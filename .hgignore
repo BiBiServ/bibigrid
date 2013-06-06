@@ -1,0 +1,5 @@
+.git/
+.*.swp
+build/
+dist/
+nbproject/private/
