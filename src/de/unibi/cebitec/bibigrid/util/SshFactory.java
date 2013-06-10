@@ -94,8 +94,13 @@ public class SshFactory {
             sb.append(InstanceInformation.getSpecs(cfg.getMasterInstanceType()).instanceCores);
             sb.append("\n");
             sb.append("sudo service gridengine-exec start\n");
+            
         }
-
+        
+        sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
+        sb.append("sudo service gmetad restart \n");
+        sb.append("sudo service ganglia-monitor restart \n");
+        
         if (cfg.getShellScriptFile() != null) {
             try {
                 List<String> lines = Files.readAllLines(cfg.getShellScriptFile(), StandardCharsets.UTF_8);

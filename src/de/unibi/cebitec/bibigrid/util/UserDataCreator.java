@@ -16,7 +16,8 @@ public class UserDataCreator {
     public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, List<String> slaveNfsMounts, int ephemerals) {
         String slaveUserData = "#!/bin/sh\n"
                 + "sleep 5\n"
-                
+                + "sudo mkdir -p /vol/spool/\n"
+                + "sudo mkdir -p /vol/scratch/\n"
                 + "echo " + masterIp + " > /var/lib/gridengine/default/common/act_qmaster\n"
                 + "echo " + masterIp + " " + masterDns + " >> /etc/hosts\n"
                 + "pid=`ps acx | grep sge_execd | cut -c1-6`\n"
@@ -27,12 +28,14 @@ public class UserDataCreator {
                 + "while test $(ps acx | grep sge_execd | wc -l) -eq 0; do\n"
                 + "        service gridengine-exec start\n"
                 + "        sleep 35\n"
-                + "done\n";
+                + "done\n"
+                + "sed -i s/MASTER_IP/" + masterIp + "/g /etc/ganglia/gmond.conf\n"
+                + "service ganglia-monitor restart \n";
 
 
         if (ephemerals == 1) {
             slaveUserData += "sudo umount /mnt\n"; // 
-            slaveUserData += "sudo mount /dev/xvdb /vol/\n";
+            slaveUserData += "sudo mount /dev/xvdb /vol/scratch\n";
         } else if (ephemerals >= 2) {
             // if 2 or more ephemerals are available use 2 as a RAID system
             slaveUserData += "sudo umount /mnt\n";
@@ -53,11 +56,10 @@ public class UserDataCreator {
 
             slaveUserData += "blockdev --setra 65536 /dev/md0\n";
             slaveUserData += "mkfs.xfs -f /dev/md0\n";
-            slaveUserData += "mount -t xfs -o noatime /dev/md0 /vol/\n";
-            
-            
+            slaveUserData += "mount -t xfs -o noatime /dev/md0 /vol/scratch\n";
+
+
         }
-        slaveUserData += "sudo mkdir -p /vol/spool/\n";
         slaveUserData += "chown ubuntu:ubuntu /vol/ \n";
         slaveUserData += "mount -t nfs4 -o proto=tcp,port=2049 " + masterIp + ":/vol/spool /vol/spool\n";
 
@@ -109,6 +111,8 @@ public class UserDataCreator {
         masterUserData += "sudo chmod 777 " + "/vol/spool/" + "\n";
         masterUserData += "echo \"echo '" + "/vol/spool/" + " 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\" | sudo sh\n";
 
+        masterUserData += "sudo mkdir -p " + "/vol/scratch/" + "\n";
+        masterUserData += "chown ubuntu:ubuntu /vol/ \n";
         for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
             masterUserData += "mkdir -p " + masterDeviceMapper.getSnapshotIdToMountPoint().get(e) + "\n";
             masterUserData += "mount " + masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)) + " " + masterDeviceMapper.getSnapshotIdToMountPoint().get(e) + "\n";
