@@ -173,6 +173,18 @@ public class CreateIntent extends Intent {
         Map<String, String> snapShotToSlaveMounts = this.getConfiguration().getSlaveMounts();
         DeviceMapper slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts);
         List<BlockDeviceMapping> slaveBlockDeviceMappings = new ArrayList<>();
+        
+        List<BlockDeviceMapping> slaveEphemeralList = new ArrayList<>();
+        
+        for (int i = 0; i < InstanceInformation.getSpecs(this.getConfiguration().getSlaveInstanceType()).ephemerals; ++i) {
+            BlockDeviceMapping temp = new BlockDeviceMapping();
+            String virtualName = "ephemeral" + i;
+            String deviceName = "/dev/sd" + ephemerals[i];
+            temp.setVirtualName(virtualName);
+            temp.setDeviceName(deviceName);
+
+            slaveEphemeralList.add(temp);
+        }
         // Create a list of slaves first. Associate with slave instance-ids later
         if (!snapShotToSlaveMounts.isEmpty()) {
             log.info(V, "Defining slave volumes");
@@ -181,7 +193,7 @@ public class CreateIntent extends Intent {
 
 
         }
-        
+        slaveBlockDeviceMappings.addAll(slaveEphemeralList);
         ////////////////////////////////////////////////////////////////////////
         ///// run master instance, tag it and wait for boot ////////////////////
 
@@ -258,7 +270,9 @@ public class CreateIntent extends Intent {
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
 
-        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, this.getConfiguration().getNfsShares());
+        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, 
+                this.getConfiguration().getNfsShares(),InstanceInformation.getSpecs(this.getConfiguration().
+                getSlaveInstanceType()).ephemerals);
 
         RunInstancesRequest slaveReq = new RunInstancesRequest();
         slaveReq

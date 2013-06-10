@@ -91,7 +91,7 @@ public class SshFactory {
             sb.append(command);
             sb.append(masterInstance.getPrivateDnsName());
             sb.append(" ");
-            sb.append(InstanceInformation.getSpecs(cfg.getMasterInstanceType()));
+            sb.append(InstanceInformation.getSpecs(cfg.getMasterInstanceType()).instanceCores);
             sb.append("\n");
             sb.append("sudo service gridengine-exec start\n");
         }
