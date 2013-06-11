@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+    <info organisation="bibi" module="grid" revision="1.0"/>
+    <configurations>
+        <conf name="compile"/>
+    </configurations>
+    <publications/>
+    <dependencies>
+        <dependency org="ch.qos" name="logback" rev="1.0.11" />
+        <dependency org="com.amazon.aws" name="aws-java-sdk" rev="1.4.5" />
+        <dependency org="org.apache" name="commons-cli" rev="1.2" />
+        <dependency org="com.jcraft" name="jsch" rev="0.1.50" />
+    </dependencies>
+</ivy-module>

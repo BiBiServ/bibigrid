@@ -9,7 +9,6 @@ public class InstanceInformation {
     private static final Map<InstanceType, InstanceSpecification> count = new HashMap<>();
 
     static {
-
         count.put(InstanceType.T1Micro, new InstanceSpecification(1, 0, false));
         count.put(InstanceType.M1Small, new InstanceSpecification(1, 1, false));
         count.put(InstanceType.M1Medium, new InstanceSpecification(1, 1, false));
@@ -26,8 +25,8 @@ public class InstanceInformation {
         count.put(InstanceType.Cc28xlarge, new InstanceSpecification(16, 4, true));
         count.put(InstanceType.Cg14xlarge, new InstanceSpecification(16, 2, true));
         count.put(InstanceType.Hi14xlarge, new InstanceSpecification(16, 2, true));
-
-
+        count.put(InstanceType.Hs18xlarge, new InstanceSpecification(16, 24, true));
+        count.put(InstanceType.Cr18xlarge, new InstanceSpecification(32, 2, true));
     }
 
     private InstanceInformation() {
