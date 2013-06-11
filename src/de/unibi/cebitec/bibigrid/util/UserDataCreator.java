@@ -113,6 +113,7 @@ public class UserDataCreator {
 
         masterUserData += "sudo mkdir -p " + "/vol/scratch/" + "\n";
         masterUserData += "chown ubuntu:ubuntu /vol/ \n";
+        masterUserData += "chown ubuntu:ubuntu /vol/scratch \n";
         for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
             masterUserData += "mkdir -p " + masterDeviceMapper.getSnapshotIdToMountPoint().get(e) + "\n";
             masterUserData += "mount " + masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)) + " " + masterDeviceMapper.getSnapshotIdToMountPoint().get(e) + "\n";

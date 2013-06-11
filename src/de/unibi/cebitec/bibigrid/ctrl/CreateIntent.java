@@ -25,12 +25,12 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class CreateIntent extends Intent {
 
     public static final Logger log = LoggerFactory.getLogger(CreateIntent.class);
     public static final String SECURITY_GROUP_PREFIX = "bibigrid-";
     public static final String MASTER_SSH_USER = "ubuntu";
+    public static final String PLACEMENT_GROUP_PREFIX = "bibigrid-pg-";
     private AmazonEC2 ec2;
 
     @Override
@@ -64,7 +64,7 @@ public class CreateIntent extends Intent {
     }
 
     private boolean runInstances() throws AmazonClientException {
-        
+
         ////////////////////////////////////////////////////////////////////////
         ///// create client and unique cluster-id //////////////////////////////
 
@@ -77,40 +77,23 @@ public class CreateIntent extends Intent {
         ////////////////////////////////////////////////////////////////////////
         ///// create security group with full internal access / ssh from outside
 
-        log.info(V,"Creating security group...");
+        log.info(V, "Creating security group...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
-        secReq.
-                withGroupName(SECURITY_GROUP_PREFIX + clusterId).
+        secReq.withGroupName(SECURITY_GROUP_PREFIX + clusterId).
                 withDescription(clusterId);
         CreateSecurityGroupResult secReqResult = ec2.createSecurityGroup(secReq);
         log.debug("security group id: {}", secReqResult.getGroupId());
 
-        UserIdGroupPair secGroupSelf = new UserIdGroupPair()
-                .withGroupId(secReqResult.getGroupId());
+        UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());
 
         IpPermission secGroupAccessSsh = new IpPermission();
-        secGroupAccessSsh
-                .withIpProtocol("tcp")
-                .withFromPort(22)
-                .withToPort(22)
-                .withIpRanges("0.0.0.0/0");
+        secGroupAccessSsh.withIpProtocol("tcp").withFromPort(22).withToPort(22).withIpRanges("0.0.0.0/0");
         IpPermission secGroupSelfAccessTcp = new IpPermission();
-        secGroupSelfAccessTcp
-                .withIpProtocol("tcp")
-                .withFromPort(0)
-                .withToPort(65535)
-                .withUserIdGroupPairs(secGroupSelf);
+        secGroupSelfAccessTcp.withIpProtocol("tcp").withFromPort(0).withToPort(65535).withUserIdGroupPairs(secGroupSelf);
         IpPermission secGroupSelfAccessUdp = new IpPermission();
-        secGroupSelfAccessUdp
-                .withIpProtocol("udp")
-                .withFromPort(0)
-                .withToPort(65535)
-                .withUserIdGroupPairs(secGroupSelf);
+        secGroupSelfAccessUdp.withIpProtocol("udp").withFromPort(0).withToPort(65535).withUserIdGroupPairs(secGroupSelf);
         IpPermission secGroupSelfAccessIcmp = new IpPermission();
-        secGroupSelfAccessIcmp
-                .withIpProtocol("icmp")
-                .withFromPort(-1)
-                .withUserIdGroupPairs(secGroupSelf);
+        secGroupSelfAccessIcmp.withIpProtocol("icmp").withFromPort(-1).withUserIdGroupPairs(secGroupSelf);
 
 
         List<IpPermission> allIpPermissions = new ArrayList<>();
@@ -120,39 +103,31 @@ public class CreateIntent extends Intent {
         allIpPermissions.add(secGroupSelfAccessIcmp);
         for (int port : this.getConfiguration().getPorts()) {
             IpPermission additionalPortTcp = new IpPermission();
-            additionalPortTcp
-                    .withIpProtocol("tcp")
-                    .withFromPort(port)
-                    .withToPort(port)
-                    .withIpRanges("0.0.0.0/0");
+            additionalPortTcp.withIpProtocol("tcp").withFromPort(port).withToPort(port).withIpRanges("0.0.0.0/0");
             allIpPermissions.add(additionalPortTcp);
             IpPermission additionalPortUdp = new IpPermission();
-            additionalPortUdp
-                    .withIpProtocol("udp")
-                    .withFromPort(port)
-                    .withToPort(port)
-                    .withIpRanges("0.0.0.0/0");
+            additionalPortUdp.withIpProtocol("udp").withFromPort(port).withToPort(port).withIpRanges("0.0.0.0/0");
             allIpPermissions.add(additionalPortUdp);
         }
 
         AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();
-        ruleChangerReq
-                .withGroupId(secReqResult.getGroupId())
-                .withIpPermissions(allIpPermissions);
+        ruleChangerReq.withGroupId(secReqResult.getGroupId()).withIpPermissions(allIpPermissions);
         ec2.authorizeSecurityGroupIngress(ruleChangerReq);
         ////////////////////////////////////////////////////////////////////////
         /////////// Create the volume for the master from snapshot /////////////
+        String placementGroup = PLACEMENT_GROUP_PREFIX + clusterId;
 
+        ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
 
         DeviceMapper masterDeviceMapper = new DeviceMapper(this.getConfiguration().getMasterMounts());
 
-         List<BlockDeviceMapping> masterDeviceMappings = new ArrayList<>();
+        List<BlockDeviceMapping> masterDeviceMappings = new ArrayList<>();
         // create Volumes first
         if (!this.getConfiguration().getMasterMounts().isEmpty()) {
             log.info(V, "Defining master volumes");
             masterDeviceMappings = createBlockDeviceMappings(masterDeviceMapper);
         }
-        
+
         String[] ephemerals = {"b", "c", "d", "e"};
         List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
         for (int i = 0; i < InstanceInformation.getSpecs(this.getConfiguration().getMasterInstanceType()).ephemerals; ++i) {
@@ -168,14 +143,14 @@ public class CreateIntent extends Intent {
         masterDeviceMappings.addAll(ephemeralList);
         // done for master. More volume description later when master is running
         //now creating Slave Volumes
-       
-        
+
+
         Map<String, String> snapShotToSlaveMounts = this.getConfiguration().getSlaveMounts();
         DeviceMapper slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts);
         List<BlockDeviceMapping> slaveBlockDeviceMappings = new ArrayList<>();
-        
+
         List<BlockDeviceMapping> slaveEphemeralList = new ArrayList<>();
-        
+
         for (int i = 0; i < InstanceInformation.getSpecs(this.getConfiguration().getSlaveInstanceType()).ephemerals; ++i) {
             BlockDeviceMapping temp = new BlockDeviceMapping();
             String virtualName = "ephemeral" + i;
@@ -198,29 +173,32 @@ public class CreateIntent extends Intent {
         ///// run master instance, tag it and wait for boot ////////////////////
 
         String base64MasterUserData = UserDataCreator.masterUserData(InstanceInformation.getSpecs(this.getConfiguration().
-                getMasterInstanceType()).ephemerals,this.getConfiguration().getNfsShares(),masterDeviceMapper);
-        
+                getMasterInstanceType()).ephemerals, this.getConfiguration().getNfsShares(), masterDeviceMapper);
+        Placement instancePlacement = new Placement(this.getConfiguration().getAvailabilityZone());
+
+        if (InstanceInformation.getSpecs(
+                this.getConfiguration().getMasterInstanceType()).clusterInstance) {
+            instancePlacement.setGroupName(placementGroup);
+        }
         log.info("Requesting master instance ...");
         RunInstancesRequest masterReq = new RunInstancesRequest();
-        masterReq
-                .withInstanceType(this.getConfiguration().getMasterInstanceType())
+        masterReq.withInstanceType(this.getConfiguration().getMasterInstanceType())
                 .withMinCount(1)
                 .withMaxCount(1)
-                .withPlacement(new Placement(this.getConfiguration().getAvailabilityZone()))
+                .withPlacement(instancePlacement)
                 .withSecurityGroupIds(secReqResult.getGroupId())
                 .withKeyName(this.getConfiguration().getKeypair())
                 .withImageId(this.getConfiguration().getMasterImage())
-                .withUserData(base64MasterUserData)
-                .withBlockDeviceMappings(masterDeviceMappings);
+                .withUserData(base64MasterUserData).withBlockDeviceMappings(masterDeviceMappings);
 
         // mounting ephemerals
-        
-        
+
+
         RunInstancesResult masterReqResult = ec2.runInstances(masterReq);
         String masterReservationId = masterReqResult.getReservation().getReservationId();
         Instance masterInstance = masterReqResult.getReservation().getInstances().get(0);
-      
-        
+
+
         log.info("Waiting for master instance to finish booting ...");
 
         /////////////////////////////////////////////
@@ -233,18 +211,14 @@ public class CreateIntent extends Intent {
         //// Tagging Master with a name ////
 
         CreateTagsRequest masterNameTagRequest = new CreateTagsRequest();
-        masterNameTagRequest
-                .withResources(masterInstance.getInstanceId())
-                .withTags(new Tag()
-                .withKey("Name")
-                .withValue("master-" + clusterId));
+        masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(new Tag().withKey("Name").withValue("master-" + clusterId));
 
 
         ec2.createTags(masterNameTagRequest);
 
-  /*
+        /*
          * Waiting for Status Checks to finish
-         * 
+         *
          */
         log.info("Waiting for Status Checks on master ...");
         do {
@@ -270,21 +244,12 @@ public class CreateIntent extends Intent {
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
 
-        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, 
-                this.getConfiguration().getNfsShares(),InstanceInformation.getSpecs(this.getConfiguration().
+        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper,
+                this.getConfiguration().getNfsShares(), InstanceInformation.getSpecs(this.getConfiguration().
                 getSlaveInstanceType()).ephemerals);
 
         RunInstancesRequest slaveReq = new RunInstancesRequest();
-        slaveReq
-                .withInstanceType(this.getConfiguration().getSlaveInstanceType())
-                .withMinCount(this.getConfiguration().getSlaveInstanceCount())
-                .withMaxCount(this.getConfiguration().getSlaveInstanceCount())
-                .withPlacement(new Placement(this.getConfiguration().getAvailabilityZone()))
-                .withSecurityGroupIds(secReqResult.getGroupId())
-                .withKeyName(this.getConfiguration().getKeypair())
-                .withUserData(base64SlaveUserData)
-                .withImageId(this.getConfiguration().getSlaveImage())
-                .withBlockDeviceMappings(slaveBlockDeviceMappings);
+        slaveReq.withInstanceType(this.getConfiguration().getSlaveInstanceType()).withMinCount(this.getConfiguration().getSlaveInstanceCount()).withMaxCount(this.getConfiguration().getSlaveInstanceCount()).withPlacement(instancePlacement).withSecurityGroupIds(secReqResult.getGroupId()).withKeyName(this.getConfiguration().getKeypair()).withUserData(base64SlaveUserData).withImageId(this.getConfiguration().getSlaveImage()).withBlockDeviceMappings(slaveBlockDeviceMappings);
 
         String slaveReservationId = "";
         List<Instance> slaveInstances = new ArrayList<>();
@@ -306,16 +271,16 @@ public class CreateIntent extends Intent {
 
             slaveInstances = waitForInstances(slaveIds);
         }
-        log.info(I,"All slave instances are running now!");
+        log.info(I, "All slave instances are running now!");
 
-       
+
 
         log.debug("master reservation: {}   slave reservation: {}   clusterId: {}    slaveCount: {}",
                 masterReservationId, slaveReservationId, clusterId, this.getConfiguration().getSlaveInstanceCount());
 
         CurrentClusters.addCluster(masterReservationId, slaveReservationId, clusterId, this.getConfiguration().getSlaveInstanceCount());
 
-      
+
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
 
@@ -330,7 +295,7 @@ public class CreateIntent extends Intent {
 
                 ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
                 sleep(10);
-                log.info(V,"Registering slaves at master instance...");
+                log.info(V, "Registering slaves at master instance...");
 
                 /*
                  * Create new Session to avoid packet corruption.
@@ -377,7 +342,7 @@ public class CreateIntent extends Intent {
                         break;
                     }
                     if (in.available() <= 0 && !channel.isClosed()) {
-                        log.info(V,"...");
+                        log.info(V, "...");
                         attempts++;
                         if (attempts > 3) {
                             in.close();
@@ -394,12 +359,12 @@ public class CreateIntent extends Intent {
                     sshSession.disconnect();
                 }
 
-                
+
             } catch (IOException | JSchException e) {
                 log.error("SSH: {}", e);
             }
         }
-        log.info(I,"Master instance has been configured.");
+        log.info(I, "Master instance has been configured.");
         log.info("Access master at:  {}", masterInstance.getPublicDnsName());
 
         return true;
@@ -440,7 +405,7 @@ public class CreateIntent extends Intent {
                 if (allrunning) {
                     return instanceDescrReqResult.getReservations().get(0).getInstances();
                 } else {
-                    log.info(V,"...");
+                    log.info(V, "...");
                     sleep(10);
                 }
 
@@ -451,8 +416,7 @@ public class CreateIntent extends Intent {
         } while (true);
     }
 
-
-     private List<BlockDeviceMapping> createBlockDeviceMappings(DeviceMapper deviceMapper) {
+    private List<BlockDeviceMapping> createBlockDeviceMappings(DeviceMapper deviceMapper) {
 
         List<BlockDeviceMapping> mappings = new ArrayList<>();
 
@@ -474,5 +438,4 @@ public class CreateIntent extends Intent {
         }
         return mappings;
     }
-    
 }

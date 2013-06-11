@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class CommandLineValidator {
     private Configuration cfg;
     private Intent intent;
     private Path propertiesFilePath;
-
+    
     public CommandLineValidator(CommandLine cl, Intent intent) {
         this.cl = cl;
         this.intent = intent;
@@ -210,6 +211,17 @@ public class CommandLineValidator {
                     }
                     InstanceType slaveType = InstanceType.fromValue(slaveTypeString);
                     this.cfg.setSlaveInstanceType(slaveType);
+                    if (InstanceInformation.getSpecs(slaveType).clusterInstance || InstanceInformation.getSpecs(this.cfg.getMasterInstanceType()).clusterInstance) {
+                        if (!slaveType.equals(this.cfg.getMasterInstanceType())) {
+                        log.error("The instance types have to be the same when using cluster types.");
+                        log.error("Master Instance Type: "+this.cfg.getMasterInstanceType().toString());
+                        log.error("Slave Instance Type: "+slaveType.toString());
+                        return false;
+                        }
+                    } 
+                 
+                        
+                    
                 } catch (Exception e) {
                     log.error("Invalid slave instance type specified!");
                     return false;
