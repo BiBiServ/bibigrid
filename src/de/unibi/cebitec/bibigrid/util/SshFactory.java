@@ -111,13 +111,11 @@ public class SshFactory {
                     sb.append("\n");
                 }
                 sb.append("\nEOFCUSTOMSCRIPT\n");
-                sb.append("bash shellscript.sh\n");
+                sb.append("bash shellscript.sh &> shellscript.log &\n");
             } catch (IOException e) {
                 log.info("Shell script could not be read.");
             }
         }
-
-       
         return sb.toString();
     }
 }
