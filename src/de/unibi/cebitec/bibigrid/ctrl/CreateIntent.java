@@ -173,7 +173,7 @@ public class CreateIntent extends Intent {
         ///// run master instance, tag it and wait for boot ////////////////////
 
         String base64MasterUserData = UserDataCreator.masterUserData(InstanceInformation.getSpecs(this.getConfiguration().
-                getMasterInstanceType()).ephemerals, this.getConfiguration().getNfsShares(), masterDeviceMapper);
+                getMasterInstanceType()).ephemerals, this.getConfiguration().getNfsShares(), masterDeviceMapper,this.getConfiguration());
         Placement instancePlacement = new Placement(this.getConfiguration().getAvailabilityZone());
 
         if (InstanceInformation.getSpecs(

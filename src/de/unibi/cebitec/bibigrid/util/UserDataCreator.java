@@ -4,14 +4,22 @@
  */
 package de.unibi.cebitec.bibigrid.util;
 
+import de.unibi.cebitec.bibigrid.model.Configuration;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author alueckne
  */
 public class UserDataCreator {
+
+    public static final Logger log = LoggerFactory.getLogger(UserDataCreator.class);
 
     public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, List<String> slaveNfsMounts, int ephemerals) {
         String slaveUserData = "#!/bin/sh\n"
@@ -78,7 +86,7 @@ public class UserDataCreator {
         return base64;
     }
 
-    public static String masterUserData(int ephemeralamount, List<String> masterNfsShares, DeviceMapper masterDeviceMapper) {
+    public static String masterUserData(int ephemeralamount, List<String> masterNfsShares, DeviceMapper masterDeviceMapper, Configuration cfg) {
         String masterUserData = "#!/bin/sh\n"
                 + "sleep 5\n";
 
@@ -125,6 +133,22 @@ public class UserDataCreator {
             masterUserData += "echo \"echo '" + mastershare + " 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\" | sudo sh\n";
         }
         masterUserData += "sudo /etc/init.d/nfs-kernel-server restart\n";
+
+        if (cfg.getEearlyShellScriptFile() != null) {
+            try {
+                List<String> lines = Files.readAllLines(cfg.getEearlyShellScriptFile(), StandardCharsets.UTF_8);
+                masterUserData += "cat > earlyshellscript.sh << EOFCUSTOMSCRIPT \n";
+
+                for (String e : lines) {
+                    masterUserData += e;
+                    masterUserData += "\n";
+                }
+                masterUserData += "\nEOFCUSTOMSCRIPT\n";
+                masterUserData += "bash earlyshellscript.sh &> earlyshellscript.log &\n";
+            } catch (IOException e) {
+                log.info("Shell script could not be read.");
+            }
+        }
         String base64 = new String(Base64.encodeBase64(masterUserData.getBytes()));
         return base64;
     }
