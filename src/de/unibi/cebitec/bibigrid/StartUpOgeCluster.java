@@ -54,7 +54,8 @@ public class StartUpOgeCluster {
                 .addOption("p", "ports", true, "comma-separated list of additional ports (tcp & udp) to be opened for all nodes (e.g. 80,443,8080)")
                 .addOption("d", "master-mounts", true, "comma-separated snapshot=mountpoint list (e.g. snap-12234abcd=/mnt/mydisk1,snap-5667889ab=/mnt/mydisk2) mounted to master")
                 .addOption("f", "slave-mounts", true, "comma-separated snapshot=mountpoint list (e.g. snap-12234abcd=/mnt/mydisk1,snap-5667889ab=/mnt/mydisk2) mounted to all slaves individually")
-                .addOption("x", "execute-script", true, "shell script file to be executed on master")
+                .addOption("x", "execute-script", true, "path to shell script file to be executed on master")
+                .addOption("ex", "early-execute-script", true, "path to shell script to be executed on master instance startup")
                 .addOption("g", "master-nfs-shares", true, "comma-separated list of paths on master to be shared via NFS")
                 .addOption("j", "slave-nfs-mounts", true, "comma-separated list of paths on slave to be mounted from NFS")
                 .addOption("v", "verbose", false, "more console output");

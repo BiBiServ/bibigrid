@@ -21,6 +21,7 @@ public class Configuration {
     private String clusterId;
     private List<Integer> ports;
     private Path shellScriptFile;
+    private Path earlyShellScriptFile;
     private Map<String, String> masterMounts;
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
@@ -129,6 +130,15 @@ public class Configuration {
         this.shellScriptFile = shellScriptFile;
     }
 
+       public Path getEearlyShellScriptFile() {
+        return earlyShellScriptFile;
+    }
+
+    public void setEarlyShellScriptFile(Path shellEarlyScriptFile) {
+        this.earlyShellScriptFile = shellEarlyScriptFile;
+    }
+
+    
     public Map<String, String> getMasterMounts() {
         return masterMounts;
     }
