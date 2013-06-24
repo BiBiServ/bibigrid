@@ -57,6 +57,7 @@ public class UserDataCreator {
             slaveUserData += "blockdev --setra 65536 /dev/md0\n";
             slaveUserData += "mkfs.xfs -f /dev/md0\n";
             slaveUserData += "mount -t xfs -o noatime /dev/md0 /vol/scratch\n";
+            slaveUserData += "chown ubuntu:ubuntu /vol/scratch \n";
 
 
         }
