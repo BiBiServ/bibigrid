@@ -73,14 +73,7 @@ public class TerminateIntent extends Intent {
                 CurrentClusters.removeCluster(this.getConfiguration().getClusterId());
                 return true;
             }
-            DescribePlacementGroupsRequest descrPgGroup = new DescribePlacementGroupsRequest().withGroupNames(CreateIntent.PLACEMENT_GROUP_PREFIX + this.getConfiguration().getClusterId());
 
-            DescribePlacementGroupsResult descrPgGroupResult = ec2.describePlacementGroups(descrPgGroup);
-            if (!descrPgGroupResult.getPlacementGroups().isEmpty()) {
-                log.info("Deleting placement group.");
-                DeletePlacementGroupRequest pgTermReq = new DeletePlacementGroupRequest(CreateIntent.PLACEMENT_GROUP_PREFIX + this.getConfiguration().getClusterId());
-                ec2.deletePlacementGroup(pgTermReq);
-            }
             TerminateInstancesRequest termReq = new TerminateInstancesRequest();
             termReq.withInstanceIds(instanceIdsToTerminate);
             TerminateInstancesResult termReqRes = ec2.terminateInstances(termReq);
@@ -111,6 +104,15 @@ public class TerminateIntent extends Intent {
             DeleteSecurityGroupRequest delSecReq = new DeleteSecurityGroupRequest();
             delSecReq.setGroupName(CreateIntent.SECURITY_GROUP_PREFIX + this.getConfiguration().getClusterId());
             ec2.deleteSecurityGroup(delSecReq);
+
+            DescribePlacementGroupsRequest descrPgGroup = new DescribePlacementGroupsRequest().withGroupNames(CreateIntent.PLACEMENT_GROUP_PREFIX + this.getConfiguration().getClusterId());
+
+            DescribePlacementGroupsResult descrPgGroupResult = ec2.describePlacementGroups(descrPgGroup);
+            if (!descrPgGroupResult.getPlacementGroups().isEmpty()) {
+                log.info("Deleting placement group.");
+                DeletePlacementGroupRequest pgTermReq = new DeletePlacementGroupRequest(CreateIntent.PLACEMENT_GROUP_PREFIX + this.getConfiguration().getClusterId());
+                ec2.deletePlacementGroup(pgTermReq);
+            }
             log.info(I, "Cluster terminated. ({})", this.getConfiguration().getClusterId());
 
             CurrentClusters.removeCluster(this.getConfiguration().getClusterId());
