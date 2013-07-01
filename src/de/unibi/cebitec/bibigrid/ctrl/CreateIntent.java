@@ -178,7 +178,8 @@ public class CreateIntent extends Intent {
 
         if (InstanceInformation.getSpecs(
                 this.getConfiguration().getMasterInstanceType()).clusterInstance) {
-            instancePlacement.setGroupName(placementGroup);
+           instancePlacement.setGroupName(placementGroup);
+	log.info("Cluster will be launched in placement group " + placementGroup);
         }
         log.info("Requesting master instance ...");
         RunInstancesRequest masterReq = new RunInstancesRequest();
