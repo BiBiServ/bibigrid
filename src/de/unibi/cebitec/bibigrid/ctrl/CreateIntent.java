@@ -176,10 +176,13 @@ public class CreateIntent extends Intent {
                 getMasterInstanceType()).ephemerals, this.getConfiguration().getNfsShares(), masterDeviceMapper,this.getConfiguration());
         Placement instancePlacement = new Placement(this.getConfiguration().getAvailabilityZone());
 
-        if (InstanceInformation.getSpecs(
-                this.getConfiguration().getMasterInstanceType()).clusterInstance) {
-           instancePlacement.setGroupName(placementGroup);
-	log.info("Cluster will be launched in placement group " + placementGroup);
+        if (InstanceInformation.getSpecs(this.getConfiguration().getMasterInstanceType()).clusterInstance) {
+            
+            if (this.getConfiguration().getMasterInstanceType().equals(this.getConfiguration().getSlaveInstanceType())) {
+                instancePlacement.setGroupName(placementGroup);
+                log.info("Cluster will be launched in placement group " + placementGroup);
+            } 
+
         }
         log.info("Requesting master instance ...");
         RunInstancesRequest masterReq = new RunInstancesRequest();
@@ -250,7 +253,10 @@ public class CreateIntent extends Intent {
                 getSlaveInstanceType()).ephemerals);
 
         RunInstancesRequest slaveReq = new RunInstancesRequest();
-        slaveReq.withInstanceType(this.getConfiguration().getSlaveInstanceType()).withMinCount(this.getConfiguration().getSlaveInstanceCount()).withMaxCount(this.getConfiguration().getSlaveInstanceCount()).withPlacement(instancePlacement).withSecurityGroupIds(secReqResult.getGroupId()).withKeyName(this.getConfiguration().getKeypair()).withUserData(base64SlaveUserData).withImageId(this.getConfiguration().getSlaveImage()).withBlockDeviceMappings(slaveBlockDeviceMappings);
+        slaveReq.withInstanceType(this.getConfiguration().getSlaveInstanceType())
+                .withMinCount(this.getConfiguration().getSlaveInstanceCount())
+                .withMaxCount(this.getConfiguration().getSlaveInstanceCount())
+                .withPlacement(instancePlacement).withSecurityGroupIds(secReqResult.getGroupId()).withKeyName(this.getConfiguration().getKeypair()).withUserData(base64SlaveUserData).withImageId(this.getConfiguration().getSlaveImage()).withBlockDeviceMappings(slaveBlockDeviceMappings);
 
         String slaveReservationId = "";
         List<Instance> slaveInstances = new ArrayList<>();

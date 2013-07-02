@@ -104,7 +104,7 @@ public class TerminateIntent extends Intent {
             DeleteSecurityGroupRequest delSecReq = new DeleteSecurityGroupRequest();
             delSecReq.setGroupName(CreateIntent.SECURITY_GROUP_PREFIX + this.getConfiguration().getClusterId());
             ec2.deleteSecurityGroup(delSecReq);
-
+            sleep(5);
             DescribePlacementGroupsRequest descrPgGroup = new DescribePlacementGroupsRequest().withGroupNames(CreateIntent.PLACEMENT_GROUP_PREFIX + this.getConfiguration().getClusterId());
 
             DescribePlacementGroupsResult descrPgGroupResult = ec2.describePlacementGroups(descrPgGroup);

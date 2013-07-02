@@ -58,7 +58,8 @@ public class StartUpOgeCluster {
                 .addOption("ex", "early-execute-script", true, "path to shell script to be executed on master instance startup")
                 .addOption("g", "master-nfs-shares", true, "comma-separated list of paths on master to be shared via NFS")
                 .addOption("j", "slave-nfs-mounts", true, "comma-separated list of paths on slave to be mounted from NFS")
-                .addOption("v", "verbose", false, "more console output");
+                .addOption("v", "verbose", false, "more console output")
+                .addOption("o","config",true,"path to alternative config file");
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
             CommandLineValidator validator = null;

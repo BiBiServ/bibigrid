@@ -29,12 +29,21 @@ public class CommandLineValidator {
     private Configuration cfg;
     private Intent intent;
     private Path propertiesFilePath;
-    
+
     public CommandLineValidator(CommandLine cl, Intent intent) {
         this.cl = cl;
         this.intent = intent;
         this.cfg = new Configuration();
-        this.propertiesFilePath = FileSystems.getDefault().getPath(DEFAULT_PROPERTIES_DIRNAME, DEFAULT_PROPERTIES_FILENAME);
+        if (cl.hasOption("o")) {
+            String path = this.cl.getOptionValue("o");
+            Path newPath = FileSystems.getDefault().getPath(path);
+            if (Files.isReadable(newPath)) {
+                this.propertiesFilePath = newPath;
+                log.info("Alternative config file " + newPath.toString() + " will be used.");
+            }
+        } else {
+            this.propertiesFilePath = FileSystems.getDefault().getPath(DEFAULT_PROPERTIES_DIRNAME, DEFAULT_PROPERTIES_FILENAME);
+        }
     }
 
     private Properties loadDefaultsFromPropertiesFile() {
@@ -211,17 +220,10 @@ public class CommandLineValidator {
                     }
                     InstanceType slaveType = InstanceType.fromValue(slaveTypeString);
                     this.cfg.setSlaveInstanceType(slaveType);
-                    if (InstanceInformation.getSpecs(slaveType).clusterInstance || InstanceInformation.getSpecs(this.cfg.getMasterInstanceType()).clusterInstance) {
-                        if (!slaveType.equals(this.cfg.getMasterInstanceType())) {
-                        log.error("The instance types have to be the same when using cluster types.");
-                        log.error("Master Instance Type: "+this.cfg.getMasterInstanceType().toString());
-                        log.error("Slave Instance Type: "+slaveType.toString());
-                        return false;
-                        }
-                    } 
-                 
-                        
-                    
+
+
+
+
                 } catch (Exception e) {
                     log.error("Invalid slave instance type specified!");
                     return false;
