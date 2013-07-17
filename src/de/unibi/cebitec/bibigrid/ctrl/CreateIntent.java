@@ -315,7 +315,7 @@ public class CreateIntent extends Intent {
                 /*
                  * Start connect attempt
                  */
-                sshSession.connect(3000);
+                sshSession.connect(5000);
 
 
 
@@ -331,7 +331,7 @@ public class CreateIntent extends Intent {
                 channel.setCommand(execCommand);
 
                 log.debug("Connecting ssh channel...");
-                channel.connect(2000);
+                channel.connect(5000);
                 int attempts = 0;
                 byte[] tmp = new byte[1024];
                 while (true) {
@@ -368,7 +368,7 @@ public class CreateIntent extends Intent {
 
 
             } catch (IOException | JSchException e) {
-                log.error("SSH: {}", e);
+                log.warn("SSH: {} ... retrying", e.getMessage());
             }
         }
         log.info(I, "Master instance has been configured.");
