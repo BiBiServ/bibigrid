@@ -320,7 +320,6 @@ public class CreateIntent extends Intent {
 
 
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-
                 //channel.setOutputStream(System.out);
                 // channel.setErrStream(System.out);
 
@@ -368,7 +367,9 @@ public class CreateIntent extends Intent {
 
 
             } catch (IOException | JSchException e) {
-                log.warn(V, "SSH: {} ... retrying", e.getMessage());
+//                log.warn(V, "SSH: {} ", e.getMessage());
+                log.info("SSH: Retrying connection.");
+                sleep(2);
             }
         }
         log.info(I, "Master instance has been configured.");
