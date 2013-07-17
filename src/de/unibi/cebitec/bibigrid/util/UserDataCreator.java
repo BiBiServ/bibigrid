@@ -91,7 +91,7 @@ public class UserDataCreator {
 
         }
         slaveUserData.append("chown ubuntu:ubuntu /vol/ \n");
-        slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n)");
+        slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
 
         for (String e : slaveDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
             slaveUserData.append("mkdir -p ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
