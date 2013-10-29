@@ -144,16 +144,17 @@ public class UserDataCreator {
             switch (ephemeralamount) {
                 case 2: {
                     masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=2 /dev/xvdb /dev/xvdc\n");
+                    masterUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc' > /etc/mdadm.conf\n");
                     break;
                 }
                 case 4: {
                     masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4 /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde\n");
+                    masterUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc /dev/xvdd' > /etc/mdadm.conf\n");
                     break;
                 }
             }
-            masterUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc' > /etc/mdadm.conf\n");
+            
             masterUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
-
             masterUserData.append("blockdev --setra 65536 /dev/md0\n");
             masterUserData.append("mkfs.xfs -f /dev/md0\n");
             masterUserData.append("mount -t xfs -o noatime /dev/md0 /vol/\n");
