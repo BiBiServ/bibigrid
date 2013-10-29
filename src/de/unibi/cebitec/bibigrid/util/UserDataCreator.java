@@ -72,15 +72,17 @@ public class UserDataCreator {
             switch (ephemerals) {
                 case 2: {
                     slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=2 /dev/xvdb /dev/xvdc\n");
+                    slaveUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc' > /etc/mdadm.conf\n");
                     break;
                 }
                 case 4: {
                     slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4 /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde\n");
+                    slaveUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde' > /etc/mdadm.conf\n");
                     break;
                 }
             }
 
-            slaveUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc' > /etc/mdadm.conf\n");
+            
             slaveUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
 
             slaveUserData.append("blockdev --setra 65536 /dev/md0\n");
