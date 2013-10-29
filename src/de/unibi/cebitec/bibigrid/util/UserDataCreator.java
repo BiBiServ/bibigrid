@@ -149,7 +149,7 @@ public class UserDataCreator {
                 }
                 case 4: {
                     masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4 /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde\n");
-                    masterUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc /dev/xvdd' > /etc/mdadm.conf\n");
+                    masterUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde' > /etc/mdadm.conf\n");
                     break;
                 }
             }
