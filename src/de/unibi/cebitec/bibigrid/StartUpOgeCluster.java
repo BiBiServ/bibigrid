@@ -75,9 +75,9 @@ public class StartUpOgeCluster {
                         JarFile jarFile = new JarFile(jarPath);
                         Manifest m = jarFile.getManifest();
                         StringBuilder versionInfo = new StringBuilder("v");
-                        versionInfo.append(m.getMainAttributes().getValue("OGE-version"));
+                        versionInfo.append(m.getMainAttributes().getValue("Bibigrid-version"));
                         versionInfo.append(" (Build: ");
-                        versionInfo.append(m.getMainAttributes().getValue("OGE-build-date"));
+                        versionInfo.append(m.getMainAttributes().getValue("Bibigrid-build-date"));
                         versionInfo.append(")");
                         System.out.println(versionInfo.toString());
                     } catch (Exception e) {
