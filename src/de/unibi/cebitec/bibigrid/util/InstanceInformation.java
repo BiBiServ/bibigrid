@@ -22,7 +22,7 @@ public class InstanceInformation {
         count.put(InstanceType.C1Medium, new InstanceSpecification(2, 1, false));
         count.put(InstanceType.C1Xlarge, new InstanceSpecification(8, 4, false));
         count.put(InstanceType.Cc14xlarge, new InstanceSpecification(8, 2, true));
-        count.put(InstanceType.Cc28xlarge, new InstanceSpecification(16, 4, true));
+        count.put(InstanceType.Cc28xlarge, new InstanceSpecification(32, 4, true));
         count.put(InstanceType.Cg14xlarge, new InstanceSpecification(16, 2, true));
         count.put(InstanceType.Hi14xlarge, new InstanceSpecification(16, 2, true));
         count.put(InstanceType.Hs18xlarge, new InstanceSpecification(16, 24, true));

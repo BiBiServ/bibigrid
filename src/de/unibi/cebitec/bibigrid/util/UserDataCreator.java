@@ -105,7 +105,7 @@ public class UserDataCreator {
                 slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":").append(share).append(" ").append(share).append("\n");
             }
         }
-
+	slaveUserData.append("while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
         return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
     }
 
