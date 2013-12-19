@@ -107,7 +107,26 @@ public class CommandLineValidator {
                     return false;
                 }
             }
+            ////////////////////////////////////////////////////////////////////////
+            ///// autoscale on/off /////////////////////////////////////////////////
 
+            if (this.cl.hasOption("j")) {
+                this.cfg.setAutoscaling(true);
+                log.info(V, "AutoScaling enabled.");
+            } else if (defaults.containsKey("autoscaling")) {
+                String value = defaults.getProperty("autoscaling");
+                if (value.equalsIgnoreCase("yes")) {
+                    this.cfg.setAutoscaling(true);
+                    log.info(V, "AutoScaling enabled.");
+                } else if (value.equalsIgnoreCase("no")) {
+                    log.info(V, "AutoScaling disabled."); 
+                    this.cfg.setAutoscaling(false);
+                } else {
+                    log.error("AutoScaling value in properties not recognized. Please use yes/no.");
+                    return false;
+                }
+            }
+           
 
             ////////////////////////////////////////////////////////////////////////
             ///// identity-file ////////////////////////////////////////////////////
@@ -148,16 +167,16 @@ public class CommandLineValidator {
 
 
             ////////////////////////////////////////////////////////////////////////
-            ///// endpoint /////////////////////////////////////////////////////////
+            ///// Region /////////////////////////////////////////////////////////
 
             if (req.contains("e")) {
-                this.cfg.setEndpoint(this.cl.getOptionValue("e", defaults.getProperty("endpoint")));
-                if (this.cfg.getEndpoint() == null) {
-                    log.error("-e option is required! Please specify the url of your API endpoint "
-                            + "(e.g. ec2.eu-west-1.amazonaws.com).");
+                this.cfg.setRegion(this.cl.getOptionValue("e", defaults.getProperty("region")));
+                if (this.cfg.getRegion() == null) {
+                    log.error("-e option is required! Please specify the url of your region "
+                            + "(e.g. eu-west-1).");
                     return false;
                 }
-                log.info(V, "Endpoint set. ({})", this.cfg.getEndpoint());
+                log.info(V, "Region set. ({})", this.cfg.getRegion());
             }
 
 
@@ -220,10 +239,14 @@ public class CommandLineValidator {
                     }
                     InstanceType slaveType = InstanceType.fromValue(slaveTypeString);
                     this.cfg.setSlaveInstanceType(slaveType);
-
-
-
-
+                    if (InstanceInformation.getSpecs(slaveType).clusterInstance || InstanceInformation.getSpecs(this.cfg.getMasterInstanceType()).clusterInstance) {
+                        if (!slaveType.equals(this.cfg.getMasterInstanceType())) {
+                            log.error("The instance types have to be the same when using cluster types.");
+                            log.error("Master Instance Type: " + this.cfg.getMasterInstanceType().toString());
+                            log.error("Slave Instance Type: " + slaveType.toString());
+                            return false;
+                        }
+                    }
                 } catch (Exception e) {
                     log.error("Invalid slave instance type specified!");
                     return false;
@@ -233,37 +256,158 @@ public class CommandLineValidator {
 
 
             ////////////////////////////////////////////////////////////////////////
-            ///// slave-instance-count /////////////////////////////////////////////
+            ///// slave-instance-max /////////////////////////////////////////////
 
             if (req.contains("n")) {
                 try {
-                    if (defaults.containsKey("slave-instance-count")) {
-                        this.cfg.setSlaveInstanceCount(Integer.parseInt(defaults.getProperty("slave-instance-count")));
+                    if (defaults.containsKey("slave-instance-max")) {
+                        this.cfg.setSlaveInstanceMaximum(Integer.parseInt(defaults.getProperty("slave-instance-max")));
                     }
                 } catch (NumberFormatException nfe) {
-                    log.error("Invalid property value for slave-instance-count. Please make sure you have an integer here.");
+                    log.error("Invalid property value for slave-instance-max. Please make sure you have a positive integer here.");
                 }
                 if (this.cl.hasOption("n")) {
                     try {
                         int numSlaves = Integer.parseInt(this.cl.getOptionValue("n"));
                         if (numSlaves >= 0) {
-                            this.cfg.setSlaveInstanceCount(numSlaves);
+                            this.cfg.setSlaveInstanceMaximum(numSlaves);
                         } else {
                             log.error("Number of slave nodes has to be at least 0.");
                         }
                     } catch (NumberFormatException nfe) {
-                        log.error("Invalid argument for -n. Please make sure you have an integer here.");
+                        log.error("Invalid argument for -n. Please make sure you have a positive integer here.");
                     }
                 }
-                if (this.cfg.getSlaveInstanceCount() < 0) {
+                if (this.cfg.getSlaveInstanceMaximum() < 0) {
                     log.error("-n option is required! Please specify the number of slave nodes. (at least 0)");
                     return false;
                 } else {
-                    log.info(V, "Slave instance count set. ({})", this.cfg.getSlaveInstanceCount());
+                    log.info(V, "Slave instance count set. ({})", this.cfg.getSlaveInstanceMaximum());
                 }
             }
+            
+            
+            ///////////////////////////////////////////////////////////////////////
+            ///////////////////// slave instance minimum //////////////////////////
+            if (req.contains("u")) {
+                try {
+                    if (defaults.containsKey("slave-instance-min")) {
+                        this.cfg.setSlaveInstanceMinimum(Integer.parseInt(defaults.getProperty("slave-instance-min")));
+                        if (this.cfg.getSlaveInstanceMaximum() < this.cfg.getSlaveInstanceMinimum()) {
+                            throw new NumberFormatException();
+                        }
+                    }
+                } catch (NumberFormatException nfe) {
+                    log.error("Invalid property value for slave-instance-min. Please make sure you have a "
+                            + "positive integer and your slave instance maximum is bigger or equal to your minimum amount.");
+                }
+                if (this.cl.hasOption("u")) {
+                    try {
+                        int numSlaves = Integer.parseInt(this.cl.getOptionValue("u"));
+                        if (numSlaves >= 0) {
+                            this.cfg.setSlaveInstanceMinimum(numSlaves);
+                            if (this.cfg.getSlaveInstanceMaximum() < this.cfg.getSlaveInstanceMinimum()) {
+                                throw new NumberFormatException();
+                            }
+                        } else {
+                            log.error("Number of slave nodes has to be at least 0.");
+                        }
+                    } catch (NumberFormatException nfe) {
+                        log.error("Invalid argument for -n. Please make sure you have a positive integer here "
+                                + "and your slave instance maximum is bigger or equal to your minimum amount.");
+                    }
+                }
+                if (this.cfg.getSlaveInstanceMinimum() < 0) {
+                    log.error("-n option is required! Please specify the number of slave nodes. (at least 0)");
+                    return false;
+                } else {
+                    log.info(V, "Slave instance minimum set. ({})", this.cfg.getSlaveInstanceMinimum());
+                }
+            }
+             ///////////////////////////////////////////////////////////////////////
+            ///////////////////// slave instance desired amount//////////////////////////
+            if (req.contains("r")) {
+                try {
+                    if (defaults.containsKey("slave-instance-start")) {
+                        this.cfg.setSlaveInstanceStartAmount(Integer.parseInt(defaults.getProperty("slave-instance-start")));
+                        if (this.cfg.getSlaveInstanceStartAmount() < this.cfg.getSlaveInstanceMinimum() || this.cfg.getSlaveInstanceStartAmount() > this.cfg.getSlaveInstanceMaximum() ) {
+                            throw new NumberFormatException();
+                        }
+                    }
+                } catch (NumberFormatException nfe) {
+                    log.error("Invalid property value for slave-instance-start. Please make sure you have a "
+                            + "positive integer and your slave instance maximum is bigger and slave instance minimum is equal or smaller to it.");
+                }
+                if (this.cl.hasOption("r")) {
+                    try {
+                        int numSlaves = Integer.parseInt(this.cl.getOptionValue("r"));
+                        if (numSlaves >= 1) {
+                            this.cfg.setSlaveInstanceStartAmount(numSlaves);
+                            if (this.cfg.getSlaveInstanceStartAmount() < this.cfg.getSlaveInstanceMinimum() || this.cfg.getSlaveInstanceStartAmount() > this.cfg.getSlaveInstanceMaximum()) {
+                                throw new NumberFormatException();
+                            }
+                        } else {
+                            log.error("Number of start slave nodes has to be at least 1.");
+                        }
+                    } catch (NumberFormatException nfe) {
+                        log.error("Invalid property value for slave-instance-start. Please make sure you have a "
+                            + "positive integer and your slave instance maximum is bigger and the slave instance minimum is equal or smaller to it.");
+                    }
+                }
+                if (this.cfg.getSlaveInstanceStartAmount() <= 0) {
+                    log.error("-r option is required! Please specify the number of desired slave nodes at start up. (at least 1)");
+                    return false;
+                } else {
+                    log.info(V, "Slave instance desired amount set. ({})", this.cfg.getSlaveInstanceStartAmount());
+                }
+            }
+            
+            
+              ///////////////////////////////////////////////////////////////////////
+            ///////////////////// autoscale master yes or no//////////////////////////
+            if (req.contains("b")) {
+                boolean valueSet = false;
+                try {
+                    if (defaults.containsKey("use-master-as-compute")) {
+                        String value = defaults.getProperty("use-master-as-compute");
+                        if (value.equalsIgnoreCase("yes")) {
+                            this.cfg.setUseMasterAsCompute(true);
+                            valueSet = true;
 
+                        } else if (value.equalsIgnoreCase("no")) {
+                            this.cfg.setUseMasterAsCompute(false);
+                            valueSet = true;
+                        } else {
+                            throw new IllegalArgumentException("Value not yes or no");
+                        }
+                    }
+                } catch (IllegalArgumentException iae) {
+                    log.error("Invalid value for use-master-as-compute. Please make sure it is set as yes or no.");
+                }
+                if (this.cl.hasOption("b")) {
+                    try {
+                        String value = defaults.getProperty("use-master-as-compute");
+                        if (value.equalsIgnoreCase("yes")) {
+                            this.cfg.setUseMasterAsCompute(true);
+                            valueSet = true;
 
+                        } else if (value.equalsIgnoreCase("no")) {
+                            this.cfg.setUseMasterAsCompute(false);
+                            valueSet = true;
+                        } else {
+                            throw new IllegalArgumentException("Value not yes or no");
+                        }
+                    }catch (IllegalArgumentException iae) {
+                    log.error("Invalid value for use-master-as-compute. Please make sure it is set as yes or no.");
+                }
+                }
+                if (!valueSet) {
+                    log.error("-b option is required! Please make sure it is set as yes or no");
+                    return false;
+                } else {
+                    log.info(V, "Use Master as compute instance. ({})", this.cfg.isUseMasterAsCompute());
+                }
+            }
             ////////////////////////////////////////////////////////////////////////
             ///// slave-image //////////////////////////////////////////////////////
 
@@ -276,8 +420,8 @@ public class CommandLineValidator {
                     log.info(V, "Slave image set. ({})", this.cfg.getSlaveImage());
                 }
             }
-
-
+           
+          
             ////////////////////////////////////////////////////////////////////////
             ///// ports ////////////////////////////////////////////////////////////
 
@@ -329,22 +473,6 @@ public class CommandLineValidator {
                 log.info(V, "Shell script file found! ({})", script);
             }
 
-            String earlyScriptFilePath = null;
-            if (defaults.containsKey("early-execute-script")) {
-                earlyScriptFilePath = defaults.getProperty("early-execute-script");
-            }
-            if (this.cl.hasOption("ex")) {
-                earlyScriptFilePath = this.cl.getOptionValue("ex");
-            }
-            if (earlyScriptFilePath != null) {
-                Path script = FileSystems.getDefault().getPath(earlyScriptFilePath);
-                if (!script.toFile().exists()) {
-                    log.error("The supplied early shell script file '{}' does not exist!", script);
-                    return false;
-                }
-                this.cfg.setEarlyShellScriptFile(script);
-                log.info(V, "Early Shell script file found! ({})", script);
-            }
 
             ////////////////////////////////////////////////////////////////////////
             ///// master-mounts ////////////////////////////////////////////////////
@@ -361,7 +489,7 @@ public class CommandLineValidator {
                         this.cfg.getMasterMounts().put(snapshot, mountpoint);
                     }
                 } catch (Exception e) {
-                    log.error("Could notparse the list of master mounts, please make "
+                    log.error("Could not parse the list of master mounts, please make "
                             + "sure you have a list of comma-separated key=value pairs without spaces in between.");
                     return false;
                 }
@@ -393,7 +521,7 @@ public class CommandLineValidator {
                         this.cfg.getSlaveMounts().put(snapshot, mountpoint);
                     }
                 } catch (Exception e) {
-                    log.error("Could notparse the list of slave mounts, please make "
+                    log.error("Could not parse the list of slave mounts, please make "
                             + "sure you have a list of comma-separated key=value pairs without spaces in between.");
                     return false;
                 }

@@ -16,8 +16,8 @@ public class CurrentClusters {
     public static final String DELIMITER = "|";
     public static final String DELIMITER_REGEX = "\\|";
 
-    public static void addCluster(String masterReservationId, String slaveReservationId, String clusterId, int slaveInstanceCount) {
-        String data = StringUtils.join(DELIMITER, masterReservationId, slaveReservationId, String.valueOf(slaveInstanceCount), String.valueOf(Calendar.getInstance().getTimeInMillis()));
+    public static void addCluster(String masterReservationId, String autoScalingGroupName, String clusterId, int slaveInstanceCount) {
+        String data = StringUtils.join(DELIMITER, masterReservationId, autoScalingGroupName, String.valueOf(slaveInstanceCount), String.valueOf(Calendar.getInstance().getTimeInMillis()));
         p.put(clusterId, data);
     }
 
@@ -32,15 +32,16 @@ public class CurrentClusters {
         return getDataArray(clusterId)[0];
     }
 
-    public static String getSlaveReservationId(String clusterId) {
+    public static String getAutoScalingGroupName(String clusterId) {
         return getDataArray(clusterId)[1];
     }
 
     private static String[] getDataArray(String clusterId) {
-        String[] data = p.get(clusterId, "-|-|-|-").split(DELIMITER_REGEX);
+        String[] data = p.get(clusterId, "-|-|-|-|-").split(DELIMITER_REGEX);
         return data;
     }
-
+    
+    
     public static boolean exists(String clusterId) {
         return p.get(clusterId, null) != null;
     }
@@ -48,7 +49,7 @@ public class CurrentClusters {
     public static String printClusterList() {
         StringBuilder display = new StringBuilder();
         display.append("\n");
-        display.append("cluster-id").append("\t").append("launch date").append("\t\t").append("# of slaves/EHs").append("\n");
+        display.append("cluster-id").append("\t").append("launch date").append("\t\t").append("max # of slaves/EHs").append("\n");
         display.append("----------").append("\t").append("--------------").append("\t\t").append("---------------").append("\n");
 
         try {

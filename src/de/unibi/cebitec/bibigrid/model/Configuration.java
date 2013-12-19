@@ -8,15 +8,16 @@ import java.util.Map;
 
 public class Configuration {
 
+   
     private InstanceType masterInstanceType;
     private String masterImage;
     private InstanceType slaveInstanceType;
-    private int slaveInstanceCount;
+    private int slaveInstanceMaximum;
     private String slaveImage;
     private String availabilityZone;
     private String keypair;
     private Path identityFile;
-    private String endpoint;
+    private String region;
     private AWSCredentials credentials;
     private String clusterId;
     private List<Integer> ports;
@@ -25,6 +26,51 @@ public class Configuration {
     private Map<String, String> masterMounts;
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
+    private int slaveInstanceMinimum;
+    private double bidPrice;
+    private int slaveInstanceStartAmount;
+    private boolean useMasterAsCompute;
+    private boolean autoscaling = false;
+
+    public boolean isAutoscaling() {
+        return autoscaling;
+    }
+
+    public void setAutoscaling(boolean autoscaling) {
+        this.autoscaling = autoscaling;
+    }
+    
+    public boolean isUseMasterAsCompute() {
+        return useMasterAsCompute;
+    }
+
+    public void setUseMasterAsCompute(boolean useMasterAsCompute) {
+        this.useMasterAsCompute = useMasterAsCompute;
+    }
+
+    public int getSlaveInstanceStartAmount() {
+        return slaveInstanceStartAmount;
+    }
+
+    public void setSlaveInstanceStartAmount(int startCount) {
+        this.slaveInstanceStartAmount = startCount;
+    }
+    
+    public int getSlaveInstanceMaximum() {
+        return slaveInstanceMaximum;
+    }
+
+    public void setSlaveInstanceMaximum(int slaveInstanceMaximum) {
+        this.slaveInstanceMaximum = slaveInstanceMaximum;
+    }
+
+    public int getSlaveInstanceMinimum() {
+        return slaveInstanceMinimum;
+    }
+
+    public void setSlaveInstanceMinimum(int slaveInstanceMinimum) {
+        this.slaveInstanceMinimum = slaveInstanceMinimum;
+    }
 
     public InstanceType getMasterInstanceType() {
         return masterInstanceType;
@@ -40,14 +86,6 @@ public class Configuration {
 
     public void setSlaveInstanceType(InstanceType slaveInstanceType) {
         this.slaveInstanceType = slaveInstanceType;
-    }
-
-    public int getSlaveInstanceCount() {
-        return slaveInstanceCount;
-    }
-
-    public void setSlaveInstanceCount(int slaveInstanceCount) {
-        this.slaveInstanceCount = slaveInstanceCount;
     }
 
     public String getKeypair() {
@@ -66,12 +104,12 @@ public class Configuration {
         this.identityFile = identityFile;
     }
 
-    public String getEndpoint() {
-        return endpoint;
+    public String getRegion() {
+        return region;
     }
 
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
+    public void setRegion(String region) {
+        this.region = region;
     }
 
     public AWSCredentials getCredentials() {
@@ -130,7 +168,7 @@ public class Configuration {
         this.shellScriptFile = shellScriptFile;
     }
 
-       public Path getEearlyShellScriptFile() {
+    public Path getEarlyShellScriptFile() {
         return earlyShellScriptFile;
     }
 
@@ -138,7 +176,6 @@ public class Configuration {
         this.earlyShellScriptFile = shellEarlyScriptFile;
     }
 
-    
     public Map<String, String> getMasterMounts() {
         return masterMounts;
     }
@@ -163,5 +200,4 @@ public class Configuration {
         this.nfsShares = nfsShares;
     }
 
-  
 }

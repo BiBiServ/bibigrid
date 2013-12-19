@@ -15,7 +15,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +28,7 @@ public class SshFactory {
             ssh.addIdentity(identity.toString());
 
             UserInfo userInfo = new UserInfo() {
+
                 @Override
                 public String getPassphrase() {
                     return null;
@@ -67,40 +67,12 @@ public class SshFactory {
         }
     }
 
-    public static String buildSshCommand(Instance masterInstance, List<Instance> slaveInstances, Configuration cfg) {
+    public static String buildSshCommand(String asGroupName, Configuration cfg, Instance masterInstance) {
         StringBuilder sb = new StringBuilder();
-        String command = "./add_exec ";
-        int slaveCores = InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).instanceCores;
-        ////////////////////////////////////////////////////////////////////
-        //// Add master as submission host and add slaves as exec hosts ////
-        sb.append("qconf -as ");
-        sb.append(masterInstance.getPrivateDnsName());
-        sb.append("\n");
-
-        for (Instance e : slaveInstances) {
-            sb.append(command);
-            sb.append(e.getPrivateDnsName());
-            sb.append(" ");
-            sb.append(slaveCores);
-            sb.append("\n");
-        }
-
-        ///////////////////////////////////////////////////////////////////////////////////
-        //// Add master als execution host if there are only 2 or less slave instances ////
-        if (cfg.getSlaveInstanceCount() < 3) {
-            sb.append(command);
-            sb.append(masterInstance.getPrivateDnsName());
-            sb.append(" ");
-            sb.append(InstanceInformation.getSpecs(cfg.getMasterInstanceType()).instanceCores);
-            sb.append("\n");
-            sb.append("sudo service gridengine-exec start\n");
-            
-        }
-        
         sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
-        
+        sb.append("qconf -as $(hostname)\n");
         if (cfg.getShellScriptFile() != null) {
             try {
                 List<String> lines = Files.readAllLines(cfg.getShellScriptFile(), StandardCharsets.UTF_8);
@@ -116,6 +88,27 @@ public class SshFactory {
                 log.info("Shell script could not be read.");
             }
         }
+        if (cfg.isUseMasterAsCompute())  {
+            sb.append("./add_exec ");
+            sb.append(masterInstance.getPrivateDnsName());
+            sb.append(" ");
+            sb.append(InstanceInformation.getSpecs(cfg.getMasterInstanceType()).instanceCores);
+            sb.append("\n");
+            sb.append("sudo service gridengine-exec start\n");
+        }
+        sb.append("echo accessKey=");
+        sb.append(cfg.getCredentials().getAWSAccessKeyId());
+        sb.append(" > /home/ubuntu/.monitor/credentials\n");     
+        sb.append("echo secretKey=");
+        sb.append(cfg.getCredentials().getAWSSecretKey());
+        sb.append(" >> /home/ubuntu/.monitor/credentials\n");
+        sb.append("echo \"java -jar /home/ubuntu/.monitor/monitor.jar ");
+        sb.append(cfg.getRegion());
+        sb.append(" ");
+        sb.append(asGroupName);
+        sb.append("\" > monitor.sh\n");
+        sb.append("chmod +x /home/ubuntu/monitor.sh\n");
+        sb.append("nohup /home/ubuntu/monitor.sh &\n");
         return sb.toString();
     }
 }

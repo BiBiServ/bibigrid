@@ -14,10 +14,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author alueckne, jkrueger (at) cebitec.uni-bielefeld.de
- *
- *
- *
+ * @author alueckne
  */
 public class UserDataCreator {
 
@@ -105,7 +102,7 @@ public class UserDataCreator {
                 slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":").append(share).append(" ").append(share).append("\n");
             }
         }
-	slaveUserData.append("while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
+        slaveUserData.append("while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
         return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
     }
 
@@ -163,11 +160,15 @@ public class UserDataCreator {
 
         }
 
-        masterUserData.append("mkdir -p " + "/vol/spool/" + "\n");
-        masterUserData.append("chmod 777 " + "/vol/spool/" + "\n");
-        masterUserData.append("echo '" + "/vol/spool/" + " 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
+        masterUserData.append("mkdir -p /vol/spool/\n");
+        masterUserData.append("chmod 777 /vol/spool/\n");
+        masterUserData.append("echo '/vol/spool/ 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
 
-        masterUserData.append("mkdir -p " + "/vol/scratch/" + "\n");
+        
+        masterUserData.append("sudo mkdir -p /home/ubuntu/.monitor\n");
+        masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.monitor \n");
+
+        masterUserData.append("mkdir -p /vol/scratch/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
         masterUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
         for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
@@ -181,10 +182,10 @@ public class UserDataCreator {
         }
         masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
 
-        if (cfg.getEearlyShellScriptFile() != null) {
+        if (cfg.getEarlyShellScriptFile() != null) {
             try {
 
-                String base64 = new String(Base64.encodeBase64(Files.readAllBytes(cfg.getEearlyShellScriptFile())));
+                String base64 = new String(Base64.encodeBase64(Files.readAllBytes(cfg.getEarlyShellScriptFile())));
 
                 if (base64.length() > 10000) {
                     log.info("Early shell script file too large  (base64 encoded size exceeds 10000 chars)");

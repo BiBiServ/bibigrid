@@ -1,12 +1,12 @@
 package de.unibi.cebitec.bibigrid;
 
+import com.amazonaws.services.ec2.model.InstanceType;
+import de.unibi.cebitec.bibigrid.ctrl.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.ctrl.CreateIntent;
-import de.unibi.cebitec.bibigrid.ctrl.TerminateIntent;
 import de.unibi.cebitec.bibigrid.ctrl.Intent;
 import de.unibi.cebitec.bibigrid.ctrl.ListIntent;
 import de.unibi.cebitec.bibigrid.ctrl.ResizeIntent;
-import de.unibi.cebitec.bibigrid.ctrl.CommandLineValidator;
-import com.amazonaws.services.ec2.model.InstanceType;
+import de.unibi.cebitec.bibigrid.ctrl.TerminateIntent;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import java.net.URL;
@@ -35,7 +35,7 @@ public class StartUpOgeCluster {
                 .addOption(OptionBuilder.withLongOpt("help").withDescription("help").create("h"))
                 .addOption(OptionBuilder.withLongOpt("create").withDescription("create cluster").create("c"))
                 .addOption(OptionBuilder.withLongOpt("list").withDescription("list running clusters").create("l"))
-                .addOption(OptionBuilder.withLongOpt("resize").withDescription("shrink or grow running cluster").hasArg().withArgName("cluster-id").create("r"))
+                
                 .addOption(OptionBuilder.withLongOpt("terminate").withDescription("terminate running cluster").hasArg().withArgName("cluster-id").create("t"));
 
         Options cmdLineOptions = new Options();
@@ -44,22 +44,26 @@ public class StartUpOgeCluster {
                 .addOption("m", "master-instance-type", true, "see INSTANCE-TYPES below")
                 .addOption("M", "master-image", true, "AMI for master")
                 .addOption("s", "slave-instance-type", true, "see INSTANCE-TYPES below")
-                .addOption("n", "slave-instance-count", true, "min: 1")
+                .addOption("n", "slave-instance-min", true, "min: 1")
+                .addOption("r","slave-instance-start",true,"Desired amount of instances at the start of the cluster")
+                .addOption("u", "slave-instance-max", true, "min: 1")
                 .addOption("S", "slave-image", true, "AMI for slaves")
                 .addOption("k", "keypair", true, "name of the keypair in aws console")
                 .addOption("i", "identity-file", true, "absolute path to private ssh key file")
-                .addOption("e", "endpoint", true, "API https endpoint")
+                .addOption("e", "region", true, "region of instance")
                 .addOption("z", "availability-zone", true, "")
+                .addOption("ex", "early-execute-script", true, "path to shell script to be executed on master instance startup")
                 .addOption("a", "aws-credentials-file", true, "containing access-key-id & secret-key, default: ~/.bibigrid.properties")
                 .addOption("p", "ports", true, "comma-separated list of additional ports (tcp & udp) to be opened for all nodes (e.g. 80,443,8080)")
                 .addOption("d", "master-mounts", true, "comma-separated snapshot=mountpoint list (e.g. snap-12234abcd=/mnt/mydisk1,snap-5667889ab=/mnt/mydisk2) mounted to master")
                 .addOption("f", "slave-mounts", true, "comma-separated snapshot=mountpoint list (e.g. snap-12234abcd=/mnt/mydisk1,snap-5667889ab=/mnt/mydisk2) mounted to all slaves individually")
-                .addOption("x", "execute-script", true, "path to shell script file to be executed on master")
-                .addOption("ex", "early-execute-script", true, "path to shell script to be executed on master instance startup")
-                .addOption("g", "master-nfs-shares", true, "comma-separated list of paths on master to be shared via NFS")
-                .addOption("j", "slave-nfs-mounts", true, "comma-separated list of paths on slave to be mounted from NFS")
+                .addOption("x", "execute-script", true, "shell script file to be executed on master")
+                .addOption("g", "nfs-shares", true, "comma-separated list of paths on master to be shared via NFS")
                 .addOption("v", "verbose", false, "more console output")
-                .addOption("o","config",true,"path to alternative config file");
+                .addOption("o","config",true,"path to alternative config file")
+                .addOption("b","use-master-as-compute",true,"yes or no if master is supposed to be used as a compute instance")
+                .addOption("j","autoscaling", false, "Enable AutoScaling");
+        
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
             CommandLineValidator validator = null;
@@ -93,7 +97,7 @@ public class StartUpOgeCluster {
                         footer.append(type.toString());
                     }
                     footer.append("\n.");
-                    help.printHelp("bibigrid --create|--list|--terminate [...]", header, cmdLineOptions, footer.toString());
+                    help.printHelp("awsoge --create|--list|--terminate [...]", header, cmdLineOptions, footer.toString());
                     break;
                 case "c":
                     intent = new CreateIntent();

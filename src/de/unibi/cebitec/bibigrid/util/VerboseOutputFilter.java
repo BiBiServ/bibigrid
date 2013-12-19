@@ -30,4 +30,5 @@ public class VerboseOutputFilter extends AbstractMatcherFilter<ILoggingEvent> {
         
         return FilterReply.NEUTRAL;
     }
+
 }
