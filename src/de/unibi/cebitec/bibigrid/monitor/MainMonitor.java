@@ -412,7 +412,7 @@ public class MainMonitor {
             StringWriter writer = new StringWriter();
             IOUtils.copy(prd.getInputStream(), writer, "UTF-8");
             String xml = writer.toString();
-
+            
 
             dbFactory = DocumentBuilderFactory.newInstance();
             builder = dbFactory.newDocumentBuilder();

@@ -39,7 +39,7 @@
               <attribute name="Bibigrid-version" value="${version}" />
           </manifest>
         
-        <zipfileset excludes="META-INF/*" src="dist/bibigrid-as.jar"/>
+        <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar"/>
         <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.4.5.jar">
             <exclude name="com/amazonaws/services/cloudformation/**/*" />
         <exclude name="com/amazonaws/services/cloudfront/**/*" />
@@ -89,7 +89,7 @@
       </jar>
       <copy file="bibigrid.sh" tofile="dist/bibigrid"/>
       <chmod file="dist/bibigrid" perm="+x"/>
-      <delete file="dist/bibigrid.jar"/>
+      <delete file="dist/bibigrid-as.jar"/>
       <delete dir="dist/lib"/>
       <delete file="dist/README.TXT"/>
       <antcall target="monitor"/>
@@ -103,7 +103,7 @@
               <attribute name="Bibigrid-build-date" value="${build-date}" />
               <attribute name="Bibigrid-version" value="${version}" />
           </manifest>
-        <zipfileset excludes="META-INF/*" src="dist/bibigrid-as.jar">
+        <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar">
             <exclude name="de/unibi/cebitec/bibigrid/ctrl/**/*" />
             <exclude name="de/unibi/cebitec/bibigrid/exc/*" />
             <exclude name="de/unibi/cebitec/bibigrid/model/**/*" />
