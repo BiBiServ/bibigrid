@@ -26,7 +26,9 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.*;
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +77,15 @@ public class CreateIntent extends Intent {
 
         ec2 = new AmazonEC2Client(this.getConfiguration().getCredentials());
         ec2.setEndpoint("ec2."+this.getConfiguration().getRegion()+".amazonaws.com");
-        String clusterId = UUID.randomUUID().toString();
+
+        // Cluster ID is a cut down base64 encoded version of a random UUID:
+        UUID clusterIdUUID = UUID.randomUUID();
+        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        bb.putLong(clusterIdUUID.getMostSignificantBits());
+        bb.putLong(clusterIdUUID.getLeastSignificantBits());
+        String clusterIdBase64 = Base64.encodeBase64URLSafeString(bb.array()).replace("-", "").replace("_", "");
+        int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
+        String clusterId = clusterIdBase64.substring(0, len);
         log.debug("cluster id: {}", clusterId);
 
 
