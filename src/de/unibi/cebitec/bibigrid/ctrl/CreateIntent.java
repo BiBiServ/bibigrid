@@ -313,32 +313,62 @@ public class CreateIntent extends Intent {
         autoScalingTag.setValue(clusterId+"-slave");
         CreateAutoScalingGroupRequest myGroup = new CreateAutoScalingGroupRequest()
                 .withAutoScalingGroupName("as_group-" + clusterId)
-                .withLaunchConfigurationName(launchMainConfig.getLaunchConfigurationName())
-                .withMaxSize(this.getConfiguration().getSlaveInstanceMaximum())
-                .withMinSize(this.getConfiguration().getSlaveInstanceMinimum())
+                .withLaunchConfigurationName(launchMainConfig.getLaunchConfigurationName()) 
                 .withAvailabilityZones(Arrays.asList(this.getConfiguration()
                 .getAvailabilityZone()))
                 .withDesiredCapacity(this.getConfiguration().getSlaveInstanceStartAmount())
                 .withTags(autoScalingTag)
                 .withTerminationPolicies("NewestInstance", "ClosestToNextInstanceHour");
        
-
+        
+        if (this.getConfiguration().isAutoscaling())  {
+            myGroup.setMaxSize(this.getConfiguration().getSlaveInstanceMaximum());
+            myGroup.setMinSize(this.getConfiguration().getSlaveInstanceMinimum());
+        } else {
+            myGroup.setMaxSize(this.getConfiguration().getSlaveInstanceStartAmount());
+            myGroup.setMinSize(this.getConfiguration().getSlaveInstanceStartAmount());
+        }
+        
         if (InstanceInformation.getSpecs(
                 this.getConfiguration().getSlaveInstanceType()).clusterInstance) {
             myGroup.setPlacementGroup(placementGroup);
         }
         as.createAutoScalingGroup(myGroup);
-
+        List<com.amazonaws.services.autoscaling.model.Instance> slaveAsInstances = new ArrayList<>();
         while (true) {
             DescribeAutoScalingGroupsResult autoScalingResult = as.describeAutoScalingGroups(new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(myGroup.getAutoScalingGroupName()));
-
+            boolean asGroupFound = false;
             if (!autoScalingResult.getAutoScalingGroups().isEmpty()) {
-                log.info(I, "AutoScaling creation successful");
-                break;
+                slaveAsInstances.clear();
+                for (AutoScalingGroup e : autoScalingResult.getAutoScalingGroups()) {
+                    if (e.getAutoScalingGroupName().equals("as_group-" + clusterId)&&!e.getInstances().isEmpty()) {
+                        slaveAsInstances.addAll(e.getInstances());
+                        asGroupFound = true;
+                        break;
+                    }
+                }
+                if (asGroupFound) {
+                    log.info(I, "AutoScaling creation successful");
+                    break;
+                } else {
+                    sleep(5);
+                }
             } else {
                 sleep(5);
             }
         }
+        List<String> slaveInstancesIds = new ArrayList<>();
+        for (com.amazonaws.services.autoscaling.model.Instance asInstance : slaveAsInstances) {
+            slaveInstancesIds.add(asInstance.getInstanceId());
+        }
+        List<Instance> slaveInstances = new ArrayList<>();
+        if (!this.getConfiguration().isAutoscaling()) {
+            log.info("Waiting for slaves...");
+            slaveInstances = waitForInstances(slaveInstancesIds);
+            log.info(I,"Slaves successfully started.");
+        }
+        
+        
         /*
          * if (this.getConfiguration().getType() == GridType.Hybrid) {
          * UpdateAutoScalingGroupRequest changeAutoScalingGroupRequest = new
@@ -369,7 +399,13 @@ public class CreateIntent extends Intent {
          * Building Command
          */
         log.info("Now configuring ...");
-        String execCommand = SshFactory.buildSshCommand(clusterId, this.getConfiguration(),masterInstance);
+        String execCommand;
+        if (this.getConfiguration().isAutoscaling()) {
+            execCommand = SshFactory.buildSshCommand(clusterId, this.getConfiguration(), masterInstance);
+        } else {
+            execCommand = SshFactory.buildSshCommand(clusterId, this.getConfiguration(), masterInstance, slaveInstances);
+            log.info(V,"Building SSH-Command");
+        }
         boolean uploaded = false;
         boolean configured = false;
         while (!configured) {
@@ -377,7 +413,6 @@ public class CreateIntent extends Intent {
 
                 ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
                 sleep(10);
-                log.info(V, "Registering slaves at master instance...");
 
                 /*
                  * Create new Session to avoid packet corruption.
@@ -388,7 +423,7 @@ public class CreateIntent extends Intent {
                  * Start connect attempt
                  */
                 sshSession.connect();
-                if (!uploaded) {
+                if (!uploaded && this.getConfiguration().isAutoscaling()) {
                     String remoteDirectory = "/home/ubuntu/.monitor";
                     String filename = "monitor.jar";
                     String localFile = "/monitor.jar";
@@ -469,6 +504,10 @@ public class CreateIntent extends Intent {
      */
     private List<Instance> waitForInstances(List<String> listOfInstances) {
         do {
+            if (listOfInstances.isEmpty()){
+                log.error("No instances found");
+                return new ArrayList<>();
+            }
             DescribeInstancesRequest instanceDescrReq = new DescribeInstancesRequest();
             instanceDescrReq.setInstanceIds(listOfInstances);
             boolean allrunning = true;
@@ -479,6 +518,7 @@ public class CreateIntent extends Intent {
                 for (Instance e : instanceDescrReqResult.getReservations().get(0).getInstances()) {
                     state = e.getState().getName();
                     if (!state.equals(InstanceStateName.Running.toString())) {
+                        log.debug(V,"ID "+e.getInstanceId()+ "in state:" +state);
                         allrunning = false;
                         break;
                     }

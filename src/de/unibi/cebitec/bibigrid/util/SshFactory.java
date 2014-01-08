@@ -111,4 +111,43 @@ public class SshFactory {
         sb.append("nohup /home/ubuntu/monitor.sh &\n");
         return sb.toString();
     }
+    
+    public static String buildSshCommand(String asGroupName, Configuration cfg, Instance masterInstance, List<Instance> slaveInstances) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
+        sb.append("sudo service gmetad restart \n");
+        sb.append("sudo service ganglia-monitor restart \n");
+        sb.append("qconf -as $(hostname)\n");
+        if (cfg.getShellScriptFile() != null) {
+            try {
+                List<String> lines = Files.readAllLines(cfg.getShellScriptFile(), StandardCharsets.UTF_8);
+                sb.append("cat > shellscript.sh << EOFCUSTOMSCRIPT \n");
+
+                for (String e : lines) {
+                    sb.append(e);
+                    sb.append("\n");
+                }
+                sb.append("\nEOFCUSTOMSCRIPT\n");
+                sb.append("bash shellscript.sh &> shellscript.log &\n");
+            } catch (IOException e) {
+                log.info("Shell script could not be read.");
+            }
+        }
+        if (cfg.isUseMasterAsCompute())  {
+            sb.append("./add_exec ");
+            sb.append(masterInstance.getPrivateDnsName());
+            sb.append(" ");
+            sb.append(InstanceInformation.getSpecs(cfg.getMasterInstanceType()).instanceCores);
+            sb.append("\n");
+            sb.append("sudo service gridengine-exec start\n");
+        }
+        for (Instance instance: slaveInstances) {
+            sb.append("./add_exec ");
+            sb.append(instance.getPrivateDnsName());
+            sb.append(" ");
+            sb.append(InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).instanceCores);
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
 }

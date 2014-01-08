@@ -93,6 +93,11 @@ public class TerminateIntent extends Intent {
                     reservationsToTerminate.add(r);
                 }
             }
+            if (reservationsToTerminate.isEmpty()) {
+                log.error("No reservations found. Cluster-ID seems to be outdated.");
+                CurrentClusters.removeCluster(clusterId);
+                return false;
+            }
 
             List<String> instanceIdsToTerminate = new ArrayList<>();
             for (Reservation r : reservationsToTerminate) {
