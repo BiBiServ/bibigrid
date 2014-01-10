@@ -127,7 +127,24 @@ public class CommandLineValidator {
                 }
             }
            
-
+            ////////////////////////////////////////////////////////////////////////
+            ///// cassandra on/off /////////////////////////////////////////////////
+            if (this.cl.hasOption("db")) {
+                this.cfg.setCassandra(true);
+                log.info(V, "Cassandra support enabled.");
+            } else if (defaults.containsKey("cassandra")) {
+                String value = defaults.getProperty("cassandra");
+                if (value.equalsIgnoreCase("yes")) {
+                    this.cfg.setCassandra(true);
+                    log.info(V, "Cassandra support enabled.");
+                } else if (value.equalsIgnoreCase("no")) {
+                    log.info(V, "Cassandra support disabled."); 
+                    this.cfg.setCassandra(false);
+                } else {
+                    log.error("Cassandra value in properties not recognized. Please use yes/no.");
+                    return false;
+                }
+            }
             ////////////////////////////////////////////////////////////////////////
             ///// identity-file ////////////////////////////////////////////////////
 

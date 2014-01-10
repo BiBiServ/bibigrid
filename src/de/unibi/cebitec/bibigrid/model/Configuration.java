@@ -31,7 +31,16 @@ public class Configuration {
     private int slaveInstanceStartAmount;
     private boolean useMasterAsCompute;
     private boolean autoscaling = false;
+    private boolean cassandra = false;
 
+    public boolean isCassandra() {
+        return cassandra;
+    }
+
+    public void setCassandra(boolean cassandra) {
+        this.cassandra = cassandra;
+    }
+    
     public boolean isAutoscaling() {
         return autoscaling;
     }

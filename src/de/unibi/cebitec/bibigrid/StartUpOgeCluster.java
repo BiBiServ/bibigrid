@@ -62,7 +62,8 @@ public class StartUpOgeCluster {
                 .addOption("v", "verbose", false, "more console output")
                 .addOption("o","config",true,"path to alternative config file")
                 .addOption("b","use-master-as-compute",true,"yes or no if master is supposed to be used as a compute instance")
-                .addOption("j","autoscaling", false, "Enable AutoScaling");
+                .addOption("j","autoscaling", false, "Enable AutoScaling")
+                .addOption("db","cassandra",false, "Enable Cassandra database support");
         
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);

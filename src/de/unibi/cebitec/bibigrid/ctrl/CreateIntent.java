@@ -173,7 +173,7 @@ public class CreateIntent extends Intent {
 
 
         
-        String base64MasterUserData = UserDataCreator.masterUserData(InstanceInformation.getSpecs(this.getConfiguration().getMasterInstanceType()).ephemerals, this.getConfiguration().getNfsShares(), masterDeviceMapper, this.getConfiguration());
+        String base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.getConfiguration());
         //////////////////////////////////////////////////////////////////////////
         /////// run master instance, tag it and wait for boot ////////////////////
         log.info("Requesting master instance ...");
@@ -246,9 +246,7 @@ public class CreateIntent extends Intent {
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
 
-        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper,
-                this.getConfiguration().getNfsShares(), InstanceInformation.getSpecs(this.getConfiguration().
-                getSlaveInstanceType()).ephemerals);
+        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper,this.getConfiguration());
 
         List<com.amazonaws.services.autoscaling.model.BlockDeviceMapping> slaveAutoScaleBlockDeviceMappings = new ArrayList<>();
         // need to parse EC2 BlockdeviceMapping to AS BlockDeviceMapping

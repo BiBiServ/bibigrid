@@ -4,6 +4,7 @@
  */
 package de.unibi.cebitec.bibigrid.util;
 
+import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,11 +25,9 @@ public class UserDataCreator {
      * Creates slaveUserData content.
      *
      *
-     * Changes JK :
-     * <ul>
-     * <li> use StringBuilder instead of String concatenation ;-) </li>
-     * <li> remove unnecessary sudo's - UserData is executed as root </li>
-     * </ul>
+     * Changes JK : <ul> <li> use StringBuilder instead of String concatenation
+     * ;-) </li> <li> remove unnecessary sudo's - UserData is executed as root
+     * </li> </ul>
      *
      *
      * @param masterIp
@@ -38,8 +37,11 @@ public class UserDataCreator {
      * @param ephemerals
      * @return
      */
-    public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, List<String> slaveNfsMounts, int ephemerals) {
+    public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg) {
         StringBuilder slaveUserData = new StringBuilder();
+        /*
+         * GridEngine Block
+         */
         slaveUserData.append("#!/bin/sh\n");
         slaveUserData.append("sleep 5\n");
         slaveUserData.append("mkdir -p /vol/spool/\n");
@@ -57,8 +59,26 @@ public class UserDataCreator {
         slaveUserData.append("done\n");
         slaveUserData.append("sed -i s/MASTER_IP/").append(masterIp).append("/g /etc/ganglia/gmond.conf\n");
         slaveUserData.append("service ganglia-monitor restart \n");
+        /*
+         * Cassandra Block
+         */
+        if (cfg.isCassandra()) {
+            slaveUserData.append("service cassandra stop\n");
+            slaveUserData.append("mkdir /vol/cassandra\n");
+            slaveUserData.append("mkdir /vol/cassandra/commitlog\n");
+            slaveUserData.append("mkdir /vol/cassandra/data\n");
+            slaveUserData.append("mkdir /vol/cassandra/saved_caches\n");
+            slaveUserData.append("chown cassandra:cassandra -R /vol/cassandra\n");
+            slaveUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
+            slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /etc/cassandra/cassandra.yaml\n");
+            slaveUserData.append("service cassandra start\n");
 
-
+        }
+        int ephemerals = InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).ephemerals;
+                
+        /*
+         * Ephemeral Block
+         */
         if (ephemerals == 1) {
             slaveUserData.append("sudo umount /mnt\n");
             slaveUserData.append("sudo mount /dev/xvdb /vol/scratch\n");
@@ -79,7 +99,7 @@ public class UserDataCreator {
                 }
             }
 
-            
+
             slaveUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
 
             slaveUserData.append("blockdev --setra 65536 /dev/md0\n");
@@ -89,6 +109,9 @@ public class UserDataCreator {
 
 
         }
+        /*
+         * NFS//Mount Block
+         */
         slaveUserData.append("chown ubuntu:ubuntu /vol/ \n");
         slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
 
@@ -96,6 +119,7 @@ public class UserDataCreator {
             slaveUserData.append("mkdir -p ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
             slaveUserData.append("mount ").append(slaveDeviceMapper.getRealDeviceNameforMountPoint(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
         }
+        List<String> slaveNfsMounts = cfg.getNfsShares();
         if (!slaveNfsMounts.isEmpty()) {
             for (String share : slaveNfsMounts) {
                 slaveUserData.append("sudo mkdir -p ").append(share).append("\n");
@@ -110,29 +134,29 @@ public class UserDataCreator {
      * Creates masterUserData content.
      *
      *
-     * Changes JK :
-     * <ul>
-     * <li> Encode earlyscript as base64 string to avoid shell interpretation of
-     * special chars like ($,
+     * Changes JK : <ul> <li> Encode earlyscript as base64 string to avoid shell
+     * interpretation of special chars like ($,
      *
-     * @,`,&) </li>
-     * <li> Limit earlyscript length to 10K chars (base64 encoded), roughly 6.6K
-     * absolute size </li>
-     * <li> use StringBuilder instead of String concatenation ;-) </li>
-     * <li> remove unnecessary sudo's - UserData is executed as root </li>
-     * <li> execute earlyscript as ubuntu user </li>
+     * @,`,&) </li> <li> Limit earlyscript length to 10K chars (base64 encoded),
+     * roughly 6.6K absolute size </li> <li> use StringBuilder instead of String
+     * concatenation ;-) </li> <li> remove unnecessary sudo's - UserData is
+     * executed as root </li> <li> execute earlyscript as ubuntu user </li>
      * </ul>
+     *
      * @param ephemeralamount
      * @param masterNfsShares
      * @param masterDeviceMapper
      * @param cfg
      * @return
      */
-    public static String masterUserData(int ephemeralamount, List<String> masterNfsShares, DeviceMapper masterDeviceMapper, Configuration cfg) {
+    public static String masterUserData(DeviceMapper masterDeviceMapper, Configuration cfg) {
         StringBuilder masterUserData = new StringBuilder();
-
+        int ephemeralamount = InstanceInformation.getSpecs(cfg.getMasterInstanceType()).ephemerals;
+        List<String> masterNfsShares = cfg.getNfsShares();
         masterUserData.append("#!/bin/sh\n").append("sleep 5\n");
-
+        /*
+         * Ephemeral/RAID Preperation
+         */
         // if 1 ephemeral is available mount it as /vol/spool
         if (ephemeralamount == 1) {
             masterUserData.append("umount /mnt\n"); // 
@@ -152,25 +176,44 @@ public class UserDataCreator {
                     break;
                 }
             }
-            
+
             masterUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
             masterUserData.append("blockdev --setra 65536 /dev/md0\n");
             masterUserData.append("mkfs.xfs -f /dev/md0\n");
             masterUserData.append("mount -t xfs -o noatime /dev/md0 /vol/\n");
 
         }
-
+        /*
+         * NFS Prep of Vol
+         */
         masterUserData.append("mkdir -p /vol/spool/\n");
         masterUserData.append("chmod 777 /vol/spool/\n");
         masterUserData.append("echo '/vol/spool/ 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
 
-        
         masterUserData.append("sudo mkdir -p /home/ubuntu/.monitor\n");
         masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.monitor \n");
 
         masterUserData.append("mkdir -p /vol/scratch/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
+        masterUserData.append("chmod 777 /vol/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
+        /*
+         * Cassandra Bloock
+         */
+        if (cfg.isCassandra()) {
+            masterUserData.append("service cassandra stop\n");
+            masterUserData.append("mkdir /vol/cassandra\n");
+            masterUserData.append("mkdir /vol/cassandra/commitlog\n");
+            masterUserData.append("mkdir /vol/cassandra/data\n");
+            masterUserData.append("mkdir /vol/cassandra/saved_caches\n");
+            masterUserData.append("chown cassandra:cassandra -R /vol/cassandra\n");
+            masterUserData.append("sed -i s/##MASTER_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
+            masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
+            masterUserData.append("service cassandra start\n");
+        }
+        /*
+         * NFS//Mounts Block
+         */
         for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
             masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
             masterUserData.append("mount ").append(masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
@@ -181,7 +224,11 @@ public class UserDataCreator {
             masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
         }
         masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
-
+        
+        
+        /*
+         * Early Execute Script
+         */
         if (cfg.getEarlyShellScriptFile() != null) {
             try {
 
