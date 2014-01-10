@@ -145,6 +145,11 @@ public class CommandLineValidator {
                     return false;
                 }
             }
+            
+            if (this.cfg.isCassandra()&&this.cfg.isAutoscaling()) {
+                log.error("Cassandra and autoscaling are not available at the same time.");
+                return false;
+            }
             ////////////////////////////////////////////////////////////////////////
             ///// identity-file ////////////////////////////////////////////////////
 
