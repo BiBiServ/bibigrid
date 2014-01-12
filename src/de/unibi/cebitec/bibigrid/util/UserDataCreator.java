@@ -195,18 +195,16 @@ public class UserDataCreator {
 
         masterUserData.append("mkdir -p /vol/scratch/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
-        masterUserData.append("chmod 777 /vol/\n");
+        masterUserData.append("chmod -R 777 /vol/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
         /*
          * Cassandra Bloock
          */
         if (cfg.isCassandra()) {
             masterUserData.append("service cassandra stop\n");
-            masterUserData.append("mkdir /vol/cassandra\n");
-            masterUserData.append("mkdir /vol/cassandra/commitlog\n");
-            masterUserData.append("mkdir /vol/cassandra/data\n");
-            masterUserData.append("mkdir /vol/cassandra/saved_caches\n");
-            masterUserData.append("chown cassandra:cassandra -R /vol/cassandra\n");
+            masterUserData.append("mkdir -p /vol/cassandra\n");
+            masterUserData.append("chown -R cassandra:cassandra /vol/cassandra\n");
+            masterUserData.append("chmod -R 777 /vol/cassandra\n");
             masterUserData.append("sed -i s/##MASTER_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
             masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
             masterUserData.append("service cassandra start\n");
