@@ -115,8 +115,7 @@ public class SshFactory {
     public static String buildSshCommand(String asGroupName, Configuration cfg, Instance masterInstance, List<Instance> slaveInstances) {
         StringBuilder sb = new StringBuilder();
         sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
-        sb.append("sudo service gmetad restart \n");
-        sb.append("sudo service ganglia-monitor restart \n");
+        
         sb.append("qconf -as $(hostname)\n");
         if (cfg.getShellScriptFile() != null) {
             try {
@@ -148,6 +147,8 @@ public class SshFactory {
             sb.append(InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).instanceCores);
             sb.append("\n");
         }
+        sb.append("sudo service gmetad restart \n");
+        sb.append("sudo service ganglia-monitor restart \n");
         return sb.toString();
     }
 }
