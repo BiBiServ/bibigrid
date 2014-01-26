@@ -287,6 +287,7 @@ public class CommandLineValidator {
                     }
                 } catch (NumberFormatException nfe) {
                     log.error("Invalid property value for slave-instance-max. Please make sure you have a positive integer here.");
+                    return false;
                 }
                 if (this.cl.hasOption("n")) {
                     try {
@@ -322,6 +323,7 @@ public class CommandLineValidator {
                 } catch (NumberFormatException nfe) {
                     log.error("Invalid property value for slave-instance-min. Please make sure you have a "
                             + "positive integer and your slave instance maximum is bigger or equal to your minimum amount.");
+                    return false;
                 }
                 if (this.cl.hasOption("u")) {
                     try {
@@ -337,6 +339,7 @@ public class CommandLineValidator {
                     } catch (NumberFormatException nfe) {
                         log.error("Invalid argument for -n. Please make sure you have a positive integer here "
                                 + "and your slave instance maximum is bigger or equal to your minimum amount.");
+                        return false;
                     }
                 }
                 if (this.cfg.getSlaveInstanceMinimum() < 0) {
@@ -359,6 +362,7 @@ public class CommandLineValidator {
                 } catch (NumberFormatException nfe) {
                     log.error("Invalid property value for slave-instance-start. Please make sure you have a "
                             + "positive integer and your slave instance maximum is bigger and slave instance minimum is equal or smaller to it.");
+                    return false;
                 }
                 if (this.cl.hasOption("r")) {
                     try {
@@ -374,6 +378,7 @@ public class CommandLineValidator {
                     } catch (NumberFormatException nfe) {
                         log.error("Invalid property value for slave-instance-start. Please make sure you have a "
                             + "positive integer and your slave instance maximum is bigger and the slave instance minimum is equal or smaller to it.");
+                        return false;
                     }
                 }
                 if (this.cfg.getSlaveInstanceStartAmount() <= 0) {

@@ -1,12 +1,7 @@
 package de.unibi.cebitec.bibigrid;
 
 import com.amazonaws.services.ec2.model.InstanceType;
-import de.unibi.cebitec.bibigrid.ctrl.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.ctrl.CreateIntent;
-import de.unibi.cebitec.bibigrid.ctrl.Intent;
-import de.unibi.cebitec.bibigrid.ctrl.ListIntent;
-import de.unibi.cebitec.bibigrid.ctrl.ResizeIntent;
-import de.unibi.cebitec.bibigrid.ctrl.TerminateIntent;
+import de.unibi.cebitec.bibigrid.ctrl.*;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import java.net.URL;
@@ -35,7 +30,7 @@ public class StartUpOgeCluster {
                 .addOption(OptionBuilder.withLongOpt("help").withDescription("help").create("h"))
                 .addOption(OptionBuilder.withLongOpt("create").withDescription("create cluster").create("c"))
                 .addOption(OptionBuilder.withLongOpt("list").withDescription("list running clusters").create("l"))
-                
+                .addOption(OptionBuilder.withLongOpt("check").withDescription("check config file").create("ch"))
                 .addOption(OptionBuilder.withLongOpt("terminate").withDescription("terminate running cluster").hasArg().withArgName("cluster-id").create("t"));
 
         Options cmdLineOptions = new Options();
@@ -98,7 +93,7 @@ public class StartUpOgeCluster {
                         footer.append(type.toString());
                     }
                     footer.append("\n.");
-                    help.printHelp("awsoge --create|--list|--terminate [...]", header, cmdLineOptions, footer.toString());
+                    help.printHelp("bibigrid --create|--list|--terminate|--check [...]", header, cmdLineOptions, footer.toString());
                     break;
                 case "c":
                     intent = new CreateIntent();
@@ -108,12 +103,12 @@ public class StartUpOgeCluster {
                     intent = new ListIntent();
                     validator = new CommandLineValidator(cl, intent);
                     break;
-                case "r":
-                    intent = new ResizeIntent();
-                    validator = new CommandLineValidator(cl, intent);
-                    break;
                 case "t":
                     intent = new TerminateIntent();
+                    validator = new CommandLineValidator(cl, intent);
+                    break;
+                case "ch":
+                    intent = new ValidationIntent();
                     validator = new CommandLineValidator(cl, intent);
                     break;
                 default:

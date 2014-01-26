@@ -16,14 +16,9 @@ import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUpOgeCluster;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.model.CurrentClusters;
-import de.unibi.cebitec.bibigrid.util.DeviceMapper;
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
-import de.unibi.cebitec.bibigrid.util.InstanceInformation;
-import de.unibi.cebitec.bibigrid.util.JSchLogger;
-import de.unibi.cebitec.bibigrid.util.SshFactory;
-import de.unibi.cebitec.bibigrid.util.UserDataCreator;
+import de.unibi.cebitec.bibigrid.util.*;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -392,7 +387,6 @@ public class CreateIntent extends Intent {
 
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
-
         /*
          * Building Command
          */
@@ -421,6 +415,7 @@ public class CreateIntent extends Intent {
                  * Start connect attempt
                  */
                 sshSession.connect();
+                
                 if (!uploaded && this.getConfiguration().isAutoscaling()) {
                     String remoteDirectory = "/home/ubuntu/.monitor";
                     String filename = "monitor.jar";

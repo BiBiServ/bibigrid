@@ -4,3 +4,4 @@ build/
 dist/
 nbproject/private/
 lib/
+report/
