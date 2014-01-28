@@ -89,10 +89,6 @@ public class ValidationIntent extends Intent {
         }
 
         sleep(1);
-        if (checkMaxInstanceLimit()) {
-        } else {
-            success = false;
-        }
 
         if (success) {
             log.info(I, "You can now start your cluster.");
@@ -209,51 +205,6 @@ public class ValidationIntent extends Intent {
             return allCheck;
         }
 
-    }
-
-    private boolean checkMaxInstanceLimit() {
-        try {
-            DryRunSupportedRequest<RunInstancesRequest> tryKeys = new DryRunSupportedRequest<RunInstancesRequest>() {
-                @Override
-                public Request<RunInstancesRequest> getDryRunRequest() {
-                    RunInstancesRequest req = new RunInstancesRequest().
-                            withInstanceType(getConfiguration().getSlaveInstanceType()).
-                            withKeyName(getConfiguration().getKeypair()).
-                            withImageId(getConfiguration().getMasterImage());
-                    int amount = 0;
-                    if (getConfiguration().isAutoscaling()) { // if autoscaling is available check the maximum amount of instances launched at the same time +1 master instance
-                        amount = getConfiguration().getSlaveInstanceStartAmount() + 1;
-                        req.setMinCount(amount);
-                        req.setMaxCount(amount);
-                    } else { // otherwise check the start amount +1 master instance
-                        amount = getConfiguration().getSlaveInstanceStartAmount() + 1;
-                        req.setMinCount(amount);
-                        req.setMaxCount(amount);
-                    }
-                    log.info("Checking if " + amount + " instances can be started.");
-                    return req.getDryRunRequest();
-                }
-            };
-            DryRunResult dryRunResult = ec2.dryRun(tryKeys);
-            if (dryRunResult.isSuccessful()) {
-                log.info(I, "Instance limit test successful.");
-                return true;
-            } else {
-                log.error("Instance limit test not succesful. Please reduce the amount of slave instances.");
-                return false;
-            }
-
-        } catch (AmazonClientException e) {
-            if (e.getCause() instanceof AmazonServiceException) {
-                AmazonServiceException f = (AmazonServiceException) e.getCause();
-                String message = f.getMessage().substring(f.getMessage().indexOf("AWS Error Message:")); // parsing the error message
-                log.error(message);
-            } else {
-            log.error("Instance limit test not successful. Please reduce the amount of slave instances.");
-            }
-            return false;
-
-        }
     }
 
     private void sleep(int seconds) {

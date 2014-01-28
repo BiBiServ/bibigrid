@@ -19,7 +19,6 @@ public class InstanceInformation {
         count.put(InstanceType.M1Large, new InstanceSpecification(2, 2, false));
         count.put(InstanceType.M1Xlarge, new InstanceSpecification(4, 4, false));
         
-        
         //compute optimized
         count.put(InstanceType.C3Large, new InstanceSpecification(2, 2, false));
         count.put(InstanceType.C3Xlarge, new InstanceSpecification(4, 2, false));
