@@ -540,7 +540,7 @@ public class CreateIntent extends Intent {
             try {
 
                 BlockDeviceMapping blockDeviceMapping = new BlockDeviceMapping();
-                blockDeviceMapping.setEbs(new EbsBlockDevice().withSnapshotId(snapshotIdMountPoint.getKey()));
+                blockDeviceMapping.setEbs(new EbsBlockDevice().withSnapshotId(DeviceMapper.stripSnapshotId(snapshotIdMountPoint.getKey())));
                 blockDeviceMapping.setDeviceName(deviceMapper.getDeviceNameForSnapshotId(snapshotIdMountPoint.getKey()));
 
                 mappings.add(blockDeviceMapping);
