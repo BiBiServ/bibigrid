@@ -107,6 +107,9 @@ public class ValidationIntent extends Intent {
         snapShotList.addAll(this.getConfiguration().getSlaveMounts().keySet());
         for (String e : snapShotList) { //snapshot ids have to be checked individually to find out which one is missing or malformed.
             try {
+                if (e.contains(":")) {
+                    e = e.substring(0, e.indexOf(":"));
+                }
                 DescribeSnapshotsRequest snapshotRequest = new DescribeSnapshotsRequest().withSnapshotIds(e);
                 DescribeSnapshotsResult snapshotResult = ec2.describeSnapshots(snapshotRequest);
                 if (snapshotResult.getSnapshots().get(0).getSnapshotId().equals(e)) {
