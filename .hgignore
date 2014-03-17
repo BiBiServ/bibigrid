@@ -5,3 +5,4 @@ dist/
 nbproject/private/
 lib/
 report/
+.gitignore

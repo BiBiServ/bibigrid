@@ -42,7 +42,7 @@ public class CreateIntent extends Intent {
 
     @Override
     public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g","r","b"});
+        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
     }
 
     @Override
@@ -69,9 +69,8 @@ public class CreateIntent extends Intent {
 
         ////////////////////////////////////////////////////////////////////////
         ///// create client and unique cluster-id //////////////////////////////
-
         ec2 = new AmazonEC2Client(this.getConfiguration().getCredentials());
-        ec2.setEndpoint("ec2."+this.getConfiguration().getRegion()+".amazonaws.com");
+        ec2.setEndpoint("ec2." + this.getConfiguration().getRegion() + ".amazonaws.com");
 
         // Cluster ID is a cut down base64 encoded version of a random UUID:
         UUID clusterIdUUID = UUID.randomUUID();
@@ -83,10 +82,8 @@ public class CreateIntent extends Intent {
         String clusterId = clusterIdBase64.substring(0, len);
         log.debug("cluster id: {}", clusterId);
 
-
         ////////////////////////////////////////////////////////////////////////
         ///// create security group with full internal access / ssh from outside
-
         log.info(V, "Creating security group...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + clusterId).
@@ -122,7 +119,6 @@ public class CreateIntent extends Intent {
         AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();
         ruleChangerReq.withGroupId(secReqResult.getGroupId()).withIpPermissions(allIpPermissions);
         ec2.authorizeSecurityGroupIngress(ruleChangerReq);
-
 
         String placementGroup = PLACEMENT_GROUP_PREFIX + clusterId;
 
@@ -165,9 +161,6 @@ public class CreateIntent extends Intent {
 
         masterDeviceMappings.addAll(ephemeralList);
 
-
-
-        
         String base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.getConfiguration());
         //////////////////////////////////////////////////////////////////////////
         /////// run master instance, tag it and wait for boot ////////////////////
@@ -190,9 +183,6 @@ public class CreateIntent extends Intent {
                 .withBlockDeviceMappings(masterDeviceMappings);
 
         // mounting ephemerals
-
-
-
         RunInstancesResult masterReqResult = ec2.runInstances(masterReq);
         String masterReservationId = masterReqResult.getReservation().getReservationId();
         Instance masterInstance = masterReqResult.getReservation().getInstances().get(0);
@@ -200,16 +190,13 @@ public class CreateIntent extends Intent {
 
         /////////////////////////////////////////////
         //// Waiting for master instance to run ////
-
         masterInstance = waitForInstances(Arrays.asList(new String[]{masterInstance.getInstanceId()})).get(0);
         log.info(I, "Master instance is now running!");
 
         ////////////////////////////////////
         //// Tagging Master with a name ////
-
         CreateTagsRequest masterNameTagRequest = new CreateTagsRequest();
-        masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(new Tag().withKey("bibigrid-id").withValue(clusterId),new Tag().withKey("Name").withValue("master-" + clusterId));
-
+        masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(new Tag().withKey("bibigrid-id").withValue(clusterId), new Tag().withKey("Name").withValue("master-" + clusterId));
 
         ec2.createTags(masterNameTagRequest);
         /*
@@ -219,12 +206,12 @@ public class CreateIntent extends Intent {
 
         log.info("Waiting for Status Checks on master ...");
         do {
-            DescribeInstanceStatusRequest request =
-                    new DescribeInstanceStatusRequest();
+            DescribeInstanceStatusRequest request
+                    = new DescribeInstanceStatusRequest();
             request.setInstanceIds((Arrays.asList(new String[]{masterInstance.getInstanceId()})));
 
-            DescribeInstanceStatusResult response =
-                    ec2.describeInstanceStatus(request);
+            DescribeInstanceStatusResult response
+                    = ec2.describeInstanceStatus(request);
 
             InstanceStatus status = response.getInstanceStatuses().get(0);
             String instanceStatus = status.getInstanceStatus().getStatus();
@@ -241,16 +228,28 @@ public class CreateIntent extends Intent {
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
 
-        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper,this.getConfiguration());
+        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, this.getConfiguration());
 
         List<com.amazonaws.services.autoscaling.model.BlockDeviceMapping> slaveAutoScaleBlockDeviceMappings = new ArrayList<>();
         // need to parse EC2 BlockdeviceMapping to AS BlockDeviceMapping
         for (com.amazonaws.services.ec2.model.BlockDeviceMapping bdm : slaveBlockDeviceMappings) {
             slaveAutoScaleBlockDeviceMappings.add(new com.amazonaws.services.autoscaling.model.BlockDeviceMapping().withDeviceName(bdm.getDeviceName()).withEbs(new Ebs().withSnapshotId(bdm.getEbs().getSnapshotId())));
         }
+       
+        // setting up Ephemerals for Slaves
+        List<com.amazonaws.services.autoscaling.model.BlockDeviceMapping> ephemeralSlaveList = new ArrayList<>();
+        for (int i = 0; i < InstanceInformation.getSpecs(this.getConfiguration().getSlaveInstanceType()).ephemerals; ++i) {
+            com.amazonaws.services.autoscaling.model.BlockDeviceMapping temp = new com.amazonaws.services.autoscaling.model.BlockDeviceMapping();
+            String virtualName = "ephemeral" + i;
+            String deviceName = "/dev/sd" + ephemerals[i];
+            temp.setVirtualName(virtualName);
+            temp.setDeviceName(deviceName);
+            ephemeralSlaveList.add(temp);
+        }
+        slaveAutoScaleBlockDeviceMappings.addAll(ephemeralSlaveList);
 
         AmazonAutoScaling as = new AmazonAutoScalingClient(this.getConfiguration().getCredentials());
-        as.setEndpoint("autoscaling."+this.getConfiguration().getRegion()+".amazonaws.com");
+        as.setEndpoint("autoscaling." + this.getConfiguration().getRegion() + ".amazonaws.com");
 
         CreateLaunchConfigurationRequest launchMainConfig = new CreateLaunchConfigurationRequest()
                 .withImageId(this.getConfiguration().getSlaveImage())
@@ -261,7 +260,7 @@ public class CreateIntent extends Intent {
                 .withKeyName(this.getConfiguration().getKeypair())
                 .withUserData(base64SlaveUserData)
                 .withInstanceMonitoring(new InstanceMonitoring().withEnabled(false));
-        
+
         as.createLaunchConfiguration(launchMainConfig);
 
         /*
@@ -282,7 +281,6 @@ public class CreateIntent extends Intent {
          *
          * as.createLaunchConfiguration(launchSpotConfig); }
          */
-
         while (true) {
             DescribeLaunchConfigurationsResult describeLaunchResult = as.describeLaunchConfigurations(new DescribeLaunchConfigurationsRequest().withLaunchConfigurationNames(launchMainConfig.getLaunchConfigurationName()));
             boolean found = false;
@@ -301,27 +299,26 @@ public class CreateIntent extends Intent {
         }
 
         com.amazonaws.services.autoscaling.model.Tag autoScalingTag = new com.amazonaws.services.autoscaling.model.Tag();
-        
+
         autoScalingTag.setKey("bibigrid");
-        autoScalingTag.setValue(clusterId+"-slave");
+        autoScalingTag.setValue(clusterId + "-slave");
         CreateAutoScalingGroupRequest myGroup = new CreateAutoScalingGroupRequest()
                 .withAutoScalingGroupName("as_group-" + clusterId)
-                .withLaunchConfigurationName(launchMainConfig.getLaunchConfigurationName()) 
+                .withLaunchConfigurationName(launchMainConfig.getLaunchConfigurationName())
                 .withAvailabilityZones(Arrays.asList(this.getConfiguration()
-                .getAvailabilityZone()))
+                                .getAvailabilityZone()))
                 .withDesiredCapacity(this.getConfiguration().getSlaveInstanceStartAmount())
                 .withTags(autoScalingTag)
                 .withTerminationPolicies("NewestInstance", "ClosestToNextInstanceHour");
-       
-        
-        if (this.getConfiguration().isAutoscaling())  {
+
+        if (this.getConfiguration().isAutoscaling()) {
             myGroup.setMaxSize(this.getConfiguration().getSlaveInstanceMaximum());
             myGroup.setMinSize(this.getConfiguration().getSlaveInstanceMinimum());
         } else {
             myGroup.setMaxSize(this.getConfiguration().getSlaveInstanceStartAmount());
             myGroup.setMinSize(this.getConfiguration().getSlaveInstanceStartAmount());
         }
-        
+
         if (InstanceInformation.getSpecs(
                 this.getConfiguration().getSlaveInstanceType()).clusterInstance) {
             myGroup.setPlacementGroup(placementGroup);
@@ -334,7 +331,7 @@ public class CreateIntent extends Intent {
             if (!autoScalingResult.getAutoScalingGroups().isEmpty()) {
                 slaveAsInstances.clear();
                 for (AutoScalingGroup e : autoScalingResult.getAutoScalingGroups()) {
-                    if (e.getAutoScalingGroupName().equals("as_group-" + clusterId)&&!e.getInstances().isEmpty()) {
+                    if (e.getAutoScalingGroupName().equals("as_group-" + clusterId) && !e.getInstances().isEmpty()) {
                         slaveAsInstances.addAll(e.getInstances());
                         asGroupFound = true;
                         break;
@@ -358,10 +355,9 @@ public class CreateIntent extends Intent {
         if (!this.getConfiguration().isAutoscaling()) {
             log.info("Waiting for slaves...");
             slaveInstances = waitForInstances(slaveInstancesIds);
-            log.info(I,"Slaves successfully started.");
+            log.info(I, "Slaves successfully started.");
         }
-        
-        
+
         /*
          * if (this.getConfiguration().getType() == GridType.Hybrid) {
          * UpdateAutoScalingGroupRequest changeAutoScalingGroupRequest = new
@@ -396,7 +392,7 @@ public class CreateIntent extends Intent {
             execCommand = SshFactory.buildSshCommand(clusterId, this.getConfiguration(), masterInstance);
         } else {
             execCommand = SshFactory.buildSshCommand(clusterId, this.getConfiguration(), masterInstance, slaveInstances);
-            log.info(V,"Building SSH-Command");
+            log.info(V, "Building SSH-Command");
         }
         boolean uploaded = false;
         boolean configured = false;
@@ -415,7 +411,7 @@ public class CreateIntent extends Intent {
                  * Start connect attempt
                  */
                 sshSession.connect();
-                
+
                 if (!uploaded && this.getConfiguration().isAutoscaling()) {
                     String remoteDirectory = "/home/ubuntu/.monitor";
                     String filename = "monitor.jar";
@@ -426,20 +422,18 @@ public class CreateIntent extends Intent {
                     channelPut.cd(remoteDirectory);
                     channelPut.put(getClass().getResourceAsStream(localFile), filename);
                     channelPut.disconnect();
-                    log.info(V,"Upload done");
+                    log.info(V, "Upload done");
                     uploaded = true;
                 }
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
 
                 InputStream in = channel.getInputStream();
-                
-
 
                 channel.setCommand(execCommand);
 
-                log.info(V,"Connecting ssh channel...");
-                channel.connect();    
-            
+                log.info(V, "Connecting ssh channel...");
+                channel.connect();
+
                 byte[] tmp = new byte[1024];
                 while (true) {
                     while (in.available() > 0) {
@@ -450,11 +444,11 @@ public class CreateIntent extends Intent {
                         String returnString = new String(tmp, 0, i);
                         if (returnString.contains("Adding instances")) {
                             configured = true;
-                        break;
+                            break;
                         }
-                        log.info(V,"SSH: {}", returnString);
+                        log.info(V, "SSH: {}", returnString);
                     }
-                    if (channel.isClosed()|| configured) {
+                    if (channel.isClosed() || configured) {
 
                         log.info("SSH: exit-status: {}", channel.getExitStatus());
                         configured = true;
@@ -468,9 +462,8 @@ public class CreateIntent extends Intent {
                     sshSession.disconnect();
                 }
 
-
             } catch (IOException | SftpException | JSchException e) {
-                log.error(V,"SSH: {}", e);
+                log.error(V, "SSH: {}", e);
                 sleep(2);
             }
         }
@@ -497,7 +490,7 @@ public class CreateIntent extends Intent {
      */
     private List<Instance> waitForInstances(List<String> listOfInstances) {
         do {
-            if (listOfInstances.isEmpty()){
+            if (listOfInstances.isEmpty()) {
                 log.error("No instances found");
                 return new ArrayList<>();
             }
@@ -511,7 +504,7 @@ public class CreateIntent extends Intent {
                 for (Instance e : instanceDescrReqResult.getReservations().get(0).getInstances()) {
                     state = e.getState().getName();
                     if (!state.equals(InstanceStateName.Running.toString())) {
-                        log.debug(V,"ID "+e.getInstanceId()+ "in state:" +state);
+                        log.debug(V, "ID " + e.getInstanceId() + "in state:" + state);
                         allrunning = false;
                         break;
                     }
@@ -544,7 +537,6 @@ public class CreateIntent extends Intent {
                 blockDeviceMapping.setDeviceName(deviceMapper.getDeviceNameForSnapshotId(snapshotIdMountPoint.getKey()));
 
                 mappings.add(blockDeviceMapping);
-
 
             } catch (AmazonServiceException ex) {
                 log.debug("{}", ex.getMessage());
