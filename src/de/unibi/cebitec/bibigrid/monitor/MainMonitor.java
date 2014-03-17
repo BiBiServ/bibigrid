@@ -170,6 +170,7 @@ public class MainMonitor {
                     for (Reservation reservation : descrInstanceRes.getReservations()) {
                         for (com.amazonaws.services.ec2.model.Instance f : reservation.getInstances()) {
                             startCommand("sh " + HOME + "/add_exec " + f.getPrivateDnsName() + " " + cores);
+                            startCommand("sudo service gmetad restart");
                             QueueEntry entry = new QueueEntry(f.getPrivateDnsName(), "0", "0", f.getInstanceId());
                             entry.setAdded(f.getLaunchTime());
                             activeNodes.add(entry);
@@ -286,6 +287,7 @@ public class MainMonitor {
                         for (com.amazonaws.services.ec2.model.Instance f : reservation.getInstances()) {
                             if (instanceIdList.contains(f.getInstanceId())) {
                                 startCommand("sh " + HOME + "/add_exec " + f.getPrivateDnsName() + " " + cores);
+                                startCommand("sudo service gmetad restart");
                                 QueueEntry entry = new QueueEntry(f.getPrivateDnsName(), "0", "0", f.getInstanceId());
                                 entry.setAdded(f.getLaunchTime());
                                 activeNodes.add(entry);
