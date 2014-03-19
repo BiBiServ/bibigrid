@@ -591,6 +591,23 @@ public class CommandLineValidator {
                 }
             }
 
+            String earlyScriptFilePath = null;
+            if (defaults.containsKey("early-execute-script")) {
+                earlyScriptFilePath = defaults.getProperty("early-execute-script");
+            }
+            if (this.cl.hasOption("ex")) {
+                earlyScriptFilePath = this.cl.getOptionValue("ex");
+            }
+            if (earlyScriptFilePath != null) {
+                Path script = FileSystems.getDefault().getPath(earlyScriptFilePath);
+                if (!script.toFile().exists()) {
+                    log.error("The supplied early shell script file '{}' does not exist!", script);
+                    return false;
+                }
+                this.cfg.setEarlyShellScriptFile(script);
+                log.info(V, "Early Shell script file found! ({})", script);
+            }
+
         }
 
 
