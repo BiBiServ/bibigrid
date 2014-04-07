@@ -195,7 +195,7 @@ public class CommandLineValidator {
                 this.cfg.setRegion(this.cl.getOptionValue("e", defaults.getProperty("region")));
                 if (this.cfg.getRegion() == null) {
                     log.error("-e option is required! Please specify the url of your region "
-                            + "(e.g. eu-west-1).");
+                            + "(e.g. region=eu-west-1).");
                     return false;
                 }
                 log.info(V, "Region set. ({})", this.cfg.getRegion());
@@ -209,7 +209,7 @@ public class CommandLineValidator {
                 this.cfg.setAvailabilityZone(this.cl.getOptionValue("z", defaults.getProperty("availability-zone")));
                 if (this.cfg.getAvailabilityZone() == null) {
                     log.error("-z option is required! Please specify an availability zone "
-                            + "(e.g. eu-west-1a).");
+                            + "(e.g. availability-zone=eu-west-1a).");
                     return false;
                 }
                 log.info(V, "Availability zone set. ({})", this.cfg.getAvailabilityZone());
@@ -223,7 +223,7 @@ public class CommandLineValidator {
                 try {
                     String masterTypeString = this.cl.getOptionValue("m", defaults.getProperty("master-instance-type"));
                     if (masterTypeString == null) {
-                        log.error("-m option is required! Please specify the instance type of your master node.");
+                        log.error("-m option is required! Please specify the instance type of your master node. (e.g. master-instance-type=t1.micro)");
                         return false;
                     }
                     InstanceType masterType = InstanceType.fromValue(masterTypeString);
@@ -256,7 +256,7 @@ public class CommandLineValidator {
                 try {
                     String slaveTypeString = this.cl.getOptionValue("s", defaults.getProperty("slave-instance-type"));
                     if (slaveTypeString == null) {
-                        log.error("-s option is required! Please specify the instance type of your slave nodes.");
+                        log.error("-s option is required! Please specify the instance type of your slave nodes(slave-instance-type=t1.micro).");
                         return false;
                     }
                     InstanceType slaveType = InstanceType.fromValue(slaveTypeString);

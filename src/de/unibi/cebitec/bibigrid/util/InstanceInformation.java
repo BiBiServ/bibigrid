@@ -22,9 +22,9 @@ public class InstanceInformation {
         //compute optimized
         count.put(InstanceType.C3Large, new InstanceSpecification(2, 2, false));
         count.put(InstanceType.C3Xlarge, new InstanceSpecification(4, 2, false));
-        count.put(InstanceType.C32xlarge, new InstanceSpecification(8, 2, false));
-        count.put(InstanceType.C34xlarge, new InstanceSpecification(16, 2, false));
-        count.put(InstanceType.C38xlarge, new InstanceSpecification(32, 2, false));
+        count.put(InstanceType.C32xlarge, new InstanceSpecification(8, 2, true));
+        count.put(InstanceType.C34xlarge, new InstanceSpecification(16, 2, true));
+        count.put(InstanceType.C38xlarge, new InstanceSpecification(32, 2, true));
         
         count.put(InstanceType.C1Medium, new InstanceSpecification(2, 1, false));
         count.put(InstanceType.C1Xlarge, new InstanceSpecification(8, 4, false));
