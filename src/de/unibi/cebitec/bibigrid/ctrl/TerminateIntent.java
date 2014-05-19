@@ -50,8 +50,8 @@ public class TerminateIntent extends Intent {
                 log.error("Can't find local information about cluster!");
                 log.info("Trying to find running clusters.");
                 DescribeInstancesRequest descrReq = new DescribeInstancesRequest();
-                
-                Filter idFilter = new Filter("tag:bibigrid-id",Arrays.asList(this.getConfiguration().getClusterId()));          
+
+                Filter idFilter = new Filter("tag:bibigrid-id", Arrays.asList(this.getConfiguration().getClusterId()));
                 List<Filter> filters = new ArrayList<>();
                 filters.add(idFilter);
                 descrReq.setFilters(filters);
@@ -110,18 +110,17 @@ public class TerminateIntent extends Intent {
             }
 
             // cluster has already been terminated (e.g. by hand) the only thing left is to delete it from preferences
-
-            TerminateInstancesRequest termReq = new TerminateInstancesRequest();
-            termReq.withInstanceIds(instanceIdsToTerminate);
-            TerminateInstancesResult termReqRes = ec2.terminateInstances(termReq);
-
+            if (!instanceIdsToTerminate.isEmpty()) {
+                TerminateInstancesRequest termReq = new TerminateInstancesRequest();
+                termReq.withInstanceIds(instanceIdsToTerminate);
+                TerminateInstancesResult termReqRes = ec2.terminateInstances(termReq);
+            } else {
+                log.info(V, "Master instance already terminated.");
+            }
             AmazonAutoScaling as = new AmazonAutoScalingClient(this.getConfiguration().getCredentials());
             as.setEndpoint("autoscaling." + this.getConfiguration().getRegion() + ".amazonaws.com");
 
-
-
             DescribeAutoScalingGroupsResult describeResult = as.describeAutoScalingGroups();
-
 
             if (!describeResult.getAutoScalingGroups().isEmpty()) {
                 boolean found = false;
@@ -141,21 +140,14 @@ public class TerminateIntent extends Intent {
                     sleep(1);
                 }
 
-
-
-
                 log.info("The instances are shutting down. Please be patient. This can take a moment...");
                 if (found) {
                     UpdateAutoScalingGroupRequest shutDownRequest = new UpdateAutoScalingGroupRequest().withAutoScalingGroupName(autoScalingGroup).withMinSize(0).withMaxSize(0);
 
-
-
                     as.updateAutoScalingGroup(shutDownRequest);
                 }
 
-
                 DescribeAutoScalingGroupsResult result;
-
 
                 while (true) {
                     result = as.describeAutoScalingGroups(new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoScalingGroup));
@@ -194,8 +186,6 @@ public class TerminateIntent extends Intent {
                 } while (true);
                 sleep(5);
 
-
-
                 log.info(V, "Suspending processes.");
                 as.suspendProcesses(new SuspendProcessesRequest().withAutoScalingGroupName(autoScalingGroup));
                 DeleteAutoScalingGroupRequest shutdown = new DeleteAutoScalingGroupRequest().withForceDelete(true).withAutoScalingGroupName(autoScalingGroup);
@@ -218,24 +208,37 @@ public class TerminateIntent extends Intent {
             }
             log.info("Deleting security group ...");
 
-            DeleteSecurityGroupRequest delSecReq = new DeleteSecurityGroupRequest();
-            delSecReq.setGroupName(CreateIntent.SECURITY_GROUP_PREFIX + clusterId);
-            ec2.deleteSecurityGroup(delSecReq);
+            DescribeSecurityGroupsResult describeSecurityGrpResult = ec2.describeSecurityGroups();
+            boolean secGroupExists = false;
+            for (SecurityGroup e : describeSecurityGrpResult.getSecurityGroups()) {
+                if (e.getGroupName().equals(CreateIntent.SECURITY_GROUP_PREFIX + clusterId)) {
+                    secGroupExists = true;
+                }
+            }
+            if (secGroupExists) {
+                DeleteSecurityGroupRequest delSecReq = new DeleteSecurityGroupRequest().withGroupName(CreateIntent.SECURITY_GROUP_PREFIX + clusterId);
+                ec2.deleteSecurityGroup(delSecReq);
+                log.info(V, "Attempting to delete security group...");
+            }
             log.info(I, "Security Group deleted.");
 
-            DescribePlacementGroupsRequest descrPgGroup = new DescribePlacementGroupsRequest().withGroupNames(CreateIntent.PLACEMENT_GROUP_PREFIX + clusterId);
+            sleep(1);
 
-            DescribePlacementGroupsResult descrPgGroupResult = ec2.describePlacementGroups(descrPgGroup);
-            
-            if (!descrPgGroupResult.getPlacementGroups().isEmpty()) {
-                log.info("Deleting placement group.");
+            DescribePlacementGroupsResult descrPgGroupResult = ec2.describePlacementGroups();
+            boolean placementgroupExists = false;
+
+            for (PlacementGroup e : descrPgGroupResult.getPlacementGroups()) {
+                if (e.getGroupName().equals(CreateIntent.PLACEMENT_GROUP_PREFIX + clusterId)) {
+                    placementgroupExists = true;
+                }
+            }
+            if (placementgroupExists) {
                 DeletePlacementGroupRequest pgTermReq = new DeletePlacementGroupRequest(CreateIntent.PLACEMENT_GROUP_PREFIX + clusterId);
                 ec2.deletePlacementGroup(pgTermReq);
+                log.debug(V, "Attempting to delete placement group...");
             }
-
-
+            log.info(I, "Placement group deleted.");
             log.info(I, "Cluster terminated. ({})", clusterId);
-
 
             if (CurrentClusters.exists(clusterId)) {
                 CurrentClusters.removeCluster(clusterId);
@@ -264,7 +267,7 @@ public class TerminateIntent extends Intent {
                     if (tag.getValue().equals(this.getConfiguration().getClusterId())) {
                         return e;
                     }
-                    
+
                 }
                 System.out.println(f.getInstanceId());
             }
