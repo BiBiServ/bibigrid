@@ -10,8 +10,10 @@ public class InstanceInformation {
 
     static {
         // General use
-        count.put(InstanceType.M3Xlarge, new InstanceSpecification(4, 2, false));
-        count.put(InstanceType.M32xlarge, new InstanceSpecification(8, 2, false));
+        count.put(InstanceType.M3Medium,new InstanceSpecification(1, 1, true));
+        count.put(InstanceType.M3Large,new InstanceSpecification(2, 1, true));
+        count.put(InstanceType.M3Xlarge, new InstanceSpecification(4, 2, true));
+        count.put(InstanceType.M32xlarge, new InstanceSpecification(8, 2, true));
         
         count.put(InstanceType.M1Small, new InstanceSpecification(1, 1, false));
         count.put(InstanceType.M1Medium, new InstanceSpecification(1, 1, false));
@@ -20,8 +22,8 @@ public class InstanceInformation {
         count.put(InstanceType.M1Xlarge, new InstanceSpecification(4, 4, false));
         
         //compute optimized
-        count.put(InstanceType.C3Large, new InstanceSpecification(2, 2, false));
-        count.put(InstanceType.C3Xlarge, new InstanceSpecification(4, 2, false));
+        count.put(InstanceType.C3Large, new InstanceSpecification(2, 2,true));
+        count.put(InstanceType.C3Xlarge, new InstanceSpecification(4, 2, true));
         count.put(InstanceType.C32xlarge, new InstanceSpecification(8, 2, true));
         count.put(InstanceType.C34xlarge, new InstanceSpecification(16, 2, true));
         count.put(InstanceType.C38xlarge, new InstanceSpecification(32, 2, true));
@@ -39,7 +41,13 @@ public class InstanceInformation {
         count.put(InstanceType.M22xlarge, new InstanceSpecification(4, 1, false));
         count.put(InstanceType.M24xlarge, new InstanceSpecification(8, 2, false));
         count.put(InstanceType.Cr18xlarge, new InstanceSpecification(32, 2, true));
-
+        
+        count.put(InstanceType.R3Large, new InstanceSpecification(2, 1, true));
+        count.put(InstanceType.R3Xlarge, new InstanceSpecification(4, 1, true));
+        count.put(InstanceType.R32xlarge, new InstanceSpecification(8, 1, true));
+        count.put(InstanceType.R34xlarge, new InstanceSpecification(16, 1, true));
+        count.put(InstanceType.R38xlarge, new InstanceSpecification(32, 2, true));
+       
         // Storage optimized
         count.put(InstanceType.Hi14xlarge, new InstanceSpecification(16, 2, true));
         count.put(InstanceType.Hs18xlarge, new InstanceSpecification(16, 24, true));

@@ -46,7 +46,7 @@
             </manifest>
         
             <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.6.12.jar">
+            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.8.0.jar">
                 <exclude name="com/amazonaws/services/cloudformation/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*" />
@@ -120,7 +120,7 @@
                 <exclude name="de/unibi/cebitec/bibigrid/exc/*" />
                 <exclude name="de/unibi/cebitec/bibigrid/model/**/*" />
             </zipfileset>
-            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.6.12.jar">
+            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.8.0.jar">
                 <exclude name="com/amazonaws/services/cloudformation/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*" />
