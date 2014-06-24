@@ -4,7 +4,6 @@
  */
 package de.unibi.cebitec.bibigrid.util;
 
-import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -106,7 +105,7 @@ public class UserDataCreator {
             slaveUserData.append("mkfs.xfs -f /dev/md0\n");
             slaveUserData.append("mount -t xfs -o noatime /dev/md0 /vol/scratch\n");
             slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
-
+            slaveUserData.append("chmod -R 777 /vol/scratch \n");
 
         }
         /*
@@ -195,8 +194,8 @@ public class UserDataCreator {
 
         masterUserData.append("mkdir -p /vol/scratch/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
-        masterUserData.append("chmod -R 777 /vol/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
+        masterUserData.append("chmod -R 777 /vol/\n");
         /*
          * Cassandra Bloock
          */
