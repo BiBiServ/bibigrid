@@ -1,3 +1,2 @@
 #!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-java -jar ${DIR}/bibigrid-java-full.jar $@
+java -jar /Users/asczyrba/Repositories/bibigrid/dist/bibigrid-java-full.jar $@
