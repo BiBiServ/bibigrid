@@ -31,7 +31,8 @@ public class StartUpOgeCluster {
                 .addOption(OptionBuilder.withLongOpt("create").withDescription("create cluster").create("c"))
                 .addOption(OptionBuilder.withLongOpt("list").withDescription("list running clusters").create("l"))
                 .addOption(OptionBuilder.withLongOpt("check").withDescription("check config file").create("ch"))
-                .addOption(OptionBuilder.withLongOpt("terminate").withDescription("terminate running cluster").hasArg().withArgName("cluster-id").create("t"));
+                .addOption(OptionBuilder.withLongOpt("terminate").withDescription("terminate running cluster").hasArg().withArgName("cluster-id").create("t"))
+                .addOption(OptionBuilder.withLongOpt("create-gluster").withDescription("create cluster with gluster").create("C"));
 
         Options cmdLineOptions = new Options();
         cmdLineOptions
@@ -58,7 +59,11 @@ public class StartUpOgeCluster {
                 .addOption("o","config",true,"path to alternative config file")
                 .addOption("b","use-master-as-compute",true,"yes or no if master is supposed to be used as a compute instance")
                 .addOption("j","autoscaling", false, "Enable AutoScaling")
-                .addOption("db","cassandra",false, "Enable Cassandra database support");
+                .addOption("db","cassandra",false, "Enable Cassandra database support")
+                .addOption("gl", "use-gluster", false, "Enable glusterfs")
+                .addOption("gla", "gluster-instance-amount", true, "Amount of machines for glusterfs")
+                .addOption("gli", "gluster-instance-type", true, "see INSTANCE-TYPES below")
+                .addOption("glI", "gluster-image", true, "AMI for glusterfs");
         
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
@@ -97,6 +102,10 @@ public class StartUpOgeCluster {
                     break;
                 case "c":
                     intent = new CreateIntent();
+                    validator = new CommandLineValidator(cl, intent);
+                    break;
+                case "C":
+                    intent = new CreateGlusterIntent();
                     validator = new CommandLineValidator(cl, intent);
                     break;
                 case "l":

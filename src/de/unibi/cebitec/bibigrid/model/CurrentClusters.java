@@ -16,8 +16,8 @@ public class CurrentClusters {
     public static final String DELIMITER = "|";
     public static final String DELIMITER_REGEX = "\\|";
 
-    public static void addCluster(String masterReservationId, String autoScalingGroupName, String clusterId, int slaveInstanceCount) {
-        String data = StringUtils.join(DELIMITER, masterReservationId, autoScalingGroupName, String.valueOf(slaveInstanceCount), String.valueOf(Calendar.getInstance().getTimeInMillis()));
+    public static void addCluster(String masterReservationId, String autoScalingGroupName, String clusterId, int slaveInstanceCount, boolean useGluster, String glusterReservationID) {
+        String data = StringUtils.join(DELIMITER, masterReservationId, autoScalingGroupName, String.valueOf(slaveInstanceCount), String.valueOf(Calendar.getInstance().getTimeInMillis()), String.valueOf(useGluster), glusterReservationID);
         p.put(clusterId, data);
     }
 
@@ -31,13 +31,20 @@ public class CurrentClusters {
     public static String getMasterReservationId(String clusterId) {
         return getDataArray(clusterId)[0];
     }
+    public static String getGlusterReservationId(String clusterId) {
+        return getDataArray(clusterId)[5];
+    }
 
     public static String getAutoScalingGroupName(String clusterId) {
         return getDataArray(clusterId)[1];
     }
+    
+    public static String getUseGluster(String clusterId){
+        return getDataArray(clusterId)[4];
+    }
 
     private static String[] getDataArray(String clusterId) {
-        String[] data = p.get(clusterId, "-|-|-|-|-").split(DELIMITER_REGEX);
+        String[] data = p.get(clusterId, "-|-|-|-|-|-|-").split(DELIMITER_REGEX);
         return data;
     }
     

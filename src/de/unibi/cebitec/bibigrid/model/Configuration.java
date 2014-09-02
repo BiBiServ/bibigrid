@@ -32,7 +32,13 @@ public class Configuration {
     private boolean useMasterAsCompute;
     private boolean autoscaling = false;
     private boolean cassandra = false;
+    //Gluster:
+    private boolean useGluster = false;
+    private int glusterInstanceAmount;
+    private InstanceType glusterInstanceType;
+    private String glusterImage;
 
+    
     public boolean isCassandra() {
         return cassandra;
     }
@@ -208,5 +214,37 @@ public class Configuration {
     public void setNfsShares(List<String> nfsShares) {
         this.nfsShares = nfsShares;
     }
+    
+    public int getGlusterInstanceAmount() {
+        return glusterInstanceAmount;
+    }
+    
+    public InstanceType getGlusterInstanceType() {
+        return glusterInstanceType;
+    }
+    
+    public boolean isUseGluster() {
+        return useGluster;
+    }
+    
+    public void setGlusterInstanceAmount(int glusterInstanceAmount) {
+        this.glusterInstanceAmount = glusterInstanceAmount;
+    }
+    
+    public void setGlusterInstanceType(InstanceType glusterInstanceType) {
+        this.glusterInstanceType = glusterInstanceType;
+    }
+    
+    public void setUseGluster(boolean useGluster) {
+        this.useGluster = useGluster;
+    }
 
+    public void setGlusterImage(String glusterImage) {
+        this.glusterImage = glusterImage;
+    }
+
+    public String getGlusterImage() {
+        return glusterImage;
+    }
+    
 }

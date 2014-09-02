@@ -10,10 +10,10 @@ public class InstanceInformation {
 
     static {
         // General use
-        count.put(InstanceType.M3Medium,new InstanceSpecification(1, 1, true));
-        count.put(InstanceType.M3Large,new InstanceSpecification(2, 1, true));
-        count.put(InstanceType.M3Xlarge, new InstanceSpecification(4, 2, true));
-        count.put(InstanceType.M32xlarge, new InstanceSpecification(8, 2, true));
+        count.put(InstanceType.M3Medium,new InstanceSpecification(1, 1, false));
+        count.put(InstanceType.M3Large,new InstanceSpecification(2, 1, false));
+        count.put(InstanceType.M3Xlarge, new InstanceSpecification(4, 2, false));
+        count.put(InstanceType.M32xlarge, new InstanceSpecification(8, 2, false));
         
         count.put(InstanceType.M1Small, new InstanceSpecification(1, 1, false));
         count.put(InstanceType.M1Medium, new InstanceSpecification(1, 1, false));

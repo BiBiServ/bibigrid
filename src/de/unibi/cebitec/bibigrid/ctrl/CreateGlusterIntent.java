@@ -27,9 +27,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CreateIntent extends Intent {
+public class CreateGlusterIntent extends Intent {
 
-    public static final Logger log = LoggerFactory.getLogger(CreateIntent.class);
+    public static final Logger log = LoggerFactory.getLogger(CreateGlusterIntent.class);
     public static final String SECURITY_GROUP_PREFIX = "bibigrid-";
     public static final String MASTER_SSH_USER = "ubuntu";
     public static final String PLACEMENT_GROUP_PREFIX = "bibigrid-pg-";
@@ -37,12 +37,12 @@ public class CreateIntent extends Intent {
 
     @Override
     public String getCmdLineOption() {
-        return "c";
+        return "C";
     }
 
     @Override
     public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
+        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b", "gli", "gla", "glI"});
     }
 
     @Override
@@ -82,12 +82,63 @@ public class CreateIntent extends Intent {
         String clusterId = clusterIdBase64.substring(0, len);
         log.debug("cluster id: {}", clusterId);
 
+        
+
+
+        
+        //Vpc Krempel
+        CreateVpcRequest vpcReq = new CreateVpcRequest("10.0.0.0/16");
+        CreateVpcResult vpcRes = ec2.createVpc(vpcReq);
+        sleep(10);
+        ModifyVpcAttributeRequest modVpcReq = new ModifyVpcAttributeRequest()
+                .withEnableDnsSupport(Boolean.TRUE)
+                .withVpcId(vpcRes.getVpc().getVpcId());
+        ec2.modifyVpcAttribute(modVpcReq);
+        modVpcReq = new ModifyVpcAttributeRequest()
+                .withEnableDnsHostnames(Boolean.TRUE)
+                .withVpcId(vpcRes.getVpc().getVpcId());
+        ec2.modifyVpcAttribute(modVpcReq);
+        CreateTagsRequest vpcNameTagRequest = new CreateTagsRequest();
+        vpcNameTagRequest.withResources(vpcRes.getVpc().getVpcId()).withTags(new Tag().withKey("bibigrid-id").withValue(clusterId), new Tag().withKey("Name").withValue("vpc-" + clusterId));
+        ec2.createTags(vpcNameTagRequest);
+        log.info("Created VPC");
+        
+        CreateSubnetRequest subnetReq = new CreateSubnetRequest(vpcRes.getVpc().getVpcId(), "10.0.0.0/24").withAvailabilityZone(this.getConfiguration().getAvailabilityZone());
+        CreateSubnetResult subnetRes = ec2.createSubnet(subnetReq);
+        log.info("Created Subnet");
+        
+        CreateInternetGatewayResult internetGatewayRes = ec2.createInternetGateway();
+        sleep(10);
+        AttachInternetGatewayRequest attachIGReq = new AttachInternetGatewayRequest()
+                .withInternetGatewayId(internetGatewayRes.getInternetGateway().getInternetGatewayId())
+                .withVpcId(vpcRes.getVpc().getVpcId());
+        ec2.attachInternetGateway(attachIGReq);
+        log.info("Created and attached Internet Gateway");
+        
+        CreateRouteTableRequest routeTableReq = new CreateRouteTableRequest().withVpcId(vpcRes.getVpc().getVpcId());
+        CreateRouteTableResult routeTableRes = ec2.createRouteTable(routeTableReq);
+        RouteTable routeTable = routeTableRes.getRouteTable();
+        sleep(10);
+        CreateRouteRequest routeReq = new CreateRouteRequest()
+                .withGatewayId(internetGatewayRes.getInternetGateway().getInternetGatewayId())
+                .withDestinationCidrBlock("0.0.0.0/0")
+                .withRouteTableId(routeTable.getRouteTableId());
+        ec2.createRoute(routeReq);
+        ec2.associateRouteTable(new AssociateRouteTableRequest()
+                .withRouteTableId(routeTable.getRouteTableId())
+                .withSubnetId(subnetRes.getSubnet().getSubnetId()));
+        log.info("Created Routes in RouteTable");
+
+
+        
+
+
         ////////////////////////////////////////////////////////////////////////
         ///// create security group with full internal access / ssh from outside
         log.info(V, "Creating security group...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + clusterId).
-                withDescription(clusterId);
+                withDescription(clusterId).withVpcId(vpcRes.getVpc().getVpcId());
         CreateSecurityGroupResult secReqResult = ec2.createSecurityGroup(secReq);
         log.debug("security group id: {}", secReqResult.getGroupId());
 
@@ -99,14 +150,14 @@ public class CreateIntent extends Intent {
         secGroupSelfAccessTcp.withIpProtocol("tcp").withFromPort(0).withToPort(65535).withUserIdGroupPairs(secGroupSelf);
         IpPermission secGroupSelfAccessUdp = new IpPermission();
         secGroupSelfAccessUdp.withIpProtocol("udp").withFromPort(0).withToPort(65535).withUserIdGroupPairs(secGroupSelf);
-        IpPermission secGroupSelfAccessIcmp = new IpPermission();
-        secGroupSelfAccessIcmp.withIpProtocol("icmp").withFromPort(-1).withUserIdGroupPairs(secGroupSelf);
+//        IpPermission secGroupSelfAccessIcmp = new IpPermission();
+//        secGroupSelfAccessIcmp.withIpProtocol("icmp").withFromPort(-1).withUserIdGroupPairs(secGroupSelf);
 
         List<IpPermission> allIpPermissions = new ArrayList<>();
         allIpPermissions.add(secGroupAccessSsh);
         allIpPermissions.add(secGroupSelfAccessTcp);
         allIpPermissions.add(secGroupSelfAccessUdp);
-        allIpPermissions.add(secGroupSelfAccessIcmp);
+//        allIpPermissions.add(secGroupSelfAccessIcmp);
         for (int port : this.getConfiguration().getPorts()) {
             IpPermission additionalPortTcp = new IpPermission();
             additionalPortTcp.withIpProtocol("tcp").withFromPort(port).withToPort(port).withIpRanges("0.0.0.0/0");
@@ -116,6 +167,9 @@ public class CreateIntent extends Intent {
             allIpPermissions.add(additionalPortUdp);
         }
 
+        
+        sleep(10);    
+        
         AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();
         ruleChangerReq.withGroupId(secReqResult.getGroupId()).withIpPermissions(allIpPermissions);
         ec2.authorizeSecurityGroupIngress(ruleChangerReq);
@@ -124,6 +178,8 @@ public class CreateIntent extends Intent {
 
         ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
 
+        
+        
         // done for master. More volume description later when master is running
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = this.getConfiguration().getSlaveMounts();
@@ -136,6 +192,250 @@ public class CreateIntent extends Intent {
             slaveBlockDeviceMappings = createBlockDeviceMappings(slaveDeviceMapper);
         }
         ////////////////////////////////////////////////////////////////////////
+        /////////////// preparing blockdevicemappings for gluster////////////////
+
+
+        List<BlockDeviceMapping> glusterDeviceMappings = new ArrayList<>();
+
+        String[] glusterEphemerals = {"b", "c", "d", "e"};
+        List<BlockDeviceMapping> glusterEphemeralList = new ArrayList<>();
+        for (int i = 0; i < InstanceInformation.getSpecs(this.getConfiguration().getGlusterInstanceType()).ephemerals; ++i) {
+            BlockDeviceMapping temp = new BlockDeviceMapping();
+            String virtualName = "ephemeral" + i;
+            String deviceName = "/dev/sd" + glusterEphemerals[i];
+            temp.setVirtualName(virtualName);
+            temp.setDeviceName(deviceName);
+
+            glusterEphemeralList.add(temp);
+        }
+
+        glusterDeviceMappings.addAll(glusterEphemeralList);
+
+        String base64GlusterUserData = UserDataCreator.glusterUserData(this.getConfiguration());
+        
+        
+        
+//################################################Start Glusterfs Instances################################################
+        log.info("Requesting gluster instances ...");
+
+        Placement instancePlacement = new Placement(this.getConfiguration().getAvailabilityZone());
+
+        if (InstanceInformation.getSpecs(
+                this.getConfiguration().getGlusterInstanceType()).clusterInstance) {
+            instancePlacement.setGroupName(placementGroup);
+        }
+        
+        int numInstances = this.getConfiguration().getGlusterInstanceAmount();
+        
+        RunInstancesRequest glusterReq = new RunInstancesRequest();
+        glusterReq.withInstanceType(this.getConfiguration().getGlusterInstanceType())
+                .withPlacement(instancePlacement)
+                .withNetworkInterfaces(new InstanceNetworkInterfaceSpecification()
+                        .withAssociatePublicIpAddress(Boolean.TRUE)
+                        .withGroups(secReqResult.getGroupId())
+                        .withSubnetId(subnetRes.getSubnet().getSubnetId())
+                        .withDeviceIndex(0))
+                .withKeyName(this.getConfiguration().getKeypair())
+                .withImageId(this.getConfiguration().getGlusterImage())
+                .withUserData(base64GlusterUserData)
+                .withBlockDeviceMappings(glusterDeviceMappings)
+                .withMaxCount(numInstances)
+                .withMinCount(numInstances);
+
+        // mounting ephemerals
+
+        RunInstancesResult glusterReqResult = ec2.runInstances(glusterReq);
+        String glusterReservationId = glusterReqResult.getReservation().getReservationId();
+        Instance glusterInstance = glusterReqResult.getReservation().getInstances().get(0);
+        log.info("Waiting for gluster instances to finish booting ...");
+
+        /////////////////////////////////////////////
+        //// Waiting for gluster instances to run ////
+        List<String> instanceIDs = new ArrayList<>();
+        for (Instance i : glusterReqResult.getReservation().getInstances()){
+            instanceIDs.add(i.getInstanceId());
+        }
+        List<Instance> instances = waitForInstances(instanceIDs);
+        glusterInstance = instances.get(0);
+        log.info(I, "Gluster instances now running!");
+
+        ////////////////////////////////////
+        //// Tagging gluster instances with a name ////
+        for (int i = 0; i < instances.size(); ++i){
+            CreateTagsRequest glusterNameTagRequest = new CreateTagsRequest();
+            glusterNameTagRequest.withResources(instances.get(i).getInstanceId()).withTags(
+                    new Tag().withKey("bibigrid-gluster").withValue(clusterId),
+                    new Tag().withKey("Name").withValue("glustergrid-"+i+"-" + clusterId));
+            ec2.createTags(glusterNameTagRequest);
+        }
+        //Waiting for Status Checks to finish
+         
+         
+
+        log.info("Waiting for Status Checks on gluster instances ...");
+        do {
+            DescribeInstanceStatusRequest request
+                    = new DescribeInstanceStatusRequest();
+            request.setInstanceIds(instanceIDs);
+
+            DescribeInstanceStatusResult response
+                    = ec2.describeInstanceStatus(request);
+            boolean allOK = true;
+            for (int i = 0; i<instances.size(); ++i){
+                InstanceStatus status = response.getInstanceStatuses().get(i);
+                String instanceStatus = status.getInstanceStatus().getStatus();
+                String systemStatus = status.getSystemStatus().getStatus();
+                log.debug("Status of instance " + i + ": " + instanceStatus + "," + systemStatus);
+                if (!instanceStatus.equalsIgnoreCase("ok") || !systemStatus.equalsIgnoreCase("ok")){
+                    allOK = false;
+                    break;
+                }
+            }
+            if (allOK) {
+                break;
+            } else {
+                log.info(V, "...");
+                sleep(10);
+            }
+        } while (true);
+        log.info(I, "Status checks successful.");
+        
+        //Configure Glusterfs
+        JSch glusterssh = new JSch();
+        JSch.setLogger(new JSchLogger());
+        /*
+         * Building Command
+         */
+        log.info("Now configuring glusterfs...");
+        String glusterExecCommand;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i < instances.size(); ++i){
+            sb.append("sudo gluster peer probe ");
+            sb.append(instances.get(i).getPrivateIpAddress());
+            sb.append("\n");
+            sb.append("sleep 5\n");
+        }
+        sb.append("sudo gluster volume create gluster-spool stripe ");
+        int numBricks = instances.size(); //TODO: implement.
+        sb.append(numBricks);
+        sb.append(" transport tcp ");
+        for (int i = 0; i < instances.size(); ++i){
+            sb.append(instances.get(i).getPrivateIpAddress());
+            sb.append(":/vol/brick "); //TODO: ephemerals!
+        }
+        sb.append("\n");
+        sb.append("sleep 15\n");
+        sb.append("sudo gluster volume start gluster-spool\n");
+        sb.append("sleep 5\n");
+        sb.append("sudo gluster volume info\n");
+        sb.append("sleep 5\n");
+        sb.append("echo 'fertig'\n");
+        glusterExecCommand = sb.toString();
+
+        boolean glusterConfigured = false;
+        while (!glusterConfigured) {
+            try {
+
+                glusterssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
+                sleep(10);
+
+                Session sshSession = SshFactory.createNewSshSession(glusterssh, glusterInstance.getPublicIpAddress(), MASTER_SSH_USER, this.getConfiguration().getIdentityFile());
+
+                sshSession.connect();
+
+                
+                ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
+
+                InputStream in = channel.getInputStream();
+
+                channel.setCommand(glusterExecCommand);
+
+                log.info(V, "Connecting ssh channel...");
+                channel.connect(1000*30);
+
+                byte[] tmp = new byte[1024];
+                while (true) {
+                    while (in.available() > 0) {
+                        int i = in.read(tmp, 0, 1024);
+                        if (i <= 0) {
+                            break;
+                        }
+                        String returnString = new String(tmp, 0, i);
+                        if (returnString.contains("fertig")) {
+                            glusterConfigured = true;
+                            break;
+                        }
+                        log.info(V, "SSH: {}", returnString);
+                    }
+                    if (channel.isClosed() || glusterConfigured) {
+
+                        log.info("SSH: exit-status: {}", channel.getExitStatus());
+                        glusterConfigured = true;
+                        break;
+                    }
+
+                    sleep(2);
+                }
+                if (glusterConfigured) {
+                    channel.disconnect();
+                    sshSession.disconnect();
+                }
+
+            } catch (IOException /*| SftpException */| JSchException e) {
+                log.error(V, "SSH: {}", e);
+                sleep(2);
+            }
+        }
+        log.info(I, "GlusterFS has been configured.");
+        
+        
+        
+        for (int i = 0; i<instances.size(); ++i){
+            log.info(V, "Gluster instance " + i + " at:  {}", instances.get(i).getPublicIpAddress());
+        }
+        log.info("Access gluster-master at:  {}", glusterInstance.getPublicIpAddress());
+        
+//##########################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////
         /////////////// preparing blockdevicemappings for master////////////////
 
         Map<String, String> masterSnapshotToMountPointMap = this.getConfiguration().getMasterMounts();
@@ -161,13 +461,19 @@ public class CreateIntent extends Intent {
 
         masterDeviceMappings.addAll(ephemeralList);
 
-        String base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.getConfiguration());
-        //////////////////////////////////////////////////////////////////////////
+        String base64MasterUserData = UserDataCreator.masterUserDataForGluster(glusterInstance.getPrivateIpAddress(), masterDeviceMapper, this.getConfiguration());
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
         /////// run master instance, tag it and wait for boot ////////////////////
         log.info("Requesting master instance ...");
 
-        Placement instancePlacement = new Placement(this.getConfiguration().getAvailabilityZone());
-
+        instancePlacement = new Placement(this.getConfiguration().getAvailabilityZone());
         if (InstanceInformation.getSpecs(
                 this.getConfiguration().getMasterInstanceType()).clusterInstance) {
             instancePlacement.setGroupName(placementGroup);
@@ -176,7 +482,11 @@ public class CreateIntent extends Intent {
         RunInstancesRequest masterReq = new RunInstancesRequest();
         masterReq.withInstanceType(this.getConfiguration().getMasterInstanceType())
                 .withMinCount(1).withMaxCount(1).withPlacement(instancePlacement)
-                .withSecurityGroupIds(secReqResult.getGroupId())
+                .withNetworkInterfaces(new InstanceNetworkInterfaceSpecification()
+                        .withAssociatePublicIpAddress(Boolean.TRUE)
+                        .withGroups(secReqResult.getGroupId())
+                        .withSubnetId(subnetRes.getSubnet().getSubnetId())
+                        .withDeviceIndex(0))
                 .withKeyName(this.getConfiguration().getKeypair())
                 .withImageId(this.getConfiguration().getMasterImage())
                 .withUserData(base64MasterUserData)
@@ -228,7 +538,7 @@ public class CreateIntent extends Intent {
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
 
-        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, this.getConfiguration());
+        String base64SlaveUserData = UserDataCreator.forSlaveWithGluster(glusterInstance.getPrivateIpAddress(), masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, this.getConfiguration());
 
         List<com.amazonaws.services.autoscaling.model.BlockDeviceMapping> slaveAutoScaleBlockDeviceMappings = new ArrayList<>();
         // need to parse EC2 BlockdeviceMapping to AS BlockDeviceMapping
@@ -259,28 +569,13 @@ public class CreateIntent extends Intent {
                 .withSecurityGroups(secReqResult.getGroupId())
                 .withKeyName(this.getConfiguration().getKeypair())
                 .withUserData(base64SlaveUserData)
-                .withInstanceMonitoring(new InstanceMonitoring().withEnabled(false));
+                .withInstanceMonitoring(new InstanceMonitoring().withEnabled(false))
+                .withAssociatePublicIpAddress(true)
+                ;
 
         as.createLaunchConfiguration(launchMainConfig);
 
-        /*
-         * if (this.getConfiguration().getType()==GridType.OnlySpot) {
-         * launchMainConfig =
-         * launchMainConfig.withSpotPrice(this.getConfiguration().getBidPrice()+"");
-         * } * if (this.getConfiguration().getType()==GridType.Hybrid) {
-         * launchSpotConfig =
-         * launchSpotConfig.withImageId(this.getConfiguration().getSlaveImage())
-         * .withInstanceType(this.getConfiguration().getSlaveInstanceType().toString())
-         * .withLaunchConfigurationName(clusterId+"-onSpot")
-         * .withBlockDeviceMappings(slaveAutoScaleBlockDeviceMappings)
-         * .withSecurityGroups(secReqResult.getGroupId())
-         * .withKeyName(this.getConfiguration().getKeypair())
-         * .withUserData(base64SlaveUserData) .withInstanceMonitoring(new
-         * InstanceMonitoring().withEnabled(false))
-         * .withSpotPrice(this.getConfiguration().getBidPrice()+"");
-         *
-         * as.createLaunchConfiguration(launchSpotConfig); }
-         */
+
         while (true) {
             DescribeLaunchConfigurationsResult describeLaunchResult = as.describeLaunchConfigurations(new DescribeLaunchConfigurationsRequest().withLaunchConfigurationNames(launchMainConfig.getLaunchConfigurationName()));
             boolean found = false;
@@ -294,7 +589,7 @@ public class CreateIntent extends Intent {
             if (found) {
                 break;
             } else {
-                sleep(5);
+                sleep(10);
             }
         }
 
@@ -309,7 +604,8 @@ public class CreateIntent extends Intent {
                                 .getAvailabilityZone()))
                 .withDesiredCapacity(this.getConfiguration().getSlaveInstanceStartAmount())
                 .withTags(autoScalingTag)
-                .withTerminationPolicies("NewestInstance", "ClosestToNextInstanceHour");
+                .withTerminationPolicies("NewestInstance", "ClosestToNextInstanceHour")
+                .withVPCZoneIdentifier(subnetRes.getSubnet().getSubnetId());
 
         if (this.getConfiguration().isAutoscaling()) {
             myGroup.setMaxSize(this.getConfiguration().getSlaveInstanceMaximum());
@@ -341,10 +637,10 @@ public class CreateIntent extends Intent {
                     log.info(I, "AutoScaling creation successful");
                     break;
                 } else {
-                    sleep(5);
+                    sleep(10);
                 }
             } else {
-                sleep(5);
+                sleep(10);
             }
         }
         List<String> slaveInstancesIds = new ArrayList<>();
@@ -369,17 +665,17 @@ public class CreateIntent extends Intent {
          * .withAvailabilityZones(Arrays.asList(this.getConfiguration().getAvailabilityZone()))
          * .withTerminationPolicies("NewestInstance","ClosestToNextInstanceHour");;
          *
-         * as.updateAutoScalingGroup(changeAutoScalingGroupRequest); } sleep(5);
+         * as.updateAutoScalingGroup(changeAutoScalingGroupRequest); } sleep(10);
          */
         log.debug("master reservation: {}   auto scaling group name: {}   clusterId: {}    slaveMin: {}    slaveMax: {}",
                 masterReservationId, myGroup.getAutoScalingGroupName(), clusterId, this.getConfiguration().getSlaveInstanceMinimum(), this.getConfiguration().getSlaveInstanceMaximum());
 
-        CurrentClusters.addCluster(masterReservationId, myGroup.getAutoScalingGroupName(), clusterId, this.getConfiguration().getSlaveInstanceMaximum(), false, "empty");
+        CurrentClusters.addCluster(masterReservationId, myGroup.getAutoScalingGroupName(), clusterId, this.getConfiguration().getSlaveInstanceMaximum(), true, glusterReservationId);
         PutScalingPolicyRequest addPolicyRequest = new PutScalingPolicyRequest().withAdjustmentType("ChangeInCapacity").withCooldown(300).withScalingAdjustment(1).withAutoScalingGroupName(myGroup.getAutoScalingGroupName()).withPolicyName(myGroup.getAutoScalingGroupName() + "-add");
 
         as.putScalingPolicy(addPolicyRequest);
 
-        sleep(5);
+        sleep(10);
 
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
@@ -405,7 +701,7 @@ public class CreateIntent extends Intent {
                 /*
                  * Create new Session to avoid packet corruption.
                  */
-                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicDnsName(), MASTER_SSH_USER, this.getConfiguration().getIdentityFile());
+                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIpAddress(), MASTER_SSH_USER, this.getConfiguration().getIdentityFile());
 
                 /*
                  * Start connect attempt
@@ -468,7 +764,7 @@ public class CreateIntent extends Intent {
             }
         }
         log.info(I, "Master instance has been configured.");
-        log.info("Access master at:  {}", masterInstance.getPublicDnsName());
+        log.info("Access master at:  {}", masterInstance.getPublicIpAddress());
 
         return true;
     }
