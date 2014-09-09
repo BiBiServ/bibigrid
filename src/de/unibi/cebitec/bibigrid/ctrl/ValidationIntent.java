@@ -130,19 +130,21 @@ public class ValidationIntent extends Intent {
             DescribeImagesRequest imageRequest = new DescribeImagesRequest().withImageIds(Arrays.asList(getConfiguration().getMasterImage(), getConfiguration().getSlaveImage()));
             DescribeImagesResult imageResult = ec2.describeImages(imageRequest);
             boolean slave = false, master = false;
-            boolean masterType = InstanceInformation.getSpecs(getConfiguration().getMasterInstanceType()).clusterInstance;
-            boolean slaveType = InstanceInformation.getSpecs(getConfiguration().getSlaveInstanceType()).clusterInstance;
+            boolean masterClusterType = InstanceInformation.getSpecs(getConfiguration().getMasterInstanceType()).clusterInstance;
+            boolean slaveClusterType = InstanceInformation.getSpecs(getConfiguration().getSlaveInstanceType()).clusterInstance;
             /*
              * Checking if both are hvm or paravirtual types
              */
-            if (masterType != slaveType) {
-                log.error("Both instances have to use hvm or paravirtual images.");
+            if (masterClusterType != slaveClusterType) {
+                log.error("If cluster instances are used please create a homogeneous group.");
                 allCheck = false;
-            } else if (masterType) {
+            } else if (masterClusterType) {
                 /*
-                 * If HVM instances
+                 * If master instance is a cluster instance check if the types are the same
                  */
                 if (getConfiguration().getMasterInstanceType() != getConfiguration().getSlaveInstanceType()) {
+                    log.error("If cluster instances are used please create a homogeneous group.");
+                    allCheck = false;
                 }
             }
             for (Image image : imageResult.getImages()) {
@@ -152,41 +154,40 @@ public class ValidationIntent extends Intent {
                 if (image.getImageId().equals(getConfiguration().getMasterImage())) {
                     master = true;
                     if (image.getVirtualizationType().equals("hvm")) { // Image detected is of HVM Type
-                        if (masterType) {
-                            log.info(I, "Master instance uses HVM images."); // Instance and Image is HVM type
-                        } else {
+                        if (InstanceInformation.getSpecs(getConfiguration().getMasterInstanceType()).hvm) {
+                            log.info(I, "Master instance can use HVM images."); // Instance and Image is HVM type
+                        } else if (InstanceInformation.getSpecs(getConfiguration().getMasterInstanceType()).pvm) {
                             log.error("Master Instance type does not support hardware-assisted virtualization."); // HVM Image but instance type is not correct 
                             allCheck = false;
                         }
                     } else {
-                        if (masterType) {
+                        if (InstanceInformation.getSpecs(getConfiguration().getMasterInstanceType()).pvm) {
+                            log.info(I, "Master instance can use paravirtual images."); // Instance and Image fits.
+                        } else if (InstanceInformation.getSpecs(getConfiguration().getMasterInstanceType()).hvm) {
                             log.error("Master Instance type does not support paravirtual images."); // Paravirtual Image but cluster instance type
                             allCheck = false;
-                        } else {
-                            log.info(I, "Master instance uses paravirtual images."); // Instance and Image fits.
                         }
                     }
-
 
                 }
                 /*
                  * Checking if Slave Image is available.
                  */
                 if (image.getImageId().equals(getConfiguration().getSlaveImage())) {
-                    slave = true;
-                    if (image.getVirtualizationType().equals("hvm")) {
-                        if (slaveType) {
-                            log.info(I, "Slave instance uses HVM images."); // Instance Type and Image uses HVM.
-                        } else {
-                            log.error("Slave Instance type does not support hardware-assisted virtualization."); // HVM Image but instance type uses paravirtualized images.
+                    slave = true; 
+                    if (image.getVirtualizationType().equals("hvm")) { // Image detected is of HVM Type
+                        if (InstanceInformation.getSpecs(getConfiguration().getSlaveInstanceType()).hvm) {
+                            log.info(I, "Slave instance can use HVM images."); // Instance and Image is HVM type
+                        } else if (InstanceInformation.getSpecs(getConfiguration().getSlaveInstanceType()).pvm) {
+                            log.error("Slave Instance type does not support hardware-assisted virtualization."); // HVM Image but instance type is not correct 
                             allCheck = false;
                         }
                     } else {
-                        if (slaveType) {
-                            log.error("Slave Instance type does not support paravirtual images."); // paravirtual image for slave but instance type is cluster.
+                        if (InstanceInformation.getSpecs(getConfiguration().getSlaveInstanceType()).pvm) {
+                            log.info(I, "Slave instance can use paravirtual images."); // Instance and Image fits.
+                        } else if (InstanceInformation.getSpecs(getConfiguration().getSlaveInstanceType()).hvm) {
+                            log.error("Slave Instance type does not support paravirtual images."); // Paravirtual Image but cluster instance type
                             allCheck = false;
-                        } else {
-                            log.info(I, "Slave instance uses paravirtual images."); // Slave Instance uses paravirtual images.
                         }
                     }
                 }
