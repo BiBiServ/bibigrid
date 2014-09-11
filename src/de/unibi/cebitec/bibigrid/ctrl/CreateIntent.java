@@ -235,7 +235,7 @@ public class CreateIntent extends Intent {
         for (com.amazonaws.services.ec2.model.BlockDeviceMapping bdm : slaveBlockDeviceMappings) {
             slaveAutoScaleBlockDeviceMappings.add(new com.amazonaws.services.autoscaling.model.BlockDeviceMapping().withDeviceName(bdm.getDeviceName()).withEbs(new Ebs().withSnapshotId(bdm.getEbs().getSnapshotId())));
         }
-       
+
         // setting up Ephemerals for Slaves
         List<com.amazonaws.services.autoscaling.model.BlockDeviceMapping> ephemeralSlaveList = new ArrayList<>();
         for (int i = 0; i < InstanceInformation.getSpecs(this.getConfiguration().getSlaveInstanceType()).ephemerals; ++i) {
@@ -467,8 +467,45 @@ public class CreateIntent extends Intent {
                 sleep(2);
             }
         }
-        log.info(I, "Master instance has been configured.");
-        log.info("Access master at:  {}", masterInstance.getPublicDnsName());
+        
+        
+        // Prepare Output Message
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("\n============\n");
+        sb.append("You might want to set these environment variables:\n");
+        sb.append("\n");
+        sb.append("export BIBIGRID_MASTER=");
+        sb.append(masterInstance.getPublicDnsName());
+        sb.append("\n");
+        int i = 1;
+        for (Instance e : slaveInstances) { // prepare environment variables
+            sb.append("export BIBIGRID_SLAVE");
+            sb.append(i);
+            sb.append("=");
+            sb.append(e.getPublicDnsName());
+            sb.append("\n");
+            ++i;
+        }
+        sb.append("\n");
+        sb.append("You can log on to the master node with:\n");
+        sb.append("\n");
+        sb.append("ssh -i ");
+        sb.append(this.getConfiguration().getIdentityFile());
+        sb.append(" ubuntu@$BIBIGRID_MASTER\n");
+        sb.append("\n");
+        sb.append("The Ganglia Web Interface is available at:\n");
+        sb.append("http://");
+        sb.append(masterInstance.getPublicDnsName());
+        sb.append("/ganglia\n");
+        sb.append("\n==========\n");
+        sb.append("You can terminate the cluster at any time with:\n");
+        sb.append("./bibigrid -t ");
+        sb.append(clusterId);
+        sb.append("\n");
+        
+        
+        log.info(I, "Master instance has been configured." +sb.toString());
 
         return true;
     }
