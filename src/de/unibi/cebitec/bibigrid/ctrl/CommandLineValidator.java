@@ -40,6 +40,8 @@ public class CommandLineValidator {
             if (Files.isReadable(newPath)) {
                 this.propertiesFilePath = newPath;
                 log.info("Alternative config file " + newPath.toString() + " will be used.");
+                this.cfg.setAlternativeConfigFile(true);
+                this.cfg.setAlternativeConfigPath(newPath.toString());
             }
         } else {
             this.propertiesFilePath = FileSystems.getDefault().getPath(DEFAULT_PROPERTIES_DIRNAME, DEFAULT_PROPERTIES_FILENAME);

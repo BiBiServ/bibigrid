@@ -84,12 +84,12 @@ public class CreateIntent extends Intent {
 
         ////////////////////////////////////////////////////////////////////////
         ///// create security group with full internal access / ssh from outside
-        log.info(V, "Creating security group...");
+        log.info("Creating security group...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + clusterId).
                 withDescription(clusterId);
         CreateSecurityGroupResult secReqResult = ec2.createSecurityGroup(secReq);
-        log.debug("security group id: {}", secReqResult.getGroupId());
+        log.info(V,"security group id: {}", secReqResult.getGroupId());
 
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());
 
@@ -121,9 +121,10 @@ public class CreateIntent extends Intent {
         ec2.authorizeSecurityGroupIngress(ruleChangerReq);
 
         String placementGroup = PLACEMENT_GROUP_PREFIX + clusterId;
-
+        if (InstanceInformation.getSpecs(this.getConfiguration().getMasterInstanceType()).clusterInstance && InstanceInformation.getSpecs(this.getConfiguration().getSlaveInstanceType()).clusterInstance) {
         ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
-
+        log.info("Creating placement group...");
+        }
         // done for master. More volume description later when master is running
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = this.getConfiguration().getSlaveMounts();
@@ -286,7 +287,7 @@ public class CreateIntent extends Intent {
             boolean found = false;
             for (LaunchConfiguration e : describeLaunchResult.getLaunchConfigurations()) {
                 if (e.getLaunchConfigurationName().equals(clusterId + "-config")) {
-                    log.info(I, "Launch Configuration creation successful");
+                    log.info(I, "Launch Configuration successfully created.");
                     found = true;
                     break;
                 }
@@ -338,7 +339,7 @@ public class CreateIntent extends Intent {
                     }
                 }
                 if (asGroupFound) {
-                    log.info(I, "AutoScaling creation successful");
+                    log.info(I, "AutoScaling Group has been successfully created.");
                     break;
                 } else {
                     sleep(5);
@@ -371,9 +372,7 @@ public class CreateIntent extends Intent {
          *
          * as.updateAutoScalingGroup(changeAutoScalingGroupRequest); } sleep(5);
          */
-        log.debug("master reservation: {}   auto scaling group name: {}   clusterId: {}    slaveMin: {}    slaveMax: {}",
-                masterReservationId, myGroup.getAutoScalingGroupName(), clusterId, this.getConfiguration().getSlaveInstanceMinimum(), this.getConfiguration().getSlaveInstanceMaximum());
-
+        
         CurrentClusters.addCluster(masterReservationId, myGroup.getAutoScalingGroupName(), clusterId, this.getConfiguration().getSlaveInstanceMaximum(), false, "empty");
         PutScalingPolicyRequest addPolicyRequest = new PutScalingPolicyRequest().withAdjustmentType("ChangeInCapacity").withCooldown(300).withScalingAdjustment(1).withAutoScalingGroupName(myGroup.getAutoScalingGroupName()).withPolicyName(myGroup.getAutoScalingGroupName() + "-add");
 
@@ -450,7 +449,7 @@ public class CreateIntent extends Intent {
                     }
                     if (channel.isClosed() || configured) {
 
-                        log.info("SSH: exit-status: {}", channel.getExitStatus());
+                        log.info(V,"SSH: exit-status: {}", channel.getExitStatus());
                         configured = true;
                         break;
                     }
@@ -467,8 +466,10 @@ public class CreateIntent extends Intent {
                 sleep(2);
             }
         }
-        
-        
+         log.info(I, "Master instance has been configured.");
+        log.info("Launch Summary:\nSecurity Group: {} \nMaster Reservation: {} \nPlacement Group: {} \nAutoScaling Group Name: {} \nLaunch Configuration ID: {} \nClusterId: {}\n",
+                secReqResult.getGroupId(), masterReservationId, myGroup.getPlacementGroup()==null ? "NONE": myGroup.getPlacementGroup(), myGroup.getAutoScalingGroupName(), myGroup.getLaunchConfigurationName(), clusterId);
+
         // Prepare Output Message
         StringBuilder sb = new StringBuilder();
 
@@ -502,10 +503,14 @@ public class CreateIntent extends Intent {
         sb.append("You can terminate the cluster at any time with:\n");
         sb.append("./bibigrid -t ");
         sb.append(clusterId);
+        if (this.getConfiguration().isAlternativeConfigFile()) {
+            sb.append(" -o ");
+            sb.append(this.getConfiguration().getAlternativeConfigPath());
+        }
         sb.append("\n");
         
         
-        log.info(I, "Master instance has been configured." +sb.toString());
+        log.info(I, sb.toString());
 
         return true;
     }

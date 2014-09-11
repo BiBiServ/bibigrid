@@ -32,6 +32,9 @@ public class Configuration {
     private boolean useMasterAsCompute;
     private boolean autoscaling = false;
     private boolean cassandra = false;
+    private boolean alternativeConfigFile = false;
+    private String alternativeConfigPath = "";
+
     //Gluster:
     private boolean useGluster = false;
     private int glusterInstanceAmount;
@@ -246,5 +249,19 @@ public class Configuration {
     public String getGlusterImage() {
         return glusterImage;
     }
-    
+     public boolean isAlternativeConfigFile() {
+        return alternativeConfigFile;
+    }
+
+    public void setAlternativeConfigFile(boolean alternativeConfigFile) {
+        this.alternativeConfigFile = alternativeConfigFile;
+    }
+
+    public String getAlternativeConfigPath() {
+        return alternativeConfigPath;
+    }
+
+    public void setAlternativeConfigPath(String alternativeConfigPath) {
+        this.alternativeConfigPath = alternativeConfigPath;
+    }
 }

@@ -269,9 +269,8 @@ public class TerminateIntent extends Intent {
             if (placementgroupExists) {
                 DeletePlacementGroupRequest pgTermReq = new DeletePlacementGroupRequest(CreateIntent.PLACEMENT_GROUP_PREFIX + clusterId);
                 ec2.deletePlacementGroup(pgTermReq);
-                log.debug(V, "Attempting to delete placement group...");
-            }
-            log.info(I, "Placement group deleted.");
+                log.info(I, "Deleting placement group...");
+            } 
             log.info(I, "Cluster terminated. ({})", clusterId);
 
             if (CurrentClusters.exists(clusterId)) {
