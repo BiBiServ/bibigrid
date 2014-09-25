@@ -228,7 +228,7 @@ public class CommandLineValidator {
                         log.error("-m option is required! Please specify the instance type of your master node. (e.g. master-instance-type=t1.micro)");
                         return false;
                     }
-                    InstanceType masterType = InstanceType.fromValue(masterTypeString);
+                    InstanceType masterType = InstanceType.fromValue(masterTypeString.trim());
                     this.cfg.setMasterInstanceType(masterType);
                 } catch (Exception e) {
                     log.error("Invalid master instance type specified!");
@@ -242,7 +242,7 @@ public class CommandLineValidator {
             ///// master-image /////////////////////////////////////////////
 
             if (req.contains("M")) {
-                this.cfg.setMasterImage(this.cl.getOptionValue("M", defaults.getProperty("master-image")));
+                this.cfg.setMasterImage(this.cl.getOptionValue("M", defaults.getProperty("master-image")).trim());
                 if (this.cfg.getMasterImage() == null) {
                     log.error("-M option is required! Please specify the AMI ID for your master node.");
                     return false;
@@ -261,7 +261,7 @@ public class CommandLineValidator {
                         log.error("-s option is required! Please specify the instance type of your slave nodes(slave-instance-type=t1.micro).");
                         return false;
                     }
-                    InstanceType slaveType = InstanceType.fromValue(slaveTypeString);
+                    InstanceType slaveType = InstanceType.fromValue(slaveTypeString.trim());
                     this.cfg.setSlaveInstanceType(slaveType);
                     if (InstanceInformation.getSpecs(slaveType).clusterInstance || InstanceInformation.getSpecs(this.cfg.getMasterInstanceType()).clusterInstance) {
                         if (!slaveType.equals(this.cfg.getMasterInstanceType())) {
@@ -441,7 +441,7 @@ public class CommandLineValidator {
             ///// slave-image //////////////////////////////////////////////////////
 
             if (req.contains("S")) {
-                this.cfg.setSlaveImage(this.cl.getOptionValue("S", defaults.getProperty("slave-image")));
+                this.cfg.setSlaveImage(this.cl.getOptionValue("S", defaults.getProperty("slave-image")).trim());
                 if (this.cfg.getSlaveImage() == null) {
                     log.error("-S option is required! Please specify the AMI ID for your slave nodes.");
                     return false;
@@ -675,7 +675,7 @@ public class CommandLineValidator {
             ///////////////////////////////////////////////////////////////////////
             ///////////////////// Gluster AMI /////////////////////////////////////
             if (req.contains("glI")) {
-                this.cfg.setGlusterImage(this.cl.getOptionValue("glI", defaults.getProperty("gluster-image")));
+                this.cfg.setGlusterImage(this.cl.getOptionValue("glI", defaults.getProperty("gluster-image").trim()));
                 if (this.cfg.getGlusterImage()== null) {
                     log.error("-glI option is required! Please specify the AMI ID for your glusterfs nodes.");
                     return false;
