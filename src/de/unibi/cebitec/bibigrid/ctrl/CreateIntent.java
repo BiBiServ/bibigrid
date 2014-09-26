@@ -332,10 +332,15 @@ public class CreateIntent extends Intent {
             if (!autoScalingResult.getAutoScalingGroups().isEmpty()) {
                 slaveAsInstances.clear();
                 for (AutoScalingGroup e : autoScalingResult.getAutoScalingGroups()) {
-                    if (e.getAutoScalingGroupName().equals("as_group-" + clusterId) && !e.getInstances().isEmpty()) {
+                    if (e.getAutoScalingGroupName().equals("as_group-" + clusterId) && !e.getInstances().isEmpty() ) {
+                        if (e.getInstances().size()== this.getConfiguration().getSlaveInstanceStartAmount()) {
                         slaveAsInstances.addAll(e.getInstances());
                         asGroupFound = true;
                         break;
+                        } else {
+                            log.debug(V,"There are still instances missing inside the autoscaling group.");
+                            sleep(5);
+                        }
                     }
                 }
                 if (asGroupFound) {
