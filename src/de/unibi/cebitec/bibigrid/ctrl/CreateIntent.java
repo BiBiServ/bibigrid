@@ -89,7 +89,7 @@ public class CreateIntent extends Intent {
         secReq.withGroupName(SECURITY_GROUP_PREFIX + clusterId).
                 withDescription(clusterId);
         CreateSecurityGroupResult secReqResult = ec2.createSecurityGroup(secReq);
-        log.info(V,"security group id: {}", secReqResult.getGroupId());
+        log.info(V, "security group id: {}", secReqResult.getGroupId());
 
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());
 
@@ -122,8 +122,8 @@ public class CreateIntent extends Intent {
 
         String placementGroup = PLACEMENT_GROUP_PREFIX + clusterId;
         if (InstanceInformation.getSpecs(this.getConfiguration().getMasterInstanceType()).clusterInstance && InstanceInformation.getSpecs(this.getConfiguration().getSlaveInstanceType()).clusterInstance) {
-        ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
-        log.info("Creating placement group...");
+            ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
+            log.info("Creating placement group...");
         }
         // done for master. More volume description later when master is running
         //now defining Slave Volumes
@@ -332,13 +332,13 @@ public class CreateIntent extends Intent {
             if (!autoScalingResult.getAutoScalingGroups().isEmpty()) {
                 slaveAsInstances.clear();
                 for (AutoScalingGroup e : autoScalingResult.getAutoScalingGroups()) {
-                    if (e.getAutoScalingGroupName().equals("as_group-" + clusterId) && !e.getInstances().isEmpty() ) {
-                        if (e.getInstances().size()== this.getConfiguration().getSlaveInstanceStartAmount()) {
-                        slaveAsInstances.addAll(e.getInstances());
-                        asGroupFound = true;
-                        break;
+                    if (e.getAutoScalingGroupName().equals("as_group-" + clusterId) && !e.getInstances().isEmpty()) {
+                        if (e.getInstances().size() == this.getConfiguration().getSlaveInstanceStartAmount()) {
+                            slaveAsInstances.addAll(e.getInstances());
+                            asGroupFound = true;
+                            break;
                         } else {
-                            log.debug(V,"There are still instances missing inside the autoscaling group.");
+                            log.debug(V, "There are still instances missing inside the autoscaling group.");
                             sleep(5);
                         }
                     }
@@ -377,7 +377,6 @@ public class CreateIntent extends Intent {
          *
          * as.updateAutoScalingGroup(changeAutoScalingGroupRequest); } sleep(5);
          */
-        
         CurrentClusters.addCluster(masterReservationId, myGroup.getAutoScalingGroupName(), clusterId, this.getConfiguration().getSlaveInstanceMaximum(), false, "empty");
         PutScalingPolicyRequest addPolicyRequest = new PutScalingPolicyRequest().withAdjustmentType("ChangeInCapacity").withCooldown(300).withScalingAdjustment(1).withAutoScalingGroupName(myGroup.getAutoScalingGroupName()).withPolicyName(myGroup.getAutoScalingGroupName() + "-add");
 
@@ -454,7 +453,7 @@ public class CreateIntent extends Intent {
                     }
                     if (channel.isClosed() || configured) {
 
-                        log.info(V,"SSH: exit-status: {}", channel.getExitStatus());
+                        log.info(V, "SSH: exit-status: {}", channel.getExitStatus());
                         configured = true;
                         break;
                     }
@@ -471,9 +470,9 @@ public class CreateIntent extends Intent {
                 sleep(2);
             }
         }
-         log.info(I, "Master instance has been configured.");
+        log.info(I, "Master instance has been configured.");
         log.info("Launch Summary:\nSecurity Group: {} \nMaster Reservation: {} \nPlacement Group: {} \nAutoScaling Group Name: {} \nLaunch Configuration ID: {} \nClusterId: {}\n",
-                secReqResult.getGroupId(), masterReservationId, myGroup.getPlacementGroup()==null ? "NONE": myGroup.getPlacementGroup(), myGroup.getAutoScalingGroupName(), myGroup.getLaunchConfigurationName(), clusterId);
+                secReqResult.getGroupId(), masterReservationId, myGroup.getPlacementGroup() == null ? "NONE" : myGroup.getPlacementGroup(), myGroup.getAutoScalingGroupName(), myGroup.getLaunchConfigurationName(), clusterId);
 
         // Prepare Output Message
         StringBuilder sb = new StringBuilder();
@@ -513,8 +512,7 @@ public class CreateIntent extends Intent {
             sb.append(this.getConfiguration().getAlternativeConfigPath());
         }
         sb.append("\n");
-        
-        
+
         log.info(I, sb.toString());
 
         return true;
@@ -548,17 +546,22 @@ public class CreateIntent extends Intent {
                 DescribeInstancesResult instanceDescrReqResult = ec2.describeInstances(instanceDescrReq);
 
                 String state;
-                for (Instance e : instanceDescrReqResult.getReservations().get(0).getInstances()) {
-                    state = e.getState().getName();
-                    if (!state.equals(InstanceStateName.Running.toString())) {
-                        log.debug(V, "ID " + e.getInstanceId() + "in state:" + state);
-                        allrunning = false;
-                        break;
+                for (Reservation v : instanceDescrReqResult.getReservations()) {
+                    for (Instance e : v.getInstances()) {
+                        state = e.getState().getName();
+                        if (!state.equals(InstanceStateName.Running.toString())) {
+                            log.debug(V, "ID " + e.getInstanceId() + "in state:" + state);
+                            allrunning = false;
+                            break;
+                        }
                     }
                 }
-
                 if (allrunning) {
-                    return instanceDescrReqResult.getReservations().get(0).getInstances();
+                    List<Instance> returnList = new ArrayList<>();
+                    for (Reservation e: instanceDescrReqResult.getReservations()) {
+                        returnList.addAll(e.getInstances());
+                    }
+                    return returnList;
                 } else {
                     log.info(V, "...");
                     sleep(10);
