@@ -1,2 +1,2 @@
 #!/bin/bash
-java -jar ./bibigrid-java-full.jar $@
+java -jar /Users/asczyrba/Repositories/bibigrid/dist/bibigrid-java-full.jar $@
