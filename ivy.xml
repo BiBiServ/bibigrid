@@ -7,7 +7,7 @@
     <publications/>
     <dependencies>
         <dependency org="ch.qos" name="logback" rev="1.0.11" />
-        <dependency org="com.amazon.aws" name="aws-java-sdk" rev="1.9.6" />
+        <dependency org="com.amazon.aws" name="aws-java-sdk" rev="1.9.25" />
         <dependency org="org.apache" name="commons-cli" rev="1.2" />
         <dependency org="com.jcraft" name="jsch" rev="0.1.50" />
         <dependency org="org.apache" name="commons-io" rev="2.4" />
