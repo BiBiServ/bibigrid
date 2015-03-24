@@ -69,19 +69,14 @@ public class CommandLineValidator {
                 log.info("No properties file for default options found ({}). Using command line parameters only.", this.propertiesFilePath);
             }
 
-
-
             ////////////////////////////////////////////////////////////////////////
             ///// terminate (cluster-id) /////////////////////////////////////////////
-
             if (req.contains("t")) {
                 this.cfg.setClusterId(this.cl.getOptionValue("t"));
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// aws-credentials-file /////////////////////////////////////////////
-
             if (req.contains("a")) {
                 String awsCredentialsFilePath = null;
                 if (defaults.containsKey("aws-credentials-file")) {
@@ -121,14 +116,14 @@ public class CommandLineValidator {
                     this.cfg.setAutoscaling(true);
                     log.info(V, "AutoScaling enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "AutoScaling disabled."); 
+                    log.info(V, "AutoScaling disabled.");
                     this.cfg.setAutoscaling(false);
                 } else {
                     log.error("AutoScaling value in properties not recognized. Please use yes/no.");
                     return false;
                 }
             }
-           
+
             ////////////////////////////////////////////////////////////////////////
             ///// cassandra on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("db")) {
@@ -140,15 +135,15 @@ public class CommandLineValidator {
                     this.cfg.setCassandra(true);
                     log.info(V, "Cassandra support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "Cassandra support disabled."); 
+                    log.info(V, "Cassandra support disabled.");
                     this.cfg.setCassandra(false);
                 } else {
                     log.error("Cassandra value in properties not recognized. Please use yes/no.");
                     return false;
                 }
             }
-            
-            if (this.cfg.isCassandra()&&this.cfg.isAutoscaling()) {
+
+            if (this.cfg.isCassandra() && this.cfg.isAutoscaling()) {
                 log.error("Cassandra and autoscaling are not available at the same time.");
                 return false;
             }
@@ -176,10 +171,8 @@ public class CommandLineValidator {
                 log.info(V, "Identity file found! ({})", identity);
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// keypair //////////////////////////////////////////////////////////
-
             if (req.contains("k")) {
                 this.cfg.setKeypair(this.cl.getOptionValue("k", defaults.getProperty("keypair")));
                 if (this.cfg.getKeypair() == null) {
@@ -189,10 +182,8 @@ public class CommandLineValidator {
                 log.info(V, "Keypair name set. ({})", this.cfg.getKeypair());
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// Region /////////////////////////////////////////////////////////
-
             if (req.contains("e")) {
                 this.cfg.setRegion(this.cl.getOptionValue("e", defaults.getProperty("region")));
                 if (this.cfg.getRegion() == null) {
@@ -203,10 +194,8 @@ public class CommandLineValidator {
                 log.info(V, "Region set. ({})", this.cfg.getRegion());
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// availability-zone ////////////////////////////////////////////////
-
             if (req.contains("z")) {
                 this.cfg.setAvailabilityZone(this.cl.getOptionValue("z", defaults.getProperty("availability-zone")));
                 if (this.cfg.getAvailabilityZone() == null) {
@@ -217,10 +206,8 @@ public class CommandLineValidator {
                 log.info(V, "Availability zone set. ({})", this.cfg.getAvailabilityZone());
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// master-instance-type /////////////////////////////////////////////
-
             if (req.contains("m")) {
                 try {
                     String masterTypeString = this.cl.getOptionValue("m", defaults.getProperty("master-instance-type"));
@@ -228,7 +215,12 @@ public class CommandLineValidator {
                         log.error("-m option is required! Please specify the instance type of your master node. (e.g. master-instance-type=t1.micro)");
                         return false;
                     }
+
                     InstanceType masterType = InstanceType.fromValue(masterTypeString.trim());
+               
+                    if (!checkInstances(masterType)){
+                        return false;
+                    }
                     this.cfg.setMasterInstanceType(masterType);
                 } catch (Exception e) {
                     log.error("Invalid master instance type specified!");
@@ -237,10 +229,8 @@ public class CommandLineValidator {
                 log.info(V, "Master instance type set. ({})", this.cfg.getMasterInstanceType());
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// master-image /////////////////////////////////////////////
-
             if (req.contains("M")) {
                 this.cfg.setMasterImage(this.cl.getOptionValue("M", defaults.getProperty("master-image")).trim());
                 if (this.cfg.getMasterImage() == null) {
@@ -250,10 +240,8 @@ public class CommandLineValidator {
                 log.info(V, "Master image set. ({})", this.cfg.getMasterImage());
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// slave-instance-type //////////////////////////////////////////////
-
             if (req.contains("s")) {
                 try {
                     String slaveTypeString = this.cl.getOptionValue("s", defaults.getProperty("slave-instance-type"));
@@ -262,6 +250,9 @@ public class CommandLineValidator {
                         return false;
                     }
                     InstanceType slaveType = InstanceType.fromValue(slaveTypeString.trim());
+                    if (!checkInstances(slaveType)){
+                        return false;
+                    }
                     this.cfg.setSlaveInstanceType(slaveType);
                     if (InstanceInformation.getSpecs(slaveType).clusterInstance || InstanceInformation.getSpecs(this.cfg.getMasterInstanceType()).clusterInstance) {
                         if (!slaveType.equals(this.cfg.getMasterInstanceType())) {
@@ -278,10 +269,8 @@ public class CommandLineValidator {
                 log.info(V, "Slave instance type set. ({})", this.cfg.getSlaveInstanceType());
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// slave-instance-max /////////////////////////////////////////////
-
             if (req.contains("n")) {
                 try {
                     if (defaults.containsKey("slave-instance-max")) {
@@ -310,8 +299,7 @@ public class CommandLineValidator {
                     log.info(V, "Slave instance count set. ({})", this.cfg.getSlaveInstanceMaximum());
                 }
             }
-            
-            
+
             ///////////////////////////////////////////////////////////////////////
             ///////////////////// slave instance minimum //////////////////////////
             if (req.contains("u")) {
@@ -351,13 +339,13 @@ public class CommandLineValidator {
                     log.info(V, "Slave instance minimum set. ({})", this.cfg.getSlaveInstanceMinimum());
                 }
             }
-             ///////////////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////////
             ///////////////////// slave instance desired amount//////////////////////////
             if (req.contains("r")) {
                 try {
                     if (defaults.containsKey("slave-instance-start")) {
                         this.cfg.setSlaveInstanceStartAmount(Integer.parseInt(defaults.getProperty("slave-instance-start")));
-                        if (this.cfg.getSlaveInstanceStartAmount() < this.cfg.getSlaveInstanceMinimum() || this.cfg.getSlaveInstanceStartAmount() > this.cfg.getSlaveInstanceMaximum() ) {
+                        if (this.cfg.getSlaveInstanceStartAmount() < this.cfg.getSlaveInstanceMinimum() || this.cfg.getSlaveInstanceStartAmount() > this.cfg.getSlaveInstanceMaximum()) {
                             throw new NumberFormatException();
                         }
                     }
@@ -379,7 +367,7 @@ public class CommandLineValidator {
                         }
                     } catch (NumberFormatException nfe) {
                         log.error("Invalid property value for slave-instance-start. Please make sure you have a "
-                            + "positive integer and your slave instance maximum is bigger and the slave instance minimum is equal or smaller to it.");
+                                + "positive integer and your slave instance maximum is bigger and the slave instance minimum is equal or smaller to it.");
                         return false;
                     }
                 }
@@ -390,9 +378,8 @@ public class CommandLineValidator {
                     log.info(V, "Slave instance desired amount set. ({})", this.cfg.getSlaveInstanceStartAmount());
                 }
             }
-            
-            
-              ///////////////////////////////////////////////////////////////////////
+
+            ///////////////////////////////////////////////////////////////////////
             ///////////////////// autoscale master yes or no//////////////////////////
             if (req.contains("b")) {
                 boolean valueSet = false;
@@ -426,9 +413,9 @@ public class CommandLineValidator {
                         } else {
                             throw new IllegalArgumentException("Value not yes or no");
                         }
-                    }catch (IllegalArgumentException iae) {
-                    log.error("Invalid value for use-master-as-compute. Please make sure it is set as yes or no.");
-                }
+                    } catch (IllegalArgumentException iae) {
+                        log.error("Invalid value for use-master-as-compute. Please make sure it is set as yes or no.");
+                    }
                 }
                 if (!valueSet) {
                     log.error("-b option is required! Please make sure it is set as yes or no");
@@ -449,11 +436,9 @@ public class CommandLineValidator {
                     log.info(V, "Slave image set. ({})", this.cfg.getSlaveImage());
                 }
             }
-           
-          
+
             ////////////////////////////////////////////////////////////////////////
             ///// ports ////////////////////////////////////////////////////////////
-
             this.cfg.setPorts(new ArrayList<Integer>());
             String portsCsv = this.cl.getOptionValue("p", defaults.getProperty("ports"));
             if (portsCsv != null) {
@@ -481,10 +466,8 @@ public class CommandLineValidator {
                 }
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// execute-script ///////////////////////////////////////////////////
-
             String scriptFilePath = null;
             if (defaults.containsKey("execute-script")) {
                 scriptFilePath = defaults.getProperty("execute-script");
@@ -502,10 +485,8 @@ public class CommandLineValidator {
                 log.info(V, "Shell script file found! ({})", script);
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// master-mounts ////////////////////////////////////////////////////
-
             this.cfg.setMasterMounts(new HashMap<String, String>());
             String masterMountsCsv = this.cl.getOptionValue("d", defaults.getProperty("master-mounts"));
             if (masterMountsCsv != null) {
@@ -534,10 +515,8 @@ public class CommandLineValidator {
                 }
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// slave-mounts /////////////////////////////////////////////////////
-
             this.cfg.setSlaveMounts(new HashMap<String, String>());
             String slaveMountsCsv = this.cl.getOptionValue("f", defaults.getProperty("slave-mounts"));
             if (slaveMountsCsv != null) {
@@ -566,10 +545,8 @@ public class CommandLineValidator {
                 }
             }
 
-
             ////////////////////////////////////////////////////////////////////////
             ///// master-nfs-shares ////////////////////////////////////////////////
-
             this.cfg.setNfsShares(new ArrayList<String>());
             String nfsSharesCsv = this.cl.getOptionValue("g", defaults.getProperty("nfs-shares"));
             if (nfsSharesCsv != null) {
@@ -609,14 +586,11 @@ public class CommandLineValidator {
                 this.cfg.setEarlyShellScriptFile(script);
                 log.info(V, "Early Shell script file found! ({})", script);
             }
-            
-            
-            
+
              ////////////////////////////////////////////////////////////////////////
             ///// GLUSTERFS /////////////////////////////////////////////
-             ////////////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////////////
             ///// gluster-instance-type /////////////////////////////////////////////
-
             if (req.contains("gli")) {
                 try {
                     String glusterTypeString = this.cl.getOptionValue("gli", defaults.getProperty("gluster-instance-type"));
@@ -632,7 +606,7 @@ public class CommandLineValidator {
                 }
                 log.info(V, "Gluster instance type set. ({})", this.cfg.getGlusterInstanceType());
             }
-            
+
             ////////////////////////////////////////////////////////////////////////
             ///// Gluster on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("gl")) {
@@ -644,14 +618,14 @@ public class CommandLineValidator {
                     this.cfg.setUseGluster(true);
                     log.info(V, "Gluster support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "Gluster support disabled."); 
+                    log.info(V, "Gluster support disabled.");
                     this.cfg.setUseGluster(false);
                 } else {
                     log.error("Use-Gluster value in properties not recognized. Please use yes/no.");
                     return false;
                 }
             }
-            
+
             ///////////////////////////////////////////////////////////////////////
             ///////////////////// Gluster instance amount /////////////////////////
             if (req.contains("gla")) {
@@ -671,21 +645,38 @@ public class CommandLineValidator {
                     log.info(V, "Gluster instance amount set. ({})", this.cfg.getGlusterInstanceAmount());
                 }
             }
-            
+
             ///////////////////////////////////////////////////////////////////////
             ///////////////////// Gluster AMI /////////////////////////////////////
             if (req.contains("glI")) {
                 this.cfg.setGlusterImage(this.cl.getOptionValue("glI", defaults.getProperty("gluster-image").trim()));
-                if (this.cfg.getGlusterImage()== null) {
+                if (this.cfg.getGlusterImage() == null) {
                     log.error("-glI option is required! Please specify the AMI ID for your glusterfs nodes.");
                     return false;
                 }
                 log.info(V, "Gluster image set. ({})", this.cfg.getGlusterImage());
             }
 
+            ///////////////////////////////////////////////////////////////////////
+            ///////////////////// grid-properties-file ////////////////////////////
+            String gridpropertiesfile = null;
+            if (defaults.containsKey("grid-properties-file")) {
+                gridpropertiesfile = defaults.getProperty("early-execute-script");
+            }
+            if (this.cl.hasOption("gpf")) {
+                gridpropertiesfile = this.cl.getOptionValue("gpf");
+            }
+            if (gridpropertiesfile != null) {
+                Path prop = FileSystems.getDefault().getPath(gridpropertiesfile);
+                if (prop.toFile().exists()) {
+                    log.warn("Overwrite an existing properties file '{}'!", prop);
+                    
+                }
+                this.cfg.setGridPropertiesFile(prop.toFile());
+                log.info(V, "Wrote grid properties to '{}' after successful grid startup!", prop);
+            }
+
         }
-
-
 
         this.intent.setConfiguration(this.cfg);
         return true;
@@ -693,5 +684,15 @@ public class CommandLineValidator {
 
     public Configuration getCfg() {
         return this.cfg;
+    }
+
+    private boolean checkInstances(InstanceType it) {
+        log.info(V,"check for unsupported instances!");
+        // T2 instances currently not working with BiBiGrid see
+        if (it.toString().startsWith("t2")) {
+            log.error("t2 instance types are currently not supported!");
+            return false;
+        }
+        return true;
     }
 }

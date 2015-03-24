@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.model;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.ec2.model.InstanceType;
+import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,19 @@ public class Configuration {
     private int glusterInstanceAmount;
     private InstanceType glusterInstanceType;
     private String glusterImage;
+    
+    
+    //grid-properties-file
+    private File gridpropertiesfile = null;
+    
 
+    public void setGridPropertiesFile(File s){
+        this.gridpropertiesfile = s;
+    }
+    
+    public File getGridPropertiesFile(){
+        return gridpropertiesfile;
+    }
     
     public boolean isCassandra() {
         return cassandra;

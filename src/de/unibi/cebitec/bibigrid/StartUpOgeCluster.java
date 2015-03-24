@@ -60,10 +60,11 @@ public class StartUpOgeCluster {
                 .addOption("b","use-master-as-compute",true,"yes or no if master is supposed to be used as a compute instance")
                 .addOption("j","autoscaling", false, "Enable AutoScaling")
                 .addOption("db","cassandra",false, "Enable Cassandra database support")
-                .addOption("gl", "use-gluster", false, "Enable glusterfs")
-                .addOption("gla", "gluster-instance-amount", true, "Amount of machines for glusterfs")
-                .addOption("gli", "gluster-instance-type", true, "see INSTANCE-TYPES below")
-                .addOption("glI", "gluster-image", true, "AMI for glusterfs");
+                .addOption("gl","use-gluster", false, "Enable glusterfs")
+                .addOption("gla","gluster-instance-amount", true, "Amount of machines for glusterfs")
+                .addOption("gli","gluster-instance-type", true, "see INSTANCE-TYPES below")
+                .addOption("glI","gluster-image", true, "AMI for glusterfs")
+                .addOption("gpf","grid-properties-file",true,"store essential grid properties like master & slave dns values and grid id in a Java property file");
         
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
