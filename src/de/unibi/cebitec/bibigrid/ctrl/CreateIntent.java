@@ -101,8 +101,9 @@ public class CreateIntent extends Intent {
         IpPermission secGroupSelfAccessUdp = new IpPermission();
         secGroupSelfAccessUdp.withIpProtocol("udp").withFromPort(0).withToPort(65535).withUserIdGroupPairs(secGroupSelf);
         IpPermission secGroupSelfAccessIcmp = new IpPermission();
-        secGroupSelfAccessIcmp.withIpProtocol("icmp").withFromPort(-1).withUserIdGroupPairs(secGroupSelf);
-
+        //secGroupSelfAccessIcmp.withIpProtocol("icmp").withFromPort(-1).withUserIdGroupPairs(secGroupSelf);
+        secGroupSelfAccessIcmp.withIpProtocol("icmp").withFromPort(-1).withToPort(-1).withUserIdGroupPairs(secGroupSelf);
+        
         List<IpPermission> allIpPermissions = new ArrayList<>();
         allIpPermissions.add(secGroupAccessSsh);
         allIpPermissions.add(secGroupSelfAccessTcp);
