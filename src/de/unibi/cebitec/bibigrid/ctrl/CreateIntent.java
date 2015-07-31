@@ -72,7 +72,7 @@ public class CreateIntent extends Intent {
         ///// create client and unique cluster-id //////////////////////////////
         ec2 = new AmazonEC2Client(this.getConfiguration().getCredentials());
         ec2.setEndpoint("ec2." + this.getConfiguration().getRegion() + ".amazonaws.com");
-
+        
         // Cluster ID is a cut down base64 encoded version of a random UUID:
         UUID clusterIdUUID = UUID.randomUUID();
         ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
@@ -184,6 +184,7 @@ public class CreateIntent extends Intent {
                 .withImageId(this.getConfiguration().getMasterImage())
                 .withUserData(base64MasterUserData)
                 .withBlockDeviceMappings(masterDeviceMappings);
+                
 
         // mounting ephemerals
         RunInstancesResult masterReqResult = ec2.runInstances(masterReq);
