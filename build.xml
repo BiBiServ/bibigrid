@@ -46,7 +46,7 @@
             </manifest>
         
             <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.9.27.jar">
+            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.10.7.jar">
                 <exclude name="com/amazonaws/services/cloudformation/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*" />
@@ -82,22 +82,22 @@
             <zipfileset excludes="META-INF/*" src="lib/commons-logging-1.1.3.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/httpclient-4.3.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/httpcore-4.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-core-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-annotations-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-databind-2.3.2.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-core-2.5.3.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-annotations-2.5.3.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-databind-2.5.3.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/logback-classic-1.0.11.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/logback-core-1.0.11.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/slf4j-api-1.7.5.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/commons-cli-1.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jsch-0.1.50.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch-0.1.53.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/freemarker-2.3.18.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/aspectjweaver-1.6.12.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/aspectjrt-1.6.12.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/mail-1.4.6.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/joda-time-2.2.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/joda-time-2.8.1.jar"/>
             <fileset file="dist/monitor.jar" />
         </jar>
-        <copy file="bibigrid.sh" tofile="dist/bibigrid"/>
+        <copy file="bibigrid" tofile="dist/bibigrid"/>
         <chmod file="dist/bibigrid" perm="+x"/>
         <delete file="dist/bibigrid-as.jar"/>
         <delete dir="dist/lib"/>
@@ -118,7 +118,7 @@
                 <exclude name="de/unibi/cebitec/bibigrid/exc/*" />
                 <exclude name="de/unibi/cebitec/bibigrid/model/**/*" />
             </zipfileset>
-            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.9.27.jar">
+            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.10.7.jar">
                 <exclude name="com/amazonaws/services/cloudformation/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*" />
@@ -154,19 +154,19 @@
             <zipfileset excludes="META-INF/*" src="lib/commons-logging-1.1.3.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/httpclient-4.3.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/httpcore-4.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-core-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-annotations-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-databind-2.3.2.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-core-2.5.3.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-annotations-2.5.3.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-databind-2.5.3.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/logback-classic-1.0.11.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/logback-core-1.0.11.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/slf4j-api-1.7.5.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/commons-cli-1.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jsch-0.1.50.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch-0.1.53.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/freemarker-2.3.18.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/aspectjweaver-1.6.12.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/aspectjrt-1.6.12.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/mail-1.4.6.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/joda-time-2.2.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/joda-time-2.8.1.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/commons-io-2.4.jar"/>
         </jar>
         <delete dir="dist/lib"/>

@@ -105,6 +105,14 @@ public class CommandLineValidator {
                 }
             }
             ////////////////////////////////////////////////////////////////////////
+            ///// vpc-id ///////////////////////////////////////////////////////////
+            
+            if (this.cl.hasOption("vpc")) {
+                this.cfg.setVpcid(this.cl.getOptionValue("vpc", defaults.getProperty("vpc-id")));
+            }
+            
+            
+            ////////////////////////////////////////////////////////////////////////
             ///// autoscale on/off /////////////////////////////////////////////////
 
             if (this.cl.hasOption("j")) {
@@ -218,9 +226,9 @@ public class CommandLineValidator {
 
                     InstanceType masterType = InstanceType.fromValue(masterTypeString.trim());
                
-                    if (!checkInstances(masterType)){
-                        return false;
-                    }
+//                    if (!checkInstances(masterType)){
+//                        return false;
+//                    }
                     this.cfg.setMasterInstanceType(masterType);
                 } catch (Exception e) {
                     log.error("Invalid master instance type specified!");
@@ -250,9 +258,9 @@ public class CommandLineValidator {
                         return false;
                     }
                     InstanceType slaveType = InstanceType.fromValue(slaveTypeString.trim());
-                    if (!checkInstances(slaveType)){
-                        return false;
-                    }
+//                    if (!checkInstances(slaveType)){
+//                        return false;
+//                    }
                     this.cfg.setSlaveInstanceType(slaveType);
                     if (InstanceInformation.getSpecs(slaveType).clusterInstance || InstanceInformation.getSpecs(this.cfg.getMasterInstanceType()).clusterInstance) {
                         if (!slaveType.equals(this.cfg.getMasterInstanceType())) {
@@ -441,7 +449,7 @@ public class CommandLineValidator {
             ///// ports ////////////////////////////////////////////////////////////
             this.cfg.setPorts(new ArrayList<Integer>());
             String portsCsv = this.cl.getOptionValue("p", defaults.getProperty("ports"));
-            if (portsCsv != null) {
+            if (portsCsv != null && !portsCsv.isEmpty()) {
                 try {
                     String[] portsStrings = portsCsv.split(",");
                     for (String portString : portsStrings) {
@@ -453,7 +461,7 @@ public class CommandLineValidator {
                     }
                 } catch (Exception e) {
                     log.error("Could not parse the supplied port list, please make "
-                            + "sure you have a list of comma-separated valid ports without spaces in between.");
+                            + "sure you have a list of comma-separated valid ports without spaces in between.",e);
                     return false;
                 }
                 if (!this.cfg.getPorts().isEmpty()) {
@@ -489,7 +497,7 @@ public class CommandLineValidator {
             ///// master-mounts ////////////////////////////////////////////////////
             this.cfg.setMasterMounts(new HashMap<String, String>());
             String masterMountsCsv = this.cl.getOptionValue("d", defaults.getProperty("master-mounts"));
-            if (masterMountsCsv != null) {
+            if (masterMountsCsv != null && !masterMountsCsv.isEmpty()) {
                 try {
                     String[] masterMounts = masterMountsCsv.split(",");
                     for (String masterMountsKeyValue : masterMounts) {

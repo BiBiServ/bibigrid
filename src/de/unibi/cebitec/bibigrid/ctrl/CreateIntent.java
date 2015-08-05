@@ -34,7 +34,11 @@ public class CreateIntent extends Intent {
     public static final String SECURITY_GROUP_PREFIX = "bibigrid-";
     public static final String MASTER_SSH_USER = "ubuntu";
     public static final String PLACEMENT_GROUP_PREFIX = "bibigrid-pg-";
+    public static final String SUBNET_PREFIX = "bibigrid-subnet-";
     private AmazonEC2 ec2;
+    private Vpc vpc;
+    private Subnet subnet;
+    private String MASTERIP;
 
     @Override
     public String getCmdLineOption() {
@@ -84,11 +88,66 @@ public class CreateIntent extends Intent {
         log.debug("cluster id: {}", clusterId);
 
         ////////////////////////////////////////////////////////////////////////
+        ///// check for (default) VPC
+        
+        if (this.getConfiguration().getVpcid() == null) {
+            vpc = getVPC(ec2);
+        } else {
+            vpc = getVPC(ec2,this.getConfiguration().getVpcid());
+        }
+        
+        if (vpc == null) {
+            log.error("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
+            System.exit(1);
+        } else {
+            log.info(V,"Use VPC {} ({})%n",vpc.getVpcId(),vpc.getCidrBlock());
+        }
+        
+        ///////////////////////////////////////////////////////////////////////
+        ///// check for unused Subnet Cidr and create one
+        
+        DescribeSubnetsRequest describesubnetsreq = new DescribeSubnetsRequest();
+        DescribeSubnetsResult describesubnetres = ec2.describeSubnets(describesubnetsreq);
+        List <Subnet> loSubnets = describesubnetres.getSubnets();
+        
+        
+        List <String> listofUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
+        for (Subnet sn : loSubnets) {
+            if (sn.getVpcId().equals(vpc.getVpcId())){
+                listofUsedCidr.add(sn.getCidrBlock());
+            }
+        }
+        
+        SubNets subnets = new SubNets(vpc.getCidrBlock(), 24);
+        String SUBNETCIDR = subnets.nextCidr(listofUsedCidr);
+              
+        log.debug(V,"Use {} for generated SubNet.",SUBNETCIDR);
+        
+        
+        // create new subnetdir      
+        CreateSubnetRequest createsubnetreq = new CreateSubnetRequest(vpc.getVpcId(), SUBNETCIDR);
+        createsubnetreq.withAvailabilityZone(this.getConfiguration().getAvailabilityZone());
+        CreateSubnetResult createsubnetres = ec2.createSubnet(createsubnetreq);
+        subnet = createsubnetres.getSubnet();
+        
+        CreateTagsRequest tagRequest = new CreateTagsRequest();
+        tagRequest.withResources(subnet.getSubnetId()).withTags(new Tag("Name", SUBNET_PREFIX+clusterId));
+        ec2.createTags(tagRequest);
+        
+        ///////////////////////////////////////////////////////////////////////
+        ///// MASTERIP
+        
+        MASTERIP = SubNets.getFirstIP(subnet.getCidrBlock());
+        
+     
+        
+        ////////////////////////////////////////////////////////////////////////
         ///// create security group with full internal access / ssh from outside
         log.info("Creating security group...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
-        secReq.withGroupName(SECURITY_GROUP_PREFIX + clusterId).
-                withDescription(clusterId);
+        secReq.withGroupName(SECURITY_GROUP_PREFIX + clusterId)
+                .withDescription(clusterId)
+                .withVpcId(vpc.getVpcId());
         CreateSecurityGroupResult secReqResult = ec2.createSecurityGroup(secReq);
         log.info(V, "security group id: {}", secReqResult.getGroupId());
 
@@ -120,6 +179,11 @@ public class CreateIntent extends Intent {
 
         AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();
         ruleChangerReq.withGroupId(secReqResult.getGroupId()).withIpPermissions(allIpPermissions);
+           
+        tagRequest = new CreateTagsRequest();
+        tagRequest.withResources(secReqResult.getGroupId()).withTags(new Tag("Name", SECURITY_GROUP_PREFIX+clusterId));
+        ec2.createTags(tagRequest);
+        
         ec2.authorizeSecurityGroupIngress(ruleChangerReq);
 
         String placementGroup = PLACEMENT_GROUP_PREFIX + clusterId;
@@ -176,16 +240,27 @@ public class CreateIntent extends Intent {
             instancePlacement.setGroupName(placementGroup);
         }
 
+        //////////////////////////////////////////////////////////////////////////
+        /////// create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
+        InstanceNetworkInterfaceSpecification inis =  new InstanceNetworkInterfaceSpecification();
+        inis    .withPrivateIpAddress(MASTERIP)
+                .withGroups(secReqResult.getGroupId())
+                .withAssociatePublicIpAddress(true)
+                .withSubnetId(subnet.getSubnetId())
+                .withDeviceIndex(0);
+                
+        
+        
         RunInstancesRequest masterReq = new RunInstancesRequest();
         masterReq.withInstanceType(this.getConfiguration().getMasterInstanceType())
                 .withMinCount(1).withMaxCount(1).withPlacement(instancePlacement)
-                .withSecurityGroupIds(secReqResult.getGroupId())
                 .withKeyName(this.getConfiguration().getKeypair())
                 .withImageId(this.getConfiguration().getMasterImage())
                 .withUserData(base64MasterUserData)
-                .withBlockDeviceMappings(masterDeviceMappings);
+                .withBlockDeviceMappings(masterDeviceMappings)
+                .withNetworkInterfaces(inis);
                 
-
+              
         // mounting ephemerals
         RunInstancesResult masterReqResult = ec2.runInstances(masterReq);
         String masterReservationId = masterReqResult.getReservation().getReservationId();
@@ -264,7 +339,7 @@ public class CreateIntent extends Intent {
                 .withKeyName(this.getConfiguration().getKeypair())
                 .withUserData(base64SlaveUserData)
                 .withInstanceMonitoring(new InstanceMonitoring().withEnabled(false));
-
+                
         as.createLaunchConfiguration(launchMainConfig);
 
         /*
@@ -616,5 +691,36 @@ public class CreateIntent extends Intent {
             }
         }
         return mappings;
+    }
+    
+    
+    /**
+     * Return a VPC that currently exists in selected region. 
+     * Returns either the *default* vpc from all or the given vpcIds list.
+     * If only one vpcId is given it is returned wether it is default or not.
+     * Return null in the case no default or fitting VPC is found.
+     * 
+     * @param ec2 - AmazonEC2Client
+     * @param vpcIds - String...
+     * @return 
+     */
+    private Vpc getVPC(AmazonEC2 ec2, String... vpcIds){
+        DescribeVpcsRequest dvreq = new DescribeVpcsRequest();
+        dvreq.setVpcIds(Arrays.asList(vpcIds));
+        
+        DescribeVpcsResult describeVpcsResult = ec2.describeVpcs(dvreq);
+        List<Vpc> lvpcs = describeVpcsResult.getVpcs();
+            
+        if (vpcIds.length == 1 && lvpcs.size() == 1){
+            return lvpcs.get(0);
+        }     
+        if (!lvpcs.isEmpty()) {
+            for (Vpc vpc : lvpcs) {
+                if (vpc.isDefault()) {
+                    return vpc;
+                }
+            }
+        }
+        return null;
     }
 }

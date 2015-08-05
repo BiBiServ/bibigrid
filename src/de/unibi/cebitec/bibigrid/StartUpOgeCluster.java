@@ -64,7 +64,8 @@ public class StartUpOgeCluster {
                 .addOption("gla","gluster-instance-amount", true, "Amount of machines for glusterfs")
                 .addOption("gli","gluster-instance-type", true, "see INSTANCE-TYPES below")
                 .addOption("glI","gluster-image", true, "AMI for glusterfs")
-                .addOption("gpf","grid-properties-file",true,"store essential grid properties like master & slave dns values and grid id in a Java property file");
+                .addOption("gpf","grid-properties-file",true,"store essential grid properties like master & slave dns values and grid id in a Java property file")
+                .addOption("vpc","vpc-id",true,"Vpc ID used instead of default vpc");
         
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);

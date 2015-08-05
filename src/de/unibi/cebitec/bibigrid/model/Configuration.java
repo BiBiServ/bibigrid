@@ -35,6 +35,7 @@ public class Configuration {
     private boolean cassandra = false;
     private boolean alternativeConfigFile = false;
     private String alternativeConfigPath = "";
+    private String  vpcid;
 
     //Gluster:
     private boolean useGluster = false;
@@ -277,4 +278,14 @@ public class Configuration {
     public void setAlternativeConfigPath(String alternativeConfigPath) {
         this.alternativeConfigPath = alternativeConfigPath;
     }
+
+    public String getVpcid() {
+        return vpcid;
+    }
+
+    public void setVpcid(String vpcid) {
+        this.vpcid = vpcid;
+    }
+    
+    
 }
