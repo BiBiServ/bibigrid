@@ -527,7 +527,7 @@ public class CommandLineValidator {
             ///// slave-mounts /////////////////////////////////////////////////////
             this.cfg.setSlaveMounts(new HashMap<String, String>());
             String slaveMountsCsv = this.cl.getOptionValue("f", defaults.getProperty("slave-mounts"));
-            if (slaveMountsCsv != null) {
+            if (slaveMountsCsv != null && !slaveMountsCsv.isEmpty()) {
                 try {
                     String[] slaveMounts = slaveMountsCsv.split(",");
                     for (String slaveMountsKeyValue : slaveMounts) {
@@ -557,7 +557,7 @@ public class CommandLineValidator {
             ///// master-nfs-shares ////////////////////////////////////////////////
             this.cfg.setNfsShares(new ArrayList<String>());
             String nfsSharesCsv = this.cl.getOptionValue("g", defaults.getProperty("nfs-shares"));
-            if (nfsSharesCsv != null) {
+            if (nfsSharesCsv != null && !nfsSharesCsv.isEmpty()) {
                 try {
                     String[] nfsSharesArray = nfsSharesCsv.split(",");
                     for (String share : nfsSharesArray) {
