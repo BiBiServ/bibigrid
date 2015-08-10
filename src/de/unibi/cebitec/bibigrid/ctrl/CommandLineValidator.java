@@ -110,6 +110,24 @@ public class CommandLineValidator {
             if (this.cl.hasOption("vpc")) {
                 this.cfg.setVpcid(this.cl.getOptionValue("vpc", defaults.getProperty("vpc-id")));
             }
+            ////////////////////////////////////////////////////////////////////////
+            ///// cassandra on/off /////////////////////////////////////////////////
+            if (this.cl.hasOption("me")) {
+                this.cfg.setMesos(true);
+                log.info(V,"Mesos enabled");
+            } else if (defaults.containsKey("mesos")) {
+                String value = defaults.getProperty("mesos");
+                if (value.equalsIgnoreCase("yes")) {
+                    this.cfg.setAutoscaling(true);
+                    log.info(V, "Mesos enabled.");
+                } else if (value.equalsIgnoreCase("no")) {
+                    log.info(V, "Mesos disabled.");
+                    this.cfg.setAutoscaling(false);
+                } else {
+                    log.error("Mesos value in properties not recognized. Please use yes/no.");
+                    return false;
+                }
+            }
             
             
             ////////////////////////////////////////////////////////////////////////

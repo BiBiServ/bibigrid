@@ -109,6 +109,7 @@ public class SshFactory {
         sb.append("\" > monitor.sh\n");
         sb.append("chmod +x /home/ubuntu/monitor.sh\n");
         sb.append("nohup /home/ubuntu/monitor.sh &\n");
+        sb.append("echo CONFIGURATION_FINISHED! \n");
         return sb.toString();
     }
     
@@ -149,6 +150,7 @@ public class SshFactory {
         }
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
+        sb.append("echo CONFIGURATION_FINISHED \n!");
         return sb.toString();
     }
 }

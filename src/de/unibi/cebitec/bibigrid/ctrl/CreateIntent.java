@@ -221,7 +221,7 @@ public class CreateIntent extends Intent {
 
         String base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.getConfiguration());
 
-        System.out.println("UserData:\n" + base64MasterUserData);
+        log.info(V,"Master UserData:\n {}",base64MasterUserData);
         //////////////////////////////////////////////////////////////////////////
         /////// run master instance, tag it and wait for boot ////////////////////
         log.info("Requesting master instance ...");
@@ -299,7 +299,7 @@ public class CreateIntent extends Intent {
 
         String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, this.getConfiguration());
 
-        System.out.println("Slave Userdata:\n" + base64SlaveUserData);
+        log.info(V,"Slave Userdata:\n{}",base64SlaveUserData);
 
         RunInstancesRequest slaveReq = new RunInstancesRequest();
         slaveReq.withInstanceType(this.getConfiguration().getSlaveInstanceType())
@@ -345,9 +345,7 @@ public class CreateIntent extends Intent {
         log.info("Now configuring ...");
         String execCommand = SshFactory.buildSshCommand(clusterId, this.getConfiguration(), masterInstance, slaveInstances);
 
-        System.out.println("execCommand ::\n" + execCommand);
-
-        log.info(V, "Building SSH-Command");
+        log.info(V, "Building SSH-Command : {}",execCommand);
 
         boolean uploaded = false;
         boolean configured = false;
@@ -397,7 +395,7 @@ public class CreateIntent extends Intent {
                 while (((lineout = stdout.readLine()) != null) || ((lineerr = stderr.readLine()) != null)) {
 
                     if (lineout != null) {
-                        if (lineout.contains("Adding instances")) {
+                        if (lineout.contains("CONFIGURATION_FINISHED")) {
                             configured = true;
                         }
                         log.info(V, "SSH: {}", lineout);

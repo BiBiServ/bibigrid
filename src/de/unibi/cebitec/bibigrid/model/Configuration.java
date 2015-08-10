@@ -36,6 +36,8 @@ public class Configuration {
     private boolean alternativeConfigFile = false;
     private String alternativeConfigPath = "";
     private String  vpcid;
+    
+    private boolean mesos = false;
 
     //Gluster:
     private boolean useGluster = false;
@@ -286,6 +288,17 @@ public class Configuration {
     public void setVpcid(String vpcid) {
         this.vpcid = vpcid;
     }
+
+    public boolean isMesos() {
+        return mesos;
+    }
+
+    public void setMesos(boolean mesos) {
+        this.mesos = mesos;
+    }
+    
+    
+    
     
     
 }

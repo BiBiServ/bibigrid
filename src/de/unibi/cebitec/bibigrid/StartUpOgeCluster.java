@@ -65,7 +65,9 @@ public class StartUpOgeCluster {
                 .addOption("gli","gluster-instance-type", true, "see INSTANCE-TYPES below")
                 .addOption("glI","gluster-image", true, "AMI for glusterfs")
                 .addOption("gpf","grid-properties-file",true,"store essential grid properties like master & slave dns values and grid id in a Java property file")
-                .addOption("vpc","vpc-id",true,"Vpc ID used instead of default vpc");
+                .addOption("vpc","vpc-id",true,"Vpc ID used instead of default vpc")
+                .addOption("me","mesos",false,"Start Mesos framework");
+        
         
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);

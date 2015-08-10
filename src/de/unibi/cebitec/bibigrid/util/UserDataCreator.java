@@ -73,15 +73,19 @@ public class UserDataCreator {
             slaveUserData.append("service cassandra start\n");
 
         }
+   
+
         int ephemerals = InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).ephemerals;
-                
+
         /*
          * Ephemeral Block
          */
-        if (ephemerals == 1) {
+        if (ephemerals
+                == 1) {
             slaveUserData.append("sudo umount /mnt\n");
             slaveUserData.append("sudo mount /dev/xvdb /vol/scratch\n");
-        } else if (ephemerals >= 2) {
+        } else if (ephemerals
+                >= 2) {
             // if 2 or more ephemerals are available use 2 as a RAID system
             slaveUserData.append("sudo umount /mnt\n");
 
@@ -98,7 +102,6 @@ public class UserDataCreator {
                 }
             }
 
-
             slaveUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
 
             slaveUserData.append("blockdev --setra 65536 /dev/md0\n");
@@ -107,25 +110,49 @@ public class UserDataCreator {
             slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
             slaveUserData.append("chmod -R 777 /vol/scratch \n");
 
+            
+            
         }
         /*
          * NFS//Mount Block
          */
-        slaveUserData.append("chown ubuntu:ubuntu /vol/ \n");
-        slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
 
-        for (String e : slaveDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+        slaveUserData.append(
+                "chown ubuntu:ubuntu /vol/ \n");
+        slaveUserData.append(
+                "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
+
+        for (String e
+                : slaveDeviceMapper.getSnapshotIdToMountPoint()
+                .keySet()) {
             slaveUserData.append("mkdir -p ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
             slaveUserData.append("mount ").append(slaveDeviceMapper.getRealDeviceNameforMountPoint(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
         }
         List<String> slaveNfsMounts = cfg.getNfsShares();
+
         if (!slaveNfsMounts.isEmpty()) {
             for (String share : slaveNfsMounts) {
                 slaveUserData.append("sudo mkdir -p ").append(share).append("\n");
                 slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":").append(share).append(" ").append(share).append("\n");
             }
         }
-        slaveUserData.append("while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
+
+        
+        /* 
+         * Mesos Block
+         */
+        if (cfg.isMesos()) {
+            slaveUserData.append("service mesos-master stop\n");
+            slaveUserData.append("service mesos-slave stop\n");
+            slaveUserData.append("rm /etc/mesos/zk"); // currently no zk supported
+            slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir");
+            slaveUserData.append("echo ").append(masterIp).append(":5050 > /etc/mesos-master/master");
+            slaveUserData.append("service mesos-slave start\n");
+        } 
+        
+        slaveUserData.append(
+                "while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
+        
         return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
     }
 
@@ -208,6 +235,28 @@ public class UserDataCreator {
             masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
             masterUserData.append("service cassandra start\n");
         }
+
+        /* 
+         * Mesos Block
+         */
+        if (cfg.isMesos()) {
+            masterUserData.append("service mesos-master stop\n");
+            masterUserData.append("service mesos-slave stop\n");
+            masterUserData.append("rm /etc/mesos/zk"); // currently no zk supported
+            masterUserData.append("mkdir -p /vol/spool/mesos\n");
+            masterUserData.append("cmod -R 777 /vol/spool/mesos\n");
+            masterUserData.append("echo bibigrid > /etc/mesos-master/cluster");
+            masterUserData.append("curl http://instance-data/latest/meta-data/local-ipv4 > /etc/mesos-master/ip");
+            masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir");
+            masterUserData.append("service mesos-master start\n");
+            if (cfg.isUseMasterAsCompute()) {
+                masterUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir");
+                masterUserData.append("curl http://instance-data/latest/meta-data/local-ipv4 > /etc/mesos-master/master");
+                masterUserData.append("echo \":5050\" >> /etc/mesos-master/master");
+                masterUserData.append("service mesos-slave start\n");
+            }
+        }
+
         /*
          * NFS//Mounts Block
          */
@@ -221,8 +270,7 @@ public class UserDataCreator {
             masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
         }
         masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
-        
-        
+
         /*
          * Early Execute Script
          */
@@ -237,7 +285,6 @@ public class UserDataCreator {
                     masterUserData.append("echo ").append(base64).append(" | base64 --decode  | sudo -u ubuntu bash - 2>&1 >> /var/log/earlyshellscript.log &\n");
                 }
 
-
             } catch (IOException e) {
                 log.info("Early shell script could not be read.");
             }
@@ -245,8 +292,7 @@ public class UserDataCreator {
 
         return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
     }
-    
-    
+
     public static String glusterUserData(Configuration cfg) {
         StringBuilder glusterUserData = new StringBuilder();
         int ephemeralamount = InstanceInformation.getSpecs(cfg.getGlusterInstanceType()).ephemerals;
@@ -286,14 +332,13 @@ public class UserDataCreator {
          */
         glusterUserData.append("mkdir -p /vol/brick/\n");
         glusterUserData.append("chmod 777 /vol/brick/\n");
-        
+
         glusterUserData.append("sudo mkdir -p /home/ubuntu/.monitor\n");
-        glusterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.monitor \n");      
+        glusterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.monitor \n");
 
         return new String(Base64.encodeBase64(glusterUserData.toString().getBytes()));
     }
-    
-    
+
     public static String forSlaveWithGluster(String glusterIp, String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg) {
         StringBuilder slaveUserData = new StringBuilder();
         /*
@@ -332,7 +377,7 @@ public class UserDataCreator {
 
         }
         int ephemerals = InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).ephemerals;
-                
+
         /*
          * Ephemeral Block
          */
@@ -355,7 +400,6 @@ public class UserDataCreator {
                     break;
                 }
             }
-
 
             slaveUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
 
@@ -387,7 +431,7 @@ public class UserDataCreator {
         slaveUserData.append("while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
         return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
     }
-    
+
     public static String masterUserDataForGluster(String glusterIp, DeviceMapper masterDeviceMapper, Configuration cfg) {
         StringBuilder masterUserData = new StringBuilder();
         int ephemeralamount = InstanceInformation.getSpecs(cfg.getMasterInstanceType()).ephemerals;
@@ -436,8 +480,7 @@ public class UserDataCreator {
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
         masterUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
         masterUserData.append("chmod -R 777 /vol/\n");
-        
-        
+
         //Gluster
         masterUserData.append("mount -t glusterfs ").append(glusterIp).append(":/gluster-spool /vol/spool\n");
         /*
@@ -465,8 +508,7 @@ public class UserDataCreator {
             masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
         }
         masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
-        
-        
+
         /*
          * Early Execute Script
          */
@@ -480,7 +522,6 @@ public class UserDataCreator {
                 } else {
                     masterUserData.append("echo ").append(base64).append(" | base64 --decode  | sudo -u ubuntu bash - 2>&1 >> /var/log/earlyshellscript.log &\n");
                 }
-
 
             } catch (IOException e) {
                 log.info("Early shell script could not be read.");
