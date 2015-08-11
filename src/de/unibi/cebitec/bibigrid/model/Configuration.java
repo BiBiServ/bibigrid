@@ -31,7 +31,6 @@ public class Configuration {
     private double bidPrice;
     private int slaveInstanceStartAmount;
     private boolean useMasterAsCompute;
-    private boolean autoscaling = false;
     private boolean cassandra = false;
     private boolean alternativeConfigFile = false;
     private String alternativeConfigPath = "";
@@ -39,13 +38,6 @@ public class Configuration {
     
     private boolean mesos = false;
 
-    //Gluster:
-    private boolean useGluster = false;
-    private int glusterInstanceAmount;
-    private InstanceType glusterInstanceType;
-    private String glusterImage;
-    
-    
     //grid-properties-file
     private File gridpropertiesfile = null;
     
@@ -66,13 +58,6 @@ public class Configuration {
         this.cassandra = cassandra;
     }
     
-    public boolean isAutoscaling() {
-        return autoscaling;
-    }
-
-    public void setAutoscaling(boolean autoscaling) {
-        this.autoscaling = autoscaling;
-    }
     
     public boolean isUseMasterAsCompute() {
         return useMasterAsCompute;
@@ -234,37 +219,6 @@ public class Configuration {
         this.nfsShares = nfsShares;
     }
     
-    public int getGlusterInstanceAmount() {
-        return glusterInstanceAmount;
-    }
-    
-    public InstanceType getGlusterInstanceType() {
-        return glusterInstanceType;
-    }
-    
-    public boolean isUseGluster() {
-        return useGluster;
-    }
-    
-    public void setGlusterInstanceAmount(int glusterInstanceAmount) {
-        this.glusterInstanceAmount = glusterInstanceAmount;
-    }
-    
-    public void setGlusterInstanceType(InstanceType glusterInstanceType) {
-        this.glusterInstanceType = glusterInstanceType;
-    }
-    
-    public void setUseGluster(boolean useGluster) {
-        this.useGluster = useGluster;
-    }
-
-    public void setGlusterImage(String glusterImage) {
-        this.glusterImage = glusterImage;
-    }
-
-    public String getGlusterImage() {
-        return glusterImage;
-    }
      public boolean isAlternativeConfigFile() {
         return alternativeConfigFile;
     }

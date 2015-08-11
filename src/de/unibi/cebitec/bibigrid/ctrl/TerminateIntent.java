@@ -90,7 +90,7 @@ public class TerminateIntent extends Intent {
         }
         
         
-        log.info("{} terminated!",this.getConfiguration().getClusterId());
+        log.info("Cluster '{}' terminated!",this.getConfiguration().getClusterId());
         
         return true;
     }

@@ -118,38 +118,17 @@ public class CommandLineValidator {
             } else if (defaults.containsKey("mesos")) {
                 String value = defaults.getProperty("mesos");
                 if (value.equalsIgnoreCase("yes")) {
-                    this.cfg.setAutoscaling(true);
+                    this.cfg.setMesos(true);
                     log.info(V, "Mesos enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
                     log.info(V, "Mesos disabled.");
-                    this.cfg.setAutoscaling(false);
+                    this.cfg.setMesos(false);
                 } else {
                     log.error("Mesos value in properties not recognized. Please use yes/no.");
                     return false;
                 }
             }
             
-            
-            ////////////////////////////////////////////////////////////////////////
-            ///// autoscale on/off /////////////////////////////////////////////////
-
-            if (this.cl.hasOption("j")) {
-                this.cfg.setAutoscaling(true);
-                log.info(V, "AutoScaling enabled.");
-            } else if (defaults.containsKey("autoscaling")) {
-                String value = defaults.getProperty("autoscaling");
-                if (value.equalsIgnoreCase("yes")) {
-                    this.cfg.setAutoscaling(true);
-                    log.info(V, "AutoScaling enabled.");
-                } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "AutoScaling disabled.");
-                    this.cfg.setAutoscaling(false);
-                } else {
-                    log.error("AutoScaling value in properties not recognized. Please use yes/no.");
-                    return false;
-                }
-            }
-
             ////////////////////////////////////////////////////////////////////////
             ///// cassandra on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("db")) {
@@ -169,10 +148,7 @@ public class CommandLineValidator {
                 }
             }
 
-            if (this.cfg.isCassandra() && this.cfg.isAutoscaling()) {
-                log.error("Cassandra and autoscaling are not available at the same time.");
-                return false;
-            }
+           
             ////////////////////////////////////////////////////////////////////////
             ///// identity-file ////////////////////////////////////////////////////
 
@@ -611,76 +587,6 @@ public class CommandLineValidator {
                 }
                 this.cfg.setEarlyShellScriptFile(script);
                 log.info(V, "Early Shell script file found! ({})", script);
-            }
-
-             ////////////////////////////////////////////////////////////////////////
-            ///// GLUSTERFS /////////////////////////////////////////////
-            ////////////////////////////////////////////////////////////////////////
-            ///// gluster-instance-type /////////////////////////////////////////////
-            if (req.contains("gli")) {
-                try {
-                    String glusterTypeString = this.cl.getOptionValue("gli", defaults.getProperty("gluster-instance-type"));
-                    if (glusterTypeString == null) {
-                        log.error("-gli option is required! Please specify the instance type of your gluster nodes. (e.g. gluster-instance-type=c3.8xlarge)");
-                        return false;
-                    }
-                    InstanceType glusterType = InstanceType.fromValue(glusterTypeString);
-                    this.cfg.setGlusterInstanceType(glusterType);
-                } catch (Exception e) {
-                    log.error("Invalid gluster instance type specified!");
-                    return false;
-                }
-                log.info(V, "Gluster instance type set. ({})", this.cfg.getGlusterInstanceType());
-            }
-
-            ////////////////////////////////////////////////////////////////////////
-            ///// Gluster on/off /////////////////////////////////////////////////
-            if (this.cl.hasOption("gl")) {
-                this.cfg.setUseGluster(true);
-                log.info(V, "Gluster support enabled.");
-            } else if (defaults.containsKey("use-gluster")) {
-                String value = defaults.getProperty("use-gluster");
-                if (value.equalsIgnoreCase("yes")) {
-                    this.cfg.setUseGluster(true);
-                    log.info(V, "Gluster support enabled.");
-                } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "Gluster support disabled.");
-                    this.cfg.setUseGluster(false);
-                } else {
-                    log.error("Use-Gluster value in properties not recognized. Please use yes/no.");
-                    return false;
-                }
-            }
-
-            ///////////////////////////////////////////////////////////////////////
-            ///////////////////// Gluster instance amount /////////////////////////
-            if (req.contains("gla")) {
-                try {
-                    if (defaults.containsKey("gluster-instance-amount")) {
-                        this.cfg.setGlusterInstanceAmount(Integer.parseInt(defaults.getProperty("gluster-instance-amount")));
-                    }
-                } catch (NumberFormatException nfe) {
-                    log.error("Invalid property value for gluster-instance-amount. Please make sure you have a "
-                            + "positive integer.");
-                    return false;
-                }
-                if (this.cfg.getGlusterInstanceAmount() <= 0) {
-                    log.error("-gla option is required! Please specify the number of glusterfs nodes. (at least 1)");
-                    return false;
-                } else {
-                    log.info(V, "Gluster instance amount set. ({})", this.cfg.getGlusterInstanceAmount());
-                }
-            }
-
-            ///////////////////////////////////////////////////////////////////////
-            ///////////////////// Gluster AMI /////////////////////////////////////
-            if (req.contains("glI")) {
-                this.cfg.setGlusterImage(this.cl.getOptionValue("glI", defaults.getProperty("gluster-image").trim()));
-                if (this.cfg.getGlusterImage() == null) {
-                    log.error("-glI option is required! Please specify the AMI ID for your glusterfs nodes.");
-                    return false;
-                }
-                log.info(V, "Gluster image set. ({})", this.cfg.getGlusterImage());
             }
 
             ///////////////////////////////////////////////////////////////////////

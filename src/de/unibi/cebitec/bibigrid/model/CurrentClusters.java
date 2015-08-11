@@ -189,7 +189,8 @@ public class CurrentClusters {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
-        formatter.format("%15s | %19s | %15s | %7s | %10s | %10s%n", "cluster-id", "launch date", "key name", "# inst", "sec group", "subnet");
+        formatter.format("%15s | %19s | %15s | %7s | %10s | %10s%n", "cluster-id", "launch date", "key name", "# inst", "group-id", "subnet-id");
+        display.append(new String(new char[91]).replace('\0', '-')).append("\n");
 
         for (String id : clustermap.keySet()) {
             Cluster v = clustermap.get(id);
