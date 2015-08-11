@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.ctrl;
 
+import com.amazonaws.services.ec2.AmazonEC2Client;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.model.CurrentClusters;
 import java.util.Arrays;
@@ -15,10 +16,10 @@ public class ListIntent extends Intent {
     public String getCmdLineOption() {
         return "l";
     }
-
+    
     @Override
     public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{});
+        return Arrays.asList(new String[]{"l", "k", "e", "a"});
     }
 
     @Override
@@ -26,7 +27,17 @@ public class ListIntent extends Intent {
         if (getConfiguration() == null) {
             throw new IntentNotConfiguredException();
         }
-        System.out.println(CurrentClusters.printClusterList());
+  
+        ////////////////////////////////////////////////////////////////////////
+        ///// create client 
+        AmazonEC2Client ec2 = new AmazonEC2Client(this.getConfiguration().getCredentials());
+        ec2.setEndpoint("ec2." + this.getConfiguration().getRegion() + ".amazonaws.com");
+        
+        ////////////////////////////////////////////////////////////////////////
+        ///// print cluster info
+        CurrentClusters cc = new CurrentClusters(ec2);
+        log.info(cc.printClusterList());
+        
         return true;
     }
 }

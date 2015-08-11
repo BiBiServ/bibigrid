@@ -11,6 +11,7 @@ import com.amazonaws.services.ec2.model.*;
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUpOgeCluster;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.model.CurrentClusters;
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
 import de.unibi.cebitec.bibigrid.util.*;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
@@ -19,7 +20,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import static java.lang.System.in;
 import java.nio.ByteBuffer;
 import java.util.*;
 import org.apache.commons.codec.binary.Base64;
@@ -29,10 +29,12 @@ import org.slf4j.LoggerFactory;
 public class CreateIntent extends Intent {
 
     public static final Logger log = LoggerFactory.getLogger(CreateIntent.class);
-    public static final String SECURITY_GROUP_PREFIX = "bibigrid-";
+    public static final String PREFIX="bibigrid-";
+    public static final String SECURITY_GROUP_PREFIX = PREFIX+"sg-";
+    
     public static final String MASTER_SSH_USER = "ubuntu";
-    public static final String PLACEMENT_GROUP_PREFIX = "bibigrid-pg-";
-    public static final String SUBNET_PREFIX = "bibigrid-subnet-";
+    public static final String PLACEMENT_GROUP_PREFIX = PREFIX+"pg-";
+    public static final String SUBNET_PREFIX = PREFIX+"subnet-";
     private AmazonEC2 ec2;
     private Vpc vpc;
     private Subnet subnet;
@@ -84,6 +86,11 @@ public class CreateIntent extends Intent {
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
         String clusterId = clusterIdBase64.substring(0, len);
         log.debug("cluster id: {}", clusterId);
+        
+        Tag bibigridid = new Tag().withKey("bibigrid-id").withValue(clusterId);
+        
+        
+        
 
         ////////////////////////////////////////////////////////////////////////
         ///// check for (default) VPC
@@ -125,7 +132,7 @@ public class CreateIntent extends Intent {
         subnet = createsubnetres.getSubnet();
 
         CreateTagsRequest tagRequest = new CreateTagsRequest();
-        tagRequest.withResources(subnet.getSubnetId()).withTags(new Tag("Name", SUBNET_PREFIX + clusterId));
+        tagRequest.withResources(subnet.getSubnetId()).withTags(bibigridid,new Tag("Name", SUBNET_PREFIX + clusterId));
         ec2.createTags(tagRequest);
 
         ///////////////////////////////////////////////////////////////////////
@@ -151,7 +158,6 @@ public class CreateIntent extends Intent {
         IpPermission secGroupSelfAccessUdp = new IpPermission();
         secGroupSelfAccessUdp.withIpProtocol("udp").withFromPort(0).withToPort(65535).withUserIdGroupPairs(secGroupSelf);
         IpPermission secGroupSelfAccessIcmp = new IpPermission();
-        //secGroupSelfAccessIcmp.withIpProtocol("icmp").withFromPort(-1).withUserIdGroupPairs(secGroupSelf);
         secGroupSelfAccessIcmp.withIpProtocol("icmp").withFromPort(-1).withToPort(-1).withUserIdGroupPairs(secGroupSelf);
 
         List<IpPermission> allIpPermissions = new ArrayList<>();
@@ -172,14 +178,14 @@ public class CreateIntent extends Intent {
         ruleChangerReq.withGroupId(secReqResult.getGroupId()).withIpPermissions(allIpPermissions);
 
         tagRequest = new CreateTagsRequest();
-        tagRequest.withResources(secReqResult.getGroupId()).withTags(new Tag("Name", SECURITY_GROUP_PREFIX + clusterId));
+        tagRequest.withResources(secReqResult.getGroupId()).withTags(bibigridid,new Tag("Name", SECURITY_GROUP_PREFIX + clusterId));
         ec2.createTags(tagRequest);
 
         ec2.authorizeSecurityGroupIngress(ruleChangerReq);
 
         String placementGroup = PLACEMENT_GROUP_PREFIX + clusterId;
         if (InstanceInformation.getSpecs(this.getConfiguration().getMasterInstanceType()).clusterInstance && InstanceInformation.getSpecs(this.getConfiguration().getSlaveInstanceType()).clusterInstance) {
-            ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
+            ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));   
             log.info("Creating placement group...");
         }
         // done for master. More volume description later when master is running
@@ -265,7 +271,7 @@ public class CreateIntent extends Intent {
         ////////////////////////////////////
         //// Tagging Master with a name ////
         CreateTagsRequest masterNameTagRequest = new CreateTagsRequest();
-        masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(new Tag().withKey("bibigrid-id").withValue(clusterId), new Tag().withKey("Name").withValue("master-" + clusterId));
+        masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(bibigridid, new Tag().withKey("Name").withValue(PREFIX+"master-" + clusterId));
 
         ec2.createTags(masterNameTagRequest);
         /*
@@ -331,7 +337,7 @@ public class CreateIntent extends Intent {
         //// Tagging all slaves  with a name
         for (Instance si : slaveInstances) {
             CreateTagsRequest slaveNameTagRequest = new CreateTagsRequest();
-            slaveNameTagRequest.withResources(si.getInstanceId()).withTags(new Tag().withKey("bibigrid-id").withValue(clusterId), new Tag().withKey("Name").withValue("slave-" + clusterId));
+            slaveNameTagRequest.withResources(si.getInstanceId()).withTags(bibigridid, new Tag().withKey("Name").withValue(PREFIX+"slave-" + clusterId));
             ec2.createTags(slaveNameTagRequest);
         }
 
@@ -351,7 +357,7 @@ public class CreateIntent extends Intent {
         boolean configured = false;
 
         int ssh_attempts = 5;
-        while (!configured || ssh_attempts > 0) {
+        while (!configured && ssh_attempts > 0) {
             try {
 
                 ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
@@ -423,6 +429,7 @@ public class CreateIntent extends Intent {
             }
         }
         log.info(I, "Master instance has been configured.");
+        
         // Prepare Output Message // Grid Properties
         StringBuilder sb = new StringBuilder();
         Properties gp = new Properties();
@@ -436,16 +443,7 @@ public class CreateIntent extends Intent {
 
         gp.setProperty("BIBIGRID_MASTER", masterInstance.getPublicIpAddress());
 
-        int i = 1;
-        for (Instance e : slaveInstances) { // prepare environment variables
-            sb.append("export BIBIGRID_SLAVE");
-            sb.append(i);
-            sb.append("=");
-            sb.append(e.getPublicIpAddress());
-            sb.append("\n");
-            gp.setProperty("BIBIGRID_SLAVE_" + i, e.getPublicIpAddress());
-            ++i;
-        }
+
         sb.append("\n");
         sb.append("You can log on to the master node with:\n");
         sb.append("\n");
