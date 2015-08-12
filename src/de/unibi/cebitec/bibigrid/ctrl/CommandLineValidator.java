@@ -4,10 +4,12 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.Pair;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +110,7 @@ public class CommandLineValidator {
             }
             ////////////////////////////////////////////////////////////////////////
             ///// vpc-id ///////////////////////////////////////////////////////////
-            
+
             if (this.cl.hasOption("vpc")) {
                 this.cfg.setVpcid(this.cl.getOptionValue("vpc", defaults.getProperty("vpc-id")));
             }
@@ -114,7 +118,7 @@ public class CommandLineValidator {
             ///// cassandra on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("me")) {
                 this.cfg.setMesos(true);
-                log.info(V,"Mesos enabled");
+                log.info(V, "Mesos enabled");
             } else if (defaults.containsKey("mesos")) {
                 String value = defaults.getProperty("mesos");
                 if (value.equalsIgnoreCase("yes")) {
@@ -128,7 +132,7 @@ public class CommandLineValidator {
                     return false;
                 }
             }
-            
+
             ////////////////////////////////////////////////////////////////////////
             ///// cassandra on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("db")) {
@@ -148,10 +152,8 @@ public class CommandLineValidator {
                 }
             }
 
-           
             ////////////////////////////////////////////////////////////////////////
             ///// identity-file ////////////////////////////////////////////////////
-
             if (req.contains("i")) {
                 String identityFilePath = null;
                 if (defaults.containsKey("identity-file")) {
@@ -219,7 +221,7 @@ public class CommandLineValidator {
                     }
 
                     InstanceType masterType = InstanceType.fromValue(masterTypeString.trim());
-               
+
 //                    if (!checkInstances(masterType)){
 //                        return false;
 //                    }
@@ -275,8 +277,8 @@ public class CommandLineValidator {
             ///// slave-instance-max /////////////////////////////////////////////
             if (req.contains("n")) {
                 try {
-                    if (defaults.containsKey("slave-instance-max")) {
-                        this.cfg.setSlaveInstanceMaximum(Integer.parseInt(defaults.getProperty("slave-instance-max")));
+                    if (defaults.containsKey("slave-instance-count")) {
+                        this.cfg.setSlaveInstanceCount(Integer.parseInt(defaults.getProperty("slave-instance-count")));
                     }
                 } catch (NumberFormatException nfe) {
                     log.error("Invalid property value for slave-instance-max. Please make sure you have a positive integer here.");
@@ -286,7 +288,7 @@ public class CommandLineValidator {
                     try {
                         int numSlaves = Integer.parseInt(this.cl.getOptionValue("n"));
                         if (numSlaves >= 0) {
-                            this.cfg.setSlaveInstanceMaximum(numSlaves);
+                            this.cfg.setSlaveInstanceCount(numSlaves);
                         } else {
                             log.error("Number of slave nodes has to be at least 0.");
                         }
@@ -294,95 +296,16 @@ public class CommandLineValidator {
                         log.error("Invalid argument for -n. Please make sure you have a positive integer here.");
                     }
                 }
-                if (this.cfg.getSlaveInstanceMaximum() < 0) {
+                if (this.cfg.getSlaveInstanceCount() < 0) {
                     log.error("-n option is required! Please specify the number of slave nodes. (at least 0)");
                     return false;
                 } else {
-                    log.info(V, "Slave instance count set. ({})", this.cfg.getSlaveInstanceMaximum());
+                    log.info(V, "Slave instance count set. ({})", this.cfg.getSlaveInstanceCount());
                 }
             }
 
             ///////////////////////////////////////////////////////////////////////
-            ///////////////////// slave instance minimum //////////////////////////
-            if (req.contains("u")) {
-                try {
-                    if (defaults.containsKey("slave-instance-min")) {
-                        this.cfg.setSlaveInstanceMinimum(Integer.parseInt(defaults.getProperty("slave-instance-min")));
-                        if (this.cfg.getSlaveInstanceMaximum() < this.cfg.getSlaveInstanceMinimum()) {
-                            throw new NumberFormatException();
-                        }
-                    }
-                } catch (NumberFormatException nfe) {
-                    log.error("Invalid property value for slave-instance-min. Please make sure you have a "
-                            + "positive integer and your slave instance maximum is bigger or equal to your minimum amount.");
-                    return false;
-                }
-                if (this.cl.hasOption("u")) {
-                    try {
-                        int numSlaves = Integer.parseInt(this.cl.getOptionValue("u"));
-                        if (numSlaves >= 0) {
-                            this.cfg.setSlaveInstanceMinimum(numSlaves);
-                            if (this.cfg.getSlaveInstanceMaximum() < this.cfg.getSlaveInstanceMinimum()) {
-                                throw new NumberFormatException();
-                            }
-                        } else {
-                            log.error("Number of slave nodes has to be at least 0.");
-                        }
-                    } catch (NumberFormatException nfe) {
-                        log.error("Invalid argument for -n. Please make sure you have a positive integer here "
-                                + "and your slave instance maximum is bigger or equal to your minimum amount.");
-                        return false;
-                    }
-                }
-                if (this.cfg.getSlaveInstanceMinimum() < 0) {
-                    log.error("-n option is required! Please specify the number of slave nodes. (at least 0)");
-                    return false;
-                } else {
-                    log.info(V, "Slave instance minimum set. ({})", this.cfg.getSlaveInstanceMinimum());
-                }
-            }
-            ///////////////////////////////////////////////////////////////////////
-            ///////////////////// slave instance desired amount//////////////////////////
-            if (req.contains("r")) {
-                try {
-                    if (defaults.containsKey("slave-instance-start")) {
-                        this.cfg.setSlaveInstanceStartAmount(Integer.parseInt(defaults.getProperty("slave-instance-start")));
-                        if (this.cfg.getSlaveInstanceStartAmount() < this.cfg.getSlaveInstanceMinimum() || this.cfg.getSlaveInstanceStartAmount() > this.cfg.getSlaveInstanceMaximum()) {
-                            throw new NumberFormatException();
-                        }
-                    }
-                } catch (NumberFormatException nfe) {
-                    log.error("Invalid property value for slave-instance-start. Please make sure you have a "
-                            + "positive integer and your slave instance maximum is bigger and slave instance minimum is equal or smaller to it.");
-                    return false;
-                }
-                if (this.cl.hasOption("r")) {
-                    try {
-                        int numSlaves = Integer.parseInt(this.cl.getOptionValue("r"));
-                        if (numSlaves >= 1) {
-                            this.cfg.setSlaveInstanceStartAmount(numSlaves);
-                            if (this.cfg.getSlaveInstanceStartAmount() < this.cfg.getSlaveInstanceMinimum() || this.cfg.getSlaveInstanceStartAmount() > this.cfg.getSlaveInstanceMaximum()) {
-                                throw new NumberFormatException();
-                            }
-                        } else {
-                            log.error("Number of start slave nodes has to be at least 1.");
-                        }
-                    } catch (NumberFormatException nfe) {
-                        log.error("Invalid property value for slave-instance-start. Please make sure you have a "
-                                + "positive integer and your slave instance maximum is bigger and the slave instance minimum is equal or smaller to it.");
-                        return false;
-                    }
-                }
-                if (this.cfg.getSlaveInstanceStartAmount() <= 0) {
-                    log.error("-r option is required! Please specify the number of desired slave nodes at start up. (at least 1)");
-                    return false;
-                } else {
-                    log.info(V, "Slave instance desired amount set. ({})", this.cfg.getSlaveInstanceStartAmount());
-                }
-            }
-
-            ///////////////////////////////////////////////////////////////////////
-            ///////////////////// autoscale master yes or no//////////////////////////
+            ///////////////////// use master as compute yes or no//////////////////////////
             if (req.contains("b")) {
                 boolean valueSet = false;
                 try {
@@ -441,27 +364,54 @@ public class CommandLineValidator {
 
             ////////////////////////////////////////////////////////////////////////
             ///// ports ////////////////////////////////////////////////////////////
-            this.cfg.setPorts(new ArrayList<Integer>());
+            this.cfg.setPorts(new ArrayList<Pair<String, Integer>>());
             String portsCsv = this.cl.getOptionValue("p", defaults.getProperty("ports"));
             if (portsCsv != null && !portsCsv.isEmpty()) {
                 try {
+                    Pattern p = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})[/(\\d{1,2})]");                 
                     String[] portsStrings = portsCsv.split(",");
                     for (String portString : portsStrings) {
-                        int port = Integer.parseInt(portString.trim());
-                        if (port < 0 || port > 65535) {
-                            throw new Exception();
+
+                        Pair<String, Integer> port;
+                        // must distinguish between different notation
+                        // 5555
+                        // 0.0.0.0:5555
+                        // 0.0.0.0/0:5555
+                        // current:5555
+                        if (portString.contains(":")) {
+                            String addr;
+                            String [] tmp = portString.split(":");
+                            if (tmp[0].equalsIgnoreCase("current")) {
+                                addr = InetAddress.getLocalHost().getHostAddress();
+                            } else {
+                                Matcher m = p.matcher(tmp[0]);
+                               
+                                for (int i = 1; i <=4; i++){
+                                    checkStringAsInt(m.group(i), 0, 255);
+                                }
+                                if (m.group(5) != null) {
+                                    checkStringAsInt(m.group(5), 0, 32);
+                                }
+                                addr = tmp[0];    
+                            }
+                            port = new Pair(tmp[1],checkStringAsInt(tmp[1], 0, 65535));                        
+                        } else {
+                            port = new Pair("0.0.0.0/0",checkStringAsInt(portString.trim(),  0, 65535));
+
                         }
-                        this.cfg.getPorts().add(port);
+                        cfg.getPorts().add(port);
                     }
                 } catch (Exception e) {
                     log.error("Could not parse the supplied port list, please make "
-                            + "sure you have a list of comma-separated valid ports without spaces in between.",e);
+                            + "sure you have a list of comma-separated valid ports "
+                            + "without spaces in between. Valid ports have following pattern :"
+                            + "[(current|'ip4v-address'|'ip4v-range/CIDR'):]'portnumber'", e);
                     return false;
                 }
                 if (!this.cfg.getPorts().isEmpty()) {
                     StringBuilder portsDisplay = new StringBuilder();
-                    for (int port : this.cfg.getPorts()) {
-                        portsDisplay.append(port);
+                    for (Pair<String, Integer> port : cfg.getPorts()) {
+                        portsDisplay.append(port.k).append(":").append(port.v);
                         portsDisplay.append(" ");
                     }
                     log.info(V, "Additional open ports set: {}", portsDisplay);
@@ -602,7 +552,7 @@ public class CommandLineValidator {
                 Path prop = FileSystems.getDefault().getPath(gridpropertiesfile);
                 if (prop.toFile().exists()) {
                     log.warn("Overwrite an existing properties file '{}'!", prop);
-                    
+
                 }
                 this.cfg.setGridPropertiesFile(prop.toFile());
                 log.info(V, "Wrote grid properties to '{}' after successful grid startup!", prop);
@@ -619,7 +569,7 @@ public class CommandLineValidator {
     }
 
     private boolean checkInstances(InstanceType it) {
-        log.info(V,"check for unsupported instances!");
+        log.info(V, "check for unsupported instances!");
         // T2 instances currently not working with BiBiGrid see
         if (it.toString().startsWith("t2")) {
             log.error("t2 instance types are currently not supported!");
@@ -627,4 +577,13 @@ public class CommandLineValidator {
         }
         return true;
     }
+    
+    private int  checkStringAsInt(String s, int min, int max ) throws Exception{
+        int v = Integer.parseInt(s);
+        if (v < min || v > max) {
+            throw new Exception();
+        }
+        return v;
+    }
+    
 }

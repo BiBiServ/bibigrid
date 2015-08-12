@@ -309,8 +309,8 @@ public class CreateIntent extends Intent {
 
         RunInstancesRequest slaveReq = new RunInstancesRequest();
         slaveReq.withInstanceType(this.getConfiguration().getSlaveInstanceType())
-                .withMinCount(this.getConfiguration().getSlaveInstanceMinimum())
-                .withMaxCount(this.getConfiguration().getSlaveInstanceMaximum())
+                .withMinCount(this.getConfiguration().getSlaveInstanceCount())
+                .withMaxCount(this.getConfiguration().getSlaveInstanceCount())
                 .withPlacement(instancePlacement)
                 .withKeyName(this.getConfiguration().getKeypair())
                 .withImageId(this.getConfiguration().getSlaveImage())

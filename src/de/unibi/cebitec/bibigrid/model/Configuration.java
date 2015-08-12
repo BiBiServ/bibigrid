@@ -7,13 +7,14 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+
 public class Configuration {
 
    
     private InstanceType masterInstanceType;
     private String masterImage;
     private InstanceType slaveInstanceType;
-    private int slaveInstanceMaximum;
+    private int slaveInstanceCount;
     private String slaveImage;
     private String availabilityZone;
     private String keypair;
@@ -21,15 +22,13 @@ public class Configuration {
     private String region;
     private AWSCredentials credentials;
     private String clusterId;
-    private List<Integer> ports;
+    private List<Pair<String,Integer>> ports;
     private Path shellScriptFile;
     private Path earlyShellScriptFile;
     private Map<String, String> masterMounts;
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
-    private int slaveInstanceMinimum;
     private double bidPrice;
-    private int slaveInstanceStartAmount;
     private boolean useMasterAsCompute;
     private boolean cassandra = false;
     private boolean alternativeConfigFile = false;
@@ -67,28 +66,12 @@ public class Configuration {
         this.useMasterAsCompute = useMasterAsCompute;
     }
 
-    public int getSlaveInstanceStartAmount() {
-        return slaveInstanceStartAmount;
+    public int getSlaveInstanceCount() {
+        return slaveInstanceCount;
     }
 
-    public void setSlaveInstanceStartAmount(int startCount) {
-        this.slaveInstanceStartAmount = startCount;
-    }
-    
-    public int getSlaveInstanceMaximum() {
-        return slaveInstanceMaximum;
-    }
-
-    public void setSlaveInstanceMaximum(int slaveInstanceMaximum) {
-        this.slaveInstanceMaximum = slaveInstanceMaximum;
-    }
-
-    public int getSlaveInstanceMinimum() {
-        return slaveInstanceMinimum;
-    }
-
-    public void setSlaveInstanceMinimum(int slaveInstanceMinimum) {
-        this.slaveInstanceMinimum = slaveInstanceMinimum;
+    public void setSlaveInstanceCount(int slaveInstanceCount) {
+        this.slaveInstanceCount = slaveInstanceCount;
     }
 
     public InstanceType getMasterInstanceType() {
@@ -171,11 +154,11 @@ public class Configuration {
         this.clusterId = clusterId;
     }
 
-    public List<Integer> getPorts() {
+    public List<Pair<String,Integer>> getPorts() {
         return ports;
     }
 
-    public void setPorts(List<Integer> ports) {
+    public void setPorts(List<Pair<String,Integer>> ports) {
         this.ports = ports;
     }
 

@@ -115,7 +115,7 @@ public class SshFactory {
     
     public static String buildSshCommand(String asGroupName, Configuration cfg, Instance masterInstance, List<Instance> slaveInstances) {
         StringBuilder sb = new StringBuilder();
-        sb.append("chmod 600 .ssh/id_rsa");
+        sb.append("chmod 600 .ssh/id_rsa\n");
         sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
         
         sb.append("qconf -as $(hostname)\n");

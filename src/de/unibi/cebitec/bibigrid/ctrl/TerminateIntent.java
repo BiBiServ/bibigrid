@@ -12,6 +12,7 @@ import de.unibi.cebitec.bibigrid.model.CurrentClusters;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +63,25 @@ public class TerminateIntent extends Intent {
             TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
             terminateInstanceRequest.setInstanceIds(instances);
             TerminateInstancesResult terminateInstanceResult = ec2.terminateInstances(terminateInstanceRequest);
+            
+            do {
+                if (terminateInstanceResult.break;
+                
+                
+                log.info("Wait for instances to shut down.");
+                 // wait until instances are shut down
+                try {  
+                    Thread.sleep(5000);
+                } catch (InterruptedException ex) {
+                    log.error("Can't sleep.");
+                }
+                
+                
+                
+            } while (true);
+            
+            log.info("Instance(s) ({}) terminated.",String.join(",", instances));
+            
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -70,15 +90,7 @@ public class TerminateIntent extends Intent {
             DeletePlacementGroupRequest deletePalacementGroupRequest = new DeletePlacementGroupRequest();
             deletePalacementGroupRequest.setGroupName(cluster.getPlacementgroup());
             ec2.deletePlacementGroup(deletePalacementGroupRequest);
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        ///// terminate security group
-        if (cluster.getSecuritygroup() != null) {
-            DeleteSecurityGroupRequest deleteSecurityGroupRequest = new DeleteSecurityGroupRequest();
-            deleteSecurityGroupRequest.setGroupId(cluster.getSecuritygroup());
-            ec2.deleteSecurityGroup(deleteSecurityGroupRequest);
-
+            log.info("PlacementGroup terminated.");
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -87,7 +99,19 @@ public class TerminateIntent extends Intent {
             DeleteSubnetRequest deleteSubnetRequest = new DeleteSubnetRequest();
             deleteSubnetRequest.setSubnetId(cluster.getSubnet());
             ec2.deleteSubnet(deleteSubnetRequest);
+            log.info("Subnet terminated.");
         }
+        
+        ////////////////////////////////////////////////////////////////////////
+        ///// terminate security group
+        if (cluster.getSecuritygroup() != null) {
+            DeleteSecurityGroupRequest deleteSecurityGroupRequest = new DeleteSecurityGroupRequest();
+            deleteSecurityGroupRequest.setGroupId(cluster.getSecuritygroup());
+            ec2.deleteSecurityGroup(deleteSecurityGroupRequest);
+            
+        }
+
+
 
         log.info("Cluster '{}' terminated!", this.getConfiguration().getClusterId());
 
