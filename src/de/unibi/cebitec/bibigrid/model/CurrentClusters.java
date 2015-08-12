@@ -63,7 +63,7 @@ public class CurrentClusters {
                         }
                     }
                     if (clusterid == null) { // not an bibigrid instance : skip
-                        break;
+                        continue;
                     }
                     // check if map contains a value objekt
                     if (clustermap.containsKey(clusterid)) {
@@ -116,7 +116,7 @@ public class CurrentClusters {
                 }
             }
             if (clusterid == null) { // not an bibigrid subnet : skip
-                break;
+                continue;
             }
             // check if map contains a value objekt
             if (clustermap.containsKey(clusterid)) {
@@ -144,7 +144,7 @@ public class CurrentClusters {
                 }
             }
             if (clusterid == null) { // not an bibigrid security group : skip
-                break;
+                continue;
             }
             // check if map contains a value objekt
             if (clustermap.containsKey(clusterid)) {
@@ -170,7 +170,7 @@ public class CurrentClusters {
                 clusterid = tmp[tmp.length - 1];
             }
             if (clusterid == null) { // not an bibigrid placement group : skip
-                break;
+                continue;
             }
             // check if map contains a value objekt
             if (clustermap.containsKey(clusterid)) {
@@ -188,17 +188,23 @@ public class CurrentClusters {
     public String printClusterList() {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
-        display.append("\n");
-        formatter.format("%15s | %19s | %15s | %7s | %10s | %10s%n", "cluster-id", "launch date", "key name", "# inst", "group-id", "subnet-id");
-        display.append(new String(new char[91]).replace('\0', '-')).append("\n");
+        if (clustermap.isEmpty()) {
+            display.append("No BiBiGrid cluster found!\n");    
+        } else {
+            display.append("\n");
+            formatter.format("%15s | %19s | %15s | %7s | %11s | %11s%n", "cluster-id", "launch date", "key name", "# inst", "group-id", "subnet-id");
+            display.append(new String(new char[93]).replace('\0', '-')).append("\n");
 
-        for (String id : clustermap.keySet()) {
-            Cluster v = clustermap.get(id);
-            formatter.format("%15s | %19s | %15s | %7d | %10s | %10s%n",
-                    id, v.getStarted(), v.getKeyname(),
-                    ((v.getMasterinstance() != null ? 1 : 0) + v.getSlaveinstances().size()),
-                    (v.getSecuritygroup() == null ? "-" : v.getSecuritygroup()),
-                    (v.getSecuritygroup() == null ? "-" : v.getSubnet()));
+            for (String id : clustermap.keySet()) {
+                Cluster v = clustermap.get(id);
+                formatter.format("%15s | %19s | %15s | %7d | %11s | %11s%n",
+                        id,
+                        v.getStarted(),
+                        (v.getKeyname() == null ? "-" : v.getKeyname()),
+                        ((v.getMasterinstance() != null ? 1 : 0) + v.getSlaveinstances().size()),
+                        (v.getSecuritygroup() == null ? "-" : v.getSecuritygroup()),
+                        (v.getSubnet() == null ? "-" : v.getSubnet()));
+            }
         }
         return display.toString();
     }

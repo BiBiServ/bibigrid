@@ -38,32 +38,32 @@ public class TerminateIntent extends Intent {
         ///// create client 
         AmazonEC2Client ec2 = new AmazonEC2Client(this.getConfiguration().getCredentials());
         ec2.setEndpoint("ec2." + this.getConfiguration().getRegion() + ".amazonaws.com");
-        
+
         ////////////////////////////////////////////////////////////////////////
         ///// create currentclusters
         CurrentClusters cc = new CurrentClusters(ec2);
-        
-        Map<String,Cluster> clustermap = cc.getClusterMap();
-        
-        if (!clustermap.containsKey(this.getConfiguration().getClusterId())){
+
+        Map<String, Cluster> clustermap = cc.getClusterMap();
+
+        if (!clustermap.containsKey(this.getConfiguration().getClusterId())) {
             log.error("Cluster with '{}' not found.");
             return false;
         }
-        
+
         Cluster cluster = clustermap.get(this.getConfiguration().getClusterId());
 
         ////////////////////////////////////////////////////////////////////////
-        ///// terminate instance
-        
+        ///// terminate instance(s)
         List<String> instances = cluster.getSlaveinstances();
-        TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
-        if (cluster.getMasterinstance()  !=  null) {
+        if (cluster.getMasterinstance() != null) {
             instances.add(cluster.getMasterinstance());
         }
-        terminateInstanceRequest.setInstanceIds(instances);
-        TerminateInstancesResult terminateInstanceResult = ec2.terminateInstances(terminateInstanceRequest);
-        
-        
+        if (instances.size() > 0) {
+            TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
+            terminateInstanceRequest.setInstanceIds(instances);
+            TerminateInstancesResult terminateInstanceResult = ec2.terminateInstances(terminateInstanceRequest);
+        }
+
         ////////////////////////////////////////////////////////////////////////
         ///// terminate placement group
         if (cluster.getPlacementgroup() != null) {
@@ -71,27 +71,26 @@ public class TerminateIntent extends Intent {
             deletePalacementGroupRequest.setGroupName(cluster.getPlacementgroup());
             ec2.deletePlacementGroup(deletePalacementGroupRequest);
         }
-        
+
         ////////////////////////////////////////////////////////////////////////
         ///// terminate security group
         if (cluster.getSecuritygroup() != null) {
             DeleteSecurityGroupRequest deleteSecurityGroupRequest = new DeleteSecurityGroupRequest();
             deleteSecurityGroupRequest.setGroupId(cluster.getSecuritygroup());
-            ec2.deleteSecurityGroup(null);
-            
+            ec2.deleteSecurityGroup(deleteSecurityGroupRequest);
+
         }
-        
+
         ////////////////////////////////////////////////////////////////////////
         ///// terminate subnet
         if (cluster.getSubnet() != null) {
             DeleteSubnetRequest deleteSubnetRequest = new DeleteSubnetRequest();
             deleteSubnetRequest.setSubnetId(cluster.getSubnet());
-            ec2.deleteSubnet(null);
+            ec2.deleteSubnet(deleteSubnetRequest);
         }
-        
-        
-        log.info("Cluster '{}' terminated!",this.getConfiguration().getClusterId());
-        
+
+        log.info("Cluster '{}' terminated!", this.getConfiguration().getClusterId());
+
         return true;
     }
 

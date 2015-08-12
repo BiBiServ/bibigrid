@@ -33,6 +33,9 @@ public class ListIntent extends Intent {
         AmazonEC2Client ec2 = new AmazonEC2Client(this.getConfiguration().getCredentials());
         ec2.setEndpoint("ec2." + this.getConfiguration().getRegion() + ".amazonaws.com");
         
+        
+        log.info("Search for BiBiGrid cluster in '{}' ...",getConfiguration().getRegion());
+        
         ////////////////////////////////////////////////////////////////////////
         ///// print cluster info
         CurrentClusters cc = new CurrentClusters(ec2);
