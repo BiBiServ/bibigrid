@@ -56,7 +56,7 @@ public class CurrentClusters {
                     // check for cluster-id
                     String clusterid = getValueforName(i.getTags(), "bibigrid-id");
                     String name = getValueforName(i.getTags(), "name");
-                    if (clusterid == null) { // old style : use name to determine clusterid
+                    if (clusterid == null && name != null) { // old style : use name to determine clusterid
                         if (name.contains("master-") || name.contains("slave-")) {
                             String[] tmp = name.split("-");
                             clusterid = tmp[tmp.length - 1];
@@ -109,7 +109,7 @@ public class CurrentClusters {
         for (Subnet s : describeSubnetResult.getSubnets()) {
             String clusterid = getValueforName(s.getTags(), "bibigrid-id");
             String name = getValueforName(s.getTags(), "name");
-            if (clusterid == null) {//old style : use name
+            if (clusterid == null && name != null) {//old style : use name
                 if (name.contains("subnet-")) {
                     String[] tmp = name.split("-");
                     clusterid = tmp[tmp.length - 1];
@@ -137,7 +137,7 @@ public class CurrentClusters {
         for (SecurityGroup sg : describeSecurityGroupsResult.getSecurityGroups()) {
             String clusterid = getValueforName(sg.getTags(), "bibigrid-id");
             String name = sg.getGroupName();
-            if (clusterid == null) {//old style : use name
+            if (clusterid == null && name != null) {//old style : use name
                 if (name.contains("bibigrid-")) {
                     String[] tmp = name.split("-");
                     clusterid = tmp[tmp.length - 1];

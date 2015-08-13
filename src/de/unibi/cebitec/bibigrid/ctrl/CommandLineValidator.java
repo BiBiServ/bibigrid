@@ -4,7 +4,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.model.Pair;
+import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.File;
@@ -364,7 +364,7 @@ public class CommandLineValidator {
 
             ////////////////////////////////////////////////////////////////////////
             ///// ports ////////////////////////////////////////////////////////////
-            this.cfg.setPorts(new ArrayList<Pair<String, Integer>>());
+            this.cfg.setPorts(new ArrayList<Port>());
             String portsCsv = this.cl.getOptionValue("p", defaults.getProperty("ports"));
             if (portsCsv != null && !portsCsv.isEmpty()) {
                 try {
@@ -372,7 +372,7 @@ public class CommandLineValidator {
                     String[] portsStrings = portsCsv.split(",");
                     for (String portString : portsStrings) {
 
-                        Pair<String, Integer> port;
+                        Port port;
                         // must distinguish between different notation
                         // 5555
                         // 0.0.0.0:5555
@@ -382,7 +382,7 @@ public class CommandLineValidator {
                             String addr;
                             String [] tmp = portString.split(":");
                             if (tmp[0].equalsIgnoreCase("current")) {
-                                addr = InetAddress.getLocalHost().getHostAddress();
+                                addr = InetAddress.getLocalHost().getHostAddress()+"/32";
                             } else {
                                 Matcher m = p.matcher(tmp[0]);
                                
@@ -394,9 +394,9 @@ public class CommandLineValidator {
                                 }
                                 addr = tmp[0];    
                             }
-                            port = new Pair(tmp[1],checkStringAsInt(tmp[1], 0, 65535));                        
+                            port = new Port(addr,checkStringAsInt(tmp[1], 0, 65535));                        
                         } else {
-                            port = new Pair("0.0.0.0/0",checkStringAsInt(portString.trim(),  0, 65535));
+                            port = new Port("0.0.0.0/0",checkStringAsInt(portString.trim(),  0, 65535));
 
                         }
                         cfg.getPorts().add(port);
@@ -410,8 +410,8 @@ public class CommandLineValidator {
                 }
                 if (!this.cfg.getPorts().isEmpty()) {
                     StringBuilder portsDisplay = new StringBuilder();
-                    for (Pair<String, Integer> port : cfg.getPorts()) {
-                        portsDisplay.append(port.k).append(":").append(port.v);
+                    for (Port port : cfg.getPorts()) {
+                        portsDisplay.append(port.iprange).append(":").append(port.number);
                         portsDisplay.append(" ");
                     }
                     log.info(V, "Additional open ports set: {}", portsDisplay);

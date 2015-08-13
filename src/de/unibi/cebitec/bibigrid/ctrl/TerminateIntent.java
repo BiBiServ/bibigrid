@@ -4,6 +4,9 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DeletePlacementGroupRequest;
 import com.amazonaws.services.ec2.model.DeleteSecurityGroupRequest;
 import com.amazonaws.services.ec2.model.DeleteSubnetRequest;
+import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
+import com.amazonaws.services.ec2.model.InstanceStateChange;
+import com.amazonaws.services.ec2.model.InstanceStatus;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
@@ -12,7 +15,6 @@ import de.unibi.cebitec.bibigrid.model.CurrentClusters;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +65,20 @@ public class TerminateIntent extends Intent {
             TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
             terminateInstanceRequest.setInstanceIds(instances);
             TerminateInstancesResult terminateInstanceResult = ec2.terminateInstances(terminateInstanceRequest);
-            
+                    
             do {
-                if (terminateInstanceResult.break;
+                DescribeInstanceStatusRequest describeInstanceStatusRequest = new  DescribeInstanceStatusRequest();
+                describeInstanceStatusRequest.setInstanceIds(instances);
+                
+                List<InstanceStatus> l = ec2.describeInstanceStatus(describeInstanceStatusRequest).getInstanceStatuses();
+                // List<InstanceStateChange> l = terminateInstanceResult.getTerminatingInstances();
+                boolean allterminated = true;
+                for (InstanceStatus is : l) {
+                    allterminated = allterminated & is.getInstanceState().getName().equals("terminated");
+                }
+                if (allterminated) {        
+                        break;
+                }
                 
                 
                 log.info("Wait for instances to shut down.");
@@ -80,7 +93,7 @@ public class TerminateIntent extends Intent {
                 
             } while (true);
             
-            log.info("Instance(s) ({}) terminated.",String.join(",", instances));
+            log.info("Instance(s) ({}) terminated.",join(",", instances));
             
         }
 
@@ -107,8 +120,7 @@ public class TerminateIntent extends Intent {
         if (cluster.getSecuritygroup() != null) {
             DeleteSecurityGroupRequest deleteSecurityGroupRequest = new DeleteSecurityGroupRequest();
             deleteSecurityGroupRequest.setGroupId(cluster.getSecuritygroup());
-            ec2.deleteSecurityGroup(deleteSecurityGroupRequest);
-            
+            ec2.deleteSecurityGroup(deleteSecurityGroupRequest);            
         }
 
 
@@ -124,6 +136,21 @@ public class TerminateIntent extends Intent {
         } catch (InterruptedException ie) {
             log.error("Thread.sleep interrupted!");
         }
+    }
+    
+    private String join(String del, List<String> cs) {
+        if (cs.isEmpty()) {
+            return "";
+        }
+        if (cs.size() == 1) {
+            return cs.get(0);
+        }
+        StringBuilder sb = new StringBuilder(cs.get(0));
+        for (int i = 1; i < cs.size(); i++){
+            sb.append(del);
+            sb.append(cs.get(i));
+        }
+        return sb.toString();
     }
 
 }

@@ -22,7 +22,7 @@ public class Configuration {
     private String region;
     private AWSCredentials credentials;
     private String clusterId;
-    private List<Pair<String,Integer>> ports;
+    private List<Port> ports;
     private Path shellScriptFile;
     private Path earlyShellScriptFile;
     private Map<String, String> masterMounts;
@@ -154,11 +154,11 @@ public class Configuration {
         this.clusterId = clusterId;
     }
 
-    public List<Pair<String,Integer>> getPorts() {
+    public List<Port> getPorts() {
         return ports;
     }
 
-    public void setPorts(List<Pair<String,Integer>> ports) {
+    public void setPorts(List<Port> ports) {
         this.ports = ports;
     }
 

@@ -11,7 +11,7 @@ import com.amazonaws.services.ec2.model.*;
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUpOgeCluster;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
-import de.unibi.cebitec.bibigrid.model.CurrentClusters;
+import de.unibi.cebitec.bibigrid.model.Port;
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
 import de.unibi.cebitec.bibigrid.util.*;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
@@ -165,12 +165,13 @@ public class CreateIntent extends Intent {
         allIpPermissions.add(secGroupSelfAccessTcp);
         allIpPermissions.add(secGroupSelfAccessUdp);
         allIpPermissions.add(secGroupSelfAccessIcmp);
-        for (int port : this.getConfiguration().getPorts()) {
+        for (Port port : this.getConfiguration().getPorts()) {
+            log.info("{}:{}",port.iprange,""+port.number);
             IpPermission additionalPortTcp = new IpPermission();
-            additionalPortTcp.withIpProtocol("tcp").withFromPort(port).withToPort(port).withIpRanges("0.0.0.0/0");
+            additionalPortTcp.withIpProtocol("tcp").withFromPort(port.number).withToPort(port.number).withIpRanges(port.iprange);
             allIpPermissions.add(additionalPortTcp);
             IpPermission additionalPortUdp = new IpPermission();
-            additionalPortUdp.withIpProtocol("udp").withFromPort(port).withToPort(port).withIpRanges("0.0.0.0/0");
+            additionalPortUdp.withIpProtocol("udp").withFromPort(port.number).withToPort(port.number).withIpRanges(port.iprange);
             allIpPermissions.add(additionalPortUdp);
         }
 
