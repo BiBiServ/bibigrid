@@ -58,7 +58,7 @@ public class StartUpOgeCluster {
                 .addOption("b","use-master-as-compute",true,"yes or no if master is supposed to be used as a compute instance")
                 .addOption("db","cassandra",false, "Enable Cassandra database support")
                 .addOption("gpf","grid-properties-file",true,"store essential grid properties like master & slave dns values and grid id in a Java property file")
-                .addOption("vpc","vpc-id",true,"Vpc ID used instead of default vpc")
+                .addOption("vpc","vpc",true,"Vpc ID used instead of default vpc")
                 .addOption("me","mesos",false,"Start Mesos framework");
         
         

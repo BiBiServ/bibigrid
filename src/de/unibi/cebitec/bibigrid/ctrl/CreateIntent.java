@@ -103,7 +103,7 @@ public class CreateIntent extends Intent {
         }
 
         if (vpc == null) {
-            log.error("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
+            log.error("No suitable vpc found ... define a default VPC for your account or set vpc ");
             System.exit(1);
         } else {
             log.info(V, "Use VPC {} ({})%n", vpc.getVpcId(), vpc.getCidrBlock());

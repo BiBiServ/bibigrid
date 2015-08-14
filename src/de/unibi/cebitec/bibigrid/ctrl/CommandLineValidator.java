@@ -112,7 +112,9 @@ public class CommandLineValidator {
             ///// vpc-id ///////////////////////////////////////////////////////////
 
             if (this.cl.hasOption("vpc")) {
-                this.cfg.setVpcid(this.cl.getOptionValue("vpc", defaults.getProperty("vpc-id")));
+                this.cfg.setVpcid(this.cl.getOptionValue("vpc"));
+            } else if (defaults.containsKey("vpc")) {
+                cfg.setVpcid(defaults.getProperty("vpc"));
             }
             ////////////////////////////////////////////////////////////////////////
             ///// cassandra on/off /////////////////////////////////////////////////
