@@ -4,14 +4,16 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DeletePlacementGroupRequest;
 import com.amazonaws.services.ec2.model.DeleteSecurityGroupRequest;
 import com.amazonaws.services.ec2.model.DeleteSubnetRequest;
-import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
-import com.amazonaws.services.ec2.model.InstanceStateChange;
-import com.amazonaws.services.ec2.model.InstanceStatus;
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
+import com.amazonaws.services.ec2.model.DescribeInstancesResult;
+import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.model.Cluster;
 import de.unibi.cebitec.bibigrid.model.CurrentClusters;
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -65,23 +67,32 @@ public class TerminateIntent extends Intent {
             TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
             terminateInstanceRequest.setInstanceIds(instances);
             TerminateInstancesResult terminateInstanceResult = ec2.terminateInstances(terminateInstanceRequest);
-                    
+            
+            log.info("Wait for instances to shut down. This can take a while, so please be patient!");
             do {
-                DescribeInstanceStatusRequest describeInstanceStatusRequest = new  DescribeInstanceStatusRequest();
-                describeInstanceStatusRequest.setInstanceIds(instances);
+//                DescribeInstanceStatusRequest describeInstanceStatusRequest = new  DescribeInstanceStatusRequest();
+//                describeInstanceStatusRequest.setInstanceIds(instances);
                 
-                List<InstanceStatus> l = ec2.describeInstanceStatus(describeInstanceStatusRequest).getInstanceStatuses();
-                // List<InstanceStateChange> l = terminateInstanceResult.getTerminatingInstances();
+                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+                describeInstancesRequest.setInstanceIds(instances);
+                
+                
+                DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesRequest);
                 boolean allterminated = true;
-                for (InstanceStatus is : l) {
-                    allterminated = allterminated & is.getInstanceState().getName().equals("terminated");
+                for (Reservation  r : describeInstancesResult.getReservations()) {
+                    List <Instance>  li = r.getInstances();
+                    for (Instance i : li){
+                        log.info(V,"Instance {} {}",i.getInstanceId(),i.getState().getName());
+                        allterminated = allterminated  & i.getState().getName().equals("terminated");
+                    }
                 }
+                
                 if (allterminated) {        
                         break;
                 }
                 
                 
-                log.info("Wait for instances to shut down.");
+                
                  // wait until instances are shut down
                 try {  
                     Thread.sleep(5000);
@@ -93,7 +104,7 @@ public class TerminateIntent extends Intent {
                 
             } while (true);
             
-            log.info("Instance(s) ({}) terminated.",join(",", instances));
+           // log.info("Instance(s) ({}) terminated.",join(",", instances));
             
         }
 

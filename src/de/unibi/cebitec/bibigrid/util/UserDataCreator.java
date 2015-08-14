@@ -43,7 +43,7 @@ public class UserDataCreator {
         slaveUserData.append("sleep 5\n");
         slaveUserData.append("mkdir -p /vol/spool/\n");
         slaveUserData.append("mkdir -p /vol/scratch/\n");
-        slaveUserData.append("echo '").append(publicKey).append("' >> /homes/ubuntu/.ssh/authorized_keys");
+        slaveUserData.append("echo '").append(publicKey).append("' >> /home/ubuntu/.ssh/authorized_keys");
         
         
         /*
@@ -148,7 +148,7 @@ public class UserDataCreator {
         if (cfg.isMesos()) {
             slaveUserData.append("service mesos-master stop\n");
             slaveUserData.append("service mesos-slave stop\n");
-            slaveUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
+            //slaveUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
             slaveUserData.append("echo ").append(masterIp).append(":5050 > /etc/mesos-slave/master\n");
             slaveUserData.append("service mesos-slave start\n");
@@ -185,9 +185,9 @@ public class UserDataCreator {
         
         
         
-        masterUserData.append("echo '").append(privateKey).append("' > /homes/ubuntu/.ssh/id_rsa\n");
-        masterUserData.append("chown ubuntu:ubuntu /homes/ubuntu/.ssh/id_rsa\n");
-        masterUserData.append("chmod 600 /homes/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("echo '").append(privateKey).append("' > /home/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
         
         /*
          * Ephemeral/RAID Preperation
@@ -248,9 +248,9 @@ public class UserDataCreator {
         if (cfg.isMesos()) {
             masterUserData.append("service mesos-master stop\n");
             masterUserData.append("service mesos-slave stop\n");
-            masterUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
+            //masterUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
-            masterUserData.append("cmod -R 777 /vol/spool/mesos\n");
+            masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
             masterUserData.append("echo bibigrid > /etc/mesos-master/cluster\n");
             masterUserData.append("curl http://instance-data/latest/meta-data/local-ipv4 > /etc/mesos-master/ip\n");
             masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir\n");

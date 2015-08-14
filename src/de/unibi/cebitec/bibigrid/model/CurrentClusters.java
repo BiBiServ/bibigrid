@@ -73,7 +73,7 @@ public class CurrentClusters {
                     }
 
                     // master//slave instance ?
-                    if (name.contains("master-")) {
+                    if (name != null && name.contains("master-")) {
                         if (cluster.getMasterinstance() == null) {
                             cluster.setMasterinstance(i.getInstanceId());
 
