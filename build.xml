@@ -37,7 +37,7 @@
     <property name="full.jar" value="dist/bibigrid-full.jar"/>
     <property name="monitor.jar" value="dist/monitor.jar"/>
     
-    <target name="fulljar" depends="resolve,jar,-post-jar,monitor">
+    <target name="fulljar" depends="resolve,jar,-post-jar">
         <jar destfile="${full.jar}">
             <manifest>
                 <attribute name="Main-Class" value="de.unibi.cebitec.bibigrid.StartUpOgeCluster"/>
@@ -95,82 +95,15 @@
             <zipfileset excludes="META-INF/*" src="lib/aspectjrt-1.6.12.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/mail-1.4.6.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/joda-time-2.8.1.jar"/>
-            <fileset file="dist/monitor.jar" />
         </jar>
         <copy file="bibigrid" tofile="dist/bibigrid"/>
         <chmod file="dist/bibigrid" perm="+x"/>
         <delete file="dist/bibigrid-as.jar"/>
         <delete dir="dist/lib"/>
         <delete file="dist/README.TXT"/>
-        <antcall target="monitor"/>
     </target>
 
 
-    <target name="monitor">
-        <jar destfile="${monitor.jar}">
-            <manifest>
-                <attribute name="Main-Class" value="de.unibi.cebitec.bibigrid.monitor.MainMonitor"/>
-                <attribute name="Bibigrid-build-date" value="${build-date}" />
-                <attribute name="Bibigrid-version" value="${version}" />
-            </manifest>
-            <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar">
-                <exclude name="de/unibi/cebitec/bibigrid/ctrl/**/*" />
-                <exclude name="de/unibi/cebitec/bibigrid/exc/*" />
-                <exclude name="de/unibi/cebitec/bibigrid/model/**/*" />
-            </zipfileset>
-            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.10.7.jar">
-                <exclude name="com/amazonaws/services/cloudformation/**/*" />
-                <exclude name="com/amazonaws/services/cloudfront/**/*" />
-                <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*" />
-                <exclude name="com/amazonaws/services/cloudsearch/**/*" />
-                <exclude name="com/amazonaws/services/cloudwatch/**/*" />
-                <exclude name="com/amazonaws/services/datapipeline/**/*" />
-                <exclude name="com/amazonaws/services/directconnect/**/*" />
-                <exclude name="com/amazonaws/services/dynamodb/**/*" />
-                <exclude name="com/amazonaws/services/dynamodbv2/**/*" />
-                <exclude name="com/amazonaws/services/elasticache/**/*" />
-                <exclude name="com/amazonaws/services/elasticbeanstalk/**/*" />
-                <exclude name="com/amazonaws/services/elasticloadbalancing/**/*" />
-                <exclude name="com/amazonaws/services/elasticmapreduce/**/*" />
-                <exclude name="com/amazonaws/services/elastictranscoder/**/*" />
-                <exclude name="com/amazonaws/services/glacier/**/*" />
-                <exclude name="com/amazonaws/services/identitymanagement/**/*" />
-                <exclude name="com/amazonaws/services/importexport/**/*" />
-                <exclude name="com/amazonaws/services/opsworks/**/*" />
-                <exclude name="com/amazonaws/services/rds/**/*" />
-                <exclude name="com/amazonaws/services/redshift/**/*" />
-                <exclude name="com/amazonaws/services/route53/**/*" />
-                <exclude name="com/amazonaws/services/securitytoken/**/*" />
-                <exclude name="com/amazonaws/services/simpledb/**/*" />
-                <exclude name="com/amazonaws/services/simpleemail/**/*" />
-                <exclude name="com/amazonaws/services/simpleworkflow/**/*" />
-                <exclude name="com/amazonaws/services/sns/**/*" />
-                <exclude name="com/amazonaws/services/sqs/**/*" />
-                <exclude name="com/amazonaws/services/storagegateway/**/*" />
-                <exclude name="com/amazonaws/services/support/**/*" />
-                <exclude name="com/amazonaws/services/s3/**/*" />
-            </zipfileset>
-            <zipfileset excludes="META-INF/*" src="lib/commons-codec-1.6.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/commons-logging-1.1.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/httpclient-4.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/httpcore-4.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-core-2.5.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-annotations-2.5.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-databind-2.5.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/logback-classic-1.0.11.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/logback-core-1.0.11.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/slf4j-api-1.7.5.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/commons-cli-1.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jsch-0.1.53.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/freemarker-2.3.18.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/aspectjweaver-1.6.12.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/aspectjrt-1.6.12.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/mail-1.4.6.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/joda-time-2.8.1.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/commons-io-2.4.jar"/>
-        </jar>
-        <delete dir="dist/lib"/>
-    </target>
     <!--
 
     There exist several targets which are by default empty and which can be 

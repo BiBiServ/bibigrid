@@ -96,26 +96,14 @@ public class SshFactory {
             sb.append("\n");
             sb.append("sudo service gridengine-exec start\n");
         }
-        sb.append("echo accessKey=");
-        sb.append(cfg.getCredentials().getAWSAccessKeyId());
-        sb.append(" > /home/ubuntu/.monitor/credentials\n");     
-        sb.append("echo secretKey=");
-        sb.append(cfg.getCredentials().getAWSSecretKey());
-        sb.append(" >> /home/ubuntu/.monitor/credentials\n");
-        sb.append("echo \"java -jar /home/ubuntu/.monitor/monitor.jar ");
-        sb.append(cfg.getRegion());
-        sb.append(" ");
-        sb.append(asGroupName);
-        sb.append("\" > monitor.sh\n");
-        sb.append("chmod +x /home/ubuntu/monitor.sh\n");
-        sb.append("nohup /home/ubuntu/monitor.sh &\n");
+        
         sb.append("echo CONFIGURATION_FINISHED \n");
         return sb.toString();
     }
     
     public static String buildSshCommand(String asGroupName, Configuration cfg, Instance masterInstance, List<Instance> slaveInstances) {
         StringBuilder sb = new StringBuilder();
-        sb.append("chmod 600 .ssh/id_rsa\n");
+        
         sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
         
         sb.append("qconf -as $(hostname)\n");

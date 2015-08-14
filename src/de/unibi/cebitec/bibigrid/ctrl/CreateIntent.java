@@ -63,14 +63,14 @@ public class CreateIntent extends Intent {
                 cleanupIntent.execute();
                 return false;
             }
-        } catch (AmazonClientException ace) {
+        } catch (AmazonClientException | JSchException ace) {
             log.error("{}", ace);
             return false;
         }
         return true;
     }
 
-    private boolean runInstances() throws AmazonClientException {
+    private boolean runInstances() throws AmazonClientException, JSchException {
 
         ////////////////////////////////////////////////////////////////////////
         ///// create client and unique cluster-id //////////////////////////////
@@ -85,11 +85,13 @@ public class CreateIntent extends Intent {
         String clusterIdBase64 = Base64.encodeBase64URLSafeString(bb.array()).replace("-", "").replace("_", "");
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
         String clusterId = clusterIdBase64.substring(0, len);
+        Tag bibigridid = new Tag().withKey("bibigrid-id").withValue(clusterId);
         log.debug("cluster id: {}", clusterId);
         
-        Tag bibigridid = new Tag().withKey("bibigrid-id").withValue(clusterId);
         
+        // create KeyPair for cluster communication
         
+        KEYPAIR keypair = new KEYPAIR();
         
 
         ////////////////////////////////////////////////////////////////////////
@@ -226,7 +228,7 @@ public class CreateIntent extends Intent {
 
         masterDeviceMappings.addAll(ephemeralList);
 
-        String base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.getConfiguration());
+        String base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.getConfiguration(),keypair.getPrivateKey());
 
         log.info(V,"Master UserData:\n {}",base64MasterUserData);
         //////////////////////////////////////////////////////////////////////////
@@ -304,7 +306,7 @@ public class CreateIntent extends Intent {
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
 
-        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, this.getConfiguration());
+        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), masterInstance.getPrivateDnsName(), slaveDeviceMapper, this.getConfiguration(),keypair.getPublicKey());
 
         log.info(V,"Slave Userdata:\n{}",base64SlaveUserData);
 

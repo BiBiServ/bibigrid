@@ -36,15 +36,19 @@ public class UserDataCreator {
      * @param ephemerals
      * @return
      */
-    public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg) {
+    public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg, String publicKey) {
         StringBuilder slaveUserData = new StringBuilder();
-        /*
-         * GridEngine Block
-         */
+        
         slaveUserData.append("#!/bin/sh\n");
         slaveUserData.append("sleep 5\n");
         slaveUserData.append("mkdir -p /vol/spool/\n");
         slaveUserData.append("mkdir -p /vol/scratch/\n");
+        slaveUserData.append("echo '").append(publicKey).append("' >> /homes/ubuntu/.ssh/authorized_keys");
+        
+        
+        /*
+         * GridEngine Block
+         */
         slaveUserData.append("echo ").append(masterIp).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
         slaveUserData.append("echo ").append(masterIp).append(" ").append(masterDns).append(" >> /etc/hosts\n");
         slaveUserData.append("pid=`ps acx | grep sge_execd | cut -c1-6`\n");
@@ -169,17 +173,22 @@ public class UserDataCreator {
      * executed as root </li> <li> execute earlyscript as ubuntu user </li>
      * </ul>
      *
-     * @param ephemeralamount
-     * @param masterNfsShares
      * @param masterDeviceMapper
      * @param cfg
      * @return
      */
-    public static String masterUserData(DeviceMapper masterDeviceMapper, Configuration cfg) {
+    public static String masterUserData(DeviceMapper masterDeviceMapper, Configuration cfg, String privateKey) {
         StringBuilder masterUserData = new StringBuilder();
         int ephemeralamount = InstanceInformation.getSpecs(cfg.getMasterInstanceType()).ephemerals;
         List<String> masterNfsShares = cfg.getNfsShares();
         masterUserData.append("#!/bin/sh\n").append("sleep 5\n");
+        
+        
+        
+        masterUserData.append("echo '").append(privateKey).append("' > /homes/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("chown ubuntu:ubuntu /homes/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("chmod 600 /homes/ubuntu/.ssh/id_rsa\n");
+        
         /*
          * Ephemeral/RAID Preperation
          */
@@ -215,9 +224,6 @@ public class UserDataCreator {
         masterUserData.append("mkdir -p /vol/spool/\n");
         masterUserData.append("chmod 777 /vol/spool/\n");
         masterUserData.append("echo '/vol/spool/ 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
-
-        masterUserData.append("sudo mkdir -p /home/ubuntu/.monitor\n");
-        masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.monitor \n");
 
         masterUserData.append("mkdir -p /vol/scratch/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
