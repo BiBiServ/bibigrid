@@ -36,6 +36,8 @@ public class Configuration {
     private String  vpcid;
     
     private boolean mesos = false;
+    
+    private String metaMode = "default";
 
     //grid-properties-file
     private File gridpropertiesfile = null;
@@ -233,9 +235,13 @@ public class Configuration {
     public void setMesos(boolean mesos) {
         this.mesos = mesos;
     }
-    
-    
-    
-    
+
+    public String getMetaMode() {
+        return metaMode;
+    }
+
+    public void setMetaMode(String metaMode) {
+        this.metaMode = metaMode;
+    }
     
 }

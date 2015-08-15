@@ -22,6 +22,9 @@ public class StartUpOgeCluster {
             + " an error they might remain running. Please check manually afterwards.";
 
     public static void main(String[] args) {
+
+        args = new String[]{"bibigrid", "-c", "-o","/home/jsteiner/bibigrid.properties","-meta","openstack"};
+
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
@@ -32,7 +35,6 @@ public class StartUpOgeCluster {
                 .addOption(OptionBuilder.withLongOpt("list").withDescription("list running clusters").create("l"))
                 .addOption(OptionBuilder.withLongOpt("check").withDescription("check config file").create("ch"))
                 .addOption(OptionBuilder.withLongOpt("terminate").withDescription("terminate running cluster").hasArg().withArgName("cluster-id").create("t"));
- 
 
         Options cmdLineOptions = new Options();
         cmdLineOptions
@@ -54,14 +56,14 @@ public class StartUpOgeCluster {
                 .addOption("x", "execute-script", true, "shell script file to be executed on master")
                 .addOption("g", "nfs-shares", true, "comma-separated list of paths on master to be shared via NFS")
                 .addOption("v", "verbose", false, "more console output")
-                .addOption("o","config",true,"path to alternative config file")
-                .addOption("b","use-master-as-compute",true,"yes or no if master is supposed to be used as a compute instance")
-                .addOption("db","cassandra",false, "Enable Cassandra database support")
-                .addOption("gpf","grid-properties-file",true,"store essential grid properties like master & slave dns values and grid id in a Java property file")
-                .addOption("vpc","vpc-id",true,"Vpc ID used instead of default vpc")
-                .addOption("me","mesos",false,"Start Mesos framework");
-        
-        
+                .addOption("o", "config", true, "path to alternative config file")
+                .addOption("b", "use-master-as-compute", true, "yes or no if master is supposed to be used as a compute instance")
+                .addOption("db", "cassandra", false, "Enable Cassandra database support")
+                .addOption("gpf", "grid-properties-file", true, "store essential grid properties like master & slave dns values and grid id in a Java property file")
+                .addOption("vpc", "vpc-id", true, "Vpc ID used instead of default vpc")
+                .addOption("me", "mesos", false, "Start Mesos framework")
+                .addOption("meta", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used");
+
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
             CommandLineValidator validator = null;

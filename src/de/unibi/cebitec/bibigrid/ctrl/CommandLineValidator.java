@@ -114,6 +114,10 @@ public class CommandLineValidator {
             if (this.cl.hasOption("vpc")) {
                 this.cfg.setVpcid(this.cl.getOptionValue("vpc", defaults.getProperty("vpc-id")));
             }
+            
+            if (this.cl.hasOption("meta")) {
+                this.cfg.setMetaMode(this.cl.getOptionValue("meta"));
+            }
             ////////////////////////////////////////////////////////////////////////
             ///// cassandra on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("me")) {

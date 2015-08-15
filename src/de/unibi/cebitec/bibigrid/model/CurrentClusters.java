@@ -79,7 +79,7 @@ public class CurrentClusters {
 
                             cluster.setStarted(dateformatter.format(i.getLaunchTime()));
                         } else {
-                            log.error("Detect two master instances ({},{}) for cluster '{}' ", cluster.getMasterinstance(), i.getInstanceId(), clusterid);
+                            log.error("Detect two master instances ({},{}) for cluster '{}' ", cluster.getMasterinstance(), i.getInstanceId(), clusterid); // ???
                             System.exit(1);
                         }
                     } else {
@@ -189,7 +189,7 @@ public class CurrentClusters {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         if (clustermap.isEmpty()) {
-            display.append("No BiBiGrid cluster found!\n");    
+            display.append("No BiBiGrid cluster found!\n");
         } else {
             display.append("\n");
             formatter.format("%15s | %19s | %15s | %7s | %11s | %11s%n", "cluster-id", "launch date", "key name", "# inst", "group-id", "subnet-id");
