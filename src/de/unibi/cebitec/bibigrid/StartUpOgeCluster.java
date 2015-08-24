@@ -23,7 +23,8 @@ public class StartUpOgeCluster {
 
     public static void main(String[] args) {
 
-        args = new String[]{"bibigrid", "-c", "-o","/home/jsteiner/bibigrid.properties","-meta","openstack"};
+//        args = new String[]{"bibigrid", "-c", "-o", "/home/jsteiner/bibigrid.properties", "-vpc", "vpc-3e9d165b"};
+//        args = new String[]{"bibigrid", "-c", "-o", "/home/jsteiner/bibigrid.properties", "-meta", "aws-ec2"};
 
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
