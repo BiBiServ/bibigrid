@@ -4,8 +4,8 @@
 # main class directly, otherwise call like before
 
 if [ -z "$CLASSPATH" ]; then
-	java $JVM_OPTS -jar `dirname $0`/bibigrid-java-full.jar $@
+	java $JVM_OPTS -jar `dirname $0`/dist/bibigrid.jar $@
 else
-	CLASSPATH=$CLASSPATH:`dirname $0`/bibigrid-java-full.jar
+	CLASSPATH=$CLASSPATH:`dirname $0`/dist/bibigrid.jar
 	java $JVM_OPTS de.unibi.cebitec.bibigrid.StartUpOgeCluster $@
 fi

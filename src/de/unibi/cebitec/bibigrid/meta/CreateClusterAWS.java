@@ -19,6 +19,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceNetworkInterfaceSpecification;
 import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.InstanceStatus;
+import com.amazonaws.services.ec2.model.ModifyInstanceAttributeRequest;
 import com.amazonaws.services.ec2.model.Placement;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
@@ -57,7 +58,9 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
     private Placement instancePlacement;
     private String base64MasterUserData;
+
     private InstanceNetworkInterfaceSpecification inis;
+    private List<InstanceNetworkInterfaceSpecification> networkInterfaces;
     private List<BlockDeviceMapping> masterDeviceMappings;
     private Tag bibigridid;
     private String clusterId;
@@ -148,12 +151,16 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
         //////////////////////////////////////////////////////////////////////////
         /////// create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
+        networkInterfaces = new ArrayList<>();
+
         inis = new InstanceNetworkInterfaceSpecification();
         inis.withPrivateIpAddress(environment.getMASTERIP())
                 .withGroups(environment.getSecReqResult().getGroupId())
                 .withAssociatePublicIpAddress(true)
                 .withSubnetId(environment.getSubnet().getSubnetId())
                 .withDeviceIndex(0);
+
+        networkInterfaces.add(inis); // add eth0
 
         return this;
     }
@@ -172,7 +179,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 .withImageId(this.config.getMasterImage())
                 .withUserData(base64MasterUserData)
                 .withBlockDeviceMappings(masterDeviceMappings)
-                .withNetworkInterfaces(inis);
+                .withNetworkInterfaces(networkInterfaces);
 
         // mounting ephemerals
         RunInstancesResult masterReqResult = ec2.runInstances(masterReq);
@@ -185,6 +192,11 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         masterInstance = waitForInstances(Arrays.asList(new String[]{masterInstance.getInstanceId()})).get(0);
         log.info(I, "Master instance is now running!");
 
+        ModifyInstanceAttributeRequest ia_req = new ModifyInstanceAttributeRequest();
+        ia_req.setInstanceId(masterInstance.getInstanceId());
+        ia_req.setSourceDestCheck(Boolean.FALSE);
+        ec2.modifyInstanceAttribute(ia_req);
+        
         ////////////////////////////////////
         //// Tagging Master with a name ////
         CreateTagsRequest masterNameTagRequest = new CreateTagsRequest();
@@ -220,10 +232,10 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
 
-        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(), 
-                masterInstance.getPrivateDnsName(), 
-                slaveDeviceMapper, 
-                this.config, 
+        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(),
+                masterInstance.getPrivateDnsName(),
+                slaveDeviceMapper,
+                this.config,
                 environment.getKeypair().getPublicKey());
 
         log.info(V, "Slave Userdata:\n{}", base64SlaveUserData);

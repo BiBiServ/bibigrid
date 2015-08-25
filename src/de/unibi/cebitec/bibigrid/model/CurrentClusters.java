@@ -178,7 +178,7 @@ public class CurrentClusters {
             } else {
                 cluster = new Cluster();
             }
-            cluster.setSecuritygroup(name);
+            cluster.setPlacementgroup(name);
 
             clustermap.put(clusterid, cluster);
         }

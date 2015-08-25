@@ -38,14 +38,13 @@ public class UserDataCreator {
      */
     public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg, String publicKey) {
         StringBuilder slaveUserData = new StringBuilder();
-        
+
         slaveUserData.append("#!/bin/sh\n");
         slaveUserData.append("sleep 5\n");
         slaveUserData.append("mkdir -p /vol/spool/\n");
         slaveUserData.append("mkdir -p /vol/scratch/\n");
         slaveUserData.append("echo '").append(publicKey).append("' >> /home/ubuntu/.ssh/authorized_keys");
-        
-        
+
         /*
          * GridEngine Block
          */
@@ -77,7 +76,6 @@ public class UserDataCreator {
             slaveUserData.append("service cassandra start\n");
 
         }
-   
 
         int ephemerals = InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).ephemerals;
 
@@ -114,8 +112,6 @@ public class UserDataCreator {
             slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
             slaveUserData.append("chmod -R 777 /vol/scratch \n");
 
-            
-            
         }
         /*
          * NFS//Mount Block
@@ -140,8 +136,13 @@ public class UserDataCreator {
                 slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":").append(share).append(" ").append(share).append("\n");
             }
         }
-
         
+        /**
+         * route all traffic to master-instance (inet access)
+         */
+        slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
+        slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
+
         /* 
          * Mesos Block
          */
@@ -152,8 +153,8 @@ public class UserDataCreator {
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
             slaveUserData.append("echo ").append(masterIp).append(":5050 > /etc/mesos-slave/master\n");
             slaveUserData.append("service mesos-slave start\n");
-        } 
-        
+        }
+
         slaveUserData.append(
                 "while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
         
@@ -182,13 +183,11 @@ public class UserDataCreator {
         int ephemeralamount = InstanceInformation.getSpecs(cfg.getMasterInstanceType()).ephemerals;
         List<String> masterNfsShares = cfg.getNfsShares();
         masterUserData.append("#!/bin/sh\n").append("sleep 5\n");
-        
-        
-        
+
         masterUserData.append("echo '").append(privateKey).append("' > /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
-        
+
         /*
          * Ephemeral/RAID Preperation
          */
@@ -276,6 +275,12 @@ public class UserDataCreator {
             masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
         }
         masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
+
+        /**
+         * enabling nat functions of master-instance (slave inet access)
+         */
+        masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
+                + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE");
 
         /*
          * Early Execute Script
