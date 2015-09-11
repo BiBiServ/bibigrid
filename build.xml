@@ -46,7 +46,7 @@
             </manifest>
         
             <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.10.7.jar">
+            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.10.16.jar">
                 <exclude name="com/amazonaws/services/cloudformation/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront/**/*" />
                 <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*" />
