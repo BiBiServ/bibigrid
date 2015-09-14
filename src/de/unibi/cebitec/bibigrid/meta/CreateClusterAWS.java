@@ -298,12 +298,12 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 .append(clusterId)
                 .append("\n\n");
         sb.append("The can easily terminate the cluster at any time with :\n")
-                .append("./bibigrid -t ");
+                .append("./bibigrid -t ").append(clusterId).append(" ");
         if (getConfig().isAlternativeConfigFile()) {
             sb.append("-o ").append(config.getAlternativeConfigPath()).append(" ");
         }
-        sb.append(clusterId)
-                .append("\n");
+        
+        sb.append("\n");
 
         log.info(sb.toString());
 
