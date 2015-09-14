@@ -21,7 +21,8 @@ public class Cluster {
     private String vpc;
     private String securitygroup;
     private String keyname;
-
+    private String user = "unknown";
+    
     private String started = "unknown";
 
     public String getMasterinstance() {
@@ -91,5 +92,15 @@ public class Cluster {
     public void setStarted(String started) {
         this.started = started;
     }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+    
+    
 
 }

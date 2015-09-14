@@ -48,19 +48,26 @@ public class UserDataCreator {
         /*
          * GridEngine Block
          */
-        slaveUserData.append("echo ").append(masterIp).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
-        slaveUserData.append("echo ").append(masterIp).append(" ").append(masterDns).append(" >> /etc/hosts\n");
-        slaveUserData.append("pid=`ps acx | grep sge_execd | cut -c1-6`\n");
-        slaveUserData.append("if [ -n $pid ]; then\n");
-        slaveUserData.append("        kill $pid;\n");
-        slaveUserData.append("fi;\n");
-        slaveUserData.append("sleep 1\n");
-        slaveUserData.append("while test $(ps acx | grep sge_execd | wc -l) -eq 0; do\n");
-        slaveUserData.append("        service gridengine-exec start\n");
-        slaveUserData.append("        sleep 35\n");
-        slaveUserData.append("done\n");
+        if (cfg.isOge()) {
+            slaveUserData.append("echo ").append(masterIp).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
+            slaveUserData.append("echo ").append(masterIp).append(" ").append(masterDns).append(" >> /etc/hosts\n");
+            slaveUserData.append("pid=`ps acx | grep sge_execd | cut -c1-6`\n");
+            slaveUserData.append("if [ -n $pid ]; then\n");
+            slaveUserData.append("        kill $pid;\n");
+            slaveUserData.append("fi;\n");
+            slaveUserData.append("sleep 1\n");
+            slaveUserData.append("while test $(ps acx | grep sge_execd | wc -l) -eq 0; do\n");
+            slaveUserData.append("        service gridengine-exec start\n");
+            slaveUserData.append("        sleep 35\n");
+            slaveUserData.append("done\n");
+        }
+
+        /*
+         * Ganglia service monitor
+         */
         slaveUserData.append("sed -i s/MASTER_IP/").append(masterIp).append("/g /etc/ganglia/gmond.conf\n");
         slaveUserData.append("service ganglia-monitor restart \n");
+
         /*
          * Cassandra Block
          */
@@ -119,24 +126,25 @@ public class UserDataCreator {
 
         slaveUserData.append(
                 "chown ubuntu:ubuntu /vol/ \n");
-        slaveUserData.append(
-                "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
+        if (cfg.isNfs()) {
+            slaveUserData.append(
+                    "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
 
-        for (String e
-                : slaveDeviceMapper.getSnapshotIdToMountPoint()
-                .keySet()) {
-            slaveUserData.append("mkdir -p ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-            slaveUserData.append("mount ").append(slaveDeviceMapper.getRealDeviceNameforMountPoint(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-        }
-        List<String> slaveNfsMounts = cfg.getNfsShares();
+            for (String e
+                    : slaveDeviceMapper.getSnapshotIdToMountPoint()
+                    .keySet()) {
+                slaveUserData.append("mkdir -p ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+                slaveUserData.append("mount ").append(slaveDeviceMapper.getRealDeviceNameforMountPoint(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+            }
+            List<String> slaveNfsMounts = cfg.getNfsShares();
 
-        if (!slaveNfsMounts.isEmpty()) {
-            for (String share : slaveNfsMounts) {
-                slaveUserData.append("sudo mkdir -p ").append(share).append("\n");
-                slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":").append(share).append(" ").append(share).append("\n");
+            if (!slaveNfsMounts.isEmpty()) {
+                for (String share : slaveNfsMounts) {
+                    slaveUserData.append("sudo mkdir -p ").append(share).append("\n");
+                    slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":").append(share).append(" ").append(share).append("\n");
+                }
             }
         }
-        
         /**
          * route all traffic to master-instance (inet access)
          */
@@ -157,7 +165,7 @@ public class UserDataCreator {
 
         slaveUserData.append(
                 "while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
-        
+
         return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
     }
 
@@ -220,9 +228,11 @@ public class UserDataCreator {
         /*
          * NFS Prep of Vol
          */
-        masterUserData.append("mkdir -p /vol/spool/\n");
-        masterUserData.append("chmod 777 /vol/spool/\n");
-        masterUserData.append("echo '/vol/spool/ 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
+        if (cfg.isNfs()) {
+            masterUserData.append("mkdir -p /vol/spool/\n");
+            masterUserData.append("chmod 777 /vol/spool/\n");
+            masterUserData.append("echo '/vol/spool/ 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
+        }
 
         masterUserData.append("mkdir -p /vol/scratch/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
@@ -265,17 +275,18 @@ public class UserDataCreator {
         /*
          * NFS//Mounts Block
          */
-        for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
-            masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-            masterUserData.append("mount ").append(masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+        if (cfg.isNfs()) {
+            for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+                masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+                masterUserData.append("mount ").append(masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+            }
+            for (String mastershare : masterNfsShares) {
+                masterUserData.append("mkdir -p ").append(mastershare).append("\n");
+                masterUserData.append("chmod 777 ").append(mastershare).append("\n");
+                masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
+            }
+            masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
         }
-        for (String mastershare : masterNfsShares) {
-            masterUserData.append("mkdir -p ").append(mastershare).append("\n");
-            masterUserData.append("chmod 777 ").append(mastershare).append("\n");
-            masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
-        }
-        masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
-
         /**
          * enabling nat functions of master-instance (slave inet access)
          */

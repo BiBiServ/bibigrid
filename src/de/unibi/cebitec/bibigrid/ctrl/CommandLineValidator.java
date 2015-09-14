@@ -108,6 +108,23 @@ public class CommandLineValidator {
                     return false;
                 }
             }
+            
+            
+            if (req.contains("u")) {
+                if (cl.hasOption("u") || defaults.containsKey("mesos")) {
+                    String value = cl.getOptionValue("u",defaults.getProperty("user"));
+                    if (value != null && !value.isEmpty()) {
+                        cfg.setUser(value);
+                    } else {
+                        log.error("User (-u) can't be null or empty.");
+                        return false;
+                    }
+                    
+                } else {
+                    log.error("-u option is required!");
+                    return false;
+                }
+            }
             ////////////////////////////////////////////////////////////////////////
             ///// vpc-id ///////////////////////////////////////////////////////////
 
@@ -121,20 +138,49 @@ public class CommandLineValidator {
                 this.cfg.setMetaMode(this.cl.getOptionValue("meta"));
             }
             ////////////////////////////////////////////////////////////////////////
-            ///// cassandra on/off /////////////////////////////////////////////////
-            if (this.cl.hasOption("me")) {
-                this.cfg.setMesos(true);
-                log.info(V, "Mesos enabled");
-            } else if (defaults.containsKey("mesos")) {
-                String value = defaults.getProperty("mesos");
+            ///// mesos on/off /////////////////////////////////////////////////
+            
+            if (this.cl.hasOption("me") || defaults.containsKey("mesos")) {
+                String value =  cl.getOptionValue("mesos", defaults.getProperty("mesos"));
                 if (value.equalsIgnoreCase("yes")) {
                     this.cfg.setMesos(true);
-                    log.info(V, "Mesos enabled.");
+                    log.info(V, "Mesos support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "Mesos disabled.");
+                    log.info(V, "Mesos support disabled.");
                     this.cfg.setMesos(false);
                 } else {
-                    log.error("Mesos value in properties not recognized. Please use yes/no.");
+                    log.error("Mesos value not recognized. Please use yes/no.");
+                    return false;
+                }
+            }
+            
+            ////////////////////////////////////////////////////////////////////////
+            ///// OGE on/off /////////////////////////////////////////////////
+            if (this.cl.hasOption("oge") || defaults.containsKey("mesos")) {
+                String value = cl.getOptionValue("oge", defaults.getProperty("mesos"));
+                if (value.equalsIgnoreCase("yes")) {
+                    this.cfg.setMesos(true);
+                    log.info(V, "OpenGridEngine support enabled.");
+                } else if (value.equalsIgnoreCase("no")) {
+                    log.info(V, "OpenGridEngine support disabled.");
+                    this.cfg.setMesos(false);
+                } else {
+                    log.error("OpenGridEngine value not recognized. Please use yes/no.");
+                    return false;
+                }
+            }
+            ////////////////////////////////////////////////////////////////////////
+            ///// NFS on/off /////////////////////////////////////////////////
+            if (this.cl.hasOption("nfs") || defaults.containsKey("nfs")) {
+                String value = cl.getOptionValue("nfs", defaults.getProperty("nfs"));               
+                if (value.equalsIgnoreCase("yes")) {
+                    this.cfg.setMesos(true);
+                    log.info(V, "NFS enabled.");
+                } else if (value.equalsIgnoreCase("no")) {
+                    log.info(V, "NFS disabled.");
+                    this.cfg.setMesos(false);
+                } else {
+                    log.error("NFS value not recognized. Please use yes/no.");
                     return false;
                 }
             }

@@ -20,7 +20,7 @@ public class CreateIntent extends Intent {
 
     @Override
     public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
+        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b", "i"});
     }
 
     @Override
@@ -56,9 +56,7 @@ public class CreateIntent extends Intent {
                         .configureClusterMasterInstance()
                         .launchClusterInstances();
             case "openstack":
-//                return new CreateClusterOpenstack()
-//                        .createClusterEnvironment()
-//                        .launchClusterInstances();
+
             default:
                 log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
                 return false;

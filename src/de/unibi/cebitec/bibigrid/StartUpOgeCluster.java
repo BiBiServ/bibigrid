@@ -62,8 +62,12 @@ public class StartUpOgeCluster {
                 .addOption("db", "cassandra", false, "Enable Cassandra database support")
                 .addOption("gpf", "grid-properties-file", true, "store essential grid properties like master & slave dns values and grid id in a Java property file")
                 .addOption("vpc", "vpc-id", true, "Vpc ID used instead of default vpc")
-                .addOption("me", "mesos", false, "Start Mesos framework")
-                .addOption("meta", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used");
+                .addOption("me", "mesos", true, "Yes or no if Mesos framework should be configured/started. Default is No")
+                .addOption("meta", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
+                .addOption("oge","oge",true,"Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
+                .addOption("nfs","nfs",true,"Yes or no if NFS should be configured/started. Default is Yes!")
+                .addOption("u","user",true,"User name (mandatory)");
+                
 
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);

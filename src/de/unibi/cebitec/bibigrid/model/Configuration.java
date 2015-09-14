@@ -36,6 +36,10 @@ public class Configuration {
     private String  vpcid;
     
     private boolean mesos = false;
+    private boolean nfs = true;
+    private boolean oge = true;
+    
+    private String user;
     
     private String metaMode = "default";
 
@@ -236,6 +240,25 @@ public class Configuration {
         this.mesos = mesos;
     }
 
+    public boolean isNfs() {
+        return nfs;
+    }
+
+    public void setNfs(boolean nfs) {
+        this.nfs = nfs;
+    }
+
+    public boolean isOge() {
+        return oge;
+    }
+
+    public void setOge(boolean oge) {
+        this.oge = oge;
+    }
+    
+    
+    
+
     public String getMetaMode() {
         return metaMode;
     }
@@ -243,5 +266,15 @@ public class Configuration {
     public void setMetaMode(String metaMode) {
         this.metaMode = metaMode;
     }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+    
+    
     
 }

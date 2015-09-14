@@ -62,7 +62,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
     private InstanceNetworkInterfaceSpecification inis;
     private List<InstanceNetworkInterfaceSpecification> networkInterfaces;
     private List<BlockDeviceMapping> masterDeviceMappings;
-    private Tag bibigridid;
+    private Tag bibigridid,username;
     private String clusterId;
     private DeviceMapper slaveDeviceMapper;
     private List<BlockDeviceMapping> slaveBlockDeviceMappings;
@@ -91,6 +91,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
         clusterId = clusterIdBase64.substring(0, len);
         bibigridid = new Tag().withKey("bibigrid-id").withValue(clusterId);
+        username = new Tag().withKey("user").withValue(config.getUser());
         log.debug("cluster id: {}", clusterId);
 
         return environment = new CreateClusterEnvironmentAWS(this);
@@ -200,7 +201,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         ////////////////////////////////////
         //// Tagging Master with a name ////
         CreateTagsRequest masterNameTagRequest = new CreateTagsRequest();
-        masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(bibigridid, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
+        masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
 
         ec2.createTags(masterNameTagRequest);
 
@@ -231,6 +232,8 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         log.info(I, "Status checks successful.");
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
+        
+        if (config.getSlaveInstanceCount() > 0) {
 
         String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(),
                 masterInstance.getPrivateDnsName(),
@@ -274,7 +277,31 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                     .withTags(bibigridid, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
             ec2.createTags(slaveNameTagRequest);
         }
+        } else {
+            log.info("No Slave instance(s) requested !");
+                    
+        }
 
+        
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n You might want to set the following environment variable:\n\n");
+        sb.append("export BIBIGRID_MASTER=").append(masterInstance.getPublicIpAddress()).append("\n\n");
+        sb.append("You can then log on the master node with:\n\n")
+                .append("ssh -i ")
+                .append(config.getIdentityFile())
+                .append(" ubuntu@$BIBIGRID_MASTER\n\n");
+        sb.append("The cluster id of your started cluster is : ")
+                .append(clusterId)
+                .append("\n");
+        sb.append("The compute grid can easily terminated typing :\n\n")
+                .append("dist/bibigrid -t ")
+                .append(clusterId)
+                .append("\n");
+      
+                
+        log.info(sb.toString());
+        
         return true;
     }
 

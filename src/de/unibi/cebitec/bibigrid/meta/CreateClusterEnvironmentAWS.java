@@ -218,14 +218,16 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment<Cre
             placementGroup = (PLACEMENT_GROUP_PREFIX + cluster.getClusterId());
             log.info("Creating placement group...");
             cluster.getEc2().createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
-            return cluster;
+           
             
         } else {
             
-            log.error("Placement Group not available for selected Instances-types ...");
+            log.info(V,"Placement Group not available for selected Instances-types ...");
             return cluster;
             
         }
+        
+        return cluster;
     }
 
     /**
