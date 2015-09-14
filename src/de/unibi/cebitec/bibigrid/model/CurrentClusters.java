@@ -206,12 +206,12 @@ public class CurrentClusters {
             display.append("No BiBiGrid cluster found!\n");
         } else {
             display.append("\n");
-            formatter.format("%15s | %10s | %19s | %15s | %7s | %11s | %11s%n", "cluster-id", "user", "launch date", "key name", "# inst", "group-id", "subnet-id");
-            display.append(new String(new char[110]).replace('\0', '-')).append("\n");
+            formatter.format("%15s | %10s | %19s | %20s | %7s | %11s | %11s%n", "cluster-id", "user", "launch date", "key name", "# inst", "group-id", "subnet-id");
+            display.append(new String(new char[115]).replace('\0', '-')).append("\n");
 
             for (String id : clustermap.keySet()) {
                 Cluster v = clustermap.get(id);
-                formatter.format("%15s | %10s | %19s | %15s | %7d | %11s | %11s%n",
+                formatter.format("%15s | %10s | %19s | %20s | %7d | %11s | %11s%n",
                         id,
                         v.getUser(),
                         v.getStarted(),

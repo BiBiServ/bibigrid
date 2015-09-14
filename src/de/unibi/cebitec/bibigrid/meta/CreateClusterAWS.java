@@ -31,11 +31,14 @@ import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import de.unibi.cebitec.bibigrid.util.UserDataCreator;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
@@ -62,7 +65,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
     private InstanceNetworkInterfaceSpecification inis;
     private List<InstanceNetworkInterfaceSpecification> networkInterfaces;
     private List<BlockDeviceMapping> masterDeviceMappings;
-    private Tag bibigridid,username;
+    private Tag bibigridid, username;
     private String clusterId;
     private DeviceMapper slaveDeviceMapper;
     private List<BlockDeviceMapping> slaveBlockDeviceMappings;
@@ -197,7 +200,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         ia_req.setInstanceId(masterInstance.getInstanceId());
         ia_req.setSourceDestCheck(Boolean.FALSE);
         ec2.modifyInstanceAttribute(ia_req);
-        
+
         ////////////////////////////////////
         //// Tagging Master with a name ////
         CreateTagsRequest masterNameTagRequest = new CreateTagsRequest();
@@ -232,58 +235,58 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         log.info(I, "Status checks successful.");
         ////////////////////////////////////////////////////////////////////////
         ///// run slave instances and supply userdata //////////////////////////
-        
+
         if (config.getSlaveInstanceCount() > 0) {
 
-        String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(),
-                masterInstance.getPrivateDnsName(),
-                slaveDeviceMapper,
-                this.config,
-                environment.getKeypair().getPublicKey());
+            String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(),
+                    masterInstance.getPrivateDnsName(),
+                    slaveDeviceMapper,
+                    this.config,
+                    environment.getKeypair().getPublicKey());
 
-        log.info(V, "Slave Userdata:\n{}", base64SlaveUserData);
+            log.info(V, "Slave Userdata:\n{}", base64SlaveUserData);
 
-        RunInstancesRequest slaveReq = new RunInstancesRequest();
-        slaveReq.withInstanceType(this.config.getSlaveInstanceType())
-                .withMinCount(this.config.getSlaveInstanceCount())
-                .withMaxCount(this.config.getSlaveInstanceCount())
-                .withPlacement(instancePlacement)
-                .withKeyName(this.config.getKeypair())
-                .withImageId(this.config.getSlaveImage())
-                .withUserData(base64SlaveUserData)
-                .withBlockDeviceMappings(slaveBlockDeviceMappings)
-                .withSubnetId(environment.getSubnet().getSubnetId())
-                .withSecurityGroupIds(environment.getSecReqResult().getGroupId());
+            RunInstancesRequest slaveReq = new RunInstancesRequest();
+            slaveReq.withInstanceType(this.config.getSlaveInstanceType())
+                    .withMinCount(this.config.getSlaveInstanceCount())
+                    .withMaxCount(this.config.getSlaveInstanceCount())
+                    .withPlacement(instancePlacement)
+                    .withKeyName(this.config.getKeypair())
+                    .withImageId(this.config.getSlaveImage())
+                    .withUserData(base64SlaveUserData)
+                    .withBlockDeviceMappings(slaveBlockDeviceMappings)
+                    .withSubnetId(environment.getSubnet().getSubnetId())
+                    .withSecurityGroupIds(environment.getSecReqResult().getGroupId());
 
-        RunInstancesResult slaveReqResult = ec2.runInstances(slaveReq);
-        String slaveReservationId = slaveReqResult.getReservation().getReservationId();
-        // create a list of all slave instances
-        List<String> slaveInstanceListIds = new ArrayList<>();
-        for (Instance i : slaveReqResult.getReservation().getInstances()) {
-            slaveInstanceListIds.add(i.getInstanceId());
-        }
-        log.info("Waiting for slave instance(s) to finish booting ...");
-        List<Instance> slaveInstances = waitForInstances(slaveInstanceListIds);
+            RunInstancesResult slaveReqResult = ec2.runInstances(slaveReq);
+            String slaveReservationId = slaveReqResult.getReservation().getReservationId();
+            // create a list of all slave instances
+            List<String> slaveInstanceListIds = new ArrayList<>();
+            for (Instance i : slaveReqResult.getReservation().getInstances()) {
+                slaveInstanceListIds.add(i.getInstanceId());
+            }
+            log.info("Waiting for slave instance(s) to finish booting ...");
+            List<Instance> slaveInstances = waitForInstances(slaveInstanceListIds);
 
-        /////////////////////////////////////////////
-        //// Waiting for master instance to run ////
-        log.info(I, "Slave instance(s) is now running!");
+            /////////////////////////////////////////////
+            //// Waiting for master instance to run ////
+            log.info(I, "Slave instance(s) is now running!");
 
-        ////////////////////////////////////
-        //// Tagging all slaves  with a name
-        for (Instance si : slaveInstances) {
-            CreateTagsRequest slaveNameTagRequest = new CreateTagsRequest();
-            slaveNameTagRequest.withResources(si.getInstanceId())
-                    .withTags(bibigridid, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
-            ec2.createTags(slaveNameTagRequest);
-        }
+            ////////////////////////////////////
+            //// Tagging all slaves  with a name
+            for (Instance si : slaveInstances) {
+                CreateTagsRequest slaveNameTagRequest = new CreateTagsRequest();
+                slaveNameTagRequest.withResources(si.getInstanceId())
+                        .withTags(bibigridid, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
+                ec2.createTags(slaveNameTagRequest);
+            }
         } else {
             log.info("No Slave instance(s) requested !");
-                    
+
         }
 
-        
-        
+        ////////////////////////////////////
+        //// Human friendly output
         StringBuilder sb = new StringBuilder();
         sb.append("\n You might want to set the following environment variable:\n\n");
         sb.append("export BIBIGRID_MASTER=").append(masterInstance.getPublicIpAddress()).append("\n\n");
@@ -293,15 +296,34 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 .append(" ubuntu@$BIBIGRID_MASTER\n\n");
         sb.append("The cluster id of your started cluster is : ")
                 .append(clusterId)
+                .append("\n\n");
+        sb.append("The can easily terminate the cluster at any time with :\n")
+                .append("./bibigrid -t ");
+        if (getConfig().isAlternativeConfigFile()) {
+            sb.append("-o ").append(config.getAlternativeConfigPath()).append(" ");
+        }
+        sb.append(clusterId)
                 .append("\n");
-        sb.append("The compute grid can easily terminated typing :\n\n")
-                .append("dist/bibigrid -t ")
-                .append(clusterId)
-                .append("\n");
-      
-                
+
         log.info(sb.toString());
-        
+
+        ////////////////////////////////////
+        //// Grid Properties file
+        if (getConfig().getGridPropertiesFile() != null) {
+            Properties gp = new Properties();
+            gp.setProperty("BIBIGRID_MASTER", masterInstance.getPublicIpAddress());
+            gp.setProperty("IdentityFile", getConfig().getIdentityFile().toString());
+            gp.setProperty("clusterId", clusterId);
+            if (getConfig().isAlternativeConfigFile()) {
+                gp.setProperty("AlternativeConfigFile", config.getAlternativeConfigPath());
+            }
+            try {
+                gp.store(new FileOutputStream(getConfig().getGridPropertiesFile()), "Autogenerated by BiBiGrid");
+            } catch (IOException e) {
+                log.error(I, "Exception while creating grid properties file : " + e.getMessage());
+            }
+        }
+
         return true;
     }
 
