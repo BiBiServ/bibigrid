@@ -4,7 +4,7 @@ import com.amazonaws.AmazonClientException;
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUpOgeCluster;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
-import de.unibi.cebitec.bibigrid.meta.CreateClusterAWS;
+import de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

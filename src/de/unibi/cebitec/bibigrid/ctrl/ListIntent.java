@@ -1,7 +1,9 @@
 package de.unibi.cebitec.bibigrid.ctrl;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import static de.unibi.cebitec.bibigrid.ctrl.CreateIntent.log;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.meta.aws.ListIntentAWS;
 import de.unibi.cebitec.bibigrid.model.CurrentClusters;
 import java.util.Arrays;
 import java.util.List;
@@ -16,7 +18,7 @@ public class ListIntent extends Intent {
     public String getCmdLineOption() {
         return "l";
     }
-    
+
     @Override
     public List<String> getRequiredOptions() {
         return Arrays.asList(new String[]{"l", "k", "e", "a"});
@@ -27,20 +29,19 @@ public class ListIntent extends Intent {
         if (getConfiguration() == null) {
             throw new IntentNotConfiguredException();
         }
-  
-        ////////////////////////////////////////////////////////////////////////
-        ///// create client 
-        AmazonEC2Client ec2 = new AmazonEC2Client(this.getConfiguration().getCredentials());
-        ec2.setEndpoint("ec2." + this.getConfiguration().getRegion() + ".amazonaws.com");
-        
-        
-        log.info("Search for BiBiGrid cluster in '{}' ...",getConfiguration().getRegion());
-        
-        ////////////////////////////////////////////////////////////////////////
-        ///// print cluster info
-        CurrentClusters cc = new CurrentClusters(ec2);
-        log.info(cc.printClusterList());
-        
+
+        switch (getConfiguration().getMetaMode()) {
+            case "aws-ec2":
+            case "default":
+                new ListIntentAWS(getConfiguration()).list();
+                break;
+            case "openstack":
+                break;
+            default:
+                log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
+                return false;
+        }
+
         return true;
     }
 }

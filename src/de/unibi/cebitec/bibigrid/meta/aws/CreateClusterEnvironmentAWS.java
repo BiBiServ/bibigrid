@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package de.unibi.cebitec.bibigrid.meta;
+package de.unibi.cebitec.bibigrid.meta.aws;
 
 import com.amazonaws.services.ec2.model.AuthorizeSecurityGroupIngressRequest;
 import com.amazonaws.services.ec2.model.CreatePlacementGroupRequest;
@@ -23,9 +23,10 @@ import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.UserIdGroupPair;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.jcraft.jsch.JSchException;
-import static de.unibi.cebitec.bibigrid.meta.CreateClusterAWS.PLACEMENT_GROUP_PREFIX;
-import static de.unibi.cebitec.bibigrid.meta.CreateClusterAWS.SECURITY_GROUP_PREFIX;
-import static de.unibi.cebitec.bibigrid.meta.CreateClusterAWS.SUBNET_PREFIX;
+import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
+import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.PLACEMENT_GROUP_PREFIX;
+import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.SECURITY_GROUP_PREFIX;
+import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.SUBNET_PREFIX;
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;

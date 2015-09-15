@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package de.unibi.cebitec.bibigrid.meta;
+package de.unibi.cebitec.bibigrid.meta.aws;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.AmazonEC2;
@@ -25,6 +25,7 @@ import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Tag;
+import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.util.DeviceMapper;
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
