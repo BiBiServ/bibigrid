@@ -204,7 +204,7 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment<Cre
         cluster.getEc2().createTags(tagRequest);
         
         cluster.getEc2().authorizeSecurityGroupIngress(ruleChangerReq);
-        
+     
         return this;
     }
     

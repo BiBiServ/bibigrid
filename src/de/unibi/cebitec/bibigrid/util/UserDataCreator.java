@@ -289,6 +289,7 @@ public class UserDataCreator {
         }
         /**
          * enabling nat functions of master-instance (slave inet access)
+         * WARNING! 10.10.0.0 is a hardcoded SUBNET-proto...ensure generic access laterly.
          */
         masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
                 + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE");

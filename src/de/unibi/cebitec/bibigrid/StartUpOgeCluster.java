@@ -25,7 +25,6 @@ public class StartUpOgeCluster {
 
 //        args = new String[]{"bibigrid", "-c", "-o", "/home/jsteiner/bibigrid.properties", "-vpc", "vpc-3e9d165b", "-me"};
 //        args = new String[]{"bibigrid", "-c", "-o", "/home/jsteiner/bibigrid.properties", "-meta", "aws-ec2"};
-
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
@@ -64,10 +63,9 @@ public class StartUpOgeCluster {
                 .addOption("vpc", "vpc-id", true, "Vpc ID used instead of default vpc")
                 .addOption("me", "mesos", true, "Yes or no if Mesos framework should be configured/started. Default is No")
                 .addOption("meta", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
-                .addOption("oge","oge",true,"Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
-                .addOption("nfs","nfs",true,"Yes or no if NFS should be configured/started. Default is Yes!")
-                .addOption("u","user",true,"User name (mandatory)");
-                
+                .addOption("oge", "oge", true, "Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
+                .addOption("nfs", "nfs", true, "Yes or no if NFS should be configured/started. Default is Yes!")
+                .addOption("u", "user", true, "User name (mandatory)");
 
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
