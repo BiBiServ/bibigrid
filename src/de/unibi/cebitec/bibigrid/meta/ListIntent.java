@@ -12,6 +12,6 @@ package de.unibi.cebitec.bibigrid.meta;
 public interface ListIntent {
     
     
-    public void list();
+    public boolean list();
     
 }

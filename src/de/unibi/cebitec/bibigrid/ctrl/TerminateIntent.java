@@ -39,27 +39,4 @@ public class TerminateIntent extends Intent {
         }
     }
 
-//    private void sleep(int seconds) {
-//        try {
-//            Thread.sleep(seconds * 1000);
-//        } catch (InterruptedException ie) {
-//            log.error("Thread.sleep interrupted!");
-//        }
-//    }
-//
-//    private String join(String del, List<String> cs) {
-//        if (cs.isEmpty()) {
-//            return "";
-//        }
-//        if (cs.size() == 1) {
-//            return cs.get(0);
-//        }
-//        StringBuilder sb = new StringBuilder(cs.get(0));
-//        for (int i = 1; i < cs.size(); i++) {
-//            sb.append(del);
-//            sb.append(cs.get(i));
-//        }
-//        return sb.toString();
-//    }
-
 }

@@ -24,7 +24,7 @@ public class ListIntentAWS implements ListIntent {
     }
 
     @Override
-    public void list() {
+    public boolean list() {
 ////////////////////////////////////////////////////////////////////////
         ///// create client 
         AmazonEC2Client ec2 = new AmazonEC2Client(conf.getCredentials());
@@ -36,6 +36,7 @@ public class ListIntentAWS implements ListIntent {
         ///// print cluster info
         CurrentClusters cc = new CurrentClusters(ec2);
         log.info(cc.printClusterList());
+        return true;
     }
 
 }
