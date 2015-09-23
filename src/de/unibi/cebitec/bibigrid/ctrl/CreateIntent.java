@@ -5,6 +5,7 @@ import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUpOgeCluster;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS;
+import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,14 @@ public class CreateIntent extends Intent {
                         .configureClusterMasterInstance()
                         .launchClusterInstances();
             case "openstack":
+                return new CreateClusterOpenstack(getConfiguration(), "http://172.21.32.13:5000/v2.0/")
+                        .createClusterEnvironment()
+                            .createVPC()
+                            .createSubnet()
+                            .createSecurityGroup()
+                            .createPlacementGroup()
+                        .configureClusterMasterInstance()
+                        .launchClusterInstances();
 
             default:
                 log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
