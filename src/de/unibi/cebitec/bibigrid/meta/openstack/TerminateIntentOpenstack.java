@@ -46,8 +46,7 @@ public class TerminateIntentOpenstack implements TerminateIntent {
         connect();
         ServerApi s = novaClient.getServerApi(os_region);
         log.info("Terminating instance with ID: {}", conf.getClusterId());
-        s.delete(conf.getClusterId());
-        return true;
+        return s.delete(conf.getClusterId());
     }
     
     void connect() {

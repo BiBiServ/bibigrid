@@ -13,12 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.jclouds.ContextBuilder;
-import org.jclouds.compute.ComputeServiceContext;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 import org.jclouds.openstack.nova.v2_0.domain.Image;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
+import org.jclouds.openstack.nova.v2_0.domain.ServerCreated;
 import org.jclouds.openstack.nova.v2_0.features.FlavorApi;
 import org.jclouds.openstack.nova.v2_0.features.ImageApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
@@ -35,7 +35,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
     private final String endPoint;
-    private final ComputeServiceContext context;
+//    private final ComputeServiceContext context;
     private final NovaApi novaClient;
 
     private final String os_region = "regionOne";
@@ -53,11 +53,11 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 new SshjSshClientModule(),
                 new SLF4JLoggingModule());
 
-        context = ContextBuilder.newBuilder(provider)
-                .endpoint(this.endPoint)
-                .credentials(username, password)
-                .modules(modules)
-                .buildView(ComputeServiceContext.class);
+//        context = ContextBuilder.newBuilder(provider)
+//                .endpoint(this.endPoint)
+//                .credentials(username, password)
+//                .modules(modules)
+//                .buildView(ComputeServiceContext.class);
 
         novaClient = ContextBuilder.newBuilder(provider)
                 .endpoint(endPoint)
@@ -91,8 +91,8 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             ServerApi s = novaClient.getServerApi(os_region);
             List<Image> images = listImages();
             List<Flavor> flavors = listFlavors();
-            s.create("bibigrid_test", os_region + "/" + images.get(0).getId(), flavors.get(0).getId());
-            log.info("Instance (ID: {}) successfully started", images.get(0).getId());
+            ServerCreated created = s.create("bibigrid_test", os_region + "/" + images.get(0).getId(), flavors.get(0).getId());
+            log.info("Instance (ID: {}) successfully started", created.getId());
         } catch (Exception e) {
             return false;
         }

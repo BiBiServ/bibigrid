@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.TerminateIntentAWS;
+import de.unibi.cebitec.bibigrid.meta.openstack.TerminateIntentOpenstack;
 import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ public class TerminateIntent extends Intent {
             case "default":
                 return new TerminateIntentAWS(getConfiguration()).terminate();
             case "openstack":
-                return false;
+                return new TerminateIntentOpenstack("http://172.21.32.13:5000/v2.0/", getConfiguration()).terminate();
             default:
                 log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
                 return false;
