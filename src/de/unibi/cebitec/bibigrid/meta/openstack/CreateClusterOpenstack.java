@@ -130,7 +130,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                     selectedFlavor = f;
                 }
             }
-            ServerCreated created = s.create("bibigrid_test", image, selectedFlavor.getId());
+            ServerCreated created = s.create("bibigrid_test", image, selectedFlavor.getId(), opt);
             log.info("Instance (ID: {}) successfully started", created.getId());
         } catch (Exception e) {
             return false;
