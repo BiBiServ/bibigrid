@@ -24,7 +24,8 @@ public class StartUpOgeCluster {
     public static void main(String[] args) {
 
 //        args = new String[]{"bibigrid", "-c", "-o", "/home/jsteiner/bibigrid.properties", "-vpc", "vpc-3e9d165b", "-me"};
-//        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties", "-meta", "openstack", "-u","jsteiner"};
+//        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
+//        args = new String[]{"bibigrid", "-t", "7da626d2-8dec-4b14-b779-f8e32995505a", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
@@ -65,7 +66,8 @@ public class StartUpOgeCluster {
                 .addOption("meta", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
                 .addOption("oge", "oge", true, "Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
                 .addOption("nfs", "nfs", true, "Yes or no if NFS should be configured/started. Default is Yes!")
-                .addOption("u", "user", true, "User name (mandatory)");
+                .addOption("u", "user", true, "User name (mandatory)")
+                .addOption("osc", "openstack-credentials", true, "The credentials to with an openstack cluster.");
 
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);

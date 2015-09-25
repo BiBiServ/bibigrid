@@ -21,7 +21,7 @@ public class CreateIntent extends Intent {
 
     @Override
     public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b", "i"});
+        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b", "i", "osc"});
     }
 
     @Override
@@ -50,19 +50,19 @@ public class CreateIntent extends Intent {
             case "aws-ec2":
                 return new CreateClusterAWS(getConfiguration())
                         .createClusterEnvironment()
-                            .createVPC()
-                            .createSubnet()
-                            .createSecurityGroup()
-                            .createPlacementGroup()
+                        .createVPC()
+                        .createSubnet()
+                        .createSecurityGroup()
+                        .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .launchClusterInstances();
             case "openstack":
-                return new CreateClusterOpenstack(getConfiguration(), "http://172.21.32.13:5000/v2.0/")
+                return new CreateClusterOpenstack(getConfiguration())
                         .createClusterEnvironment()
-                            .createVPC()
-                            .createSubnet()
-                            .createSecurityGroup()
-                            .createPlacementGroup()
+                        .createVPC()
+                        .createSubnet()
+                        .createSecurityGroup()
+                        .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .launchClusterInstances();
 

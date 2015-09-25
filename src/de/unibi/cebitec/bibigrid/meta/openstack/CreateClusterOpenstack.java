@@ -5,12 +5,20 @@
  */
 package de.unibi.cebitec.bibigrid.meta.openstack;
 
+import com.amazonaws.services.ec2.model.BlockDeviceMapping;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
+import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.log;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.util.DeviceMapper;
+import de.unibi.cebitec.bibigrid.util.InstanceInformation;
+import de.unibi.cebitec.bibigrid.util.KEYPAIR;
+import de.unibi.cebitec.bibigrid.util.UserDataCreator;
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.jclouds.ContextBuilder;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
@@ -22,6 +30,7 @@ import org.jclouds.openstack.nova.v2_0.domain.ServerCreated;
 import org.jclouds.openstack.nova.v2_0.features.FlavorApi;
 import org.jclouds.openstack.nova.v2_0.features.ImageApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
+import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
 import org.jclouds.sshj.config.SshjSshClientModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +55,26 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
     private Configuration conf;
 
-    public CreateClusterOpenstack(Configuration conf, String endPoint) {
+    public static final String PREFIX = "bibigrid-";
+    public static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
+
+    public static final String MASTER_SSH_USER = "ubuntu";
+    public static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
+    public static final String SUBNET_PREFIX = PREFIX + "subnet-";
+
+    private String base64MasterUserData;
+
+    private List<BlockDeviceMapping> masterDeviceMappings;
+    private String clusterId;
+    private DeviceMapper slaveDeviceMapper;
+    private List<BlockDeviceMapping> slaveBlockDeviceMappings;
+
+    private KEYPAIR keypair;
+
+    public CreateClusterOpenstack(Configuration conf) {
+
         this.conf = conf;
-        this.endPoint = endPoint;
+        this.endPoint = conf.getOpenstackEndpoint();
         Iterable<Module> modules = ImmutableSet.<Module>of(
                 new SshjSshClientModule(),
                 new SLF4JLoggingModule());
@@ -58,10 +84,9 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 //                .credentials(username, password)
 //                .modules(modules)
 //                .buildView(ComputeServiceContext.class);
-
         novaClient = ContextBuilder.newBuilder(provider)
                 .endpoint(endPoint)
-                .credentials(username, password)
+                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
                 .modules(modules)
                 .buildApi(NovaApi.class);
         log.info("Openstack connection established ...");
@@ -91,7 +116,21 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             ServerApi s = novaClient.getServerApi(os_region);
             List<Image> images = listImages();
             List<Flavor> flavors = listFlavors();
-            ServerCreated created = s.create("bibigrid_test", os_region + "/" + images.get(0).getId(), flavors.get(0).getId());
+            /**
+             * Options.
+             */
+            CreateServerOptions opt = new CreateServerOptions();
+            opt.keyPairName(conf.getKeypair());
+
+            String image = os_region + "/" + conf.getMasterImage();
+            String type = conf.getMasterInstanceType().toString();
+            Flavor selectedFlavor = null;
+            for (Flavor f : flavors) {
+                if (f.getName().equals(type)) {
+                    selectedFlavor = f;
+                }
+            }
+            ServerCreated created = s.create("bibigrid_test", image, selectedFlavor.getId());
             log.info("Instance (ID: {}) successfully started", created.getId());
         } catch (Exception e) {
             return false;

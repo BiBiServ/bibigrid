@@ -7,10 +7,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-
 public class Configuration {
 
-   
     private InstanceType masterInstanceType;
     private String masterImage;
     private InstanceType slaveInstanceType;
@@ -33,28 +31,30 @@ public class Configuration {
     private boolean cassandra = false;
     private boolean alternativeConfigFile = false;
     private String alternativeConfigPath = "";
-    private String  vpcid;
-    
+    private String vpcid;
+
     private boolean mesos = false;
     private boolean nfs = true;
     private boolean oge = true;
-    
+
     private String user;
-    
+
     private String metaMode = "default";
+
+    private OpenStackCredentials openstackCredentials;
+    private String openstackEndpoint;
 
     //grid-properties-file
     private File gridpropertiesfile = null;
-    
 
-    public void setGridPropertiesFile(File s){
+    public void setGridPropertiesFile(File s) {
         this.gridpropertiesfile = s;
     }
-    
-    public File getGridPropertiesFile(){
+
+    public File getGridPropertiesFile() {
         return gridpropertiesfile;
     }
-    
+
     public boolean isCassandra() {
         return cassandra;
     }
@@ -62,8 +62,7 @@ public class Configuration {
     public void setCassandra(boolean cassandra) {
         this.cassandra = cassandra;
     }
-    
-    
+
     public boolean isUseMasterAsCompute() {
         return useMasterAsCompute;
     }
@@ -207,8 +206,8 @@ public class Configuration {
     public void setNfsShares(List<String> nfsShares) {
         this.nfsShares = nfsShares;
     }
-    
-     public boolean isAlternativeConfigFile() {
+
+    public boolean isAlternativeConfigFile() {
         return alternativeConfigFile;
     }
 
@@ -255,9 +254,6 @@ public class Configuration {
     public void setOge(boolean oge) {
         this.oge = oge;
     }
-    
-    
-    
 
     public String getMetaMode() {
         return metaMode;
@@ -274,7 +270,21 @@ public class Configuration {
     public void setUser(String user) {
         this.user = user;
     }
-    
-    
-    
+
+    public OpenStackCredentials getOpenstackCredentials() {
+        return openstackCredentials;
+    }
+
+    public void setOpenstackCredentials(OpenStackCredentials openstackCredentials) {
+        this.openstackCredentials = openstackCredentials;
+    }
+
+    public String getOpenstackEndpoint() {
+        return openstackEndpoint;
+    }
+
+    public void setOpenstackEndpoint(String openstackEndpoint) {
+        this.openstackEndpoint = openstackEndpoint;
+    }
+
 }

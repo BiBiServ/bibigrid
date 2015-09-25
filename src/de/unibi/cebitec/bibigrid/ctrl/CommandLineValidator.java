@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.OpenStackCredentials;
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
@@ -81,7 +82,7 @@ public class CommandLineValidator {
 
             ////////////////////////////////////////////////////////////////////////
             ///// aws-credentials-file /////////////////////////////////////////////
-            if (req.contains("a")) {
+            if (req.contains("a") && (defaults.get("meta").equals("aws-ec2") || defaults.get("meta").equals("default"))) {
                 String awsCredentialsFilePath = null;
                 if (defaults.containsKey("aws-credentials-file")) {
                     awsCredentialsFilePath = defaults.getProperty("aws-credentials-file");
@@ -108,18 +109,17 @@ public class CommandLineValidator {
                     return false;
                 }
             }
-            
-            
+
             if (req.contains("u")) {
                 if (cl.hasOption("u") || defaults.containsKey("mesos")) {
-                    String value = cl.getOptionValue("u",defaults.getProperty("user"));
+                    String value = cl.getOptionValue("u", defaults.getProperty("user"));
                     if (value != null && !value.isEmpty()) {
                         cfg.setUser(value);
                     } else {
                         log.error("User (-u) can't be null or empty.");
                         return false;
                     }
-                    
+
                 } else {
                     log.error("-u option is required!");
                     return false;
@@ -133,15 +133,34 @@ public class CommandLineValidator {
             } else if (defaults.containsKey("vpc")) {
                 cfg.setVpcid(defaults.getProperty("vpc"));
             }
-            
-            if (this.cl.hasOption("meta")) {
+
+            /**
+             * Entweder über die CL ...
+             * noch fehlerhaft....notwendig?
+             */
+            if (this.cl.hasOption("meta") && this.cl.getOptionValue("meta").equals("openstack")) {
                 this.cfg.setMetaMode(this.cl.getOptionValue("meta"));
+                // Wenn der openStack Mode gewählt wurde
+                this.cfg.setOpenstackCredentials(new OpenStackCredentials(defaults.getProperty("tenantname"),
+                        defaults.getProperty("username"),
+                        defaults.getProperty("os-password")));
+                this.cfg.setOpenstackEndpoint(defaults.getProperty("os-endpoint"));
+                /**
+                 * Oder über die defaults ...
+                 */
+            } else if (defaults.get("meta").equals("openstack")) {
+                this.cfg.setMetaMode(defaults.getProperty("meta"));
+                // Wenn der openStack Mode gewählt wurde
+                this.cfg.setOpenstackCredentials(new OpenStackCredentials(defaults.getProperty("tenantname"),
+                        defaults.getProperty("username"),
+                        defaults.getProperty("os-password")));
+                this.cfg.setOpenstackEndpoint(defaults.getProperty("os-endpoint"));
             }
+
             ////////////////////////////////////////////////////////////////////////
             ///// mesos on/off /////////////////////////////////////////////////
-            
             if (this.cl.hasOption("me") || defaults.containsKey("mesos")) {
-                String value =  cl.getOptionValue("mesos", defaults.getProperty("mesos"));
+                String value = cl.getOptionValue("mesos", defaults.getProperty("mesos"));
                 if (value.equalsIgnoreCase("yes")) {
                     this.cfg.setMesos(true);
                     log.info(V, "Mesos support enabled.");
@@ -153,7 +172,7 @@ public class CommandLineValidator {
                     return false;
                 }
             }
-            
+
             ////////////////////////////////////////////////////////////////////////
             ///// OGE on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("oge") || defaults.containsKey("mesos")) {
@@ -172,7 +191,7 @@ public class CommandLineValidator {
             ////////////////////////////////////////////////////////////////////////
             ///// NFS on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("nfs") || defaults.containsKey("nfs")) {
-                String value = cl.getOptionValue("nfs", defaults.getProperty("nfs"));               
+                String value = cl.getOptionValue("nfs", defaults.getProperty("nfs"));
                 if (value.equalsIgnoreCase("yes")) {
                     this.cfg.setMesos(true);
                     log.info(V, "NFS enabled.");
@@ -420,7 +439,7 @@ public class CommandLineValidator {
             String portsCsv = this.cl.getOptionValue("p", defaults.getProperty("ports"));
             if (portsCsv != null && !portsCsv.isEmpty()) {
                 try {
-                    Pattern p = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})[/(\\d{1,2})]");                 
+                    Pattern p = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})[/(\\d{1,2})]");
                     String[] portsStrings = portsCsv.split(",");
                     for (String portString : portsStrings) {
 
@@ -432,23 +451,23 @@ public class CommandLineValidator {
                         // current:5555
                         if (portString.contains(":")) {
                             String addr;
-                            String [] tmp = portString.split(":");
+                            String[] tmp = portString.split(":");
                             if (tmp[0].equalsIgnoreCase("current")) {
-                                addr = InetAddress.getLocalHost().getHostAddress()+"/32";
+                                addr = InetAddress.getLocalHost().getHostAddress() + "/32";
                             } else {
                                 Matcher m = p.matcher(tmp[0]);
-                               
-                                for (int i = 1; i <=4; i++){
+
+                                for (int i = 1; i <= 4; i++) {
                                     checkStringAsInt(m.group(i), 0, 255);
                                 }
                                 if (m.group(5) != null) {
                                     checkStringAsInt(m.group(5), 0, 32);
                                 }
-                                addr = tmp[0];    
+                                addr = tmp[0];
                             }
-                            port = new Port(addr,checkStringAsInt(tmp[1], 0, 65535));                        
+                            port = new Port(addr, checkStringAsInt(tmp[1], 0, 65535));
                         } else {
-                            port = new Port("0.0.0.0/0",checkStringAsInt(portString.trim(),  0, 65535));
+                            port = new Port("0.0.0.0/0", checkStringAsInt(portString.trim(), 0, 65535));
 
                         }
                         cfg.getPorts().add(port);
@@ -629,13 +648,13 @@ public class CommandLineValidator {
         }
         return true;
     }
-    
-    private int  checkStringAsInt(String s, int min, int max ) throws Exception{
+
+    private int checkStringAsInt(String s, int min, int max) throws Exception {
         int v = Integer.parseInt(s);
         if (v < min || v > max) {
             throw new Exception();
         }
         return v;
     }
-    
+
 }
