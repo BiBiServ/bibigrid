@@ -205,6 +205,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 ServerCreated createdSlave = s.create("bibigrid_slave_" + (i + 1) + "_" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
                 log.info("Slave_{} (ID: {}) successfully started", i + 1, createdSlave.getId());
             }
+            log.info("Cluster (ID: {}) successfully created!", clusterId);
         } catch (Exception e) {
             return false;
         }
