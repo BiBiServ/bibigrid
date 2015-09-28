@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.ListIntentAWS;
+import de.unibi.cebitec.bibigrid.meta.openstack.ListIntentOpenstack;
 import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
@@ -29,10 +30,9 @@ public class ListIntent extends Intent {
 
         switch (getConfiguration().getMetaMode()) {
             case "aws-ec2":
-            case "default":
                 return new ListIntentAWS(getConfiguration()).list();
             case "openstack":
-                return false;
+                return new ListIntentOpenstack(getConfiguration()).list();
             default:
                 log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
                 return false;

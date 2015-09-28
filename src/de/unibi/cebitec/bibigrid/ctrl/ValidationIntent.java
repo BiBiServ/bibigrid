@@ -35,7 +35,6 @@ public class ValidationIntent extends Intent {
 
         switch (getConfiguration().getMetaMode()) {
             case "aws-ec2":
-            case "default":
                 return new ValidateIntentAWS(getConfiguration()).validate();
             case "openstack":
                 return false;

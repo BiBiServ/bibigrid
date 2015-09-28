@@ -21,7 +21,7 @@ public class CreateIntent extends Intent {
 
     @Override
     public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b", "i", "osc"});
+        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
     }
 
     @Override
@@ -46,24 +46,24 @@ public class CreateIntent extends Intent {
 
     private boolean startClusterAtSelectedCloudProvider() throws AmazonClientException, JSchException {
         switch (getConfiguration().getMetaMode()) {
-            case "default":
             case "aws-ec2":
                 return new CreateClusterAWS(getConfiguration())
                         .createClusterEnvironment()
-                        .createVPC()
-                        .createSubnet()
-                        .createSecurityGroup()
-                        .createPlacementGroup()
+                            .createVPC()
+                            .createSubnet()
+                            .createSecurityGroup()
+                            .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .launchClusterInstances();
             case "openstack":
                 return new CreateClusterOpenstack(getConfiguration())
                         .createClusterEnvironment()
-                        .createVPC()
-                        .createSubnet()
-                        .createSecurityGroup()
-                        .createPlacementGroup()
+                            .createVPC()
+                            .createSubnet()
+                            .createSecurityGroup()
+                            .createPlacementGroup()
                         .configureClusterMasterInstance()
+                        .configureClusterSlaveInstance()
                         .launchClusterInstances();
 
             default:

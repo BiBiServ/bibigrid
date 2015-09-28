@@ -276,20 +276,25 @@ public class UserDataCreator {
          * NFS//Mounts Block
          */
         if (cfg.isNfs()) {
-            for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
-                masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-                masterUserData.append("mount ").append(masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+            if (masterDeviceMapper != null) {
+                for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+                    masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+                    masterUserData.append("mount ").append(masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+                }
+                for (String mastershare : masterNfsShares) {
+                    masterUserData.append("mkdir -p ").append(mastershare).append("\n");
+                    masterUserData.append("chmod 777 ").append(mastershare).append("\n");
+                    masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
+                }
+                masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
+            } else {
+                log.error("MasterDeviceMapper is null ...");
             }
-            for (String mastershare : masterNfsShares) {
-                masterUserData.append("mkdir -p ").append(mastershare).append("\n");
-                masterUserData.append("chmod 777 ").append(mastershare).append("\n");
-                masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
-            }
-            masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
         }
         /**
          * enabling nat functions of master-instance (slave inet access)
-         * WARNING! 10.10.0.0 is a hardcoded SUBNET-proto...ensure generic access laterly.
+         * WARNING! 10.10.0.0 is a hardcoded SUBNET-proto...ensure generic
+         * access laterly.
          */
         masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
                 + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE");

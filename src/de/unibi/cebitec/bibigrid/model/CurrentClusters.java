@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.jclouds.openstack.nova.v2_0.NovaApi;
+import org.jclouds.openstack.nova.v2_0.domain.Server;
+import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,6 +202,30 @@ public class CurrentClusters {
 
     }
 
+    /**
+     * 
+     * @param novaClient OpenStack
+     */
+    public CurrentClusters(NovaApi novaClient, Configuration conf) {
+        String keypairName = conf.getKeypair();
+        ServerApi s = novaClient.getServerApi("regionOne");
+        
+        Cluster c = new Cluster();
+        
+        for (Server serv : s.listInDetail().concat()) {
+            if (serv.getKeyName().equals(keypairName)) {
+                if (serv.getName().contains("master")) {
+                    c.setMasterinstance(serv.getId());
+                } else if(serv.getName().contains("slave")) {
+                    c.addSlaveInstance(serv.getId());
+                }
+                c.setStarted(serv.getCreated().toString());
+                c.setUser(conf.getUser());
+            }
+        }
+        clustermap.put(keypairName, c);
+    }
+    
     public String printClusterList() {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);

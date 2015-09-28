@@ -97,16 +97,56 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         return environment = new CreateClusterEnvironmentOpenstack(this);
     }
 
+    private Flavor masterFlavor, slaveFlavor;
+    private CreateServerOptions masterOptions, slaveOptions;
+    private String masterImage, slaveImage;
+
     @Override
     public CreateClusterOpenstack configureClusterMasterInstance() {
-        log.info("Master instance configuration not implemented yet ...");
-        log.info("Going to use a hardcoded instance type ...");
+        ServerApi s = novaClient.getServerApi(os_region);
+        List<Image> images = listImages();
+        List<Flavor> flavors = listFlavors();
+        /**
+         * Options.
+         */
+        masterOptions = new CreateServerOptions();
+        masterOptions.keyPairName(conf.getKeypair());
+        masterOptions.securityGroupNames("default");
+        masterOptions.userData(UserDataCreator.masterUserData(null, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
+
+        masterImage = os_region + "/" + conf.getMasterImage();
+        String type = conf.getMasterInstanceType().toString();
+        masterFlavor = null;
+        for (Flavor f : flavors) {
+            if (f.getName().equals(type)) {
+                masterFlavor = f;
+            }
+        }
         return this;
     }
 
     @Override
     public CreateClusterOpenstack configureClusterSlaveInstance() {
-        log.error("Slave configuration not supported yet!");
+        ServerApi s = novaClient.getServerApi(os_region);
+        List<Image> images = listImages();
+        List<Flavor> flavors = listFlavors();
+        /**
+         * Options.
+         */
+        slaveOptions = new CreateServerOptions();
+        slaveOptions.keyPairName(conf.getKeypair());
+        slaveOptions.securityGroupNames("default");
+        slaveOptions.userData(UserDataCreator.masterUserData(null, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
+
+        slaveImage = os_region + "/" + conf.getSlaveImage();
+        String type = conf.getSlaveInstanceType().toString();
+        slaveFlavor = null;
+
+        for (Flavor f : flavors) {
+            if (f.getName().equals(type)) {
+                slaveFlavor = f;
+            }
+        }
         return this;
     }
 
@@ -114,24 +154,12 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
     public boolean launchClusterInstances() {
         try {
             ServerApi s = novaClient.getServerApi(os_region);
-            List<Image> images = listImages();
-            List<Flavor> flavors = listFlavors();
-            /**
-             * Options.
-             */
-            CreateServerOptions opt = new CreateServerOptions();
-            opt.keyPairName(conf.getKeypair());
-
-            String image = os_region + "/" + conf.getMasterImage();
-            String type = conf.getMasterInstanceType().toString();
-            Flavor selectedFlavor = null;
-            for (Flavor f : flavors) {
-                if (f.getName().equals(type)) {
-                    selectedFlavor = f;
-                }
+            ServerCreated createdMaster = s.create("bibigrid_master", masterImage, masterFlavor.getId(), masterOptions);
+            log.info("Master (ID: {}) successfully started", createdMaster.getId());
+            for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
+                ServerCreated createdSlave = s.create("bibigrid_slave_" + (i + 1), slaveImage, slaveFlavor.getId(), slaveOptions);
+                log.info("Slave_{} (ID: {}) successfully started", i + 1, createdSlave.getId());
             }
-            ServerCreated created = s.create("bibigrid_test", image, selectedFlavor.getId(), opt);
-            log.info("Instance (ID: {}) successfully started", created.getId());
         } catch (Exception e) {
             return false;
         }

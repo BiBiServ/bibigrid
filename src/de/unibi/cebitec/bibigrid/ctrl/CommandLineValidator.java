@@ -65,9 +65,21 @@ public class CommandLineValidator {
 
     public boolean validate() {
         List<String> req = this.intent.getRequiredOptions();
+        req = new ArrayList<>(req);
 
         if (!req.isEmpty()) {
             Properties defaults = this.loadDefaultsFromPropertiesFile();
+
+            /**
+             * Delete 'a','i','z' (AWS needs) from req while using meta-mode not equal
+             * to aws!
+             */
+            if (!defaults.getProperty("meta").equals("aws-ec2")) {
+                req.remove("a"); // aws cred
+                req.remove("i"); // identity file (SSH)
+                req.remove("z"); // availability zone
+            }
+
             if (Files.exists(this.propertiesFilePath)) {
                 log.info(V, "Reading default options from properties file at '{}'.", this.propertiesFilePath);
             } else {
@@ -82,7 +94,7 @@ public class CommandLineValidator {
 
             ////////////////////////////////////////////////////////////////////////
             ///// aws-credentials-file /////////////////////////////////////////////
-            if (req.contains("a") && (defaults.get("meta").equals("aws-ec2") || defaults.get("meta").equals("default"))) {
+            if (req.contains("a")) {
                 String awsCredentialsFilePath = null;
                 if (defaults.containsKey("aws-credentials-file")) {
                     awsCredentialsFilePath = defaults.getProperty("aws-credentials-file");
@@ -135,24 +147,16 @@ public class CommandLineValidator {
             }
 
             /**
-             * Entweder über die CL ...
-             * noch fehlerhaft....notwendig?
+             * Openstack meta area. When parameter 'meta' is given, and selected
+             * type is 'openstack' than get os-credentials from alternative
+             * bibigrid.properties.
              */
-            if (this.cl.hasOption("meta") && this.cl.getOptionValue("meta").equals("openstack")) {
-                this.cfg.setMetaMode(this.cl.getOptionValue("meta"));
+            if ((this.cl.hasOption("meta") && this.cl.getOptionValue("meta").equals("openstack"))
+                    || defaults.getProperty("meta").equals("openstack")) { // either the meta tag is given as a parameter or as a statement in the bibigrid.properties
+                this.cfg.setMetaMode("openstack");
                 // Wenn der openStack Mode gewählt wurde
-                this.cfg.setOpenstackCredentials(new OpenStackCredentials(defaults.getProperty("tenantname"),
-                        defaults.getProperty("username"),
-                        defaults.getProperty("os-password")));
-                this.cfg.setOpenstackEndpoint(defaults.getProperty("os-endpoint"));
-                /**
-                 * Oder über die defaults ...
-                 */
-            } else if (defaults.get("meta").equals("openstack")) {
-                this.cfg.setMetaMode(defaults.getProperty("meta"));
-                // Wenn der openStack Mode gewählt wurde
-                this.cfg.setOpenstackCredentials(new OpenStackCredentials(defaults.getProperty("tenantname"),
-                        defaults.getProperty("username"),
+                this.cfg.setOpenstackCredentials(new OpenStackCredentials(defaults.getProperty("os-tenantname"),
+                        defaults.getProperty("os-username"),
                         defaults.getProperty("os-password")));
                 this.cfg.setOpenstackEndpoint(defaults.getProperty("os-endpoint"));
             }

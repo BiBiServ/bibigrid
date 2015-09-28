@@ -39,7 +39,7 @@ public class Configuration {
 
     private String user;
 
-    private String metaMode = "default";
+    private String metaMode = "aws-ec2";
 
     private OpenStackCredentials openstackCredentials;
     private String openstackEndpoint;

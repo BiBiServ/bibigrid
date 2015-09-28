@@ -30,10 +30,9 @@ public class TerminateIntent extends Intent {
 
         switch (getConfiguration().getMetaMode()) {
             case "aws-ec2":
-            case "default":
                 return new TerminateIntentAWS(getConfiguration()).terminate();
             case "openstack":
-                return new TerminateIntentOpenstack("http://172.21.32.13:5000/v2.0/", getConfiguration()).terminate();
+                return new TerminateIntentOpenstack(getConfiguration()).terminate();
             default:
                 log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
                 return false;
