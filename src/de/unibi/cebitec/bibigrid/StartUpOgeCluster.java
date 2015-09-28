@@ -27,7 +27,7 @@ public class StartUpOgeCluster {
 //        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
 //        args = new String[]{"bibigrid", "-t", "46a93722-6790-4d65-97bd-a79d5dae23ae", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
 //        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
-        args = new String[]{"bibigrid", "-t all", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
+//        args = new String[]{"bibigrid", "-t all", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
