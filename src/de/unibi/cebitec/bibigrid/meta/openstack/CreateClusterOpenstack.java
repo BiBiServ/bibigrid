@@ -13,10 +13,13 @@ import de.unibi.cebitec.bibigrid.util.DeviceMapper;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.util.UserDataCreator;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import org.apache.commons.codec.binary.Base64;
 import org.jclouds.ContextBuilder;
 import org.jclouds.compute.ComputeServiceContext;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
@@ -39,37 +42,49 @@ import org.slf4j.LoggerFactory;
  * @author jsteiner
  */
 public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenstack, CreateClusterEnvironmentOpenstack> {
-    
+
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
-    
+
     private final String endPoint;
 //    private final ComputeServiceContext context;
     private final NovaApi novaClient;
-    
+
     private final String os_region = "regionOne";
-    
+
     private final String provider = "openstack-nova";
-    
+
     private CreateClusterEnvironmentOpenstack environment;
-    
+
     private Configuration conf;
-    
+
     public static final String PREFIX = "bibigrid-";
     public static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
-    
+
     public static final String MASTER_SSH_USER = "ubuntu";
     public static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
     public static final String SUBNET_PREFIX = PREFIX + "subnet-";
-    
+
     private String base64MasterUserData;
-    
+
     private String clusterId;
     private DeviceMapper slaveDeviceMapper;
-    
+
     private KEYPAIR keypair;
-    
+
     public CreateClusterOpenstack(Configuration conf) {
-        
+
+        // Cluster ID is a cut down base64 encoded version of a random UUID:
+        UUID clusterIdUUID = UUID.randomUUID();
+        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        bb.putLong(clusterIdUUID.getMostSignificantBits());
+        bb.putLong(clusterIdUUID.getLeastSignificantBits());
+        String clusterIdBase64 = Base64.encodeBase64URLSafeString(bb.array()).replace("-", "").replace("_", "");
+        int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
+        clusterId = clusterIdBase64.substring(0, len);
+//        bibigridid = new Tag().withKey("bibigrid-id").withValue(clusterId);
+//        username = new Tag().withKey("user").withValue(config.getUser());
+        log.debug("cluster id: {}", clusterId);
+
         this.conf = conf;
         this.endPoint = conf.getOpenstackEndpoint();
         Iterable<Module> modules = ImmutableSet.<Module>of(
@@ -89,16 +104,16 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 .buildApi(NovaApi.class);
         log.info("Openstack connection established ...");
     }
-    
+
     @Override
     public CreateClusterEnvironmentOpenstack createClusterEnvironment() {
         return environment = new CreateClusterEnvironmentOpenstack(this);
     }
-    
+
     private Flavor masterFlavor, slaveFlavor;
     private CreateServerOptions masterOptions, slaveOptions;
     private String masterImage, slaveImage;
-    
+
     @Override
     public CreateClusterOpenstack configureClusterMasterInstance() {
         ServerApi s = novaClient.getServerApi(os_region);
@@ -126,7 +141,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         masterOptions.availabilityZone("nova-x86_64");
         masterOptions.userData(UserDataCreator.masterUserData(null, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
         masterOptions.blockDeviceMappings(mappings);
-        
+
         masterImage = os_region + "/" + conf.getMasterImage();
         String type = conf.getMasterInstanceType().toString();
         masterFlavor = null;
@@ -137,7 +152,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         }
         return this;
     }
-    
+
     @Override
     public CreateClusterOpenstack configureClusterSlaveInstance() {
         ServerApi s = novaClient.getServerApi(os_region);
@@ -167,11 +182,11 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         slaveOptions.availabilityZone("nova-x86_64");
         slaveOptions.userData(UserDataCreator.masterUserData(null, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
         slaveOptions.blockDeviceMappings(mappings);
-        
+
         slaveImage = os_region + "/" + conf.getSlaveImage();
         String type = conf.getSlaveInstanceType().toString();
         slaveFlavor = null;
-        
+
         for (Flavor f : flavors) {
             if (f.getName().equals(type)) {
                 slaveFlavor = f;
@@ -179,15 +194,15 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         }
         return this;
     }
-    
+
     @Override
     public boolean launchClusterInstances() {
         try {
             ServerApi s = novaClient.getServerApi(os_region);
-            ServerCreated createdMaster = s.create("bibigrid_master", masterImage, masterFlavor.getId(), masterOptions);
+            ServerCreated createdMaster = s.create("bibigrid_master_" + clusterId, masterImage, masterFlavor.getId(), masterOptions);
             log.info("Master (ID: {}) successfully started", createdMaster.getId());
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
-                ServerCreated createdSlave = s.create("bibigrid_slave_" + (i + 1), slaveImage, slaveFlavor.getId(), slaveOptions);
+                ServerCreated createdSlave = s.create("bibigrid_slave_" + (i + 1) + "_" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
                 log.info("Slave_{} (ID: {}) successfully started", i + 1, createdSlave.getId());
             }
         } catch (Exception e) {
@@ -195,22 +210,22 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         }
         return true;
     }
-    
+
     private List<Server> listServers() {
         List<Server> ret = new ArrayList<>();
         Set<String> regions = novaClient.getConfiguredRegions();
         for (String region : regions) {
             ServerApi serverApi = novaClient.getServerApi(region);
-            
+
             System.out.println("Servers in " + region);
-            
+
             for (Server server : serverApi.listInDetail().concat()) {
                 ret.add(server);
             }
         }
         return ret;
     }
-    
+
     private List<Flavor> listFlavors() {
         List<Flavor> ret = new ArrayList<>();
         FlavorApi f = novaClient.getFlavorApi(os_region); // hardcoded
@@ -219,7 +234,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         }
         return ret;
     }
-    
+
     private List<Image> listImages() {
         List<Image> ret = new ArrayList<>();
         ImageApi imageApi = novaClient.getImageApi(os_region);
@@ -228,5 +243,5 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         }
         return ret;
     }
-    
+
 }
