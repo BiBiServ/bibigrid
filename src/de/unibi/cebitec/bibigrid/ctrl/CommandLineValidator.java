@@ -68,12 +68,17 @@ public class CommandLineValidator {
         Properties defaults = this.loadDefaultsFromPropertiesFile(); // load props
 
         String mode = "";
-        if (cl.hasOption("mode")) { // if commandline has option mode
-            mode = cl.getOptionValue("mode");
-            cfg.setMode(MODE.valueOf(mode));
-        } else if (defaults.getProperty("mode") != null) { // if props has option mode
-            mode = defaults.getProperty("mode");
-            cfg.setMode(MODE.valueOf(mode.toUpperCase()));
+        try {
+            if (cl.hasOption("mode")) { // if commandline has option mode
+                mode = cl.getOptionValue("mode").trim();
+                cfg.setMode(MODE.valueOf(mode.toUpperCase()));
+            } else if (defaults.getProperty("mode") != null) { // if props has option mode
+                mode = defaults.getProperty("mode");
+                cfg.setMode(MODE.valueOf(mode.toUpperCase()));
+            }
+        } catch (IllegalArgumentException iae) {
+            log.error("No suitable mode found. Exit");
+            return false;
         }
         // if no mode aws given keep default mode instead.
 
@@ -149,48 +154,46 @@ public class CommandLineValidator {
             }
 
             /**
-             * Openstack meta area. When parameter 'meta' is given, and selected
-             * type is 'openstack' than get os-credentials from alternative
-             * bibigrid.properties.
+             * Openstack meta area.
              */
             if (cfg.getMode().equals(MODE.OPENSTACK)) {
 
                 OpenStackCredentials osc = new OpenStackCredentials();
 
                 if (cl.hasOption("osu")) {
-                    osc.setUsername(cl.getOptionValue("osu"));
+                    osc.setUsername(cl.getOptionValue("osu").trim());
                 } else if (defaults.getProperty("os-username") != null) {
                     osc.setUsername(defaults.getProperty("os-username"));
                 } else {
                     log.error("No suitable entry for OpenStack-Username (osu) found! Exit");
-                    System.exit(1);
+                    return false;
                 }
 
                 if (cl.hasOption("ost")) {
-                    osc.setTenantName(cl.getOptionValue("ost"));
+                    osc.setTenantName(cl.getOptionValue("ost").trim());
                 } else if (defaults.getProperty("os-tenantname") != null) {
                     osc.setTenantName(defaults.getProperty("os-tenantname"));
                 } else {
                     log.error("No suitable entry for OpenStack-Tenantname (ost) found! Exit");
-                    System.exit(1);
+                    return false;
                 }
 
                 if (cl.hasOption("osp")) {
-                    osc.setPassword(cl.getOptionValue("osp"));
+                    osc.setPassword(cl.getOptionValue("osp").trim());
                 } else if (defaults.getProperty("os-password") != null) {
                     osc.setPassword(defaults.getProperty("os-password"));
                 } else {
                     log.error("No suitable entry for OpenStack-Password (osp) found! Exit");
-                    System.exit(1);
+                    return false;
                 }
 
                 if (cl.hasOption("ose")) {
-                    osc.setEndpoint(cl.getOptionValue("ose"));
+                    osc.setEndpoint(cl.getOptionValue("ose").trim());
                 } else if (defaults.getProperty("os-endpoint") != null) {
                     osc.setEndpoint(defaults.getProperty("os-endpoint"));
                 } else {
                     log.error("No suitable entry for OpenStack-Endpoint (ose) found! Exit");
-                    System.exit(1);
+                    return false;
                 }
                 this.cfg.setOpenstackCredentials(osc);
             }

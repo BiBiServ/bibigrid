@@ -23,8 +23,8 @@ public class StartUpOgeCluster {
 
     public static void main(String[] args) {
 
-//        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
-        args = new String[]{"bibigrid", "-t ws5rdXQdSsFro0g", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
+        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
+//        args = new String[]{"bibigrid", "-t Vvp5M9MsT3mDJ41", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
 
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
@@ -67,10 +67,10 @@ public class StartUpOgeCluster {
                 .addOption("oge", "oge", true, "Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
                 .addOption("nfs", "nfs", true, "Yes or no if NFS should be configured/started. Default is Yes!")
                 .addOption("u", "user", true, "User name (mandatory)")
-                .addOption("osu", "openstack-username", true, "...")
-                .addOption("ost", "openstack-tenantname", true, "...")
-                .addOption("osp", "openstack-password", true, "...")
-                .addOption("ose", "openstack-endpoint", true, "...");
+                .addOption("osu", "openstack-username", true, "The given Openstack Username")
+                .addOption("ost", "openstack-tenantname", true, "The given Openstack Tenantname")
+                .addOption("osp", "openstack-password", true, "The given Openstack User-Password")
+                .addOption("ose", "openstack-endpoint", true, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/)");
 
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);

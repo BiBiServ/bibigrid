@@ -34,7 +34,7 @@ public class TerminateIntentOpenstack implements TerminateIntent {
 
     private NovaApi novaClient;
 
-    private final String os_region = "regionOne";
+    private final String os_region;
     private final String provider = "openstack-nova";
 
 //    private final String nodeID;
@@ -42,6 +42,7 @@ public class TerminateIntentOpenstack implements TerminateIntent {
 
     public TerminateIntentOpenstack(Configuration conf) {
         this.conf = conf;
+        os_region = conf.getRegion();
     }
 
     @Override
