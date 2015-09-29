@@ -23,7 +23,7 @@ public class StartUpOgeCluster {
 
     public static void main(String[] args) {
 
-        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
+//        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
 //        args = new String[]{"bibigrid", "-t Vvp5M9MsT3mDJ41", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
 
         CommandLineParser cli = new PosixParser();
