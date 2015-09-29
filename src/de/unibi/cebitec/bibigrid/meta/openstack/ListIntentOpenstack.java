@@ -36,7 +36,7 @@ public class ListIntentOpenstack implements ListIntent {
                 new SLF4JLoggingModule());
 
         NovaApi novaClient = ContextBuilder.newBuilder(provider)
-                .endpoint(conf.getOpenstackEndpoint())
+                .endpoint(conf.getOpenstackCredentials().getEndpoint())
                 .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
                 .modules(modules)
                 .buildApi(NovaApi.class);

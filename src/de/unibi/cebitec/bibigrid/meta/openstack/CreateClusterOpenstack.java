@@ -45,8 +45,6 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
-    private final String endPoint;
-//    private final ComputeServiceContext context;
     private final NovaApi novaClient;
 
     private final String os_region = "regionOne";
@@ -86,7 +84,6 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         log.debug("cluster id: {}", clusterId);
 
         this.conf = conf;
-        this.endPoint = conf.getOpenstackEndpoint();
         Iterable<Module> modules = ImmutableSet.<Module>of(
                 new SshjSshClientModule(),
                 new SLF4JLoggingModule());
@@ -98,7 +95,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 //                .buildView(ComputeServiceContext.class);
 //        context.getComputeService().templateOptions().
         novaClient = ContextBuilder.newBuilder(provider)
-                .endpoint(endPoint)
+                .endpoint(conf.getOpenstackCredentials().getEndpoint())
                 .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
                 .modules(modules)
                 .buildApi(NovaApi.class);
@@ -138,7 +135,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         masterOptions = new CreateServerOptions();
         masterOptions.keyPairName(conf.getKeypair());
         masterOptions.securityGroupNames("default");
-        masterOptions.availabilityZone("nova-x86_64");
+        masterOptions.availabilityZone(conf.getAvailabilityZone());
         masterOptions.userData(UserDataCreator.masterUserData(null, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
         masterOptions.blockDeviceMappings(mappings);
 
@@ -179,7 +176,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         slaveOptions = new CreateServerOptions();
         slaveOptions.keyPairName(conf.getKeypair());
         slaveOptions.securityGroupNames("default");
-        slaveOptions.availabilityZone("nova-x86_64");
+        slaveOptions.availabilityZone(conf.getAvailabilityZone());
         slaveOptions.userData(UserDataCreator.masterUserData(null, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
         slaveOptions.blockDeviceMappings(mappings);
 
@@ -206,10 +203,43 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 log.info("Slave_{} (ID: {}) successfully started", i + 1, createdSlave.getId());
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);
+
+            ////////////////////////////////////
+            //// Human friendly output
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n You might want to set the following environment variable:\n\n");
+            sb.append("export BIBIGRID_MASTER=").append(getPublicIpFromServer(createdMaster.getId())).append("\n\n");
+            sb.append("You can then log on the master node with:\n\n")
+                    .append("[TODO] ssh")
+                    //                    .append(conf.getIdentityFile())
+                    .append(" ubuntu@$BIBIGRID_MASTER\n\n");
+            sb.append("The cluster id of your started cluster is : ")
+                    .append(clusterId)
+                    .append("\n\n");
+            sb.append("The can easily terminate the cluster at any time with :\n")
+                    .append("./bibigrid -t ").append(clusterId).append(" ");
+            if (conf.isAlternativeConfigFile()) {
+                sb.append("-o ").append(conf.getAlternativeConfigPath()).append(" ");
+            }
+
+            sb.append("\n");
+
+            log.info(sb.toString());
         } catch (Exception e) {
             return false;
         }
         return true;
+    }
+
+    private String getPublicIpFromServer(String serverID) {
+        ServerApi serverApi = novaClient.getServerApi(os_region);
+
+        for (Server server : serverApi.listInDetail().concat()) {
+            if (server.getId().equals(serverID)) {
+                return server.getAccessIPv4();
+            }
+        }
+        return "";
     }
 
     private List<Server> listServers() {
@@ -217,8 +247,6 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         Set<String> regions = novaClient.getConfiguredRegions();
         for (String region : regions) {
             ServerApi serverApi = novaClient.getServerApi(region);
-
-            System.out.println("Servers in " + region);
 
             for (Server server : serverApi.listInDetail().concat()) {
                 ret.add(server);

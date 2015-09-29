@@ -6,6 +6,7 @@ import de.unibi.cebitec.bibigrid.StartUpOgeCluster;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
+import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +21,14 @@ public class CreateIntent extends Intent {
     }
 
     @Override
-    public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
+    public List<String> getRequiredOptions(MODE mode) {
+        switch (mode) {
+            case AWS_EC2:
+                return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
+            case OPENSTACK:
+                return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "z", "g", "r", "b", "osu", "ost", "osp", "ose"});
+        }
+        return null;
     }
 
     @Override
@@ -45,23 +52,23 @@ public class CreateIntent extends Intent {
     }
 
     private boolean startClusterAtSelectedCloudProvider() throws AmazonClientException, JSchException {
-        switch (getConfiguration().getMetaMode()) {
-            case "aws-ec2":
+        switch (getConfiguration().getMode()) {
+            case AWS_EC2:
                 return new CreateClusterAWS(getConfiguration())
                         .createClusterEnvironment()
-                            .createVPC()
-                            .createSubnet()
-                            .createSecurityGroup()
-                            .createPlacementGroup()
+                        .createVPC()
+                        .createSubnet()
+                        .createSecurityGroup()
+                        .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .launchClusterInstances();
-            case "openstack":
+            case OPENSTACK:
                 return new CreateClusterOpenstack(getConfiguration())
                         .createClusterEnvironment()
-                            .createVPC()
-                            .createSubnet()
-                            .createSecurityGroup()
-                            .createPlacementGroup()
+                        .createVPC()
+                        .createSubnet()
+                        .createSecurityGroup()
+                        .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .configureClusterSlaveInstance()
                         .launchClusterInstances();

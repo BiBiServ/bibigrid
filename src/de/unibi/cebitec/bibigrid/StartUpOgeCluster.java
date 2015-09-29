@@ -23,11 +23,9 @@ public class StartUpOgeCluster {
 
     public static void main(String[] args) {
 
-//        args = new String[]{"bibigrid", "-c", "-o", "/home/jsteiner/bibigrid.properties", "-vpc", "vpc-3e9d165b", "-me"};
 //        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
-//        args = new String[]{"bibigrid", "-t", "46a93722-6790-4d65-97bd-a79d5dae23ae", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
-//        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
-        args = new String[]{"bibigrid", "-t 2EyMiOFYQnSHvFx", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
+        args = new String[]{"bibigrid", "-t ws5rdXQdSsFro0g", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
+
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
@@ -65,10 +63,14 @@ public class StartUpOgeCluster {
                 .addOption("gpf", "grid-properties-file", true, "store essential grid properties like master & slave dns values and grid id in a Java property file")
                 .addOption("vpc", "vpc-id", true, "Vpc ID used instead of default vpc")
                 .addOption("me", "mesos", true, "Yes or no if Mesos framework should be configured/started. Default is No")
-                .addOption("meta", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
+                .addOption("mode", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
                 .addOption("oge", "oge", true, "Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
                 .addOption("nfs", "nfs", true, "Yes or no if NFS should be configured/started. Default is Yes!")
-                .addOption("u", "user", true, "User name (mandatory)");
+                .addOption("u", "user", true, "User name (mandatory)")
+                .addOption("osu", "openstack-username", true, "...")
+                .addOption("ost", "openstack-tenantname", true, "...")
+                .addOption("osp", "openstack-password", true, "...")
+                .addOption("ose", "openstack-endpoint", true, "...");
 
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);

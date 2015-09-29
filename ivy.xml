@@ -11,5 +11,6 @@
         <dependency org="org.apache" name="commons-cli" rev="1.2" />
         <dependency org="com.jcraft" name="jsch" rev="0.1.53" revConstraint="latest.integration"/>
         <dependency org="org.apache" name="commons-io" rev="2.4" />
+        <dependency org="org.apache" name="jclouds.openstack" rev="1.9.1" />
     </dependencies>
 </ivy-module>

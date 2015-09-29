@@ -48,7 +48,7 @@ public class TerminateIntentOpenstack implements TerminateIntent {
     public boolean terminate() {
         connect();
         /**
-         * What to do if the execution fails and the terminateIntent gets not
+         * What to do if the createIntent fails and the terminateIntent gets not
          * called via commandline -t ? ...
          */
         ServerApi s = novaClient.getServerApi(os_region);
@@ -59,7 +59,7 @@ public class TerminateIntentOpenstack implements TerminateIntent {
                 s.delete(serv.getId());
                 log.info("Terminated " + serv.getName());
             }
-            log.info("Cluster (ID: {}) successfully terminated", conf.getClusterId());
+            log.info("Cluster (ID: {}) successfully terminated", conf.getClusterId().trim());
             return true;
         } else {
             /**
@@ -96,11 +96,12 @@ public class TerminateIntentOpenstack implements TerminateIntent {
                 String name = server.getName();
                 if (name.substring(name.lastIndexOf("_") + 1, name.length()).equals(clusterID.trim())) {
                     ret.add(server);
-                } else {
-                    log.error("No suitable bibigrid cluster with ID: [{}] found.", conf.getClusterId().trim());
-                    System.exit(1);
                 }
             }
+        }
+        if (ret.isEmpty()) {
+            log.error("No suitable bibigrid cluster with ID: [{}] found.", conf.getClusterId().trim());
+            System.exit(1);
         }
         return ret;
     }
@@ -111,7 +112,7 @@ public class TerminateIntentOpenstack implements TerminateIntent {
                 new SLF4JLoggingModule());
 
         novaClient = ContextBuilder.newBuilder(provider)
-                .endpoint(conf.getOpenstackEndpoint())
+                .endpoint(conf.getOpenstackCredentials().getEndpoint())
                 .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
                 .modules(modules)
                 .buildApi(NovaApi.class);

@@ -39,10 +39,14 @@ public class Configuration {
 
     private String user;
 
-    private String metaMode = "aws-ec2";
+    public static enum MODE {
+
+        AWS_EC2, OPENSTACK
+    }
+
+    private MODE mode = MODE.AWS_EC2;
 
     private OpenStackCredentials openstackCredentials;
-    private String openstackEndpoint;
 
     //grid-properties-file
     private File gridpropertiesfile = null;
@@ -255,12 +259,12 @@ public class Configuration {
         this.oge = oge;
     }
 
-    public String getMetaMode() {
-        return metaMode;
+    public MODE getMode() {
+        return mode;
     }
 
-    public void setMetaMode(String metaMode) {
-        this.metaMode = metaMode;
+    public void setMode(MODE mode) {
+        this.mode = mode;
     }
 
     public String getUser() {
@@ -277,14 +281,6 @@ public class Configuration {
 
     public void setOpenstackCredentials(OpenStackCredentials openstackCredentials) {
         this.openstackCredentials = openstackCredentials;
-    }
-
-    public String getOpenstackEndpoint() {
-        return openstackEndpoint;
-    }
-
-    public void setOpenstackEndpoint(String openstackEndpoint) {
-        this.openstackEndpoint = openstackEndpoint;
     }
 
 }

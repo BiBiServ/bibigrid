@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import de.unibi.cebitec.bibigrid.model.OpenStackCredentials;
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
@@ -64,21 +65,22 @@ public class CommandLineValidator {
     }
 
     public boolean validate() {
-        List<String> req = this.intent.getRequiredOptions();
+        Properties defaults = this.loadDefaultsFromPropertiesFile(); // load props
+
+        String mode = "";
+        if (cl.hasOption("mode")) { // if commandline has option mode
+            mode = cl.getOptionValue("mode");
+            cfg.setMode(MODE.valueOf(mode));
+        } else if (defaults.getProperty("mode") != null) { // if props has option mode
+            mode = defaults.getProperty("mode");
+            cfg.setMode(MODE.valueOf(mode.toUpperCase()));
+        }
+        // if no mode aws given keep default mode instead.
+
+        List<String> req = this.intent.getRequiredOptions(cfg.getMode());
         req = new ArrayList<>(req);
 
         if (!req.isEmpty()) {
-            Properties defaults = this.loadDefaultsFromPropertiesFile();
-
-            /**
-             * Delete 'a','i','z' (AWS needs) from req while using meta-mode not equal
-             * to aws!
-             */
-            if (!defaults.getProperty("meta").equals("aws-ec2")) {
-                req.remove("a"); // aws cred
-                req.remove("i"); // identity file (SSH)
-                req.remove("z"); // availability zone
-            }
 
             if (Files.exists(this.propertiesFilePath)) {
                 log.info(V, "Reading default options from properties file at '{}'.", this.propertiesFilePath);
@@ -151,14 +153,46 @@ public class CommandLineValidator {
              * type is 'openstack' than get os-credentials from alternative
              * bibigrid.properties.
              */
-            if ((this.cl.hasOption("meta") && this.cl.getOptionValue("meta").equals("openstack"))
-                    || defaults.getProperty("meta").equals("openstack")) { // either the meta tag is given as a parameter or as a statement in the bibigrid.properties
-                this.cfg.setMetaMode("openstack");
-                // Wenn der openStack Mode gewählt wurde
-                this.cfg.setOpenstackCredentials(new OpenStackCredentials(defaults.getProperty("os-tenantname"),
-                        defaults.getProperty("os-username"),
-                        defaults.getProperty("os-password")));
-                this.cfg.setOpenstackEndpoint(defaults.getProperty("os-endpoint"));
+            if (cfg.getMode().equals(MODE.OPENSTACK)) {
+
+                OpenStackCredentials osc = new OpenStackCredentials();
+
+                if (cl.hasOption("osu")) {
+                    osc.setUsername(cl.getOptionValue("osu"));
+                } else if (defaults.getProperty("os-username") != null) {
+                    osc.setUsername(defaults.getProperty("os-username"));
+                } else {
+                    log.error("No suitable entry for OpenStack-Username (osu) found! Exit");
+                    System.exit(1);
+                }
+
+                if (cl.hasOption("ost")) {
+                    osc.setTenantName(cl.getOptionValue("ost"));
+                } else if (defaults.getProperty("os-tenantname") != null) {
+                    osc.setTenantName(defaults.getProperty("os-tenantname"));
+                } else {
+                    log.error("No suitable entry for OpenStack-Tenantname (ost) found! Exit");
+                    System.exit(1);
+                }
+
+                if (cl.hasOption("osp")) {
+                    osc.setPassword(cl.getOptionValue("osp"));
+                } else if (defaults.getProperty("os-password") != null) {
+                    osc.setPassword(defaults.getProperty("os-password"));
+                } else {
+                    log.error("No suitable entry for OpenStack-Password (osp) found! Exit");
+                    System.exit(1);
+                }
+
+                if (cl.hasOption("ose")) {
+                    osc.setEndpoint(cl.getOptionValue("ose"));
+                } else if (defaults.getProperty("os-endpoint") != null) {
+                    osc.setEndpoint(defaults.getProperty("os-endpoint"));
+                } else {
+                    log.error("No suitable entry for OpenStack-Endpoint (ose) found! Exit");
+                    System.exit(1);
+                }
+                this.cfg.setOpenstackCredentials(osc);
             }
 
             ////////////////////////////////////////////////////////////////////////

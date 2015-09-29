@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 import com.amazonaws.services.ec2.AmazonEC2;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.ValidateIntentAWS;
+import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
@@ -23,8 +24,14 @@ public class ValidationIntent extends Intent {
     }
 
     @Override
-    public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{"ch", "m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
+    public List<String> getRequiredOptions(MODE mode) {
+        switch (mode) {
+            case AWS_EC2:
+                return Arrays.asList(new String[]{"ch", "m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
+            case OPENSTACK:
+                return Arrays.asList(new String[]{"ch", "m", "M", "s", "S", "n", "u", "k", "i", "e", "z", "g", "r", "b", "ost", "osu", "osp", "ose"});
+        }
+        return null;
     }
 
     @Override
@@ -33,10 +40,10 @@ public class ValidationIntent extends Intent {
             throw new IntentNotConfiguredException();
         }
 
-        switch (getConfiguration().getMetaMode()) {
-            case "aws-ec2":
+        switch (getConfiguration().getMode()) {
+            case AWS_EC2:
                 return new ValidateIntentAWS(getConfiguration()).validate();
-            case "openstack":
+            case OPENSTACK:
                 return false;
             default:
                 log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
