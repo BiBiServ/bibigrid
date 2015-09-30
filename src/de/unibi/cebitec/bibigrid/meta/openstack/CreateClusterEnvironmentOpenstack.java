@@ -9,6 +9,11 @@ import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import java.util.logging.Level;
+import org.jclouds.net.domain.IpProtocol;
+import org.jclouds.openstack.nova.v2_0.domain.Ingress;
+import org.jclouds.openstack.nova.v2_0.domain.SecurityGroupRule;
+import org.jclouds.openstack.nova.v2_0.domain.SecurityGroup;
+import org.jclouds.openstack.nova.v2_0.extensions.SecurityGroupApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,13 +23,15 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterEnvironmentOpenstack
         implements CreateClusterEnvironment<CreateClusterEnvironmentOpenstack, CreateClusterOpenstack> {
-
+    
     private CreateClusterOpenstack cluster;
     
+    private SecurityGroup securityGroup;
+    
     private KEYPAIR keypair;
-
+    
     public static final Logger log = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
-
+    
     public CreateClusterEnvironmentOpenstack(CreateClusterOpenstack cluster) {
         this.cluster = cluster;
         try {
@@ -33,25 +40,30 @@ public class CreateClusterEnvironmentOpenstack
             java.util.logging.Logger.getLogger(CreateClusterEnvironmentOpenstack.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
+    
     @Override
     public CreateClusterEnvironmentOpenstack createVPC() {
         log.info("VPC creation not implemented yet");
         return this;
     }
-
+    
     @Override
     public CreateClusterEnvironmentOpenstack createSubnet() {
         log.info("Subnet creation not implementd yet");
         return this;
     }
-
+    
     @Override
     public CreateClusterEnvironmentOpenstack createSecurityGroup() {
-        log.info("SecurityGroup creation not implemented yet");
+        SecurityGroupApi s = cluster.getSecurityGroupApi();
+        securityGroup = s.createWithDescription("sg-" + cluster.getClusterId(), "Security Group for cluster: " + cluster.getClusterId());
+        SecurityGroupRule rule_ssh = s.createRuleAllowingCidrBlock(securityGroup.getId(), Ingress.builder().ipProtocol(IpProtocol.TCP).fromPort(22).toPort(22).build(), "0.0.0.0/0");
+        SecurityGroupRule rule_all_tcp = s.createRuleAllowingSecurityGroupId(securityGroup.getId(), Ingress.builder().ipProtocol(IpProtocol.TCP).fromPort(1).toPort(65535).build(), securityGroup.getId());
+        SecurityGroupRule rule_all_udp = s.createRuleAllowingSecurityGroupId(securityGroup.getId(), Ingress.builder().ipProtocol(IpProtocol.UDP).fromPort(1).toPort(65535).build(), securityGroup.getId());
+        log.info("SecurityGroup (ID: {}) created.", securityGroup.getName());
         return this;
     }
-
+    
     @Override
     public CreateClusterOpenstack createPlacementGroup() {
         log.info("PlacementGroup creation not implemented yet");
@@ -61,5 +73,9 @@ public class CreateClusterEnvironmentOpenstack
     public KEYPAIR getKeypair() {
         return this.keypair;
     }
-
+    
+    public SecurityGroup getSecurityGroup() {
+        return securityGroup;
+    }
+    
 }

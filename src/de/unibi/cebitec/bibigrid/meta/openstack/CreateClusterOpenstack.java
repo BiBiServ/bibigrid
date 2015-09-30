@@ -32,6 +32,7 @@ import org.jclouds.openstack.nova.v2_0.domain.Flavor;
 import org.jclouds.openstack.nova.v2_0.domain.Image;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
 import org.jclouds.openstack.nova.v2_0.domain.ServerCreated;
+import org.jclouds.openstack.nova.v2_0.extensions.SecurityGroupApi;
 import org.jclouds.openstack.nova.v2_0.features.FlavorApi;
 import org.jclouds.openstack.nova.v2_0.features.ImageApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
@@ -48,7 +49,11 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
-    private final NovaApi novaClient;
+    private final NovaApi novaApi;
+    private final ServerApi serverApi;
+    private final SecurityGroupApi securityGroupApi;
+    private final FlavorApi flavorApi;
+    private final ImageApi imageApi;
 
     private final String os_region;
 
@@ -65,13 +70,9 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
     public static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
     public static final String SUBNET_PREFIX = PREFIX + "subnet-";
 
-    private String base64MasterUserData;
-
     private String clusterId;
     private DeviceMapper slaveDeviceMapper;
-
-    private KEYPAIR keypair;
-
+    
     public CreateClusterOpenstack(Configuration conf) {
 
         // Cluster ID is a cut down base64 encoded version of a random UUID:
@@ -82,8 +83,6 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         String clusterIdBase64 = Base64.encodeBase64URLSafeString(bb.array()).replace("-", "").replace("_", "");
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
         clusterId = clusterIdBase64.substring(0, len);
-//        bibigridid = new Tag().withKey("bibigrid-id").withValue(clusterId);
-//        username = new Tag().withKey("user").withValue(config.getUser());
         log.debug("cluster id: {}", clusterId);
 
         this.conf = conf;
@@ -93,17 +92,16 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 new SshjSshClientModule(),
                 new SLF4JLoggingModule());
 
-//        context = ContextBuilder.newBuilder(provider)
-//                .endpoint(this.endPoint)
-//                .credentials(username, password)
-//                .modules(modules)
-//                .buildView(ComputeServiceContext.class);
-//        context.getComputeService().templateOptions().
-        novaClient = ContextBuilder.newBuilder(provider)
+        novaApi = ContextBuilder.newBuilder(provider)
                 .endpoint(conf.getOpenstackCredentials().getEndpoint())
                 .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
                 .modules(modules)
                 .buildApi(NovaApi.class);
+
+        serverApi = novaApi.getServerApi(os_region);
+        securityGroupApi = novaApi.getSecurityGroupApi(os_region).get();
+        flavorApi = novaApi.getFlavorApi(os_region);
+        imageApi = novaApi.getImageApi(os_region);
 
         log.info("Openstack connection established ...");
     }
@@ -119,8 +117,6 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
     @Override
     public CreateClusterOpenstack configureClusterMasterInstance() {
-        ServerApi s = novaClient.getServerApi(os_region);
-        List<Image> images = listImages();
         List<Flavor> flavors = listFlavors();
 
         /**
@@ -148,7 +144,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
          */
         masterOptions = new CreateServerOptions();
         masterOptions.keyPairName(conf.getKeypair());
-        masterOptions.securityGroupNames("default");
+        masterOptions.securityGroupNames(environment.getSecurityGroup().getName());
         masterOptions.availabilityZone(conf.getAvailabilityZone());
         masterOptions.userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
 //        masterOptions.blockDeviceMappings(mappings);
@@ -168,8 +164,6 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
     @Override
     public CreateClusterOpenstack configureClusterSlaveInstance() {
-        ServerApi s = novaClient.getServerApi(os_region);
-        List<Image> images = listImages();
         List<Flavor> flavors = listFlavors();
 
         /**
@@ -198,12 +192,12 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
          */
         slaveOptions = new CreateServerOptions();
         slaveOptions.keyPairName(conf.getKeypair());
-        slaveOptions.securityGroupNames("default");
+        slaveOptions.securityGroupNames(environment.getSecurityGroup().getName());
         slaveOptions.availabilityZone(conf.getAvailabilityZone());
 //        slaveOptions.blockDeviceMappings(mappings);
 
         slaveImage = os_region + "/" + conf.getSlaveImage();
-        String type = conf.getSlaveInstanceType().getValue().toString();
+        String type = conf.getSlaveInstanceType().getValue();
         slaveFlavor = null;
 
         for (Flavor f : flavors) {
@@ -219,8 +213,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
     @Override
     public boolean launchClusterInstances() {
         try {
-            ServerApi s = novaClient.getServerApi(os_region);
-            ServerCreated createdMaster = s.create("bibigrid_master_" + clusterId, masterImage, masterFlavor.getId(), masterOptions);
+            ServerCreated createdMaster = serverApi.create("bibigrid_master_" + clusterId, masterImage, masterFlavor.getId(), masterOptions);
             log.info("Master (ID: {}) successfully started", createdMaster.getId());
 
             String masterIP = getPublicIpFromServer(createdMaster.getId());
@@ -233,7 +226,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             );
 
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
-                ServerCreated createdSlave = s.create("bibigrid_slave_" + (i + 1) + "_" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
+                ServerCreated createdSlave = serverApi.create("bibigrid_slave_" + (i + 1) + "_" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
                 log.info("Slave_{} (ID: {}) successfully started", i + 1, createdSlave.getId());
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);
@@ -267,7 +260,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
     }
 
     private String getPublicIpFromServer(String serverID) {
-        Server server = novaClient.getServerApi(os_region).get(serverID);
+        Server server = serverApi.get(serverID);
         if (server != null) {
             String addr = "";
             log.info("Waiting for master network configuration ...");
@@ -281,7 +274,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                     } catch (InterruptedException ex) {
                         java.util.logging.Logger.getLogger(CreateClusterOpenstack.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    server = novaClient.getServerApi(os_region).get(serverID);
+                    server = serverApi.get(serverID);
                 }
 
             } while (addr.isEmpty());
@@ -291,23 +284,18 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         }
     }
 
-    private List<Server> listServers() {
+    private List<Server> listServers(String region) {
         List<Server> ret = new ArrayList<>();
-        Set<String> regions = novaClient.getConfiguredRegions();
-        for (String region : regions) {
-            ServerApi serverApi = novaClient.getServerApi(region);
 
-            for (Server server : serverApi.listInDetail().concat()) {
-                ret.add(server);
-            }
+        for (Server server : serverApi.listInDetail().concat()) {
+            ret.add(server);
         }
         return ret;
     }
 
     private List<Flavor> listFlavors() {
         List<Flavor> ret = new ArrayList<>();
-        FlavorApi f = novaClient.getFlavorApi(os_region); // hardcoded
-        for (Flavor r : f.listInDetail().concat()) {
+        for (Flavor r : flavorApi.listInDetail().concat()) {
             ret.add(r);
         }
         return ret;
@@ -315,11 +303,34 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
     private List<Image> listImages() {
         List<Image> ret = new ArrayList<>();
-        ImageApi imageApi = novaClient.getImageApi(os_region);
         for (Image m : imageApi.listInDetail().concat()) {
             ret.add(m);
         }
         return ret;
+    }
+
+    public NovaApi getNovaApi() {
+        return novaApi;
+    }
+
+    public ServerApi getServerApi() {
+        return serverApi;
+    }
+
+    public SecurityGroupApi getSecurityGroupApi() {
+        return securityGroupApi;
+    }
+
+    public FlavorApi getFlavorApi() {
+        return flavorApi;
+    }
+
+    public ImageApi getImageApi() {
+        return imageApi;
+    }
+
+    public String getClusterId() {
+        return clusterId;
     }
 
 }
