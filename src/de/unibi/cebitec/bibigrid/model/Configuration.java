@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.model;
 
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.services.ec2.model.InstanceType;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;

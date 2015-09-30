@@ -19,6 +19,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceNetworkInterfaceSpecification;
 import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.InstanceStatus;
+import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.ec2.model.ModifyInstanceAttributeRequest;
 import com.amazonaws.services.ec2.model.Placement;
 import com.amazonaws.services.ec2.model.Reservation;
@@ -128,7 +129,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
         String[] ephemerals = {"b", "c", "d", "e"};
         List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
-        for (int i = 0; i < InstanceInformation.getSpecs(this.config.getMasterInstanceType()).ephemerals; ++i) {
+        for (int i = 0; i < this.config.getMasterInstanceType().getSpec().ephemerals; ++i) {
             BlockDeviceMapping temp = new BlockDeviceMapping();
             String virtualName = "ephemeral" + i;
             String deviceName = "/dev/sd" + ephemerals[i];
@@ -149,8 +150,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
         instancePlacement = new Placement(this.config.getAvailabilityZone());
 
-        if (InstanceInformation.getSpecs(
-                this.config.getMasterInstanceType()).clusterInstance) {
+        if (this.config.getMasterInstanceType().getSpec().clusterInstance) {
             instancePlacement.setGroupName(environment.getPlacementGroup());
         }
 
@@ -178,7 +178,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
     @Override
     public boolean launchClusterInstances() {
         RunInstancesRequest masterReq = new RunInstancesRequest();
-        masterReq.withInstanceType(this.config.getMasterInstanceType())
+        masterReq.withInstanceType(InstanceType.fromValue(this.config.getMasterInstanceType().getValue()))
                 .withMinCount(1).withMaxCount(1).withPlacement(instancePlacement)
                 .withKeyName(this.config.getKeypair())
                 .withImageId(this.config.getMasterImage())
@@ -248,7 +248,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             log.info(V, "Slave Userdata:\n{}", base64SlaveUserData);
 
             RunInstancesRequest slaveReq = new RunInstancesRequest();
-            slaveReq.withInstanceType(this.config.getSlaveInstanceType())
+            slaveReq.withInstanceType(InstanceType.fromValue(this.config.getSlaveInstanceType().getValue()))
                     .withMinCount(this.config.getSlaveInstanceCount())
                     .withMaxCount(this.config.getSlaveInstanceCount())
                     .withPlacement(instancePlacement)
@@ -303,7 +303,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         if (getConfig().isAlternativeConfigFile()) {
             sb.append("-o ").append(config.getAlternativeConfigPath()).append(" ");
         }
-        
+
         sb.append("\n");
 
         log.info(sb.toString());

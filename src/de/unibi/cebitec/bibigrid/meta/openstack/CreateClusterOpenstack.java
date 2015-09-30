@@ -134,11 +134,12 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
          */
         Set<BlockDeviceMapping> mappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
-        for (int i = 0; i < InstanceInformation.getSpecs(this.conf.getMasterInstanceType()).ephemerals; ++i) {
+        for (int i = 0; i < this.conf.getMasterInstanceType().getSpec().ephemerals; ++i) {
             BlockDeviceMapping m = BlockDeviceMapping.builder()
                     .deviceName("/dev/sd" + ephemerals[i])
-                    .bootIndex(i)
-                    .uuid("ephemeral" + i)
+                    .deleteOnTermination(Boolean.TRUE)
+                    .sourceType("blank")
+                    .destinationType("local")
                     .build();
             mappings.add(m);
         }
@@ -150,16 +151,18 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         masterOptions.securityGroupNames("default");
         masterOptions.availabilityZone(conf.getAvailabilityZone());
         masterOptions.userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
-        masterOptions.blockDeviceMappings(mappings);
+//        masterOptions.blockDeviceMappings(mappings);
 
         masterImage = os_region + "/" + conf.getMasterImage();
-        String type = conf.getMasterInstanceType().toString();
+        String type = conf.getMasterInstanceType().getValue().toString();
         masterFlavor = null;
         for (Flavor f : flavors) {
             if (f.getName().equals(type)) {
                 masterFlavor = f;
+                break;
             }
         }
+        log.info("Master configured");
         return this;
     }
 
@@ -180,11 +183,12 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
          */
         Set<BlockDeviceMapping> mappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
-        for (int i = 0; i < InstanceInformation.getSpecs(this.conf.getSlaveInstanceType()).ephemerals; ++i) {
+        for (int i = 0; i < this.conf.getSlaveInstanceType().getSpec().ephemerals; ++i) {
             BlockDeviceMapping m = BlockDeviceMapping.builder()
                     .deviceName("/dev/sd" + ephemerals[i])
-                    .bootIndex(i)
-                    .uuid("ephemeral" + i)
+                    .sourceType("blank")
+                    .deleteOnTermination(Boolean.TRUE)
+                    .destinationType("local")
                     .build();
             mappings.add(m);
         }
@@ -196,17 +200,19 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         slaveOptions.keyPairName(conf.getKeypair());
         slaveOptions.securityGroupNames("default");
         slaveOptions.availabilityZone(conf.getAvailabilityZone());
-        slaveOptions.blockDeviceMappings(mappings);
+//        slaveOptions.blockDeviceMappings(mappings);
 
         slaveImage = os_region + "/" + conf.getSlaveImage();
-        String type = conf.getSlaveInstanceType().toString();
+        String type = conf.getSlaveInstanceType().getValue().toString();
         slaveFlavor = null;
 
         for (Flavor f : flavors) {
             if (f.getName().equals(type)) {
                 slaveFlavor = f;
+                break;
             }
         }
+        log.info("Slave(s) configured");
         return this;
     }
 
@@ -217,8 +223,10 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             ServerCreated createdMaster = s.create("bibigrid_master_" + clusterId, masterImage, masterFlavor.getId(), masterOptions);
             log.info("Master (ID: {}) successfully started", createdMaster.getId());
 
-            slaveOptions.userData(UserDataCreator.forSlave(getPublicIpFromServer(createdMaster.getId()),
-                    getPublicIpFromServer(createdMaster.getId()),
+            String masterIP = getPublicIpFromServer(createdMaster.getId());
+
+            slaveOptions.userData(UserDataCreator.forSlave(masterIP,
+                    masterIP,
                     slaveDeviceMapper,
                     conf,
                     environment.getKeypair().getPublicKey()).getBytes()
@@ -234,10 +242,10 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             //// Human friendly output
             StringBuilder sb = new StringBuilder();
             sb.append("\n You might want to set the following environment variable:\n\n");
-            sb.append("export BIBIGRID_MASTER=").append(getPublicIpFromServer(createdMaster.getId())).append("\n\n");
+            sb.append("export BIBIGRID_MASTER=").append(masterIP).append("\n\n");
             sb.append("You can then log on the master node with:\n\n")
-                    .append("[TODO] ssh")
-                    //                    .append(conf.getIdentityFile())
+                    .append("ssh -i ")
+                    .append(conf.getIdentityFile())
                     .append(" ubuntu@$BIBIGRID_MASTER\n\n");
             sb.append("The cluster id of your started cluster is : ")
                     .append(clusterId)
@@ -252,6 +260,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
             log.info(sb.toString());
         } catch (Exception e) {
+            log.error(e.getMessage());
             return false;
         }
         return true;
@@ -261,6 +270,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         Server server = novaClient.getServerApi(os_region).get(serverID);
         if (server != null) {
             String addr = "";
+            log.info("Waiting for master network configuration ...");
             do {
                 for (Address a : server.getAddresses().get("demo-net")) {
                     addr = a.getAddr();
@@ -273,7 +283,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                     }
                     server = novaClient.getServerApi(os_region).get(serverID);
                 }
-                
+
             } while (addr.isEmpty());
             return addr;
         } else {

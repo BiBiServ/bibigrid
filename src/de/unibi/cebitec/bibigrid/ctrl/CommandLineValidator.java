@@ -2,9 +2,11 @@ package de.unibi.cebitec.bibigrid.ctrl;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
-import com.amazonaws.services.ec2.model.InstanceType;
+import de.unibi.cebitec.bibigrid.meta.aws.InstanceTypeAWS;
+import de.unibi.cebitec.bibigrid.meta.openstack.InstanceTypeOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
+import de.unibi.cebitec.bibigrid.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.OpenStackCredentials;
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
@@ -332,7 +334,16 @@ public class CommandLineValidator {
                         return false;
                     }
 
-                    InstanceType masterType = InstanceType.fromValue(masterTypeString.trim());
+                    InstanceType masterType = null;
+
+                    switch (cfg.getMode()) {
+                        case AWS_EC2:
+                            masterType = new InstanceTypeAWS(masterTypeString.trim());
+                            break;
+                        case OPENSTACK:
+                            masterType = new InstanceTypeOpenstack(cfg, masterTypeString.trim());
+                            break;
+                    }
 
 //                    if (!checkInstances(masterType)){
 //                        return false;
@@ -365,12 +376,22 @@ public class CommandLineValidator {
                         log.error("-s option is required! Please specify the instance type of your slave nodes(slave-instance-type=t1.micro).");
                         return false;
                     }
-                    InstanceType slaveType = InstanceType.fromValue(slaveTypeString.trim());
+                    InstanceType slaveType = null;
+
+                    switch (cfg.getMode()) {
+                        case AWS_EC2:
+                            slaveType = new InstanceTypeAWS(slaveTypeString.trim());
+                            break;
+                        case OPENSTACK:
+                            slaveType = new InstanceTypeOpenstack(cfg, slaveTypeString.trim());
+                            break;
+                    }
+
 //                    if (!checkInstances(slaveType)){
 //                        return false;
 //                    }
                     this.cfg.setSlaveInstanceType(slaveType);
-                    if (InstanceInformation.getSpecs(slaveType).clusterInstance || InstanceInformation.getSpecs(this.cfg.getMasterInstanceType()).clusterInstance) {
+                    if (slaveType.getSpec().clusterInstance || this.cfg.getMasterInstanceType().getSpec().clusterInstance) {
                         if (!slaveType.equals(this.cfg.getMasterInstanceType())) {
                             log.error("The instance types have to be the same when using cluster types.");
                             log.error("Master Instance Type: " + this.cfg.getMasterInstanceType().toString());

@@ -43,7 +43,7 @@ public class UserDataCreator {
         slaveUserData.append("sleep 5\n");
         slaveUserData.append("mkdir -p /vol/spool/\n");
         slaveUserData.append("mkdir -p /vol/scratch/\n");
-        slaveUserData.append("echo '").append(publicKey).append("' >> /home/ubuntu/.ssh/authorized_keys");
+        slaveUserData.append("echo '").append(publicKey).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
 
         /*
          * GridEngine Block
@@ -84,7 +84,7 @@ public class UserDataCreator {
 
         }
 
-        int ephemerals = InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).ephemerals;
+        int ephemerals = cfg.getSlaveInstanceType().getSpec().ephemerals;
 
         /*
          * Ephemeral Block
@@ -148,8 +148,25 @@ public class UserDataCreator {
         /**
          * route all traffic to master-instance (inet access)
          */
-        slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
-        slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
+        // @TODO
+        switch (cfg.getMode()) {
+            case AWS_EC2:
+                slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
+                slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
+                break;
+            case OPENSTACK:
+                // TESTING!!! @TODO
+                slaveUserData.append("echo 'http_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'https_proxy=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'ftp_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'no_proxy=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n")
+                        .append("echo 'HTTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'HTTPS_PROXY=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'FTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'NO_PROXY=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n");
+                break;
+        }
+
 
         /* 
          * Mesos Block
@@ -166,7 +183,12 @@ public class UserDataCreator {
         slaveUserData.append(
                 "while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
 
-        return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
+        switch (cfg.getMode()) {
+            case AWS_EC2:
+                return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
+            default:
+                return slaveUserData.toString();
+        }
     }
 
     /**
@@ -188,7 +210,7 @@ public class UserDataCreator {
      */
     public static String masterUserData(DeviceMapper masterDeviceMapper, Configuration cfg, String privateKey) {
         StringBuilder masterUserData = new StringBuilder();
-        int ephemeralamount = InstanceInformation.getSpecs(cfg.getMasterInstanceType()).ephemerals;
+        int ephemeralamount = cfg.getMasterInstanceType().getSpec().ephemerals;
         List<String> masterNfsShares = cfg.getNfsShares();
         masterUserData.append("#!/bin/sh\n").append("sleep 5\n");
 
@@ -296,9 +318,25 @@ public class UserDataCreator {
          * WARNING! 10.10.0.0 is a hardcoded SUBNET-proto...ensure generic
          * access laterly.
          */
-        masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
-                + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE");
 
+        switch (cfg.getMode()) {
+            case AWS_EC2:
+                masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
+                        + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE");
+                break;
+            case OPENSTACK:
+                // TESTING!!! @TODO
+                masterUserData.append("echo 'http_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'https_proxy=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'ftp_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'no_proxy=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n")
+                        .append("echo 'HTTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'HTTPS_PROXY=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'FTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                        .append("echo 'NO_PROXY=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n");
+                break;
+
+        }
         /*
          * Early Execute Script
          */
@@ -317,7 +355,11 @@ public class UserDataCreator {
                 log.info("Early shell script could not be read.");
             }
         }
-
-        return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
+        switch (cfg.getMode()) {
+            case AWS_EC2:
+                return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
+            default:
+                return masterUserData.toString();
+        }
     }
 }

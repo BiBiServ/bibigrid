@@ -92,7 +92,7 @@ public class SshFactory {
             sb.append("./add_exec ");
             sb.append(masterInstance.getPrivateDnsName());
             sb.append(" ");
-            sb.append(InstanceInformation.getSpecs(cfg.getMasterInstanceType()).instanceCores);
+            sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
             sb.append("\n");
             sb.append("sudo service gridengine-exec start\n");
         }
@@ -126,7 +126,7 @@ public class SshFactory {
             sb.append("./add_exec ");
             sb.append(masterInstance.getPrivateDnsName());
             sb.append(" ");
-            sb.append(InstanceInformation.getSpecs(cfg.getMasterInstanceType()).instanceCores);
+            sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
             sb.append("\n");
             sb.append("sudo service gridengine-exec start\n");
         }
@@ -134,7 +134,7 @@ public class SshFactory {
             sb.append("./add_exec ");
             sb.append(instance.getPrivateDnsName());
             sb.append(" ");
-            sb.append(InstanceInformation.getSpecs(cfg.getSlaveInstanceType()).instanceCores);
+            sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
             sb.append("\n");
         }
         sb.append("sudo service gmetad restart \n");
