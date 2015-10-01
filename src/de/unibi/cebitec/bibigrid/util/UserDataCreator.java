@@ -89,24 +89,35 @@ public class UserDataCreator {
         /*
          * Ephemeral Block
          */
+        String blockDeviceBase = "";
+        switch (cfg.getMode()) {
+            case AWS_EC2:
+                blockDeviceBase = "/dev/xvd";
+                break;
+            case OPENSTACK:
+                blockDeviceBase = "/dev/vd";
+                break;
+        }
+
         if (ephemerals
                 == 1) {
             slaveUserData.append("sudo umount /mnt\n");
-            slaveUserData.append("sudo mount /dev/xvdb /vol/scratch\n");
+            slaveUserData.append("sudo mount ").append(blockDeviceBase).append("b /vol/scratch\n");
         } else if (ephemerals
                 >= 2) {
             // if 2 or more ephemerals are available use 2 as a RAID system
             slaveUserData.append("sudo umount /mnt\n");
 
+            // @TODO more dynamic!
             switch (ephemerals) {
                 case 2: {
-                    slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=2 /dev/xvdb /dev/xvdc\n");
-                    slaveUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc' > /etc/mdadm.conf\n");
+                    slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=2  ").append(blockDeviceBase).append("b  ").append(blockDeviceBase).append("c\n");
+                    slaveUserData.append("echo 'DEVICE  ").append(blockDeviceBase).append("b  ").append(blockDeviceBase).append("c' > /etc/mdadm.conf\n");
                     break;
                 }
                 case 4: {
-                    slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4 /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde\n");
-                    slaveUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde' > /etc/mdadm.conf\n");
+                    slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4  ").append(blockDeviceBase).append("b  ").append(blockDeviceBase).append("c  ").append(blockDeviceBase).append("d  ").append(blockDeviceBase).append("e\n");
+                    slaveUserData.append("echo 'DEVICE  ").append(blockDeviceBase).append("b  ").append(blockDeviceBase).append("c  ").append(blockDeviceBase).append("d  ").append(blockDeviceBase).append("e' > /etc/mdadm.conf\n");
                     break;
                 }
             }
@@ -221,22 +232,31 @@ public class UserDataCreator {
         /*
          * Ephemeral/RAID Preperation
          */
+        String blockDeviceBase = "";
+        switch (cfg.getMode()) {
+            case AWS_EC2:
+                blockDeviceBase = "/dev/xvd";
+                break;
+            case OPENSTACK:
+                blockDeviceBase = "/dev/vd";
+                break;
+        }
         // if 1 ephemeral is available mount it as /vol/spool
         if (ephemeralamount == 1) {
             masterUserData.append("umount /mnt\n"); // 
-            masterUserData.append("mount /dev/xvdb /vol/\n");
+            masterUserData.append("mount ").append(blockDeviceBase).append("b /vol/\n");
         } else if (ephemeralamount >= 2) {
             // if 2 or more ephemerals are available use 2 as a RAID system
             masterUserData.append("umount /mnt\n");
             switch (ephemeralamount) {
                 case 2: {
-                    masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=2 /dev/xvdb /dev/xvdc\n");
-                    masterUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc' > /etc/mdadm.conf\n");
+                    masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=2 ").append(blockDeviceBase).append("b ").append(blockDeviceBase).append("c\n");
+                    masterUserData.append("echo 'DEVICE ").append(blockDeviceBase).append("b ").append(blockDeviceBase).append("c' > /etc/mdadm.conf\n");
                     break;
                 }
                 case 4: {
-                    masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4 /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde\n");
-                    masterUserData.append("echo 'DEVICE /dev/xvdb /dev/xvdc /dev/xvdd /dev/xvde' > /etc/mdadm.conf\n");
+                    masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4 ").append(blockDeviceBase).append("b ").append(blockDeviceBase).append("c ").append(blockDeviceBase).append("d ").append(blockDeviceBase).append("e\n");
+                    masterUserData.append("echo 'DEVICE ").append(blockDeviceBase).append("b ").append(blockDeviceBase).append("c ").append(blockDeviceBase).append("d ").append(blockDeviceBase).append("e' > /etc/mdadm.conf\n");
                     break;
                 }
             }
@@ -247,13 +267,15 @@ public class UserDataCreator {
             masterUserData.append("mount -t xfs -o noatime /dev/md0 /vol/\n");
 
         }
+
         /*
          * NFS Prep of Vol
          */
         if (cfg.isNfs()) {
             masterUserData.append("mkdir -p /vol/spool/\n");
             masterUserData.append("chmod 777 /vol/spool/\n");
-            masterUserData.append("echo '/vol/spool/ 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
+            masterUserData.append("ipbase=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
+            masterUserData.append("echo \"/vol/spool/ $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
         }
 
         masterUserData.append("mkdir -p /vol/scratch/\n");
@@ -306,7 +328,7 @@ public class UserDataCreator {
                 for (String mastershare : masterNfsShares) {
                     masterUserData.append("mkdir -p ").append(mastershare).append("\n");
                     masterUserData.append("chmod 777 ").append(mastershare).append("\n");
-                    masterUserData.append("echo '").append(mastershare).append(" 10.0.0.0/8(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
+                    masterUserData.append("echo '").append(mastershare).append(" $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
                 }
                 masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
             } else {

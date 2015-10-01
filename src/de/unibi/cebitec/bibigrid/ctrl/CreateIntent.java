@@ -56,19 +56,19 @@ public class CreateIntent extends Intent {
             case AWS_EC2:
                 return new CreateClusterAWS(getConfiguration())
                         .createClusterEnvironment()
-                        .createVPC()
-                        .createSubnet()
-                        .createSecurityGroup()
-                        .createPlacementGroup()
+                            .createVPC()
+                            .createSubnet()
+                            .createSecurityGroup()
+                            .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .launchClusterInstances();
             case OPENSTACK:
                 return new CreateClusterOpenstack(getConfiguration())
                         .createClusterEnvironment()
-                        .createVPC()
-                        .createSubnet()
-                        .createSecurityGroup()
-                        .createPlacementGroup()
+                            .createVPC()
+                            .createSubnet()
+                            .createSecurityGroup()
+                            .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .configureClusterSlaveInstance()
                         .launchClusterInstances();

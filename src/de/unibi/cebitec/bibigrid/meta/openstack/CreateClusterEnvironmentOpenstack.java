@@ -7,7 +7,9 @@ package de.unibi.cebitec.bibigrid.meta.openstack;
 
 import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
+import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
+import java.util.List;
 import java.util.logging.Level;
 import org.jclouds.net.domain.IpProtocol;
 import org.jclouds.openstack.nova.v2_0.domain.Ingress;
@@ -57,9 +59,20 @@ public class CreateClusterEnvironmentOpenstack
     public CreateClusterEnvironmentOpenstack createSecurityGroup() {
         SecurityGroupApi s = cluster.getSecurityGroupApi();
         securityGroup = s.createWithDescription("sg-" + cluster.getClusterId(), "Security Group for cluster: " + cluster.getClusterId());
+        /**
+         * Standard Rules.
+         */
         SecurityGroupRule rule_ssh = s.createRuleAllowingCidrBlock(securityGroup.getId(), Ingress.builder().ipProtocol(IpProtocol.TCP).fromPort(22).toPort(22).build(), "0.0.0.0/0");
         SecurityGroupRule rule_all_tcp = s.createRuleAllowingSecurityGroupId(securityGroup.getId(), Ingress.builder().ipProtocol(IpProtocol.TCP).fromPort(1).toPort(65535).build(), securityGroup.getId());
         SecurityGroupRule rule_all_udp = s.createRuleAllowingSecurityGroupId(securityGroup.getId(), Ingress.builder().ipProtocol(IpProtocol.UDP).fromPort(1).toPort(65535).build(), securityGroup.getId());
+        
+        /**
+         * User selected Ports.
+         */
+        List<Port> ports = cluster.getConfiguration().getPorts();
+        for (Port p : ports) {
+            s.createRuleAllowingCidrBlock(securityGroup.getId(), Ingress.builder().fromPort(p.number).toPort(p.number).ipProtocol(IpProtocol.TCP).build(), p.iprange);
+        }
         log.info("SecurityGroup (ID: {}) created.", securityGroup.getName());
         return this;
     }

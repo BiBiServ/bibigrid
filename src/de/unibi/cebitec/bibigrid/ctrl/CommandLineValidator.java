@@ -501,7 +501,8 @@ public class CommandLineValidator {
             String portsCsv = this.cl.getOptionValue("p", defaults.getProperty("ports"));
             if (portsCsv != null && !portsCsv.isEmpty()) {
                 try {
-                    Pattern p = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})[/(\\d{1,2})]");
+                    Pattern p = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})(?:/(\\d{1,2}))*");
+                    
                     String[] portsStrings = portsCsv.split(",");
                     for (String portString : portsStrings) {
 
@@ -518,7 +519,9 @@ public class CommandLineValidator {
                                 addr = InetAddress.getLocalHost().getHostAddress() + "/32";
                             } else {
                                 Matcher m = p.matcher(tmp[0]);
-
+                                
+                                boolean matches = m.matches();
+                                
                                 for (int i = 1; i <= 4; i++) {
                                     checkStringAsInt(m.group(i), 0, 255);
                                 }

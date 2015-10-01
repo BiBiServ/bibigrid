@@ -15,11 +15,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import org.jclouds.ContextBuilder;
+import org.jclouds.http.HttpResponseException;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.domain.SecurityGroup;
+import org.jclouds.openstack.nova.v2_0.domain.SecurityGroupRule;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
+import org.jclouds.openstack.nova.v2_0.extensions.SecurityGroupApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.jclouds.sshj.config.SshjSshClientModule;
 import org.slf4j.Logger;
@@ -30,22 +34,21 @@ import org.slf4j.LoggerFactory;
  * @author jsteiner
  */
 public class TerminateIntentOpenstack implements TerminateIntent {
-    
+
     public static final Logger log = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
-    
+
     private NovaApi novaClient;
-    
+
     private final String os_region;
     private final String provider = "openstack-nova";
 
-//    private final String nodeID;
     Configuration conf;
-    
+
     public TerminateIntentOpenstack(Configuration conf) {
         this.conf = conf;
         os_region = conf.getRegion();
     }
-    
+
     @Override
     public boolean terminate() {
         connect();
@@ -61,10 +64,36 @@ public class TerminateIntentOpenstack implements TerminateIntent {
                 s.delete(serv.getId());
                 log.info("Terminated " + serv.getName());
             }
-            for (SecurityGroup ss : novaClient.getSecurityGroupApi(os_region).get().list()) {
-                if (ss.getName().equals("sg-" + conf.getClusterId().trim())) {
-                    novaClient.getSecurityGroupApi(os_region).get().delete(ss.getId());
-                    log.info("SecurityGroup ({}) deleted.", ss.getName());
+            /**
+             * For deleting a SecurityGroup you first have to delete all its
+             * rule and then delete the sg itself.
+             */
+            SecurityGroupApi sgApi = novaClient.getSecurityGroupApi(os_region).get();
+            for (SecurityGroup securityGroup : sgApi.list()) {
+                if (securityGroup.getName().equals("sg-" + conf.getClusterId().trim())) {
+
+//                    for (SecurityGroupRule rule : securityGroup.getRules()) {
+//                        sgApi.deleteRule(rule.getId()); // first delete rules, then the sg itself
+//                    }
+
+                    int tries = 5 * conf.getSlaveInstanceCount();
+                    while (true) {
+                        try {
+                            Thread.sleep(1000);
+                            sgApi.delete(securityGroup.getId()); // delete whole sg
+                            break;
+                        } catch (InterruptedException ex) {
+                            java.util.logging.Logger.getLogger(TerminateIntentOpenstack.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (HttpResponseException he) {
+                            log.info("Waiting for detaching SecurityGroup ...");
+                            tries--;
+                            if (tries == 0) {
+                                log.error("Can't detach SecurityGroup aborting.");
+                                return false;
+                            }
+                        }
+                    }
+                    log.info("SecurityGroup ({}) deleted.", securityGroup.getName());
                 }
             }
             log.info("Cluster (ID: {}) successfully terminated", conf.getClusterId().trim());
@@ -82,24 +111,24 @@ public class TerminateIntentOpenstack implements TerminateIntent {
                     break;
                 }
             }
-            
+
             for (String slave : c.getSlaveinstances()) {
                 s.delete(slave);
                 log.info("Deleted Slave-Instance (ID: {})", slave);
             }
-            
+
             s.delete(c.getMasterinstance());
             log.info("Deleted Master-Instance (ID: {})", c.getMasterinstance());
             return true;
         }
     }
-    
+
     private List<Server> getServers(String clusterID) {
         List<Server> ret = new ArrayList<>();
         Set<String> regions = novaClient.getConfiguredRegions();
         for (String region : regions) {
             ServerApi serverApi = novaClient.getServerApi(region);
-            
+
             for (Server server : serverApi.listInDetail().concat()) {
                 String name = server.getName();
                 if (name.substring(name.lastIndexOf("_") + 1, name.length()).equals(clusterID.trim())) {
@@ -113,17 +142,17 @@ public class TerminateIntentOpenstack implements TerminateIntent {
         }
         return ret;
     }
-    
+
     void connect() {
         Iterable<Module> modules = ImmutableSet.<Module>of(
                 new SshjSshClientModule(),
                 new SLF4JLoggingModule());
-        
+
         novaClient = ContextBuilder.newBuilder(provider)
                 .endpoint(conf.getOpenstackCredentials().getEndpoint())
                 .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
                 .modules(modules)
                 .buildApi(NovaApi.class);
     }
-    
+
 }

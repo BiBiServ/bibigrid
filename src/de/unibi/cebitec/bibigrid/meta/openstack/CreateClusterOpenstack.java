@@ -132,10 +132,11 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         String[] ephemerals = {"b", "c", "d", "e"};
         for (int i = 0; i < this.conf.getMasterInstanceType().getSpec().ephemerals; ++i) {
             BlockDeviceMapping m = BlockDeviceMapping.builder()
-                    .deviceName("/dev/sd" + ephemerals[i])
+                    .deviceName("sd" + ephemerals[i])
                     .deleteOnTermination(Boolean.TRUE)
                     .sourceType("blank")
                     .destinationType("local")
+                    .bootIndex(-1)
                     .build();
             mappings.add(m);
         }
@@ -150,7 +151,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 //        masterOptions.blockDeviceMappings(mappings);
 
         masterImage = os_region + "/" + conf.getMasterImage();
-        String type = conf.getMasterInstanceType().getValue().toString();
+        String type = conf.getMasterInstanceType().getValue();
         masterFlavor = null;
         for (Flavor f : flavors) {
             if (f.getName().equals(type)) {
@@ -219,7 +220,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             String masterIP = getPublicIpFromServer(createdMaster.getId());
 
             slaveOptions.userData(UserDataCreator.forSlave(masterIP,
-                    masterIP,
+                    "bibigrid-master",
                     slaveDeviceMapper,
                     conf,
                     environment.getKeypair().getPublicKey()).getBytes()
@@ -258,7 +259,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         }
         return true;
     }
-
+    
     private String getPublicIpFromServer(String serverID) {
         Server server = serverApi.get(serverID);
         if (server != null) {
@@ -331,6 +332,10 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
     public String getClusterId() {
         return clusterId;
+    }
+    
+    public Configuration getConfiguration() {
+        return this.conf;
     }
 
 }
