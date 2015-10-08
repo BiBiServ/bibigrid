@@ -7,12 +7,27 @@ package de.unibi.cebitec.bibigrid.meta.openstack;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
+import static de.unibi.cebitec.bibigrid.ctrl.CreateIntent.log;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.util.DeviceMapper;
+import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
+import de.unibi.cebitec.bibigrid.util.JSchLogger;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
+import de.unibi.cebitec.bibigrid.util.SshFactory;
 import de.unibi.cebitec.bibigrid.util.UserDataCreator;
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -72,7 +87,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
     private String clusterId;
     private DeviceMapper slaveDeviceMapper;
-    
+
     public CreateClusterOpenstack(Configuration conf) {
 
         // Cluster ID is a cut down base64 encoded version of a random UUID:
@@ -211,26 +226,39 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         return this;
     }
 
+    private String masterIP;
+    private List<String> slaveIPs;
+
+    private String masterDNS;
+    private List<String> slaveDns = new ArrayList<>();
+
     @Override
     public boolean launchClusterInstances() {
         try {
-            ServerCreated createdMaster = serverApi.create("bibigrid_master_" + clusterId, masterImage, masterFlavor.getId(), masterOptions);
+            ServerCreated createdMaster = serverApi.create("bibigrid-master-" + clusterId, masterImage, masterFlavor.getId(), masterOptions);
             log.info("Master (ID: {}) successfully started", createdMaster.getId());
 
-            String masterIP = getPublicIpFromServer(createdMaster.getId());
+            masterIP = getPublicIpFromServer(createdMaster.getId(), "Master");
+            masterDNS = "bibigrid-master-" + clusterId;
 
             slaveOptions.userData(UserDataCreator.forSlave(masterIP,
-                    "bibigrid-master",
+                    masterDNS,
                     slaveDeviceMapper,
                     conf,
                     environment.getKeypair().getPublicKey()).getBytes()
             );
 
+            slaveIPs = new ArrayList<>();
+
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
-                ServerCreated createdSlave = serverApi.create("bibigrid_slave_" + (i + 1) + "_" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
+                ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (i + 1) + "_" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
+                slaveIPs.add(getPublicIpFromServer(createdSlave.getId(), "Slave_" + (i + 1))); //store all slave ips
+                slaveDns.add("bibigrid-slave-" + (i + 1) + "-" + clusterId);
                 log.info("Slave_{} (ID: {}) successfully started", i + 1, createdSlave.getId());
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);
+
+            sshTestAndExecute();
 
             ////////////////////////////////////
             //// Human friendly output
@@ -259,12 +287,12 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         }
         return true;
     }
-    
-    private String getPublicIpFromServer(String serverID) {
+
+    private String getPublicIpFromServer(String serverID, String instance) {
         Server server = serverApi.get(serverID);
         if (server != null) {
             String addr = "";
-            log.info("Waiting for master network configuration ...");
+            log.info("Waiting for {} network configuration ...", instance);
             do {
                 for (Address a : server.getAddresses().get("demo-net")) {
                     addr = a.getAddr();
@@ -283,6 +311,113 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         } else {
             return null;
         }
+    }
+
+    private void sshTestAndExecute() {
+        JSch ssh = new JSch();
+        JSch.setLogger(new JSchLogger());
+        /*
+         * Building Command
+         */
+        log.info("Now configuring ...");
+        String execCommand;
+        if (slaveDns.isEmpty()) {
+            execCommand = SshFactory.buildSshCommandOpenstack(clusterId, this.getConfiguration(), masterDNS);
+        } else {
+            execCommand = SshFactory.buildSshCommandOpenstack(clusterId, this.getConfiguration(), masterDNS, slaveDns);
+        }
+
+        log.info(V, "Building SSH-Command : {}", execCommand);
+
+        boolean uploaded = false;
+        boolean configured = false;
+
+        int ssh_attempts = 25; // @TODO attempts
+        while (!configured && ssh_attempts > 0) {
+            try {
+
+                ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
+                log.info("Trying to connect to master ({})...", ssh_attempts);
+                Thread.sleep(4000);
+
+                /*
+                 * Create new Session to avoid packet corruption.
+                 */
+                Session sshSession = SshFactory.createNewSshSession(ssh, masterIP, MASTER_SSH_USER, this.getConfiguration().getIdentityFile());
+
+                /*
+                 * Start connect attempt
+                 */
+                sshSession.connect();
+                log.info("Connected to master!");
+
+//                if (!uploaded || ssh_attempts > 0) {
+//                    String remoteDirectory = "/home/ubuntu/.ssh";
+//                    String filename = "id_rsa";
+//                    String localFile = getConfiguration().getIdentityFile().toString();
+//                    log.info(V, "Uploading key");
+//                    ChannelSftp channelPut = (ChannelSftp) sshSession.openChannel("sftp");
+//                    channelPut.connect();
+//                    channelPut.cd(remoteDirectory);
+//                    channelPut.put(new FileInputStream(localFile), filename);
+//                    channelPut.disconnect();
+//                    log.info(V, "Upload done");
+//                    uploaded = true;
+//                }
+                ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
+
+                BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+                BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
+
+                channel.setCommand(execCommand);
+
+                log.info(V, "Connecting ssh channel...");
+                channel.connect();
+
+                String lineout = null, lineerr = null;
+
+                while (((lineout = stdout.readLine()) != null) || ((lineerr = stderr.readLine()) != null)) {
+
+                    if (lineout != null) {
+                        if (lineout.contains("CONFIGURATION_FINISHED")) {
+                            configured = true;
+                        }
+                        log.info(V, "SSH: {}", lineout);
+                    }
+
+//                    if (lineerr != null) {
+                    if (lineerr != null && !configured) {
+                        log.error(V, "SSH: {}", lineerr);
+                    }
+//                    if (channel.isClosed() || configured) {
+                    if (channel.isClosed() && configured) {
+                        log.info(V, "SSH: exit-status: {}", channel.getExitStatus());
+                        configured = true;
+                    }
+
+                    Thread.sleep(2000);
+                }
+                if (configured) {
+                    channel.disconnect();
+                    sshSession.disconnect();
+                }
+
+            } catch (IOException | JSchException e) {
+                ssh_attempts--;
+                if (ssh_attempts == 0) {
+                    log.error(V, "SSH: {}", e);
+                }
+
+//                try {
+//                    Thread.sleep(2000);
+//                } catch (InterruptedException ex) {
+//                    log.error("Interrupted ...");
+//                }
+            } catch (InterruptedException ex) {
+                log.error("Interrupted ...");
+            }
+        }
+        log.info(I, "Master instance has been configured.");
     }
 
     private List<Server> listServers(String region) {
@@ -333,7 +468,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
     public String getClusterId() {
         return clusterId;
     }
-    
+
     public Configuration getConfiguration() {
         return this.conf;
     }

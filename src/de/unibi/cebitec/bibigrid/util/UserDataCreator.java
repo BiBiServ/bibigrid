@@ -191,9 +191,14 @@ public class UserDataCreator {
             slaveUserData.append("service mesos-slave start\n");
         }
 
-        slaveUserData.append(
-                "while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
+//        slaveUserData.append(
+//                "while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
+        
+//        String checkifFileExists = "ssh -q -o StrictHostKeyChecking=no bibigrid-slave-1-pDj1myEySSih6vw [[ -f /tmp/slave.finished ]] && echo \"File exists\" || echo \"File does not exist\";";
+        
+//        slaveUserData.append("sleep 60 \nsudo service gridengine-exec start\n");
 
+        slaveUserData.append("echo 'slave done\n' >> /vol/spool/slaves.finished \n");
         switch (cfg.getMode()) {
             case AWS_EC2:
                 return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
@@ -377,6 +382,8 @@ public class UserDataCreator {
                 log.info("Early shell script could not be read.");
             }
         }
+        masterUserData.append("touch /vol/spool/masteruserdata.finished \n");
+
         switch (cfg.getMode()) {
             case AWS_EC2:
                 return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));

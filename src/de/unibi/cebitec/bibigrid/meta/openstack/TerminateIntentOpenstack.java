@@ -34,21 +34,21 @@ import org.slf4j.LoggerFactory;
  * @author jsteiner
  */
 public class TerminateIntentOpenstack implements TerminateIntent {
-
+    
     public static final Logger log = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
-
+    
     private NovaApi novaClient;
-
+    
     private final String os_region;
     private final String provider = "openstack-nova";
-
+    
     Configuration conf;
-
+    
     public TerminateIntentOpenstack(Configuration conf) {
         this.conf = conf;
         os_region = conf.getRegion();
     }
-
+    
     @Override
     public boolean terminate() {
         connect();
@@ -75,8 +75,7 @@ public class TerminateIntentOpenstack implements TerminateIntent {
 //                    for (SecurityGroupRule rule : securityGroup.getRules()) {
 //                        sgApi.deleteRule(rule.getId()); // first delete rules, then the sg itself
 //                    }
-
-                    int tries = 5 * conf.getSlaveInstanceCount();
+                    int tries = 15;
                     while (true) {
                         try {
                             Thread.sleep(1000);
@@ -86,11 +85,12 @@ public class TerminateIntentOpenstack implements TerminateIntent {
                             java.util.logging.Logger.getLogger(TerminateIntentOpenstack.class.getName()).log(Level.SEVERE, null, ex);
                         } catch (HttpResponseException he) {
                             log.info("Waiting for detaching SecurityGroup ...");
-                            tries--;
                             if (tries == 0) {
                                 log.error("Can't detach SecurityGroup aborting.");
+                                log.error(he.getMessage());
                                 return false;
                             }
+                            tries--;
                         }
                     }
                     log.info("SecurityGroup ({}) deleted.", securityGroup.getName());
@@ -111,24 +111,24 @@ public class TerminateIntentOpenstack implements TerminateIntent {
                     break;
                 }
             }
-
+            
             for (String slave : c.getSlaveinstances()) {
                 s.delete(slave);
                 log.info("Deleted Slave-Instance (ID: {})", slave);
             }
-
+            
             s.delete(c.getMasterinstance());
             log.info("Deleted Master-Instance (ID: {})", c.getMasterinstance());
             return true;
         }
     }
-
+    
     private List<Server> getServers(String clusterID) {
         List<Server> ret = new ArrayList<>();
         Set<String> regions = novaClient.getConfiguredRegions();
         for (String region : regions) {
             ServerApi serverApi = novaClient.getServerApi(region);
-
+            
             for (Server server : serverApi.listInDetail().concat()) {
                 String name = server.getName();
                 if (name.substring(name.lastIndexOf("_") + 1, name.length()).equals(clusterID.trim())) {
@@ -142,17 +142,17 @@ public class TerminateIntentOpenstack implements TerminateIntent {
         }
         return ret;
     }
-
+    
     void connect() {
         Iterable<Module> modules = ImmutableSet.<Module>of(
                 new SshjSshClientModule(),
                 new SLF4JLoggingModule());
-
+        
         novaClient = ContextBuilder.newBuilder(provider)
                 .endpoint(conf.getOpenstackCredentials().getEndpoint())
                 .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
                 .modules(modules)
                 .buildApi(NovaApi.class);
     }
-
+    
 }
