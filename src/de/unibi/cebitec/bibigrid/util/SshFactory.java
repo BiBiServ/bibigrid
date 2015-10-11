@@ -150,7 +150,7 @@ public class SshFactory {
         sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
-        sb.append("sleep 60 \n"); //testweise @TODO
+//        sb.append("sleep 60 \n"); //testweise @TODO
         sb.append("qconf -as $(hostname)\n");
         if (cfg.getShellScriptFile() != null) {
             try {
@@ -183,10 +183,8 @@ public class SshFactory {
 
     public static String buildSshCommandOpenstack(String asGroupName, Configuration cfg, String masterDNS, List<String> slaveDnsAddresses) {
         StringBuilder sb = new StringBuilder();
-        sb.append("sleep 60 \n"); // @TODO
-//        sb.append("date\n");
+//        sb.append("sleep 60 \n"); // @TODO
         sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
-//        sb.append("date\n");
         sb.append("qconf -as $(hostname)\n");
         if (cfg.getShellScriptFile() != null) {
             try {
@@ -203,7 +201,6 @@ public class SshFactory {
                 log.info("Shell script could not be read.");
             }
         }
-//        sb.append("echo 3\n");
         if (cfg.isUseMasterAsCompute()) {
             sb.append("./add_exec ");
             sb.append(masterDNS);
@@ -212,7 +209,6 @@ public class SshFactory {
             sb.append("\n");
             sb.append("sudo service gridengine-exec start\n");
         }
-//        sb.append("echo 4\n");
         for (String slaveDNS : slaveDnsAddresses) {
             sb.append("./add_exec ");
             sb.append(slaveDNS);
@@ -220,11 +216,8 @@ public class SshFactory {
             sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
             sb.append("\n");
         }
-//        sb.append("echo 5\n");
         sb.append("sudo service gmetad restart \n");
-//        sb.append("echo 6\n");
         sb.append("sudo service ganglia-monitor restart \n");
-//        sb.append("echo 7\n");
         sb.append("echo CONFIGURATION_FINISHED \n");
         return sb.toString();
     }

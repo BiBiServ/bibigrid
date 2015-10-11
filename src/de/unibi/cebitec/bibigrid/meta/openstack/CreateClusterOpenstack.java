@@ -239,7 +239,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             log.info("Master (ID: {}) successfully started", createdMaster.getId());
 
             masterIP = getPublicIpFromServer(createdMaster.getId(), "Master");
-            masterDNS = "bibigrid-master-" + clusterId;
+            masterDNS = "bibigrid-master-" + clusterId + ".novalocal";
 
             slaveOptions.userData(UserDataCreator.forSlave(masterIP,
                     masterDNS,
@@ -251,9 +251,9 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             slaveIPs = new ArrayList<>();
 
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
-                ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (i + 1) + "_" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
+                ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (i + 1) + "-" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
                 slaveIPs.add(getPublicIpFromServer(createdSlave.getId(), "Slave_" + (i + 1))); //store all slave ips
-                slaveDns.add("bibigrid-slave-" + (i + 1) + "-" + clusterId);
+                slaveDns.add("bibigrid-slave-" + (i + 1) + "-" + clusterId + ".novalocal");
                 log.info("Slave_{} (ID: {}) successfully started", i + 1, createdSlave.getId());
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);

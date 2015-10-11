@@ -131,7 +131,7 @@ public class TerminateIntentOpenstack implements TerminateIntent {
             
             for (Server server : serverApi.listInDetail().concat()) {
                 String name = server.getName();
-                if (name.substring(name.lastIndexOf("_") + 1, name.length()).equals(clusterID.trim())) {
+                if (name.substring(name.lastIndexOf("-") + 1, name.length()).equals(clusterID.trim())) {
                     ret.add(server);
                 }
             }
