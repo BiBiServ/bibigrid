@@ -2,7 +2,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 
 import com.amazonaws.AmazonClientException;
 import com.jcraft.jsch.*;
-import de.unibi.cebitec.bibigrid.StartUpOgeCluster;
+import de.unibi.cebitec.bibigrid.StartUp;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
@@ -38,7 +38,7 @@ public class CreateIntent extends Intent {
         }
         try {
             if (!startClusterAtSelectedCloudProvider()) {
-                log.error(StartUpOgeCluster.ABORT_WITH_INSTANCES_RUNNING);
+                log.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
                 Intent cleanupIntent = new TerminateIntent();
                 cleanupIntent.setConfiguration(getConfiguration());
                 cleanupIntent.execute();

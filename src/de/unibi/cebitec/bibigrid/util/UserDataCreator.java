@@ -182,9 +182,9 @@ public class UserDataCreator {
         /* 
          * Mesos Block
          */
-        if (cfg.isMesos()) {
-            slaveUserData.append("service mesos-master stop\n");
-            slaveUserData.append("service mesos-slave stop\n");
+        slaveUserData.append("service mesos-master stop\n");
+        slaveUserData.append("service mesos-slave stop\n");
+        if (cfg.isMesos()) {    
             //slaveUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
             slaveUserData.append("echo ").append(masterIp).append(":5050 > /etc/mesos-slave/master\n");
@@ -198,7 +198,7 @@ public class UserDataCreator {
         
 //        slaveUserData.append("sleep 60 \nsudo service gridengine-exec start\n");
 
-        slaveUserData.append("echo 'slave done\n' >> /vol/spool/slaves.finished \n");
+        slaveUserData.append("echo 'slave done' >> /vol/spool/slaves.finished \n");
         switch (cfg.getMode()) {
             case AWS_EC2:
                 return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
@@ -290,8 +290,8 @@ public class UserDataCreator {
         /*
          * Cassandra Bloock
          */
+        masterUserData.append("service cassandra stop\n");
         if (cfg.isCassandra()) {
-            masterUserData.append("service cassandra stop\n");
             masterUserData.append("mkdir -p /vol/cassandra\n");
             masterUserData.append("chown -R cassandra:cassandra /vol/cassandra\n");
             masterUserData.append("chmod -R 777 /vol/cassandra\n");
@@ -303,9 +303,9 @@ public class UserDataCreator {
         /* 
          * Mesos Block
          */
-        if (cfg.isMesos()) {
-            masterUserData.append("service mesos-master stop\n");
-            masterUserData.append("service mesos-slave stop\n");
+        masterUserData.append("service mesos-master stop\n");
+        masterUserData.append("service mesos-slave stop\n");
+        if (cfg.isMesos()) {    
             //masterUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
             masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
@@ -349,7 +349,7 @@ public class UserDataCreator {
         switch (cfg.getMode()) {
             case AWS_EC2:
                 masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
-                        + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE");
+                        + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE\n");
                 break;
             case OPENSTACK:
                 // TESTING!!! @TODO

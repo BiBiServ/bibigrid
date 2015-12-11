@@ -132,12 +132,14 @@ public class SshFactory {
             sb.append("\n");
             sb.append("sudo service gridengine-exec start\n");
         }
-        for (Instance instance : slaveInstances) {
-            sb.append("./add_exec ");
-            sb.append(instance.getPrivateDnsName());
-            sb.append(" ");
-            sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
-            sb.append("\n");
+        if (slaveInstances != null) {
+            for (Instance instance : slaveInstances) {
+                sb.append("./add_exec ");
+                sb.append(instance.getPrivateDnsName());
+                sb.append(" ");
+                sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
+                sb.append("\n");
+            }
         }
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");

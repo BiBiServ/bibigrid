@@ -12,9 +12,9 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StartUpOgeCluster {
+public class StartUp {
 
-    public static final Logger log = LoggerFactory.getLogger(StartUpOgeCluster.class);
+    public static final Logger log = LoggerFactory.getLogger(StartUp.class);
     public static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation."
             + " No instances started/terminated.";
     public static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation."
@@ -23,8 +23,6 @@ public class StartUpOgeCluster {
 
     public static void main(String[] args) {
 
-//        args = new String[]{"bibigrid", "-c", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner", "-v"};
-        args = new String[]{"bibigrid", "-t O8gV3FXmRlq2L9y", "-o", "/homes/jsteiner/bibigrid.properties.os", "-u", "jsteiner"};
 
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
@@ -82,7 +80,7 @@ public class StartUpOgeCluster {
             switch (intentOptions.getSelected()) {
                 case "V":
                     try {
-                        URL jarUrl = StartUpOgeCluster.class.getProtectionDomain().getCodeSource().getLocation();
+                        URL jarUrl = StartUp.class.getProtectionDomain().getCodeSource().getLocation();
                         String jarPath = URLDecoder.decode(jarUrl.getFile(), "UTF-8");
                         JarFile jarFile = new JarFile(jarPath);
                         Manifest m = jarFile.getManifest();

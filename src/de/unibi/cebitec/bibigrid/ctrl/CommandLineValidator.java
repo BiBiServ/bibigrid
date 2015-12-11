@@ -164,8 +164,8 @@ public class CommandLineValidator {
 
                 if (cl.hasOption("osu")) {
                     osc.setUsername(cl.getOptionValue("osu").trim());
-                } else if (defaults.getProperty("os-username") != null) {
-                    osc.setUsername(defaults.getProperty("os-username"));
+                } else if (defaults.getProperty("openstack-username") != null) {
+                    osc.setUsername(defaults.getProperty("openstack-username"));
                 } else {
                     log.error("No suitable entry for OpenStack-Username (osu) found! Exit");
                     return false;
@@ -173,8 +173,8 @@ public class CommandLineValidator {
 
                 if (cl.hasOption("ost")) {
                     osc.setTenantName(cl.getOptionValue("ost").trim());
-                } else if (defaults.getProperty("os-tenantname") != null) {
-                    osc.setTenantName(defaults.getProperty("os-tenantname"));
+                } else if (defaults.getProperty("openstack-tenantname") != null) {
+                    osc.setTenantName(defaults.getProperty("openstack-tenantname"));
                 } else {
                     log.error("No suitable entry for OpenStack-Tenantname (ost) found! Exit");
                     return false;
@@ -182,8 +182,8 @@ public class CommandLineValidator {
 
                 if (cl.hasOption("osp")) {
                     osc.setPassword(cl.getOptionValue("osp").trim());
-                } else if (defaults.getProperty("os-password") != null) {
-                    osc.setPassword(defaults.getProperty("os-password"));
+                } else if (defaults.getProperty("openstack-password") != null) {
+                    osc.setPassword(defaults.getProperty("openstack-password"));
                 } else {
                     log.error("No suitable entry for OpenStack-Password (osp) found! Exit");
                     return false;
@@ -191,8 +191,8 @@ public class CommandLineValidator {
 
                 if (cl.hasOption("ose")) {
                     osc.setEndpoint(cl.getOptionValue("ose").trim());
-                } else if (defaults.getProperty("os-endpoint") != null) {
-                    osc.setEndpoint(defaults.getProperty("os-endpoint"));
+                } else if (defaults.getProperty("openstack-endpoint") != null) {
+                    osc.setEndpoint(defaults.getProperty("openstack-endpoint"));
                 } else {
                     log.error("No suitable entry for OpenStack-Endpoint (ose) found! Exit");
                     return false;
@@ -344,13 +344,9 @@ public class CommandLineValidator {
                             masterType = new InstanceTypeOpenstack(cfg, masterTypeString.trim());
                             break;
                     }
-
-//                    if (!checkInstances(masterType)){
-//                        return false;
-//                    }
                     this.cfg.setMasterInstanceType(masterType);
                 } catch (Exception e) {
-                    log.error("Invalid master instance type specified!");
+                    log.error("Invalid master instance type specified!",e);
                     return false;
                 }
                 log.info(V, "Master instance type set. ({})", this.cfg.getMasterInstanceType());
@@ -702,16 +698,6 @@ public class CommandLineValidator {
 
     public Configuration getCfg() {
         return this.cfg;
-    }
-
-    private boolean checkInstances(InstanceType it) {
-        log.info(V, "check for unsupported instances!");
-        // T2 instances currently not working with BiBiGrid see
-        if (it.toString().startsWith("t2")) {
-            log.error("t2 instance types are currently not supported!");
-            return false;
-        }
-        return true;
     }
 
     private int checkStringAsInt(String s, int min, int max) throws Exception {

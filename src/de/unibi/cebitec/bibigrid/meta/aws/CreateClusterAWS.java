@@ -26,15 +26,25 @@ import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Tag;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
+import static de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack.MASTER_SSH_USER;
+import static de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack.log;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.util.DeviceMapper;
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
 import de.unibi.cebitec.bibigrid.util.InstanceInformation;
+import de.unibi.cebitec.bibigrid.util.JSchLogger;
+import de.unibi.cebitec.bibigrid.util.SshFactory;
 import de.unibi.cebitec.bibigrid.util.UserDataCreator;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +81,11 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
     private String clusterId;
     private DeviceMapper slaveDeviceMapper;
     private List<BlockDeviceMapping> slaveBlockDeviceMappings;
+    
+    
+    Instance masterInstance;
+    List<Instance> slaveInstances;
+            
 
     private final Configuration config;
 
@@ -189,7 +204,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         // mounting ephemerals
         RunInstancesResult masterReqResult = ec2.runInstances(masterReq);
         String masterReservationId = masterReqResult.getReservation().getReservationId();
-        Instance masterInstance = masterReqResult.getReservation().getInstances().get(0);
+        masterInstance = masterReqResult.getReservation().getInstances().get(0);
         log.info("Waiting for master instance to finish booting ...");
 
         /////////////////////////////////////////////
@@ -267,7 +282,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 slaveInstanceListIds.add(i.getInstanceId());
             }
             log.info("Waiting for slave instance(s) to finish booting ...");
-            List<Instance> slaveInstances = waitForInstances(slaveInstanceListIds);
+            slaveInstances = waitForInstances(slaveInstanceListIds);
 
             /////////////////////////////////////////////
             //// Waiting for master instance to run ////
@@ -285,7 +300,14 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             log.info("No Slave instance(s) requested !");
 
         }
-
+        
+        
+        //////////////////////////////////
+        ////// post configure master
+        configureMaster();
+        
+        
+        
         ////////////////////////////////////
         //// Human friendly output
         StringBuilder sb = new StringBuilder();
@@ -424,6 +446,109 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
     public String getClusterId() {
         return clusterId;
+    }
+    
+    private void configureMaster() {
+        JSch ssh = new JSch();
+        JSch.setLogger(new JSchLogger());
+        /*
+         * Building Command
+         */
+        log.info("Now configuring ...");
+        String execCommand  = SshFactory.buildSshCommand(clusterId, getConfig(),masterInstance , slaveInstances );
+       
+
+        log.info(V, "Building SSH-Command : {}", execCommand);
+
+        boolean uploaded = false;
+        boolean configured = false;
+
+        int ssh_attempts = 25; // @TODO attempts
+        while (!configured && ssh_attempts > 0) {
+            try {
+
+                ssh.addIdentity(getConfig().getIdentityFile().toString());
+                log.info("Trying to connect to master ({})...", ssh_attempts);
+                Thread.sleep(4000);
+
+                /*
+                 * Create new Session to avoid packet corruption.
+                 */
+                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIpAddress(), MASTER_SSH_USER, getConfig().getIdentityFile());
+
+                /*
+                 * Start connect attempt
+                 */
+                sshSession.connect();
+                log.info("Connected to master!");
+
+//                if (!uploaded || ssh_attempts > 0) {
+//                    String remoteDirectory = "/home/ubuntu/.ssh";
+//                    String filename = "id_rsa";
+//                    String localFile = getConfiguration().getIdentityFile().toString();
+//                    log.info(V, "Uploading key");
+//                    ChannelSftp channelPut = (ChannelSftp) sshSession.openChannel("sftp");
+//                    channelPut.connect();
+//                    channelPut.cd(remoteDirectory);
+//                    channelPut.put(new FileInputStream(localFile), filename);
+//                    channelPut.disconnect();
+//                    log.info(V, "Upload done");
+//                    uploaded = true;
+//                }
+                ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
+
+                BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+                BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
+
+                channel.setCommand(execCommand);
+
+                log.info(V, "Connecting ssh channel...");
+                channel.connect();
+
+                String lineout = null, lineerr = null;
+
+                while (((lineout = stdout.readLine()) != null) || ((lineerr = stderr.readLine()) != null)) {
+
+                    if (lineout != null) {
+                        if (lineout.contains("CONFIGURATION_FINISHED")) {
+                            configured = true;
+                        }
+                        log.info(V, "SSH: {}", lineout);
+                    }
+
+//                    if (lineerr != null) {
+                    if (lineerr != null && !configured) {
+                        log.error(V, "SSH: {}", lineerr);
+                    }
+//                    if (channel.isClosed() || configured) {
+                    if (channel.isClosed() && configured) {
+                        log.info(V, "SSH: exit-status: {}", channel.getExitStatus());
+                        configured = true;
+                    }
+
+                    Thread.sleep(2000);
+                }
+                if (configured) {
+                    channel.disconnect();
+                    sshSession.disconnect();
+                }
+
+            } catch (IOException | JSchException e) {
+                ssh_attempts--;
+                if (ssh_attempts == 0) {
+                    log.error(V, "SSH: {}", e);
+                }
+
+//                try {
+//                    Thread.sleep(2000);
+//                } catch (InterruptedException ex) {
+//                    log.error("Interrupted ...");
+//                }
+            } catch (InterruptedException ex) {
+                log.error("Interrupted ...");
+            }
+        }
+        log.info(I, "Master instance has been configured.");
     }
 
 }
