@@ -40,7 +40,7 @@
     <target name="fulljar" depends="resolve,jar,-post-jar">
         <jar destfile="${full.jar}">
             <manifest>
-                <attribute name="Main-Class" value="de.unibi.cebitec.bibigrid.StartUpOgeCluster"/>
+                <attribute name="Main-Class" value="de.unibi.cebitec.bibigrid.StartUp"/>
                 <attribute name="Bibigrid-build-date" value="${build-date}"/>
                 <attribute name="Bibigrid-version" value="${version}"/>
             </manifest>
