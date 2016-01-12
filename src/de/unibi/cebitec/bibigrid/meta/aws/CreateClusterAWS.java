@@ -142,15 +142,13 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             masterDeviceMappings = createBlockDeviceMappings(masterDeviceMapper);
         }
 
-        String[] ephemerals = {"b", "c", "d", "e"};
         List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
         for (int i = 0; i < this.config.getMasterInstanceType().getSpec().ephemerals; ++i) {
             BlockDeviceMapping temp = new BlockDeviceMapping();
             String virtualName = "ephemeral" + i;
-            String deviceName = "/dev/sd" + ephemerals[i];
+            String deviceName = "/dev/sd" + ephemeral(i);
             temp.setVirtualName(virtualName);
             temp.setDeviceName(deviceName);
-
             ephemeralList.add(temp);
         }
 
@@ -549,6 +547,11 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             }
         }
         log.info(I, "Master instance has been configured.");
+    }
+    
+    
+    private char ephemeral(int i){
+        return (char)(i+98);
     }
 
 }
