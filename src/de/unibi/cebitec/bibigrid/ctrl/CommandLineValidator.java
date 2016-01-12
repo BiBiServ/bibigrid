@@ -383,16 +383,14 @@ public class CommandLineValidator {
                             break;
                     }
 
-//                    if (!checkInstances(slaveType)){
-//                        return false;
-//                    }
                     cfg.setSlaveInstanceType(slaveType);
                     if (slaveType.getSpec().clusterInstance || cfg.getMasterInstanceType().getSpec().clusterInstance) {
                         if (!slaveType.toString().equals(cfg.getMasterInstanceType().toString())) {
-                            log.error("The instance types have to be the same when using cluster types.");
-                            log.error("Master Instance Type: " + cfg.getMasterInstanceType().toString());
-                            log.error("Slave Instance Type: " + slaveType.toString());
-                            return false;
+                            log.warn("The instance types should be the same when using cluster types.");
+                            log.warn("Master Instance Type: " + cfg.getMasterInstanceType().toString());
+                            log.warn("Slave Instance Type: " + slaveType.toString());
+                            
+                           
                         }
                     }
                 } catch (Exception e) {

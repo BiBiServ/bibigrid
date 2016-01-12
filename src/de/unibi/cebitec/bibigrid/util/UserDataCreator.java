@@ -251,20 +251,21 @@ public class UserDataCreator {
             masterUserData.append("umount /mnt\n"); // 
             masterUserData.append("mount ").append(blockDeviceBase).append("b /vol/\n");
         } else if (ephemeralamount >= 2) {
-            // if 2 or more ephemerals are available use 2 as a RAID system
             masterUserData.append("umount /mnt\n");
-            switch (ephemeralamount) {
-                case 2: {
-                    masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=2 ").append(blockDeviceBase).append("b ").append(blockDeviceBase).append("c\n");
-                    masterUserData.append("echo 'DEVICE ").append(blockDeviceBase).append("b ").append(blockDeviceBase).append("c' > /etc/mdadm.conf\n");
-                    break;
-                }
-                case 4: {
-                    masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4 ").append(blockDeviceBase).append("b ").append(blockDeviceBase).append("c ").append(blockDeviceBase).append("d ").append(blockDeviceBase).append("e\n");
-                    masterUserData.append("echo 'DEVICE ").append(blockDeviceBase).append("b ").append(blockDeviceBase).append("c ").append(blockDeviceBase).append("d ").append(blockDeviceBase).append("e' > /etc/mdadm.conf\n");
-                    break;
-                }
+            // if 2 or more ephemerals are available use all of them in a RAID 0 system
+            
+            masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=").append(ephemeralamount).append(" ");
+            for (int i = 0; i < ephemeralamount; i++) {
+                masterUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
             }
+            masterUserData.append("\n");
+            
+            masterUserData.append("echo 'DEVICE ");
+            for (int i = 0; i < ephemeralamount; i++) {
+                masterUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
+            }
+            masterUserData.append("'> /etc/mdadm.conf \n");
+            
 
             masterUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
             masterUserData.append("blockdev --setra 65536 /dev/md0\n");
@@ -333,7 +334,7 @@ public class UserDataCreator {
                 for (String mastershare : masterNfsShares) {
                     masterUserData.append("mkdir -p ").append(mastershare).append("\n");
                     masterUserData.append("chmod 777 ").append(mastershare).append("\n");
-                    masterUserData.append("echo '").append(mastershare).append(" $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)'>> /etc/exports\n");
+                    masterUserData.append("echo \"").append(mastershare).append(" $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\">> /etc/exports\n");
                 }
                 masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
             } else {
@@ -390,5 +391,10 @@ public class UserDataCreator {
             default:
                 return masterUserData.toString();
         }
+    }
+    
+    
+    private static char ephemeral(int i){
+        return (char)(i+98);
     }
 }

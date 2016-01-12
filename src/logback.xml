@@ -13,6 +13,18 @@
         </encoder>
     </appender>
     
+    <appender name="stdout-err" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>%highlight(%-5level): %msg %n</pattern>
+            <!-- http://logback.qos.ch/manual/layouts.html -->
+        </encoder>
+    </appender>
+    
     <appender name="stdout-info" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="de.unibi.cebitec.bibigrid.util.VerboseOutputFilter" />
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
@@ -21,7 +33,7 @@
             <onMismatch>DENY</onMismatch>
         </filter>
         <encoder>
-            <pattern>%highlight(OK): %msg%n</pattern>
+            <pattern>%highlight(Ok ): %msg%n</pattern>
             <!-- http://logback.qos.ch/manual/layouts.html -->
         </encoder>
     </appender>
