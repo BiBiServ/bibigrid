@@ -16,7 +16,6 @@ public abstract class InstanceType {
     protected String value;
     protected InstanceInformation.InstanceSpecification spec;
     
-//    public InstanceType fromValue(String type);
 
     public String getValue() {
         return value;
@@ -26,4 +25,8 @@ public abstract class InstanceType {
         return spec;
     }
     
+    @Override
+    public String toString(){
+        return getValue();
+    }
 }
