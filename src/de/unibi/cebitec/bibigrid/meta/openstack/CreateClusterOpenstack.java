@@ -135,13 +135,15 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         List<Flavor> flavors = listFlavors();
 
         /**
-         * DeviceMapper init.
+         * DeviceMapper init. 
+         * @ToDo 
          */
         Map<String, String> masterSnapshotToMountPointMap = this.conf.getMasterMounts();
-        DeviceMapper masterDeviceMapper = new DeviceMapper(masterSnapshotToMountPointMap);
+        DeviceMapper masterDeviceMapper = new DeviceMapper(masterSnapshotToMountPointMap,conf.getMasterInstanceType().getSpec().ephemerals);
 
         /**
          * BlockDeviceMapping.
+         * @ToDo 
          */
         Set<BlockDeviceMapping> mappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
@@ -184,12 +186,14 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
 
         /**
          * DeviceMapper Slave.
+         * @ToDo 
          */
         Map<String, String> snapShotToSlaveMounts = this.conf.getSlaveMounts();
-        slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts);
+        slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts,conf.getMasterInstanceType().getSpec().ephemerals);
 
         /**
          * BlockDeviceMapping.
+         * @ToDo 
          */
         Set<BlockDeviceMapping> mappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};

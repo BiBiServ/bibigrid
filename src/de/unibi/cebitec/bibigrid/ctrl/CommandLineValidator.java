@@ -132,7 +132,7 @@ public class CommandLineValidator {
             }
 
             if (req.contains("u")) {
-                if (cl.hasOption("u") || defaults.containsKey("mesos")) {
+                if (cl.hasOption("u") || defaults.containsKey("user")) {
                     String value = cl.getOptionValue("u", defaults.getProperty("user"));
                     if (value != null && !value.isEmpty()) {
                         cfg.setUser(value);

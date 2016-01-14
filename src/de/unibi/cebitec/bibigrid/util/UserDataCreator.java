@@ -278,12 +278,16 @@ public class UserDataCreator {
          * NFS Prep of Vol
          */
         if (cfg.isNfs()) {
-            masterUserData.append("mkdir -p /vol/spool/\n");
-            masterUserData.append("chmod 777 /vol/spool/\n");
+            
             masterUserData.append("ipbase=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
             masterUserData.append("echo \"/vol/spool/ $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
         }
 
+        /*
+         * create spool and scratch
+        */
+        masterUserData.append("mkdir -p /vol/spool/\n");
+        masterUserData.append("chmod 777 /vol/spool/\n");
         masterUserData.append("mkdir -p /vol/scratch/\n");
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
         masterUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
@@ -326,6 +330,10 @@ public class UserDataCreator {
          * NFS//Mounts Block
          */
         if (cfg.isNfs()) {
+            // export spool dir
+            masterUserData.append("ipbase=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
+            masterUserData.append("echo \"/vol/spool/ $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
+            
             if (masterDeviceMapper != null) {
                 for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
                     masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
