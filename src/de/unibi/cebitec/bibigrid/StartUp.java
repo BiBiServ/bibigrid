@@ -39,8 +39,10 @@ public class StartUp {
         cmdLineOptions
                 .addOptionGroup(intentOptions)
                 .addOption("m", "master-instance-type", true, "see INSTANCE-TYPES below")
+                .addOption("mme", "max-master-ephemerals", true, "limits the maxium number of used ephemerals for master spool volume (raid 0)")
                 .addOption("M", "master-image", true, "AMI for master")
                 .addOption("s", "slave-instance-type", true, "see INSTANCE-TYPES below")
+                .addOption("mse", "max-slave-ephemerals", true, "limits the maxium number of used ephemerals for slave spool volume (raid 0 )")
                 .addOption("n", "slave-instance-count", true, "min: 0")
                 .addOption("S", "slave-image", true, "AMI for slaves")
                 .addOption("k", "keypair", true, "name of the keypair in aws console")

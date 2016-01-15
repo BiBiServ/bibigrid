@@ -120,21 +120,13 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
     @Override
     public CreateClusterAWS configureClusterMasterInstance() {
         // done for master. More volume description later when master is running
-        //now defining Slave Volumes
-        Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
-        slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts,config.getSlaveInstanceType().getSpec().ephemerals);
-        slaveBlockDeviceMappings = new ArrayList<>();
-        // Create a list of slaves first. Associate with slave instance-ids later
-        if (!snapShotToSlaveMounts.isEmpty()) {
-            log.info(V, "Defining slave volumes");
-
-            slaveBlockDeviceMappings = createBlockDeviceMappings(slaveDeviceMapper);
-        }
+        
         ////////////////////////////////////////////////////////////////////////
         /////////////// preparing blockdevicemappings for master////////////////
 
         Map<String, String> masterSnapshotToMountPointMap = this.config.getMasterMounts();
-        DeviceMapper masterDeviceMapper = new DeviceMapper(masterSnapshotToMountPointMap,config.getMasterInstanceType().getSpec().ephemerals);
+        int ephemerals = config.getMasterInstanceType().getSpec().ephemerals;
+        DeviceMapper masterDeviceMapper = new DeviceMapper(masterSnapshotToMountPointMap,ephemerals);
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
         if (!this.config.getMasterMounts().isEmpty()) {
@@ -156,10 +148,10 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
         base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.config, environment.getKeypair().getPrivateKey());
 
-        log.info(V, "Master UserData:\n {}", base64MasterUserData);
+        log.info(V, "Master UserData:\n {}", new String(Base64.decodeBase64(base64MasterUserData)));
         //////////////////////////////////////////////////////////////////////////
         /////// run master instance, tag it and wait for boot ////////////////////
-        log.info("Requesting master instance ...");
+        
 
         instancePlacement = new Placement(this.config.getAvailabilityZone());
 
@@ -185,11 +177,26 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
     @Override
     public CreateClusterAWS configureClusterSlaveInstance() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //now defining Slave Volumes
+        Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
+        int ephemerals = config.getSlaveInstanceType().getSpec().ephemerals;
+        slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts,ephemerals);
+        slaveBlockDeviceMappings = new ArrayList<>();
+        // Create a list of slaves first. Associate with slave instance-ids later
+        if (!snapShotToSlaveMounts.isEmpty()) {
+            log.info(V, "Defining slave volumes");
+
+            slaveBlockDeviceMappings = createBlockDeviceMappings(slaveDeviceMapper);
+        }
+        return this;
     }
 
+
+    
     @Override
     public boolean launchClusterInstances() {
+        log.info("Requesting master instance ...");
+
         RunInstancesRequest masterReq = new RunInstancesRequest();
         masterReq.withInstanceType(InstanceType.fromValue(this.config.getMasterInstanceType().getValue()))
                 .withMinCount(1).withMaxCount(1).withPlacement(instancePlacement)
@@ -258,7 +265,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                     this.config,
                     environment.getKeypair().getPublicKey());
 
-            log.info(V, "Slave Userdata:\n{}", base64SlaveUserData);
+            log.info(V, "Slave Userdata:\n{}", new String(Base64.decodeBase64(base64SlaveUserData)));
 
             RunInstancesRequest slaveReq = new RunInstancesRequest();
             slaveReq.withInstanceType(InstanceType.fromValue(this.config.getSlaveInstanceType().getValue()))

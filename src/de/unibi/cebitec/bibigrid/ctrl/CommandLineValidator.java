@@ -33,9 +33,9 @@ public class CommandLineValidator {
     public static final String DEFAULT_PROPERTIES_DIRNAME = System.getProperty("user.home");
     public static final String DEFAULT_PROPERTIES_FILENAME = ".bibigrid.properties";
     public static final Logger log = LoggerFactory.getLogger(CommandLineValidator.class);
-    private CommandLine cl;
-    private Configuration cfg;
-    private Intent intent;
+    private final CommandLine cl;
+    private final Configuration cfg;
+    private final Intent intent;
     private Path propertiesFilePath;
 
     public CommandLineValidator(CommandLine cl, Intent intent) {
@@ -85,6 +85,7 @@ public class CommandLineValidator {
         // if no mode aws given keep default mode instead.
 
         List<String> req = this.intent.getRequiredOptions(cfg.getMode());
+        
         req = new ArrayList<>(req);
 
         if (!req.isEmpty()) {
@@ -362,7 +363,7 @@ public class CommandLineValidator {
                 }
                 log.info(V, "Master image set. ({})", this.cfg.getMasterImage());
             }
-
+            
             ////////////////////////////////////////////////////////////////////////
             ///// slave-instance-type //////////////////////////////////////////////
             if (req.contains("s")) {
@@ -488,7 +489,7 @@ public class CommandLineValidator {
                     log.info(V, "Slave image set. ({})", this.cfg.getSlaveImage());
                 }
             }
-
+            
             ////////////////////////////////////////////////////////////////////////
             ///// ports ////////////////////////////////////////////////////////////
             this.cfg.setPorts(new ArrayList<Port>());

@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class Configuration {
 
-    private InstanceType masterInstanceType;
+    private InstanceType masterInstanceType;  
     private String masterImage;
     private InstanceType slaveInstanceType;
     private int slaveInstanceCount;

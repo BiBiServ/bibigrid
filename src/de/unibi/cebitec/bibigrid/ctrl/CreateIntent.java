@@ -61,6 +61,7 @@ public class CreateIntent extends Intent {
                             .createSecurityGroup()
                             .createPlacementGroup()
                         .configureClusterMasterInstance()
+                        .configureClusterSlaveInstance()
                         .launchClusterInstances();
             case OPENSTACK:
                 return new CreateClusterOpenstack(getConfiguration())

@@ -84,7 +84,7 @@ public class UserDataCreator {
 
         }
 
-        int ephemerals = cfg.getSlaveInstanceType().getSpec().ephemerals;
+        int ephemeralamount = cfg.getSlaveInstanceType().getSpec().ephemerals;
 
         /*
          * Ephemeral Block
@@ -99,33 +99,30 @@ public class UserDataCreator {
                 break;
         }
 
-        if (ephemerals
-                == 1) {
+        if (ephemeralamount  == 1) {
             slaveUserData.append("sudo umount /mnt\n");
             slaveUserData.append("sudo mount ").append(blockDeviceBase).append("b /vol/scratch\n");
-        } else if (ephemerals
-                >= 2) {
+        } else if (ephemeralamount >= 2) {
             // if 2 or more ephemerals are available use 2 as a RAID system
-            slaveUserData.append("sudo umount /mnt\n");
+            slaveUserData.append("umount /mnt\n");
+            // if 2 or more ephemerals are available use all of them in a RAID 0 system
 
-            // @TODO more dynamic!
-            switch (ephemerals) {
-                case 2: {
-                    slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=2  ").append(blockDeviceBase).append("b  ").append(blockDeviceBase).append("c\n");
-                    slaveUserData.append("echo 'DEVICE  ").append(blockDeviceBase).append("b  ").append(blockDeviceBase).append("c' > /etc/mdadm.conf\n");
-                    break;
-                }
-                case 4: {
-                    slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=4  ").append(blockDeviceBase).append("b  ").append(blockDeviceBase).append("c  ").append(blockDeviceBase).append("d  ").append(blockDeviceBase).append("e\n");
-                    slaveUserData.append("echo 'DEVICE  ").append(blockDeviceBase).append("b  ").append(blockDeviceBase).append("c  ").append(blockDeviceBase).append("d  ").append(blockDeviceBase).append("e' > /etc/mdadm.conf\n");
-                    break;
-                }
+            slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=").append(ephemeralamount).append(" ");
+            for (int i = 0; i < ephemeralamount; i++) {
+                slaveUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
             }
+            slaveUserData.append("\n");
+
+            slaveUserData.append("echo 'DEVICE ");
+            for (int i = 0; i < ephemeralamount; i++) {
+                slaveUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
+            }
+            slaveUserData.append("'> /etc/mdadm.conf \n");
 
             slaveUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
-
             slaveUserData.append("blockdev --setra 65536 /dev/md0\n");
             slaveUserData.append("mkfs.xfs -f /dev/md0\n");
+
             slaveUserData.append("mount -t xfs -o noatime /dev/md0 /vol/scratch\n");
             slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
             slaveUserData.append("chmod -R 777 /vol/scratch \n");
@@ -184,7 +181,7 @@ public class UserDataCreator {
          */
         slaveUserData.append("service mesos-master stop\n");
         slaveUserData.append("service mesos-slave stop\n");
-        if (cfg.isMesos()) {    
+        if (cfg.isMesos()) {
             //slaveUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
             slaveUserData.append("echo ").append(masterIp).append(":5050 > /etc/mesos-slave/master\n");
@@ -193,11 +190,8 @@ public class UserDataCreator {
 
 //        slaveUserData.append(
 //                "while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
-        
 //        String checkifFileExists = "ssh -q -o StrictHostKeyChecking=no bibigrid-slave-1-pDj1myEySSih6vw [[ -f /tmp/slave.finished ]] && echo \"File exists\" || echo \"File does not exist\";";
-        
 //        slaveUserData.append("sleep 60 \nsudo service gridengine-exec start\n");
-
         slaveUserData.append("echo 'slave done' >> /vol/spool/slaves.finished \n");
         switch (cfg.getMode()) {
             case AWS_EC2:
@@ -226,6 +220,7 @@ public class UserDataCreator {
      */
     public static String masterUserData(DeviceMapper masterDeviceMapper, Configuration cfg, String privateKey) {
         StringBuilder masterUserData = new StringBuilder();
+
         int ephemeralamount = cfg.getMasterInstanceType().getSpec().ephemerals;
         List<String> masterNfsShares = cfg.getNfsShares();
         masterUserData.append("#!/bin/sh\n").append("sleep 5\n");
@@ -253,19 +248,18 @@ public class UserDataCreator {
         } else if (ephemeralamount >= 2) {
             masterUserData.append("umount /mnt\n");
             // if 2 or more ephemerals are available use all of them in a RAID 0 system
-            
+
             masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=").append(ephemeralamount).append(" ");
             for (int i = 0; i < ephemeralamount; i++) {
                 masterUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
             }
             masterUserData.append("\n");
-            
+
             masterUserData.append("echo 'DEVICE ");
             for (int i = 0; i < ephemeralamount; i++) {
                 masterUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
             }
             masterUserData.append("'> /etc/mdadm.conf \n");
-            
 
             masterUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
             masterUserData.append("blockdev --setra 65536 /dev/md0\n");
@@ -278,14 +272,14 @@ public class UserDataCreator {
          * NFS Prep of Vol
          */
         if (cfg.isNfs()) {
-            
+
             masterUserData.append("ipbase=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
             masterUserData.append("echo \"/vol/spool/ $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
         }
 
         /*
          * create spool and scratch
-        */
+         */
         masterUserData.append("mkdir -p /vol/spool/\n");
         masterUserData.append("chmod 777 /vol/spool/\n");
         masterUserData.append("mkdir -p /vol/scratch/\n");
@@ -310,7 +304,7 @@ public class UserDataCreator {
          */
         masterUserData.append("service mesos-master stop\n");
         masterUserData.append("service mesos-slave stop\n");
-        if (cfg.isMesos()) {    
+        if (cfg.isMesos()) {
             //masterUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
             masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
@@ -333,7 +327,7 @@ public class UserDataCreator {
             // export spool dir
             masterUserData.append("ipbase=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
             masterUserData.append("echo \"/vol/spool/ $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
-            
+
             if (masterDeviceMapper != null) {
                 for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
                     masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
@@ -400,9 +394,8 @@ public class UserDataCreator {
                 return masterUserData.toString();
         }
     }
-    
-    
-    private static char ephemeral(int i){
-        return (char)(i+98);
+
+    private static char ephemeral(int i) {
+        return (char) (i + 98);
     }
 }
