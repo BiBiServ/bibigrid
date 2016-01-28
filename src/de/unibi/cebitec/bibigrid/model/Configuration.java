@@ -25,7 +25,7 @@ public class Configuration {
     private Map<String, String> masterMounts;
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
-    private double bidPrice;
+    
     private boolean useMasterAsCompute;
     private boolean cassandra = false;
     private boolean alternativeConfigFile = false;
@@ -37,6 +37,11 @@ public class Configuration {
     private boolean oge = true;
 
     private String user;
+    
+    /* AWS related Configuration options */
+    private double bidPrice;
+    private boolean useSpotInstances;
+    
 
     public static enum MODE {
 
@@ -282,4 +287,22 @@ public class Configuration {
         this.openstackCredentials = openstackCredentials;
     }
 
+    public double getBidPrice() {
+        return bidPrice;
+    }
+
+    public void setBidPrice(double bidPrice) {
+        this.bidPrice = bidPrice;
+    }
+
+    public boolean isUseSpotInstances() {
+        return useSpotInstances;
+    }
+
+    public void setUseSpotInstances(boolean useSpotInstances) {
+        this.useSpotInstances = useSpotInstances;
+    }
+
+    
+        
 }

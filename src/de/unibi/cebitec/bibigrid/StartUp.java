@@ -45,6 +45,8 @@ public class StartUp {
                 .addOption("mse", "max-slave-ephemerals", true, "limits the maxium number of used ephemerals for slave spool volume (raid 0 )")
                 .addOption("n", "slave-instance-count", true, "min: 0")
                 .addOption("S", "slave-image", true, "AMI for slaves")
+                .addOption("usir" , "use-spot-instance-request", true, " use spot instances instead of regular ones for the slaves (! t instance types are unsupported)")
+                .addOption("bp" , "bidprice", true, "bid price for spot instances")
                 .addOption("k", "keypair", true, "name of the keypair in aws console")
                 .addOption("i", "identity-file", true, "absolute path to private ssh key file")
                 .addOption("e", "region", true, "region of instance")

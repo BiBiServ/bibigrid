@@ -201,6 +201,8 @@ public class CommandLineValidator {
                 this.cfg.setOpenstackCredentials(osc);
             }
 
+           
+            
             ////////////////////////////////////////////////////////////////////////
             ///// mesos on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("me") || defaults.containsKey("mesos")) {
@@ -600,7 +602,7 @@ public class CommandLineValidator {
 
             ////////////////////////////////////////////////////////////////////////
             ///// slave-mounts /////////////////////////////////////////////////////
-            this.cfg.setSlaveMounts(new HashMap<String, String>());
+            this.cfg.setSlaveMounts(new HashMap<>());
             String slaveMountsCsv = this.cl.getOptionValue("f", defaults.getProperty("slave-mounts"));
             if (slaveMountsCsv != null && !slaveMountsCsv.isEmpty()) {
                 try {
@@ -630,7 +632,7 @@ public class CommandLineValidator {
 
             ////////////////////////////////////////////////////////////////////////
             ///// master-nfs-shares ////////////////////////////////////////////////
-            this.cfg.setNfsShares(new ArrayList<String>());
+            this.cfg.setNfsShares(new ArrayList<>());
             String nfsSharesCsv = this.cl.getOptionValue("g", defaults.getProperty("nfs-shares"));
             if (nfsSharesCsv != null && !nfsSharesCsv.isEmpty()) {
                 try {
@@ -668,6 +670,37 @@ public class CommandLineValidator {
                 }
                 this.cfg.setEarlyShellScriptFile(script);
                 log.info(V, "Early Shell script file found! ({})", script);
+            }
+            
+            
+            /* ------------------------- spot instance request --------------------------- */
+            if (cl.hasOption("usir") || defaults.containsKey("use-spot-instance-request")) {
+                String value = cl.getOptionValue("usir", defaults.getProperty("use-spot-instance-request"));
+                if (value.equalsIgnoreCase("yes")) {
+                    cfg.setUseSpotInstances(true);
+                    
+                    if (cl.hasOption("bd") || defaults.containsKey("bidprice")) {
+                        try {
+                            cfg.setBidPrice(Double.parseDouble(cl.getOptionValue("bd", defaults.getProperty("bidprice"))));
+                        } catch (NumberFormatException e){
+                            log.error("Argument bp/bidprice is not a valid double value !");
+                            return false;
+                        }
+                        
+                    } else {
+                        log.error("If use-spot-instance-request is set, a bidprice must defined!");
+                        return false;
+                    }
+                    
+                    
+                    log.info(V, "Use spot instances ");
+                } else if (value.equalsIgnoreCase("no")) {
+                    log.info(V, "SpotInstance ussage disabled.");
+                    this.cfg.setMesos(false);
+                } else {
+                    log.error("SpotInstanceRequest value not recognized. Please use yes/no.");
+                    return false;
+                }
             }
 
             ///////////////////////////////////////////////////////////////////////
