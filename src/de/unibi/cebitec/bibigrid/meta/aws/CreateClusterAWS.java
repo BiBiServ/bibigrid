@@ -83,7 +83,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
     private String base64MasterUserData;
 
     private InstanceNetworkInterfaceSpecification inis;
-    private List<InstanceNetworkInterfaceSpecification> networkInterfaces;
+    private List<InstanceNetworkInterfaceSpecification> masterNetworkInterfaces, slaveNetworkInterfaces;
     private List<BlockDeviceMapping> masterDeviceMappings;
     private Tag bibigridid, username;
     private String clusterId;
@@ -169,7 +169,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
         //////////////////////////////////////////////////////////////////////////
         /////// create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
-        networkInterfaces = new ArrayList<>();
+        masterNetworkInterfaces = new ArrayList<>();
 
         inis = new InstanceNetworkInterfaceSpecification();
         inis.withPrivateIpAddress(environment.getMASTERIP())
@@ -178,7 +178,14 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 .withSubnetId(environment.getSubnet().getSubnetId())
                 .withDeviceIndex(0);
 
-        networkInterfaces.add(inis); // add eth0
+        masterNetworkInterfaces.add(inis); // add eth0
+
+        slaveNetworkInterfaces = new ArrayList<>();
+        inis = new InstanceNetworkInterfaceSpecification();
+        inis.withGroups(environment.getSecReqResult().getGroupId())
+                .withSubnetId(environment.getSubnet().getSubnetId())
+                .withDeviceIndex(0);
+        slaveNetworkInterfaces.add(inis);
 
         return this;
     }
@@ -207,6 +214,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             RequestSpotInstancesRequest masterReq = new RequestSpotInstancesRequest();
             masterReq.withType(SpotInstanceType.OneTime)
                     .withInstanceCount(1)
+                    .withLaunchGroup("lg_" + clusterId)
                     .withSpotPrice(Double.toString(config.getBidPrice()));
 
             LaunchSpecification masterLaunchSpecification = new LaunchSpecification();
@@ -216,7 +224,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                     .withImageId(this.config.getMasterImage())
                     .withUserData(base64MasterUserData)
                     .withBlockDeviceMappings(masterDeviceMappings)
-                    .withNetworkInterfaces(networkInterfaces);
+                    .withNetworkInterfaces(masterNetworkInterfaces);
 
             masterReq.setLaunchSpecification(masterLaunchSpecification);
 
@@ -236,12 +244,13 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
             RunInstancesRequest masterReq = new RunInstancesRequest();
             masterReq.withInstanceType(InstanceType.fromValue(this.config.getMasterInstanceType().getValue()))
-                    .withMinCount(1).withMaxCount(1).withPlacement(instancePlacement)
+                    .withMinCount(1).withMaxCount(1)
+                    .withPlacement(instancePlacement)
                     .withKeyName(this.config.getKeypair())
                     .withImageId(this.config.getMasterImage())
                     .withUserData(base64MasterUserData)
                     .withBlockDeviceMappings(masterDeviceMappings)
-                    .withNetworkInterfaces(networkInterfaces);
+                    .withNetworkInterfaces(masterNetworkInterfaces);
 
             // mounting ephemerals
             RunInstancesResult masterReqResult = ec2.runInstances(masterReq);
@@ -310,7 +319,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest();
                 slaveReq.withType(SpotInstanceType.OneTime)
                         .withInstanceCount(config.getSlaveInstanceCount())
-                        .withLaunchGroup("lg_" + masterInstance.getInstanceId())
+                        .withLaunchGroup("lg_" + clusterId)
                         .withSpotPrice(Double.toString(config.getBidPrice()));
 
                 LaunchSpecification slaveLaunchSpecification = new LaunchSpecification();
@@ -320,8 +329,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                         .withImageId(this.config.getSlaveImage())
                         .withUserData(base64SlaveUserData)
                         .withBlockDeviceMappings(slaveBlockDeviceMappings)
-                        .withSubnetId(environment.getSubnet().getSubnetId())
-                        .withSecurityGroups(environment.getSecReqResult().getGroupId());
+                        .withNetworkInterfaces(slaveNetworkInterfaces);
 
                 slaveReq.setLaunchSpecification(slaveLaunchSpecification);
 
@@ -349,8 +357,9 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                         .withImageId(this.config.getSlaveImage())
                         .withUserData(base64SlaveUserData)
                         .withBlockDeviceMappings(slaveBlockDeviceMappings)
-                        .withSubnetId(environment.getSubnet().getSubnetId())
-                        .withSecurityGroupIds(environment.getSecReqResult().getGroupId());
+                        .withNetworkInterfaces(slaveNetworkInterfaces);
+//                        .withSubnetId(environment.getSubnet().getSubnetId())
+//                        .withSecurityGroupIds(environment.getSecReqResult().getGroupId());
 
                 RunInstancesResult slaveReqResult = ec2.runInstances(slaveReq);
                 String slaveReservationId = slaveReqResult.getReservation().getReservationId();

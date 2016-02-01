@@ -45,7 +45,8 @@ public class CreateIntent extends Intent {
                 return false;
             }
         } catch (AmazonClientException | JSchException ace) {
-            log.error("{}", ace);
+            //ace.printStackTrace();
+            log.error("Exception : {} ", ace.getMessage());
             return false;
         }
         return true;
