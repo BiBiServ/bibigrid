@@ -13,7 +13,7 @@
         </encoder>
     </appender>
     
-    <appender name="stdout-err" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="stdout-warn" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>WARN</level>
             <onMatch>ACCEPT</onMatch>
@@ -65,6 +65,7 @@
     
     <root level="debug">
         <appender-ref ref="stdout-err"/>
+        <appender-ref ref="stdout-warn"/>
         <appender-ref ref="stdout-info"/>
         <appender-ref ref="stdout-info2"/>
     </root>

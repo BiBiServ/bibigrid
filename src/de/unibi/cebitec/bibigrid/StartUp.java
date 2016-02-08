@@ -4,6 +4,7 @@ import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.ctrl.*;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.jar.JarFile;
@@ -45,7 +46,7 @@ public class StartUp {
                 .addOption("mse", "max-slave-ephemerals", true, "limits the maxium number of used ephemerals for slave spool volume (raid 0 )")
                 .addOption("n", "slave-instance-count", true, "min: 0")
                 .addOption("S", "slave-image", true, "AMI for slaves")
-                .addOption("usir" , "use-spot-instance-request", true, " use spot instances instead of regular ones for the slaves (! t instance types are unsupported)")
+                .addOption("usir" , "use-spot-instance-request", true, " Yes or No of spot instances should be used  (Type t instance types are unsupported).")
                 .addOption("bp" , "bidprice", true, "bid price for spot instances")
                 .addOption("k", "keypair", true, "name of the keypair in aws console")
                 .addOption("i", "identity-file", true, "absolute path to private ssh key file")

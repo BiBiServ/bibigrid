@@ -59,7 +59,7 @@ public class CurrentClusters {
                     // check for cluster-id
                     String clusterid = getValueforName(i.getTags(), "bibigrid-id");
                     String name = getValueforName(i.getTags(), "name");
-                    String user = getValueforName(i.getTags(),"user");
+                    String user = getValueforName(i.getTags(), "user");
                     if (clusterid == null && name != null) { // old style : use name to determine clusterid
                         if (name.contains("master-") || name.contains("slave-")) {
                             String[] tmp = name.split("-");
@@ -99,19 +99,18 @@ public class CurrentClusters {
                     } else {
                         cluster.setKeyname(i.getKeyName());
                     }
-                    
+
                     // user - should be always the same for all instances of one cluser
                     if (user != null) {
                         if (cluster.getUser().equalsIgnoreCase("unknown")) {
                             cluster.setUser(user);
                         } else {
                             if (!cluster.getUser().equals(user)) {
-                                log.error("Detect two different users ({},{}) for cluster '{}'",cluster.getUser(),user,clusterid);
+                                log.error("Detect two different users ({},{}) for cluster '{}'", cluster.getUser(), user, clusterid);
                             }
-                                cluster.setUser("various");
-                            }
+
                         }
-                               
+                    }
 
                     clustermap.put(clusterid, cluster);
                 }
@@ -203,20 +202,20 @@ public class CurrentClusters {
     }
 
     /**
-     * 
+     *
      * @param novaClient OpenStack
      */
     public CurrentClusters(NovaApi novaClient, Configuration conf) {
         String keypairName = conf.getKeypair();
         ServerApi s = novaClient.getServerApi("regionOne");
-        
+
         Cluster c = new Cluster();
-        
+
         for (Server serv : s.listInDetail().concat()) {
             if (serv.getKeyName().equals(keypairName)) {
                 if (serv.getName().contains("master")) {
                     c.setMasterinstance(serv.getId());
-                } else if(serv.getName().contains("slave")) {
+                } else if (serv.getName().contains("slave")) {
                     c.addSlaveInstance(serv.getId());
                 }
                 c.setStarted(serv.getCreated().toString());
@@ -225,7 +224,7 @@ public class CurrentClusters {
         }
         clustermap.put(keypairName, c);
     }
-    
+
     public String printClusterList() {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);

@@ -215,7 +215,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             }
         }
 
-        masterDeviceMappings.addAll(ephemeralList);
+        slaveBlockDeviceMappings.addAll(ephemeralList);
 
         return this;
     }
@@ -239,10 +239,14 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                     .withUserData(base64MasterUserData)
                     .withBlockDeviceMappings(masterDeviceMappings)
                     .withNetworkInterfaces(masterNetworkInterfaces);
+            
 
             masterReq.setLaunchSpecification(masterLaunchSpecification);
 
+           
+            
             RequestSpotInstancesResult masterReqResult = ec2.requestSpotInstances(masterReq);
+            
             List<SpotInstanceRequest> masterReqResponses = masterReqResult.getSpotInstanceRequests();
             // collect all spotInstanceRequestIds ...
             List<String> spotInstanceRequestIds = new ArrayList<>();
