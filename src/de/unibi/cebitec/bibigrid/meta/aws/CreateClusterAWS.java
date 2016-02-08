@@ -239,14 +239,11 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                     .withUserData(base64MasterUserData)
                     .withBlockDeviceMappings(masterDeviceMappings)
                     .withNetworkInterfaces(masterNetworkInterfaces);
-            
 
             masterReq.setLaunchSpecification(masterLaunchSpecification);
 
-           
-            
             RequestSpotInstancesResult masterReqResult = ec2.requestSpotInstances(masterReq);
-            
+
             List<SpotInstanceRequest> masterReqResponses = masterReqResult.getSpotInstanceRequests();
             // collect all spotInstanceRequestIds ...
             List<String> spotInstanceRequestIds = new ArrayList<>();
@@ -254,9 +251,14 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             for (SpotInstanceRequest requestResponse : masterReqResponses) {
 
                 spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
-                requestResponse.withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
 
             }
+            // Tag spotrequest
+            CreateTagsRequest ctr = new CreateTagsRequest();
+            ctr.withResources(spotInstanceRequestIds);
+            ctr.withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
+            ec2.createTags(ctr);
+            // Wait for spot request finished  
             log.info("Waiting for master instance (spot request) to finish booting ...");
             masterInstance = waitForInstances(waitForSpotInstances(spotInstanceRequestIds)).get(0);
         } else {
@@ -361,10 +363,15 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 for (SpotInstanceRequest requestResponse : slaveReqResponses) {
 
                     spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
-                    requestResponse.withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
 
                 }
 
+                // tag spot requests (slave)
+                CreateTagsRequest ctr = new CreateTagsRequest();
+                ctr.withResources(spotInstanceRequestIds);
+                ctr.withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
+                ec2.createTags(ctr);
+                // wait for spot request (slave) finished
                 slaveInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
 
             } else {
