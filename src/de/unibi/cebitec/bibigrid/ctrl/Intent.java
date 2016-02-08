@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import java.util.List;
 
 public abstract class Intent {
@@ -13,7 +14,7 @@ public abstract class Intent {
 
     public abstract String getCmdLineOption();
 
-    public abstract List<String> getRequiredOptions();
+    public abstract List<String> getRequiredOptions(MODE mode);
 
     public abstract boolean execute() throws IntentNotConfiguredException;
 

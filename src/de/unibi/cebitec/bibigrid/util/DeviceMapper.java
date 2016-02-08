@@ -1,13 +1,21 @@
 package de.unibi.cebitec.bibigrid.util;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class DeviceMapper {
 
-    private static final String[] POSSIBLE_DEVICE_LETTERS = {"f", "g", "h", "i",
-        "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
-    private int usedLetters = 0;
+
+    
+    
+    private static final int MAX_DEVICES = 25; // vdb ... vdz
+    
+    
+    //private int AVAIL_DEVICES;
+    private int USED_DEVICES = 0;
+    
+    // private int usedLetters = 0;
 
     // snap-0a12b34c -> /my/dir/
     private Map<String, String> snapshotToMountPoint;
@@ -18,15 +26,18 @@ public class DeviceMapper {
     // /my/dir/ -> /dev/xvdf
     private Map<String, String> mountPointToRealDeviceName;
 
-    public DeviceMapper(Map<String, String> snapshotIdToMountPoint) throws IllegalArgumentException {
-        if (snapshotIdToMountPoint.size() > POSSIBLE_DEVICE_LETTERS.length) {
+    public DeviceMapper(Map<String, String> snapshotIdToMountPoint, int used_devices) throws IllegalArgumentException {
+        // calculate the number of avail devices after  removing all used ephemerals
+       USED_DEVICES = used_devices;
+
+        if (snapshotIdToMountPoint.size() > (MAX_DEVICES-USED_DEVICES)) {
             throw new IllegalArgumentException("Too many volumes in map. Not enough device drivers left!");
         }
         this.snapshotToMountPoint = snapshotIdToMountPoint;
         this.snapshotToDeviceName = new HashMap<>();
         this.mountPointToRealDeviceName = new HashMap<>();
         for (Map.Entry<String, String> mapping : this.snapshotToMountPoint.entrySet()) {
-            String letter = nextAvailableDeviceLetter();
+            char letter = nextAvailableDeviceLetter();
             this.snapshotToDeviceName.put(mapping.getKey(), createDeviceName(letter));
             StringBuilder realDeviceName = new StringBuilder().append(createRealDeviceName(letter));
             int partitionNumber = getPartitionNumber(mapping.getKey());
@@ -50,17 +61,20 @@ public class DeviceMapper {
         return this.mountPointToRealDeviceName.get(mountPoint);
     }
 
-    private String nextAvailableDeviceLetter() {
-        String nextLetter = POSSIBLE_DEVICE_LETTERS[usedLetters];
-        this.usedLetters++;
+    
+  
+    
+    private char nextAvailableDeviceLetter() {
+        char nextLetter = (char)(USED_DEVICES+98);
+        USED_DEVICES ++;
         return nextLetter;
     }
 
-    private String createDeviceName(String letter) {
+    private String createDeviceName(char letter) {
         return new StringBuilder("/dev/sd").append(letter).toString();
     }
 
-    private String createRealDeviceName(String letter) {
+    private String createRealDeviceName(char letter) {
         return new StringBuilder("/dev/xvd").append(letter).toString();
     }
 

@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.model;
 
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.services.ec2.model.InstanceType;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
@@ -9,11 +8,10 @@ import java.util.Map;
 
 public class Configuration {
 
-   
-    private InstanceType masterInstanceType;
+    private InstanceType masterInstanceType;  
     private String masterImage;
     private InstanceType slaveInstanceType;
-    private int slaveInstanceMaximum;
+    private int slaveInstanceCount;
     private String slaveImage;
     private String availabilityZone;
     private String keypair;
@@ -21,40 +19,50 @@ public class Configuration {
     private String region;
     private AWSCredentials credentials;
     private String clusterId;
-    private List<Integer> ports;
+    private List<Port> ports;
     private Path shellScriptFile;
     private Path earlyShellScriptFile;
     private Map<String, String> masterMounts;
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
-    private int slaveInstanceMinimum;
-    private double bidPrice;
-    private int slaveInstanceStartAmount;
+    
     private boolean useMasterAsCompute;
-    private boolean autoscaling = false;
     private boolean cassandra = false;
     private boolean alternativeConfigFile = false;
     private String alternativeConfigPath = "";
+    private String vpcid;
 
-    //Gluster:
-    private boolean useGluster = false;
-    private int glusterInstanceAmount;
-    private InstanceType glusterInstanceType;
-    private String glusterImage;
+    private boolean mesos = false;
+    private boolean nfs = true;
+    private boolean oge = true;
+
+    private String user;
     
+    /* AWS related Configuration options */
+    private double bidPrice;
+    private boolean useSpotInstances;
     
+
+    public static enum MODE {
+
+        AWS_EC2, OPENSTACK
+    }
+
+    private MODE mode = MODE.AWS_EC2;
+
+    private OpenStackCredentials openstackCredentials;
+
     //grid-properties-file
     private File gridpropertiesfile = null;
-    
 
-    public void setGridPropertiesFile(File s){
+    public void setGridPropertiesFile(File s) {
         this.gridpropertiesfile = s;
     }
-    
-    public File getGridPropertiesFile(){
+
+    public File getGridPropertiesFile() {
         return gridpropertiesfile;
     }
-    
+
     public boolean isCassandra() {
         return cassandra;
     }
@@ -62,15 +70,7 @@ public class Configuration {
     public void setCassandra(boolean cassandra) {
         this.cassandra = cassandra;
     }
-    
-    public boolean isAutoscaling() {
-        return autoscaling;
-    }
 
-    public void setAutoscaling(boolean autoscaling) {
-        this.autoscaling = autoscaling;
-    }
-    
     public boolean isUseMasterAsCompute() {
         return useMasterAsCompute;
     }
@@ -79,28 +79,12 @@ public class Configuration {
         this.useMasterAsCompute = useMasterAsCompute;
     }
 
-    public int getSlaveInstanceStartAmount() {
-        return slaveInstanceStartAmount;
+    public int getSlaveInstanceCount() {
+        return slaveInstanceCount;
     }
 
-    public void setSlaveInstanceStartAmount(int startCount) {
-        this.slaveInstanceStartAmount = startCount;
-    }
-    
-    public int getSlaveInstanceMaximum() {
-        return slaveInstanceMaximum;
-    }
-
-    public void setSlaveInstanceMaximum(int slaveInstanceMaximum) {
-        this.slaveInstanceMaximum = slaveInstanceMaximum;
-    }
-
-    public int getSlaveInstanceMinimum() {
-        return slaveInstanceMinimum;
-    }
-
-    public void setSlaveInstanceMinimum(int slaveInstanceMinimum) {
-        this.slaveInstanceMinimum = slaveInstanceMinimum;
+    public void setSlaveInstanceCount(int slaveInstanceCount) {
+        this.slaveInstanceCount = slaveInstanceCount;
     }
 
     public InstanceType getMasterInstanceType() {
@@ -183,11 +167,11 @@ public class Configuration {
         this.clusterId = clusterId;
     }
 
-    public List<Integer> getPorts() {
+    public List<Port> getPorts() {
         return ports;
     }
 
-    public void setPorts(List<Integer> ports) {
+    public void setPorts(List<Port> ports) {
         this.ports = ports;
     }
 
@@ -230,39 +214,8 @@ public class Configuration {
     public void setNfsShares(List<String> nfsShares) {
         this.nfsShares = nfsShares;
     }
-    
-    public int getGlusterInstanceAmount() {
-        return glusterInstanceAmount;
-    }
-    
-    public InstanceType getGlusterInstanceType() {
-        return glusterInstanceType;
-    }
-    
-    public boolean isUseGluster() {
-        return useGluster;
-    }
-    
-    public void setGlusterInstanceAmount(int glusterInstanceAmount) {
-        this.glusterInstanceAmount = glusterInstanceAmount;
-    }
-    
-    public void setGlusterInstanceType(InstanceType glusterInstanceType) {
-        this.glusterInstanceType = glusterInstanceType;
-    }
-    
-    public void setUseGluster(boolean useGluster) {
-        this.useGluster = useGluster;
-    }
 
-    public void setGlusterImage(String glusterImage) {
-        this.glusterImage = glusterImage;
-    }
-
-    public String getGlusterImage() {
-        return glusterImage;
-    }
-     public boolean isAlternativeConfigFile() {
+    public boolean isAlternativeConfigFile() {
         return alternativeConfigFile;
     }
 
@@ -277,4 +230,79 @@ public class Configuration {
     public void setAlternativeConfigPath(String alternativeConfigPath) {
         this.alternativeConfigPath = alternativeConfigPath;
     }
+
+    public String getVpcid() {
+        return vpcid;
+    }
+
+    public void setVpcid(String vpcid) {
+        this.vpcid = vpcid;
+    }
+
+    public boolean isMesos() {
+        return mesos;
+    }
+
+    public void setMesos(boolean mesos) {
+        this.mesos = mesos;
+    }
+
+    public boolean isNfs() {
+        return nfs;
+    }
+
+    public void setNfs(boolean nfs) {
+        this.nfs = nfs;
+    }
+
+    public boolean isOge() {
+        return oge;
+    }
+
+    public void setOge(boolean oge) {
+        this.oge = oge;
+    }
+
+    public MODE getMode() {
+        return mode;
+    }
+
+    public void setMode(MODE mode) {
+        this.mode = mode;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public OpenStackCredentials getOpenstackCredentials() {
+        return openstackCredentials;
+    }
+
+    public void setOpenstackCredentials(OpenStackCredentials openstackCredentials) {
+        this.openstackCredentials = openstackCredentials;
+    }
+
+    public double getBidPrice() {
+        return bidPrice;
+    }
+
+    public void setBidPrice(double bidPrice) {
+        this.bidPrice = bidPrice;
+    }
+
+    public boolean isUseSpotInstances() {
+        return useSpotInstances;
+    }
+
+    public void setUseSpotInstances(boolean useSpotInstances) {
+        this.useSpotInstances = useSpotInstances;
+    }
+
+    
+        
 }

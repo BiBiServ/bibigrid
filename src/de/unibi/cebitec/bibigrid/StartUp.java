@@ -4,6 +4,7 @@ import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.ctrl.*;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.jar.JarFile;
@@ -12,9 +13,9 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StartUpOgeCluster {
+public class StartUp {
 
-    public static final Logger log = LoggerFactory.getLogger(StartUpOgeCluster.class);
+    public static final Logger log = LoggerFactory.getLogger(StartUp.class);
     public static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation."
             + " No instances started/terminated.";
     public static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation."
@@ -22,6 +23,8 @@ public class StartUpOgeCluster {
             + " an error they might remain running. Please check manually afterwards.";
 
     public static void main(String[] args) {
+
+
         CommandLineParser cli = new PosixParser();
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
@@ -31,19 +34,20 @@ public class StartUpOgeCluster {
                 .addOption(OptionBuilder.withLongOpt("create").withDescription("create cluster").create("c"))
                 .addOption(OptionBuilder.withLongOpt("list").withDescription("list running clusters").create("l"))
                 .addOption(OptionBuilder.withLongOpt("check").withDescription("check config file").create("ch"))
-                .addOption(OptionBuilder.withLongOpt("terminate").withDescription("terminate running cluster").hasArg().withArgName("cluster-id").create("t"))
-                .addOption(OptionBuilder.withLongOpt("create-gluster").withDescription("create cluster with gluster").create("C"));
+                .addOption(OptionBuilder.withLongOpt("terminate").withDescription("terminate running cluster").hasArg().withArgName("cluster-id").create("t"));
 
         Options cmdLineOptions = new Options();
         cmdLineOptions
                 .addOptionGroup(intentOptions)
                 .addOption("m", "master-instance-type", true, "see INSTANCE-TYPES below")
+                .addOption("mme", "max-master-ephemerals", true, "limits the maxium number of used ephemerals for master spool volume (raid 0)")
                 .addOption("M", "master-image", true, "AMI for master")
                 .addOption("s", "slave-instance-type", true, "see INSTANCE-TYPES below")
-                .addOption("n", "slave-instance-min", true, "min: 1")
-                .addOption("r","slave-instance-start",true,"Desired amount of instances at the start of the cluster")
-                .addOption("u", "slave-instance-max", true, "min: 1")
+                .addOption("mse", "max-slave-ephemerals", true, "limits the maxium number of used ephemerals for slave spool volume (raid 0 )")
+                .addOption("n", "slave-instance-count", true, "min: 0")
                 .addOption("S", "slave-image", true, "AMI for slaves")
+                .addOption("usir" , "use-spot-instance-request", true, " Yes or No of spot instances should be used  (Type t instance types are unsupported).")
+                .addOption("bp" , "bidprice", true, "bid price for spot instances")
                 .addOption("k", "keypair", true, "name of the keypair in aws console")
                 .addOption("i", "identity-file", true, "absolute path to private ssh key file")
                 .addOption("e", "region", true, "region of instance")
@@ -56,16 +60,21 @@ public class StartUpOgeCluster {
                 .addOption("x", "execute-script", true, "shell script file to be executed on master")
                 .addOption("g", "nfs-shares", true, "comma-separated list of paths on master to be shared via NFS")
                 .addOption("v", "verbose", false, "more console output")
-                .addOption("o","config",true,"path to alternative config file")
-                .addOption("b","use-master-as-compute",true,"yes or no if master is supposed to be used as a compute instance")
-                .addOption("j","autoscaling", false, "Enable AutoScaling")
-                .addOption("db","cassandra",false, "Enable Cassandra database support")
-                .addOption("gl","use-gluster", false, "Enable glusterfs")
-                .addOption("gla","gluster-instance-amount", true, "Amount of machines for glusterfs")
-                .addOption("gli","gluster-instance-type", true, "see INSTANCE-TYPES below")
-                .addOption("glI","gluster-image", true, "AMI for glusterfs")
-                .addOption("gpf","grid-properties-file",true,"store essential grid properties like master & slave dns values and grid id in a Java property file");
-        
+                .addOption("o", "config", true, "path to alternative config file")
+                .addOption("b", "use-master-as-compute", true, "yes or no if master is supposed to be used as a compute instance")
+                .addOption("db", "cassandra", false, "Enable Cassandra database support")
+                .addOption("gpf", "grid-properties-file", true, "store essential grid properties like master & slave dns values and grid id in a Java property file")
+                .addOption("vpc", "vpc-id", true, "Vpc ID used instead of default vpc")
+                .addOption("me", "mesos", true, "Yes or no if Mesos framework should be configured/started. Default is No")
+                .addOption("mode", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
+                .addOption("oge", "oge", true, "Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
+                .addOption("nfs", "nfs", true, "Yes or no if NFS should be configured/started. Default is Yes!")
+                .addOption("u", "user", true, "User name (mandatory)")
+                .addOption("osu", "openstack-username", true, "The given Openstack Username")
+                .addOption("ost", "openstack-tenantname", true, "The given Openstack Tenantname")
+                .addOption("osp", "openstack-password", true, "The given Openstack User-Password")
+                .addOption("ose", "openstack-endpoint", true, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/)");
+
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
             CommandLineValidator validator = null;
@@ -76,7 +85,7 @@ public class StartUpOgeCluster {
             switch (intentOptions.getSelected()) {
                 case "V":
                     try {
-                        URL jarUrl = StartUpOgeCluster.class.getProtectionDomain().getCodeSource().getLocation();
+                        URL jarUrl = StartUp.class.getProtectionDomain().getCodeSource().getLocation();
                         String jarPath = URLDecoder.decode(jarUrl.getFile(), "UTF-8");
                         JarFile jarFile = new JarFile(jarPath);
                         Manifest m = jarFile.getManifest();
@@ -103,10 +112,6 @@ public class StartUpOgeCluster {
                     break;
                 case "c":
                     intent = new CreateIntent();
-                    validator = new CommandLineValidator(cl, intent);
-                    break;
-                case "C":
-                    intent = new CreateGlusterIntent();
                     validator = new CommandLineValidator(cl, intent);
                     break;
                 case "l":

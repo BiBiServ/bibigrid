@@ -2,7 +2,9 @@
 .*.swp
 build/
 dist/
+dist/bibigrid
 nbproject/private/
 lib/
+lib_old/
 report/
 .gitignore

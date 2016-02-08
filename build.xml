@@ -38,140 +38,120 @@
     <property name="full.jar" value="dist/bibigrid-full.jar"/>
     <property name="monitor.jar" value="dist/monitor.jar"/>
     
-    <target name="fulljar" depends="resolve,jar,-post-jar,monitor">
+    <target name="fulljar" depends="resolve,jar,-post-jar">
         <jar destfile="${full.jar}">
             <manifest>
-                <attribute name="Main-Class" value="de.unibi.cebitec.bibigrid.StartUpOgeCluster"/>
-                <attribute name="Bibigrid-build-date" value="${build-date}" />
-                <attribute name="Bibigrid-version" value="${version}" />
+                <attribute name="Main-Class" value="de.unibi.cebitec.bibigrid.StartUp"/>
+                <attribute name="Bibigrid-build-date" value="${build-date}"/>
+                <attribute name="Bibigrid-version" value="${version}"/>
             </manifest>
-        
+
             <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.9.27.jar">
-                <exclude name="com/amazonaws/services/cloudformation/**/*" />
-                <exclude name="com/amazonaws/services/cloudfront/**/*" />
-                <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*" />
-                <exclude name="com/amazonaws/services/cloudsearch/**/*" />
-                <exclude name="com/amazonaws/services/cloudwatch/**/*" />
-                <exclude name="com/amazonaws/services/datapipeline/**/*" />
-                <exclude name="com/amazonaws/services/directconnect/**/*" />
-                <exclude name="com/amazonaws/services/dynamodb/**/*" />
-                <exclude name="com/amazonaws/services/dynamodbv2/**/*" />
-                <exclude name="com/amazonaws/services/elasticache/**/*" />
-                <exclude name="com/amazonaws/services/elasticbeanstalk/**/*" />
-                <exclude name="com/amazonaws/services/elasticloadbalancing/**/*" />
-                <exclude name="com/amazonaws/services/elasticmapreduce/**/*" />
-                <exclude name="com/amazonaws/services/elastictranscoder/**/*" />
-                <exclude name="com/amazonaws/services/glacier/**/*" />
-                <exclude name="com/amazonaws/services/identitymanagement/**/*" />
-                <exclude name="com/amazonaws/services/importexport/**/*" />
-                <exclude name="com/amazonaws/services/opsworks/**/*" />
-                <exclude name="com/amazonaws/services/rds/**/*" />
-                <exclude name="com/amazonaws/services/redshift/**/*" />
-                <exclude name="com/amazonaws/services/route53/**/*" />
-                <exclude name="com/amazonaws/services/securitytoken/**/*" />
-                <exclude name="com/amazonaws/services/simpledb/**/*" />
-                <exclude name="com/amazonaws/services/simpleemail/**/*" />
-                <exclude name="com/amazonaws/services/simpleworkflow/**/*" />
-                <exclude name="com/amazonaws/services/sns/**/*" />
-                <exclude name="com/amazonaws/services/sqs/**/*" />
-                <exclude name="com/amazonaws/services/storagegateway/**/*" />
-                <exclude name="com/amazonaws/services/support/**/*" />
-                <exclude name="com/amazonaws/services/s3/**/*" />
+            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.10.49.jar">
+                <exclude name="com/amazonaws/services/cloudformation/**/*"/>
+                <exclude name="com/amazonaws/services/cloudfront/**/*"/>
+                <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*"/>
+                <exclude name="com/amazonaws/services/cloudsearch/**/*"/>
+                <exclude name="com/amazonaws/services/cloudwatch/**/*"/>
+                <exclude name="com/amazonaws/services/datapipeline/**/*"/>
+                <exclude name="com/amazonaws/services/directconnect/**/*"/>
+                <exclude name="com/amazonaws/services/dynamodb/**/*"/>
+                <exclude name="com/amazonaws/services/dynamodbv2/**/*"/>
+                <exclude name="com/amazonaws/services/elasticache/**/*"/>
+                <exclude name="com/amazonaws/services/elasticbeanstalk/**/*"/>
+                <exclude name="com/amazonaws/services/elasticloadbalancing/**/*"/>
+                <exclude name="com/amazonaws/services/elasticmapreduce/**/*"/>
+                <exclude name="com/amazonaws/services/elastictranscoder/**/*"/>
+                <exclude name="com/amazonaws/services/glacier/**/*"/>
+                <exclude name="com/amazonaws/services/identitymanagement/**/*"/>
+                <exclude name="com/amazonaws/services/importexport/**/*"/>
+                <exclude name="com/amazonaws/services/opsworks/**/*"/>
+                <exclude name="com/amazonaws/services/rds/**/*"/>
+                <exclude name="com/amazonaws/services/redshift/**/*"/>
+                <exclude name="com/amazonaws/services/route53/**/*"/>
+                <exclude name="com/amazonaws/services/securitytoken/**/*"/>
+                <exclude name="com/amazonaws/services/simpledb/**/*"/>
+                <exclude name="com/amazonaws/services/simpleemail/**/*"/>
+                <exclude name="com/amazonaws/services/simpleworkflow/**/*"/>
+                <exclude name="com/amazonaws/services/sns/**/*"/>
+                <exclude name="com/amazonaws/services/sqs/**/*"/>
+                <exclude name="com/amazonaws/services/storagegateway/**/*"/>
+                <exclude name="com/amazonaws/services/support/**/*"/>
+                <exclude name="com/amazonaws/services/s3/**/*"/>
             </zipfileset>
+            <zipfileset excludes="META-INF/*" src="lib/commons-cli-1.2.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/commons-codec-1.6.jar"/>
+            
             <zipfileset excludes="META-INF/*" src="lib/commons-logging-1.1.3.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/httpclient-4.3.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/httpcore-4.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-core-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-annotations-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-databind-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/logback-classic-1.0.11.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/logback-core-1.0.11.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-core-2.5.3.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-annotations-2.5.3.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jackson-databind-2.5.3.jar"/>
+            <!-- <zipfileset excludes="META-INF/*" src="lib/logback-classic-1.0.11.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/logback-core-1.0.11.jar"/> -->
             <zipfileset excludes="META-INF/*" src="lib/slf4j-api-1.7.5.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/commons-cli-1.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jsch-0.1.50.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch-0.1.53.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/freemarker-2.3.18.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/aspectjweaver-1.6.12.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/aspectjrt-1.6.12.jar"/>
             <zipfileset excludes="META-INF/*" src="lib/mail-1.4.6.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/joda-time-2.2.jar"/>
-            <fileset file="dist/monitor.jar" />
+            <zipfileset excludes="META-INF/*" src="lib/joda-time-2.8.1.jar"/>
+            <!-- Openstack 1.9.1 -->
+            <zipfileset excludes="META-INF/*" src="lib/aopalliance-1.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/bcpkix-jdk15on-1.49-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/bcprov-ext-jdk15on-1.49-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/gson-2.3-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/guava-16.0.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/guice-3.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/guice-assistedinject-3.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/guice-multibindings-3.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/javax.inject-1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jclouds-blobstore-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jclouds-bouncycastle-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jclouds-compute-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jclouds-core-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jclouds-okhttp-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jclouds-scriptbuilder-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jclouds-slf4j-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jclouds-sshj-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jna-4.1.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jna-platform-4.1.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch.agentproxy.connector-factory-0.0.8-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch.agentproxy.core-0.0.8-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch.agentproxy.pageant-0.0.8-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch.agentproxy.sshagent-0.0.8-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch.agentproxy.sshj-0.0.8-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch.agentproxy.usocket-jna-0.0.8-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsch.agentproxy.usocket-nc-0.0.8-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsr250-api-1.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/jsr311-api-1.1.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/logback-classic-1.0.13-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/logback-core-1.0.13-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/mysql-connector-java-5.1.25-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/okhttp-2.2.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/okio-1.2.0-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/openstack-cinder-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/openstack-glance-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/openstack-keystone-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/openstack-marconi-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/openstack-neutron-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/openstack-nova-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/openstack-swift-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/openstack-trove-1.9.1-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/rocoto-6.2-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/slf4j-api-1.7.2-1.9.1.jar"/>
+            <zipfileset excludes="META-INF/*" src="lib/sshj-0.8.1-1.9.1.jar"/>
+
         </jar>
-        <copy file="bibigrid.sh" tofile="dist/bibigrid"/>
+        <copy file="bibigrid" tofile="dist/bibigrid"/>
         <chmod file="dist/bibigrid" perm="+x"/>
         <delete file="dist/bibigrid-as.jar"/>
         <delete dir="dist/lib"/>
         <delete file="dist/README.TXT"/>
-        <antcall target="monitor"/>
     </target>
 
 
-    <target name="monitor">
-        <jar destfile="${monitor.jar}">
-            <manifest>
-                <attribute name="Main-Class" value="de.unibi.cebitec.bibigrid.monitor.MainMonitor"/>
-                <attribute name="Bibigrid-build-date" value="${build-date}" />
-                <attribute name="Bibigrid-version" value="${version}" />
-            </manifest>
-            <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar">
-                <exclude name="de/unibi/cebitec/bibigrid/ctrl/**/*" />
-                <exclude name="de/unibi/cebitec/bibigrid/exc/*" />
-                <exclude name="de/unibi/cebitec/bibigrid/model/**/*" />
-            </zipfileset>
-            <zipfileset excludes="META-INF/*" src="lib/aws-java-sdk-1.9.27.jar">
-                <exclude name="com/amazonaws/services/cloudformation/**/*" />
-                <exclude name="com/amazonaws/services/cloudfront/**/*" />
-                <exclude name="com/amazonaws/services/cloudfront_2012_03_15/**/*" />
-                <exclude name="com/amazonaws/services/cloudsearch/**/*" />
-                <exclude name="com/amazonaws/services/cloudwatch/**/*" />
-                <exclude name="com/amazonaws/services/datapipeline/**/*" />
-                <exclude name="com/amazonaws/services/directconnect/**/*" />
-                <exclude name="com/amazonaws/services/dynamodb/**/*" />
-                <exclude name="com/amazonaws/services/dynamodbv2/**/*" />
-                <exclude name="com/amazonaws/services/elasticache/**/*" />
-                <exclude name="com/amazonaws/services/elasticbeanstalk/**/*" />
-                <exclude name="com/amazonaws/services/elasticloadbalancing/**/*" />
-                <exclude name="com/amazonaws/services/elasticmapreduce/**/*" />
-                <exclude name="com/amazonaws/services/elastictranscoder/**/*" />
-                <exclude name="com/amazonaws/services/glacier/**/*" />
-                <exclude name="com/amazonaws/services/identitymanagement/**/*" />
-                <exclude name="com/amazonaws/services/importexport/**/*" />
-                <exclude name="com/amazonaws/services/opsworks/**/*" />
-                <exclude name="com/amazonaws/services/rds/**/*" />
-                <exclude name="com/amazonaws/services/redshift/**/*" />
-                <exclude name="com/amazonaws/services/route53/**/*" />
-                <exclude name="com/amazonaws/services/securitytoken/**/*" />
-                <exclude name="com/amazonaws/services/simpledb/**/*" />
-                <exclude name="com/amazonaws/services/simpleemail/**/*" />
-                <exclude name="com/amazonaws/services/simpleworkflow/**/*" />
-                <exclude name="com/amazonaws/services/sns/**/*" />
-                <exclude name="com/amazonaws/services/sqs/**/*" />
-                <exclude name="com/amazonaws/services/storagegateway/**/*" />
-                <exclude name="com/amazonaws/services/support/**/*" />
-                <exclude name="com/amazonaws/services/s3/**/*" />
-            </zipfileset>
-            <zipfileset excludes="META-INF/*" src="lib/commons-codec-1.6.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/commons-logging-1.1.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/httpclient-4.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/httpcore-4.3.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-core-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-annotations-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jackson-databind-2.3.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/logback-classic-1.0.11.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/logback-core-1.0.11.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/slf4j-api-1.7.5.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/commons-cli-1.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/jsch-0.1.50.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/freemarker-2.3.18.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/aspectjweaver-1.6.12.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/aspectjrt-1.6.12.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/mail-1.4.6.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/joda-time-2.2.jar"/>
-            <zipfileset excludes="META-INF/*" src="lib/commons-io-2.4.jar"/>
-        </jar>
-        <delete dir="dist/lib"/>
-    </target>
     <!--
 
     There exist several targets which are by default empty and which can be 

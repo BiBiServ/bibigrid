@@ -1,7 +1,9 @@
 package de.unibi.cebitec.bibigrid.ctrl;
 
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
-import de.unibi.cebitec.bibigrid.model.CurrentClusters;
+import de.unibi.cebitec.bibigrid.meta.aws.ListIntentAWS;
+import de.unibi.cebitec.bibigrid.meta.openstack.ListIntentOpenstack;
+import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
@@ -17,8 +19,14 @@ public class ListIntent extends Intent {
     }
 
     @Override
-    public List<String> getRequiredOptions() {
-        return Arrays.asList(new String[]{});
+    public List<String> getRequiredOptions(MODE mode) {
+        switch (mode) {
+            case AWS_EC2:
+                return Arrays.asList(new String[]{"l", "k", "e", "a"});
+            case OPENSTACK:
+                return Arrays.asList(new String[]{"l", "k", "e", "osu", "ost", "osp", "ose"});
+        }
+        return null;
     }
 
     @Override
@@ -26,7 +34,15 @@ public class ListIntent extends Intent {
         if (getConfiguration() == null) {
             throw new IntentNotConfiguredException();
         }
-        System.out.println(CurrentClusters.printClusterList());
-        return true;
+
+        switch (getConfiguration().getMode()) {
+            case AWS_EC2:
+                return new ListIntentAWS(getConfiguration()).list();
+            case OPENSTACK:
+                return new ListIntentOpenstack(getConfiguration()).list();
+            default:
+                log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
+                return false;
+        }
     }
 }
