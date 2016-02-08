@@ -197,12 +197,26 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         int ephemerals = config.getSlaveInstanceType().getSpec().ephemerals;
         slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts, ephemerals);
         slaveBlockDeviceMappings = new ArrayList<>();
-        // Create a list of slaves first. Associate with slave instance-ids later
+        // configure volumes first ...
         if (!snapShotToSlaveMounts.isEmpty()) {
-            log.info(V, "Defining slave volumes");
-
+            log.info(V, "configure slave volumes");
             slaveBlockDeviceMappings = createBlockDeviceMappings(slaveDeviceMapper);
         }
+        // configure ephemeral devices
+        List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
+        if (ephemerals > 0) {
+            for (int i = 0; i < ephemerals; ++i) {
+                BlockDeviceMapping temp = new BlockDeviceMapping();
+                String virtualName = "ephemeral" + i;
+                String deviceName = "/dev/sd" + ephemeral(i);
+                temp.setVirtualName(virtualName);
+                temp.setDeviceName(deviceName);
+                ephemeralList.add(temp);
+            }
+        }
+
+        masterDeviceMappings.addAll(ephemeralList);
+
         return this;
     }
 
@@ -236,6 +250,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             for (SpotInstanceRequest requestResponse : masterReqResponses) {
 
                 spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
+                requestResponse.withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
 
             }
             log.info("Waiting for master instance (spot request) to finish booting ...");
@@ -334,6 +349,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 slaveReq.setLaunchSpecification(slaveLaunchSpecification);
 
                 RequestSpotInstancesResult slaveReqResult = ec2.requestSpotInstances(slaveReq);
+
                 List<SpotInstanceRequest> slaveReqResponses = slaveReqResult.getSpotInstanceRequests();
                 // collect all spotInstanceRequestIds ...
                 List<String> spotInstanceRequestIds = new ArrayList<>();
@@ -341,6 +357,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                 for (SpotInstanceRequest requestResponse : slaveReqResponses) {
 
                     spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
+                    requestResponse.withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
 
                 }
 
@@ -358,8 +375,6 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                         .withUserData(base64SlaveUserData)
                         .withBlockDeviceMappings(slaveBlockDeviceMappings)
                         .withNetworkInterfaces(slaveNetworkInterfaces);
-//                        .withSubnetId(environment.getSubnet().getSubnetId())
-//                        .withSecurityGroupIds(environment.getSecReqResult().getGroupId());
 
                 RunInstancesResult slaveReqResult = ec2.runInstances(slaveReq);
                 String slaveReservationId = slaveReqResult.getReservation().getReservationId();
@@ -383,7 +398,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             for (Instance si : slaveInstances) {
                 CreateTagsRequest slaveNameTagRequest = new CreateTagsRequest();
                 slaveNameTagRequest.withResources(si.getInstanceId())
-                        .withTags(bibigridid, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
+                        .withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
                 ec2.createTags(slaveNameTagRequest);
             }
         } else {
