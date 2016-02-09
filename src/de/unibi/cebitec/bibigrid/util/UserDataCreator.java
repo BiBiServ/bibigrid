@@ -268,14 +268,7 @@ public class UserDataCreator {
 
         }
 
-        /*
-         * NFS Prep of Vol
-         */
-        if (cfg.isNfs()) {
-
-            masterUserData.append("ipbase=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
-            masterUserData.append("echo \"/vol/spool/ $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
-        }
+  
 
         /*
          * create spool and scratch
