@@ -100,8 +100,9 @@ public class UserDataCreator {
         }
 
         if (ephemeralamount  == 1) {
-            slaveUserData.append("sudo umount /mnt\n");
-            slaveUserData.append("sudo mount ").append(blockDeviceBase).append("b /vol/scratch\n");
+            slaveUserData.append("umount /mnt\n");
+            slaveUserData.append("mount ").append(blockDeviceBase).append("b /vol/scratch\n");
+            
         } else if (ephemeralamount >= 2) {
             // if 2 or more ephemerals are available use 2 as a RAID system
             slaveUserData.append("umount /mnt\n");
@@ -124,10 +125,11 @@ public class UserDataCreator {
             slaveUserData.append("mkfs.xfs -f /dev/md0\n");
 
             slaveUserData.append("mount -t xfs -o noatime /dev/md0 /vol/scratch\n");
-            slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
-            slaveUserData.append("chmod -R 777 /vol/scratch \n");
-
         }
+        
+        slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
+        slaveUserData.append("chmod -R 777 /vol/scratch \n");
+        
         /*
          * NFS//Mount Block
          */
