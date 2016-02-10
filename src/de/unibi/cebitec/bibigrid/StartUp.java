@@ -4,7 +4,6 @@ import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.ctrl.*;
 import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
-import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.jar.JarFile;
@@ -41,11 +40,11 @@ public class StartUp {
                 .addOptionGroup(intentOptions)
                 .addOption("m", "master-instance-type", true, "see INSTANCE-TYPES below")
                 .addOption("mme", "max-master-ephemerals", true, "limits the maxium number of used ephemerals for master spool volume (raid 0)")
-                .addOption("M", "master-image", true, "AMI for master")
+                .addOption("M", "master-image", true, "machine image id for master, if not set  images defined at https://bibiserv.cebitec.uni-bielefeld.de/resoruces/bibigrid/<framework>/<region>.ami.properties are used!")
                 .addOption("s", "slave-instance-type", true, "see INSTANCE-TYPES below")
                 .addOption("mse", "max-slave-ephemerals", true, "limits the maxium number of used ephemerals for slave spool volume (raid 0 )")
                 .addOption("n", "slave-instance-count", true, "min: 0")
-                .addOption("S", "slave-image", true, "AMI for slaves")
+                .addOption("S", "slave-image", true, "machine image id for slaves, same behaviour like master-image")
                 .addOption("usir" , "use-spot-instance-request", true, " Yes or No of spot instances should be used  (Type t instance types are unsupported).")
                 .addOption("bp" , "bidprice", true, "bid price for spot instances")
                 .addOption("k", "keypair", true, "name of the keypair in aws console")

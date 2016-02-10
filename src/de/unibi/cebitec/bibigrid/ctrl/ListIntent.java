@@ -21,7 +21,7 @@ public class ListIntent extends Intent {
     @Override
     public List<String> getRequiredOptions(MODE mode) {
         switch (mode) {
-            case AWS_EC2:
+            case AWS:
                 return Arrays.asList(new String[]{"l", "k", "e", "a"});
             case OPENSTACK:
                 return Arrays.asList(new String[]{"l", "k", "e", "osu", "ost", "osp", "ose"});
@@ -36,7 +36,7 @@ public class ListIntent extends Intent {
         }
 
         switch (getConfiguration().getMode()) {
-            case AWS_EC2:
+            case AWS:
                 return new ListIntentAWS(getConfiguration()).list();
             case OPENSTACK:
                 return new ListIntentOpenstack(getConfiguration()).list();

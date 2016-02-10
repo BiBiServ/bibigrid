@@ -23,7 +23,7 @@ public class CreateIntent extends Intent {
     @Override
     public List<String> getRequiredOptions(MODE mode) {
         switch (mode) {
-            case AWS_EC2:
+            case AWS:
                 return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
             case OPENSTACK:
                 return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "z", "g", "r", "b", "osu", "ost", "osp", "ose"});
@@ -54,7 +54,7 @@ public class CreateIntent extends Intent {
 
     private boolean startClusterAtSelectedCloudProvider() throws AmazonClientException, JSchException {
         switch (getConfiguration().getMode()) {
-            case AWS_EC2:
+            case AWS:
                 return new CreateClusterAWS(getConfiguration())
                         .createClusterEnvironment()
                             .createVPC()

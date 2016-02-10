@@ -62,8 +62,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author jsteiner
+ * Implementation of the general CreateClusterAWs interface for an AWS based cluster.
+ * First implementation was done by Johannes within a student project.
+ * 
+ * 
+ * @author Johannes Steiner <jsteiner@techfak.uni-bielefeld.de>
+ *         Jan Krueger <jkrueger@cebitec.uni-bielefeld.de>
  */
 public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateClusterEnvironmentAWS> {
 

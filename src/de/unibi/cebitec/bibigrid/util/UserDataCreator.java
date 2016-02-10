@@ -91,7 +91,7 @@ public class UserDataCreator {
          */
         String blockDeviceBase = "";
         switch (cfg.getMode()) {
-            case AWS_EC2:
+            case AWS:
                 blockDeviceBase = "/dev/xvd";
                 break;
             case OPENSTACK:
@@ -158,7 +158,7 @@ public class UserDataCreator {
          */
         // @TODO
         switch (cfg.getMode()) {
-            case AWS_EC2:
+            case AWS:
                 slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
                 slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
                 break;
@@ -194,7 +194,7 @@ public class UserDataCreator {
 //        slaveUserData.append("sleep 60 \nsudo service gridengine-exec start\n");
         slaveUserData.append("echo 'slave done' >> /vol/spool/slaves.finished \n");
         switch (cfg.getMode()) {
-            case AWS_EC2:
+            case AWS:
                 return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
             default:
                 return slaveUserData.toString();
@@ -234,7 +234,7 @@ public class UserDataCreator {
          */
         String blockDeviceBase = "";
         switch (cfg.getMode()) {
-            case AWS_EC2:
+            case AWS:
                 blockDeviceBase = "/dev/xvd";
                 break;
             case OPENSTACK:
@@ -343,7 +343,7 @@ public class UserDataCreator {
          */
 
         switch (cfg.getMode()) {
-            case AWS_EC2:
+            case AWS:
                 masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
                         + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE\n");
                 break;
@@ -381,7 +381,7 @@ public class UserDataCreator {
         masterUserData.append("touch /vol/spool/masteruserdata.finished \n");
 
         switch (cfg.getMode()) {
-            case AWS_EC2:
+            case AWS:
                 return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
             default:
                 return masterUserData.toString();

@@ -45,10 +45,10 @@ public class Configuration {
 
     public static enum MODE {
 
-        AWS_EC2, OPENSTACK
+        AWS, OPENSTACK
     }
 
-    private MODE mode = MODE.AWS_EC2;
+    private MODE mode = MODE.AWS;
 
     private OpenStackCredentials openstackCredentials;
 
@@ -140,6 +140,9 @@ public class Configuration {
     }
 
     public void setMasterImage(String masterImage) {
+        if (masterImage != null) {
+            masterImage = masterImage.trim();
+        }
         this.masterImage = masterImage;
     }
 
@@ -148,6 +151,9 @@ public class Configuration {
     }
 
     public void setSlaveImage(String slaveImage) {
+        if (slaveImage != null) {
+            slaveImage = slaveImage.trim();
+        }
         this.slaveImage = slaveImage;
     }
 

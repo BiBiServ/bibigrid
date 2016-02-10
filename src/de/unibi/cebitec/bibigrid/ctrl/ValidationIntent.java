@@ -26,7 +26,7 @@ public class ValidationIntent extends Intent {
     @Override
     public List<String> getRequiredOptions(MODE mode) {
         switch (mode) {
-            case AWS_EC2:
+            case AWS:
                 return Arrays.asList(new String[]{"ch", "m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
             case OPENSTACK:
                 return Arrays.asList(new String[]{"ch", "m", "M", "s", "S", "n", "u", "k", "i", "e", "z", "g", "r", "b", "ost", "osu", "osp", "ose"});
@@ -41,7 +41,7 @@ public class ValidationIntent extends Intent {
         }
 
         switch (getConfiguration().getMode()) {
-            case AWS_EC2:
+            case AWS:
                 return new ValidateIntentAWS(getConfiguration()).validate();
             case OPENSTACK:
                 return false;
