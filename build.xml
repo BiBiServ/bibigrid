@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- You may freely edit this file. See commented blocks below for -->
-<!-- some examples of how to customize the build. -->
-<!-- (If you delete it and reopen the project it will be recreated.) -->
-<!-- By default, only the Clean and Build commands use this build script. -->
-<!-- Commands such as Run, Debug, and Test only use this build script if -->
-<!-- the Compile on Save feature is turned off for the project. -->
-<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
-<!-- in the project's Project Properties dialog box.-->
+<!--
+
+    Build File for 
+
+-->
 <project name="bibigrid" default="fulljar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
     <description>Builds, tests, and runs the project bibigrid.</description>
     <import file="nbproject/build-impl.xml"/>
@@ -14,7 +11,6 @@
     <tstamp>
         <format property="build-date" pattern="yyyy-MM-dd HH:mm:ss" />
     </tstamp>
-    <property name="version" value="1.3.1"/>
     
     <property name="full.jar" value="dist/bibigrid-java-full.jar"/>
     
@@ -26,8 +22,35 @@
         <ivy:report todir="report" />
     </target>
     
-    <target name="resolve" description="retrieve dependencies with ivy">
+    <target name="resolve" description="retrieve dependencies with ivy and reconfigure netbeans library path">
+        <!-- clean up library directory -->
+        <delete failonerror="false">
+            <fileset dir="lib"/>
+        </delete>
+        <!-- retrive all dependencies from ivy -->
         <ivy:retrieve />
+        <!-- rebuild netbeans classpath -->
+        <exec executable="bash" dir="." output="nbproject/lib.txt">
+		<arg line="-c"/>
+		<arg value="ls lib/*.jar"/>
+	</exec>
+	<replaceregexp file="nbproject/lib.txt" flags="gs">
+            <regexp pattern="\n(.)"/>
+            <substitution expression=":\1"/>
+	</replaceregexp>
+	<replaceregexp file="nbproject/lib.txt" flags="gs">
+            <regexp pattern="\n"/>
+            <substitution expression=":"/>
+	</replaceregexp>
+	<loadresource property="jar.files">
+            <file file="nbproject/lib.txt" basedir="."/>
+	</loadresource>
+        
+        <propertyfile file="nbproject/project.properties">
+            <entry key="javac.classpath" value="${jar.files}"/>
+        </propertyfile>           
+        
+        <delete file="nbproject/lib.txt"/>
     </target>
 
     <target name="clean-cache" description="clean ivy cache">
@@ -35,14 +58,14 @@
     </target>
     
     <property name="full.jar" value="dist/bibigrid-full.jar"/>
-    <property name="monitor.jar" value="dist/monitor.jar"/>
+
     
-    <target name="fulljar" depends="resolve,jar,-post-jar">
+    <target name="fulljar" depends="resolve,jar,-post-jar,_mercurial">
         <jar destfile="${full.jar}">
             <manifest>
                 <attribute name="Main-Class" value="de.unibi.cebitec.bibigrid.StartUp"/>
                 <attribute name="Bibigrid-build-date" value="${build-date}"/>
-                <attribute name="Bibigrid-version" value="${version}"/>
+                <attribute name="Bibigrid-version" value="${HG.TAG} ${HG.REVISION}"/>
             </manifest>
 
             <zipfileset excludes="META-INF/*" src="dist/bibigrid.jar"/>
@@ -143,13 +166,32 @@
             <zipfileset excludes="META-INF/*" src="lib/sshj-0.8.1-1.9.1.jar"/>
 
         </jar>
-        <copy file="bibigrid" tofile="dist/bibigrid"/>
+        <copy file="misc/bibigrid" tofile="dist/bibigrid"/>
         <chmod file="dist/bibigrid" perm="+x"/>
-        <delete file="dist/bibigrid-as.jar"/>
+        <copy file="misc/README" tofile="dist/bibigrid"/>
+        <echo file="dist/VERSION">BiBiGrid ${HG.TAG}b${HG.REVISION}</echo>
+        <delete file="dist/bibigrid.jar"/>
         <delete dir="dist/lib"/>
-        <delete file="dist/README.TXT"/>
+        
+        <zip destfile="dist/bibigrid_${HG.TAG}b${HG.REVISION}.zip">
+            <zipfileset dir="dist" prefix="bibigrid" excludes="**/*.zip"/>
+        </zip>
+        
     </target>
+    
 
+     <target name="_mercurial" description="get the latest tag name and revision number">
+
+                <exec executable="bash" outputproperty="HG.TAG">
+                        <arg line="-c "/>
+                        <arg value="hg tags | head -n 2 | grep -v tip |  cut -f 1 -d ' '  "/>
+                </exec>
+                <exec executable="bash" outputproperty="HG.REVISION">
+                        <arg line="-c "/>
+                        <arg value="LANG=en_US hg tip |  grep changeset: | cut -f 2 -d ':' | sed -e 's/^ *//' "/>
+                </exec>
+
+    </target>
 
     <!--
 
