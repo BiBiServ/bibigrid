@@ -21,7 +21,7 @@ public class TerminateIntent extends Intent {
     @Override
     public List<String> getRequiredOptions(MODE mode) {
         switch (mode) {
-            case AWS_EC2:
+            case AWS:
                 return Arrays.asList(new String[]{"t", "e", "a"});
             case OPENSTACK:
                 return Arrays.asList(new String[]{"t", "e", "osu", "ost", "osp", "ose"});
@@ -36,7 +36,7 @@ public class TerminateIntent extends Intent {
         }
 
         switch (getConfiguration().getMode()) {
-            case AWS_EC2:
+            case AWS:
                 return new TerminateIntentAWS(getConfiguration()).terminate();
             case OPENSTACK:
                 return new TerminateIntentOpenstack(getConfiguration()).terminate();

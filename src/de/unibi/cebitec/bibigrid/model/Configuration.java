@@ -39,16 +39,17 @@ public class Configuration {
     private String user;
     
     /* AWS related Configuration options */
-    private double bidPrice;
+    private double bidPrice, bidPriceMaster;
     private boolean useSpotInstances;
+    private boolean publicSlaveIps; 
     
 
     public static enum MODE {
 
-        AWS_EC2, OPENSTACK
+        AWS, OPENSTACK
     }
 
-    private MODE mode = MODE.AWS_EC2;
+    private MODE mode = MODE.AWS;
 
     private OpenStackCredentials openstackCredentials;
 
@@ -140,6 +141,9 @@ public class Configuration {
     }
 
     public void setMasterImage(String masterImage) {
+        if (masterImage != null) {
+            masterImage = masterImage.trim();
+        }
         this.masterImage = masterImage;
     }
 
@@ -148,6 +152,9 @@ public class Configuration {
     }
 
     public void setSlaveImage(String slaveImage) {
+        if (slaveImage != null) {
+            slaveImage = slaveImage.trim();
+        }
         this.slaveImage = slaveImage;
     }
 
@@ -295,6 +302,17 @@ public class Configuration {
         this.bidPrice = bidPrice;
     }
 
+    public double getBidPriceMaster() {
+        if (bidPriceMaster <= 0.0) {
+            return bidPrice;
+        }
+        return bidPriceMaster;
+    }
+
+    public void setBidPriceMaster(double bidPriceMaster) {
+        this.bidPriceMaster = bidPriceMaster;
+    }
+
     public boolean isUseSpotInstances() {
         return useSpotInstances;
     }
@@ -303,6 +321,12 @@ public class Configuration {
         this.useSpotInstances = useSpotInstances;
     }
 
+    public boolean isPublicSlaveIps() {
+        return publicSlaveIps;
+    }
+
+    public void setPublicSlaveIps(boolean publicSlaveIps) {
+        this.publicSlaveIps = publicSlaveIps;
+    }
     
-        
 }

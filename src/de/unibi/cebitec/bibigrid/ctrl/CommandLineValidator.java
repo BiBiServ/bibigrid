@@ -9,11 +9,11 @@ import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import de.unibi.cebitec.bibigrid.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.OpenStackCredentials;
 import de.unibi.cebitec.bibigrid.model.Port;
-import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +37,8 @@ public class CommandLineValidator {
     private final Configuration cfg;
     private final Intent intent;
     private Path propertiesFilePath;
+    
+    private Properties machineImage = null;
 
     public CommandLineValidator(CommandLine cl, Intent intent) {
         this.cl = cl;
@@ -314,7 +316,7 @@ public class CommandLineValidator {
                 }
                 log.info(V, "Region set. ({})", this.cfg.getRegion());
             }
-
+            
             ////////////////////////////////////////////////////////////////////////
             ///// availability-zone ////////////////////////////////////////////////
             if (req.contains("z")) {
@@ -340,7 +342,7 @@ public class CommandLineValidator {
                     InstanceType masterType = null;
 
                     switch (cfg.getMode()) {
-                        case AWS_EC2:
+                        case AWS:
                             masterType = new InstanceTypeAWS(masterTypeString.trim());
                             break;
                         case OPENSTACK:
@@ -358,12 +360,18 @@ public class CommandLineValidator {
             ////////////////////////////////////////////////////////////////////////
             ///// master-image /////////////////////////////////////////////
             if (req.contains("M")) {
-                this.cfg.setMasterImage(this.cl.getOptionValue("M", defaults.getProperty("master-image")).trim());
-                if (this.cfg.getMasterImage() == null) {
-                    log.error("-M option is required! Please specify the AMI ID for your master node.");
-                    return false;
+                cfg.setMasterImage(cl.getOptionValue("M", defaults.getProperty("master-image")));
+                if (cfg.getMasterImage() == null) {
+                    // try to load machine image id from URL
+                    loadMachineImageId();
+                    if (machineImage != null ){
+                        cfg.setMasterImage(machineImage.getProperty("master"));
+                    } else {
+                        log.error("-M option is required! Please specify the AMI ID for your master node.");
+                        return false;
+                    }
                 }
-                log.info(V, "Master image set. ({})", this.cfg.getMasterImage());
+                log.info(V, "Master image set. ({})", cfg.getMasterImage());
             }
             
             ////////////////////////////////////////////////////////////////////////
@@ -378,7 +386,7 @@ public class CommandLineValidator {
                     InstanceType slaveType = null;
 
                     switch (cfg.getMode()) {
-                        case AWS_EC2:
+                        case AWS:
                             slaveType = new InstanceTypeAWS(slaveTypeString.trim());
                             break;
                         case OPENSTACK:
@@ -483,10 +491,17 @@ public class CommandLineValidator {
             ///// slave-image //////////////////////////////////////////////////////
 
             if (req.contains("S")) {
-                this.cfg.setSlaveImage(this.cl.getOptionValue("S", defaults.getProperty("slave-image")).trim());
+                this.cfg.setSlaveImage(this.cl.getOptionValue("S", defaults.getProperty("slave-image")));
                 if (this.cfg.getSlaveImage() == null) {
-                    log.error("-S option is required! Please specify the AMI ID for your slave nodes.");
+                     // try to load machine image id from URL
+                    loadMachineImageId();
+                    if (machineImage != null ){
+                        cfg.setSlaveImage(machineImage.getProperty("slave"));
+                    } else {
+                       
+                        log.error("-S option is required! Please specify the AMI ID for your slave nodes.");
                     return false;
+                    }
                 } else {
                     log.info(V, "Slave image set. ({})", this.cfg.getSlaveImage());
                 }
@@ -494,7 +509,7 @@ public class CommandLineValidator {
             
             ////////////////////////////////////////////////////////////////////////
             ///// ports ////////////////////////////////////////////////////////////
-            this.cfg.setPorts(new ArrayList<Port>());
+            this.cfg.setPorts(new ArrayList<>());
             String portsCsv = this.cl.getOptionValue("p", defaults.getProperty("ports"));
             if (portsCsv != null && !portsCsv.isEmpty()) {
                 try {
@@ -673,6 +688,11 @@ public class CommandLineValidator {
             }
             
             
+            /* ------------------------ public ip address for all slaves ------------------------- */
+            if (cl.hasOption("psi") || defaults.containsKey("public-slave-ip")){
+                cfg.setPublicSlaveIps(cl.getOptionValue("psi", defaults.getProperty("public-slave-ip")).equalsIgnoreCase("yes"));
+            }
+            
             /* ------------------------- spot instance request --------------------------- */
             if (cl.hasOption("usir") || defaults.containsKey("use-spot-instance-request")) {
                 String value = cl.getOptionValue("usir", defaults.getProperty("use-spot-instance-request"));
@@ -682,18 +702,33 @@ public class CommandLineValidator {
                     if (cl.hasOption("bd") || defaults.containsKey("bidprice")) {
                         try {
                             cfg.setBidPrice(Double.parseDouble(cl.getOptionValue("bd", defaults.getProperty("bidprice"))));
+                            if (cfg.getBidPrice() <= 0.0) {
+                                throw new NumberFormatException();
+                            }
                         } catch (NumberFormatException e){
-                            log.error("Argument bp/bidprice is not a valid double value !");
+                            log.error("Argument bp/bidprice is not a valid double value  and must be > 0.0 !");
                             return false;
-                        }
-                        
+                        }                     
                     } else {
                         log.error("If use-spot-instance-request is set, a bidprice must defined!");
                         return false;
                     }
                     
-                    
-                    log.info(V, "Use spot instances ");
+                    if (cl.hasOption("bdm") || defaults.containsKey("bidprice-master")) {
+                        try{
+                            cfg.setBidPriceMaster(Double.parseDouble(cl.getOptionValue("bdm",defaults.getProperty("bidprice-master"))));
+                            if (cfg.getBidPriceMaster() <= 0.0) {
+                                throw new NumberFormatException();
+                            }
+                        } catch (NumberFormatException e) {
+                            log.error("Argument bpm/bidprice-master is not a valid double value and must be > 0.0 !");
+                            return false;
+                        }
+                    } else {
+                        log.info(V,"Bidprice master is not set, use general bidprice instead!");
+                    }
+                              
+                    log.info(V, "Use spot request for all");
                 } else if (value.equalsIgnoreCase("no")) {
                     log.info(V, "SpotInstance ussage disabled.");
                     this.cfg.setMesos(false);
@@ -740,4 +775,27 @@ public class CommandLineValidator {
         return v;
     }
 
+    private void loadMachineImageId(){
+        machineImage = new Properties();
+        String str = "https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/"+cfg.getMode().name().toLowerCase()+"/"+cfg.getRegion()+".ami.properties";
+        try {
+            
+            URL url = new URL("https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/"+cfg.getMode().name().toLowerCase()+"/"+cfg.getRegion()+".ami.properties");
+            machineImage.load(url.openStream());
+            
+            if (!machineImage.containsKey("master")) {
+                throw new IOException("Key/value for master image is missing in properties file!");
+            }
+            if (!machineImage.containsKey("slave")) {
+                throw new IOException("Key/value for slave image is missing in properties file!");
+            }
+        } catch (IOException ex) {
+            log.warn("No machine image properties file found for "+cfg.getMode().name()+" and region '"+cfg.getRegion()+"' found!");
+            log.error(V,"Exception: {}",ex.getMessage());
+            log.error(V,"Try : {}",str);
+            machineImage = null;
+        }
+
+    }
+    
 }

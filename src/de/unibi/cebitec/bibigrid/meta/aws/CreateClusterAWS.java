@@ -62,8 +62,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author jsteiner
+ * Implementation of the general CreateClusterAWs interface for an AWS based cluster.
+ * First implementation was done by Johannes within a student project.
+ * 
+ * 
+ * @author Johannes Steiner <jsteiner@techfak.uni-bielefeld.de>
+ *         Jan Krueger <jkrueger@cebitec.uni-bielefeld.de>
  */
 public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateClusterEnvironmentAWS> {
 
@@ -184,7 +188,10 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         inis = new InstanceNetworkInterfaceSpecification();
         inis.withGroups(environment.getSecReqResult().getGroupId())
                 .withSubnetId(environment.getSubnet().getSubnetId())
+                .withAssociatePublicIpAddress(config.isPublicSlaveIps())
                 .withDeviceIndex(0);
+        
+       
         slaveNetworkInterfaces.add(inis);
 
         return this;
@@ -229,7 +236,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             masterReq.withType(SpotInstanceType.OneTime)
                     .withInstanceCount(1)
                     .withLaunchGroup("lg_" + clusterId)
-                    .withSpotPrice(Double.toString(config.getBidPrice()));
+                    .withSpotPrice(Double.toString(config.getBidPriceMaster()));
 
             LaunchSpecification masterLaunchSpecification = new LaunchSpecification();
             masterLaunchSpecification.withInstanceType(InstanceType.fromValue(this.config.getSlaveInstanceType().getValue()))
@@ -365,12 +372,42 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                     spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
 
                 }
+                // wait for a second
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+
+                }
+
+                log.info(V, "tag spot request instances");
 
                 // tag spot requests (slave)
                 CreateTagsRequest ctr = new CreateTagsRequest();
                 ctr.withResources(spotInstanceRequestIds);
                 ctr.withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
-                ec2.createTags(ctr);
+                /* Setting tags for spot requests can cause an amazon service 
+                 exception, if the spot request returns an id, but the id 
+                 isn't registered in spot request registy yet. */
+                int counter = 0;
+                boolean finished = false;
+                while (!finished) {
+                    try {
+                        ec2.createTags(ctr);
+                        finished = true;
+                    } catch (AmazonServiceException ase) {
+                        if (counter < 5) {
+                            log.warn("{} ... try again in 10 seconds.", ase.getMessage());
+                            try {
+                                Thread.sleep(10000);
+                            } catch (InterruptedException e) {
+                            }
+                            counter++;
+                        } else {
+                            throw ase;
+                        }
+                    }
+                }
+                log.info("Waiting for slave instance(s) (spot request) to finish booting ...");
                 // wait for spot request (slave) finished
                 slaveInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
 

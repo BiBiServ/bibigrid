@@ -6,8 +6,12 @@
 package de.unibi.cebitec.bibigrid.meta;
 
 /**
- *
- * @author jsteiner
+ * CreateCluster Interface must be implemented by all "real" CreateCluster classes and 
+ * provides the minimum of general functions for the environment, the configuration of
+ * master and slave instances and launching the cluster.
+ * 
+ * 
+ * @author Johannes Steiner <jsteiner(at)cebitec.uni-bielefeld.de>
  * @param <P> The Provider Instance P
  * @param <E> The Environment Instance E
  */
