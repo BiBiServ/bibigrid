@@ -239,7 +239,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                     .withSpotPrice(Double.toString(config.getBidPriceMaster()));
 
             LaunchSpecification masterLaunchSpecification = new LaunchSpecification();
-            masterLaunchSpecification.withInstanceType(InstanceType.fromValue(this.config.getSlaveInstanceType().getValue()))
+            masterLaunchSpecification.withInstanceType(InstanceType.fromValue(this.config.getMasterInstanceType().getValue()))
                     .withPlacement(spotInstancePlacement)
                     .withKeyName(this.config.getKeypair())
                     .withImageId(this.config.getMasterImage())
