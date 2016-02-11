@@ -32,8 +32,8 @@ public class UserDataCreator {
      * @param masterIp
      * @param masterDns
      * @param slaveDeviceMapper
-     * @param slaveNfsMounts
-     * @param ephemerals
+     * @param cfg
+     * @param publicKey
      * @return
      */
     public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg, String publicKey) {
@@ -134,8 +134,7 @@ public class UserDataCreator {
          * NFS//Mount Block
          */
 
-        slaveUserData.append(
-                "chown ubuntu:ubuntu /vol/ \n");
+        slaveUserData.append("chown ubuntu:ubuntu /vol/ \n");
         if (cfg.isNfs()) {
             slaveUserData.append(
                     "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
@@ -150,19 +149,20 @@ public class UserDataCreator {
 
             if (!slaveNfsMounts.isEmpty()) {
                 for (String share : slaveNfsMounts) {
-                    slaveUserData.append("sudo mkdir -p ").append(share).append("\n");
+                    slaveUserData.append("mkdir -p ").append(share).append("\n");
                     slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":").append(share).append(" ").append(share).append("\n");
                 }
             }
         }
         /**
-         * route all traffic to master-instance (inet access)
+         * route all traffic to master-instance (inet access) if slaves not configured with public ip address
          */
-        // @TODO
         switch (cfg.getMode()) {
             case AWS:
-                slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
-                slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
+                if (!cfg.isPublicSlaveIps()) {
+                    slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
+                    slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
+                }
                 break;
             case OPENSTACK:
                 // TESTING!!! @TODO
@@ -339,15 +339,17 @@ public class UserDataCreator {
             }
         }
         /**
-         * enabling nat functions of master-instance (slave inet access)
+         * Enabling nat functions of master-instance (slave inet access) if slaves configured without public ip address
          * WARNING! 10.10.0.0 is a hardcoded SUBNET-proto...ensure generic
-         * access laterly.
+         * access later.
          */
 
         switch (cfg.getMode()) {
             case AWS:
-                masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
+                if (!cfg.isPublicSlaveIps()) {
+                    masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
                         + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE\n");
+                }
                 break;
             case OPENSTACK:
                 // TESTING!!! @TODO

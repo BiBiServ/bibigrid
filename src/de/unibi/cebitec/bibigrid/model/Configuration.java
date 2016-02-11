@@ -39,8 +39,9 @@ public class Configuration {
     private String user;
     
     /* AWS related Configuration options */
-    private double bidPrice;
+    private double bidPrice, bidPriceMaster;
     private boolean useSpotInstances;
+    private boolean publicSlaveIps; 
     
 
     public static enum MODE {
@@ -301,6 +302,17 @@ public class Configuration {
         this.bidPrice = bidPrice;
     }
 
+    public double getBidPriceMaster() {
+        if (bidPriceMaster <= 0.0) {
+            return bidPrice;
+        }
+        return bidPriceMaster;
+    }
+
+    public void setBidPriceMaster(double bidPriceMaster) {
+        this.bidPriceMaster = bidPriceMaster;
+    }
+
     public boolean isUseSpotInstances() {
         return useSpotInstances;
     }
@@ -309,6 +321,12 @@ public class Configuration {
         this.useSpotInstances = useSpotInstances;
     }
 
+    public boolean isPublicSlaveIps() {
+        return publicSlaveIps;
+    }
+
+    public void setPublicSlaveIps(boolean publicSlaveIps) {
+        this.publicSlaveIps = publicSlaveIps;
+    }
     
-        
 }

@@ -688,6 +688,11 @@ public class CommandLineValidator {
             }
             
             
+            /* ------------------------ public ip address for all slaves ------------------------- */
+            if (cl.hasOption("psi") || defaults.containsKey("public-slave-ip")){
+                cfg.setPublicSlaveIps(cl.getOptionValue("psi", defaults.getProperty("public-slave-ip")).equalsIgnoreCase("yes"));
+            }
+            
             /* ------------------------- spot instance request --------------------------- */
             if (cl.hasOption("usir") || defaults.containsKey("use-spot-instance-request")) {
                 String value = cl.getOptionValue("usir", defaults.getProperty("use-spot-instance-request"));
@@ -697,18 +702,33 @@ public class CommandLineValidator {
                     if (cl.hasOption("bd") || defaults.containsKey("bidprice")) {
                         try {
                             cfg.setBidPrice(Double.parseDouble(cl.getOptionValue("bd", defaults.getProperty("bidprice"))));
+                            if (cfg.getBidPrice() <= 0.0) {
+                                throw new NumberFormatException();
+                            }
                         } catch (NumberFormatException e){
-                            log.error("Argument bp/bidprice is not a valid double value !");
+                            log.error("Argument bp/bidprice is not a valid double value  and must be > 0.0 !");
                             return false;
-                        }
-                        
+                        }                     
                     } else {
                         log.error("If use-spot-instance-request is set, a bidprice must defined!");
                         return false;
                     }
                     
-                    
-                    log.info(V, "Use spot instances ");
+                    if (cl.hasOption("bdm") || defaults.containsKey("bidprice-master")) {
+                        try{
+                            cfg.setBidPriceMaster(Double.parseDouble(cl.getOptionValue("bdm",defaults.getProperty("bidprice-master"))));
+                            if (cfg.getBidPriceMaster() <= 0.0) {
+                                throw new NumberFormatException();
+                            }
+                        } catch (NumberFormatException e) {
+                            log.error("Argument bpm/bidprice-master is not a valid double value and must be > 0.0 !");
+                            return false;
+                        }
+                    } else {
+                        log.info(V,"Bidprice master is not set, use general bidprice instead!");
+                    }
+                              
+                    log.info(V, "Use spot request for all");
                 } else if (value.equalsIgnoreCase("no")) {
                     log.info(V, "SpotInstance ussage disabled.");
                     this.cfg.setMesos(false);

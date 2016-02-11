@@ -188,7 +188,10 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         inis = new InstanceNetworkInterfaceSpecification();
         inis.withGroups(environment.getSecReqResult().getGroupId())
                 .withSubnetId(environment.getSubnet().getSubnetId())
+                .withAssociatePublicIpAddress(config.isPublicSlaveIps())
                 .withDeviceIndex(0);
+        
+       
         slaveNetworkInterfaces.add(inis);
 
         return this;
@@ -233,7 +236,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
             masterReq.withType(SpotInstanceType.OneTime)
                     .withInstanceCount(1)
                     .withLaunchGroup("lg_" + clusterId)
-                    .withSpotPrice(Double.toString(config.getBidPrice()));
+                    .withSpotPrice(Double.toString(config.getBidPriceMaster()));
 
             LaunchSpecification masterLaunchSpecification = new LaunchSpecification();
             masterLaunchSpecification.withInstanceType(InstanceType.fromValue(this.config.getSlaveInstanceType().getValue()))
