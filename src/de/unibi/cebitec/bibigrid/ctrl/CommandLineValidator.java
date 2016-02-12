@@ -224,7 +224,7 @@ public class CommandLineValidator {
             ////////////////////////////////////////////////////////////////////////
             ///// OGE on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("oge") || defaults.containsKey("oge")) {
-                String value = cl.getOptionValue("oge", defaults.getProperty("mesos"));
+                String value = cl.getOptionValue("oge", defaults.getProperty("oge"));
                 if (value.equalsIgnoreCase("yes")) {
                     cfg.setOge(true);
                     log.info(V, "OpenGridEngine support enabled.");
