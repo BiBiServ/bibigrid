@@ -13,8 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author alueckne
+ * Creates UserData for master and slave instances.
+ * 
+ * 
+ * @author jkrueger(at)cebitec.uni-bielefeld.de, alueckne(at)cebitec.uni-bielefeld.de
  */
 public class UserDataCreator {
 
@@ -188,13 +190,13 @@ public class UserDataCreator {
         slaveUserData.append("service zookeeper stop\n");
         if (cfg.isMesos()) {
             // configure zk
-            slaveUserData.append("echo zk://").append(masterIp).append(":5050 > /etc/mesos/zk\n");
+            slaveUserData.append("echo zk://").append(masterIp).append(":2181/mesos > /etc/mesos/zk\n");
             //configure mesos-slave
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
             slaveUserData.append("service mesos-slave start\n");
         }
 
-        slaveUserData.append("/usr/bin/curl http://169.254.169.254/latest/meta-data/local-ipv4 >> /vol/spool/slaves.finished \n");
+        slaveUserData.append("/usr/bin/curl http://169.254.169.254/latest/meta-data/local-ipv4 -w '\\n'>> /vol/spool/slaves.finished \n");
         switch (cfg.getMode()) {
             case AWS:
                 return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
@@ -250,27 +252,21 @@ public class UserDataCreator {
         } else if (ephemeralamount >= 2) {
             masterUserData.append("umount /mnt\n");
             // if 2 or more ephemerals are available use all of them in a RAID 0 system
-
             masterUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=").append(ephemeralamount).append(" ");
             for (int i = 0; i < ephemeralamount; i++) {
                 masterUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
             }
             masterUserData.append("\n");
-
             masterUserData.append("echo 'DEVICE ");
             for (int i = 0; i < ephemeralamount; i++) {
                 masterUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
             }
             masterUserData.append("'> /etc/mdadm.conf \n");
-
             masterUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
             masterUserData.append("blockdev --setra 65536 /dev/md0\n");
             masterUserData.append("mkfs.xfs -f /dev/md0\n");
             masterUserData.append("mount -t xfs -o noatime /dev/md0 /vol/\n");
-
         }
-
-  
 
         /*
          * create spool and scratch

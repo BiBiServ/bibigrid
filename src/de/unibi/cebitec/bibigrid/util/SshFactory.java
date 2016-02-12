@@ -73,7 +73,7 @@ public class SshFactory {
         sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
-        sb.append("qconf -as $(hostname)\n");
+
         if (cfg.getShellScriptFile() != null) {
             try {
                 List<String> lines = Files.readAllLines(cfg.getShellScriptFile(), StandardCharsets.UTF_8);
@@ -90,13 +90,18 @@ public class SshFactory {
                 log.info("Shell script could not be read.");
             }
         }
-        if (cfg.isUseMasterAsCompute()) {
-            sb.append("./add_exec ");
-            sb.append(masterInstance.getPrivateDnsName());
-            sb.append(" ");
-            sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
-            sb.append("\n");
-            sb.append("sudo service gridengine-exec start\n");
+        if (cfg.isOge()) {
+            sb.append("qconf -as $(hostname)\n");
+            if (cfg.isUseMasterAsCompute()) {
+                sb.append("./add_exec ");
+                sb.append(masterInstance.getPrivateDnsName());
+                sb.append(" ");
+                sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
+                sb.append("\n");
+                sb.append("sudo service gridengine-exec start\n");
+            }
+        } else {
+            sb.append("sudo service gridengine-master stop\n");
         }
 
         sb.append("echo CONFIGURATION_FINISHED \n");
@@ -108,7 +113,6 @@ public class SshFactory {
 
         sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
 
-        sb.append("qconf -as $(hostname)\n");
         if (cfg.getShellScriptFile() != null) {
             try {
                 List<String> lines = Files.readAllLines(cfg.getShellScriptFile(), StandardCharsets.UTF_8);
@@ -124,22 +128,28 @@ public class SshFactory {
                 log.info("Shell script could not be read.");
             }
         }
-        if (cfg.isUseMasterAsCompute()) {
-            sb.append("./add_exec ");
-            sb.append(masterInstance.getPrivateDnsName());
-            sb.append(" ");
-            sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
-            sb.append("\n");
-            sb.append("sudo service gridengine-exec start\n");
-        }
-        if (slaveInstances != null) {
-            for (Instance instance : slaveInstances) {
+
+        if (cfg.isOge()) {
+            sb.append("qconf -as $(hostname)\n");
+            if (cfg.isUseMasterAsCompute()) {
                 sb.append("./add_exec ");
-                sb.append(instance.getPrivateDnsName());
+                sb.append(masterInstance.getPrivateDnsName());
                 sb.append(" ");
-                sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
+                sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
                 sb.append("\n");
+                sb.append("sudo service gridengine-exec start\n");
             }
+            if (slaveInstances != null) {
+                for (Instance instance : slaveInstances) {
+                    sb.append("./add_exec ");
+                    sb.append(instance.getPrivateDnsName());
+                    sb.append(" ");
+                    sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
+                    sb.append("\n");
+                }
+            }
+        } else {
+            sb.append("sudo service gridengine-master stop\n");
         }
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
