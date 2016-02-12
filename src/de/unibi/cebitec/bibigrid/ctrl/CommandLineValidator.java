@@ -223,14 +223,14 @@ public class CommandLineValidator {
 
             ////////////////////////////////////////////////////////////////////////
             ///// OGE on/off /////////////////////////////////////////////////
-            if (this.cl.hasOption("oge") || defaults.containsKey("mesos")) {
+            if (this.cl.hasOption("oge") || defaults.containsKey("oge")) {
                 String value = cl.getOptionValue("oge", defaults.getProperty("mesos"));
                 if (value.equalsIgnoreCase("yes")) {
-                    this.cfg.setMesos(true);
+                    cfg.setOge(true);
                     log.info(V, "OpenGridEngine support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
                     log.info(V, "OpenGridEngine support disabled.");
-                    this.cfg.setMesos(false);
+                    cfg.setOge(false);
                 } else {
                     log.error("OpenGridEngine value not recognized. Please use yes/no.");
                     return false;

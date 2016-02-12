@@ -60,6 +60,8 @@ public class UserDataCreator {
             slaveUserData.append("        service gridengine-exec start\n");
             slaveUserData.append("        sleep 35\n");
             slaveUserData.append("done\n");
+        } else {
+            slaveUserData.append("service gridengine-exec stop");
         }
 
         /*
@@ -183,18 +185,16 @@ public class UserDataCreator {
          */
         slaveUserData.append("service mesos-master stop\n");
         slaveUserData.append("service mesos-slave stop\n");
+        slaveUserData.append("service zookeeper stop\n");
         if (cfg.isMesos()) {
-            //slaveUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
+            // configure zk
+            slaveUserData.append("echo zk://").append(masterIp).append(":5050 > /etc/mesos/zk\n");
+            //configure mesos-slave
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
-            slaveUserData.append("echo ").append(masterIp).append(":5050 > /etc/mesos-slave/master\n");
             slaveUserData.append("service mesos-slave start\n");
         }
 
-//        slaveUserData.append(
-//                "while true; do\n").append("service gridengine-exec start\n").append("sleep 60\n").append("done\n");
-//        String checkifFileExists = "ssh -q -o StrictHostKeyChecking=no bibigrid-slave-1-pDj1myEySSih6vw [[ -f /tmp/slave.finished ]] && echo \"File exists\" || echo \"File does not exist\";";
-//        slaveUserData.append("sleep 60 \nsudo service gridengine-exec start\n");
-        slaveUserData.append("echo 'slave done' >> /vol/spool/slaves.finished \n");
+        slaveUserData.append("/usr/bin/curl http://169.254.169.254/latest/meta-data/local-ipv4 >> /vol/spool/slaves.finished \n");
         switch (cfg.getMode()) {
             case AWS:
                 return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
@@ -299,20 +299,21 @@ public class UserDataCreator {
          */
         masterUserData.append("service mesos-master stop\n");
         masterUserData.append("service mesos-slave stop\n");
-        if (cfg.isMesos()) {
-            //masterUserData.append("rm /etc/mesos/zk\n"); // currently no zk supported
+        
+        if (cfg.isMesos()) {          
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
             masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
             masterUserData.append("echo bibigrid > /etc/mesos-master/cluster\n");
             masterUserData.append("curl http://instance-data/latest/meta-data/local-ipv4 > /etc/mesos-master/ip\n");
-            masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir\n");
+            masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir\n");          
             masterUserData.append("service mesos-master start\n");
             if (cfg.isUseMasterAsCompute()) {
+                //configure mesos-slave
                 masterUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
-                masterUserData.append("curl http://instance-data/latest/meta-data/local-ipv4 > /etc/mesos-master/master\n");
-                masterUserData.append("echo \":5050\" >> /etc/mesos-master/master\n");
                 masterUserData.append("service mesos-slave start\n");
             }
+        } else {
+            masterUserData.append("service zookeeper stop\n");
         }
 
         /*
