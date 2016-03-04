@@ -164,7 +164,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         masterOptions.keyPairName(conf.getKeypair());
         masterOptions.securityGroupNames(environment.getSecurityGroup().getName());
         masterOptions.availabilityZone(conf.getAvailabilityZone());
-        masterOptions.userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair().getPrivateKey()).getBytes()); //fails cause of null devicemapper
+        masterOptions.userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()).getBytes()); //fails cause of null devicemapper
 //        masterOptions.blockDeviceMappings(mappings);
 
         masterImage = os_region + "/" + conf.getMasterImage();
@@ -249,7 +249,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                     masterDNS,
                     slaveDeviceMapper,
                     conf,
-                    environment.getKeypair().getPublicKey()).getBytes()
+                    environment.getKeypair()).getBytes()
             );
 
             slaveIPs = new ArrayList<>();

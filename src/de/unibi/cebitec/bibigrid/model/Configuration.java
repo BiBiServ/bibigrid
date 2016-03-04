@@ -26,6 +26,8 @@ public class Configuration {
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
     
+    private FS localFS = FS.XFS;
+    
     private boolean useMasterAsCompute;
     private boolean cassandra = false;
     private boolean alternativeConfigFile = false;
@@ -47,6 +49,10 @@ public class Configuration {
     public static enum MODE {
 
         AWS, OPENSTACK
+    }
+    
+    public static enum FS {
+        EXT2, EXT3, EXT4, XFS
     }
 
     private MODE mode = MODE.AWS;
@@ -328,5 +334,14 @@ public class Configuration {
     public void setPublicSlaveIps(boolean publicSlaveIps) {
         this.publicSlaveIps = publicSlaveIps;
     }
+
+    public FS getLocalFS() {
+        return localFS;
+    }
+
+    public void setLocalFS(FS localFS) {
+        this.localFS = localFS;
+    }
+    
     
 }

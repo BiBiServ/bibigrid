@@ -155,7 +155,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
 
         masterDeviceMappings.addAll(ephemeralList);
 
-        base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.config, environment.getKeypair().getPrivateKey());
+        base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.config, environment.getKeypair());
 
         log.info(V, "Master UserData:\n {}", new String(Base64.decodeBase64(base64MasterUserData)));
         //////////////////////////////////////////////////////////////////////////
@@ -339,7 +339,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                     masterInstance.getPrivateDnsName(),
                     slaveDeviceMapper,
                     this.config,
-                    environment.getKeypair().getPublicKey());
+                    environment.getKeypair());
 
             log.info(V, "Slave Userdata:\n{}", new String(Base64.decodeBase64(base64SlaveUserData)));
 

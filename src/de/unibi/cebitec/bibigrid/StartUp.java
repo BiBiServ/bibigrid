@@ -70,6 +70,7 @@ public class StartUp {
                 .addOption("mode", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
                 .addOption("oge", "oge", true, "Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
                 .addOption("nfs", "nfs", true, "Yes or no if NFS should be configured/started. Default is Yes!")
+                .addOption("lfs","local-fs",true, "File system used for internal (empheral) diskspace. One of 'ext2', 'ext3', 'ext4' or 'xfs'. Default is 'xfs'.")
                 .addOption("u", "user", true, "User name (mandatory)")
                 .addOption("osu", "openstack-username", true, "The given Openstack Username")
                 .addOption("ost", "openstack-tenantname", true, "The given Openstack Tenantname")

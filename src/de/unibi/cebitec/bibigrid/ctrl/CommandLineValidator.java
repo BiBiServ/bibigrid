@@ -5,6 +5,7 @@ import com.amazonaws.auth.PropertiesCredentials;
 import de.unibi.cebitec.bibigrid.meta.aws.InstanceTypeAWS;
 import de.unibi.cebitec.bibigrid.meta.openstack.InstanceTypeOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.Configuration.FS;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import de.unibi.cebitec.bibigrid.model.InstanceType;
 import de.unibi.cebitec.bibigrid.model.OpenStackCredentials;
@@ -736,6 +737,21 @@ public class CommandLineValidator {
                     log.error("SpotInstanceRequest value not recognized. Please use yes/no.");
                     return false;
                 }
+            }
+            
+            /* ----------------------- ephemeral fs ----------------------------- */
+            if (cl.hasOption("lfs") || defaults.containsKey("local-fs")) {
+                String value = cl.getOptionValue("lfs",defaults.getProperty("local-fs"));
+                try {
+                    FS fs  = FS.valueOf(value.toUpperCase());
+                    cfg.setLocalFS(fs);
+                } catch (IllegalArgumentException e) {
+                    log.error("Local filesustem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
+                    return false;
+                }
+                
+            
+                        
             }
 
             ///////////////////////////////////////////////////////////////////////

@@ -35,17 +35,23 @@ public class UserDataCreator {
      * @param masterDns
      * @param slaveDeviceMapper
      * @param cfg
-     * @param publicKey
+     * @param keypair
+
      * @return
      */
-    public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg, String publicKey) {
+    public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg,KEYPAIR keypair) {
         StringBuilder slaveUserData = new StringBuilder();
 
         slaveUserData.append("#!/bin/sh\n");
         slaveUserData.append("sleep 5\n");
+        slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
+        slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
+        slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
+        slaveUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
+        
         slaveUserData.append("mkdir -p /vol/spool/\n");
         slaveUserData.append("mkdir -p /vol/scratch/\n");
-        slaveUserData.append("echo '").append(publicKey).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
+       
 
         /*
          * GridEngine Block
@@ -105,13 +111,28 @@ public class UserDataCreator {
 
         if (ephemeralamount  == 1) {
             slaveUserData.append("umount /mnt\n");
+            switch (cfg.getLocalFS()) {
+                case EXT2 : {
+                    slaveUserData.append("mkfs.ext2 ").append(blockDeviceBase).append("b\n");
+                    break;
+                }
+                case EXT3 : {
+                    slaveUserData.append("mkfs.ext3 ").append(blockDeviceBase).append("b\n");
+                    break;
+                }
+                case EXT4 : {
+                    slaveUserData.append("mkfs.ext4 ").append(blockDeviceBase).append("b\n");
+                    break;    
+                }
+                default : {
+                    slaveUserData.append("mkfs.xfs -f /").append(blockDeviceBase).append("b\n");           
+                }
+            }       
             slaveUserData.append("mount ").append(blockDeviceBase).append("b /vol/scratch\n");
             
         } else if (ephemeralamount >= 2) {
-            // if 2 or more ephemerals are available use 2 as a RAID system
-            slaveUserData.append("umount /mnt\n");
             // if 2 or more ephemerals are available use all of them in a RAID 0 system
-
+            slaveUserData.append("umount /mnt\n");
             slaveUserData.append("yes | mdadm --create /dev/md0 --level=0 -c256 --raid-devices=").append(ephemeralamount).append(" ");
             for (int i = 0; i < ephemeralamount; i++) {
                 slaveUserData.append(blockDeviceBase).append(ephemeral(i)).append(" ");
@@ -126,9 +147,28 @@ public class UserDataCreator {
 
             slaveUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
             slaveUserData.append("blockdev --setra 65536 /dev/md0\n");
-            slaveUserData.append("mkfs.xfs -f /dev/md0\n");
-
-            slaveUserData.append("mount -t xfs -o noatime /dev/md0 /vol/scratch\n");
+            
+            switch (cfg.getLocalFS()) {
+                case EXT2 : {
+                    slaveUserData.append("mkfs.ext2 /dev/md0\n");
+                    slaveUserData.append("mount -t ext2 -o noatime /dev/md0 /vol/scratch\n");
+                    break;
+                }
+                case EXT3 : {
+                    slaveUserData.append("mkfs.ext3 /dev/md0\n");
+                    slaveUserData.append("mount -t ext3 -o noatime /dev/md0 /vol/scratch\n");
+                    break;
+                }
+                case EXT4 : {
+                    slaveUserData.append("mkfs.ext4 /dev/md0\n");
+                    slaveUserData.append("mount -t ext4 -o noatime /dev/md0 /vol/scratch\n");
+                    break;    
+                }
+                default : {
+                    slaveUserData.append("mkfs.xfs -f /dev/md0\n");
+                    slaveUserData.append("mount -t xfs -o noatime /dev/md0 /vol/scratch\n");
+                }
+            }
         }
         
         slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
@@ -193,6 +233,8 @@ public class UserDataCreator {
             slaveUserData.append("echo zk://").append(masterIp).append(":2181/mesos > /etc/mesos/zk\n");
             //configure mesos-slave
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
+            slaveUserData.append("echo mesos,docker > /etc/mesos-slave/containerizers\n");
+            slaveUserData.append("echo false > /etc/mesos-slave/switch_user\n");
             slaveUserData.append("service mesos-slave start\n");
         }
 
@@ -222,16 +264,17 @@ public class UserDataCreator {
      * @param cfg
      * @return
      */
-    public static String masterUserData(DeviceMapper masterDeviceMapper, Configuration cfg, String privateKey) {
+    public static String masterUserData(DeviceMapper masterDeviceMapper, Configuration cfg, KEYPAIR keypair) {
         StringBuilder masterUserData = new StringBuilder();
 
         int ephemeralamount = cfg.getMasterInstanceType().getSpec().ephemerals;
         List<String> masterNfsShares = cfg.getNfsShares();
         masterUserData.append("#!/bin/sh\n").append("sleep 5\n");
 
-        masterUserData.append("echo '").append(privateKey).append("' > /home/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
 
         /*
          * Ephemeral/RAID Preperation
@@ -248,6 +291,23 @@ public class UserDataCreator {
         // if 1 ephemeral is available mount it as /vol/spool
         if (ephemeralamount == 1) {
             masterUserData.append("umount /mnt\n"); // 
+            switch (cfg.getLocalFS()) {
+                case EXT2 : {
+                    masterUserData.append("mkfs.ext2 ").append(blockDeviceBase).append("b\n");
+                    break;
+                }
+                case EXT3 : {
+                    masterUserData.append("mkfs.ext3 ").append(blockDeviceBase).append("b\n");
+                    break;
+                }
+                case EXT4 : {
+                    masterUserData.append("mkfs.ext4 ").append(blockDeviceBase).append("b\n");
+                    break;    
+                }
+                default : {
+                    masterUserData.append("mkfs.xfs -f /").append(blockDeviceBase).append("b\n");           
+                }
+            }
             masterUserData.append("mount ").append(blockDeviceBase).append("b /vol/\n");
         } else if (ephemeralamount >= 2) {
             masterUserData.append("umount /mnt\n");
@@ -264,8 +324,28 @@ public class UserDataCreator {
             masterUserData.append("'> /etc/mdadm.conf \n");
             masterUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
             masterUserData.append("blockdev --setra 65536 /dev/md0\n");
-            masterUserData.append("mkfs.xfs -f /dev/md0\n");
-            masterUserData.append("mount -t xfs -o noatime /dev/md0 /vol/\n");
+            switch (cfg.getLocalFS()) {
+                case EXT2 : {
+                    masterUserData.append("mkfs.ext2 -f /dev/md0\n");
+                    masterUserData.append("mount -t ext2 -o noatime /dev/md0 /vol/\n");
+                    break;
+                }
+                case EXT3 : {
+                    masterUserData.append("mkfs.ext3 -f /dev/md0\n");
+                    masterUserData.append("mount -t ext3 -o noatime /dev/md0 /vol/\n");
+                    break;
+                }
+                case EXT4 : {
+                    masterUserData.append("mkfs.ext4 -f /dev/md0\n");
+                    masterUserData.append("mount -t ext4 -o noatime /dev/md0 /vol/\n");
+                    break;    
+                }
+                default : {
+                    masterUserData.append("mkfs.xfs -f /dev/md0\n");
+                    masterUserData.append("mount -t xfs -o noatime /dev/md0 /vol/\n");
+                }
+            }
+            
         }
 
         /*
@@ -306,6 +386,8 @@ public class UserDataCreator {
             if (cfg.isUseMasterAsCompute()) {
                 //configure mesos-slave
                 masterUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
+                masterUserData.append("echo mesos,docker > /etc/mesos-slave/containerizers\n");
+                masterUserData.append("echo false > /etc/mesos-slave/switch_user\n");
                 masterUserData.append("service mesos-slave start\n");
             }
         } else {
