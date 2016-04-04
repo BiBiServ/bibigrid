@@ -44,6 +44,12 @@ public class UserDataCreator {
 
         slaveUserData.append("#!/bin/sh\n");
         slaveUserData.append("sleep 5\n");
+        
+        /* "Hack" for CeBiTec OpenStack setup - set hostname */
+        if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
+            updateHostname(slaveUserData);
+        }
+        
         slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -52,13 +58,11 @@ public class UserDataCreator {
         slaveUserData.append("mkdir -p /vol/spool/\n");
         slaveUserData.append("mkdir -p /vol/scratch/\n");
        
-
         /*
          * GridEngine Block
          */
         if (cfg.isOge()) {
             slaveUserData.append("echo ").append(masterIp).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
-            slaveUserData.append("echo ").append(masterIp).append(" ").append(masterDns).append(" >> /etc/hosts\n");
             slaveUserData.append("pid=`ps acx | grep sge_execd | cut -c1-6`\n");
             slaveUserData.append("if [ -n $pid ]; then\n");
             slaveUserData.append("        kill $pid;\n");
@@ -82,16 +86,26 @@ public class UserDataCreator {
          * Cassandra Block
          */
         if (cfg.isCassandra()) {
-            slaveUserData.append("service cassandra stop\n");
-            slaveUserData.append("mkdir /vol/cassandra\n");
-            slaveUserData.append("mkdir /vol/cassandra/commitlog\n");
-            slaveUserData.append("mkdir /vol/cassandra/data\n");
-            slaveUserData.append("mkdir /vol/cassandra/saved_caches\n");
-            slaveUserData.append("chown cassandra:cassandra -R /vol/cassandra\n");
-            slaveUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
-            slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /etc/cassandra/cassandra.yaml\n");
-            slaveUserData.append("service cassandra start\n");
+            // slaveUserData.append("service cassandra stop\n");  --> started manually since we don't use teh debian packages
+            slaveUserData.append("mkdir /vol/scratch/cassandra\n");
+            slaveUserData.append("mkdir /vol/scratch/cassandra/commitlog\n");
+            slaveUserData.append("mkdir /vol/scratch/cassandra/data\n");
+            slaveUserData.append("mkdir /vol/scratch/cassandra/saved_caches\n");
+            slaveUserData.append("chown cassandra:cassandra -R /vol/scratch/cassandra\n");
+            slaveUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /opt/cassandra/conf/cassandra.yaml\n");
+            // slaveUserData.append("service cassandra start\n"); --> start cassandra database as daemon process
 
+        }
+        
+        /*
+         * HDFS Block
+         */
+        if (cfg.isHdfs()) {
+            slaveUserData.append("mkdir /vol/scratch/hadoop\n");
+            slaveUserData.append("chown hadoop:hadoop -R /vol/scratch/hadoop\n");
+            
+            
         }
 
         int ephemeralamount = cfg.getSlaveInstanceType().getSpec().ephemerals;
@@ -209,15 +223,15 @@ public class UserDataCreator {
                 }
                 break;
             case OPENSTACK:
-                // TESTING!!! @TODO
-                slaveUserData.append("echo 'http_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'https_proxy=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'ftp_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'no_proxy=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n")
-                        .append("echo 'HTTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'HTTPS_PROXY=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'FTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'NO_PROXY=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n");
+//                // TESTING!!! @TODO
+//                slaveUserData.append("echo 'http_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+//                        .append("echo 'https_proxy=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+//                        .append("echo 'ftp_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+//                        .append("echo 'no_proxy=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n")
+//                        .append("echo 'HTTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+//                        .append("echo 'HTTPS_PROXY=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+//                        .append("echo 'FTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+//                        .append("echo 'NO_PROXY=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n");
                 break;
         }
 
@@ -275,6 +289,13 @@ public class UserDataCreator {
         masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
+        
+
+        /* "Hack" for CeBiTec OpenStack setup - set hostname */
+        if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
+            updateHostname(masterUserData);
+        }
+
 
         /*
          * Ephemeral/RAID Preperation
@@ -369,6 +390,17 @@ public class UserDataCreator {
             masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
             masterUserData.append("service cassandra start\n");
         }
+        
+        /*
+         * OGE Block
+         */
+        masterUserData.append("service gridengine-master stop\n");
+        if (cfg.isOge()) {
+            masterUserData.append("curl http://169.254.169.254/latest/meta-data/local-ipv4 > /var/lib/gridengine/default/common/act_qmaster\n");
+            masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
+            masterUserData.append("service gridengine-master start\n");
+        }
+        
 
         /* 
          * Mesos Block
@@ -380,7 +412,7 @@ public class UserDataCreator {
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
             masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
             masterUserData.append("echo bibigrid > /etc/mesos-master/cluster\n");
-            masterUserData.append("curl http://instance-data/latest/meta-data/local-ipv4 > /etc/mesos-master/ip\n");
+            masterUserData.append("curl http://169.254.169.254/latest/meta-data/local-ipv4 > /etc/mesos-master/ip\n");
             masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir\n");          
             masterUserData.append("service mesos-master start\n");
             if (cfg.isUseMasterAsCompute()) {
@@ -431,15 +463,15 @@ public class UserDataCreator {
                 }
                 break;
             case OPENSTACK:
-                // TESTING!!! @TODO
-                masterUserData.append("echo 'http_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
+                // settig proxy is unneccesaryy : using prepared images
+                /*masterUserData.append("echo 'http_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
                         .append("echo 'https_proxy=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
                         .append("echo 'ftp_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
                         .append("echo 'no_proxy=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n")
                         .append("echo 'HTTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
                         .append("echo 'HTTPS_PROXY=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
                         .append("echo 'FTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'NO_PROXY=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n");
+                        .append("echo 'NO_PROXY=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n"); */
                 break;
 
         }
@@ -473,5 +505,12 @@ public class UserDataCreator {
 
     private static char ephemeral(int i) {
         return (char) (i + 98);
+    }
+    
+    
+    private static void updateHostname(StringBuilder sb) {
+        sb.append("t=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | sed 's/\\./-/g'`\n");
+        sb.append("hostname host-$t\n");
+        
     }
 }

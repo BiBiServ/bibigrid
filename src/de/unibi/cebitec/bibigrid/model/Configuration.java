@@ -37,6 +37,7 @@ public class Configuration {
     private boolean mesos = false;
     private boolean nfs = true;
     private boolean oge = true;
+    private boolean hdfs = false;
 
     private String user;
     
@@ -342,6 +343,16 @@ public class Configuration {
     public void setLocalFS(FS localFS) {
         this.localFS = localFS;
     }
+
+    public boolean isHdfs() {
+        return hdfs;
+    }
+
+    public void setHdfs(boolean hdfs) {
+        this.hdfs = hdfs;
+    }
+    
+    
     
     
 }

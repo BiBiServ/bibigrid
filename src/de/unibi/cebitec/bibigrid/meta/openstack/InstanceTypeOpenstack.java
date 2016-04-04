@@ -20,8 +20,10 @@ import org.jclouds.openstack.nova.v2_0.features.FlavorApi;
 import org.jclouds.sshj.config.SshjSshClientModule;
 
 /**
+ * Provides a list of all supported flavors supported by configured openstack installation/region.
+ * 
  *
- * @author jsteiner
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class InstanceTypeOpenstack extends InstanceType {
 

@@ -12,6 +12,7 @@ import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import java.util.List;
 import java.util.logging.Level;
 import org.jclouds.net.domain.IpProtocol;
+import org.jclouds.openstack.neutron.v2.features.SubnetApi;
 import org.jclouds.openstack.nova.v2_0.domain.Ingress;
 import org.jclouds.openstack.nova.v2_0.domain.SecurityGroupRule;
 import org.jclouds.openstack.nova.v2_0.domain.SecurityGroup;
@@ -21,7 +22,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jsteiner
+ * 
+ * 
+ * @author Johannes Steiner, Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterEnvironmentOpenstack
         implements CreateClusterEnvironment<CreateClusterEnvironmentOpenstack, CreateClusterOpenstack> {
@@ -45,12 +48,15 @@ public class CreateClusterEnvironmentOpenstack
     
     @Override
     public CreateClusterEnvironmentOpenstack createVPC() {
-        log.info("VPC creation not implemented yet");
+        log.info("Network creation not implemented yet");
         return this;
     }
     
     @Override
     public CreateClusterEnvironmentOpenstack createSubnet() {
+        SubnetApi subnetapi = cluster.getSubnetApi();      
+//        SubNet subnet 
+//        subnetapi.create(new CreateSubnet());
         log.info("Subnet creation not implementd yet");
         return this;
     }
