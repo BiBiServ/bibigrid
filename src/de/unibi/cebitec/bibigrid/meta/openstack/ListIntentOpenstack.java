@@ -24,9 +24,18 @@ public class ListIntentOpenstack implements ListIntent {
 
     private Configuration conf;
     private final String provider = "openstack-nova";
+    NovaApi novaApi;
 
     public ListIntentOpenstack(Configuration conf) {
         this.conf = conf;
+         Iterable<Module> modules = ImmutableSet.<Module>of(
+                new SshjSshClientModule(),
+                new SLF4JLoggingModule());
+        novaApi = ContextBuilder.newBuilder(provider)
+                .endpoint(conf.getOpenstackCredentials().getEndpoint())
+                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
+                .modules(modules)
+                .buildApi(NovaApi.class);
     }
 
     @Override
@@ -34,14 +43,7 @@ public class ListIntentOpenstack implements ListIntent {
         Iterable<Module> modules = ImmutableSet.<Module>of(
                 new SshjSshClientModule(),
                 new SLF4JLoggingModule());
-
-        NovaApi novaClient = ContextBuilder.newBuilder(provider)
-                .endpoint(conf.getOpenstackCredentials().getEndpoint())
-                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
-                .modules(modules)
-                .buildApi(NovaApi.class);
-        
-        CurrentClusters cc = new CurrentClusters(novaClient, conf);
+        CurrentClusters cc = new CurrentClusters(novaApi, conf);
         log.info(cc.printClusterList());
         return true;
     }

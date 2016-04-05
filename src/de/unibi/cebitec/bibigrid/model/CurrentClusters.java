@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
+import org.jclouds.openstack.nova.v2_0.extensions.SecurityGroupApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -203,26 +204,54 @@ public class CurrentClusters {
 
     /**
      *
-     * @param novaClient OpenStack
+     * @param novaApi OpenStack
      */
-    public CurrentClusters(NovaApi novaClient, Configuration conf) {
+    public CurrentClusters(NovaApi novaApi, Configuration conf) {
         String keypairName = conf.getKeypair();
-        ServerApi s = novaClient.getServerApi("regionOne");
+        ServerApi s = novaApi.getServerApi(conf.getRegion());
+        SecurityGroupApi sec= novaApi.getSecurityGroupApi(conf.getRegion()).get();
 
-        Cluster c = new Cluster();
+        Cluster cluster;
 
+        /*
+         * Instances
+         */
         for (Server serv : s.listInDetail().concat()) {
-            if (serv.getKeyName().equals(keypairName)) {
-                if (serv.getName().contains("master")) {
-                    c.setMasterinstance(serv.getId());
-                } else if (serv.getName().contains("slave")) {
-                    c.addSlaveInstance(serv.getId());
+            // check if instance is a BiBiGrid instance and extract clusterid from it
+            String name = serv.getName();
+            
+            if (name != null && (name.startsWith("bibigrid-master-") || name.startsWith("bibigrid-slave-"))) {
+                String [] t = name.split("-");
+                String clusterid = t[t.length-1]; 
+                // check if entry already available
+                if (clustermap.containsKey(clusterid)) {
+                    cluster = clustermap.get(clusterid);
+                } else {
+                    cluster = new Cluster();
+                    clustermap.put(clusterid, cluster);
                 }
-                c.setStarted(serv.getCreated().toString());
-                c.setUser(conf.getUser());
+                // master / slave
+                if (name.contains("master")) {
+                    cluster.setMasterinstance(serv.getId());
+                    cluster.setStarted(dateformatter.format(serv.getCreated()));
+                    cluster.setKeyname(serv.getKeyName());
+                    
+                } else if (name.contains("slave")) {
+                    cluster.addSlaveInstance(serv.getId());          
+                }               
             }
         }
-        clustermap.put(keypairName, c);
+        /*
+         * Security Group
+        */
+        for (org.jclouds.openstack.nova.v2_0.domain.SecurityGroup sg : sec.list()) {
+            for (String clusterid : clustermap.keySet()) {
+                if (sg.getName().contains(clusterid)) {
+                    clustermap.get(clusterid).setSecuritygroup(sg.getId());
+                    break;
+                }
+            }
+        }
     }
 
     public String printClusterList() {
@@ -239,11 +268,11 @@ public class CurrentClusters {
                 Cluster v = clustermap.get(id);
                 formatter.format("%15s | %10s | %19s | %20s | %7d | %11s | %11s%n",
                         id,
-                        v.getUser(),
-                        v.getStarted(),
+                        (v.getUser() == null) ? "<NA>" :v.getUser(),
+                        (v.getStarted() == null) ? "-" : v.getStarted(),
                         (v.getKeyname() == null ? "-" : v.getKeyname()),
                         ((v.getMasterinstance() != null ? 1 : 0) + v.getSlaveinstances().size()),
-                        (v.getSecuritygroup() == null ? "-" : v.getSecuritygroup()),
+                        (v.getSecuritygroup() == null ? "-" : (v.getSecuritygroup().length() > 11 ? v.getSecuritygroup().substring(0,9)+"..":v.getSecuritygroup())),
                         (v.getSubnet() == null ? "-" : v.getSubnet()));
             }
         }

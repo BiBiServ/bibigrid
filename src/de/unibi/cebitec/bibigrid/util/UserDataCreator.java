@@ -43,7 +43,7 @@ public class UserDataCreator {
         StringBuilder slaveUserData = new StringBuilder();
 
         slaveUserData.append("#!/bin/sh\n");
-        slaveUserData.append("sleep 5\n");
+        //slaveUserData.append("sleep 5\n");
         
         /* "Hack" for CeBiTec OpenStack setup - set hostname */
         if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
@@ -82,31 +82,7 @@ public class UserDataCreator {
         slaveUserData.append("sed -i s/MASTER_IP/").append(masterIp).append("/g /etc/ganglia/gmond.conf\n");
         slaveUserData.append("service ganglia-monitor restart \n");
 
-        /*
-         * Cassandra Block
-         */
-        if (cfg.isCassandra()) {
-            // slaveUserData.append("service cassandra stop\n");  --> started manually since we don't use teh debian packages
-            slaveUserData.append("mkdir /vol/scratch/cassandra\n");
-            slaveUserData.append("mkdir /vol/scratch/cassandra/commitlog\n");
-            slaveUserData.append("mkdir /vol/scratch/cassandra/data\n");
-            slaveUserData.append("mkdir /vol/scratch/cassandra/saved_caches\n");
-            slaveUserData.append("chown cassandra:cassandra -R /vol/scratch/cassandra\n");
-            slaveUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
-            slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /opt/cassandra/conf/cassandra.yaml\n");
-            // slaveUserData.append("service cassandra start\n"); --> start cassandra database as daemon process
-
-        }
-        
-        /*
-         * HDFS Block
-         */
-        if (cfg.isHdfs()) {
-            slaveUserData.append("mkdir /vol/scratch/hadoop\n");
-            slaveUserData.append("chown hadoop:hadoop -R /vol/scratch/hadoop\n");
-            
-            
-        }
+       
 
         int ephemeralamount = cfg.getSlaveInstanceType().getSpec().ephemerals;
 
@@ -188,6 +164,33 @@ public class UserDataCreator {
         slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
         slaveUserData.append("chmod -R 777 /vol/scratch \n");
         
+        
+         /*
+         * Cassandra Block
+         */
+        if (cfg.isCassandra()) {
+            
+            slaveUserData.append("mkdir /vol/scratch/cassandra\n");
+            slaveUserData.append("mkdir /vol/scratch/cassandra/commitlog\n");
+            slaveUserData.append("mkdir /vol/scratch/cassandra/data\n");
+            slaveUserData.append("mkdir /vol/scratch/cassandra/saved_caches\n");
+            slaveUserData.append("chown cassandra:cassandra -R /vol/scratch/cassandra\n");
+            slaveUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /opt/cassandra/conf/cassandra.yaml\n");
+            // slaveUserData.append("service cassandra start\n"); --> start cassandra database as daemon process
+
+        }
+        
+        /*
+         * HDFS Block
+         */
+        if (cfg.isHdfs()) {
+            slaveUserData.append("mkdir /vol/scratch/hadoop\n");
+            slaveUserData.append("chown hadoop:hadoop -R /vol/scratch/hadoop\n");
+            
+            
+        }
+        
         /*
          * NFS//Mount Block
          */
@@ -222,16 +225,7 @@ public class UserDataCreator {
                     slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
                 }
                 break;
-            case OPENSTACK:
-//                // TESTING!!! @TODO
-//                slaveUserData.append("echo 'http_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-//                        .append("echo 'https_proxy=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-//                        .append("echo 'ftp_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-//                        .append("echo 'no_proxy=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n")
-//                        .append("echo 'HTTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-//                        .append("echo 'HTTPS_PROXY=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-//                        .append("echo 'FTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-//                        .append("echo 'NO_PROXY=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n");
+            case OPENSTACK:             
                 break;
         }
 
@@ -239,17 +233,20 @@ public class UserDataCreator {
         /* 
          * Mesos Block
          */
-        slaveUserData.append("service mesos-master stop\n");
-        slaveUserData.append("service mesos-slave stop\n");
-        slaveUserData.append("service zookeeper stop\n");
+        
         if (cfg.isMesos()) {
+            slaveUserData.append("service mesos-master stop\n");
             // configure zk
             slaveUserData.append("echo zk://").append(masterIp).append(":2181/mesos > /etc/mesos/zk\n");
             //configure mesos-slave
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
             slaveUserData.append("echo mesos,docker > /etc/mesos-slave/containerizers\n");
             slaveUserData.append("echo false > /etc/mesos-slave/switch_user\n");
-            slaveUserData.append("service mesos-slave start\n");
+            slaveUserData.append("service mesos-slave restart\n");
+        } else {
+            slaveUserData.append("service mesos-slave stop\n");
+            slaveUserData.append("service mesos-master stop\n");
+            slaveUserData.append("service zookeeper stop\n");
         }
 
         slaveUserData.append("/usr/bin/curl http://169.254.169.254/latest/meta-data/local-ipv4 -w '\\n'>> /vol/spool/slaves.finished \n");
@@ -378,18 +375,32 @@ public class UserDataCreator {
         masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
         masterUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
         masterUserData.append("chmod -R 777 /vol/\n");
+        
         /*
          * Cassandra Bloock
          */
-        masterUserData.append("service cassandra stop\n");
         if (cfg.isCassandra()) {
-            masterUserData.append("mkdir -p /vol/cassandra\n");
-            masterUserData.append("chown -R cassandra:cassandra /vol/cassandra\n");
-            masterUserData.append("chmod -R 777 /vol/cassandra\n");
-            masterUserData.append("sed -i s/##MASTER_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
-            masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /etc/cassandra/cassandra.yaml\n");
-            masterUserData.append("service cassandra start\n");
+            masterUserData.append("mkdir -p /vol/scratch/cassandra\n");
+            masterUserData.append("chown -R cassandra:cassandra /vol/scratch/cassandra\n");
+            masterUserData.append("chmod -R 777 /vol/scratch/cassandra\n");
+            masterUserData.append("sed -i s/##MASTER_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            masterUserData.append("service cassandra start\n"); // @ToDo : this will not work with latest version
         }
+        
+        /*
+         * HDFS Block
+         */
+        if (cfg.isHdfs()) {
+            masterUserData.append("mkdir -p /vol/scratch/hadoop\n");
+            masterUserData.append("chown -R hadoop:hadoop /vol/scratch/hdfs\n");
+            masterUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
+            // @ToDo: Update configuration
+            masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs namenode
+            masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs datanode
+        }
+        
+        
         
         /*
          * OGE Block
@@ -405,10 +416,11 @@ public class UserDataCreator {
         /* 
          * Mesos Block
          */
-        masterUserData.append("service mesos-master stop\n");
-        masterUserData.append("service mesos-slave stop\n");
-        
-        if (cfg.isMesos()) {          
+        if (cfg.isMesos()) {
+            // stop master & slave for Reconfigauation
+            masterUserData.append("service mesos-slave stop\n");
+            masterUserData.append("service mesos-master stop\n");
+            // configure mesos master
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
             masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
             masterUserData.append("echo bibigrid > /etc/mesos-master/cluster\n");
@@ -423,7 +435,11 @@ public class UserDataCreator {
                 masterUserData.append("service mesos-slave start\n");
             }
         } else {
+            // shutdown possible running mesos components
             masterUserData.append("service zookeeper stop\n");
+            masterUserData.append("service mesos-slave stop\n");
+            masterUserData.append("service chronos stop\n");
+            masterUserData.append("service mesos-master stop\n");
         }
 
         /*
@@ -463,15 +479,7 @@ public class UserDataCreator {
                 }
                 break;
             case OPENSTACK:
-                // settig proxy is unneccesaryy : using prepared images
-                /*masterUserData.append("echo 'http_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'https_proxy=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'ftp_proxy=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'no_proxy=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n")
-                        .append("echo 'HTTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'HTTPS_PROXY=https://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'FTP_PROXY=http://proxy.cebitec.uni-bielefeld.de:3128' >> /etc/environment \n")
-                        .append("echo 'NO_PROXY=localhost,127.0.0.1,169.254.169.254' >> /etc/environment \n"); */
+                // currently nothing todo
                 break;
 
         }
