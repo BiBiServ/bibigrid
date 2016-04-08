@@ -63,11 +63,14 @@
         </encoder>
     </appender>
     
+   
     <root level="debug">
         <appender-ref ref="stdout-err"/>
         <appender-ref ref="stdout-warn"/>
         <appender-ref ref="stdout-info"/>
         <appender-ref ref="stdout-info2"/>
     </root>
+    
+   
   
 </configuration>
