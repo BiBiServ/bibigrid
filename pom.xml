@@ -97,6 +97,7 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
+                                        <exclude>META-INF/*</exclude>
                                         <exclude>com/amazonaws/services/cloudformation/**/*</exclude>
                                         <exclude>com/amazonaws/services/cloudfront/**/*</exclude>
                                         <exclude>com/amazonaws/services/cloudfront_2012_03_15/**/*</exclude>
