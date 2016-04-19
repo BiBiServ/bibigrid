@@ -26,7 +26,7 @@ public class CreateIntent extends Intent {
             case AWS:
                 return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
             case OPENSTACK:
-                return Arrays.asList(new String[]{"m", "M", "s", "S", "n", "u", "k", "i", "e", "z", "g", "r", "b", "osu", "ost", "osp", "ose"});
+                return Arrays.asList(new String[]{"m", "M", "s", "S", "n",  "k", "i", "e", "z", "g", "r", "b", "osu", "ost", "osp", "ose"});
         }
         return null;
     }

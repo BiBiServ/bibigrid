@@ -242,11 +242,11 @@ public class CommandLineValidator {
             if (this.cl.hasOption("nfs") || defaults.containsKey("nfs")) {
                 String value = cl.getOptionValue("nfs", defaults.getProperty("nfs"));
                 if (value.equalsIgnoreCase("yes")) {
-                    this.cfg.setMesos(true);
+                    this.cfg.setNfs(true);
                     log.info(V, "NFS enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
                     log.info(V, "NFS disabled.");
-                    this.cfg.setMesos(false);
+                    this.cfg.setNfs(false);
                 } else {
                     log.error("NFS value not recognized. Please use yes/no.");
                     return false;
