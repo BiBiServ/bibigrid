@@ -120,7 +120,7 @@ public class SshFactory {
 
     public static String buildSshCommandOpenstack(String asGroupName, Configuration cfg, CreateClusterOpenstack.Instance master, List<CreateClusterOpenstack.Instance> slaves) {
         StringBuilder sb = new StringBuilder();
-//        sb.append("sleep 60 \n"); // @TODO
+
         sb.append("sudo sed -i s/MASTER_IP/").append(master.getIp()).append("/g /etc/ganglia/gmond.conf\n");
 
         if (cfg.getShellScriptFile() != null) {
@@ -140,7 +140,7 @@ public class SshFactory {
         }
         if (cfg.isOge()) {
             sb.append("sleep 30\n"); // we have to wait until all childs are available ...            
-            sb.append("qconf -as ").append(master.getHostname()).append("\n");
+            sb.append("qconf -as ").append(master.getIp()).append("\n");
             if (cfg.isUseMasterAsCompute()) {
                 sb.append("./add_exec ");
                 sb.append(master.getIp());

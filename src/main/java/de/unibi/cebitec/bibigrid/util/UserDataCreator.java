@@ -72,9 +72,7 @@ public class UserDataCreator {
             slaveUserData.append("        service gridengine-exec start\n");
             slaveUserData.append("        sleep 35\n");
             slaveUserData.append("done\n");
-        } else {
-            slaveUserData.append("service gridengine-exec stop");
-        }
+        } 
 
         /*
          * Ganglia service monitor
@@ -235,19 +233,16 @@ public class UserDataCreator {
          */
         
         if (cfg.isMesos()) {
-            slaveUserData.append("service mesos-master stop\n");
+            
             // configure zk
             slaveUserData.append("echo zk://").append(masterIp).append(":2181/mesos > /etc/mesos/zk\n");
             //configure mesos-slave
             slaveUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
             slaveUserData.append("echo mesos,docker > /etc/mesos-slave/containerizers\n");
             slaveUserData.append("echo false > /etc/mesos-slave/switch_user\n");
-            slaveUserData.append("service mesos-slave restart\n");
-        } else {
-            slaveUserData.append("service mesos-slave stop\n");
-            slaveUserData.append("service mesos-master stop\n");
-            slaveUserData.append("service zookeeper stop\n");
-        }
+            // start mesos-slave
+            slaveUserData.append("service mesos-slave start\n");
+        } 
 
         slaveUserData.append("/usr/bin/curl http://169.254.169.254/latest/meta-data/local-ipv4 -w '\\n'>> /vol/spool/slaves.finished \n");
         switch (cfg.getMode()) {
@@ -396,8 +391,8 @@ public class UserDataCreator {
             masterUserData.append("chown -R hadoop:hadoop /vol/scratch/hdfs\n");
             masterUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
             // @ToDo: Update configuration
-            masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs namenode
-            masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs datanode
+            //masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs namenode
+            //masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs datanode
         }
         
         
@@ -405,11 +400,13 @@ public class UserDataCreator {
         /*
          * OGE Block
          */
-        masterUserData.append("service gridengine-master stop\n");
         if (cfg.isOge()) {
             masterUserData.append("curl http://169.254.169.254/latest/meta-data/local-ipv4 > /var/lib/gridengine/default/common/act_qmaster\n");
             masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
             masterUserData.append("service gridengine-master start\n");
+            if (cfg.isUseMasterAsCompute()) {
+                masterUserData.append("service gridengine-slave start\n");
+            }
         }
         
 
@@ -417,15 +414,14 @@ public class UserDataCreator {
          * Mesos Block
          */
         if (cfg.isMesos()) {
-            // stop master & slave for Reconfigauation
-            masterUserData.append("service mesos-slave stop\n");
-            masterUserData.append("service mesos-master stop\n");
             // configure mesos master
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
             masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
             masterUserData.append("echo bibigrid > /etc/mesos-master/cluster\n");
             masterUserData.append("curl http://169.254.169.254/latest/meta-data/local-ipv4 > /etc/mesos-master/ip\n");
-            masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir\n");          
+            masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir\n");
+            masterUserData.append("echo zk://`curl http://169.254.169.254/latest/meta-data/local-ipv4`:2181/mesos > /etc/mesos/zk\n");
+            masterUserData.append("service zookeeper start\n");
             masterUserData.append("service mesos-master start\n");
             if (cfg.isUseMasterAsCompute()) {
                 //configure mesos-slave
@@ -434,13 +430,7 @@ public class UserDataCreator {
                 masterUserData.append("echo false > /etc/mesos-slave/switch_user\n");
                 masterUserData.append("service mesos-slave start\n");
             }
-        } else {
-            // shutdown possible running mesos components
-            masterUserData.append("service zookeeper stop\n");
-            masterUserData.append("service mesos-slave stop\n");
-            masterUserData.append("service chronos stop\n");
-            masterUserData.append("service mesos-master stop\n");
-        }
+        } 
 
         /*
          * NFS//Mounts Block
