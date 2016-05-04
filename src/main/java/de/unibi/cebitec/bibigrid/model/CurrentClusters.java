@@ -220,6 +220,8 @@ public class CurrentClusters {
             // check if instance is a BiBiGrid instance and extract clusterid from it
             String name = serv.getName();
             
+   
+            
             if (name != null && (name.startsWith("bibigrid-master-") || name.startsWith("bibigrid-slave-"))) {
                 String [] t = name.split("-");
                 String clusterid = t[t.length-1]; 
@@ -228,6 +230,7 @@ public class CurrentClusters {
                     cluster = clustermap.get(clusterid);
                 } else {
                     cluster = new Cluster();
+                    cluster.setUser(serv.getMetadata().getOrDefault("user", "unknown"));
                     clustermap.put(clusterid, cluster);
                 }
                 // master / slave

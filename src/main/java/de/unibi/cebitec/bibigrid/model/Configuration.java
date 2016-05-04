@@ -39,7 +39,7 @@ public class Configuration {
     private boolean oge = true;
     private boolean hdfs = false;
 
-    private String user;
+    private String user = System.getProperty("user.name");
     
     /* AWS related Configuration options */
     private double bidPrice, bidPriceMaster;

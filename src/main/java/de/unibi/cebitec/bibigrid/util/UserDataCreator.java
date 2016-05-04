@@ -14,9 +14,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Creates UserData for master and slave instances.
- * 
- * 
- * @author jkrueger(at)cebitec.uni-bielefeld.de, alueckne(at)cebitec.uni-bielefeld.de
+ *
+ *
+ * @author jkrueger(at)cebitec.uni-bielefeld.de,
+ * alueckne(at)cebitec.uni-bielefeld.de
  */
 public class UserDataCreator {
 
@@ -36,51 +37,52 @@ public class UserDataCreator {
      * @param slaveDeviceMapper
      * @param cfg
      * @param keypair
-
+     *
      * @return
      */
-    public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg,KEYPAIR keypair) {
+    public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg, KEYPAIR keypair) {
         StringBuilder slaveUserData = new StringBuilder();
 
-        slaveUserData.append("#!/bin/sh\n");
-        //slaveUserData.append("sleep 5\n");
-        
+        slaveUserData.append("#!/bin/bash\n");
+        slaveUserData.append("exec > /var/log/userdata.log\n")
+                .append("exec 2>&1\n");
+        /* append additional service check fct */
+        shellFct(slaveUserData);
+
+        /* Save currentIP as env var */
+        slaveUserData.append("CURRENT_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+
         /* "Hack" for CeBiTec OpenStack setup - set hostname */
         if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
             updateHostname(slaveUserData);
         }
-        
+
         slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
-        
-        slaveUserData.append("mkdir -p /vol/spool/\n");
+
+        slaveUserData.append("mkdir -p /vol/spool/log\n");
         slaveUserData.append("mkdir -p /vol/scratch/\n");
-       
+
         /*
          * GridEngine Block
          */
         if (cfg.isOge()) {
             slaveUserData.append("echo ").append(masterIp).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
-            slaveUserData.append("pid=`ps acx | grep sge_execd | cut -c1-6`\n");
-            slaveUserData.append("if [ -n $pid ]; then\n");
-            slaveUserData.append("        kill $pid;\n");
-            slaveUserData.append("fi;\n");
-            slaveUserData.append("sleep 1\n");
-            slaveUserData.append("while test $(ps acx | grep sge_execd | wc -l) -eq 0; do\n");
-            slaveUserData.append("        service gridengine-exec start\n");
-            slaveUserData.append("        sleep 35\n");
-            slaveUserData.append("done\n");
-        } 
+            // test for sge_master available
+            slaveUserData.append("check ").append(masterIp).append(" 6444\n");
+            // start sge_exed 
+            slaveUserData.append("wait_for_process sge_execd 10 \"service gridengine-exec start\"\n");
+            slaveUserData.append("log 'sge_execd started'\n");
+        }
 
         /*
          * Ganglia service monitor
          */
         slaveUserData.append("sed -i s/MASTER_IP/").append(masterIp).append("/g /etc/ganglia/gmond.conf\n");
         slaveUserData.append("service ganglia-monitor restart \n");
-
-       
+        slaveUserData.append("log 'ganglia configured and started'\n");
 
         int ephemeralamount = cfg.getSlaveInstanceType().getSpec().ephemerals;
 
@@ -97,27 +99,28 @@ public class UserDataCreator {
                 break;
         }
 
-        if (ephemeralamount  == 1) {
+        if (ephemeralamount == 1) {
             slaveUserData.append("umount /mnt\n");
             switch (cfg.getLocalFS()) {
-                case EXT2 : {
+                case EXT2: {
                     slaveUserData.append("mkfs.ext2 ").append(blockDeviceBase).append("b\n");
                     break;
                 }
-                case EXT3 : {
+                case EXT3: {
                     slaveUserData.append("mkfs.ext3 ").append(blockDeviceBase).append("b\n");
                     break;
                 }
-                case EXT4 : {
+                case EXT4: {
                     slaveUserData.append("mkfs.ext4 ").append(blockDeviceBase).append("b\n");
-                    break;    
+                    break;
                 }
-                default : {
-                    slaveUserData.append("mkfs.xfs -f /").append(blockDeviceBase).append("b\n");           
+                default: {
+                    slaveUserData.append("mkfs.xfs -f /").append(blockDeviceBase).append("b\n");
                 }
-            }       
+            }
             slaveUserData.append("mount ").append(blockDeviceBase).append("b /vol/scratch\n");
-            
+            slaveUserData.append("log 'ephemeral configured'\n");
+
         } else if (ephemeralamount >= 2) {
             // if 2 or more ephemerals are available use all of them in a RAID 0 system
             slaveUserData.append("umount /mnt\n");
@@ -135,74 +138,83 @@ public class UserDataCreator {
 
             slaveUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
             slaveUserData.append("blockdev --setra 65536 /dev/md0\n");
-            
+
             switch (cfg.getLocalFS()) {
-                case EXT2 : {
+                case EXT2: {
                     slaveUserData.append("mkfs.ext2 /dev/md0\n");
                     slaveUserData.append("mount -t ext2 -o noatime /dev/md0 /vol/scratch\n");
                     break;
                 }
-                case EXT3 : {
+                case EXT3: {
                     slaveUserData.append("mkfs.ext3 /dev/md0\n");
                     slaveUserData.append("mount -t ext3 -o noatime /dev/md0 /vol/scratch\n");
                     break;
                 }
-                case EXT4 : {
+                case EXT4: {
                     slaveUserData.append("mkfs.ext4 /dev/md0\n");
                     slaveUserData.append("mount -t ext4 -o noatime /dev/md0 /vol/scratch\n");
-                    break;    
+                    break;
                 }
-                default : {
+                default: {
                     slaveUserData.append("mkfs.xfs -f /dev/md0\n");
                     slaveUserData.append("mount -t xfs -o noatime /dev/md0 /vol/scratch\n");
                 }
             }
+            slaveUserData.append("log 'ephemerals configured'\n");
         }
-        
+
         slaveUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
         slaveUserData.append("chmod -R 777 /vol/scratch \n");
-        
-        
-         /*
+
+        /*
          * Cassandra Block
          */
         if (cfg.isCassandra()) {
-            
+
             slaveUserData.append("mkdir /vol/scratch/cassandra\n");
             slaveUserData.append("mkdir /vol/scratch/cassandra/commitlog\n");
             slaveUserData.append("mkdir /vol/scratch/cassandra/data\n");
             slaveUserData.append("mkdir /vol/scratch/cassandra/saved_caches\n");
             slaveUserData.append("chown cassandra:cassandra -R /vol/scratch/cassandra\n");
-            slaveUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            slaveUserData.append("sed -i s/##PRIVATE_IP##/${CURRENT_IP}/g /opt/cassandra/conf/cassandra.yaml\n");
             slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /opt/cassandra/conf/cassandra.yaml\n");
             // slaveUserData.append("service cassandra start\n"); --> start cassandra database as daemon process
+            slaveUserData.append("log 'Cassandra configured and started'\n");
 
         }
-        
+
         /*
          * HDFS Block
          */
         if (cfg.isHdfs()) {
             slaveUserData.append("mkdir /vol/scratch/hadoop\n");
             slaveUserData.append("chown hadoop:hadoop -R /vol/scratch/hadoop\n");
-            
-            
+
+            slaveUserData.append("log \"hdfs configured and started\"\n");
         }
-        
+
         /*
          * NFS//Mount Block
          */
-
         slaveUserData.append("chown ubuntu:ubuntu /vol/ \n");
         if (cfg.isNfs()) {
+            // wait for NFS server is ready and available
+            slaveUserData.append("check ").append(masterIp).append(" 2049\n");
+
             slaveUserData.append(
                     "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
 
             for (String e
                     : slaveDeviceMapper.getSnapshotIdToMountPoint()
                     .keySet()) {
-                slaveUserData.append("mkdir -p ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-                slaveUserData.append("mount ").append(slaveDeviceMapper.getRealDeviceNameforMountPoint(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
+                slaveUserData.append("mkdir -p ")
+                        .append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))
+                        .append("\n");
+                slaveUserData.append("mount ")
+                        .append(slaveDeviceMapper.getRealDeviceNameforMountPoint(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)))
+                        .append(" ")
+                        .append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))
+                        .append("\n");
             }
             List<String> slaveNfsMounts = cfg.getNfsShares();
 
@@ -212,9 +224,11 @@ public class UserDataCreator {
                     slaveUserData.append("mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":").append(share).append(" ").append(share).append("\n");
                 }
             }
+            slaveUserData.append("log \"nfs configured\"\n");
         }
         /**
-         * route all traffic to master-instance (inet access) if slaves not configured with public ip address
+         * route all traffic to master-instance (inet access) if slaves not
+         * configured with public ip address
          */
         switch (cfg.getMode()) {
             case AWS:
@@ -223,7 +237,7 @@ public class UserDataCreator {
                     slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
                 }
                 break;
-            case OPENSTACK:             
+            case OPENSTACK:
                 break;
         }
 
@@ -231,9 +245,8 @@ public class UserDataCreator {
         /* 
          * Mesos Block
          */
-        
         if (cfg.isMesos()) {
-            
+
             // configure zk
             slaveUserData.append("echo zk://").append(masterIp).append(":2181/mesos > /etc/mesos/zk\n");
             //configure mesos-slave
@@ -242,9 +255,11 @@ public class UserDataCreator {
             slaveUserData.append("echo false > /etc/mesos-slave/switch_user\n");
             // start mesos-slave
             slaveUserData.append("service mesos-slave start\n");
-        } 
+            slaveUserData.append("log \"mesos slave configured and started\"\n");
+        }
 
-        slaveUserData.append("/usr/bin/curl http://169.254.169.254/latest/meta-data/local-ipv4 -w '\\n'>> /vol/spool/slaves.finished \n");
+        slaveUserData.append("cp /var/log/userdata.log /vol/spool/log/SLAVE_${CURRENT_IP}.log \n");
+        slaveUserData.append("exit 0\n");
         switch (cfg.getMode()) {
             case AWS:
                 return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
@@ -275,19 +290,23 @@ public class UserDataCreator {
 
         int ephemeralamount = cfg.getMasterInstanceType().getSpec().ephemerals;
         List<String> masterNfsShares = cfg.getNfsShares();
-        masterUserData.append("#!/bin/sh\n").append("sleep 5\n");
-
-        masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
-        masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
-        masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
-        masterUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
+        masterUserData.append("#!/bin/bash\n");
+        masterUserData.append("exec > /var/log/userdata.log\n")
+                .append("exec 2>&1\n");
+        masterUserData.append("echo 'MasterUserData executed!'\n");
         
+        /* append additional shell fct */
+        shellFct(masterUserData);
 
         /* "Hack" for CeBiTec OpenStack setup - set hostname */
         if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
             updateHostname(masterUserData);
         }
 
+        masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
+        masterUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
 
         /*
          * Ephemeral/RAID Preperation
@@ -305,23 +324,24 @@ public class UserDataCreator {
         if (ephemeralamount == 1) {
             masterUserData.append("umount /mnt\n"); // 
             switch (cfg.getLocalFS()) {
-                case EXT2 : {
+                case EXT2: {
                     masterUserData.append("mkfs.ext2 ").append(blockDeviceBase).append("b\n");
                     break;
                 }
-                case EXT3 : {
+                case EXT3: {
                     masterUserData.append("mkfs.ext3 ").append(blockDeviceBase).append("b\n");
                     break;
                 }
-                case EXT4 : {
+                case EXT4: {
                     masterUserData.append("mkfs.ext4 ").append(blockDeviceBase).append("b\n");
-                    break;    
+                    break;
                 }
-                default : {
-                    masterUserData.append("mkfs.xfs -f /").append(blockDeviceBase).append("b\n");           
+                default: {
+                    masterUserData.append("mkfs.xfs -f /").append(blockDeviceBase).append("b\n");
                 }
             }
             masterUserData.append("mount ").append(blockDeviceBase).append("b /vol/\n");
+            masterUserData.append("log \"ephemeral configured\"\n");
         } else if (ephemeralamount >= 2) {
             masterUserData.append("umount /mnt\n");
             // if 2 or more ephemerals are available use all of them in a RAID 0 system
@@ -338,39 +358,37 @@ public class UserDataCreator {
             masterUserData.append("mdadm --detail --scan >> /etc/mdadm.conf\n");
             masterUserData.append("blockdev --setra 65536 /dev/md0\n");
             switch (cfg.getLocalFS()) {
-                case EXT2 : {
+                case EXT2: {
                     masterUserData.append("mkfs.ext2 -f /dev/md0\n");
                     masterUserData.append("mount -t ext2 -o noatime /dev/md0 /vol/\n");
                     break;
                 }
-                case EXT3 : {
+                case EXT3: {
                     masterUserData.append("mkfs.ext3 -f /dev/md0\n");
                     masterUserData.append("mount -t ext3 -o noatime /dev/md0 /vol/\n");
                     break;
                 }
-                case EXT4 : {
+                case EXT4: {
                     masterUserData.append("mkfs.ext4 -f /dev/md0\n");
                     masterUserData.append("mount -t ext4 -o noatime /dev/md0 /vol/\n");
-                    break;    
+                    break;
                 }
-                default : {
+                default: {
                     masterUserData.append("mkfs.xfs -f /dev/md0\n");
                     masterUserData.append("mount -t xfs -o noatime /dev/md0 /vol/\n");
                 }
             }
-            
+            masterUserData.append("log \"ephemerals configured\"\n");
         }
 
         /*
-         * create spool and scratch
+         * create spool, scratch, log
          */
-        masterUserData.append("mkdir -p /vol/spool/\n");
-        masterUserData.append("chmod 777 /vol/spool/\n");
+        masterUserData.append("mkdir -p /vol/spool/log\n");
         masterUserData.append("mkdir -p /vol/scratch/\n");
-        masterUserData.append("chown ubuntu:ubuntu /vol/ \n");
-        masterUserData.append("chown ubuntu:ubuntu /vol/scratch \n");
+        masterUserData.append("chown -R ubuntu:ubuntu /vol/\n");
         masterUserData.append("chmod -R 777 /vol/\n");
-        
+
         /*
          * Cassandra Bloock
          */
@@ -378,11 +396,12 @@ public class UserDataCreator {
             masterUserData.append("mkdir -p /vol/scratch/cassandra\n");
             masterUserData.append("chown -R cassandra:cassandra /vol/scratch/cassandra\n");
             masterUserData.append("chmod -R 777 /vol/scratch/cassandra\n");
-            masterUserData.append("sed -i s/##MASTER_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
-            masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl http://instance-data/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            masterUserData.append("sed -i s/##MASTER_IP##/$(curl -sS http://169.254.169.254/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl -sS http://169.254.169.254/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
             masterUserData.append("service cassandra start\n"); // @ToDo : this will not work with latest version
+            masterUserData.append("log \"cassandra configured and started\"\n");
         }
-        
+
         /*
          * HDFS Block
          */
@@ -393,22 +412,23 @@ public class UserDataCreator {
             // @ToDo: Update configuration
             //masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs namenode
             //masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs datanode
+            masterUserData.append("log \"hdfs configured - nn/dn started\"\n");
         }
-        
-        
-        
+
         /*
          * OGE Block
          */
         if (cfg.isOge()) {
-            masterUserData.append("curl http://169.254.169.254/latest/meta-data/local-ipv4 > /var/lib/gridengine/default/common/act_qmaster\n");
+            masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 > /var/lib/gridengine/default/common/act_qmaster\n");
             masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
             masterUserData.append("service gridengine-master start\n");
-            if (cfg.isUseMasterAsCompute()) {
-                masterUserData.append("service gridengine-slave start\n");
-            }
+            masterUserData.append("log \"gridengine-master configured and started\"\n");
+            /*if (cfg.isUseMasterAsCompute()) {
+                masterUserData.append("service gridengine-exec start\n");
+                masterUserData.append("log \"gridengine-execd started\"\n");
+            } */ //-> moved to SSHFactory
         }
-        
+
 
         /* 
          * Mesos Block
@@ -421,24 +441,25 @@ public class UserDataCreator {
             masterUserData.append("curl http://169.254.169.254/latest/meta-data/local-ipv4 > /etc/mesos-master/ip\n");
             masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir\n");
             masterUserData.append("echo zk://`curl http://169.254.169.254/latest/meta-data/local-ipv4`:2181/mesos > /etc/mesos/zk\n");
-            masterUserData.append("service zookeeper start\n");
             masterUserData.append("service mesos-master start\n");
+            masterUserData.append("log \"mesos-master configured and started\"\n");
             if (cfg.isUseMasterAsCompute()) {
                 //configure mesos-slave
                 masterUserData.append("echo /vol/spool/mesos > /etc/mesos-slave/work_dir\n");
                 masterUserData.append("echo mesos,docker > /etc/mesos-slave/containerizers\n");
                 masterUserData.append("echo false > /etc/mesos-slave/switch_user\n");
                 masterUserData.append("service mesos-slave start\n");
+                masterUserData.append("log \"mesos-slave configured and started\"\n");
             }
-        } 
+        }
 
         /*
          * NFS//Mounts Block
          */
         if (cfg.isNfs()) {
             // export spool dir
-            masterUserData.append("ipbase=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
-            masterUserData.append("echo \"/vol/spool/ $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
+            masterUserData.append("ipbase=`curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
+            masterUserData.append("echo \"/vol/spool/ ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
 
             if (masterDeviceMapper != null) {
                 for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
@@ -448,24 +469,25 @@ public class UserDataCreator {
                 for (String mastershare : masterNfsShares) {
                     masterUserData.append("mkdir -p ").append(mastershare).append("\n");
                     masterUserData.append("chmod 777 ").append(mastershare).append("\n");
-                    masterUserData.append("echo \"").append(mastershare).append(" $ipbase.0/24(rw,nohide,insecure,no_subtree_check,async)\">> /etc/exports\n");
+                    masterUserData.append("echo \"").append(mastershare).append(" ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\">> /etc/exports\n");
                 }
                 masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
+                masterUserData.append("log \"NFS Server configured and restarted\"\n");
             } else {
                 log.error("MasterDeviceMapper is null ...");
             }
         }
         /**
-         * Enabling nat functions of master-instance (slave inet access) if slaves configured without public ip address
-         * WARNING! 10.10.0.0 is a hardcoded SUBNET-proto...ensure generic
-         * access later.
+         * Enabling nat functions of master-instance (slave inet access) if
+         * slaves configured without public ip address WARNING! 10.10.0.0 is a
+         * hardcoded SUBNET-proto...ensure generic access later.
          */
 
         switch (cfg.getMode()) {
             case AWS:
                 if (!cfg.isPublicSlaveIps()) {
                     masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
-                        + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE\n");
+                            + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE\n");
                 }
                 break;
             case OPENSTACK:
@@ -485,13 +507,16 @@ public class UserDataCreator {
                     log.info("Early shell script file too large  (base64 encoded size exceeds 10000 chars)");
                 } else {
                     masterUserData.append("echo ").append(base64).append(" | base64 --decode  | sudo -u ubuntu bash - 2>&1 >> /var/log/earlyshellscript.log &\n");
+                    masterUserData.append("log \"earlyshellscript executed\"\n");
                 }
 
             } catch (IOException e) {
                 log.info("Early shell script could not be read.");
             }
         }
-        masterUserData.append("touch /vol/spool/masteruserdata.finished \n");
+        masterUserData.append("log \"userdata.finished\"\n");
+        masterUserData.append("cp /var/log/userdata.log /vol/spool/log/master.log\n");
+        masterUserData.append("exit 0\n");
 
         switch (cfg.getMode()) {
             case AWS:
@@ -504,11 +529,33 @@ public class UserDataCreator {
     private static char ephemeral(int i) {
         return (char) (i + 98);
     }
-    
-    
-    private static void updateHostname(StringBuilder sb) {
-        sb.append("t=`curl http://169.254.169.254/latest/meta-data/local-ipv4 | sed 's/\\./-/g'`\n");
-        sb.append("hostname host-$t\n");
-        
+
+    public static void updateHostname(StringBuilder sb) {
+        sb.append("t=`curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 | sed 's/\\./-/g'`\n");
+        sb.append("sudo hostname host-$t 2> /dev/null\n");
+    }
+
+
+
+    public static void shellFct(StringBuilder sb) {
+        sb.append("function log { date +\"%x %R:%S - ${1}\";}\n");
+        sb.append("function check {\n")
+                .append("\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
+                .append("\twhile test $? -eq 1; do\n")
+                .append("\t\tlog \"wait for service at ${1}:${2}\"\n")
+                .append("\t\tsleep 2\n")
+                .append("\t\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
+                .append("\tdone\n")
+                .append("}\n");
+
+        sb.append("function wait_for_process {\n")
+                .append("\twhile [ $(ps -e | grep ${1} | wc -l) != '1' ]; do\n")
+                .append("\t\t${3}\n")
+                .append("\t\tlog \"wait for process ${1}\"\n")
+                .append("\t\tsleep ${2}\n")
+                .append("\t\tlog \"$(ps -e | grep ${1})\"\n")
+                .append("\tdone;\n")
+                .append("}\n");
+
     }
 }

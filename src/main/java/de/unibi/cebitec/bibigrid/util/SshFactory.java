@@ -98,7 +98,7 @@ public class SshFactory {
                 sb.append(" ");
                 sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
                 sb.append("\n");
-                sb.append("sudo service gridengine-exec start\n");
+                //sb.append("sudo service gridengine-exec start\n");
             }
             if (slaveInstances != null) {
                 for (Instance instance : slaveInstances) {
@@ -110,7 +110,7 @@ public class SshFactory {
                 }
             }
         } else {
-            sb.append("sudo service gridengine-master stop\n");
+            //sb.append("sudo service gridengine-master stop\n");
         }
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
@@ -120,7 +120,11 @@ public class SshFactory {
 
     public static String buildSshCommandOpenstack(String asGroupName, Configuration cfg, CreateClusterOpenstack.Instance master, List<CreateClusterOpenstack.Instance> slaves) {
         StringBuilder sb = new StringBuilder();
-
+        
+        UserDataCreator.updateHostname(sb);
+        UserDataCreator.shellFct(sb);
+        
+        
         sb.append("sudo sed -i s/MASTER_IP/").append(master.getIp()).append("/g /etc/ganglia/gmond.conf\n");
 
         if (cfg.getShellScriptFile() != null) {
@@ -139,22 +143,19 @@ public class SshFactory {
             }
         }
         if (cfg.isOge()) {
-            sb.append("sleep 30\n"); // we have to wait until all childs are available ...            
+            // wait for sge_master started
+            sb.append("check ").append(master.getIp()).append(" 6444\n");
+            // configure submit host
             sb.append("qconf -as ").append(master.getIp()).append("\n");
+            // add master as exec host  if set and start execd
             if (cfg.isUseMasterAsCompute()) {
-                sb.append("./add_exec ");
-                sb.append(master.getIp());
-                sb.append(" ");
-                sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
-                sb.append("\n");
+                sb.append("./add_exec ").append(master.getIp()).append(" ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append("\n");
                 sb.append("sudo service gridengine-exec start\n");
+                
             }
-            for (CreateClusterOpenstack.Instance slave : slaves) {
-                sb.append("./add_exec ");
-                sb.append(slave.getIp());
-                sb.append(" ");
-                sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
-                sb.append("\n");
+            // add slaves as exec hosts
+            for (CreateClusterOpenstack.Instance slave : slaves) {              
+                sb.append("./add_exec ").append(slave.getIp()).append(" ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append("\n");
             }
         }
         sb.append("sudo service gmetad restart \n");
@@ -162,4 +163,6 @@ public class SshFactory {
         sb.append("echo CONFIGURATION_FINISHED \n");
         return sb.toString();
     }
+    
+
 }
