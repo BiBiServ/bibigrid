@@ -255,13 +255,13 @@ public class CommandLineValidator {
 
             ////////////////////////////////////////////////////////////////////////
             ///// cassandra on/off /////////////////////////////////////////////////
-            if (this.cl.hasOption("db")) {
-                this.cfg.setCassandra(true);
+            if (cl.hasOption("db")) {
+                cfg.setCassandra(true);
                 log.info(V, "Cassandra support enabled.");
             } else if (defaults.containsKey("cassandra")) {
                 String value = defaults.getProperty("cassandra");
                 if (value.equalsIgnoreCase("yes")) {
-                    this.cfg.setCassandra(true);
+                    cfg.setCassandra(true);
                     log.info(V, "Cassandra support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
                     log.info(V, "Cassandra support disabled.");

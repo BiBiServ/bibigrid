@@ -77,6 +77,9 @@ public class Configuration {
 
     public void setCassandra(boolean cassandra) {
         this.cassandra = cassandra;
+        if (cassandra) {
+            nfs = true;
+        }
     }
 
     public boolean isUseMasterAsCompute() {
@@ -350,6 +353,9 @@ public class Configuration {
 
     public void setHdfs(boolean hdfs) {
         this.hdfs = hdfs;
+         if (hdfs) {
+            nfs = true;
+        }
     }
     
     

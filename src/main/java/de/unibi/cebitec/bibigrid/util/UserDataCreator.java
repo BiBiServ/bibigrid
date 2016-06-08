@@ -183,15 +183,7 @@ public class UserDataCreator {
 
         }
 
-        /*
-         * HDFS Block
-         */
-        if (cfg.isHdfs()) {
-            slaveUserData.append("mkdir /vol/scratch/hadoop\n");
-            slaveUserData.append("chown hadoop:hadoop -R /vol/scratch/hadoop\n");
 
-            slaveUserData.append("log \"hdfs configured and started\"\n");
-        }
 
         /*
          * NFS//Mount Block
@@ -203,6 +195,9 @@ public class UserDataCreator {
 
             slaveUserData.append(
                     "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
+            slaveUserData.append(
+                    "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/opt/ /opt/\n");
+        
 
             for (String e
                     : slaveDeviceMapper.getSnapshotIdToMountPoint()
@@ -225,6 +220,17 @@ public class UserDataCreator {
                 }
             }
             slaveUserData.append("log \"nfs configured\"\n");
+            
+        /*
+         * HDFS Block
+         */
+        if (cfg.isHdfs()) {
+            slaveUserData.append("mkdir -p /vol/scratch/hadoop/dn\n");
+            slaveUserData.append("chown -R hadoop:hadoop /vol/scratch/hadoop\n");
+            slaveUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
+            slaveUserData.append("log \"hdfs configured and started\"\n");
+        }
+            
         }
         /**
          * route all traffic to master-instance (inet access) if slaves not
@@ -406,12 +412,10 @@ public class UserDataCreator {
          * HDFS Block
          */
         if (cfg.isHdfs()) {
-            masterUserData.append("mkdir -p /vol/scratch/hadoop\n");
-            masterUserData.append("chown -R hadoop:hadoop /vol/scratch/hdfs\n");
+            masterUserData.append("mkdir -p /vol/scratch/hadoop/nn\n");
+            masterUserData.append("mkdir -p /vol/scratch/hadoop/dn\n");
+            masterUserData.append("chown -R hadoop:hadoop /vol/scratch/hadoop\n");
             masterUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
-            // @ToDo: Update configuration
-            //masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs namenode
-            //masterUserData.append("service hdfs start\n"); // @ToDo: start hdfs datanode
             masterUserData.append("log \"hdfs configured - nn/dn started\"\n");
         }
 
@@ -423,10 +427,6 @@ public class UserDataCreator {
             masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
             masterUserData.append("service gridengine-master start\n");
             masterUserData.append("log \"gridengine-master configured and started\"\n");
-            /*if (cfg.isUseMasterAsCompute()) {
-                masterUserData.append("service gridengine-exec start\n");
-                masterUserData.append("log \"gridengine-execd started\"\n");
-            } */ //-> moved to SSHFactory
         }
 
 
@@ -457,9 +457,13 @@ public class UserDataCreator {
          * NFS//Mounts Block
          */
         if (cfg.isNfs()) {
-            // export spool dir
+            
             masterUserData.append("ipbase=`curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
+            // export spool dir
             masterUserData.append("echo \"/vol/spool/ ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
+            // export opt dir
+            masterUserData.append("echo \"/opt/ ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
+            
 
             if (masterDeviceMapper != null) {
                 for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
@@ -471,7 +475,7 @@ public class UserDataCreator {
                     masterUserData.append("chmod 777 ").append(mastershare).append("\n");
                     masterUserData.append("echo \"").append(mastershare).append(" ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\">> /etc/exports\n");
                 }
-                masterUserData.append("/etc/init.d/nfs-kernel-server restart\n");
+                masterUserData.append("service nfs-kernel-server restart\n");
                 masterUserData.append("log \"NFS Server configured and restarted\"\n");
             } else {
                 log.error("MasterDeviceMapper is null ...");

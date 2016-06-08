@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,18 +145,27 @@ public class SshFactory {
             // wait for sge_master started
             sb.append("check ").append(master.getIp()).append(" 6444\n");
             // configure submit host
-            sb.append("qconf -as ").append(master.getIp()).append("\n");
+            sb.append("qconf -as ").append(master.getIp()).append(" 2>&1\n");
             // add master as exec host  if set and start execd
             if (cfg.isUseMasterAsCompute()) {
-                sb.append("./add_exec ").append(master.getIp()).append(" ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append("\n");
+                sb.append("./add_exec ").append(master.getIp()).append(" ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
                 sb.append("sudo service gridengine-exec start\n");
                 
             }
             // add slaves as exec hosts
             for (CreateClusterOpenstack.Instance slave : slaves) {              
-                sb.append("./add_exec ").append(slave.getIp()).append(" ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append("\n");
+                sb.append("./add_exec ").append(slave.getIp()).append(" ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
             }
         }
+        
+        if (cfg.isHdfs()) {
+            for (CreateClusterOpenstack.Instance slave : slaves) {
+                sb.append("echo ").append(slave.getIp()).append(" >> /opt/hadoop/etc/hadoop/slaves\n");
+            }
+            sb.append("/opt/hadoop/sbin/start-dfs.sh\n");
+            
+        }
+        
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
         sb.append("echo CONFIGURATION_FINISHED \n");
