@@ -22,10 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.jclouds.openstack.nova.v2_0.NovaApi;
-import org.jclouds.openstack.nova.v2_0.domain.Server;
-import org.jclouds.openstack.nova.v2_0.extensions.SecurityGroupApi;
-import org.jclouds.openstack.nova.v2_0.features.ServerApi;
+import org.openstack4j.api.OSClient;
+import org.openstack4j.model.compute.SecGroupExtension;
+import org.openstack4j.model.compute.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -204,19 +203,19 @@ public class CurrentClusters {
 
     /**
      *
-     * @param novaApi OpenStack
+     * @param os OpenStack
      */
-    public CurrentClusters(NovaApi novaApi, Configuration conf) {
+    public CurrentClusters(OSClient os, Configuration conf) {
         String keypairName = conf.getKeypair();
-        ServerApi s = novaApi.getServerApi(conf.getRegion());
-        SecurityGroupApi sec= novaApi.getSecurityGroupApi(conf.getRegion()).get();
+//        ServerApi s = os.getServerApi(conf.getRegion());
+//        SecurityGroupApi sec= os.getSecurityGroupApi(conf.getRegion()).get();
 
         Cluster cluster;
 
         /*
          * Instances
          */
-        for (Server serv : s.listInDetail().concat()) {
+        for (Server serv : os.compute().servers().list()) {
             // check if instance is a BiBiGrid instance and extract clusterid from it
             String name = serv.getName();
             
@@ -247,7 +246,7 @@ public class CurrentClusters {
         /*
          * Security Group
         */
-        for (org.jclouds.openstack.nova.v2_0.domain.SecurityGroup sg : sec.list()) {
+        for (SecGroupExtension sg : os.compute().securityGroups().list()) {
             for (String clusterid : clustermap.keySet()) {
                 if (sg.getName().contains(clusterid)) {
                     clustermap.get(clusterid).setSecuritygroup(sg.getId());
