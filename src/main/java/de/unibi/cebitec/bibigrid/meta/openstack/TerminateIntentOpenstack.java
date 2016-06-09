@@ -20,6 +20,8 @@ import org.jclouds.ContextBuilder;
 import org.jclouds.http.HttpResponseException;
 
 import org.jclouds.sshj.config.SshjSshClientModule;
+import org.openstack4j.api.compute.ComputeSecurityGroupService;
+import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.compute.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,15 +53,16 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
             log.info("Terminating cluster with ID: {}", conf.getClusterId());
             List<Server> l = getServers(conf.getClusterId());
             for (Server serv : l) {
-                s.delete(serv.getId());
+                os.compute().servers().delete(serv.getId());
                 log.info("Terminated " + serv.getName());
             }
             /**
              * For deleting a SecurityGroup you first have to delete all its
              * rule and then delete the sg itself.
              */
-            SecurityGroupApi sgApi = novaClient.getSecurityGroupApi(os_region).get();
-            for (SecurityGroup securityGroup : sgApi.list()) {
+            ComputeSecurityGroupService securityGroups = os.compute().securityGroups();
+
+            for (SecGroupExtension securityGroup : securityGroups.list()) {
                 if (securityGroup.getName().equals("sg-" + conf.getClusterId().trim())) {
 
 //                    for (SecurityGroupRule rule : securityGroup.getRules()) {
@@ -69,7 +72,7 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                     while (true) {
                         try {
                             Thread.sleep(1000);
-                            sgApi.delete(securityGroup.getId()); // delete whole sg
+                            securityGroups.delete(securityGroup.getId()); // delete whole sg
                             break;
                         } catch (InterruptedException ex) {
                             java.util.logging.Logger.getLogger(TerminateIntentOpenstack.class.getName()).log(Level.SEVERE, null, ex);
@@ -88,29 +91,32 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
             }
             log.info("Cluster (ID: {}) successfully terminated", conf.getClusterId().trim());
             return true;
-        } else {
-            /**
-             * ... maybe this?
-             */
-            CurrentClusters cc = new CurrentClusters(novaClient, conf);
-            Map<String, Cluster> clusters = cc.getClusterMap();
-            Cluster c = null;
-            for (String id : clusters.keySet()) {
-                if (id.contains(conf.getKeypair())) {
-                    c = clusters.get(id);
-                    break;
-                }
-            }
-
-            for (String slave : c.getSlaveinstances()) {
-                s.delete(slave);
-                log.info("Deleted Slave-Instance (ID: {})", slave);
-            }
-
-            s.delete(c.getMasterinstance());
-            log.info("Deleted Master-Instance (ID: {})", c.getMasterinstance());
-            return true;
+//        } 
+//        else {
+//            /**
+//             * ... maybe this?
+//             */
+//            CurrentClusters cc = new CurrentClusters(os, conf);
+//            Map<String, Cluster> clusters = cc.getClusterMap();
+//            Cluster c = null;
+//            for (String id : clusters.keySet()) {
+//                if (id.contains(conf.getKeypair())) {
+//                    c = clusters.get(id);
+//                    break;
+//                }
+//            }
+//
+//            for (String slave : c.getSlaveinstances()) {
+//                os..delete(slave);
+//                log.info("Deleted Slave-Instance (ID: {})", slave);
+//            }
+//
+//            s.delete(c.getMasterinstance());
+//            log.info("Deleted Master-Instance (ID: {})", c.getMasterinstance());
+//            return true;
+//        }
         }
+        return false;
     }
 
     private List<Server> getServers(String clusterID) {
@@ -129,7 +135,5 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
         }
         return ret;
     }
-
-
 
 }
