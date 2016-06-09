@@ -77,7 +77,7 @@ public class CreateClusterEnvironmentOpenstack
         //ComputeSecurityGroupService csgs = cluster.getOs().compute().securityGroups();
         SecurityGroupService sgs = cluster.getOs().networking().securitygroup();
         sg = sgs.create(Builders.securityGroup()
-                .id("sg-" + cluster.getClusterId())
+                .name("sg-" + cluster.getClusterId())
                 .description("Security Group for cluster: " + cluster.getClusterId())
                 .build());
 

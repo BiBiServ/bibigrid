@@ -49,7 +49,7 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
          * called via commandline -t ? ...
          */
 
-        if (!conf.getClusterId().isEmpty()) {
+        if (conf.getClusterId() != null && !conf.getClusterId().isEmpty()) {
             log.info("Terminating cluster with ID: {}", conf.getClusterId());
             List<Server> l = getServers(conf.getClusterId());
             for (Server serv : l) {

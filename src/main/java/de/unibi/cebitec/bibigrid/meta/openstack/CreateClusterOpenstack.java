@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * @author Jan Krueger - jkrueger (at)cebitec.uni-bielfeld.de 1st version by
  * Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenstack, CreateClusterEnvironmentOpenstack> {
+public class CreateClusterOpenstack extends OpenStackIntent implements CreateCluster<CreateClusterOpenstack, CreateClusterEnvironmentOpenstack> {
     
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
@@ -67,7 +67,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
     
     private CreateClusterEnvironmentOpenstack environment;
     
-    private Configuration conf;
+
     
     public static final String PREFIX = "bibigrid-";
     public static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
@@ -83,10 +83,10 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
      */
     private Map<String, String> metadata;
     
-    private OSClient os;
+ 
     
     public CreateClusterOpenstack(Configuration conf) {
-
+        super(conf);
         // MetaData
         metadata = new HashMap<>();
         metadata.put("user", conf.getUser());
