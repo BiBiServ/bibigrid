@@ -5,9 +5,6 @@
  */
 package de.unibi.cebitec.bibigrid.meta.openstack;
 
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Module;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
@@ -32,26 +29,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
-import org.jclouds.ContextBuilder;
-import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
-import org.jclouds.openstack.neutron.v2.NeutronApi;
-import org.jclouds.openstack.neutron.v2.NeutronApiMetadata;
-import org.jclouds.openstack.neutron.v2.features.SubnetApi;
-import org.jclouds.openstack.nova.v2_0.NovaApi;
-import org.jclouds.openstack.nova.v2_0.domain.Address;
-import org.jclouds.openstack.nova.v2_0.domain.BlockDeviceMapping;
-import org.jclouds.openstack.nova.v2_0.domain.Flavor;
-import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
-import org.jclouds.openstack.nova.v2_0.domain.Image;
-import org.jclouds.openstack.nova.v2_0.domain.Server;
-import org.jclouds.openstack.nova.v2_0.domain.ServerCreated;
-import org.jclouds.openstack.nova.v2_0.extensions.FloatingIPApi;
-import org.jclouds.openstack.nova.v2_0.extensions.SecurityGroupApi;
-import org.jclouds.openstack.nova.v2_0.features.FlavorApi;
-import org.jclouds.openstack.nova.v2_0.features.ImageApi;
-import org.jclouds.openstack.nova.v2_0.features.ServerApi;
-import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
-import org.jclouds.sshj.config.SshjSshClientModule;
+import org.openstack4j.api.Builders;
+import org.openstack4j.api.OSClient;
+import org.openstack4j.model.compute.Address;
+import org.openstack4j.model.compute.BDMDestType;
+import org.openstack4j.model.compute.BDMSourceType;
+import org.openstack4j.model.compute.BlockDeviceMappingCreate;
+import org.openstack4j.model.compute.Flavor;
+import org.openstack4j.model.compute.FloatingIP;
+import org.openstack4j.model.compute.Image;
+import org.openstack4j.model.compute.Server;
+import org.openstack4j.model.compute.ServerCreate;
+import org.openstack4j.model.network.NetFloatingIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,41 +50,41 @@ import org.slf4j.LoggerFactory;
  * Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenstack, CreateClusterEnvironmentOpenstack> {
-
+    
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
-    private final NovaApi novaApi;
-    private final ServerApi serverApi;
-    private final SecurityGroupApi securityGroupApi;
-    private final FlavorApi flavorApi;
-    private final ImageApi imageApi;
-    private final FloatingIPApi floatingApi;
-    private final NeutronApi neutronApi;
-    private final SubnetApi subnetApi;
-
+//    private final NovaApi novaApi;
+//    private final ServerApi serverApi;
+//    private final SecurityGroupApi securityGroupApi;
+//    private final FlavorApi flavorApi;
+//    private final ImageApi imageApi;
+//    private final FloatingIPApi floatingApi;
+//    private final NeutronApi neutronApi;
+//    private final SubnetApi subnetApi;
     private final String os_region;
-
+    
     private final String provider = "openstack-nova";
-
+    
     private CreateClusterEnvironmentOpenstack environment;
-
+    
     private Configuration conf;
-
+    
     public static final String PREFIX = "bibigrid-";
     public static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
-
+    
     public static final String MASTER_SSH_USER = "ubuntu";
     public static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
     public static final String SUBNET_PREFIX = PREFIX + "subnet-";
-
+    
     private String clusterId;
-    private DeviceMapper slaveDeviceMapper;
 
     /**
      * MetaData
      */
     private Map<String, String> metadata;
-
+    
+    private OSClient os;
+    
     public CreateClusterOpenstack(Configuration conf) {
 
         // MetaData
@@ -111,45 +100,44 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
         clusterId = clusterIdBase64.substring(0, len);
         log.debug("cluster id: {}", clusterId);
-
+        
         this.conf = conf;
         os_region = conf.getRegion();
 
-        Iterable<Module> modules = ImmutableSet.<Module>of(
-                new SshjSshClientModule(),
-                new SLF4JLoggingModule());
-
-        novaApi = ContextBuilder.newBuilder(provider)
-                .endpoint(conf.getOpenstackCredentials().getEndpoint())
-                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
-                .modules(modules)
-                .buildApi(NovaApi.class);
-
-        neutronApi = ContextBuilder.newBuilder(new NeutronApiMetadata())
-                .endpoint(conf.getOpenstackCredentials().getEndpoint())
-                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
-                .buildApi(NeutronApi.class);
-
-        serverApi = novaApi.getServerApi(os_region);
-        securityGroupApi = novaApi.getSecurityGroupApi(os_region).get(); // @ToDo : that may fail !!!
-        flavorApi = novaApi.getFlavorApi(os_region);
-        imageApi = novaApi.getImageApi(os_region);
-        floatingApi = novaApi.getFloatingIPApi(os_region).get(); //@ToDo: that may fail !!!
-
-        subnetApi = neutronApi.getSubnetApi(os_region);
-
+//        Iterable<Module> modules = ImmutableSet.<Module>of(
+//                new SshjSshClientModule(),
+//                new SLF4JLoggingModule());
+//        novaApi = ContextBuilder.newBuilder(provider)
+//                .endpoint(conf.getOpenstackCredentials().getEndpoint())
+//                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
+//                .modules(modules)
+//                .buildApi(NovaApi.class);
+//
+//        neutronApi = ContextBuilder.newBuilder(new NeutronApiMetadata())
+//                .endpoint(conf.getOpenstackCredentials().getEndpoint())
+//                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
+//                .buildApi(NeutronApi.class);
+//        serverApi = novaApi.getServerApi(os_region);
+//        securityGroupApi = novaApi.getSecurityGroupApi(os_region).get(); // @ToDo : that may fail !!!
+//        flavorApi = novaApi.getFlavorApi(os_region);
+//        imageApi = novaApi.getImageApi(os_region);
+//        floatingApi = novaApi.getFloatingIPApi(os_region).get(); //@ToDo: that may fail !!!
+//
+//        subnetApi = neutronApi.getSubnetApi(os_region);
         log.info("Openstack connection established ...");
     }
-
+    
     @Override
     public CreateClusterEnvironmentOpenstack createClusterEnvironment() {
         return environment = new CreateClusterEnvironmentOpenstack(this);
     }
-
+    
     private Flavor masterFlavor, slaveFlavor;
-    private CreateServerOptions masterOptions, slaveOptions;
+    //private CreateServerOptions masterOptions, slaveOptions;  -> os.compute()
     private String masterImage, slaveImage;
-
+    private DeviceMapper masterDeviceMapper, slaveDeviceMapper;
+    private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
+    
     @Override
     public CreateClusterOpenstack configureClusterMasterInstance() {
         List<Flavor> flavors = listFlavors();
@@ -157,41 +145,29 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         /**
          * DeviceMapper init.
          *
-         * @ToDo
          */
         Map<String, String> masterSnapshotToMountPointMap = this.conf.getMasterMounts();
-        DeviceMapper masterDeviceMapper = new DeviceMapper(masterSnapshotToMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals);
+        masterDeviceMapper = new DeviceMapper(masterSnapshotToMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals);
 
         /**
          * BlockDeviceMapping.
          *
-         * @ToDo
          */
-        Set<BlockDeviceMapping> mappings = new HashSet<>();
+        masterMappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
         for (int i = 0; i < this.conf.getMasterInstanceType().getSpec().ephemerals; ++i) {
-            BlockDeviceMapping m = BlockDeviceMapping.builder()
+            BlockDeviceMappingCreate bdmc = Builders.blockDeviceMapping()
                     .deviceName("sd" + ephemerals[i])
-                    .deleteOnTermination(Boolean.TRUE)
-                    .sourceType("blank")
-                    .destinationType("local")
+                    .deleteOnTermination(true)
+                    .sourceType(BDMSourceType.BLANK)
+                    .destinationType(BDMDestType.LOCAL)
                     .bootIndex(-1)
                     .build();
-            mappings.add(m);
+            masterMappings.add(bdmc);
         }
-        /**
-         * Options.
-         */
-        masterOptions = new CreateServerOptions();
-        masterOptions.keyPairName(conf.getKeypair());
-        masterOptions.securityGroupNames(environment.getSecurityGroup().getName());
-        masterOptions.availabilityZone(conf.getAvailabilityZone());
-        masterOptions.userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()).getBytes()); //fails cause of null devicemapper
-        masterOptions.metadata(metadata);
-
-//        masterOptions.blockDeviceMappings(mappings);
+        
         masterImage = os_region + "/" + conf.getMasterImage();
-
+        
         String type = conf.getMasterInstanceType().getValue();
         masterFlavor = null;
         for (Flavor f : flavors) {
@@ -203,7 +179,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         log.info("Master configured");
         return this;
     }
-
+    
     @Override
     public CreateClusterOpenstack configureClusterSlaveInstance() {
         List<Flavor> flavors = listFlavors();
@@ -221,32 +197,27 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
          *
          * @ToDo
          */
-        Set<BlockDeviceMapping> mappings = new HashSet<>();
+        slaveMappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
         for (int i = 0; i < this.conf.getSlaveInstanceType().getSpec().ephemerals; ++i) {
-            BlockDeviceMapping m = BlockDeviceMapping.builder()
-                    .deviceName("/dev/sd" + ephemerals[i])
-                    .sourceType("blank")
-                    .deleteOnTermination(Boolean.TRUE)
-                    .destinationType("local")
+            BlockDeviceMappingCreate bdmc = Builders.blockDeviceMapping()
+                    .deviceName("sd" + ephemerals[i])
+                    .deleteOnTermination(true)
+                    .sourceType(BDMSourceType.BLANK)
+                    .destinationType(BDMDestType.LOCAL)
+                    .bootIndex(-1)
                     .build();
-            mappings.add(m);
+            slaveMappings.add(bdmc);
+            
         }
 
         /**
          * Options.
          */
-        slaveOptions = new CreateServerOptions();
-        slaveOptions.keyPairName(conf.getKeypair());
-        slaveOptions.securityGroupNames(environment.getSecurityGroup().getName());
-        slaveOptions.availabilityZone(conf.getAvailabilityZone());
-        slaveOptions.metadata(metadata);
-//        slaveOptions.blockDeviceMappings(mappings);
-
         slaveImage = os_region + "/" + conf.getSlaveImage();
         String type = conf.getSlaveInstanceType().getValue();
         slaveFlavor = null;
-
+        
         for (Flavor f : flavors) {
             if (f.getName().equals(type)) {
                 slaveFlavor = f;
@@ -256,50 +227,83 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         log.info("Slave(s) configured");
         return this;
     }
-
-    /*private String masterIP, masterPublicIP;
-    private String masterDNS;
-    private final List<String> slaveDns = new ArrayList<>();*/
+    
     private final Instance master = new Instance();
     private final List<Instance> slaves = new ArrayList<>();
-
+    
     @Override
     public boolean launchClusterInstances() {
         try {
-            FloatingIP floatingip = getFloatingIP();
-
+            NetFloatingIP floatingip = getFloatingIP();
+            
             if (floatingip == null) {
                 log.error("No  unused floating ip available! Abbort!");
                 return false;
             }
 
-            ServerCreated createdMaster = serverApi.create("bibigrid-master-" + clusterId, masterImage, masterFlavor.getId(), masterOptions);
-            log.info("Master (ID: {}) started", createdMaster.getId());
-
-            master.setId(createdMaster.getId());
-            master.setIp(getLocalIp(createdMaster.getId(), "bibiserv").getAddr());
-            master.setPublicIp(floatingip.getIp());
+//            ServerCreated createdMaster = serverApi.create("bibigrid-master-" + clusterId, masterImage, masterFlavor.getId(), masterOptions);
+            //masterOptions = new CreateServerOptions();
+//        masterOptions.keyPairName(conf.getKeypair());
+//        masterOptions.securityGroupNames(environment.getSecurityGroup().getName());
+//        masterOptions.availabilityZone(conf.getAvailabilityZone());
+//        masterOptions.userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()).getBytes()); //fails cause of null devicemapper
+//        masterOptions.metadata(metadata);
+            ServerCreate sc = Builders.server()
+                    .name("bibigrid-master-" + clusterId)
+                    .flavor(masterFlavor.getId())
+                    .image(masterImage)
+                    .keypairName(conf.getKeypair())
+                    .addSecurityGroup(environment.getSecurityGroup().getId())
+                    .availabilityZone(conf.getAvailabilityZone())
+                    .userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()))
+                    .addMetadata(metadata)
+                    //.addPersonality("/etc/motd", "Welcome to the new VM! Restricted access only")
+                    .build();
+            Server server = os.compute().servers().boot(sc);
+            
+            log.info("Master (ID: {}) started", server.getId());
+            
+            master.setId(server.getId());
+            master.setIp(server.getAccessIPv4()); // @ToDo
+            master.setPublicIp(floatingip.getFloatingIpAddress());
             master.setHostname("bibigrid-master-" + clusterId);
             master.updateNeutronHostname();
-
+            
             log.info("Master (ID: {}) network configuration finished", master.getId());
+            
+            os.compute().floatingIps().addFloatingIP(server, floatingip.getFloatingIpAddress());
 
-            floatingApi.addToServer(floatingip.getIp(), createdMaster.getId());
-
+            //floatingApi.addToServer(floatingip.getIp(), createdMaster.getId());
             log.info("FloatingIP {} assigned to Master(ID: {}) ", master.getPublicIp(), master.getId());
-
-            slaveOptions.userData(UserDataCreator.forSlave(master.getIp(),
-                    master.getNeutronHostname(),
-                    slaveDeviceMapper,
-                    conf,
-                    environment.getKeypair()).getBytes()
-            );
+            
+//            slaveOptions.userData(UserDataCreator.forSlave(master.getIp(),
+//                    master.getNeutronHostname(),
+//                    slaveDeviceMapper,
+//                    conf,
+//                    environment.getKeypair()).getBytes()
+//            );
             //start all slave instances  
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
-                ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (i + 1) + "-" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
+                // ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (i + 1) + "-" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
+                sc = Builders.server()
+                        .name("bibigrid-slave-" + (i + 1) + "-" + clusterId)
+                        .flavor(slaveFlavor.getId())
+                        .image(slaveImage)
+                        .keypairName(conf.getKeypair())
+                        .addSecurityGroup(environment.getSecurityGroup().getId())
+                        .availabilityZone(conf.getAvailabilityZone())
+                        .userData(UserDataCreator.forSlave(master.getIp(),
+                                master.getNeutronHostname(),
+                                slaveDeviceMapper,
+                                conf,
+                                environment.getKeypair()))
+                        .build();
+                
+                Server si = os.compute().servers().boot(sc);
+                
                 Instance slave = new Instance();
-                slave.setId(createdSlave.getId());
-                slave.setHostname(createdSlave.getName());
+                slave.setId(si.getId());
+                slave.setHostname(si.getName());
                 slaves.add(slave);
             }
             // wait for slave network finished ... update server instance list            
@@ -309,7 +313,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 i.updateNeutronHostname();
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);
-
+            
             sshTestAndExecute();
 
             ////////////////////////////////////
@@ -329,9 +333,9 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
             if (conf.isAlternativeConfigFile()) {
                 sb.append("-o ").append(conf.getAlternativeConfigPath()).append(" ");
             }
-
+            
             sb.append("\n");
-
+            
             log.info(sb.toString());
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -352,9 +356,9 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
     private Address getLocalIp(String instanceID, String network) {
         Address addr = null;
         do {
-            Server instance = serverApi.get(instanceID);
-            if (instance != null && instance.getAddresses().get(network).size() > 0) {
-                addr = instance.getAddresses().get(network).iterator().next();
+            Server instance = os.compute().servers().get(instanceID);
+            if (instance != null && instance.getAddresses().getAddresses(network).size() > 0) {
+                addr = instance.getAddresses().getAddresses(network).iterator().next();
             } else {
                 try {
                     Thread.sleep(2500);
@@ -366,7 +370,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         } while (addr == null);
         return addr;
     }
-
+    
     private void sshTestAndExecute() {
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
@@ -376,14 +380,14 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         log.info("Now configuring ...");
         String execCommand = SshFactory.buildSshCommandOpenstack(clusterId, this.getConfiguration(), master, slaves);
         log.info(V, "Building SSH-Command : {}", execCommand);
-
+        
         boolean uploaded = false;
         boolean configured = false;
-
+        
         int ssh_attempts = 25; // @TODO attempts
         while (!configured && ssh_attempts > 0) {
             try {
-
+                
                 ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
                 log.info("Trying to connect to master ({})...", ssh_attempts);
                 Thread.sleep(4000);
@@ -399,22 +403,20 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 sshSession.connect();
                 log.info("Connected to master!");
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-
-               
+                
                 BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
                 BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
-
+                
                 channel.setCommand(execCommand);
-
+                
                 log.info(V, "Connecting ssh channel...");
                 channel.connect();
-
+                
                 String lineout = null, lineerr = null;
-
-                                
+                
                 while (!configured) {
                     
-                    if (stdout.ready()){ 
+                    if (stdout.ready()) {                        
                         lineout = stdout.readLine();
                         if (lineout.equals("CONFIGURATION_FINISHED")) {
                             configured = true;
@@ -440,7 +442,7 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 if (ssh_attempts == 0) {
                     log.error(V, "SSH: {}", e);
                 }
-
+                
             } catch (InterruptedException ex) {
                 log.warn("Interrupted ...");
             }
@@ -448,32 +450,32 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
         
         if (configured) {
             log.info(I, "Master instance has been configured.");
-        } else{
+        } else {
             log.error("Master instance configuration failed!");
         }
         
     }
-
+    
     private List<Server> listServers(String region) {
         List<Server> ret = new ArrayList<>();
-
-        for (Server server : serverApi.listInDetail().concat()) {
+        
+        for (Server server : os.compute().servers().list()) {
             ret.add(server);
         }
         return ret;
     }
-
+    
     private List<Flavor> listFlavors() {
         List<Flavor> ret = new ArrayList<>();
-        for (Flavor r : flavorApi.listInDetail().concat()) {
+        for (Flavor r : os.compute().flavors().list()) {
             ret.add(r);
         }
         return ret;
     }
-
+    
     private List<Image> listImages() {
         List<Image> ret = new ArrayList<>();
-        for (Image m : imageApi.listInDetail().concat()) {
+        for (Image m : os.compute().images().list()) {
             ret.add(m);
         }
         return ret;
@@ -486,116 +488,115 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
      *
      * @return
      */
-    private FloatingIP getFloatingIP() {
+    private NetFloatingIP getFloatingIP() {
 
         // get list of all available floating IP's, and search for a free one
-        FluentIterable<FloatingIP> l = floatingApi.list();
-
+        List<? extends NetFloatingIP> l = os.networking().floatingip().list();
+        
         for (int i = 0; i < l.size(); i++) {
-            FloatingIP fip = l.get(i);
-            if (fip.getInstanceId() == null) {
+            NetFloatingIP fip = l.get(i);
+            if (fip.getPortId() == null) {
                 //found an unused floating ip and return it
                 return fip;
             }
         }
         // try to allocate a new floating from network pool
-        try {
-            return floatingApi.allocateFromPool("ext-cebitec"); // @ToDo hardcoded
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
+//        try {
+//            return floatingApi.allocateFromPool("ext-cebitec"); // @ToDo hardcoded
+//        } catch (Exception e) {
+//            log.error(e.getMessage());
+//        }
         return null;
-
+        
     }
 
-    public NovaApi getNovaApi() {
-        return novaApi;
-    }
-
-    public NeutronApi getNeutronApi() {
-        return neutronApi;
-    }
-
-    public ServerApi getServerApi() {
-        return serverApi;
-    }
-
-    public SecurityGroupApi getSecurityGroupApi() {
-        return securityGroupApi;
-    }
-
-    public FlavorApi getFlavorApi() {
-        return flavorApi;
-    }
-
-    public SubnetApi getSubnetApi() {
-        return subnetApi;
-    }
-
-    public ImageApi getImageApi() {
-        return imageApi;
-    }
-
+//    public NovaApi getNovaApi() {
+//        return novaApi;
+//    }
+//
+//    public NeutronApi getNeutronApi() {
+//        return neutronApi;
+//    }
+//
+//    public ServerApi getServerApi() {
+//        return serverApi;
+//    }
+//
+//    public SecurityGroupApi getSecurityGroupApi() {
+//        return securityGroupApi;
+//    }
+//
+//    public FlavorApi getFlavorApi() {
+//        return flavorApi;
+//    }
+//
+//    public SubnetApi getSubnetApi() {
+//        return subnetApi;
+//    }
+//
+//    public ImageApi getImageApi() {
+//        return imageApi;
+//    }
     public String getClusterId() {
         return clusterId;
     }
-
+    
     public Configuration getConfiguration() {
         return this.conf;
     }
-
+    
     public class Instance {
-
+        
         private String id, ip, publicIp;
-
+        
         private String hostname, neutronHostname;
-
+        
         public Instance() {
         }
-
+        
         ;
 
        
        public String getId() {
             return id;
         }
-
+        
         public void setId(String id) {
             this.id = id;
         }
-
+        
         public String getIp() {
             return ip;
         }
-
+        
         public void setIp(String ip) {
             this.ip = ip;
         }
-
+        
         public String getPublicIp() {
             return publicIp;
         }
-
+        
         public void setPublicIp(String publicIp) {
             this.publicIp = publicIp;
         }
-
+        
         public String getHostname() {
             return hostname;
         }
-
+        
         public void setHostname(String hostname) {
             this.hostname = hostname;
         }
-
+        
         public String getNeutronHostname() {
             return neutronHostname;
         }
-
+        
         public void setNeutronHostname(String neutronHostname) {
             this.neutronHostname = neutronHostname;
         }
-
+        
         public void updateNeutronHostname() {
             if (ip != null && ip.matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) {
                 String[] t = ip.split("\\.");
@@ -604,6 +605,11 @@ public class CreateClusterOpenstack implements CreateCluster<CreateClusterOpenst
                 log.warn("ip must be a valid IPv4 address string.");
             }
         }
-
+        
     }
+    
+    public OSClient getOs() {
+        return os;
+    }
+    
 }

@@ -347,7 +347,7 @@ public class CommandLineValidator {
                             masterType = new InstanceTypeAWS(masterTypeString.trim());
                             break;
                         case OPENSTACK:
-                            masterType = new InstanceTypeOpenstack(cfg, masterTypeString.trim());
+                            masterType = new InstanceTypeOpenstack(conf, masterTypeString.trim());
                             break;
                     }
                     this.cfg.setMasterInstanceType(masterType);
