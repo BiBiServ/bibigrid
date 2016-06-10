@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.logging.Level;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.compute.ComputeSecurityGroupService;
+import org.openstack4j.api.networking.NetworkService;
 import org.openstack4j.api.networking.SecurityGroupService;
 import org.openstack4j.api.networking.SubnetService;
 import org.openstack4j.model.compute.IPProtocol;
@@ -41,6 +42,7 @@ public class CreateClusterEnvironmentOpenstack
     private CreateClusterOpenstack cluster;
 
     private SecurityGroup sg;
+     private SecGroupExtension sge;
 
     private KEYPAIR keypair;
 
@@ -65,7 +67,17 @@ public class CreateClusterEnvironmentOpenstack
     public CreateClusterEnvironmentOpenstack createSubnet() {
 
         SubnetService sns = cluster.getOs().networking().subnet();
-
+        NetworkService ns = cluster.getOs().networking().network();
+        
+        
+        // @ToDo
+        if (cluster.getConfiguration().getNetworkname() == null) {
+            cluster.getConfiguration().setNetworkname(ns.list().get(0).getName());
+        }
+        
+        if (cluster.getConfiguration().getSubnetname() == null) {
+            cluster.getConfiguration().setSubnetname(sns.list().get(0).getName());
+        }
 //        SubNet subnet 
 //        subnetapi.create(new CreateSubnet());
         log.info("Subnet creation not implementd yet");
@@ -74,77 +86,68 @@ public class CreateClusterEnvironmentOpenstack
 
     @Override
     public CreateClusterEnvironmentOpenstack createSecurityGroup() {
-        //ComputeSecurityGroupService csgs = cluster.getOs().compute().securityGroups();
-        SecurityGroupService sgs = cluster.getOs().networking().securitygroup();
-        sg = sgs.create(Builders.securityGroup()
+        ComputeSecurityGroupService csgs = cluster.getOs().compute().securityGroups();
+        sge = csgs.create("sg-" + cluster.getClusterId(), "Security Group for cluster: " + cluster.getClusterId());
+               
+        
+        csgs.createRule(Builders.secGroupRule()
+                .parentGroupId(sge.getId())
+                .protocol(IPProtocol.TCP)
+                .cidr("0.0.0.0/0")
+                .range(22, 22)
+                .build());
+        
+        csgs.createRule(Builders.secGroupRule()
+                .parentGroupId(sge.getId())
+                .protocol(IPProtocol.TCP)
+                .groupId(sge.getId())
+                .range(1,65535)
+                .build());
+        
+        
+        
+        
+        //SecurityGroupService sgs = cluster.getOs().networking().securitygroup();
+        /*sg = sgs.create(Builders.securityGroup()
                 .name("sg-" + cluster.getClusterId())
                 .description("Security Group for cluster: " + cluster.getClusterId())
-                .build());
+                .build());*/
 
         /**
          * Standard Rules.
          */
-        SecurityGroupRule rule_ssh = Builders.securityGroupRule()
-                .securityGroupId(sg.getId())
-                .protocol("tcp")
-                .direction("ingress")
-                .ethertype("IPv4")
-                .portRangeMin(22)
-                .portRangeMax(22)
-                .remoteIpPrefix("0.0.0.0/0")
-                .build();
-        SecurityGroupRule rule_all_tcp_ingress = Builders.securityGroupRule()
-                .securityGroupId(sg.getId())
-                .protocol("tcp")
-                .direction("ingress")
-                .ethertype("IPv4")
-                .portRangeMin(1)
-                .portRangeMax(65535)
-                .remoteIpPrefix(sg.getId())
-                .build();
-        SecurityGroupRule rule_all_tcp_egress = Builders.securityGroupRule()
-                .securityGroupId(sg.getId())
-                .protocol("tcp")
-                .direction("egress")
-                .ethertype("IPv4")
-                .portRangeMin(1)
-                .portRangeMax(65535)
-                .remoteIpPrefix(sg.getId())
-                .build();
-        SecurityGroupRule rule_all_udp_ingress = Builders.securityGroupRule()
-                .securityGroupId(sg.getId())
-                .protocol("udp")
-                .direction("ingress")
-                .ethertype("IPv4")
-                .portRangeMin(1)
-                .portRangeMax(65535)
-                .remoteIpPrefix(sg.getId())
-                .build();
-        SecurityGroupRule rule_all_udp_egress = Builders.securityGroupRule()
-                .securityGroupId(sg.getId())
-                .protocol("udp")
-                .direction("egress")
-                .ethertype("IPv4")
-                .portRangeMin(1)
-                .portRangeMax(65535)
-                .remoteIpPrefix(sg.getId())
-                .build();
+//        SecurityGroupRule rule_ssh = Builders.securityGroupRule()
+//                
+//                .securityGroupId(sg.getId())
+//                .protocol("tcp")
+//                .direction("ingress")
+//                .ethertype("IPv4")
+//                .portRangeMin(22)
+//                .portRangeMax(22)
+//                .remoteIpPrefix("0.0.0.0/0")
+//                .build();
 
         /**
          * User selected Ports.
          */
         List<Port> ports = cluster.getConfiguration().getPorts();
         for (Port p : ports) {
-            SecurityGroupRule rule_user_ingress = Builders.securityGroupRule()
-                .securityGroupId(sg.getId())
-                .protocol("tcp")
-                .direction("ingress")
-                .portRangeMin(p.number)
-                .portRangeMax(p.number)
-                .remoteIpPrefix(p.iprange)
-                .build(); 
+//            SecurityGroupRule rule_user_ingress = Builders.securityGroupRule()
+//                .securityGroupId(sg.getId())
+//                .protocol("tcp")
+//                .direction("ingress")
+//                .portRangeMin(p.number)
+//                .portRangeMax(p.number)
+//                .remoteIpPrefix(p.iprange)
+//                .build(); 
+            csgs.createRule(Builders.secGroupRule()
+                .parentGroupId(sge.getId())
+                .protocol(IPProtocol.TCP)
+                .cidr(p.iprange)
+                .range(p.number,p.number)
+                .build());
         }
-        log.info("SecurityGroup (ID: {}) created.", sg.getName());
+        log.info("SecurityGroup (ID: {}) created.", sge.getName());
         return this;
     }
 
@@ -160,6 +163,10 @@ public class CreateClusterEnvironmentOpenstack
 
     public SecurityGroup getSecurityGroup() {
         return sg;
+    }
+    
+    public SecGroupExtension getSecGroupExtension() {
+        return sge;
     }
 
 }

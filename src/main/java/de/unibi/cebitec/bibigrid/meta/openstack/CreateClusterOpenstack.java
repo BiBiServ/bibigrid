@@ -32,11 +32,11 @@ import org.apache.commons.codec.binary.Base64;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Address;
+import org.openstack4j.model.compute.Addresses;
 import org.openstack4j.model.compute.BDMDestType;
 import org.openstack4j.model.compute.BDMSourceType;
 import org.openstack4j.model.compute.BlockDeviceMappingCreate;
 import org.openstack4j.model.compute.Flavor;
-import org.openstack4j.model.compute.FloatingIP;
 import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.compute.Server;
 import org.openstack4j.model.compute.ServerCreate;
@@ -253,18 +253,18 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     .flavor(masterFlavor.getId())
                     .image(masterImage)
                     .keypairName(conf.getKeypair())
-                    .addSecurityGroup(environment.getSecurityGroup().getId())
+                    .addSecurityGroup(environment.getSecGroupExtension().getName())
                     .availabilityZone(conf.getAvailabilityZone())
                     .userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()))
                     .addMetadata(metadata)
                     //.addPersonality("/etc/motd", "Welcome to the new VM! Restricted access only")
                     .build();
-            Server server = os.compute().servers().boot(sc);
+            Server server = os.compute().servers().bootAndWaitActive(sc,60000);
             
             log.info("Master (ID: {}) started", server.getId());
             
             master.setId(server.getId());
-            master.setIp(server.getAccessIPv4()); // @ToDo
+            master.setIp(server.getAddresses().getAddresses(conf.getNetworkname()).get(0).getAddr()); // @ToDo
             master.setPublicIp(floatingip.getFloatingIpAddress());
             master.setHostname("bibigrid-master-" + clusterId);
             master.updateNeutronHostname();
@@ -276,12 +276,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             //floatingApi.addToServer(floatingip.getIp(), createdMaster.getId());
             log.info("FloatingIP {} assigned to Master(ID: {}) ", master.getPublicIp(), master.getId());
             
-//            slaveOptions.userData(UserDataCreator.forSlave(master.getIp(),
-//                    master.getNeutronHostname(),
-//                    slaveDeviceMapper,
-//                    conf,
-//                    environment.getKeypair()).getBytes()
-//            );
+
             //start all slave instances  
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
                 // ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (i + 1) + "-" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
@@ -290,7 +285,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                         .flavor(slaveFlavor.getId())
                         .image(slaveImage)
                         .keypairName(conf.getKeypair())
-                        .addSecurityGroup(environment.getSecurityGroup().getId())
+                        .addSecurityGroup(environment.getSecGroupExtension().getId())
                         .availabilityZone(conf.getAvailabilityZone())
                         .userData(UserDataCreator.forSlave(master.getIp(),
                                 master.getNeutronHostname(),
@@ -299,7 +294,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                                 environment.getKeypair()))
                         .build();
                 
-                Server si = os.compute().servers().boot(sc);
+                Server si = os.compute().servers().bootAndWaitActive(sc,60000);
                 
                 Instance slave = new Instance();
                 slave.setId(si.getId());

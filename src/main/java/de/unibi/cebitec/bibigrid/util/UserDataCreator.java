@@ -270,7 +270,7 @@ public class UserDataCreator {
             case AWS:
                 return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
             default:
-                return slaveUserData.toString();
+                return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
         }
     }
 
@@ -526,7 +526,7 @@ public class UserDataCreator {
             case AWS:
                 return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
             default:
-                return masterUserData.toString();
+                return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
         }
     }
 

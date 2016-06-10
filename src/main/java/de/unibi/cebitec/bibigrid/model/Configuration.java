@@ -46,6 +46,12 @@ public class Configuration {
     private boolean useSpotInstances;
     private boolean publicSlaveIps; 
     
+    
+    /* network configuration */
+    
+    private String networkname = null;
+    private String subnetname  = null; 
+    
 
     public static enum MODE {
 
@@ -356,6 +362,22 @@ public class Configuration {
          if (hdfs) {
             nfs = true;
         }
+    }
+
+    public String getSubnetname() {
+        return subnetname;
+    }
+
+    public void setSubnetname(String subnetname) {
+        this.subnetname = subnetname;
+    }
+
+    public String getNetworkname() {
+        return networkname;
+    }
+
+    public void setNetworkname(String networkname) {
+        this.networkname = networkname;
     }
     
     
