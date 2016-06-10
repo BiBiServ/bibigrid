@@ -201,6 +201,15 @@ public class CommandLineValidator {
                     log.error("No suitable entry for OpenStack-Endpoint (ose) found! Exit");
                     return false;
                 }
+                
+                if (cl.hasOption("osd")) {
+                    osc.setDomain(cl.getOptionValue("osd").trim());
+                } else if (defaults.getProperty("openstack-domain") != null) {
+                    osc.setEndpoint(defaults.getProperty("openstack-domain"));
+                } else {
+                    // V2
+                }
+                
                 this.cfg.setOpenstackCredentials(osc);
             }
 

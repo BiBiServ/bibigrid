@@ -75,7 +75,8 @@ public class StartUp {
                 .addOption("osu", "openstack-username", true, "The given Openstack Username")
                 .addOption("ost", "openstack-tenantname", true, "The given Openstack Tenantname")
                 .addOption("osp", "openstack-password", true, "The given Openstack User-Password")
-                .addOption("ose", "openstack-endpoint", true, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/)");
+                .addOption("ose", "openstack-endpoint", true, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/)")
+                .addOption("osd","openstack-domain",true,"The given Openstack Domain");
 
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
