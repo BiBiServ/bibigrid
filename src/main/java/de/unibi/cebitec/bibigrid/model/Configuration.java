@@ -25,6 +25,7 @@ public class Configuration {
     private Map<String, String> masterMounts;
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
+    private boolean logHttpRequests;
     
     private FS localFS = FS.XFS;
     
@@ -379,8 +380,14 @@ public class Configuration {
     public void setNetworkname(String networkname) {
         this.networkname = networkname;
     }
-    
-    
+
+    public boolean isLogHttpRequests() {
+        return logHttpRequests;
+    }
+
+    public void setLogHttpRequests(boolean logHttpRequests) {
+        this.logHttpRequests = logHttpRequests;
+    }
     
     
 }

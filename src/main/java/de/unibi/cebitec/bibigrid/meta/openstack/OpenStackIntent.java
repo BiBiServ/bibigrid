@@ -29,6 +29,7 @@ abstract class OpenStackIntent {
     public static OSClient buildOSClient(Configuration conf){
         OpenStackCredentials osc = conf.getOpenstackCredentials();
         
+        OSFactory.enableHttpLoggingFilter(conf.isLogHttpRequests());
         if (osc.getDomain() != null) {
             //v3
             return OSFactory.builderV3()

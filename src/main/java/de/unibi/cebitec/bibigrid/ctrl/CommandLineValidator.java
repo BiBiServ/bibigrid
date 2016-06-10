@@ -781,6 +781,12 @@ public class CommandLineValidator {
                 this.cfg.setGridPropertiesFile(prop.toFile());
                 log.info(V, "Wrote grid properties to '{}' after successful grid startup!", prop);
             }
+            
+            ////////////////////////////////////////////////////////////////////////
+            ///// debug-requests ///////////////////////////////////////////////////
+            if (this.cl.hasOption("dr")) {
+                this.cfg.setLogHttpRequests(true);
+            }
 
         }
 
