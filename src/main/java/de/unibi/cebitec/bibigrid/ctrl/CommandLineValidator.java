@@ -205,8 +205,9 @@ public class CommandLineValidator {
                 if (cl.hasOption("osd")) {
                     osc.setDomain(cl.getOptionValue("osd").trim());
                 } else if (defaults.getProperty("openstack-domain") != null) {
-                    osc.setEndpoint(defaults.getProperty("openstack-domain"));
+                    osc.setDomain(defaults.getProperty("openstack-domain"));
                 } else {
+                    log.info("Keystone V2 API.");
                     // V2
                 }
                 
