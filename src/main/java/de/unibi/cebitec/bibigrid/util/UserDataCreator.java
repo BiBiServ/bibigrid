@@ -264,6 +264,27 @@ public class UserDataCreator {
             slaveUserData.append("log \"mesos slave configured and started\"\n");
         }
 
+        
+        /*
+         * Early Execute Script for Slave
+         */
+        if (cfg.getEarlySlaveShellScriptFile() != null) {
+            try {
+
+                String base64 = new String(Base64.encodeBase64(Files.readAllBytes(cfg.getEarlySlaveShellScriptFile())));
+
+                if (base64.length() > 10000) {
+                    log.info("Early shell script file too large  (base64 encoded size exceeds 10000 chars)");
+                } else {
+                    slaveUserData.append("echo ").append(base64).append(" | base64 --decode  | bash - 2>&1 > /var/log/earlyshellscript.log \n");
+                    slaveUserData.append("log \"earlyshellscript executed\"\n");
+                }
+
+            } catch (IOException e) {
+                log.info("Early shell script could not be read.");
+            }
+        }
+        
         slaveUserData.append("cp /var/log/userdata.log /vol/spool/log/SLAVE_${CURRENT_IP}.log \n");
         slaveUserData.append("exit 0\n");
         switch (cfg.getMode()) {
@@ -502,15 +523,15 @@ public class UserDataCreator {
         /*
          * Early Execute Script
          */
-        if (cfg.getEarlyShellScriptFile() != null) {
+        if (cfg.getEarlyMasterShellScriptFile() != null) {
             try {
 
-                String base64 = new String(Base64.encodeBase64(Files.readAllBytes(cfg.getEarlyShellScriptFile())));
+                String base64 = new String(Base64.encodeBase64(Files.readAllBytes(cfg.getEarlyMasterShellScriptFile())));
 
                 if (base64.length() > 10000) {
                     log.info("Early shell script file too large  (base64 encoded size exceeds 10000 chars)");
                 } else {
-                    masterUserData.append("echo ").append(base64).append(" | base64 --decode  | sudo -u ubuntu bash - 2>&1 >> /var/log/earlyshellscript.log &\n");
+                    masterUserData.append("echo ").append(base64).append(" | base64 --decode  | bash - 2>&1 > /var/log/earlyshellscript.log \n");
                     masterUserData.append("log \"earlyshellscript executed\"\n");
                 }
 

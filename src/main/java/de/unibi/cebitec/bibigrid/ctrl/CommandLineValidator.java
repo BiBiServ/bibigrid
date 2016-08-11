@@ -681,22 +681,43 @@ public class CommandLineValidator {
                 }
             }
 
-            String earlyScriptFilePath = null;
+            /* ------------------------ early shell script Master ------------------------- */
+            String earlyMasterScriptFilePath = null;
             if (defaults.containsKey("early-execute-script")) {
-                earlyScriptFilePath = defaults.getProperty("early-execute-script");
+                earlyMasterScriptFilePath = defaults.getProperty("early-execute-script");
             }
             if (this.cl.hasOption("ex")) {
-                earlyScriptFilePath = this.cl.getOptionValue("ex");
+                earlyMasterScriptFilePath = this.cl.getOptionValue("ex");
             }
-            if (earlyScriptFilePath != null) {
-                Path script = FileSystems.getDefault().getPath(earlyScriptFilePath);
+            if (earlyMasterScriptFilePath != null) {
+                Path script = FileSystems.getDefault().getPath(earlyMasterScriptFilePath);
                 if (!script.toFile().exists()) {
-                    log.error("The supplied early shell script file '{}' does not exist!", script);
+                    log.error("The supplied early master shell script file '{}' does not exist!", script);
                     return false;
                 }
-                this.cfg.setEarlyShellScriptFile(script);
-                log.info(V, "Early Shell script file found! ({})", script);
+                cfg.setEarlyMasterShellScriptFile(script);
+                log.info(V, "Early master shell script file found! ({})", script);
             }
+            
+            
+            /* ------------------------ early shell script Master ------------------------- */
+            String earlySlaveScriptFilePath = null;
+            if (defaults.containsKey("early-slave-execute-script")) {
+                earlySlaveScriptFilePath = defaults.getProperty("early-slave-execute-script");
+            }
+            if (this.cl.hasOption("esx")) {
+                earlySlaveScriptFilePath = this.cl.getOptionValue("esx");
+            }
+            if (earlySlaveScriptFilePath != null) {
+                Path script = FileSystems.getDefault().getPath(earlySlaveScriptFilePath);
+                if (!script.toFile().exists()) {
+                    log.error("The supplied early slave shell script file '{}' does not exist!", script);
+                    return false;
+                }
+                cfg.setEarlySlaveShellScriptFile(script);
+                log.info(V, "Early slave shell script file found! ({})", script);
+            }
+            
             
             
             /* ------------------------ public ip address for all slaves ------------------------- */
