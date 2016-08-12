@@ -379,13 +379,13 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         boolean uploaded = false;
         boolean configured = false;
         
-        int ssh_attempts = 25; // @TODO attempts
+        int ssh_attempts = 50; // @TODO attempts
         while (!configured && ssh_attempts > 0) {
             try {
                 
                 ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
                 log.info("Trying to connect to master ({})...", ssh_attempts);
-                Thread.sleep(4000);
+                Thread.sleep(5000);
 
                 /*
                  * Create new Session to avoid packet corruption.
