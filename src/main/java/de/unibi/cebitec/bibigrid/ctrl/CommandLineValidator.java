@@ -38,7 +38,7 @@ public class CommandLineValidator {
     private final Configuration cfg;
     private final Intent intent;
     private Path propertiesFilePath;
-    
+
     private Properties machineImage = null;
 
     public CommandLineValidator(CommandLine cl, Intent intent) {
@@ -49,20 +49,33 @@ public class CommandLineValidator {
             String path = this.cl.getOptionValue("o");
             Path newPath = FileSystems.getDefault().getPath(path);
             if (Files.isReadable(newPath)) {
-                this.propertiesFilePath = newPath;
-                log.info("Alternative config file " + newPath.toString() + " will be used.");
-                this.cfg.setAlternativeConfigFile(true);
-                this.cfg.setAlternativeConfigPath(newPath.toString());
+                propertiesFilePath = newPath;
+                log.info("Alternative config file {} will be used.",newPath.toString());
+                cfg.setAlternativeConfigFile(true);
+                cfg.setAlternativeConfigPath(newPath.toString());
+            } else {
+                log.error("Alternative config ({}) file is not readable. Try to use default.",newPath.toString());
             }
-        } else {
-            this.propertiesFilePath = FileSystems.getDefault().getPath(DEFAULT_PROPERTIES_DIRNAME, DEFAULT_PROPERTIES_FILENAME);
+        } 
+        if (propertiesFilePath == null) {
+            propertiesFilePath = FileSystems.getDefault().getPath(DEFAULT_PROPERTIES_DIRNAME, DEFAULT_PROPERTIES_FILENAME);
+            
         }
+        // some messages
+         if (Files.exists(propertiesFilePath)) {
+                log.info(V, "Reading default options from properties file at '{}'.", propertiesFilePath);
+            } else {
+                log.info("No properties file for default options found ({}). Using command line parameters only.", propertiesFilePath);
+            }
+        
     }
 
     private Properties loadDefaultsFromPropertiesFile() {
         Properties defaultProperties = new Properties();
         try {
-            defaultProperties.load(Files.newInputStream(this.propertiesFilePath));
+            if (propertiesFilePath != null) {
+                defaultProperties.load(Files.newInputStream(propertiesFilePath));
+            }
         } catch (IOException e) {
             //nothing to do here, just return empty properties. validate() will catch that.
         }
@@ -87,17 +100,12 @@ public class CommandLineValidator {
         }
         // if no mode aws given keep default mode instead.
 
-        List<String> req = this.intent.getRequiredOptions(cfg.getMode());
-        
-        req = new ArrayList<>(req);
+        List<String> req = intent.getRequiredOptions(cfg.getMode());
 
+        //req = new ArrayList<>(req);
         if (!req.isEmpty()) {
 
-            if (Files.exists(this.propertiesFilePath)) {
-                log.info(V, "Reading default options from properties file at '{}'.", this.propertiesFilePath);
-            } else {
-                log.info("No properties file for default options found ({}). Using command line parameters only.", this.propertiesFilePath);
-            }
+           
 
             ////////////////////////////////////////////////////////////////////////
             ///// terminate (cluster-id) /////////////////////////////////////////////
@@ -135,20 +143,20 @@ public class CommandLineValidator {
                 }
             }
 
-            if (req.contains("u")) {
-                if (cl.hasOption("u") || defaults.containsKey("user")) {
-                    String value = cl.getOptionValue("u", defaults.getProperty("user"));
-                    if (value != null && !value.isEmpty()) {
-                        cfg.setUser(value);
-                    } else {
-                        log.error("User (-u) can't be null or empty.");
-                        return false;
-                    }
-
+            
+            /////////// user name ///////////////
+            if (cl.hasOption("u") || defaults.containsKey("user")) {
+                String value = cl.getOptionValue("u", defaults.getProperty("user"));
+                if (value != null && !value.isEmpty()) {
+                    cfg.setUser(value);
                 } else {
-                    log.error("-u option is required!");
+                    log.error("User (-u) can't be null or empty.");
                     return false;
                 }
+
+            } else {
+                // get user name from system
+                cfg.setUser(System.getProperty("user.name")); 
             }
             ////////////////////////////////////////////////////////////////////////
             ///// vpc-id ///////////////////////////////////////////////////////////
@@ -201,7 +209,7 @@ public class CommandLineValidator {
                     log.error("No suitable entry for OpenStack-Endpoint (ose) found! Exit");
                     return false;
                 }
-                
+
                 if (cl.hasOption("osd")) {
                     osc.setDomain(cl.getOptionValue("osd").trim());
                 } else if (defaults.getProperty("openstack-domain") != null) {
@@ -210,12 +218,10 @@ public class CommandLineValidator {
                     log.info("Keystone V2 API.");
                     // V2
                 }
-                
+
                 this.cfg.setOpenstackCredentials(osc);
             }
 
-           
-            
             ////////////////////////////////////////////////////////////////////////
             ///// mesos on/off /////////////////////////////////////////////////
             if (this.cl.hasOption("me") || defaults.containsKey("mesos")) {
@@ -327,7 +333,7 @@ public class CommandLineValidator {
                 }
                 log.info(V, "Region set. ({})", this.cfg.getRegion());
             }
-            
+
             ////////////////////////////////////////////////////////////////////////
             ///// availability-zone ////////////////////////////////////////////////
             if (req.contains("z")) {
@@ -362,7 +368,7 @@ public class CommandLineValidator {
                     }
                     this.cfg.setMasterInstanceType(masterType);
                 } catch (Exception e) {
-                    log.error("Invalid master instance type specified!",e);
+                    log.error("Invalid master instance type specified!", e);
                     return false;
                 }
                 log.info(V, "Master instance type set. ({})", this.cfg.getMasterInstanceType());
@@ -375,7 +381,7 @@ public class CommandLineValidator {
                 if (cfg.getMasterImage() == null) {
                     // try to load machine image id from URL
                     loadMachineImageId();
-                    if (machineImage != null ){
+                    if (machineImage != null) {
                         cfg.setMasterImage(machineImage.getProperty("master"));
                     } else {
                         log.error("-M option is required! Please specify the AMI ID for your master node.");
@@ -384,7 +390,7 @@ public class CommandLineValidator {
                 }
                 log.info(V, "Master image set. ({})", cfg.getMasterImage());
             }
-            
+
             ////////////////////////////////////////////////////////////////////////
             ///// slave-instance-type //////////////////////////////////////////////
             if (req.contains("s")) {
@@ -411,8 +417,7 @@ public class CommandLineValidator {
                             log.warn("The instance types should be the same when using cluster types.");
                             log.warn("Master Instance Type: " + cfg.getMasterInstanceType().toString());
                             log.warn("Slave Instance Type: " + slaveType.toString());
-                            
-                           
+
                         }
                     }
                 } catch (Exception e) {
@@ -504,20 +509,20 @@ public class CommandLineValidator {
             if (req.contains("S")) {
                 this.cfg.setSlaveImage(this.cl.getOptionValue("S", defaults.getProperty("slave-image")));
                 if (this.cfg.getSlaveImage() == null) {
-                     // try to load machine image id from URL
+                    // try to load machine image id from URL
                     loadMachineImageId();
-                    if (machineImage != null ){
+                    if (machineImage != null) {
                         cfg.setSlaveImage(machineImage.getProperty("slave"));
                     } else {
-                       
+
                         log.error("-S option is required! Please specify the AMI ID for your slave nodes.");
-                    return false;
+                        return false;
                     }
                 } else {
                     log.info(V, "Slave image set. ({})", this.cfg.getSlaveImage());
                 }
             }
-            
+
             ////////////////////////////////////////////////////////////////////////
             ///// ports ////////////////////////////////////////////////////////////
             this.cfg.setPorts(new ArrayList<>());
@@ -525,7 +530,7 @@ public class CommandLineValidator {
             if (portsCsv != null && !portsCsv.isEmpty()) {
                 try {
                     Pattern p = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})(?:/(\\d{1,2}))*");
-                    
+
                     String[] portsStrings = portsCsv.split(",");
                     for (String portString : portsStrings) {
 
@@ -542,9 +547,9 @@ public class CommandLineValidator {
                                 addr = InetAddress.getLocalHost().getHostAddress() + "/32";
                             } else {
                                 Matcher m = p.matcher(tmp[0]);
-                                
+
                                 boolean matches = m.matches();
-                                
+
                                 for (int i = 1; i <= 4; i++) {
                                     checkStringAsInt(m.group(i), 0, 255);
                                 }
@@ -698,8 +703,7 @@ public class CommandLineValidator {
                 cfg.setEarlyMasterShellScriptFile(script);
                 log.info(V, "Early master shell script file found! ({})", script);
             }
-            
-            
+
             /* ------------------------ early shell script Master ------------------------- */
             String earlySlaveScriptFilePath = null;
             if (defaults.containsKey("early-slave-execute-script")) {
@@ -717,38 +721,36 @@ public class CommandLineValidator {
                 cfg.setEarlySlaveShellScriptFile(script);
                 log.info(V, "Early slave shell script file found! ({})", script);
             }
-            
-            
-            
+
             /* ------------------------ public ip address for all slaves ------------------------- */
-            if (cl.hasOption("psi") || defaults.containsKey("public-slave-ip")){
+            if (cl.hasOption("psi") || defaults.containsKey("public-slave-ip")) {
                 cfg.setPublicSlaveIps(cl.getOptionValue("psi", defaults.getProperty("public-slave-ip")).equalsIgnoreCase("yes"));
             }
-            
+
             /* ------------------------- spot instance request --------------------------- */
             if (cl.hasOption("usir") || defaults.containsKey("use-spot-instance-request")) {
                 String value = cl.getOptionValue("usir", defaults.getProperty("use-spot-instance-request"));
                 if (value.equalsIgnoreCase("yes")) {
                     cfg.setUseSpotInstances(true);
-                    
+
                     if (cl.hasOption("bd") || defaults.containsKey("bidprice")) {
                         try {
                             cfg.setBidPrice(Double.parseDouble(cl.getOptionValue("bd", defaults.getProperty("bidprice"))));
                             if (cfg.getBidPrice() <= 0.0) {
                                 throw new NumberFormatException();
                             }
-                        } catch (NumberFormatException e){
+                        } catch (NumberFormatException e) {
                             log.error("Argument bp/bidprice is not a valid double value  and must be > 0.0 !");
                             return false;
-                        }                     
+                        }
                     } else {
                         log.error("If use-spot-instance-request is set, a bidprice must defined!");
                         return false;
                     }
-                    
+
                     if (cl.hasOption("bdm") || defaults.containsKey("bidprice-master")) {
-                        try{
-                            cfg.setBidPriceMaster(Double.parseDouble(cl.getOptionValue("bdm",defaults.getProperty("bidprice-master"))));
+                        try {
+                            cfg.setBidPriceMaster(Double.parseDouble(cl.getOptionValue("bdm", defaults.getProperty("bidprice-master"))));
                             if (cfg.getBidPriceMaster() <= 0.0) {
                                 throw new NumberFormatException();
                             }
@@ -757,9 +759,9 @@ public class CommandLineValidator {
                             return false;
                         }
                     } else {
-                        log.info(V,"Bidprice master is not set, use general bidprice instead!");
+                        log.info(V, "Bidprice master is not set, use general bidprice instead!");
                     }
-                              
+
                     log.info(V, "Use spot request for all");
                 } else if (value.equalsIgnoreCase("no")) {
                     log.info(V, "SpotInstance ussage disabled.");
@@ -769,20 +771,18 @@ public class CommandLineValidator {
                     return false;
                 }
             }
-            
+
             /* ----------------------- ephemeral fs ----------------------------- */
             if (cl.hasOption("lfs") || defaults.containsKey("local-fs")) {
-                String value = cl.getOptionValue("lfs",defaults.getProperty("local-fs"));
+                String value = cl.getOptionValue("lfs", defaults.getProperty("local-fs"));
                 try {
-                    FS fs  = FS.valueOf(value.toUpperCase());
+                    FS fs = FS.valueOf(value.toUpperCase());
                     cfg.setLocalFS(fs);
                 } catch (IllegalArgumentException e) {
                     log.error("Local filesustem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
                     return false;
                 }
-                
-            
-                        
+
             }
 
             ///////////////////////////////////////////////////////////////////////
@@ -803,7 +803,7 @@ public class CommandLineValidator {
                 this.cfg.setGridPropertiesFile(prop.toFile());
                 log.info(V, "Wrote grid properties to '{}' after successful grid startup!", prop);
             }
-            
+
             ////////////////////////////////////////////////////////////////////////
             ///// debug-requests ///////////////////////////////////////////////////
             if (this.cl.hasOption("dr")) {
@@ -828,14 +828,14 @@ public class CommandLineValidator {
         return v;
     }
 
-    private void loadMachineImageId(){
+    private void loadMachineImageId() {
         machineImage = new Properties();
-        String str = "https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/"+cfg.getMode().name().toLowerCase()+"/"+cfg.getRegion()+".ami.properties";
+        String str = "https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/" + cfg.getMode().name().toLowerCase() + "/" + cfg.getRegion() + ".ami.properties";
         try {
-            
-            URL url = new URL("https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/"+cfg.getMode().name().toLowerCase()+"/"+cfg.getRegion()+".ami.properties");
+
+            URL url = new URL("https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/" + cfg.getMode().name().toLowerCase() + "/" + cfg.getRegion() + ".ami.properties");
             machineImage.load(url.openStream());
-            
+
             if (!machineImage.containsKey("master")) {
                 throw new IOException("Key/value for master image is missing in properties file!");
             }
@@ -843,12 +843,12 @@ public class CommandLineValidator {
                 throw new IOException("Key/value for slave image is missing in properties file!");
             }
         } catch (IOException ex) {
-            log.warn("No machine image properties file found for "+cfg.getMode().name()+" and region '"+cfg.getRegion()+"' found!");
-            log.error(V,"Exception: {}",ex.getMessage());
-            log.error(V,"Try : {}",str);
+            log.warn("No machine image properties file found for " + cfg.getMode().name() + " and region '" + cfg.getRegion() + "' found!");
+            log.error(V, "Exception: {}", ex.getMessage());
+            log.error(V, "Try : {}", str);
             machineImage = null;
         }
 
     }
-    
+
 }

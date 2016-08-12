@@ -102,7 +102,7 @@ public class CurrentClusters {
 
                     // user - should be always the same for all instances of one cluser
                     if (user != null) {
-                        if (cluster.getUser().equalsIgnoreCase("unknown")) {
+                        if (cluster.getUser() == null) {
                             cluster.setUser(user);
                         } else {
                             if (!cluster.getUser().equals(user)) {
@@ -202,8 +202,11 @@ public class CurrentClusters {
     }
 
     /**
+     * Determine cluster properties running OpenStack
+     * 
      *
      * @param os OpenStack
+     * @param conf
      */
     public CurrentClusters(OSClient os, Configuration conf) {
         String keypairName = conf.getKeypair();
@@ -218,7 +221,7 @@ public class CurrentClusters {
         for (Server serv : os.compute().servers().list()) {
             // check if instance is a BiBiGrid instance and extract clusterid from it
             String name = serv.getName();
-            
+            Map<String,String> metadata = serv.getMetadata(); 
    
             
             if (name != null && (name.startsWith("bibigrid-master-") || name.startsWith("bibigrid-slave-"))) {
@@ -229,9 +232,13 @@ public class CurrentClusters {
                     cluster = clustermap.get(clusterid);
                 } else {
                     cluster = new Cluster();
-                    cluster.setUser(serv.getMetadata().getOrDefault("user", "unknown"));
                     clustermap.put(clusterid, cluster);
                 }
+                // get user from metadata map 
+                if (cluster.getUser() == null) {
+                    cluster.setUser(metadata.get("user"));
+                }
+                               
                 // master / slave
                 if (name.contains("master")) {
                     cluster.setMasterinstance(serv.getId());

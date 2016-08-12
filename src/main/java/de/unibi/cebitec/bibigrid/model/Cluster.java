@@ -21,7 +21,7 @@ public class Cluster {
     private String vpc;
     private String securitygroup;
     private String keyname;
-    private String user = "unknown";
+    private String user;
     
     private String started = "unknown";
 
