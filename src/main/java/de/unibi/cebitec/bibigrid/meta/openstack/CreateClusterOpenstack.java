@@ -369,7 +369,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         Address addr = null;
         do {
             Server instance = os.compute().servers().get(instanceID);
-            if (instance != null && instance.getAddresses().getAddresses(network).size() > 0) {
+            if (instance != null && instance.getAddresses() !=  null && instance.getAddresses().getAddresses(network) != null && instance.getAddresses().getAddresses(network).size() > 0) {
                 addr = instance.getAddresses().getAddresses(network).iterator().next();
             } else {
                 try {
