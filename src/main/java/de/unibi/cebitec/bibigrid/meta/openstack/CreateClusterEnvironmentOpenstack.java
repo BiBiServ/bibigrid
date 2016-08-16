@@ -46,20 +46,20 @@ public class CreateClusterEnvironmentOpenstack
 
     private KEYPAIR keypair;
 
-    public static final Logger log = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
+    public static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
 
     public CreateClusterEnvironmentOpenstack(CreateClusterOpenstack cluster) {
         this.cluster = cluster;
         try {
             keypair = new KEYPAIR();
         } catch (JSchException ex) {
-            java.util.logging.Logger.getLogger(CreateClusterEnvironmentOpenstack.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage(),ex);  
         }
     }
 
     @Override
     public CreateClusterEnvironmentOpenstack createVPC() {
-        log.info("Network creation not implemented yet");
+        LOG.info("Network creation not implemented yet");
         return this;
     }
 
@@ -68,6 +68,8 @@ public class CreateClusterEnvironmentOpenstack
 
         SubnetService sns = cluster.getOs().networking().subnet();
         NetworkService ns = cluster.getOs().networking().network();
+        
+        
         
         
         // @ToDo
@@ -80,7 +82,7 @@ public class CreateClusterEnvironmentOpenstack
         }
 //        SubNet subnet 
 //        subnetapi.create(new CreateSubnet());
-        log.info("Subnet creation not implementd yet");
+        LOG.info("Subnet creation not implementd yet");
         return this;
     }
 
@@ -104,29 +106,6 @@ public class CreateClusterEnvironmentOpenstack
                 .range(1,65535)
                 .build());
         
-        
-        
-        
-        //SecurityGroupService sgs = cluster.getOs().networking().securitygroup();
-        /*sg = sgs.create(Builders.securityGroup()
-                .name("sg-" + cluster.getClusterId())
-                .description("Security Group for cluster: " + cluster.getClusterId())
-                .build());*/
-
-        /**
-         * Standard Rules.
-         */
-//        SecurityGroupRule rule_ssh = Builders.securityGroupRule()
-//                
-//                .securityGroupId(sg.getId())
-//                .protocol("tcp")
-//                .direction("ingress")
-//                .ethertype("IPv4")
-//                .portRangeMin(22)
-//                .portRangeMax(22)
-//                .remoteIpPrefix("0.0.0.0/0")
-//                .build();
-
         /**
          * User selected Ports.
          */
@@ -147,13 +126,13 @@ public class CreateClusterEnvironmentOpenstack
                 .range(p.number,p.number)
                 .build());
         }
-        log.info("SecurityGroup (ID: {}) created.", sge.getName());
+        LOG.info("SecurityGroup (ID: {}) created.", sge.getName());
         return this;
     }
 
     @Override
     public CreateClusterOpenstack createPlacementGroup() {
-        log.info("PlacementGroup creation not implemented yet");
+        LOG.info("PlacementGroup creation not implemented yet");
         return cluster;
     }
 

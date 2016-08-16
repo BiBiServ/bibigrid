@@ -54,14 +54,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
-//    private final NovaApi novaApi;
-//    private final ServerApi serverApi;
-//    private final SecurityGroupApi securityGroupApi;
-//    private final FlavorApi flavorApi;
-//    private final ImageApi imageApi;
-//    private final FloatingIPApi floatingApi;
-//    private final NeutronApi neutronApi;
-//    private final SubnetApi subnetApi;
+
     private final String os_region;
 
     private final String provider = "openstack-nova";

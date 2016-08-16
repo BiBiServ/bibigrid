@@ -812,7 +812,8 @@ public class CommandLineValidator {
 
         }
 
-        this.intent.setConfiguration(this.cfg);
+        // if successfull validated set configuration to intent
+        intent.setConfiguration(cfg);
         return true;
     }
 
