@@ -1,26 +1,13 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.meta.openstack;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Module;
 import de.unibi.cebitec.bibigrid.meta.TerminateIntent;
-import de.unibi.cebitec.bibigrid.model.Cluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.model.CurrentClusters;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import org.jclouds.ContextBuilder;
 import org.jclouds.http.HttpResponseException;
 
-import org.jclouds.sshj.config.SshjSshClientModule;
 import org.openstack4j.api.compute.ComputeSecurityGroupService;
+import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.compute.Server;
 import org.slf4j.Logger;
@@ -28,14 +15,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jsteiner
+ * @author Johannes Steiner (1st version), Jan Krueger (jkrueger@cebitec.uni-bielefeld.de)
  */
 public class TerminateIntentOpenstack extends OpenStackIntent implements TerminateIntent {
 
-    public static final Logger log = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
+    public static final Logger LOG = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
 
     private final String os_region;
-    private final String provider = "openstack-nova";
+//    private final String provider = "openstack-nova";
 
     public TerminateIntentOpenstack(Configuration conf) {
         super(conf);
@@ -44,77 +31,49 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
 
     @Override
     public boolean terminate() {
-        /**
-         * What to do if the createIntent fails and the terminateIntent gets not
-         * called via commandline -t ? ...
-         */
-
         if (conf.getClusterId() != null && !conf.getClusterId().isEmpty()) {
-            log.info("Terminating cluster with ID: {}", conf.getClusterId());
+            LOG.info("Terminating cluster with ID: {}", conf.getClusterId());
             List<Server> l = getServers(conf.getClusterId());
             for (Server serv : l) {
                 os.compute().servers().delete(serv.getId());
-                log.info("Terminated " + serv.getName());
+                LOG.info("Terminated " + serv.getName());
             }
-            /**
-             * For deleting a SecurityGroup you first have to delete all its
-             * rule and then delete the sg itself.
-             */
-            ComputeSecurityGroupService securityGroups = os.compute().securityGroups();
 
+     
+            ComputeSecurityGroupService securityGroups = os.compute().securityGroups();
+           // iterate over all Security Groups ... 
             for (SecGroupExtension securityGroup : securityGroups.list()) {
+                // only clean the security group with id "sg-<clusterid>
                 if (securityGroup.getName().equals("sg-" + conf.getClusterId().trim())) {
 
-//                    for (SecurityGroupRule rule : securityGroup.getRules()) {
-//                        sgApi.deleteRule(rule.getId()); // first delete rules, then the sg itself
-//                    }
                     int tries = 15;
                     while (true) {
                         try {
                             Thread.sleep(1000);
-                            securityGroups.delete(securityGroup.getId()); // delete whole sg
-                            break;
+                            ActionResponse ar = securityGroups.delete(securityGroup.getId()); 
+                            if (ar.isSuccess()) {
+                                break;
+                            }
+                            LOG.warn("{} Try again in a second ...",ar.getFault());
+                            
                         } catch (InterruptedException ex) {
-                            java.util.logging.Logger.getLogger(TerminateIntentOpenstack.class.getName()).log(Level.SEVERE, null, ex);
+                            // do nothing
                         } catch (HttpResponseException he) {
-                            log.info("Waiting for detaching SecurityGroup ...");
+                            LOG.info("Waiting for detaching SecurityGroup ...");
                             if (tries == 0) {
-                                log.error("Can't detach SecurityGroup aborting.");
-                                log.error(he.getMessage());
+                                LOG.error("Can't detach SecurityGroup aborting.");
+                                LOG.error(he.getMessage());
                                 return false;
                             }
                             tries--;
                         }
                     }
-                    log.info("SecurityGroup ({}) deleted.", securityGroup.getName());
-                }
+                    LOG.info("SecurityGroup ({}) deleted.", securityGroup.getName());
+                } 
             }
-            log.info("Cluster (ID: {}) successfully terminated", conf.getClusterId().trim());
+           
+            LOG.info("Cluster (ID: {}) successfully terminated", conf.getClusterId().trim());
             return true;
-//        } 
-//        else {
-//            /**
-//             * ... maybe this?
-//             */
-//            CurrentClusters cc = new CurrentClusters(os, conf);
-//            Map<String, Cluster> clusters = cc.getClusterMap();
-//            Cluster c = null;
-//            for (String id : clusters.keySet()) {
-//                if (id.contains(conf.getKeypair())) {
-//                    c = clusters.get(id);
-//                    break;
-//                }
-//            }
-//
-//            for (String slave : c.getSlaveinstances()) {
-//                os..delete(slave);
-//                log.info("Deleted Slave-Instance (ID: {})", slave);
-//            }
-//
-//            s.delete(c.getMasterinstance());
-//            log.info("Deleted Master-Instance (ID: {})", c.getMasterinstance());
-//            return true;
-//        }
         }
         return false;
     }
@@ -130,7 +89,7 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
         }
 
         if (ret.isEmpty()) {
-            log.error("No suitable bibigrid cluster with ID: [{}] found.", conf.getClusterId().trim());
+            LOG.error("No suitable bibigrid cluster with ID: [{}] found.", conf.getClusterId().trim());
             System.exit(1);
         }
         return ret;
