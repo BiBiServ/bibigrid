@@ -5,6 +5,8 @@
  */
 package de.unibi.cebitec.bibigrid.meta;
 
+import de.unibi.cebitec.bibigrid.model.ConfigurationException;
+
 /**
  *
  * @author jsteiner
@@ -17,22 +19,25 @@ public interface CreateClusterEnvironment<E, P> {
      * Api specific implementation of creating or choosing an exisiting
      * Virtual Private Cloud.
      * @return Environment E
+     * @throws de.unibi.cebitec.bibigrid.model.ConfigurationException
      */
-    public E createVPC();
+    public E createVPC()  throws ConfigurationException;
 
     /**
      * Api specific implementation of creating or choosing a Subnet.
      *
      * @return Environment E
+     * @throws de.unibi.cebitec.bibigrid.model.ConfigurationException
      */
-    public E createSubnet();
+    public E createSubnet() throws ConfigurationException;
 
     /**
      * Api specific implementation of creating or choosing a SecurityGroup.
      *
      * @return Environment E
+     * @throws de.unibi.cebitec.bibigrid.model.ConfigurationException
      */
-    public E createSecurityGroup();
+    public E createSecurityGroup()  throws ConfigurationException;
 
     /**
      * Api specific implementation of creating or choosing a placement group.
@@ -40,6 +45,7 @@ public interface CreateClusterEnvironment<E, P> {
      * CreateCluster implementing Instance to step to instance configuration.
      *
      * @return Provider P
+     * @throws de.unibi.cebitec.bibigrid.model.ConfigurationException
      */
-    public P createPlacementGroup();
+    public P createPlacementGroup()  throws ConfigurationException;
 }

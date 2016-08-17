@@ -7,31 +7,28 @@ package de.unibi.cebitec.bibigrid.meta.openstack;
 
 import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
+import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.ConfigurationException;
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import java.util.List;
-import java.util.logging.Level;
 import org.openstack4j.api.Builders;
+import org.openstack4j.api.OSClient;
 import org.openstack4j.api.compute.ComputeSecurityGroupService;
 import org.openstack4j.api.networking.NetworkService;
-import org.openstack4j.api.networking.SecurityGroupService;
 import org.openstack4j.api.networking.SubnetService;
 import org.openstack4j.model.compute.IPProtocol;
 import org.openstack4j.model.compute.SecGroupExtension;
-import org.openstack4j.model.compute.SecGroupExtension.Rule;
+import org.openstack4j.model.network.IPVersionType;
+import org.openstack4j.model.network.Network;
+import org.openstack4j.model.network.Router;
 import org.openstack4j.model.network.SecurityGroup;
-import org.openstack4j.model.network.SecurityGroupRule;
-//import org.jclouds.net.domain.IpProtocol;
-//import org.jclouds.openstack.neutron.v2.features.SubnetApi;
-//import org.jclouds.openstack.nova.v2_0.domain.Ingress;
-//import org.jclouds.openstack.nova.v2_0.domain.SecurityGroupRule;
-//import org.jclouds.openstack.nova.v2_0.domain.SecurityGroup;
-//import org.jclouds.openstack.nova.v2_0.extensions.SecurityGroupApi;
+import org.openstack4j.model.network.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
+ * Prepare the cloud environment for an OpenStack cluster.
  *
  *
  * @author Johannes Steiner, Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
@@ -42,10 +39,14 @@ public class CreateClusterEnvironmentOpenstack
     private CreateClusterOpenstack cluster;
 
     private SecurityGroup sg;
-     private SecGroupExtension sge;
+    private SecGroupExtension sge;
 
     private KEYPAIR keypair;
 
+    private static final String ROUTERPREFIX = "router-";
+    private static final String NETWORKPREFIX = "net-";
+    private static final String SUBNETWORKPREFIX = "subnet-";
+    
     public static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
 
     public CreateClusterEnvironmentOpenstack(CreateClusterOpenstack cluster) {
@@ -59,15 +60,81 @@ public class CreateClusterEnvironmentOpenstack
 
     @Override
     public CreateClusterEnvironmentOpenstack createVPC() {
-        LOG.info("Network creation not implemented yet");
+        // complete setup is done by createSubNet
         return this;
     }
 
     @Override
-    public CreateClusterEnvironmentOpenstack createSubnet() {
+    public CreateClusterEnvironmentOpenstack createSubnet() throws ConfigurationException{
+        
+        /*
+        User can specify three parameters to define the network connection for a
+        BiBiGrid cluster
+        
+        1) router
+        2) network
+        3) subnetwork
+        
+        
+        */
+        
+        
+        OSClient osc = cluster.getOs();
+        Configuration cfg = cluster.getConfiguration();
+        String clusterid = cluster.getClusterId();
+        
+        
+        Router router = null;
+        Network net = null;
+        Subnet subnet = null;
 
-        SubnetService sns = cluster.getOs().networking().subnet();
-        NetworkService ns = cluster.getOs().networking().network();
+        // if no router is given create a new one
+        if (cfg.getRoutername() == null) {
+            router = osc.networking().router().create(Builders.router()
+            .name(ROUTERPREFIX+clusterid)
+            .externalGateway(cfg.getGatewayname())
+            .build());
+        // otherwise use existing one
+        } else {
+            for (Router r : osc.networking().router().list()){
+                if (r.getName().equals(cfg.getRoutername())) {
+                    router =  r;
+                    break;
+                }
+            }
+            if (router == null) {
+                throw new ConfigurationException("No Router with name '"+cfg.getRoutername()+"' found!");
+            }
+        }
+
+        
+        if (cfg.getSubnetname() != null) {
+            //  Check if subnetname exists
+            
+            //  Determine netname if  
+            
+        } else  {
+        
+            if (cfg.getNetworkname() == null) {
+                // create new network
+                net = osc.networking().network().create(Builders.network()
+                    .name("net-" + cluster.getClusterId())
+                    .adminStateUp(true)
+                    .build());
+                
+            } 
+            // and create a new subnetwork
+            subnet = osc.networking().subnet().create(Builders.subnet()
+                    .name("subnet-"+cluster.getClusterId())
+                    .network(net)
+                    .ipVersion(IPVersionType.V4)
+                    .cidr("10.10.10.0/24")
+                    .build());
+
+        }
+        
+        SubnetService sns = osc.networking().subnet();
+        NetworkService ns = osc.networking().network();
         
         
         
@@ -111,14 +178,7 @@ public class CreateClusterEnvironmentOpenstack
          */
         List<Port> ports = cluster.getConfiguration().getPorts();
         for (Port p : ports) {
-//            SecurityGroupRule rule_user_ingress = Builders.securityGroupRule()
-//                .securityGroupId(sg.getId())
-//                .protocol("tcp")
-//                .direction("ingress")
-//                .portRangeMin(p.number)
-//                .portRangeMax(p.number)
-//                .remoteIpPrefix(p.iprange)
-//                .build(); 
+
             csgs.createRule(Builders.secGroupRule()
                 .parentGroupId(sge.getId())
                 .protocol(IPProtocol.TCP)
@@ -148,4 +208,6 @@ public class CreateClusterEnvironmentOpenstack
         return sge;
     }
 
+    
+    
 }

@@ -53,7 +53,8 @@ public class Configuration {
     
     private String routername = null;
     private String networkname = null;
-    private String subnetname  = null; 
+    private String subnetname  = null;
+    private String gatewayname = null;
     
 
     public static enum MODE {
@@ -397,6 +398,14 @@ public class Configuration {
 
     public void setRoutername(String routername) {
         this.routername = routername;
+    }
+
+    public String getGatewayname() {
+        return gatewayname;
+    }
+
+    public void setGatewayname(String gatewayname) {
+        this.gatewayname = gatewayname;
     }
     
     public boolean isLogHttpRequests() {
