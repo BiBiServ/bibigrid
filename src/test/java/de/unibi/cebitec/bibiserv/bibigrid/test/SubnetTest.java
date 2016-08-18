@@ -58,7 +58,7 @@ public class SubnetTest {
         } else {
             CommandLineParser cli = new DefaultParser();
             OptionGroup intentOptions = getCMDLineOptionGroup();
-            Options cmdLineOptions = getCMDLineOptions();
+            Options cmdLineOptions = getCMDLineOptions(intentOptions);
             try {
                 CommandLine cl = cli.parse(cmdLineOptions, new String[]{"-o", bibigridproperties, "-ch"});
                 intent = new CreateIntent();

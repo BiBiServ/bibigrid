@@ -12,6 +12,11 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Startup/Main class of BiBiGrid.
+ * 
+ * @author Jan Krueger - jkrueger(at)cebitec.un-bielefel.de
+ */
 public class StartUp {
 
     public static final Logger log = LoggerFactory.getLogger(StartUp.class);
@@ -25,20 +30,22 @@ public class StartUp {
     public static OptionGroup getCMDLineOptionGroup() {
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
+        Option terminate = new Option("t","terminate",true,"terminate running cluster");
+        terminate.setArgName("cluster-id");
         intentOptions
-                .addOption(OptionBuilder.withLongOpt("version").withDescription("version").create("V"))
-                .addOption(OptionBuilder.withLongOpt("help").withDescription("help").create("h"))
-                .addOption(OptionBuilder.withLongOpt("create").withDescription("create cluster").create("c"))
-                .addOption(OptionBuilder.withLongOpt("list").withDescription("list running clusters").create("l"))
-                .addOption(OptionBuilder.withLongOpt("check").withDescription("check config file").create("ch"))
-                .addOption(OptionBuilder.withLongOpt("terminate").withDescription("terminate running cluster").hasArg().withArgName("cluster-id").create("t"));
+                .addOption(new Option("V","version",false,"version"))
+                .addOption(new Option("h","help",false,"help"))
+                .addOption(new Option("c","create",false,"create cluster"))
+                .addOption(new Option("l","list",false,"list running clusters"))
+                .addOption(new Option("ch","check",false,"check config file"))
+                .addOption(terminate);
         return intentOptions;
     }
     
-    public static Options getCMDLineOptions() {
+    public static Options getCMDLineOptions(OptionGroup optgrp) {
         Options cmdLineOptions = new Options();
         cmdLineOptions
-                .addOptionGroup(getCMDLineOptionGroup())
+                .addOptionGroup(optgrp)
                 .addOption("m", "master-instance-type", true, "see INSTANCE-TYPES below")
                 .addOption("mme", "max-master-ephemerals", true, "limits the maxium number of used ephemerals for master spool volume (raid 0)")
                 .addOption("M", "master-image", true, "machine image id for master, if not set  images defined at https://bibiserv.cebitec.uni-bielefeld.de/resoruces/bibigrid/<framework>/<region>.ami.properties are used!")
@@ -90,8 +97,9 @@ public class StartUp {
 
         CommandLineParser cli = new DefaultParser();
         OptionGroup intentOptions = getCMDLineOptionGroup();
-        Options cmdLineOptions = getCMDLineOptions();
+        Options cmdLineOptions = getCMDLineOptions(intentOptions);
 
+        
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
             CommandLineValidator validator = null;
