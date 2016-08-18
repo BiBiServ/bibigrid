@@ -1,6 +1,6 @@
 package de.unibi.cebitec.bibigrid.ctrl;
 
-import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.ListIntentAWS;
 import de.unibi.cebitec.bibigrid.meta.openstack.ListIntentOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;

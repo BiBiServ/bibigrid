@@ -1,7 +1,7 @@
 package de.unibi.cebitec.bibigrid.ctrl;
 
 import com.amazonaws.services.ec2.AmazonEC2;
-import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.ValidateIntentAWS;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import java.util.Arrays;

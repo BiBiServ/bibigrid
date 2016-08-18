@@ -154,22 +154,41 @@ public class CommandLineValidator {
                     return false;
                 }
 
-            } else {
-                // get user name from system
-                cfg.setUser(System.getProperty("user.name")); 
             }
             ////////////////////////////////////////////////////////////////////////
-            ///// vpc-id ///////////////////////////////////////////////////////////
+            ///// Network Options ///////////////////////////////////////////////////////////
 
-            if (this.cl.hasOption("vpc")) {
-                this.cfg.setVpcid(this.cl.getOptionValue("vpc"));
+            if (cl.hasOption("vpc")) {  // AWS - required
+                cfg.setVpcid(cl.getOptionValue("vpc"));
             } else if (defaults.containsKey("vpc")) {
                 cfg.setVpcid(defaults.getProperty("vpc"));
             }
+            
+            
+            if (cl.hasOption("router")) { // Openstack - optional, but recommend
+                cfg.setRoutername(cl.getOptionValue("router"));
+            } else if (defaults.containsKey("router")) {
+                cfg.setRoutername(defaults.getProperty("router"));
+            }
+            if (cl.hasOption("network")) { // Openstack - optional
+                cfg.setNetworkname(cl.getOptionValue("network"));
+            } else if (defaults.containsKey("network")) {
+                cfg.setNetworkname(defaults.getProperty("network"));
+            }
+            if (cl.hasOption("subnet")) { // Openstack - optinal
+                cfg.setSubnetname(cl.getOptionValue("subnet"));
+            } else if (defaults.containsKey("subnet")) {
+                cfg.setSubnetname(defaults.getProperty("subnet"));
+            }
+            
+            
+            
+            
 
             /**
              * Openstack meta area.
              */
+ 
             if (cfg.getMode().equals(MODE.OPENSTACK)) {
 
                 OpenStackCredentials osc = new OpenStackCredentials();
@@ -220,7 +239,7 @@ public class CommandLineValidator {
                 }
 
                 this.cfg.setOpenstackCredentials(osc);
-            }
+            } 
 
             ////////////////////////////////////////////////////////////////////////
             ///// mesos on/off /////////////////////////////////////////////////

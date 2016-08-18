@@ -1,4 +1,4 @@
-package de.unibi.cebitec.bibigrid.exc;
+package de.unibi.cebitec.bibigrid.exception;
 
 public class IntentNotConfiguredException extends Exception {
 

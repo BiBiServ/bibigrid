@@ -3,10 +3,11 @@ package de.unibi.cebitec.bibigrid.ctrl;
 import com.amazonaws.AmazonClientException;
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUp;
-import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
+import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class CreateIntent extends Intent {
                 cleanupIntent.execute();
                 return false;
             }
-        } catch (AmazonClientException | JSchException ace) {
+        } catch (ConfigurationException | JSchException ace) {
             //ace.printStackTrace();
             log.error("Exception : {} ", ace.getMessage());
             return false;
@@ -52,7 +53,7 @@ public class CreateIntent extends Intent {
         return true;
     }
 
-    private boolean startClusterAtSelectedCloudProvider() throws AmazonClientException, JSchException {
+    private boolean startClusterAtSelectedCloudProvider() throws ConfigurationException,  JSchException {
         switch (getConfiguration().getMode()) {
             case AWS:
                 return new CreateClusterAWS(getConfiguration())

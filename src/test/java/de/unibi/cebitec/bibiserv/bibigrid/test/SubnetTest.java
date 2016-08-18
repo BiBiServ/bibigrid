@@ -7,6 +7,9 @@ import de.unibi.cebitec.bibigrid.ctrl.CreateIntent;
 import de.unibi.cebitec.bibigrid.ctrl.Intent;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterEnvironmentOpenstack;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
+import de.unibi.cebitec.bibigrid.util.SubNets;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -14,17 +17,21 @@ import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.networking.NetworkService;
-import org.openstack4j.api.networking.RouterService;
+import org.openstack4j.api.networking.PortService;
 import org.openstack4j.api.networking.SubnetService;
 import org.openstack4j.model.network.IPVersionType;
 import org.openstack4j.model.network.Network;
+import org.openstack4j.model.network.Port;
+import org.openstack4j.model.network.Router;
 import org.openstack4j.model.network.Subnet;
+import org.openstack4j.model.network.options.PortListOptions;
+import org.openstack4j.openstack.networking.domain.NeutronSubnet;
+import org.openstack4j.openstack.networking.domain.NeutronSubnet.Subnets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +51,7 @@ public class SubnetTest {
     public static void setup() {
 
         //String bibigridproperties = System.getProperty("bibigrid.properties");
-        String bibigridproperties = "/homes/jkrueger/.bibigrid.properties.OS";
+        String bibigridproperties = "/Users/jkrueger/.bibigrid.properties.OS";
 
         if (bibigridproperties == null) {
             LOG.warn("To run JUnit test, you have to set system property \"bibigrid.properties\" to a valid OpenStack bibigrid.properties file!");
@@ -77,14 +84,14 @@ public class SubnetTest {
 
     }
 
-    @Test
+    //@Test
     public void TestCreate() {
         LOG.info("test create");
         if (intent != null) {
             OSClient osc = cluster.getOs();
 
             
-            RouterService rs = osc.networking().router();
+            
             
 
             
@@ -105,12 +112,21 @@ public class SubnetTest {
                     .ipVersion(IPVersionType.V4)
                     .cidr("10.10.10.0/24")
                     .build());
-
+            
+        }
+        Assert.assertTrue(true);
+    }
+    
+    @Test
+    public void TestRouter(){
+        LOG.info("test Router");
+        if (intent != null) {
+         
         }
         Assert.assertTrue(true);
     }
 
-    @Test
+    //@Test
     public void TestDelete() {
         LOG.info("test Delete");
         if (intent != null) {

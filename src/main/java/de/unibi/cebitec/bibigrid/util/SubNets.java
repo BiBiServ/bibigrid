@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.util;
 
-import com.amazonaws.services.ec2.model.Subnet;
 import java.util.Collection;
 
 /**
@@ -8,7 +7,7 @@ import java.util.Collection;
  * 
  * 
  * 
- * @author jkrueger
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class SubNets {
     
@@ -23,8 +22,8 @@ public class SubNets {
             
     
     
-    public SubNets(String vpccidr, long subnetsize){
-        long [] tmp = parseCidr(vpccidr);
+    public SubNets(String CIDR, long subnetsize){
+        long [] tmp = parseCidr(CIDR);
         ip = tmp[0];
         networksize = tmp[1];
         networkmask = tmp[2];

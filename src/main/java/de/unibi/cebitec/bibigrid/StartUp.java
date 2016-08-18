@@ -2,7 +2,7 @@ package de.unibi.cebitec.bibigrid;
 
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.ctrl.*;
-import de.unibi.cebitec.bibigrid.exc.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -67,6 +67,9 @@ public class StartUp {
                 .addOption("db", "cassandra", false, "Enable Cassandra database support")
                 .addOption("gpf", "grid-properties-file", true, "store essential grid properties like master & slave dns values and grid id in a Java property file")
                 .addOption("vpc", "vpc-id", true, "Vpc ID used instead of default vpc")
+                .addOption("router", "router", true, "Name of router used (Openstack), only one of --router --network or --subnet should be used. ")
+                .addOption("network", "network", true, "Name of network used (Openstack), only one of --router --network or --subnet should be used.")
+                .addOption("subnet", "subnet", true, "Naem of subnet used (Openstack), only one of --router --network or --subnet should be used.")
                 .addOption("psi", "public-slave-ip", true, "Slave instances also get an public ip address")
                 .addOption("me", "mesos", true, "Yes or no if Mesos framework should be configured/started. Default is No")
                 .addOption("mode", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
