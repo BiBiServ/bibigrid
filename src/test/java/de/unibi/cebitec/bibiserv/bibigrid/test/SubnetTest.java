@@ -7,9 +7,6 @@ import de.unibi.cebitec.bibigrid.ctrl.CreateIntent;
 import de.unibi.cebitec.bibigrid.ctrl.Intent;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterEnvironmentOpenstack;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
-import de.unibi.cebitec.bibigrid.util.SubNets;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -26,12 +23,7 @@ import org.openstack4j.api.networking.PortService;
 import org.openstack4j.api.networking.SubnetService;
 import org.openstack4j.model.network.IPVersionType;
 import org.openstack4j.model.network.Network;
-import org.openstack4j.model.network.Port;
-import org.openstack4j.model.network.Router;
 import org.openstack4j.model.network.Subnet;
-import org.openstack4j.model.network.options.PortListOptions;
-import org.openstack4j.openstack.networking.domain.NeutronSubnet;
-import org.openstack4j.openstack.networking.domain.NeutronSubnet.Subnets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +113,13 @@ public class SubnetTest {
     public void TestRouter(){
         LOG.info("test Router");
         if (intent != null) {
-         
+            OSClient osc = cluster.getOs();
+            NetworkService ns = osc.networking().network();
+            PortService port = osc.networking().port();
+            port.create(Builders.port()
+                    .name("test")
+                    
+                    .build());
         }
         Assert.assertTrue(true);
     }

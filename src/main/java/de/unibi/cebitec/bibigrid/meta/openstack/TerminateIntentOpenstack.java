@@ -4,18 +4,24 @@ import de.unibi.cebitec.bibigrid.meta.TerminateIntent;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import java.util.ArrayList;
 import java.util.List;
-import org.jclouds.http.HttpResponseException;
+import static org.openstack4j.api.Builders.port;
 
 import org.openstack4j.api.compute.ComputeSecurityGroupService;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.compute.Server;
+import org.openstack4j.model.network.Network;
+import org.openstack4j.model.network.Port;
+import org.openstack4j.model.network.Router;
+import org.openstack4j.model.network.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Implements TermintaeItent for Openstack.
  *
- * @author Johannes Steiner (1st version), Jan Krueger (jkrueger@cebitec.uni-bielefeld.de)
+ * @author Johannes Steiner (1st version), 
+ *  Jan Krueger (jkrueger@cebitec.uni-bielefeld.de)
  */
 public class TerminateIntentOpenstack extends OpenStackIntent implements TerminateIntent {
 
@@ -39,42 +45,78 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                 LOG.info("Terminated " + serv.getName());
             }
 
-     
+            // clean up security groups
             ComputeSecurityGroupService securityGroups = os.compute().securityGroups();
-           // iterate over all Security Groups ... 
+            // iterate over all Security Groups ... 
             for (SecGroupExtension securityGroup : securityGroups.list()) {
                 // only clean the security group with id "sg-<clusterid>
                 if (securityGroup.getName().equals("sg-" + conf.getClusterId().trim())) {
 
-                    int tries = 15;
                     while (true) {
                         try {
                             Thread.sleep(1000);
-                            ActionResponse ar = securityGroups.delete(securityGroup.getId()); 
+                            ActionResponse ar = securityGroups.delete(securityGroup.getId());
                             if (ar.isSuccess()) {
                                 break;
                             }
-                            LOG.warn("{} Try again in a second ...",ar.getFault());
-                            
+                            LOG.warn("{} Try again in a second ...", ar.getFault());
+
                         } catch (InterruptedException ex) {
                             // do nothing
-                        } catch (HttpResponseException he) {
-                            LOG.info("Waiting for detaching SecurityGroup ...");
-                            if (tries == 0) {
-                                LOG.error("Can't detach SecurityGroup aborting.");
-                                LOG.error(he.getMessage());
-                                return false;
-                            }
-                            tries--;
                         }
                     }
                     LOG.info("SecurityGroup ({}) deleted.", securityGroup.getName());
-                } 
+                }
             }
-           
+
+            // clean up router, interface, subnet, network
+            Network net = CreateClusterEnvironmentOpenstack.getNetworkByName(os, CreateClusterEnvironmentOpenstack.NETWORKPREFIX);
+            if (net != null) {
+                // get router
+                Router router = CreateClusterEnvironmentOpenstack.getRouterbyNetwork(os, net);
+                // get subnetwork
+                Subnet subnet = CreateClusterEnvironmentOpenstack.getSubnetworkByName(os, CreateClusterEnvironmentOpenstack.SUBNETWORKPREFIX);
+                // get a list of all ports which are handled by the used router
+                List<? extends Port> portlist = CreateClusterEnvironmentOpenstack.getPortsbyRouterAndNetwork(os, router, net);
+                if (subnet != null) {
+                    // detach interface  from router - list should contain only 1 port)
+                    for (Port port : portlist) {
+                        os.networking().router().detachInterface(router.getId(), subnet.getId(), port.getId());
+                        // should the port also be removed ?
+                    }
+                    // delete subnet
+                    ActionResponse ar = os.networking().subnet().delete(subnet.getId());
+                    if (ar.isSuccess()) {
+                        LOG.info("Subnet (ID:{}) deleted!",subnet.getId());
+                    } else {
+                        LOG.warn("Can't remove subnet (ID:{}) : {}", subnet.getId(), ar.getFault());
+                    }
+                }
+                // delete network
+                ActionResponse ar = os.networking().network().delete(net.getId());
+                if (ar.isSuccess()) {
+                    LOG.info("Network (ID:{}) deleted!",net.getId());
+                } else {
+                    LOG.warn("Can't remove network (ID:{}) : {}", net.getId(), ar.getFault());
+                } 
+            } else {
+                LOG.warn("No network with clusterid [{}] found.", conf.getClusterId());
+            }
+            // search for router and remove it
+            Router router = CreateClusterEnvironmentOpenstack.getRouterByName(os, CreateClusterEnvironmentOpenstack.ROUTERPREFIX);
+            if (router != null) {
+                ActionResponse ar = os.networking().router().delete(router.getId());
+                if (ar.isSuccess()) {
+                    LOG.info("Router (ID:{}) deleted!",router.getId());
+                } else {
+                    LOG.warn("Can't remove router (ID:{}) : {}", router.getId(), ar.getFault());
+                }
+            }
+
             LOG.info("Cluster (ID: {}) successfully terminated", conf.getClusterId().trim());
             return true;
         }
+
         return false;
     }
 
@@ -89,8 +131,7 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
         }
 
         if (ret.isEmpty()) {
-            LOG.error("No suitable bibigrid cluster with ID: [{}] found.", conf.getClusterId().trim());
-            System.exit(1);
+            LOG.warn("No instances with clusterid  [{}] found.", conf.getClusterId().trim());
         }
         return ret;
     }

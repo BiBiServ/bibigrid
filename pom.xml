@@ -65,7 +65,7 @@
 
 
         <!-- Evtl. unnoetig -->
-        <dependency>
+<!--        <dependency>
             <groupId>org.apache.jclouds.driver</groupId>
             <artifactId>jclouds-sshj</artifactId>
             <version>1.9.2</version>
@@ -75,7 +75,7 @@
             <groupId>org.apache.jclouds.driver</groupId>
             <artifactId>jclouds-slf4j</artifactId>
             <version>1.9.2</version>
-        </dependency>
+        </dependency>-->
         
         
         <dependency>
