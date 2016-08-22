@@ -9,6 +9,15 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+/**
+ * List all cluster for the used cluster environment.
+ * 
+ * All resources created by BiBiGrid follows a naming schema and are tagged. Bundles
+ * all resources having the same cluster-id  and list them. 
+ * 
+ * @author Jan Krueger - jkrueger
+ */
 public class ListIntent extends Intent {
 
     public static final Logger log = LoggerFactory.getLogger(ListIntent.class);
@@ -37,9 +46,12 @@ public class ListIntent extends Intent {
 
         switch (getConfiguration().getMode()) {
             case AWS:
-                return new ListIntentAWS(getConfiguration()).list();
+                log.info(new ListIntentAWS(getConfiguration()).toString());
+                return true;
+                
             case OPENSTACK:
-                return new ListIntentOpenstack(getConfiguration()).list();
+                log.info(new ListIntentOpenstack(getConfiguration()).toString());
+                return true;
             default:
                 log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
                 return false;

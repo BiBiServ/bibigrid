@@ -1,24 +1,25 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
- * @author jkrueger
+ * Represents a cluster, consisting of instances, network (router,net,subnet, placementgroup and vpc) and firewall rules (security group)
+ * 
+ * 
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class Cluster {
 
     private String masterinstance;
     private List<String> slaveinstances = new ArrayList<>();
-    private String placementgroup;
-    private String subnet;
-    private String vpc;
+    
+    private String router; // OpenStack
+    private String net; // OpenStack
+    private String subnet; 
+    
+    private String placementgroup; // AWS
+    private String vpc; //AWS
     private String securitygroup;
     private String keyname;
     private String user;
@@ -100,6 +101,23 @@ public class Cluster {
     public void setUser(String user) {
         this.user = user;
     }
+
+    public String getRouter() {
+        return router;
+    }
+
+    public void setRouter(String router) {
+        this.router = router;
+    }
+
+    public String getNet() {
+        return net;
+    }
+
+    public void setNet(String net) {
+        this.net = net;
+    }
+    
     
     
 

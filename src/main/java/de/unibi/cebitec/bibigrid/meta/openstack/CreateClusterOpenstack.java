@@ -244,7 +244,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             Addresses addresses = server.getAddresses();
             Map<String,List<?extends Address>> map =  addresses.getAddresses();
             
-            master.setIp(map.get(conf.getNetworkname()).get(0).getAddr()); // @ToDo
+            master.setIp(map.get(conf.getNetworkname()).get(0).getAddr());
             master.setPublicIp(floatingip.getFloatingIpAddress());
             master.setHostname("bibigrid-master-" + clusterId);
             master.updateNeutronHostname();
@@ -294,8 +294,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             }
             // wait for slave network finished ... update server instance list            
             for (Instance i : slaves) {
-                Address addr = getLocalIp(i.getId(), "bibiserv"); // @ToDo : HardCoded Network !!!!
-                i.setIp(addr.getAddr());
+                 addresses = server.getAddresses();
+                 map =  addresses.getAddresses();  
+                i.setIp(map.get(conf.getNetworkname()).get(0).getAddr());        
                 i.updateNeutronHostname();
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);

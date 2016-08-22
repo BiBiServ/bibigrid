@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package de.unibi.cebitec.bibigrid.meta.aws;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -19,36 +15,35 @@ import static de.unibi.cebitec.bibigrid.ctrl.TerminateIntent.log;
 import de.unibi.cebitec.bibigrid.meta.TerminateIntent;
 import de.unibi.cebitec.bibigrid.model.Cluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.model.CurrentClusters;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.util.List;
 import java.util.Map;
 
 /**
- *
- * @author jsteiner
+ * AWS specific implementation of terminate intent.
+ * 
+ * 
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ *         Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class TerminateIntentAWS implements TerminateIntent {
 
     private final Configuration conf;
+    private final Map<String, Cluster> clustermap;
+    private final AmazonEC2Client ec2;
 
     public TerminateIntentAWS(final Configuration conf) {
         this.conf = conf;
+        
+        ec2 = new AmazonEC2Client(conf.getCredentials());
+        ec2.setEndpoint("ec2." + conf.getRegion() + ".amazonaws.com");
+        clustermap = new ListIntentAWS(conf).getList();
+        
     }
 
     @Override
     public boolean terminate() {
-        ////////////////////////////////////////////////////////////////////////
-        ///// create client 
-        AmazonEC2Client ec2 = new AmazonEC2Client(conf.getCredentials());
-        ec2.setEndpoint("ec2." + conf.getRegion() + ".amazonaws.com");
-
-        ////////////////////////////////////////////////////////////////////////
-        ///// create currentclusters
-        CurrentClusters cc = new CurrentClusters(ec2);
-
-        Map<String, Cluster> clustermap = cc.getClusterMap();
-
+        // check if cluster with given id exists
         if (!clustermap.containsKey(conf.getClusterId())) {
             log.error("Cluster with '{}' not found.");
             return false;
