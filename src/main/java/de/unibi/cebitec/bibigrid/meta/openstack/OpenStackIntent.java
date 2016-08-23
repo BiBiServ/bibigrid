@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.meta.openstack;
 
 import de.unibi.cebitec.bibigrid.model.Configuration;
@@ -12,8 +7,9 @@ import org.openstack4j.model.common.Identifier;
 import org.openstack4j.openstack.OSFactory;
 
 /**
- *
- * @author jkrueger
+ * Abstract class that must be implemented by all OpenStack intents
+ * 
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 abstract class OpenStackIntent {
     

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.meta.openstack;
 
 import com.jcraft.jsch.ChannelExec;
@@ -16,12 +11,14 @@ import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
 import de.unibi.cebitec.bibigrid.util.JSchLogger;
 import de.unibi.cebitec.bibigrid.util.SshFactory;
 import de.unibi.cebitec.bibigrid.util.UserDataCreator;
+import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +43,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
+ * Openstack specific implementation of CreateCluster interface.
+ * 
+ * 
  * @author Jan Krueger - jkrueger (at)cebitec.uni-bielfeld.de 1st version by
  * Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
@@ -54,14 +53,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
-//    private final NovaApi novaApi;
-//    private final ServerApi serverApi;
-//    private final SecurityGroupApi securityGroupApi;
-//    private final FlavorApi flavorApi;
-//    private final ImageApi imageApi;
-//    private final FloatingIPApi floatingApi;
-//    private final NeutronApi neutronApi;
-//    private final SubnetApi subnetApi;
+
     private final String os_region;
 
     private final String provider = "openstack-nova";
@@ -103,26 +95,6 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         this.conf = conf;
         os_region = conf.getRegion();
 
-//        Iterable<Module> modules = ImmutableSet.<Module>of(
-//                new SshjSshClientModule(),
-//                new SLF4JLoggingModule());
-//        novaApi = ContextBuilder.newBuilder(provider)
-//                .endpoint(conf.getOpenstackCredentials().getEndpoint())
-//                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
-//                .modules(modules)
-//                .buildApi(NovaApi.class);
-//
-//        neutronApi = ContextBuilder.newBuilder(new NeutronApiMetadata())
-//                .endpoint(conf.getOpenstackCredentials().getEndpoint())
-//                .credentials(conf.getOpenstackCredentials().getTenantName() + ":" + conf.getOpenstackCredentials().getUsername(), conf.getOpenstackCredentials().getPassword())
-//                .buildApi(NeutronApi.class);
-//        serverApi = novaApi.getServerApi(os_region);
-//        securityGroupApi = novaApi.getSecurityGroupApi(os_region).get(); // @ToDo : that may fail !!!
-//        flavorApi = novaApi.getFlavorApi(os_region);
-//        imageApi = novaApi.getImageApi(os_region);
-//        floatingApi = novaApi.getFloatingIPApi(os_region).get(); //@ToDo: that may fail !!!
-//
-//        subnetApi = neutronApi.getSubnetApi(os_region);
         log.info("Openstack connection established ...");
     }
 
@@ -249,6 +221,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     .availabilityZone(conf.getAvailabilityZone())
                     .userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()))
                     .addMetadata(metadata)
+                    .networks(Arrays.asList(environment.getNetwork().getId()))
                     //.addPersonality("/etc/motd", "Welcome to the new VM! Restricted access only")
                     .build();
             Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
@@ -271,7 +244,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             Addresses addresses = server.getAddresses();
             Map<String,List<?extends Address>> map =  addresses.getAddresses();
             
-            master.setIp(map.get(conf.getNetworkname()).get(0).getAddr()); // @ToDo
+            master.setIp(map.get(environment.getNetwork().getName()).get(0).getAddr());
             master.setPublicIp(floatingip.getFloatingIpAddress());
             master.setHostname("bibigrid-master-" + clusterId);
             master.updateNeutronHostname();
@@ -298,6 +271,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                                 slaveDeviceMapper,
                                 conf,
                                 environment.getKeypair()))
+                        .networks(Arrays.asList(environment.getNetwork().getId()))
                         .build();
 
                 Server si = os.compute().servers().bootAndWaitActive(sc, 60000);
@@ -320,8 +294,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             }
             // wait for slave network finished ... update server instance list            
             for (Instance i : slaves) {
-                Address addr = getLocalIp(i.getId(), "bibiserv"); // @ToDo : HardCoded Network !!!!
-                i.setIp(addr.getAddr());
+                 addresses = server.getAddresses();
+                 map =  addresses.getAddresses();  
+                i.setIp(map.get(environment.getNetwork().getName()).get(0).getAddr());        
                 i.updateNeutronHostname();
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);
@@ -350,7 +325,12 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
             log.info(sb.toString());
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            // print stacktrace only verbose mode, otherwise the message returned by OS is fine
+            if (VerboseOutputFilter.SHOW_VERBOSE) {
+                log.error(e.getMessage(),e);
+            } else {
+                log.error(e.getMessage());
+            }
             return false;
         }
         return true;
@@ -452,7 +432,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             } catch (IOException | JSchException e) {
                 ssh_attempts--;
                 if (ssh_attempts == 0) {
-                    log.error(V, "SSH: {}", e);
+                    log.error(V, "SSH: {}", e.getMessage());
                 }
 
             } catch (InterruptedException ex) {
@@ -507,48 +487,24 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
         for (int i = 0; i < l.size(); i++) {
             NetFloatingIP fip = l.get(i);
-            if (fip.getPortId() == null) {
+            if (fip.getPortId() == null && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId()))  {
                 //found an unused floating ip and return it
                 return fip;
             }
         }
         // try to allocate a new floating from network pool
-//        try {
-//            return floatingApi.allocateFromPool("ext-cebitec"); // @ToDo hardcoded
-//        } catch (Exception e) {
-//            log.error(e.getMessage());
-//        }
+        try {
+            return os.networking().floatingip().create(Builders.netFloatingIP()
+                    .floatingNetworkId(environment.getRouter().getExternalGatewayInfo().getNetworkId())
+                    .build());
+            
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
         return null;
 
     }
 
-//    public NovaApi getNovaApi() {
-//        return novaApi;
-//    }
-//
-//    public NeutronApi getNeutronApi() {
-//        return neutronApi;
-//    }
-//
-//    public ServerApi getServerApi() {
-//        return serverApi;
-//    }
-//
-//    public SecurityGroupApi getSecurityGroupApi() {
-//        return securityGroupApi;
-//    }
-//
-//    public FlavorApi getFlavorApi() {
-//        return flavorApi;
-//    }
-//
-//    public SubnetApi getSubnetApi() {
-//        return subnetApi;
-//    }
-//
-//    public ImageApi getImageApi() {
-//        return imageApi;
-//    }
     public String getClusterId() {
         return clusterId;
     }

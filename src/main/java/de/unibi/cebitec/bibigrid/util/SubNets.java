@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.util;
 
-import com.amazonaws.services.ec2.model.Subnet;
 import java.util.Collection;
 
 /**
@@ -8,7 +7,7 @@ import java.util.Collection;
  * 
  * 
  * 
- * @author jkrueger
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class SubNets {
     
@@ -23,8 +22,8 @@ public class SubNets {
             
     
     
-    public SubNets(String vpccidr, long subnetsize){
-        long [] tmp = parseCidr(vpccidr);
+    public SubNets(String CIDR, long subnetsize){
+        long [] tmp = parseCidr(CIDR);
         ip = tmp[0];
         networksize = tmp[1];
         networkmask = tmp[2];
@@ -91,11 +90,11 @@ public class SubNets {
     public static long [] parseCidr(String cidr){
         String [] vpccidr = cidr.split("/");
         if (vpccidr.length != 2) {
-            throw new RuntimeException("IP has invalid format - d.d.d.d/m");
+            throw new RuntimeException("CIDR has invalid format - expected d.d.d.d/m, but is "+cidr);
         }
         String [] ips = vpccidr[0].split("\\.");
         if (ips.length != 4) {
-            throw new RuntimeException("IP has invalid format - d.d.d.d/m");
+            throw new RuntimeException("CIDR has invalid format - expected d.d.d.d/m, but is "+cidr);
         }
         long ip = (Long.parseLong(ips[0]) << 24) + (Long.parseLong(ips[1]) << 16) + (Long.parseLong(ips[2]) << 8) + Long.parseLong(ips[3]);      
         long size = Integer.parseInt(vpccidr[1]);

@@ -23,12 +23,12 @@ import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.UserIdGroupPair;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.jcraft.jsch.JSchException;
+import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
 import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
 import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.PLACEMENT_GROUP_PREFIX;
 import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.SECURITY_GROUP_PREFIX;
 import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.SUBNET_PREFIX;
 import de.unibi.cebitec.bibigrid.model.Port;
-import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.util.SubNets;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
@@ -65,14 +65,13 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment<Cre
     }
 
     @Override
-    public CreateClusterEnvironmentAWS createVPC() {
+    public CreateClusterEnvironmentAWS createVPC() throws ConfigurationException {
 
         try {
             // create KeyPair for cluster communication
             keypair = new KEYPAIR();
-        } catch (JSchException ex) {
-            log.error(ex.getMessage());
-            System.exit(1);
+        } catch (JSchException ex) {      
+            throw new ConfigurationException(ex.getMessage());
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -84,8 +83,7 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment<Cre
         }
 
         if (vpc == null) {
-            log.error("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
-            System.exit(1);
+            throw new ConfigurationException("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
         } else {
             log.info(V, "Use VPC {} ({})%n", vpc.getVpcId(), vpc.getCidrBlock());
         }

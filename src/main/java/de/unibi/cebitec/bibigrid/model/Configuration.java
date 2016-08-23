@@ -48,10 +48,13 @@ public class Configuration {
     private boolean publicSlaveIps; 
     
     
-    /* network configuration */
+    /* network configuration (for OpenStack)*/
     
+    
+    private String routername = null;
     private String networkname = null;
-    private String subnetname  = null; 
+    private String subnetname  = null;
+    private String gatewayname = null;
     
 
     public static enum MODE {
@@ -389,6 +392,22 @@ public class Configuration {
         this.networkname = networkname;
     }
 
+    public String getRoutername() {
+        return routername;
+    }
+
+    public void setRoutername(String routername) {
+        this.routername = routername;
+    }
+
+    public String getGatewayname() {
+        return gatewayname;
+    }
+
+    public void setGatewayname(String gatewayname) {
+        this.gatewayname = gatewayname;
+    }
+    
     public boolean isLogHttpRequests() {
         return logHttpRequests;
     }
