@@ -244,7 +244,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             Addresses addresses = server.getAddresses();
             Map<String,List<?extends Address>> map =  addresses.getAddresses();
             
-            master.setIp(map.get(conf.getNetworkname()).get(0).getAddr());
+            master.setIp(map.get(environment.getNetwork().getName()).get(0).getAddr());
             master.setPublicIp(floatingip.getFloatingIpAddress());
             master.setHostname("bibigrid-master-" + clusterId);
             master.updateNeutronHostname();
@@ -296,7 +296,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             for (Instance i : slaves) {
                  addresses = server.getAddresses();
                  map =  addresses.getAddresses();  
-                i.setIp(map.get(conf.getNetworkname()).get(0).getAddr());        
+                i.setIp(map.get(environment.getNetwork().getName()).get(0).getAddr());        
                 i.updateNeutronHostname();
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);
@@ -432,7 +432,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             } catch (IOException | JSchException e) {
                 ssh_attempts--;
                 if (ssh_attempts == 0) {
-                    log.error(V, "SSH: {}", e);
+                    log.error(V, "SSH: {}", e.getMessage());
                 }
 
             } catch (InterruptedException ex) {
@@ -487,48 +487,24 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
         for (int i = 0; i < l.size(); i++) {
             NetFloatingIP fip = l.get(i);
-            if (fip.getPortId() == null) {
+            if (fip.getPortId() == null && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId()))  {
                 //found an unused floating ip and return it
                 return fip;
             }
         }
         // try to allocate a new floating from network pool
-//        try {
-//            return floatingApi.allocateFromPool("ext-cebitec"); // @ToDo hardcoded
-//        } catch (Exception e) {
-//            log.error(e.getMessage());
-//        }
+        try {
+            return os.networking().floatingip().create(Builders.netFloatingIP()
+                    .floatingNetworkId(environment.getRouter().getExternalGatewayInfo().getNetworkId())
+                    .build());
+            
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
         return null;
 
     }
 
-//    public NovaApi getNovaApi() {
-//        return novaApi;
-//    }
-//
-//    public NeutronApi getNeutronApi() {
-//        return neutronApi;
-//    }
-//
-//    public ServerApi getServerApi() {
-//        return serverApi;
-//    }
-//
-//    public SecurityGroupApi getSecurityGroupApi() {
-//        return securityGroupApi;
-//    }
-//
-//    public FlavorApi getFlavorApi() {
-//        return flavorApi;
-//    }
-//
-//    public SubnetApi getSubnetApi() {
-//        return subnetApi;
-//    }
-//
-//    public ImageApi getImageApi() {
-//        return imageApi;
-//    }
     public String getClusterId() {
         return clusterId;
     }
