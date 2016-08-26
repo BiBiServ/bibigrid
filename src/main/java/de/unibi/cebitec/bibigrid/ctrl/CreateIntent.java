@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.ctrl;
 
-import com.amazonaws.AmazonClientException;
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUp;
 import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
@@ -14,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 public class CreateIntent extends Intent {
 
-    public static final Logger log = LoggerFactory.getLogger(CreateIntent.class);
+    public static final Logger LOG = LoggerFactory.getLogger(CreateIntent.class);
 
     @Override
     public String getCmdLineOption() {
@@ -39,15 +38,14 @@ public class CreateIntent extends Intent {
         }
         try {
             if (!startClusterAtSelectedCloudProvider()) {
-                log.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
+                LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
                 Intent cleanupIntent = new TerminateIntent();
                 cleanupIntent.setConfiguration(getConfiguration());
                 cleanupIntent.execute();
                 return false;
             }
         } catch (ConfigurationException | JSchException ace) {
-            //ace.printStackTrace();
-            log.error("Exception : {} ", ace.getMessage());
+            LOG.error("Exception : {}",ace.getMessage());
             return false;
         }
         return true;
@@ -77,7 +75,7 @@ public class CreateIntent extends Intent {
                         .launchClusterInstances();
 
             default:
-                log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
+                LOG.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
                 return false;
         }
     }

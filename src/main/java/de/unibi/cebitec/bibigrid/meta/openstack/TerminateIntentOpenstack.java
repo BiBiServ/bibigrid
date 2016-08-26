@@ -4,10 +4,12 @@ import de.unibi.cebitec.bibigrid.meta.TerminateIntent;
 import de.unibi.cebitec.bibigrid.model.Cluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import java.util.List;
+import org.openstack4j.api.exceptions.ClientResponseException;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.network.Network;
 import org.openstack4j.model.network.Port;
 import org.openstack4j.model.network.Router;
+import org.openstack4j.model.network.RouterInterface;
 import org.openstack4j.model.network.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,25 +74,30 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                 // get network
                 Network net = CreateClusterEnvironmentOpenstack.getNetworkById(os, subnet.getNetworkId());
                 // get router
-                Router router = CreateClusterEnvironmentOpenstack.getRouterbyNetwork(os, net);
+                Router router = CreateClusterEnvironmentOpenstack.getRouterbyNetwork(os, net, subnet);
+                
+                if (router == null) {
+                    return false;
+                }
+                // get  port which handled connects router with network/subnet
+                Port port = CreateClusterEnvironmentOpenstack.getPortbyRouterAndNetworkAndSubnet(os, router, net, subnet);
 
-                // get a list of all ports which are handled by the used router
-                List<? extends Port> portlist = CreateClusterEnvironmentOpenstack.getPortsbyRouterAndNetwork(os, router, net);
-
-                // detach interface  from router - list should contain only 1 port)
-                for (Port port : portlist) {
+                // detach interface  from router 
+                try {
                     os.networking().router().detachInterface(router.getId(), subnet.getId(), port.getId());
+                    // delete subnet
+                    ActionResponse ar = os.networking().subnet().delete(subnet.getId());
+                    if (ar.isSuccess()) {
+                        LOG.info("Subnet (ID:{}) deleted!", subnet.getId());
+                    } else {
+                        LOG.warn("Can't remove subnet (ID:{}) : {}", subnet.getId(), ar.getFault());
+                    }
+                } catch (ClientResponseException e) {
+                    LOG.warn(e.getMessage());
+                }
 
-                }
-                // delete subnet
-                ActionResponse ar = os.networking().subnet().delete(subnet.getId());
-                if (ar.isSuccess()) {
-                    LOG.info("Subnet (ID:{}) deleted!", subnet.getId());
-                } else {
-                    LOG.warn("Can't remove subnet (ID:{}) : {}", subnet.getId(), ar.getFault());
-                }
             }
-            
+
             // network
             if (cluster.getNet() != null) {
 

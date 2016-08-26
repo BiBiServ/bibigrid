@@ -12,10 +12,10 @@ import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.util.SubNets;
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.util.ArrayList;
 import java.util.List;
 import org.openstack4j.api.Builders;
-import static org.openstack4j.api.Builders.port;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.compute.ComputeSecurityGroupService;
 import org.openstack4j.api.exceptions.ClientResponseException;
@@ -23,6 +23,7 @@ import org.openstack4j.api.networking.PortService;
 import org.openstack4j.model.compute.IPProtocol;
 import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.network.AttachInterfaceType;
+import org.openstack4j.model.network.IP;
 import org.openstack4j.model.network.IPVersionType;
 import org.openstack4j.model.network.Network;
 import org.openstack4j.model.network.Router;
@@ -101,6 +102,7 @@ public class CreateClusterEnvironmentOpenstack
                     throw new ConfigurationException("No Subnet with name '" + cfg.getSubnetname() + "' found!");
                 }
                 net = getNetworkById(osc, subnet.getNetworkId());
+                router = getRouterbyNetwork(osc, net);
                 LOG.info("Use existing subnet (ID: {}, CIDR: {}).", subnet.getId(), subnet.getCidr());
                 return this;
             }
@@ -179,6 +181,7 @@ public class CreateClusterEnvironmentOpenstack
             LOG.info("Interface (ID: {}) added .", iface.getId());
 
         } catch (ClientResponseException crs) {
+            LOG.error(V, crs.getMessage(), crs);
             throw new ConfigurationException(crs.getMessage(), crs);
         }
 
@@ -368,16 +371,39 @@ public class CreateClusterEnvironmentOpenstack
      * @return
      */
     public static Router getRouterbyNetwork(OSClient osc, Network network) {
+        return getRouterbyNetwork(osc, network, null);
+    }
+
+    /**
+     * Deteremine Router by given network and subnetwork. Return router tjaty
+     *
+     * @param osc
+     * @param network
+     * @param subnet
+     * @return
+     */
+    public static Router getRouterbyNetwork(OSClient osc, Network network, Subnet subnet) {
         PortService ps = osc.networking().port();
         PortListOptions plopt = PortListOptions.create();
         plopt.networkId(network.getId());
 
-        if (ps.list(plopt).size() > 1) {
-            LOG.warn("Network {} uses more than one router, return the 1st one !");
+        plopt.deviceOwner("network:router_interface");
+
+        if (subnet == null && ps.list(plopt).size() > 1) {
+            LOG.warn("Network (ID: {}) uses more than one router, return the 1st one !", network.getId());
         }
         for (org.openstack4j.model.network.Port port : ps.list(plopt)) {
-            return getRouterById(osc, port.getDeviceId()); // just return first router
+            if (subnet == null) {
+                return getRouterById(osc, port.getDeviceId()); // if no subnet is given just return first router
+            } else {
+                for (IP ip : port.getFixedIps()) {
+                    if (ip.getSubnetId().equals(subnet.getId())) {
+                        return getRouterById(osc, port.getDeviceId());
+                    }
+                }
+            }
         }
+        LOG.warn("No router matches given constraints ...");
         return null;
     }
 
@@ -388,12 +414,21 @@ public class CreateClusterEnvironmentOpenstack
         return ps.list(plopt);
     }
 
-    public static List<? extends org.openstack4j.model.network.Port> getPortsbyRouterAndNetwork(OSClient osc, Router router, Network net) {
+    public static org.openstack4j.model.network.Port getPortbyRouterAndNetworkAndSubnet(OSClient osc, Router router, Network net,Subnet subnet) {
         PortService ps = osc.networking().port();
         PortListOptions plopt = PortListOptions.create();
         plopt.deviceId(router.getId());
         plopt.networkId(net.getId());
-        return ps.list(plopt);
+        
+        for (org.openstack4j.model.network.Port port : ps.list(plopt)) {
+            for (IP ip : port.getFixedIps()) { 
+                if (ip.getSubnetId().equals(subnet.getId())) {
+                        return port;
+                    } 
+            }
+        }
+        LOG.warn("No Port matches givens constraints ...");
+        return null;
     }
 
 }

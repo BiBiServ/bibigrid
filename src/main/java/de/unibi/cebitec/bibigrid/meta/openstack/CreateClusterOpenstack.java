@@ -294,8 +294,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             }
             // wait for slave network finished ... update server instance list            
             for (Instance i : slaves) {
-                 addresses = server.getAddresses();
-                 map =  addresses.getAddresses();  
+                addresses = server.getAddresses();
+                map =  addresses.getAddresses();  
                 i.setIp(map.get(environment.getNetwork().getName()).get(0).getAddr());        
                 i.updateNeutronHostname();
             }
