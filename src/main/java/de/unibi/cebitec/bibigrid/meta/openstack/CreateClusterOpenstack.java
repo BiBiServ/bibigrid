@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
 import org.apache.commons.codec.binary.Base64;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
@@ -44,15 +45,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Openstack specific implementation of CreateCluster interface.
- * 
- * 
+ *
+ *
  * @author Jan Krueger - jkrueger (at)cebitec.uni-bielfeld.de 1st version by
  * Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterOpenstack extends OpenStackIntent implements CreateCluster<CreateClusterOpenstack, CreateClusterEnvironmentOpenstack> {
 
     public static final Logger log = LoggerFactory.getLogger(CreateClusterOpenstack.class);
-
 
     private final String os_region;
 
@@ -241,10 +241,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             log.info("Master (ID: {}) started", server.getId());
 
             master.setId(server.getId());
-            Addresses addresses = server.getAddresses();
-            Map<String,List<?extends Address>> map =  addresses.getAddresses();
-            
-            master.setIp(map.get(environment.getNetwork().getName()).get(0).getAddr());
+            master.setIp(waitForAddress(server.getId(), environment.getNetwork().getName()).getAddr());
             master.setPublicIp(floatingip.getFloatingIpAddress());
             master.setHostname("bibigrid-master-" + clusterId);
             master.updateNeutronHostname();
@@ -282,7 +279,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     log.info(V, "{},{}", fault.getCode(), fault.getMessage());
                     // print error message and abort launch
                     if (fault.getCode() == 500) {
-                        log.error("Launch slave {} :: {}",(i+1), fault.getMessage());
+                        log.error("Launch slave {} :: {}", (i + 1), fault.getMessage());
                         return false;
                     }
                 }
@@ -294,9 +291,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             }
             // wait for slave network finished ... update server instance list            
             for (Instance i : slaves) {
-                addresses = server.getAddresses();
-                map =  addresses.getAddresses();  
-                i.setIp(map.get(environment.getNetwork().getName()).get(0).getAddr());        
+                i.setIp(waitForAddress(i.getId(), environment.getNetwork().getName()).getAddr());
                 i.updateNeutronHostname();
             }
             log.info("Cluster (ID: {}) successfully created!", clusterId);
@@ -327,7 +322,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         } catch (Exception e) {
             // print stacktrace only verbose mode, otherwise the message returned by OS is fine
             if (VerboseOutputFilter.SHOW_VERBOSE) {
-                log.error(e.getMessage(),e);
+                log.error(e.getMessage(), e);
             } else {
                 log.error(e.getMessage());
             }
@@ -349,7 +344,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         Address addr = null;
         do {
             Server instance = os.compute().servers().get(instanceID);
-            if (instance != null && instance.getAddresses() !=  null && instance.getAddresses().getAddresses(network) != null && instance.getAddresses().getAddresses(network).size() > 0) {
+            if (instance != null && instance.getAddresses() != null && instance.getAddresses().getAddresses(network) != null && instance.getAddresses().getAddresses(network).size() > 0) {
                 addr = instance.getAddresses().getAddresses(network).iterator().next();
             } else {
                 try {
@@ -487,7 +482,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
         for (int i = 0; i < l.size(); i++) {
             NetFloatingIP fip = l.get(i);
-            if (fip.getPortId() == null && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId()))  {
+            if (fip.getPortId() == null && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId())) {
                 //found an unused floating ip and return it
                 return fip;
             }
@@ -497,7 +492,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             return os.networking().floatingip().create(Builders.netFloatingIP()
                     .floatingNetworkId(environment.getRouter().getExternalGatewayInfo().getNetworkId())
                     .build());
-            
+
         } catch (Exception e) {
             log.error(e.getMessage());
         }
@@ -578,6 +573,33 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
     public OSClient getOs() {
         return os;
+    }
+
+    private Address waitForAddress(String serverid, String networkname) {
+        // ################################################################
+        // following block is a ugly hack to refresh the server object
+        // ####################################################### -> Start
+        Addresses addresses;
+        List<? extends Address> addrlist;
+        Map<String, List<? extends Address>> map;
+        Server server;
+
+        do {
+            try {
+                // wait a second
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                // do nothing
+            }
+            // refresh server object - ugly 
+            server = os.compute().servers().get(serverid);
+            addresses = server.getAddresses();
+            map = addresses.getAddresses();
+            addrlist = map.get(networkname);
+            log.info(V, "addrlist {}", addrlist);
+        } while (addrlist == null || addrlist.isEmpty());
+        // <- End ##########################################################
+        return addrlist.get(0);
     }
 
 }
