@@ -180,11 +180,11 @@ public class CommandLineValidator {
             } else if (defaults.containsKey("subnet")) {
                 cfg.setSubnetname(defaults.getProperty("subnet"));
             }
-            
-            
-            
-            
+   
 
+            
+            
+            
             /**
              * Openstack meta area.
              */
@@ -210,7 +210,7 @@ public class CommandLineValidator {
                     log.error("No suitable entry for OpenStack-Tenantname (ost) found! Exit");
                     return false;
                 }
-
+                                
                 if (cl.hasOption("osp")) {
                     osc.setPassword(cl.getOptionValue("osp").trim());
                 } else if (defaults.getProperty("openstack-password") != null) {

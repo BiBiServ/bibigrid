@@ -63,7 +63,7 @@ public class CreateClusterEnvironmentOpenstack
     public static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
 
     public CreateClusterEnvironmentOpenstack(CreateClusterOpenstack cluster) {
-        this.cluster = cluster;
+        this.cluster = cluster;   
         try {
             keypair = new KEYPAIR();
         } catch (JSchException ex) {

@@ -29,6 +29,7 @@ import java.util.logging.Level;
 import org.apache.commons.codec.binary.Base64;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
+import org.openstack4j.model.common.Identifier;
 import org.openstack4j.model.compute.Address;
 import org.openstack4j.model.compute.Addresses;
 import org.openstack4j.model.compute.BDMDestType;
@@ -479,18 +480,23 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
         // get list of all available floating IP's, and search for a free one
         List<? extends NetFloatingIP> l = os.networking().floatingip().list();
-
+                
         for (int i = 0; i < l.size(); i++) {
             NetFloatingIP fip = l.get(i);
-            if (fip.getPortId() == null && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId())) {
+            
+            if (fip.getPortId() == null 
+                    // check if floatingip fits to router network id
+                && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId())
+                    // check if tentant id fits routers tenant id
+                && fip.getTenantId().equals(environment.getRouter().getTenantId())) {
                 //found an unused floating ip and return it
-                return fip;
+                return fip; 
             }
         }
         // try to allocate a new floating from network pool
         try {
             return os.networking().floatingip().create(Builders.netFloatingIP()
-                    .floatingNetworkId(environment.getRouter().getExternalGatewayInfo().getNetworkId())
+                    .floatingNetworkId(environment.getRouter().getExternalGatewayInfo().getNetworkId())                   
                     .build());
 
         } catch (Exception e) {

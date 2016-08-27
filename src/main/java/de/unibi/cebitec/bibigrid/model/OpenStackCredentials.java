@@ -7,11 +7,12 @@ package de.unibi.cebitec.bibigrid.model;
 
 /**
  *
- * @author jsteiner
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class OpenStackCredentials {
 
     private String tenantName;
+    private String tenantID;
     private String username;
     private String password;
     private String endpoint;
@@ -61,7 +62,7 @@ public class OpenStackCredentials {
     public void setDomain(String domain) {
         this.domain = domain;
     }
-    
-    
 
+
+    
 }

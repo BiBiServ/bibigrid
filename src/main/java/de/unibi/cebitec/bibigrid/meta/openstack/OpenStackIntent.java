@@ -5,6 +5,8 @@ import de.unibi.cebitec.bibigrid.model.OpenStackCredentials;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.Identifier;
 import org.openstack4j.openstack.OSFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract class that must be implemented by all OpenStack intents
@@ -16,6 +18,8 @@ abstract class OpenStackIntent {
     protected Configuration conf;
     protected OSClient os;
     
+    public static final Logger LOG = LoggerFactory.getLogger(OpenStackIntent.class);
+    
     public OpenStackIntent(Configuration conf) {
         this.conf = conf;
         os = buildOSClient(conf);
@@ -24,7 +28,7 @@ abstract class OpenStackIntent {
     
     public static OSClient buildOSClient(Configuration conf){
         OpenStackCredentials osc = conf.getOpenstackCredentials();
-        
+       
         OSFactory.enableHttpLoggingFilter(conf.isLogHttpRequests());
         if (osc.getDomain() != null) {
             //v3
@@ -33,14 +37,15 @@ abstract class OpenStackIntent {
                        .credentials(osc.getUsername(),osc.getPassword(),Identifier.byName(osc.getDomain()))
                        .scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getDomain()))
                        .authenticate();
-            
+                
         } else {
-            return OSFactory.builderV2()
+            //v2
+             return OSFactory.builderV2()
                        .endpoint(conf.getOpenstackCredentials().getEndpoint())
-                       .credentials(osc.getUsername(),osc.getPassword())
+                       .credentials(osc.getUsername(),osc.getPassword())                   
                        .tenantName(osc.getTenantName())
                        .authenticate();
-            
+           
         }
         
         
