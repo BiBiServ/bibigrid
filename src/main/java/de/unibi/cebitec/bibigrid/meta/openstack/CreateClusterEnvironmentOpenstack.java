@@ -169,7 +169,8 @@ public class CreateClusterEnvironmentOpenstack
             subnet = osc.networking().subnet().create(Builders.subnet()
                     .name(SUBNETWORKPREFIX + cluster.getClusterId())
                     .network(net)
-                    .ipVersion(IPVersionType.V4)
+                    .ipVersion(IPVersionType.V4)    
+                    .enableDHCP(true)
                     .cidr(CIDR)
                     .build());
 
