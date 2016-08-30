@@ -20,6 +20,8 @@ public class Cluster {
     
     private String placementgroup; // AWS
     private String vpc; //AWS
+    
+    private String publicIp;
     private String securitygroup;
     private String keyname;
     private String user;
@@ -116,6 +118,14 @@ public class Cluster {
 
     public void setNet(String net) {
         this.net = net;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
     }
     
     

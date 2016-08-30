@@ -6,8 +6,10 @@ import de.unibi.cebitec.bibigrid.model.Cluster;
 import java.text.SimpleDateFormat;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.openstack4j.model.compute.Address;
 import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.compute.Server;
 import org.openstack4j.model.network.Network;
@@ -70,6 +72,20 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
                     cluster.setMasterinstance(serv.getId());
                     cluster.setStarted(dateformatter.format(serv.getCreated()));
                     cluster.setKeyname(serv.getKeyName());
+                    Map <String,List<? extends Address>> madr = serv.getAddresses().getAddresses();
+                    // map should contain only one  network
+                    if (madr.keySet().size() == 1) {
+                        for (Address address : madr.get((String)(madr.keySet().toArray()[0]))) {
+                            if (address.getType().equals("floating")) {
+                                cluster.setPublicIp(address.getAddr());
+                            }
+                        }
+                        
+                    } else {
+                      LOG.warn("No or more than one network associated with instance {}",serv.getId());
+                    }
+                    
+                    
 
                 } else if (name.contains("slave")) {
                     cluster.addSlaveInstance(serv.getId());
@@ -168,16 +184,17 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
             display.append("No BiBiGrid cluster found!\n");
         } else {
             display.append("\n");
-            formatter.format("%15s | %10s | %19s | %20s | %7s | %2s | %6s | %3s | %5s%n", "cluster-id", "user", "launch date", "key name", "# inst", "sg", "router", "net", " subnet");
+            formatter.format("%15s | %10s | %19s | %20s | %15s | %7s | %2s | %6s | %3s | %5s%n", "cluster-id", "user", "launch date", "key name", "floating-ip","# inst", "sg", "router", "net", " subnet");
             display.append(new String(new char[115]).replace('\0', '-')).append("\n");
 
             for (String id : clustermap.keySet()) {
                 Cluster v = clustermap.get(id);
-                formatter.format("%15s | %10s | %19s | %20s | %7d | %2s | %6s | %3s | %5s%n",
+                formatter.format("%15s | %10s | %19s | %20s | %15s | %7d | %2s | %6s | %3s | %5s%n",
                         id,
                         (v.getUser() == null) ? "<NA>" :v.getUser(),
                         (v.getStarted() == null) ? "-" : v.getStarted(),
                         (v.getKeyname() == null ? "-" : v.getKeyname()),
+                        (v.getPublicIp() == null ? "-" : v.getPublicIp()),
                         ((v.getMasterinstance() != null ? 1 : 0) + v.getSlaveinstances().size()),
                         (v.getSecuritygroup() == null ? "-" : "+"),
                         (v.getRouter() == null ? "-" : "+"),
