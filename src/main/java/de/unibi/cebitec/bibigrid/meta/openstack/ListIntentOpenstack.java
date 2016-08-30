@@ -184,7 +184,8 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
             display.append("No BiBiGrid cluster found!\n");
         } else {
             display.append("\n");
-            formatter.format("%15s | %10s | %19s | %20s | %15s | %7s | %2s | %6s | %3s | %5s%n", "cluster-id", "user", "launch date", "key name", "floating-ip","# inst", "sg", "router", "net", " subnet");
+            formatter.format("%15s | %10s | %19s | %20s | %15s | %7s | %2s | %6s | %3s | %5s%n", 
+                    "cluster-id", "user", "launch date", "key name", "floating-ip","# inst", "sg", "router", "net", " subnet");
             display.append(new String(new char[115]).replace('\0', '-')).append("\n");
 
             for (String id : clustermap.keySet()) {
