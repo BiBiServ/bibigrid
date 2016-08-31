@@ -91,6 +91,9 @@ public class SshFactory {
 
         if (cfg.isOge()) {
             sb.append("qconf -as $(hostname)\n");
+            // clean-up possible previous configuration (could be happend if you use a configured masterimage snapshot as image)
+            sb.append("for i in `qconf -sel`; do qconf -dattr hostgroup hostlist $i \\@allhosts 2>&1; qconf -de $i 2>&1; done;\n");
+            
             if (cfg.isUseMasterAsCompute()) {
                 sb.append("./add_exec ");
                 sb.append(masterInstance.getPrivateDnsName());
@@ -146,6 +149,9 @@ public class SshFactory {
             sb.append("check ").append(master.getIp()).append(" 6444\n");
             // configure submit host
             sb.append("qconf -as ").append(master.getIp()).append(" 2>&1\n");
+            // clean-up possible previous configuration (could be happend if you use a configured masterimage snapshot as image)
+            sb.append("for i in `qconf -sel`; do qconf -dattr hostgroup hostlist $i \\@allhosts 2>&1; qconf -de $i 2>&1; done;\n");
+            
             // add master as exec host  if set and start execd
             if (cfg.isUseMasterAsCompute()) {
                 sb.append("./add_exec ").append(master.getIp()).append(" ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
