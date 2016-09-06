@@ -28,6 +28,7 @@ import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
+import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.compute.Address;
 import org.openstack4j.model.compute.Addresses;
 import org.openstack4j.model.compute.BDMDestType;
@@ -194,17 +195,11 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     }
 
     private final Instance master = new Instance();
-    private final List<Instance> slaves = new ArrayList<>();
+    private final Map<String, Instance> slaves = new HashMap<>();
 
     @Override
     public boolean launchClusterInstances() {
         try {
-            NetFloatingIP floatingip = getFloatingIP();
-
-            if (floatingip == null) {
-                LOG.error("No  unused floating ip available! Abbort!");
-                return false;
-            }
 
             ServerCreate sc = Builders.server()
                     .name("bibigrid-master-" + clusterId)
@@ -216,7 +211,6 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     .userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()))
                     .addMetadata(metadata)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
-                    //.addPersonality("/etc/motd", "Welcome to the new VM! Restricted access only")
                     .build();
             Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
 
@@ -236,19 +230,55 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
             master.setId(server.getId());
             master.setIp(waitForAddress(server.getId(), environment.getNetwork().getName()).getAddr());
-            master.setPublicIp(floatingip.getFloatingIpAddress());
+
             master.setHostname("bibigrid-master-" + clusterId);
             master.updateNeutronHostname();
 
             LOG.info("Master (ID: {}) network configuration finished", master.getId());
 
-            os.compute().floatingIps().addFloatingIP(server, floatingip.getFloatingIpAddress());
-
-            //floatingApi.addToServer(floatingip.getIp(), createdMaster.getId());
-            LOG.info("FloatingIP {} assigned to Master(ID: {}) ", master.getPublicIp(), master.getId());
+            // get and assign floating ip to master
+            ActionResponse ar = null;
+            boolean assigned = false;
+            
+            List<String> blacklist = new ArrayList<>();
+            while (ar == null || !assigned) {
+                // get next free floatingIP
+                NetFloatingIP floatingip = getFloatingIP(blacklist);
+                // if null  there is no free floating ip available
+                if (floatingip == null) {
+                    LOG.error("No unused FloatingIP available! Abbort!");
+                    return false;
+                }
+                // put ip on blacklist
+                blacklist.add(floatingip.getFloatingIpAddress());
+                // try to assign floating ip to server
+                ar = os.compute().floatingIps().addFloatingIP(server, floatingip.getFloatingIpAddress());
+                // in case of success try  update master object
+                if (ar.isSuccess()) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        // do nothing
+                    }
+                    Server tmp = os.compute().servers().get(server.getId());
+                    if (tmp != null) {
+                        assigned = checkforFloatingIp(tmp, floatingip.getFloatingIpAddress());
+                        if (assigned) { 
+                            master.setPublicIp(floatingip.getFloatingIpAddress());
+                            LOG.info("FloatingIP {} assigned to Master(ID: {}) ", master.getPublicIp(), master.getId());
+                        } else {
+                            LOG.warn("FloatingIP {} assignment failed ! Try another one ...", floatingip.getFloatingIpAddress());
+                        }
+                    }
+                } else {
+                    LOG.warn("FloatingIP {} assignment failed with fault : {}! Try another one ...", floatingip.getFloatingIpAddress(), ar.getFault());
+                }
+            }
+            
+            
 
             //boot slave instances ...
-            List<Server> tmp_sl = new ArrayList<>(); // temporary list
+            List<String> slaveIDs = new ArrayList<>(); // temporary list
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
                 // ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (i + 1) + "-" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
                 sc = Builders.server()
@@ -266,49 +296,61 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                         .networks(Arrays.asList(environment.getNetwork().getId()))
                         .build();
 
-                tmp_sl.add(os.compute().servers().boot(sc));
+                slaveIDs.add(os.compute().servers().boot(sc).getId());
+                LOG.info(V, "Instance request for {}  ", sc.getName());
             }
-            // check     
 
-            while (slaves.size() != tmp_sl.size()) {
+            LOG.info("Waiting for slave instances ready ...");
+
+            // check     
+            while (slaves.size() != slaveIDs.size()) {
                 // wait for some seconds to not overload REST API
                 try {
                     Thread.sleep(3000);
-                } catch (InterruptedException e){
-                    // do noting
+                } catch (InterruptedException e) {
+                    // do nothing
                 }
-                // iterate over all slaves
-                for (Server si : tmp_sl) {
-                    switch (si.getStatus()) {
-                        case ACTIVE:
-                            Instance slave = new Instance();
-                            slave.setId(si.getId());
-                            slave.setHostname(si.getName());
-                            slaves.add(slave);
-                            System.out.print(".");
-                            break;
-                        case ERROR:
-                            // check if anything goes wrong,
-                            fault = si.getFault();
-                            if (fault != null) {
-                                // some more debug information in verboose mode
-                                LOG.info("Launch {} failed with Code {} :: {}", si.getName(), fault.getCode(), fault.getMessage());
-                                return false;
+                // get fresh server object for given server id
+                for (String id : slaveIDs) {
+                    //ignore if instance is already active ...
+                    if (!slaves.containsKey(id)) {
+                        Server si = os.compute().servers().get(id);
+
+                        // check for status available ...
+                        if (si.getStatus() != null) {
+
+                            switch (si.getStatus()) {
+                                case ACTIVE:
+                                    Instance slave = new Instance();
+                                    slave.setId(si.getId());
+                                    slave.setHostname(si.getName());
+                                    slaves.put(id, slave);
+                                    LOG.info("Instance {} is active !", si.getName());
+                                    break;
+                                case ERROR:
+                                    // check if anything goes wrong,
+                                    fault = si.getFault();
+                                    if (fault != null) {
+                                        LOG.error("Launch {} failed without message!", si.getName());
+                                    } else {
+                                        LOG.error("Launch {} failed with Code {} :: {}", si.getName(), fault.getCode(), fault.getMessage());
+
+                                    }
+                                    return false;
+
+                                default:
+                                    // other not critical state
+                                    break;
                             }
-                            System.out.print("!");
-                            break;
-                        default:
-                            // other not critical state
-                            break;
+                        } else {
+                            LOG.warn(V, "Status  of instance {} not available (== null)", si.getId());
+                        }
                     }
-                    
                 }
-                System.out.println(" - slaves");
-                
-                
             }
+            LOG.info(V, "Wait for slave network configuration finished ...");
             // wait for slave network finished ... update server instance list            
-            for (Instance i : slaves) {
+            for (Instance i : slaves.values()) {
                 i.setIp(waitForAddress(i.getId(), environment.getNetwork().getName()).getAddr());
                 i.updateNeutronHostname();
             }
@@ -383,7 +425,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
          * Building Command
          */
         LOG.info("Now configuring ...");
-        String execCommand = SshFactory.buildSshCommandOpenstack(clusterId, this.getConfiguration(), master, slaves);
+        String execCommand = SshFactory.buildSshCommandOpenstack(clusterId, this.getConfiguration(), master, slaves.values());
         LOG.info(V, "Building SSH-Command : {}", execCommand);
 
         boolean uploaded = false;
@@ -494,8 +536,12 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
      * @return
      */
     private NetFloatingIP getFloatingIP() {
-
-        // get list of all available floating IP's, and search for a free one
+        return getFloatingIP(new ArrayList<>());
+    }
+        
+        
+    private NetFloatingIP getFloatingIP(List<String> blacklist){
+        // get list of all available floating IP's, and search for free ones ...
         List<? extends NetFloatingIP> l = os.networking().floatingip().list();
 
         for (int i = 0; i < l.size(); i++) {
@@ -505,7 +551,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     // check if floatingip fits to router network id
                     && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId())
                     // check if tentant id fits routers tenant id
-                    && fip.getTenantId().equals(environment.getRouter().getTenantId())) {
+                    && fip.getTenantId().equals(environment.getRouter().getTenantId())
+                    && !blacklist.contains(fip.getFloatingIpAddress()) ) {
                 //found an unused floating ip and return it
                 return fip;
             }
@@ -623,6 +670,30 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         } while (addrlist == null || addrlist.isEmpty());
         // <- End ##########################################################
         return addrlist.get(0);
+    }
+
+    /**
+     * Check if a given floating ip is set for a given server instance.
+     * 
+     * @param serv - Server instance
+     * @param floatingip - floatingIp to be checked
+     * @return 
+     */
+    private boolean checkforFloatingIp(Server serv, String floatingip) {
+        Map<String, List<? extends Address>> madr = serv.getAddresses().getAddresses();
+        // map should contain only one  network
+        if (madr.keySet().size() == 1) {
+            for (Address address : madr.get((String) (madr.keySet().toArray()[0]))) {
+                if (address.getType().equals("floating") && address.getAddr().equals(floatingip)) {
+                    return true;
+                }
+            }
+
+        } else {
+            LOG.warn("No or more than one network associated with instance {}", serv.getId());
+        }
+        return false;
+
     }
 
 }
