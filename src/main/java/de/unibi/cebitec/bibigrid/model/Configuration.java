@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.model;
 import com.amazonaws.auth.AWSCredentials;
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +20,7 @@ public class Configuration {
     private String region;
     private AWSCredentials credentials;
     private String clusterId;
-    private List<Port> ports;
+    
     private Path shellScriptFile;
     private Path earlyMasterShellScriptFile,earlySlaveShellScriptFile;
     private Map<String, String> masterMounts;
@@ -55,6 +56,10 @@ public class Configuration {
     private String networkname = null;
     private String subnetname  = null;
     private String gatewayname = null;
+    
+    /* security group configuration */
+    private List<Port> ports = new ArrayList<>();
+    private String securitygroup;
     
 
     public static enum MODE {
@@ -415,6 +420,17 @@ public class Configuration {
     public void setLogHttpRequests(boolean logHttpRequests) {
         this.logHttpRequests = logHttpRequests;
     }
+
+    public String getSecuritygroup() {
+        return securitygroup;
+    }
+
+    public void setSecuritygroup(String securitygroup) {
+        this.securitygroup = securitygroup;
+    }
+    
+    
+    
     
     
 }

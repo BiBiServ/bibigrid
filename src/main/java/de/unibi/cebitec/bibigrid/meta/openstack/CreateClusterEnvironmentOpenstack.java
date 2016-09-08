@@ -191,6 +191,24 @@ public class CreateClusterEnvironmentOpenstack
 
     @Override
     public CreateClusterEnvironmentOpenstack createSecurityGroup() throws ConfigurationException {
+        OSClient osc = cluster.getOs();
+        // if a  security group is configured then used it
+        if (cluster.getConfiguration().getSecuritygroup() != null) {
+            
+            sge = getSecGroupExtensionByName(osc, cluster.getConfiguration().getSecuritygroup());
+            
+            
+            if (sge == null) {
+                LOG.warn("Configured Security Group (name: {}) not found. Try to create a new one ... ", cluster.getConfiguration().getSecuritygroup());
+            } else {
+                LOG.info("Use existing Security Group (name: {}).", sge.getName());
+                return this;
+            }
+            
+        }
+        
+        
+        
         try {
             ComputeSecurityGroupService csgs = cluster.getOs().compute().securityGroups();
             sge = csgs.create("sg-" + cluster.getClusterId(), "Security Group for cluster: " + cluster.getClusterId());
@@ -222,7 +240,7 @@ public class CreateClusterEnvironmentOpenstack
                         .range(p.number, p.number)
                         .build());
             }
-            LOG.info("SecurityGroup (ID: {}) created.", sge.getName());
+            LOG.info("SecurityGroup (name: {}) created.", sge.getName());
         } catch (ClientResponseException e) {
             throw new ConfigurationException(e.getMessage(), e);
         }
@@ -259,6 +277,39 @@ public class CreateClusterEnvironmentOpenstack
     public Subnet getSubnet() {
         return subnet;
     }
+    
+    /**
+     * Determine secgroupExt by given id. Returns secgroupext object or null in the
+     * case that no suitable secgroupexetension is found.
+     * @param osc
+     * @param id
+     * @return 
+     */
+    public static SecGroupExtension getSecGroupExtensionById(OSClient osc, String id ){
+        for (SecGroupExtension sge : osc.compute().securityGroups().list()){
+            if (sge.getId().equals(id)){
+                return sge;
+            }
+        }
+        return null;
+    }
+       /**
+     * Determine secgroupExt by given name. Returns secgroupext object or null in the
+     * case that no suitable secgroupexetension is found.
+     * @param osc
+     * @param name
+     * @return 
+     */
+    public static SecGroupExtension getSecGroupExtensionByName(OSClient osc, String name ){
+        for (SecGroupExtension sge : osc.compute().securityGroups().list()){
+            if (sge.getName().equals(name)){
+                return sge;
+            }
+        }
+        return null;
+    }
+    
+    
 
     /**
      * Determine router by given router name. Returns router object or null in
