@@ -545,8 +545,11 @@ public class CommandLineValidator {
             }
 
             ////////////////////////////////////////////////////////////////////////
+            ///// security group ////////////////////////////////////////////////////////////
+            cfg.setSecuritygroup(cl.getOptionValue("sg",defaults.getProperty("security-group")));
+                    
+            ////////////////////////////////////////////////////////////////////////
             ///// ports ////////////////////////////////////////////////////////////
-            this.cfg.setPorts(new ArrayList<>());
             String portsCsv = this.cl.getOptionValue("p", defaults.getProperty("ports"));
             if (portsCsv != null && !portsCsv.isEmpty()) {
                 try {
