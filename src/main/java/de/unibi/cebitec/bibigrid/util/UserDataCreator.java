@@ -69,7 +69,7 @@ public class UserDataCreator {
          * GridEngine Block
          */
         if (cfg.isOge()) {
-            slaveUserData.append("echo ").append(masterIp).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
+            slaveUserData.append("echo ").append(masterDns).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
             // test for sge_master available
             slaveUserData.append("check ").append(masterIp).append(" 6444\n");
             // start sge_exed 
@@ -444,7 +444,11 @@ public class UserDataCreator {
          * OGE Block
          */
         if (cfg.isOge()) {
-            masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 > /var/lib/gridengine/default/common/act_qmaster\n");
+            switch (cfg.getMode()) {
+                case AWS : masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/public-hostname > /var/lib/gridengine/default/common/act_qmaster\n"); break;
+                case OPENSTACK : masterUserData.append("echo $hostname > /var/lib/gridengine/default/common/act_qmaster\n"); break;
+            }
+            
             masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
             masterUserData.append("service gridengine-master start\n");
             masterUserData.append("log \"gridengine-master configured and started\"\n");
@@ -556,8 +560,8 @@ public class UserDataCreator {
     }
 
     public static void updateHostname(StringBuilder sb) {
-        sb.append("t=`curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 | sed 's/\\./-/g'`\n");
-        sb.append("sudo hostname host-$t 2> /dev/null\n");
+        sb.append("hostname=host-`curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 | sed 's/\\./-/g'`\n");
+        sb.append("sudo hostname $hostname 2> /dev/null\n");
     }
 
 
