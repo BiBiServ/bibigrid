@@ -5,6 +5,7 @@
 package de.unibi.cebitec.bibigrid.util;
 
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
@@ -338,15 +339,7 @@ public class UserDataCreator {
         /*
          * Ephemeral/RAID Preperation
          */
-        String blockDeviceBase = "";
-        switch (cfg.getMode()) {
-            case AWS:
-                blockDeviceBase = "/dev/xvd";
-                break;
-            case OPENSTACK:
-                blockDeviceBase = "/dev/vd";
-                break;
-        }
+        String blockDeviceBase = DeviceMapper.getBlockDeviceBase(cfg.getMode());
         // if 1 ephemeral is available mount it as /vol/spool
         if (ephemeralamount == 1) {
             masterUserData.append("umount /mnt\n"); // 
@@ -478,6 +471,19 @@ public class UserDataCreator {
             }
         }
 
+        
+        
+        /* Block Devices */
+        if (masterDeviceMapper != null) {
+            for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+                String device = masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e));
+                String mountpoint = masterDeviceMapper.getSnapshotIdToMountPoint().get(e);
+                masterUserData.append("mkdir -p ").append(mountpoint).append("\n");
+                masterUserData.append("umount ").append(device).append("\n");
+                masterUserData.append("mount ").append(device).append(" ").append(mountpoint).append("\n");
+            }
+        }
+        
         /*
          * NFS//Mounts Block
          */
@@ -489,12 +495,6 @@ public class UserDataCreator {
             // export opt dir
             masterUserData.append("echo \"/opt/ ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
             
-
-            if (masterDeviceMapper != null) {
-                for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
-                    masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-                    masterUserData.append("mount ").append(masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-                }
                 for (String mastershare : masterNfsShares) {
                     masterUserData.append("mkdir -p ").append(mastershare).append("\n");
                     masterUserData.append("chmod 777 ").append(mastershare).append("\n");
@@ -502,9 +502,7 @@ public class UserDataCreator {
                 }
                 masterUserData.append("service nfs-kernel-server restart\n");
                 masterUserData.append("log \"NFS Server configured and restarted\"\n");
-            } else {
-                log.error("MasterDeviceMapper is null ...");
-            }
+           
         }
         /**
          * Enabling nat functions of master-instance (slave inet access) if
@@ -547,6 +545,7 @@ public class UserDataCreator {
         masterUserData.append("cp /var/log/userdata.log /vol/spool/log/master.log\n");
         masterUserData.append("exit 0\n");
 
+        log.info(V,"Master userdata:\n{}",masterUserData.toString());
         switch (cfg.getMode()) {
             case AWS:
                 return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));

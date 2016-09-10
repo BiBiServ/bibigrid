@@ -1,22 +1,20 @@
 package de.unibi.cebitec.bibigrid.util;
 
 
+import de.unibi.cebitec.bibigrid.model.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 
 public class DeviceMapper {
 
 
-    
+    private Configuration.MODE MODE;
     
     private static final int MAX_DEVICES = 25; // vdb ... vdz
-    
-    
+       
     //private int AVAIL_DEVICES;
     private int USED_DEVICES = 0;
     
-    // private int usedLetters = 0;
-
     // snap-0a12b34c -> /my/dir/
     private Map<String, String> snapshotToMountPoint;
 
@@ -26,7 +24,10 @@ public class DeviceMapper {
     // /my/dir/ -> /dev/xvdf
     private Map<String, String> mountPointToRealDeviceName;
 
-    public DeviceMapper(Map<String, String> snapshotIdToMountPoint, int used_devices) throws IllegalArgumentException {
+    public DeviceMapper(Configuration.MODE mode, Map<String, String> snapshotIdToMountPoint, int used_devices) throws IllegalArgumentException {
+        // set mode
+        MODE = mode;
+        
         // calculate the number of avail devices after  removing all used ephemerals
        USED_DEVICES = used_devices;
 
@@ -75,7 +76,7 @@ public class DeviceMapper {
     }
 
     private String createRealDeviceName(char letter) {
-        return new StringBuilder("/dev/xvd").append(letter).toString();
+        return new StringBuilder(getBlockDeviceBase()).append(letter).toString();
     }
 
     private int getPartitionNumber(String rawSnapshotId) {
@@ -106,6 +107,29 @@ public class DeviceMapper {
             return idParts[0];
         }
         return rawSnapshotId;
+    }
+    
+    private String getBlockDeviceBase(){
+        return getBlockDeviceBase(MODE);
+    }
+    
+    /**
+     * Return BlockDeviceBase in dependence of used cluster mode
+     * 
+     * @param mode
+     * @return 
+     */
+    public static String getBlockDeviceBase(Configuration.MODE mode) {
+    
+        switch (mode) {
+            case AWS:
+                return "/dev/xvd";
+               
+            case OPENSTACK:
+                return "/dev/vd";
+                
+        }
+        return null;
     }
 
 }
