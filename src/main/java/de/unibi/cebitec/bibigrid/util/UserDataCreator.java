@@ -478,8 +478,8 @@ public class UserDataCreator {
             for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
                 String device = masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e));
                 String mountpoint = masterDeviceMapper.getSnapshotIdToMountPoint().get(e);
-                masterUserData.append("mkdir -p ").append(mountpoint).append("\n");
                 masterUserData.append("umount ").append(device).append("\n");
+                masterUserData.append("mkdir -p ").append(mountpoint).append("\n");             
                 masterUserData.append("mount ").append(device).append(" ").append(mountpoint).append("\n");
             }
         }
