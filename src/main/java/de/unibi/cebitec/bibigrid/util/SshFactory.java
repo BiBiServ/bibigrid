@@ -124,7 +124,7 @@ public class SshFactory {
     public static String buildSshCommandOpenstack(String asGroupName, Configuration cfg, CreateClusterOpenstack.Instance master, Collection<CreateClusterOpenstack.Instance> slaves) {
         StringBuilder sb = new StringBuilder();
         
-        UserDataCreator.updateHostname(sb);
+        
         UserDataCreator.shellFct(sb);
         
         
