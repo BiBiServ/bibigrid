@@ -53,11 +53,6 @@ public class UserDataCreator {
         /* Save currentIP as env var */
         slaveUserData.append("CURRENT_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
 
-        /* "Hack" for CeBiTec OpenStack setup - set hostname */
-        if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
-            updateHostname(slaveUserData);
-        }
-
         slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -326,11 +321,6 @@ public class UserDataCreator {
         /* append additional shell fct */
         shellFct(masterUserData);
 
-        /* "Hack" for CeBiTec OpenStack setup - set hostname */
-        if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
-            updateHostname(masterUserData);
-        }
-
         masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -557,13 +547,6 @@ public class UserDataCreator {
     private static char ephemeral(int i) {
         return (char) (i + 98);
     }
-
-    public static void updateHostname(StringBuilder sb) {
-        sb.append("hostname=host-`curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 | sed 's/\\./-/g'`\n");
-        sb.append("sudo hostname $hostname 2> /dev/null\n");
-    }
-
-
 
     public static void shellFct(StringBuilder sb) {
         sb.append("function log { date +\"%x %R:%S - ${1}\";}\n");
