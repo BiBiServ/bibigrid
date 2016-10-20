@@ -442,6 +442,8 @@ public class UserDataCreator {
          * Mesos Block
          */
         if (cfg.isMesos()) {
+            // start zookeeper
+            masterUserData.append("service zookeeper start\n");
             // configure mesos master
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
             masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
