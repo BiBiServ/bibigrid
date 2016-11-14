@@ -3,11 +3,15 @@ package de.unibi.cebitec.bibigrid;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.ctrl.*;
 import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.util.RuleBuilder;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+
+import de.unibi.techfak.bibiserv.cms.Tparam;
+import de.unibi.techfak.bibiserv.cms.TparamGroup;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +45,34 @@ public class StartUp {
                 .addOption(terminate);
         return intentOptions;
     }
+
+    public static Options RulesToOptions(Options cmdLine){
+
+        RuleBuilder ruleBuild = new RuleBuilder();
+        TparamGroup ruleSet = ruleBuild.getRules();
+
+        for (Object ob : ruleSet.getParamrefOrParamGroupref()){
+
+            Tparam tp = (Tparam) ob;
+            boolean hasArg;
+
+            if(tp.getType() == null){
+                hasArg = false;
+            }else {
+                hasArg = true;
+            }
+
+            cmdLine.addOption(tp.getId(),tp.getOption(),hasArg,tp.getShortDescription().get(0).getValue());
+        }
+
+        return cmdLine;
+    }
     
     public static Options getCMDLineOptions(OptionGroup optgrp) {
         Options cmdLineOptions = new Options();
         cmdLineOptions
-                .addOptionGroup(optgrp)
-                .addOption("m", "master-instance-type", true, "see INSTANCE-TYPES below")
+                .addOptionGroup(optgrp);
+                /*.addOption("m", "master-instance-type", true, "see INSTANCE-TYPES below")
                 .addOption("mme", "max-master-ephemerals", true, "limits the maxium number of used ephemerals for master spool volume (raid 0)")
                 .addOption("M", "master-image", true, "machine image id for master, if not set  images defined at https://bibiserv.cebitec.uni-bielefeld.de/resoruces/bibigrid/<framework>/<region>.ami.properties are used!")
                 .addOption("s", "slave-instance-type", true, "see INSTANCE-TYPES below")
@@ -90,7 +116,8 @@ public class StartUp {
                 .addOption("osp", "openstack-password", true, "The given Openstack User-Password")
                 .addOption("ose", "openstack-endpoint", true, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/)")
                 .addOption("osd", "openstack-domain", true, "The given Openstack Domain")
-                .addOption("dr", "debug-requests", false, "Enable HTTP request and response logging.");
+                .addOption("dr", "debug-requests", false, "Enable HTTP request and response logging.");*/
+
         return cmdLineOptions;
     }
 
@@ -99,6 +126,7 @@ public class StartUp {
         CommandLineParser cli = new DefaultParser();
         OptionGroup intentOptions = getCMDLineOptionGroup();
         Options cmdLineOptions = getCMDLineOptions(intentOptions);
+        cmdLineOptions = RulesToOptions(cmdLineOptions);
 
         
         try {
