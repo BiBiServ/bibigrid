@@ -39,7 +39,11 @@ import org.openstack4j.model.compute.Flavor;
 import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.compute.Server;
 import org.openstack4j.model.compute.ServerCreate;
+import org.openstack4j.model.compute.VolumeAttachment;
 import org.openstack4j.model.network.NetFloatingIP;
+import org.openstack4j.model.storage.block.Volume;
+import org.openstack4j.model.storage.block.Volume.Status;
+import org.openstack4j.model.storage.block.VolumeSnapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,8 +116,20 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
          * DeviceMapper init.
          *
          */
-        Map<String, String> masterSnapshotToMountPointMap = this.conf.getMasterMounts();
-        masterDeviceMapper = new DeviceMapper(masterSnapshotToMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals);
+        Map<String, String> masterVolumetoMountPointMap = new HashMap<>();
+        for (String snapshot : conf.getMasterMounts().keySet()) {
+            // 1st check if Snapshot exist
+            VolumeSnapshot vss = getSnapshotbyName(snapshot);
+            if (vss == null) {
+                LOG.warn("Snapshot with name {} not found!", snapshot);
+            } else {
+                // 2nd create new  Volume from Snapshot
+                Volume v = createVolumefromSnapshot(vss, snapshot + "_" + clusterId);
+                masterVolumetoMountPointMap.put(v.getId(), conf.getMasterMounts().get(snapshot));
+                LOG.info(V, "Create volume ({}) from snapshot ({}).", v.getName(), snapshot);
+            }
+        }
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals);
 
         /**
          * BlockDeviceMapping.
@@ -156,7 +172,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
          * @ToDo
          */
         Map<String, String> snapShotToSlaveMounts = this.conf.getSlaveMounts();
-        slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals);
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals);
 
         /**
          * BlockDeviceMapping.
@@ -199,8 +215,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
     @Override
     public boolean launchClusterInstances() {
-        try {
 
+        try {
             ServerCreate sc = Builders.server()
                     .name("bibigrid-master-" + clusterId)
                     .flavor(masterFlavor.getId())
@@ -239,7 +255,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             // get and assign floating ip to master
             ActionResponse ar = null;
             boolean assigned = false;
-            
+
             List<String> blacklist = new ArrayList<>();
             while (ar == null || !assigned) {
                 // get next free floatingIP
@@ -263,7 +279,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     Server tmp = os.compute().servers().get(server.getId());
                     if (tmp != null) {
                         assigned = checkforFloatingIp(tmp, floatingip.getFloatingIpAddress());
-                        if (assigned) { 
+                        if (assigned) {
                             master.setPublicIp(floatingip.getFloatingIpAddress());
                             LOG.info("FloatingIP {} assigned to Master(ID: {}) ", master.getPublicIp(), master.getId());
                         } else {
@@ -274,8 +290,44 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     LOG.warn("FloatingIP {} assignment failed with fault : {}! Try another one ...", floatingip.getFloatingIpAddress(), ar.getFault());
                 }
             }
-            
-            
+
+            // attach Volumes
+            for (String volumeid : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+                //check if volume is availabe
+
+                Volume v = os.blockStorage().volumes().get(volumeid);
+
+                boolean waiting = true;
+                while (waiting) {
+                    switch (v.getStatus()) {
+                        case AVAILABLE:
+                            waiting = false;
+                            break;
+                        case CREATING: {
+                            try {
+                                Thread.sleep(5000);
+                                LOG.info(V, "Wait for Volume ({}) available", v.getId());
+                            } catch (InterruptedException e) {
+                                // do nothing
+                            }
+                            v = os.blockStorage().volumes().get(volumeid);
+                            break;
+                        }
+                        default:
+                            waiting = false;
+                            LOG.error("Volume not available  (Status : {})",v.getStatus());
+                    }
+                }
+
+                if (v.getStatus().equals(Status.AVAILABLE)) {
+                    VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeid, masterDeviceMapper.getDeviceNameForSnapshotId(volumeid));
+                    if (va == null) {
+                        LOG.error("Attaching volume {} to master failed ...", volumeid);
+                    } else {
+                        LOG.info(V, "Volume {}  attached to Master.", va.getId());
+                    }
+                }
+            }
 
             //boot slave instances ...
             List<String> slaveIDs = new ArrayList<>(); // temporary list
@@ -538,9 +590,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     private NetFloatingIP getFloatingIP() {
         return getFloatingIP(new ArrayList<>());
     }
-        
-        
-    private NetFloatingIP getFloatingIP(List<String> blacklist){
+
+    private NetFloatingIP getFloatingIP(List<String> blacklist) {
         // get list of all available floating IP's, and search for free ones ...
         List<? extends NetFloatingIP> l = os.networking().floatingip().list();
 
@@ -552,7 +603,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId())
                     // check if tentant id fits routers tenant id
                     && fip.getTenantId().equals(environment.getRouter().getTenantId())
-                    && !blacklist.contains(fip.getFloatingIpAddress()) ) {
+                    && !blacklist.contains(fip.getFloatingIpAddress())) {
                 //found an unused floating ip and return it
                 return fip;
             }
@@ -674,10 +725,10 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
     /**
      * Check if a given floating ip is set for a given server instance.
-     * 
+     *
      * @param serv - Server instance
      * @param floatingip - floatingIp to be checked
-     * @return 
+     * @return
      */
     private boolean checkforFloatingIp(Server serv, String floatingip) {
         Map<String, List<? extends Address>> madr = serv.getAddresses().getAddresses();
@@ -694,6 +745,39 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         }
         return false;
 
+    }
+
+    /**
+     * Return a Snapshot by its name or null if no snapshot is found ...
+     *
+     * @param name
+     * @return
+     */
+    private VolumeSnapshot getSnapshotbyName(String name) {
+        List<? extends VolumeSnapshot> allsnapshots = os.blockStorage().snapshots().list();
+        for (VolumeSnapshot vss : allsnapshots) {
+            if (vss.getName().equals(name)) {
+
+                return vss;
+            }
+        }
+        // nothing found
+        return null;
+    }
+
+    /**
+     * Return a new volume from a Snapshot
+     *
+     * @param vss
+     * @param name of newly created volume
+     * @return
+     */
+    private Volume createVolumefromSnapshot(VolumeSnapshot vss, String name) {
+        return os.blockStorage().volumes().create(Builders.volume()
+                .name(name)
+                .snapshot(vss.getId())
+                .description("created from SnapShot " + vss.getId() + " by BiBiGrid")
+                .build());
     }
 
 }
