@@ -3,11 +3,15 @@ package de.unibi.cebitec.bibigrid;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.ctrl.*;
 import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.util.RuleBuilder;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+
+import de.unibi.techfak.bibiserv.cms.Tparam;
+import de.unibi.techfak.bibiserv.cms.TparamGroup;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,56 +45,32 @@ public class StartUp {
                 .addOption(terminate);
         return intentOptions;
     }
+
+    public static OptionGroup getRulesToOptions(){
+
+        RuleBuilder ruleBuild = new RuleBuilder();
+        TparamGroup ruleSet = ruleBuild.getRules();
+        OptionGroup ruleOptions = new OptionGroup();
+
+        for (Object ob : ruleSet.getParamrefOrParamGroupref()){
+
+            Tparam tp = (Tparam) ob;
+            boolean hasArg;
+
+            hasArg = tp.getType() != null;
+
+            ruleOptions.addOption(new Option(tp.getId(),tp.getOption(),hasArg,tp.getShortDescription().get(0).getValue()));
+        }
+
+        return ruleOptions;
+    }
     
-    public static Options getCMDLineOptions(OptionGroup optgrp) {
+    public static Options getCMDLineOptions(OptionGroup optgrp, OptionGroup optfrorules) {
         Options cmdLineOptions = new Options();
         cmdLineOptions
                 .addOptionGroup(optgrp)
-                .addOption("m", "master-instance-type", true, "see INSTANCE-TYPES below")
-                .addOption("mme", "max-master-ephemerals", true, "limits the maxium number of used ephemerals for master spool volume (raid 0)")
-                .addOption("M", "master-image", true, "machine image id for master, if not set  images defined at https://bibiserv.cebitec.uni-bielefeld.de/resoruces/bibigrid/<framework>/<region>.ami.properties are used!")
-                .addOption("s", "slave-instance-type", true, "see INSTANCE-TYPES below")
-                .addOption("mse", "max-slave-ephemerals", true, "limits the maxium number of used ephemerals for slave spool volume (raid 0 )")
-                .addOption("n", "slave-instance-count", true, "min: 0")
-                .addOption("S", "slave-image", true, "machine image id for slaves, same behaviour like master-image")
-                .addOption("usir", "use-spot-instance-request", true, " Yes or No of spot instances should be used  (Type t instance types are unsupported).")
-                .addOption("bp", "bidprice", true, "bid price for spot instances")
-                .addOption("bpm", "bidprice-master", true, "bid price for the master spot instance, if not set general 'bidprice' is used.")
-                .addOption("k", "keypair", true, "name of the keypair in aws console")
-                .addOption("i", "identity-file", true, "absolute path to private ssh key file")
-                .addOption("e", "region", true, "region of instance")
-                .addOption("z", "availability-zone", true, "")
-                .addOption("ex", "early-execute-script", true, "path to shell script to be executed on master instance startup (size limitation of 10K chars)")
-                .addOption("esx", "early-slave-execute-script", true, " path to shell script to be executed on slave instance(s) startup (size limitation of 10K chars)")
-                .addOption("a", "aws-credentials-file", true, "containing access-key-id & secret-key, default: ~/.bibigrid.properties")
-                .addOption("p", "ports", true, "comma-separated list of additional ports (tcp & udp) to be opened for all nodes (e.g. 80,443,8080). Ignored if 'security-group' is set!")
-                .addOption("sg", "security-group", true,"security group id used by current setup")
-                .addOption("d", "master-mounts", true, "comma-separated snapshot=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) mounted to master. (Optional: Partition selection with ':', e.g. snap-12234abcd:1=/mnt/mydir1)")
-                .addOption("f", "slave-mounts", true, "comma-separated snapshot=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) mounted to all slaves individually")
-                .addOption("x", "execute-script", true, "shell script file to be executed on master")
-                .addOption("g", "nfs-shares", true, "comma-separated list of paths on master to be shared via NFS")
-                .addOption("v", "verbose", false, "more console output")
-                .addOption("o", "config", true, "path to alternative config file")
-                .addOption("b", "use-master-as-compute", true, "yes or no if master is supposed to be used as a compute instance")
-                .addOption("db", "cassandra", false, "Enable Cassandra database support")
-                .addOption("gpf", "grid-properties-file", true, "store essential grid properties like master & slave dns values and grid id in a Java property file")
-                .addOption("vpc", "vpc-id", true, "Vpc ID used instead of default vpc")
-                .addOption("router", "router", true, "Name of router used (Openstack), only one of --router --network or --subnet should be used. ")
-                .addOption("network", "network", true, "Name of network used (Openstack), only one of --router --network or --subnet should be used.")
-                .addOption("subnet", "subnet", true, "Naem of subnet used (Openstack), only one of --router --network or --subnet should be used.")
-                .addOption("psi", "public-slave-ip", true, "Slave instances also get an public ip address")
-                .addOption("me", "mesos", true, "Yes or no if Mesos framework should be configured/started. Default is No")
-                .addOption("mode", "meta-mode", true, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!")
-                .addOption("oge", "oge", true, "Yes or no if OpenGridEngine should be configured/started. Default is Yes!")
-                .addOption("nfs", "nfs", true, "Yes or no if NFS should be configured/started. Default is Yes!")
-                .addOption("lfs", "local-fs", true, "File system used for internal (empheral) diskspace. One of 'ext2', 'ext3', 'ext4' or 'xfs'. Default is 'xfs'.")
-                .addOption("u", "user", true, "User name (mandatory)")
-                .addOption("osu", "openstack-username", true, "The given Openstack Username")
-                .addOption("ost", "openstack-tenantname", true, "The given Openstack Tenantname")
-                .addOption("osp", "openstack-password", true, "The given Openstack User-Password")
-                .addOption("ose", "openstack-endpoint", true, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/)")
-                .addOption("osd", "openstack-domain", true, "The given Openstack Domain")
-                .addOption("dr", "debug-requests", false, "Enable HTTP request and response logging.");
+                .addOptionGroup(optfrorules);
+
         return cmdLineOptions;
     }
 
@@ -98,7 +78,8 @@ public class StartUp {
 
         CommandLineParser cli = new DefaultParser();
         OptionGroup intentOptions = getCMDLineOptionGroup();
-        Options cmdLineOptions = getCMDLineOptions(intentOptions);
+        OptionGroup ruleOptions = getRulesToOptions();
+        Options cmdLineOptions = getCMDLineOptions(intentOptions, ruleOptions);
 
         
         try {
