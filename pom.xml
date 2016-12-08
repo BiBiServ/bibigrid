@@ -130,9 +130,15 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            
                             <transformers>
+                                
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>de.unibi.cebitec.bibigrid.StartUp</mainClass>
+                                    <manifestEntries>
+                                        <Bibigrid-version>${project.version}</Bibigrid-version>
+                                        <Bibigrid-build-date>${maven.build.timestamp}</Bibigrid-build-date>
+                                    </manifestEntries>
                                 </transformer>
                             </transformers>
                             <filters>
