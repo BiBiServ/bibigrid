@@ -68,7 +68,7 @@ public class RuleBuilder {
         group.getParamrefOrParamGroupref().add(createBasicRule("vpc", "vpc-id", Tprimitive.STRING, "Vpc ID used instead of default vpc"));
         group.getParamrefOrParamGroupref().add(createBasicRule("router", "router", Tprimitive.STRING, "Name of router used (Openstack));, only one of --router --network or --subnet should be used. "));
         group.getParamrefOrParamGroupref().add(createBasicRule("network", "network", Tprimitive.STRING, "Name of network used (Openstack));, only one of --router --network or --subnet should be used."));
-        group.getParamrefOrParamGroupref().add(createBasicRule("subnet", "subnet", Tprimitive.STRING, "Naem of subnet used (Openstack));, only one of --router --network or --subnet should be used."));
+        group.getParamrefOrParamGroupref().add(createBasicRule("subnet", "subnet", Tprimitive.STRING, "Name of subnet used (Openstack));, only one of --router --network or --subnet should be used."));
         group.getParamrefOrParamGroupref().add(createBasicRule("psi", "public-slave-ip", Tprimitive.BOOLEAN, "Slave instances also get an public ip address"));
         group.getParamrefOrParamGroupref().add(createBasicRule("me", "mesos", Tprimitive.BOOLEAN, "Yes or no if Mesos framework should be configured/started. Default is No"));
         group.getParamrefOrParamGroupref().add(createBasicRule("mode", "meta-mode", Tprimitive.STRING, "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!"));
