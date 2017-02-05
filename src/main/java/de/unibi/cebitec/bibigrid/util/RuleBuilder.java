@@ -82,7 +82,12 @@ public class RuleBuilder {
         group.getParamrefOrParamGroupref().add(createBasicRule("ose", "openstack-endpoint", Tprimitive.STRING, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/));")); //Regex?
         group.getParamrefOrParamGroupref().add(createBasicRule("osd", "openstack-domain", Tprimitive.STRING, "The given Openstack Domain"));
         group.getParamrefOrParamGroupref().add(createBasicRule("dr", "debug-requests", null, "Enable HTTP request and response logging."));
-
+        group.getParamrefOrParamGroupref().add(createBasicRule("t","terminate",Tprimitive.STRING,"terminate running cluster"));
+        /*group.getParamrefOrParamGroupref().add(createBasicRule("V","version",null,"version"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("h","help",null,"help"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("c","create",null,"create cluster"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("l","list",null,"list running clusters"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("ch","check",null,"check config file"));*/
     }
 
     private Tparam createBasicRule(String sflag, String lflag, Tprimitive type, String shortdesc){

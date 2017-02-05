@@ -81,6 +81,10 @@ public class StartUp {
         OptionGroup ruleOptions = getRulesToOptions();
         Options cmdLineOptions = getCMDLineOptions(intentOptions, ruleOptions);
 
+       /* for(String k: args){
+            System.out.println("Innen: "+ k);
+        }*/
+
         
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
