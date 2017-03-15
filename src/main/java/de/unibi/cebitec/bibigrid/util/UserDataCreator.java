@@ -28,11 +28,6 @@ public class UserDataCreator {
      * Creates slaveUserData content.
      *
      *
-     * Changes JK : <ul> <li> use StringBuilder instead of String concatenation
-     * ;-) </li> <li> remove unnecessary sudo's - UserData is executed as root
-     * </li> </ul>
-     *
-     *
      * @param masterIp
      * @param masterDns
      * @param slaveDeviceMapper
@@ -172,10 +167,10 @@ public class UserDataCreator {
             slaveUserData.append("mkdir /vol/scratch/cassandra/data\n");
             slaveUserData.append("mkdir /vol/scratch/cassandra/saved_caches\n");
             slaveUserData.append("chown cassandra:cassandra -R /vol/scratch/cassandra\n");
-            slaveUserData.append("sed -i s/##PRIVATE_IP##/${CURRENT_IP}/g /opt/cassandra/conf/cassandra.yaml\n");
-            slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /opt/cassandra/conf/cassandra.yaml\n");
-            // slaveUserData.append("service cassandra start\n"); --> start cassandra database as daemon process
-            slaveUserData.append("log 'Cassandra configured and started'\n");
+            //slaveUserData.append("sed -i s/##PRIVATE_IP##/${CURRENT_IP}/g /opt/cassandra/conf/cassandra.yaml\n");
+            //slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /opt/cassandra/conf/cassandra.yaml\n");
+            //slaveUserData.append("service cassandra start\n"); --> start cassandra database as daemon process
+            slaveUserData.append("log 'Cassandra pre-configured'\n");
 
         }
 
@@ -406,10 +401,10 @@ public class UserDataCreator {
             masterUserData.append("mkdir -p /vol/scratch/cassandra\n");
             masterUserData.append("chown -R cassandra:cassandra /vol/scratch/cassandra\n");
             masterUserData.append("chmod -R 777 /vol/scratch/cassandra\n");
-            masterUserData.append("sed -i s/##MASTER_IP##/$(curl -sS http://169.254.169.254/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
-            masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl -sS http://169.254.169.254/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
-            masterUserData.append("service cassandra start\n"); // @ToDo : this will not work with latest version
-            masterUserData.append("log \"cassandra configured and started\"\n");
+            //masterUserData.append("sed -i s/##MASTER_IP##/$(curl -sS http://169.254.169.254/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            //masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl -sS http://169.254.169.254/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
+            //masterUserData.append("service cassandra start\n"); // @ToDo : this will not work with latest version
+            masterUserData.append("log \"cassandra pre-configured\"\n");
         }
 
         /*
@@ -429,7 +424,7 @@ public class UserDataCreator {
         if (cfg.isOge()) {
             switch (cfg.getMode()) {
                 case AWS : masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/public-hostname > /var/lib/gridengine/default/common/act_qmaster\n"); break;
-                case OPENSTACK : masterUserData.append("echo $hostname > /var/lib/gridengine/default/common/act_qmaster\n"); break;
+                case OPENSTACK : masterUserData.append("echo $(hostname) > /var/lib/gridengine/default/common/act_qmaster\n"); break;
             }
             
             masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
@@ -469,8 +464,8 @@ public class UserDataCreator {
         if (masterDeviceMapper != null) {
             for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
                 String device = masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e));
-                String mountpoint = masterDeviceMapper.getSnapshotIdToMountPoint().get(e);
-                masterUserData.append("umount ").append(device).append("\n");
+                String mountpoint = masterDeviceMapper.getSnapshotIdToMountPoint().get(e); 
+               masterUserData.append("umount ").append(device).append("\n");
                 masterUserData.append("mkdir -p ").append(mountpoint).append("\n");             
                 masterUserData.append("mount ").append(device).append(" ").append(mountpoint).append("\n");
             }

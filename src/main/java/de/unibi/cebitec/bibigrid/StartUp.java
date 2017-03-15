@@ -109,13 +109,8 @@ public class StartUp {
                 case "h":
                     HelpFormatter help = new HelpFormatter();
                     String header = ""; //TODO: infotext (auf default props hinweisen); instanzgroessen auflisten
-                    StringBuilder footer = new StringBuilder(" \nValid INSTANCE-TYPES are:");
-                    for (InstanceType type : InstanceType.values()) {
-                        footer.append("\n-\t");
-                        footer.append(type.toString());
-                    }
-                    footer.append("\n.");
-                    help.printHelp("bibigrid --create|--list|--terminate|--check [...]", header, cmdLineOptions, footer.toString());
+                    String footer = "";
+                    help.printHelp("bibigrid --create|--list|--terminate|--check [...]", header, cmdLineOptions,footer);
                     break;
                 case "c":
                     intent = new CreateIntent();

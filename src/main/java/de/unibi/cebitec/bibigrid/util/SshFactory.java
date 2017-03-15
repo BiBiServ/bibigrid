@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.slf4j.Logger;
@@ -163,6 +164,25 @@ public class SshFactory {
             for (CreateClusterOpenstack.Instance slave : slaves) {              
                 sb.append("./add_exec ").append(slave.getNeutronHostname()).append(" ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
             }
+        }
+        
+        if (cfg.isCassandra()) {
+            List<String> cassandra_hosts = new ArrayList<>();
+            // add master
+            cassandra_hosts.add(master.getNeutronHostname());
+            // add add all slaves
+            for (CreateClusterOpenstack.Instance slave : slaves) {              
+                cassandra_hosts.add(slave.getNeutronHostname());
+            }
+            // now configure cassandra on all hosts and starts it afterwards
+            String ch = String.join(",",cassandra_hosts);
+            String ssh_opt="-o CheckHostIP=no -o StrictHostKeyChecking=no";
+            for (String host : cassandra_hosts) {
+                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo -u cassandra /opt/create_cassandra_config.sh  /opt/cassandra/ /vol/scratch/cassandra/ cassandra ").append(ch).append(" \"\n");
+                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo service cassandra start\"\n");
+                
+            }
+            
         }
         
         if (cfg.isHdfs()) {

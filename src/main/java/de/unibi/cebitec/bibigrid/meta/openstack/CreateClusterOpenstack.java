@@ -67,6 +67,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     public static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
     public static final String SUBNET_PREFIX = PREFIX + "subnet-";
 
+    public static final long WAITTIME = 5000;
+
     /*
      * Cluster ID
      */
@@ -119,13 +121,14 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         Map<String, String> masterVolumetoMountPointMap = new HashMap<>();
         for (String snapshot : conf.getMasterMounts().keySet()) {
             // 1st check if Snapshot exist
-            VolumeSnapshot vss = getSnapshotbyName(snapshot);
+            VolumeSnapshot vss = getSnapshotbyNameOrId(snapshot);
             if (vss == null) {
                 LOG.warn("Snapshot with name {} not found!", snapshot);
             } else {
                 // 2nd create new  Volume from Snapshot
                 Volume v = createVolumefromSnapshot(vss, snapshot + "_" + clusterId);
                 masterVolumetoMountPointMap.put(v.getId(), conf.getMasterMounts().get(snapshot));
+               
                 LOG.info(V, "Create volume ({}) from snapshot ({}).", v.getName(), snapshot);
             }
         }
@@ -228,7 +231,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     .addMetadata(metadata)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();
-            Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
+            //Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
+            Server server = os.compute().servers().boot(sc); // boot an return immidiately
 
             // check if anything goes wrong,
             Fault fault = server.getFault();
@@ -242,6 +246,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 }
             }
 
+            /* Network configuration */
             LOG.info("Master (ID: {}) started", server.getId());
 
             master.setId(server.getId());
@@ -249,8 +254,6 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
             master.setHostname("bibigrid-master-" + clusterId);
             master.updateNeutronHostname();
-
-            LOG.info("Master (ID: {}) network configuration finished", master.getId());
 
             // get and assign floating ip to master
             ActionResponse ar = null;
@@ -290,6 +293,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     LOG.warn("FloatingIP {} assignment failed with fault : {}! Try another one ...", floatingip.getFloatingIpAddress(), ar.getFault());
                 }
             }
+            LOG.info("Master (ID: {}) network configuration finished", master.getId());
 
             // attach Volumes
             for (String volumeid : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
@@ -315,11 +319,12 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                         }
                         default:
                             waiting = false;
-                            LOG.error("Volume not available  (Status : {})",v.getStatus());
+                            LOG.error("Volume not available  (Status : {})", v.getStatus());
                     }
                 }
 
                 if (v.getStatus().equals(Status.AVAILABLE)) {
+                    // @ToDo: Test if a volume can be attached to a non active server instance ...
                     VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeid, masterDeviceMapper.getDeviceNameForSnapshotId(volumeid));
                     if (va == null) {
                         LOG.error("Attaching volume {} to master failed ...", volumeid);
@@ -329,10 +334,23 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 }
             }
 
+            // wait for master available       
+            do {
+                if (checkforServerAndUpdateInstance(server.getId(), master)) {
+                    if (!master.isActive()) { // if not yet active wait ....
+                        sleep();
+                    }
+                } else { // error case
+                    return false;
+                }
+            } while (!master.isActive());
+          
+
+            
             //boot slave instances ...
-            List<String> slaveIDs = new ArrayList<>(); // temporary list
+            //List<String> slaveIDs = new ArrayList<>(); // temporary list
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
-                // ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (i + 1) + "-" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
+                // ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (slave + 1) + "-" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
                 sc = Builders.server()
                         .name("bibigrid-slave-" + (i + 1) + "-" + clusterId)
                         .flavor(slaveFlavor.getId())
@@ -347,65 +365,50 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                                 environment.getKeypair()))
                         .networks(Arrays.asList(environment.getNetwork().getId()))
                         .build();
+                Server tmp = os.compute().servers().boot(sc);
+                slaves.put(tmp.getId(), new Instance(tmp.getId()));
+                
 
-                slaveIDs.add(os.compute().servers().boot(sc).getId());
+                //slaveIDs.add(tmp.getId());
                 LOG.info(V, "Instance request for {}  ", sc.getName());
             }
 
             LOG.info("Waiting for slave instances ready ...");
 
             // check     
-            while (slaves.size() != slaveIDs.size()) {
+            int active = 0;
+            while (slaves.size() != active) {
                 // wait for some seconds to not overload REST API
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    // do nothing
-                }
+                sleep();
                 // get fresh server object for given server id
-                for (String id : slaveIDs) {
+                for (Instance slave : slaves.values()) {
                     //ignore if instance is already active ...
-                    if (!slaves.containsKey(id)) {
-                        Server si = os.compute().servers().get(id);
-
-                        // check for status available ...
-                        if (si.getStatus() != null) {
-
-                            switch (si.getStatus()) {
-                                case ACTIVE:
-                                    Instance slave = new Instance();
-                                    slave.setId(si.getId());
-                                    slave.setHostname(si.getName());
-                                    slaves.put(id, slave);
-                                    LOG.info("Instance {} is active !", si.getName());
-                                    break;
-                                case ERROR:
-                                    // check if anything goes wrong,
-                                    fault = si.getFault();
-                                    if (fault != null) {
-                                        LOG.error("Launch {} failed without message!", si.getName());
-                                    } else {
-                                        LOG.error("Launch {} failed with Code {} :: {}", si.getName(), fault.getCode(), fault.getMessage());
-
-                                    }
-                                    return false;
-
-                                default:
-                                    // other not critical state
-                                    break;
+                    if (!slave.isActive()) {
+                        // check server status
+                        if (checkforServerAndUpdateInstance(slave.getId(), slave)) {
+                            if (slave.isActive()) {
+                                active ++;
+                            } else {
+                                sleep();
                             }
-                        } else {
-                            LOG.warn(V, "Status  of instance {} not available (== null)", si.getId());
+                        } else { // error case
+                            return false;
                         }
+                        
                     }
                 }
             }
             LOG.info(V, "Wait for slave network configuration finished ...");
             // wait for slave network finished ... update server instance list            
-            for (Instance i : slaves.values()) {
-                i.setIp(waitForAddress(i.getId(), environment.getNetwork().getName()).getAddr());
-                i.updateNeutronHostname();
+            for (Instance slave : slaves.values()) {
+                slave.setIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
+                slave.updateNeutronHostname();
             }
+            /* @ToDo: 
+                Mount a volume to slave instance 
+                - create (count of slave instances) snapshots
+                - mount each snapshot as volume to an instance */
+            
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
 
             sshTestAndExecute();
@@ -459,12 +462,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             if (instance != null && instance.getAddresses() != null && instance.getAddresses().getAddresses(network) != null && instance.getAddresses().getAddresses(network).size() > 0) {
                 addr = instance.getAddresses().getAddresses(network).iterator().next();
             } else {
-                try {
-                    Thread.sleep(2500);
-                    System.out.print(".");
-                } catch (InterruptedException ex) {
-                    LOG.error("Can't sleep!");
-                }
+                sleep();
             }
         } while (addr == null);
         return addr;
@@ -489,7 +487,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
                 ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
                 LOG.info("Trying to connect to master ({})...", ssh_attempts);
-                Thread.sleep(5000);
+                sleep();
 
                 /*
                  * Create new Session to avoid packet corruption.
@@ -631,6 +629,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
     public class Instance {
 
+        private boolean active = false;
+
         private String id, ip, publicIp;
 
         private String hostname, neutronHostname;
@@ -638,7 +638,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         public Instance() {
         }
 
-        ;
+        public Instance(String id){
+            this.id = id;
+        }
 
        
        public String getId() {
@@ -688,6 +690,14 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             } else {
                 LOG.warn("ip must be a valid IPv4 address string.");
             }
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
+        public void setActive(boolean active) {
+            this.active = active;
         }
 
     }
@@ -753,11 +763,15 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
      * @param name
      * @return
      */
-    private VolumeSnapshot getSnapshotbyName(String name) {
+    private VolumeSnapshot getSnapshotbyNameOrId(String nameorid) {
         List<? extends VolumeSnapshot> allsnapshots = os.blockStorage().snapshots().list();
         for (VolumeSnapshot vss : allsnapshots) {
-            if (vss.getName().equals(name)) {
-
+            if (vss.getName() != null) {
+                if (vss.getName().equals(nameorid)) {
+                    return vss;
+                }
+            }
+            if (vss.getId().equals(nameorid)){
                 return vss;
             }
         }
@@ -778,6 +792,57 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 .snapshot(vss.getId())
                 .description("created from SnapShot " + vss.getId() + " by BiBiGrid")
                 .build());
+    }
+
+    /**
+     * Check for Server status and update instance with id, hostname and active
+     * state. Returns false in the case of an error, true otherwise.
+     *
+     * @param id
+     * @param instance
+     * @return
+     */
+    private boolean checkforServerAndUpdateInstance(String id, Instance instance) {
+        Server si = os.compute().servers().get(id);
+
+        // check for status available ...
+        if (si.getStatus() != null) {
+
+            switch (si.getStatus()) {
+                case ACTIVE:
+                    instance.setActive(true);
+                    instance.setId(si.getId());
+                    instance.setHostname(si.getName());
+                    LOG.info("Instance {} is active !", si.getName());
+                    break;
+                case ERROR:
+                    // check and [rint error anything goes wrong,
+                    Fault fault = si.getFault();
+                    if (fault != null) {
+                        LOG.error("Launch {} failed without message!", si.getName());
+                    } else {
+                        LOG.error("Launch {} failed with Code {} :: {}", si.getName(), fault.getCode(), fault.getMessage());
+
+                    }
+                    return false;
+
+                default:
+                    // other non critical state ... just wait
+                    break;
+            }
+        } else {
+            LOG.warn(V, "Status  of instance {} not available (== null)", si.getId());
+        }
+        return true;
+    }
+
+    private void sleep() {
+        // wait for WAITTIME seconds
+        try {
+            Thread.sleep(WAITTIME);
+        } catch (InterruptedException e) {
+            // do nothing
+        }
     }
 
 }

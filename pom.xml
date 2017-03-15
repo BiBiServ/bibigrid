@@ -58,36 +58,11 @@
             <version>1.10.67</version>
         </dependency>       
             
-        <!-- Openstack Support -->    <!--
-        <dependency>
-            <groupId>org.apache.jclouds.api</groupId>
-            <artifactId>openstack-nova</artifactId>
-            <version>1.9.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.jclouds.labs</groupId>
-            <artifactId>openstack-neutron</artifactId>
-            <version>1.9.2</version>
-        </dependency>-->
         <dependency>
             <groupId>org.pacesys</groupId>
             <artifactId>openstack4j</artifactId>
-            <version>3.0.0</version>
+            <version>3.0.3</version>
         </dependency>
-
-
-        <!-- Evtl. unnoetig -->
-<!--        <dependency>
-            <groupId>org.apache.jclouds.driver</groupId>
-            <artifactId>jclouds-sshj</artifactId>
-            <version>1.9.2</version>
-        </dependency>
-            
-        <dependency>
-            <groupId>org.apache.jclouds.driver</groupId>
-            <artifactId>jclouds-slf4j</artifactId>
-            <version>1.9.2</version>
-        </dependency>-->
         
         
         <dependency>
