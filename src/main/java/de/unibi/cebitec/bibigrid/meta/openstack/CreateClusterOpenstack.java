@@ -304,45 +304,6 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
       }
       LOG.info("Master (ID: {}) network configuration finished", master.getId());
 
-      // attach Volumes
-      for (String volumeid : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
-        //check if volume is availabe
-
-        Volume v = os.blockStorage().volumes().get(volumeid);
-
-        boolean waiting = true;
-        while (waiting) {
-          switch (v.getStatus()) {
-            case AVAILABLE:
-              waiting = false;
-              break;
-            case CREATING: {
-              try {
-                Thread.sleep(5000);
-                LOG.info(V, "Wait for Volume ({}) available", v.getId());
-              } catch (InterruptedException e) {
-                // do nothing
-              }
-              v = os.blockStorage().volumes().get(volumeid);
-              break;
-            }
-            default:
-              waiting = false;
-              LOG.error("Volume not available  (Status : {})", v.getStatus());
-          }
-        }
-
-        if (v.getStatus().equals(Status.AVAILABLE)) {
-          // @ToDo: Test if a volume can be attached to a non active server instance ...
-          VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeid, masterDeviceMapper.getDeviceNameForSnapshotId(volumeid));
-          if (va == null) {
-            LOG.error("Attaching volume {} to master failed ...", volumeid);
-          } else {
-            LOG.info(V, "Volume {}  attached to Master.", va.getId());
-          }
-        }
-      }
-
       // wait for master available       
       do {
         if (checkforServerAndUpdateInstance(server.getId(), master)) {
@@ -353,6 +314,48 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
           return false;
         }
       } while (!master.isActive());
+
+      // attach Volumes
+      if (!masterDeviceMapper.getSnapshotIdToMountPoint().isEmpty()) {
+        for (String volumeid : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+          //check if volume is availabe
+
+          Volume v = os.blockStorage().volumes().get(volumeid);
+
+          boolean waiting = true;
+          while (waiting) {
+            switch (v.getStatus()) {
+              case AVAILABLE:
+                waiting = false;
+                break;
+              case CREATING: {
+                try {
+                  Thread.sleep(5000);
+                  LOG.info(V, "Wait for Volume ({}) available", v.getId());
+                } catch (InterruptedException e) {
+                  // do nothing
+                }
+                v = os.blockStorage().volumes().get(volumeid);
+                break;
+              }
+              default:
+                waiting = false;
+                LOG.error("Volume not available  (Status : {})", v.getStatus());
+            }
+          }
+
+          if (v.getStatus().equals(Status.AVAILABLE)) {
+            // @ToDo: Test if a volume can be attached to a non active server instance ...
+            VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeid, masterDeviceMapper.getDeviceNameForSnapshotId(volumeid));
+            if (va == null) {
+              LOG.error("Attaching volume {} to master failed ...", volumeid);
+            } else {
+              LOG.info(V, "Volume {}  attached to Master.", va.getId());
+            }
+          }
+        }
+        LOG.info("{} Volume(s) attached to  Master.",masterDeviceMapper.getSnapshotIdToMountPoint().size());
+      }
 
       //boot slave instances ...
       //List<String> slaveIDs = new ArrayList<>(); // temporary list
