@@ -148,7 +148,7 @@ public class SshFactory {
         }
         if (cfg.isOge()) {
             // wait for sge_master started
-            sb.append("check ").append(master.getIp()).append(" 6444\n");
+            sb.append("ch_s ").append(master.getIp()).append(" 6444\n");
             // configure submit host
             sb.append("qconf -as ").append(master.getNeutronHostname()).append(" 2>&1\n");
             // clean-up possible previous configuration (could be happend if you use a configured masterimage snapshot as image)
