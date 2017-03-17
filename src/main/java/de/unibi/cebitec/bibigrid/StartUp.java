@@ -46,11 +46,11 @@ public class StartUp {
         return intentOptions;
     }
 
-    public static OptionGroup getRulesToOptions(){
+    public static Options getRulesToOptions(){
 
         RuleBuilder ruleBuild = new RuleBuilder();
         TparamGroup ruleSet = ruleBuild.getRules();
-        OptionGroup ruleOptions = new OptionGroup();
+        Options ruleOptions = new Options();
 
         for (Object ob : ruleSet.getParamrefOrParamGroupref()){
 
@@ -65,21 +65,12 @@ public class StartUp {
         return ruleOptions;
     }
     
-    public static Options getCMDLineOptions(OptionGroup optgrp, OptionGroup optfrorules) {
-        Options cmdLineOptions = new Options();
-        cmdLineOptions
-                .addOptionGroup(optgrp)
-                .addOptionGroup(optfrorules);
-
-        return cmdLineOptions;
-    }
-
     public static void main(String[] args) {
 
-        CommandLineParser cli = new DefaultParser();
+        CommandLineParser cli = new DefaultParser();      
         OptionGroup intentOptions = getCMDLineOptionGroup();
-        OptionGroup ruleOptions = getRulesToOptions();
-        Options cmdLineOptions = getCMDLineOptions(intentOptions, ruleOptions);
+        Options cmdLineOptions = getRulesToOptions();
+        cmdLineOptions.addOptionGroup(intentOptions);
 
         
         try {
