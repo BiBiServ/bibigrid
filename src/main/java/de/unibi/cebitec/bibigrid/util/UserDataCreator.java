@@ -64,7 +64,7 @@ public class UserDataCreator {
     if (cfg.isOge()) {
       slaveUserData.append("echo ").append(masterDns).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
       // test for sge_master available
-      slaveUserData.append("ch ").append(masterIp).append(" 6444\n");
+      slaveUserData.append("ch_s ").append(masterIp).append(" 6444\n");
       // start sge_exed 
       slaveUserData.append("ch_p sge_execd 10 \"service gridengine-exec start\"\n");
       slaveUserData.append("log 'sge_execd started'\n");
@@ -74,7 +74,7 @@ public class UserDataCreator {
          * Ganglia service monitor
      */
     slaveUserData.append("sed -i s/MASTER_IP/").append(masterIp).append("/g /etc/ganglia/gmond.conf\n");
-    //slaveUserData.append("service ganglia-monitor restart \n");
+    slaveUserData.append("service ganglia-monitor start \n");
     slaveUserData.append("log 'ganglia configured and started'\n");
 
     int ephemeralamount = cfg.getSlaveInstanceType().getSpec().ephemerals;
@@ -179,7 +179,7 @@ public class UserDataCreator {
     slaveUserData.append("chown ubuntu:ubuntu /vol/ \n");
     if (cfg.isNfs()) {
       // wait for NFS server is ready and available
-      slaveUserData.append("ch ").append(masterIp).append(" 2049\n");
+      slaveUserData.append("ch_s ").append(masterIp).append(" 2049\n");
 
       slaveUserData.append(
               "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
@@ -400,9 +400,9 @@ public class UserDataCreator {
     masterUserData.append("chmod -R 777 /vol/\n");
     
     /* create bibigrid specific log within /var/spool */
-    masterUserData.append("mkdir -p /var/spool/bibigrid\n");
-    masterUserData.append("chown root:ubuntu /vol/spool/bibigrid\n");
-    masterUserData.append("chmod 775 /vol/spool/bibigrid\n");
+    masterUserData.append("mkdir -p /var/log/bibigrid\n");
+    masterUserData.append("chown root:ubuntu /var/log/bibigrid\n");
+    masterUserData.append("chmod 775 /var/log/bibigrid\n");
 
     /*
          * Cassandra Bloock
@@ -548,7 +548,7 @@ public class UserDataCreator {
       }
     }
     masterUserData.append("log \"userdata.finished\"\n");
-    masterUserData.append("cp /var/log/userdata.log /var/log/bibigrid/log/${IP}\n");
+    masterUserData.append("cp /var/log/userdata.log /var/log/bibigrid/${IP}\n");
 
     masterUserData.append("exit 0\n");
 
