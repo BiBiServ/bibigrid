@@ -167,21 +167,26 @@ public class SshFactory {
         }
         
         if (cfg.isCassandra()) {
+               sb.append("/usr/bin/whoami \n");
+            sb.append("ls -al /home/ubuntu/.ssh \n");
+          
             List<String> cassandra_hosts = new ArrayList<>();
             // add master
-            cassandra_hosts.add(master.getNeutronHostname());
+            cassandra_hosts.add(master.getIp());
             // add add all slaves
             for (CreateClusterOpenstack.Instance slave : slaves) {              
-                cassandra_hosts.add(slave.getNeutronHostname());
+                cassandra_hosts.add(slave.getIp());
             }
             // now configure cassandra on all hosts and starts it afterwards
             String ch = String.join(",",cassandra_hosts);
             String ssh_opt="-o CheckHostIP=no -o StrictHostKeyChecking=no";
             for (String host : cassandra_hosts) {
-                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo -u cassandra /opt/create_cassandra_config.sh  /opt/cassandra/ /vol/scratch/cassandra/ cassandra ").append(ch).append(" \"\n");
+                sb.append("check ").append(host).append(" 22\n");
+                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo -u cassandra /opt/cassandra/bin/create_cassandra_config.sh  /opt/cassandra/ /vol/scratch/cassandra/ cassandra ").append(ch).append(" \"\n");
                 sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo service cassandra start\"\n");
                 
             }
+         
             
         }
         
@@ -193,8 +198,8 @@ public class SshFactory {
             
         }
         
-        sb.append("sudo service gmetad restart \n");
-        sb.append("sudo service ganglia-monitor restart \n");
+        //sb.append("sudo service gmetad restart \n");
+        //sb.append("sudo service ganglia-monitor restart \n");
         sb.append("echo CONFIGURATION_FINISHED \n");
         return sb.toString();
     }

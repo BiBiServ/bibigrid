@@ -26,6 +26,7 @@ public class Configuration {
     private Map<String, String> masterMounts;
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
+    private Map<String,String> extNfsShares;
     private boolean logHttpRequests;
     
     private FS localFS = FS.XFS;
@@ -254,6 +255,16 @@ public class Configuration {
     public void setNfsShares(List<String> nfsShares) {
         this.nfsShares = nfsShares;
     }
+
+  public Map<String, String> getExtNfsShares() {
+    return extNfsShares;
+  }
+
+  public void setExtNfsShares(Map<String, String> extNfsShares) {
+    this.extNfsShares = extNfsShares;
+  }
+    
+    
 
     public boolean isAlternativeConfigFile() {
         return alternativeConfigFile;
