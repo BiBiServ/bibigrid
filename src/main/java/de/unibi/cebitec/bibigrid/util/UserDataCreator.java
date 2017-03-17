@@ -570,7 +570,7 @@ public class UserDataCreator {
             .append("\t\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
             .append("\tdone\n")
             .append("}\n");
-    sb.append("function ch_f{\n"
+    sb.append("function ch_f {\n"
             + "\twhile [ ! -f ${1} ]; do\n"
             + "\t\tlog \"wait for file ${1}\"\n"
             + "\t\tsleep 2\n"
