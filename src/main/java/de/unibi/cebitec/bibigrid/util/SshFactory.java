@@ -102,7 +102,7 @@ public class SshFactory {
                 sb.append(" ");
                 sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
                 sb.append("\n");
-                //sb.append("sudo service gridengine-exec start\n");
+                sb.append("sudo service gridengine-exec start\n");
             }
             if (slaveInstances != null) {
                 for (Instance instance : slaveInstances) {
@@ -114,7 +114,7 @@ public class SshFactory {
                 }
             }
         } else {
-            //sb.append("sudo service gridengine-master stop\n");
+            sb.append("sudo service gridengine-master stop\n");
         }
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
@@ -180,13 +180,10 @@ public class SshFactory {
             String ch = String.join(",",cassandra_hosts);
             String ssh_opt="-o CheckHostIP=no -o StrictHostKeyChecking=no";
             for (String host : cassandra_hosts) {
-                sb.append("check ").append(host).append(" 22\n");
+                sb.append("ch_f /var/log/bibigrid/").append(host).append("\n");
                 sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo -u cassandra /opt/cassandra/bin/create_cassandra_config.sh  /opt/cassandra/ /vol/scratch/cassandra/ cassandra ").append(ch).append(" \"\n");
-                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo service cassandra start\"\n");
-                
+                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo service cassandra start\"\n");   
             }
-         
-            
         }
         
         if (cfg.isHdfs()) {
@@ -197,8 +194,8 @@ public class SshFactory {
             
         }
         
-        //sb.append("sudo service gmetad restart \n");
-        //sb.append("sudo service ganglia-monitor restart \n");
+        sb.append("sudo service gmetad restart \n");
+        sb.append("sudo service ganglia-monitor start \n");
         sb.append("echo CONFIGURATION_FINISHED \n");
         return sb.toString();
     }

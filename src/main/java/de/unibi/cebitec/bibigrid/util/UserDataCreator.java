@@ -64,9 +64,9 @@ public class UserDataCreator {
     if (cfg.isOge()) {
       slaveUserData.append("echo ").append(masterDns).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
       // test for sge_master available
-      slaveUserData.append("check ").append(masterIp).append(" 6444\n");
+      slaveUserData.append("ch ").append(masterIp).append(" 6444\n");
       // start sge_exed 
-      slaveUserData.append("wait_for_process sge_execd 10 \"service gridengine-exec start\"\n");
+      slaveUserData.append("ch_p sge_execd 10 \"service gridengine-exec start\"\n");
       slaveUserData.append("log 'sge_execd started'\n");
     }
 
@@ -74,7 +74,7 @@ public class UserDataCreator {
          * Ganglia service monitor
      */
     slaveUserData.append("sed -i s/MASTER_IP/").append(masterIp).append("/g /etc/ganglia/gmond.conf\n");
-    slaveUserData.append("service ganglia-monitor restart \n");
+    //slaveUserData.append("service ganglia-monitor restart \n");
     slaveUserData.append("log 'ganglia configured and started'\n");
 
     int ephemeralamount = cfg.getSlaveInstanceType().getSpec().ephemerals;
@@ -179,7 +179,7 @@ public class UserDataCreator {
     slaveUserData.append("chown ubuntu:ubuntu /vol/ \n");
     if (cfg.isNfs()) {
       // wait for NFS server is ready and available
-      slaveUserData.append("check ").append(masterIp).append(" 2049\n");
+      slaveUserData.append("ch ").append(masterIp).append(" 2049\n");
 
       slaveUserData.append(
               "mount -t nfs4 -o proto=tcp,port=2049 ").append(masterIp).append(":/vol/spool /vol/spool\n");
@@ -281,8 +281,9 @@ public class UserDataCreator {
       }
     }
 
-    // copy userdata.log 
-    slaveUserData.append(SCP).append("/var/log/userdata.log ").append(masterIp).append(":/vol/spool/log/${IP} \n");
+    // copy userdata.log using scp to master : must be done as ubuntu user since the ubuntu user has the
+    slaveUserData.append("ch_s ${IP} 22\n");
+    slaveUserData.append("sudo -u ubuntu ").append(SCP).append("/var/log/userdata.log ").append(masterIp).append(":/var/log/bibigrid/${IP}\n");
     slaveUserData.append("exit 0\n");
 
     return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
@@ -397,6 +398,11 @@ public class UserDataCreator {
     masterUserData.append("mkdir -p /vol/scratch/\n");
     masterUserData.append("chown -R ubuntu:ubuntu /vol/\n");
     masterUserData.append("chmod -R 777 /vol/\n");
+    
+    /* create bibigrid specific log within /var/spool */
+    masterUserData.append("mkdir -p /var/spool/bibigrid\n");
+    masterUserData.append("chown root:ubuntu /vol/spool/bibigrid\n");
+    masterUserData.append("chmod 775 /vol/spool/bibigrid\n");
 
     /*
          * Cassandra Bloock
@@ -542,7 +548,7 @@ public class UserDataCreator {
       }
     }
     masterUserData.append("log \"userdata.finished\"\n");
-    masterUserData.append("cp /var/log/userdata.log /vol/spool/log/${IP}\n");
+    masterUserData.append("cp /var/log/userdata.log /var/log/bibigrid/log/${IP}\n");
 
     masterUserData.append("exit 0\n");
 
@@ -556,7 +562,7 @@ public class UserDataCreator {
 
   public static void shellFct(StringBuilder sb) {
     sb.append("function log { date +\"%x %R:%S - ${1}\";}\n");
-    sb.append("function check {\n")
+    sb.append("function ch_s {\n")
             .append("\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
             .append("\twhile test $? -eq 1; do\n")
             .append("\t\tlog \"wait for service at ${1}:${2}\"\n")
@@ -564,8 +570,15 @@ public class UserDataCreator {
             .append("\t\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
             .append("\tdone\n")
             .append("}\n");
-
-    sb.append("function wait_for_process {\n")
+    sb.append("function ch_f{\n"
+            + "\twhile [ ! -f ${1} ]; do\n"
+            + "\t\tlog \"wait for file ${1}\"\n"
+            + "\t\tsleep 2\n"
+            + "\tdone\n"
+            + "}\n");
+            
+    
+    sb.append("function ch_p {\n")
             .append("\twhile [ $(ps -e | grep ${1} | wc -l) != '1' ]; do\n")
             .append("\t\t${3}\n")
             .append("\t\tlog \"wait for process ${1}\"\n")
@@ -573,6 +586,7 @@ public class UserDataCreator {
             .append("\t\tlog \"$(ps -e | grep ${1})\"\n")
             .append("\tdone;\n")
             .append("}\n");
+    
 
   }
 }
