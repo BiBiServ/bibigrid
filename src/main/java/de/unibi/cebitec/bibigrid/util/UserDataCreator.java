@@ -22,7 +22,9 @@ import org.slf4j.LoggerFactory;
  */
 public class UserDataCreator {
 
-  public static final Logger log = LoggerFactory.getLogger(UserDataCreator.class);
+  public static final Logger LOG = LoggerFactory.getLogger(UserDataCreator.class);
+  private static final String SSH = "ssh -o CheckHostIP=no -o StrictHostKeyChecking=no ";
+  private static final String SCP = "scp -o CheckHostIP=no -o StrictHostKeyChecking=no ";
 
   /**
    * Creates slaveUserData content.
@@ -46,7 +48,7 @@ public class UserDataCreator {
     shellFct(slaveUserData);
 
     /* Save currentIP as env var */
-    slaveUserData.append("CURRENT_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+    slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
 
     slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
@@ -167,9 +169,6 @@ public class UserDataCreator {
       slaveUserData.append("mkdir /vol/scratch/cassandra/data\n");
       slaveUserData.append("mkdir /vol/scratch/cassandra/saved_caches\n");
       slaveUserData.append("chown cassandra:cassandra -R /vol/scratch/cassandra\n");
-      //slaveUserData.append("sed -i s/##PRIVATE_IP##/${CURRENT_IP}/g /opt/cassandra/conf/cassandra.yaml\n");
-      //slaveUserData.append("sed -i s/##MASTER_IP##/").append(masterIp).append("/g  /opt/cassandra/conf/cassandra.yaml\n");
-      //slaveUserData.append("service cassandra start\n"); --> start cassandra database as daemon process
       slaveUserData.append("log 'Cassandra pre-configured'\n");
 
     }
@@ -271,25 +270,22 @@ public class UserDataCreator {
         String base64 = new String(Base64.encodeBase64(Files.readAllBytes(cfg.getEarlySlaveShellScriptFile())));
 
         if (base64.length() > 10000) {
-          log.info("Early shell script file too large  (base64 encoded size exceeds 10000 chars)");
+          LOG.info("Early shell script file too large  (base64 encoded size exceeds 10000 chars)");
         } else {
           slaveUserData.append("echo ").append(base64).append(" | base64 --decode  | bash - 2>&1 > /var/log/earlyshellscript.log \n");
           slaveUserData.append("log \"earlyshellscript executed\"\n");
         }
 
       } catch (IOException e) {
-        log.info("Early shell script could not be read.");
+        LOG.info("Early shell script could not be read.");
       }
     }
 
-    slaveUserData.append("cp /var/log/userdata.log /vol/spool/log/SLAVE_${CURRENT_IP}.log \n");
+    // copy userdata.log 
+    slaveUserData.append(SCP).append("/var/log/userdata.log ").append(masterIp).append(":/vol/spool/log/${IP} \n");
     slaveUserData.append("exit 0\n");
-    switch (cfg.getMode()) {
-      case AWS:
-        return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
-      default:
-        return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
-    }
+
+    return new String(Base64.encodeBase64(slaveUserData.toString().getBytes()));
   }
 
   /**
@@ -322,6 +318,8 @@ public class UserDataCreator {
     /* append additional shell fct */
     shellFct(masterUserData);
 
+    
+    masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
     masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -407,9 +405,6 @@ public class UserDataCreator {
       masterUserData.append("mkdir -p /vol/scratch/cassandra\n");
       masterUserData.append("chown -R cassandra:cassandra /vol/scratch/cassandra\n");
       masterUserData.append("chmod -R 777 /vol/scratch/cassandra\n");
-      //masterUserData.append("sed -i s/##MASTER_IP##/$(curl -sS http://169.254.169.254/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
-      //masterUserData.append("sed -i s/##PRIVATE_IP##/$(curl -sS http://169.254.169.254/latest/meta-data/local-ipv4)/g /opt/cassandra/conf/cassandra.yaml\n");
-      //masterUserData.append("service cassandra start\n"); // @ToDo : this will not work with latest version
       masterUserData.append("log \"cassandra pre-configured\"\n");
     }
 
@@ -453,9 +448,9 @@ public class UserDataCreator {
       masterUserData.append("mkdir -p /vol/spool/mesos\n");
       masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
       masterUserData.append("echo bibigrid > /etc/mesos-master/cluster\n");
-      masterUserData.append("curl http://169.254.169.254/latest/meta-data/local-ipv4 > /etc/mesos-master/ip\n");
+      masterUserData.append("echo ${IP} > /etc/mesos-master/ip\n");
       masterUserData.append("echo /vol/spool/mesos > /etc/mesos-master/work_dir\n");
-      masterUserData.append("echo zk://`curl http://169.254.169.254/latest/meta-data/local-ipv4`:2181/mesos > /etc/mesos/zk\n");
+      masterUserData.append("echo zk://${IP}:2181/mesos > /etc/mesos/zk\n");
       masterUserData.append("service mesos-master start\n");
       masterUserData.append("log \"mesos-master configured and started\"\n");
       if (cfg.isUseMasterAsCompute()) {
@@ -484,16 +479,16 @@ public class UserDataCreator {
      */
     if (cfg.isNfs()) {
 
-      masterUserData.append("ipbase=`curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 | cut -f 1-3 -d .`\n");
+      masterUserData.append("IPBASE=`echo ${IP} | cut -f 1-3 -d .`\n");
       // export spool dir
-      masterUserData.append("echo \"/vol/spool/ ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
+      masterUserData.append("echo \"/vol/spool/ ${IPBASE}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
       // export opt dir
-      masterUserData.append("echo \"/opt/ ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
+      masterUserData.append("echo \"/opt/ ${IPBASE}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
 
       for (String mastershare : masterNfsShares) {
         masterUserData.append("mkdir -p ").append(mastershare).append("\n");
         masterUserData.append("chmod 777 ").append(mastershare).append("\n");
-        masterUserData.append("echo \"").append(mastershare).append(" ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\">> /etc/exports\n");
+        masterUserData.append("echo \"").append(mastershare).append(" ${IPBASE}.0/24(rw,nohide,insecure,no_subtree_check,async)\">> /etc/exports\n");
       }
       masterUserData.append("service nfs-kernel-server restart\n");
       masterUserData.append("log \"NFS Server configured and restarted\"\n");
@@ -536,27 +531,23 @@ public class UserDataCreator {
         String base64 = new String(Base64.encodeBase64(Files.readAllBytes(cfg.getEarlyMasterShellScriptFile())));
 
         if (base64.length() > 10000) {
-          log.info("Early shell script file too large  (base64 encoded size exceeds 10000 chars)");
+          LOG.info("Early shell script file too large  (base64 encoded size exceeds 10000 chars)");
         } else {
           masterUserData.append("echo ").append(base64).append(" | base64 --decode  | bash - 2>&1 > /var/log/earlyshellscript.log \n");
           masterUserData.append("log \"earlyshellscript executed\"\n");
         }
 
       } catch (IOException e) {
-        log.info("Early shell script could not be read.");
+        LOG.info("Early shell script could not be read.");
       }
     }
     masterUserData.append("log \"userdata.finished\"\n");
-    masterUserData.append("cp /var/log/userdata.log /vol/spool/log/master.log\n");
+    masterUserData.append("cp /var/log/userdata.log /vol/spool/log/${IP}\n");
+
     masterUserData.append("exit 0\n");
 
-    log.info(V, "Master userdata:\n{}", masterUserData.toString());
-    switch (cfg.getMode()) {
-      case AWS:
-        return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
-      default:
-        return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
-    }
+    LOG.info(V, "Master userdata:\n{}", masterUserData.toString());
+    return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
   }
 
   private static char ephemeral(int i) {

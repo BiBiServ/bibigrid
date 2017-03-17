@@ -167,9 +167,8 @@ public class SshFactory {
         }
         
         if (cfg.isCassandra()) {
-               sb.append("/usr/bin/whoami \n");
-            sb.append("ls -al /home/ubuntu/.ssh \n");
-          
+              
+  
             List<String> cassandra_hosts = new ArrayList<>();
             // add master
             cassandra_hosts.add(master.getIp());
