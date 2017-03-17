@@ -178,7 +178,7 @@ public class SshFactory {
             }
             // now configure cassandra on all hosts and starts it afterwards
             String ch = String.join(",",cassandra_hosts);
-            String ssh_opt="-o CheckHostIP=no -o StrictHostKeyChecking=no";
+            String ssh_opt="-q -o CheckHostIP=no -o StrictHostKeyChecking=no";
             for (String host : cassandra_hosts) {
                 sb.append("ch_f /var/log/bibigrid/").append(host).append("\n");
                 sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo -u cassandra /opt/cassandra/bin/create_cassandra_config.sh  /opt/cassandra/ /vol/scratch/cassandra/ cassandra ").append(ch).append(" \"\n");
