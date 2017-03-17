@@ -56,10 +56,11 @@ public class RuleBuilder {
         group.getParamrefOrParamGroupref().add(port);
 
         group.getParamrefOrParamGroupref().add(createBasicRule("sg", "security-group", Tprimitive.STRING,"security group id used by current setup"));
-        group.getParamrefOrParamGroupref().add(createBasicRule("d", "master-mounts", Tprimitive.STRING, "comma-separated snapshot=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) mounted to master. (Optional: Partition selection with ':', e.g. snap-12234abcd:1=/mnt/mydir1)"));
-        group.getParamrefOrParamGroupref().add(createBasicRule("f", "slave-mounts", Tprimitive.STRING, "comma-separated snapshot=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) mounted to all slaves individually")); //Regex zb. nach = Zeichen suchen?
+        group.getParamrefOrParamGroupref().add(createBasicRule("d", "master-mounts", Tprimitive.STRING, "comma-separated volume/snapshot id=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) mounted to master. (Optional: Partition selection with ':', e.g. snap-12234abcd:1=/mnt/mydir1)"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("f", "slave-mounts", Tprimitive.STRING, "comma-separated snapshot id=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) mounted to all slaves individually")); //Regex zb. nach = Zeichen suchen?
         group.getParamrefOrParamGroupref().add(createBasicRule("x", "execute-script", Tprimitive.STRING, "shell script file to be executed on master"));
-        group.getParamrefOrParamGroupref().add(createBasicRule("g", "nfs-shares", Tprimitive.STRING, "comma-separated list of paths on master to be shared via NFS"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("g", "nfs-shares", Tprimitive.STRING, "comma-separated list of paths on master to be shared via NFS (e.g. 192.168.10.44=/export/data,192.168.10.44=/export/bla)"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("ge", "ext-nfs-shares", Tprimitive.STRING,"comma-separated nfsserver=path list (e.g."));
         group.getParamrefOrParamGroupref().add(createBasicRule("v", "verbose", null, "more console output"));
         group.getParamrefOrParamGroupref().add(createBasicRule("o", "config", Tprimitive.STRING, "path to alternative config file"));
         group.getParamrefOrParamGroupref().add(createBasicRule("b", "use-master-as-compute", Tprimitive.BOOLEAN, "yes or no if master is supposed to be used as a compute instance"));

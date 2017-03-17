@@ -33,7 +33,7 @@ public class CommandLineValidator {
 
     public static final String DEFAULT_PROPERTIES_DIRNAME = System.getProperty("user.home");
     public static final String DEFAULT_PROPERTIES_FILENAME = ".bibigrid.properties";
-    public static final Logger log = LoggerFactory.getLogger(CommandLineValidator.class);
+    public static final Logger LOG = LoggerFactory.getLogger(CommandLineValidator.class);
     private final CommandLine cl;
     private final Configuration cfg;
     private final Intent intent;
@@ -50,11 +50,11 @@ public class CommandLineValidator {
             Path newPath = FileSystems.getDefault().getPath(path);
             if (Files.isReadable(newPath)) {
                 propertiesFilePath = newPath;
-                log.info("Alternative config file {} will be used.",newPath.toString());
+                LOG.info("Alternative config file {} will be used.",newPath.toString());
                 cfg.setAlternativeConfigFile(true);
                 cfg.setAlternativeConfigPath(newPath.toString());
             } else {
-                log.error("Alternative config ({}) file is not readable. Try to use default.",newPath.toString());
+                LOG.error("Alternative config ({}) file is not readable. Try to use default.",newPath.toString());
             }
         } 
         if (propertiesFilePath == null) {
@@ -63,9 +63,9 @@ public class CommandLineValidator {
         }
         // some messages
          if (Files.exists(propertiesFilePath)) {
-                log.info(V, "Reading default options from properties file at '{}'.", propertiesFilePath);
+                LOG.info(V, "Reading default options from properties file at '{}'.", propertiesFilePath);
             } else {
-                log.info("No properties file for default options found ({}). Using command line parameters only.", propertiesFilePath);
+                LOG.info("No properties file for default options found ({}). Using command line parameters only.", propertiesFilePath);
             }
         
     }
@@ -95,9 +95,10 @@ public class CommandLineValidator {
                 cfg.setMode(MODE.valueOf(mode.toUpperCase()));
             }
         } catch (IllegalArgumentException iae) {
-            log.error("No suitable mode found. Exit");
+            LOG.error("No suitable mode found. Exit");
             return false;
         }
+        // if no mode aws given keep default mode instead.
         // if no mode aws given keep default mode instead.
 
         List<String> req = intent.getRequiredOptions(cfg.getMode());
@@ -127,8 +128,8 @@ public class CommandLineValidator {
                     if (Files.exists(this.propertiesFilePath)) {
                         awsCredentialsFilePath = this.propertiesFilePath.toString();
                     } else {
-                        log.error("Default credentials file not found! ({})", this.propertiesFilePath);
-                        log.error("-a option is required! Please specify the properties file containing the aws credentials.");
+                        LOG.error("Default credentials file not found! ({})", this.propertiesFilePath);
+                        LOG.error("-a option is required! Please specify the properties file containing the aws credentials.");
                         return false;
                     }
                 }
@@ -136,9 +137,9 @@ public class CommandLineValidator {
                 try {
                     AWSCredentials keys = new PropertiesCredentials(credentialsFile);
                     this.cfg.setCredentials(keys);
-                    log.info(V, "AWS-Credentials successfully loaded! ({})", awsCredentialsFilePath);
+                    LOG.info(V, "AWS-Credentials successfully loaded! ({})", awsCredentialsFilePath);
                 } catch (IOException | IllegalArgumentException e) {
-                    log.error("AWS-Credentials from properties: {}", e.getMessage());
+                    LOG.error("AWS-Credentials from properties: {}", e.getMessage());
                     return false;
                 }
             }
@@ -150,7 +151,7 @@ public class CommandLineValidator {
                 if (value != null && !value.isEmpty()) {
                     cfg.setUser(value);
                 } else {
-                    log.error("User (-u) can't be null or empty.");
+                    LOG.error("User (-u) can't be null or empty.");
                     return false;
                 }
 
@@ -198,7 +199,7 @@ public class CommandLineValidator {
                 } else if (defaults.getProperty("openstack-username") != null) {
                     osc.setUsername(defaults.getProperty("openstack-username"));
                 } else {
-                    log.error("No suitable entry for OpenStack-Username (osu) found! Exit");
+                    LOG.error("No suitable entry for OpenStack-Username (osu) found! Exit");
                     return false;
                 }
 
@@ -207,7 +208,7 @@ public class CommandLineValidator {
                 } else if (defaults.getProperty("openstack-tenantname") != null) {
                     osc.setTenantName(defaults.getProperty("openstack-tenantname"));
                 } else {
-                    log.error("No suitable entry for OpenStack-Tenantname (ost) found! Exit");
+                    LOG.error("No suitable entry for OpenStack-Tenantname (ost) found! Exit");
                     return false;
                 }
                                 
@@ -216,7 +217,7 @@ public class CommandLineValidator {
                 } else if (defaults.getProperty("openstack-password") != null) {
                     osc.setPassword(defaults.getProperty("openstack-password"));
                 } else {
-                    log.error("No suitable entry for OpenStack-Password (osp) found! Exit");
+                    LOG.error("No suitable entry for OpenStack-Password (osp) found! Exit");
                     return false;
                 }
 
@@ -225,18 +226,18 @@ public class CommandLineValidator {
                 } else if (defaults.getProperty("openstack-endpoint") != null) {
                     osc.setEndpoint(defaults.getProperty("openstack-endpoint"));
                 } else {
-                    log.error("No suitable entry for OpenStack-Endpoint (ose) found! Exit");
+                    LOG.error("No suitable entry for OpenStack-Endpoint (ose) found! Exit");
                     return false;
                 }
 
                 if (cl.hasOption("osd")) {
                     osc.setDomain(cl.getOptionValue("osd").trim());
-                    log.info("Keystone V3 API.");
+                    LOG.info("Keystone V3 API.");
                 } else if (defaults.getProperty("openstack-domain") != null) {
                     osc.setDomain(defaults.getProperty("openstack-domain"));
-                    log.info("Keystone V3 API.");
+                    LOG.info("Keystone V3 API.");
                 } else {
-                    log.info("Keystone V2 API.");
+                    LOG.info("Keystone V2 API.");
                     // V2
                 }
 
@@ -249,12 +250,12 @@ public class CommandLineValidator {
                 String value = cl.getOptionValue("mesos", defaults.getProperty("mesos"));
                 if (value.equalsIgnoreCase("yes")) {
                     this.cfg.setMesos(true);
-                    log.info(V, "Mesos support enabled.");
+                    LOG.info(V, "Mesos support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "Mesos support disabled.");
+                    LOG.info(V, "Mesos support disabled.");
                     this.cfg.setMesos(false);
                 } else {
-                    log.error("Mesos value not recognized. Please use yes/no.");
+                    LOG.error("Mesos value not recognized. Please use yes/no.");
                     return false;
                 }
             }
@@ -265,12 +266,12 @@ public class CommandLineValidator {
                 String value = cl.getOptionValue("oge", defaults.getProperty("oge"));
                 if (value.equalsIgnoreCase("yes")) {
                     cfg.setOge(true);
-                    log.info(V, "OpenGridEngine support enabled.");
+                    LOG.info(V, "OpenGridEngine support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "OpenGridEngine support disabled.");
+                    LOG.info(V, "OpenGridEngine support disabled.");
                     cfg.setOge(false);
                 } else {
-                    log.error("OpenGridEngine value not recognized. Please use yes/no.");
+                    LOG.error("OpenGridEngine value not recognized. Please use yes/no.");
                     return false;
                 }
             }
@@ -280,12 +281,12 @@ public class CommandLineValidator {
                 String value = cl.getOptionValue("nfs", defaults.getProperty("nfs"));
                 if (value.equalsIgnoreCase("yes")) {
                     this.cfg.setNfs(true);
-                    log.info(V, "NFS enabled.");
+                    LOG.info(V, "NFS enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "NFS disabled.");
+                    LOG.info(V, "NFS disabled.");
                     this.cfg.setNfs(false);
                 } else {
-                    log.error("NFS value not recognized. Please use yes/no.");
+                    LOG.error("NFS value not recognized. Please use yes/no.");
                     return false;
                 }
             }
@@ -294,17 +295,17 @@ public class CommandLineValidator {
             ///// cassandra on/off /////////////////////////////////////////////////
             if (cl.hasOption("db")) {
                 cfg.setCassandra(true);
-                log.info(V, "Cassandra support enabled.");
+                LOG.info(V, "Cassandra support enabled.");
             } else if (defaults.containsKey("cassandra")) {
                 String value = defaults.getProperty("cassandra");
                 if (value.equalsIgnoreCase("yes")) {
                     cfg.setCassandra(true);
-                    log.info(V, "Cassandra support enabled.");
+                    LOG.info(V, "Cassandra support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "Cassandra support disabled.");
+                    LOG.info(V, "Cassandra support disabled.");
                     this.cfg.setCassandra(false);
                 } else {
-                    log.error("Cassandra value in properties not recognized. Please use yes/no.");
+                    LOG.error("Cassandra value in properties not recognized. Please use yes/no.");
                     return false;
                 }
             }
@@ -320,16 +321,16 @@ public class CommandLineValidator {
                     identityFilePath = this.cl.getOptionValue("i");
                 }
                 if (identityFilePath == null) {
-                    log.error("-i option is required! Please specify the absolute path to your identity file (private ssh key file).");
+                    LOG.error("-i option is required! Please specify the absolute path to your identity file (private ssh key file).");
                     return false;
                 }
                 Path identity = FileSystems.getDefault().getPath(identityFilePath);
                 if (!identity.toFile().exists()) {
-                    log.error("Identity private key file '{}' does not exist!", identity);
+                    LOG.error("Identity private key file '{}' does not exist!", identity);
                     return false;
                 }
                 this.cfg.setIdentityFile(identity);
-                log.info(V, "Identity file found! ({})", identity);
+                LOG.info(V, "Identity file found! ({})", identity);
             }
 
             ////////////////////////////////////////////////////////////////////////
@@ -337,10 +338,10 @@ public class CommandLineValidator {
             if (req.contains("k")) {
                 this.cfg.setKeypair(this.cl.getOptionValue("k", defaults.getProperty("keypair")));
                 if (this.cfg.getKeypair() == null) {
-                    log.error("-k option is required! Please specify the name of your keypair.");
+                    LOG.error("-k option is required! Please specify the name of your keypair.");
                     return false;
                 }
-                log.info(V, "Keypair name set. ({})", this.cfg.getKeypair());
+                LOG.info(V, "Keypair name set. ({})", this.cfg.getKeypair());
             }
 
             ////////////////////////////////////////////////////////////////////////
@@ -348,11 +349,11 @@ public class CommandLineValidator {
             if (req.contains("e")) {
                 this.cfg.setRegion(this.cl.getOptionValue("e", defaults.getProperty("region")));
                 if (this.cfg.getRegion() == null) {
-                    log.error("-e option is required! Please specify the url of your region "
+                    LOG.error("-e option is required! Please specify the url of your region "
                             + "(e.g. region=eu-west-1).");
                     return false;
                 }
-                log.info(V, "Region set. ({})", this.cfg.getRegion());
+                LOG.info(V, "Region set. ({})", this.cfg.getRegion());
             }
 
             ////////////////////////////////////////////////////////////////////////
@@ -360,11 +361,11 @@ public class CommandLineValidator {
             if (req.contains("z")) {
                 this.cfg.setAvailabilityZone(this.cl.getOptionValue("z", defaults.getProperty("availability-zone")));
                 if (this.cfg.getAvailabilityZone() == null) {
-                    log.error("-z option is required! Please specify an availability zone "
+                    LOG.error("-z option is required! Please specify an availability zone "
                             + "(e.g. availability-zone=eu-west-1a).");
                     return false;
                 }
-                log.info(V, "Availability zone set. ({})", this.cfg.getAvailabilityZone());
+                LOG.info(V, "Availability zone set. ({})", this.cfg.getAvailabilityZone());
             }
 
             ////////////////////////////////////////////////////////////////////////
@@ -373,7 +374,7 @@ public class CommandLineValidator {
                 try {
                     String masterTypeString = this.cl.getOptionValue("m", defaults.getProperty("master-instance-type"));
                     if (masterTypeString == null) {
-                        log.error("-m option is required! Please specify the instance type of your master node. (e.g. master-instance-type=t1.micro)");
+                        LOG.error("-m option is required! Please specify the instance type of your master node. (e.g. master-instance-type=t1.micro)");
                         return false;
                     }
 
@@ -389,10 +390,10 @@ public class CommandLineValidator {
                     }
                     this.cfg.setMasterInstanceType(masterType);
                 } catch (Exception e) {
-                    log.error("Invalid master instance type specified!", e);
+                    LOG.error("Invalid master instance type specified!", e);
                     return false;
                 }
-                log.info(V, "Master instance type set. ({})", this.cfg.getMasterInstanceType());
+                LOG.info(V, "Master instance type set. ({})", this.cfg.getMasterInstanceType());
             }
 
             ////////////////////////////////////////////////////////////////////////
@@ -405,11 +406,11 @@ public class CommandLineValidator {
                     if (machineImage != null) {
                         cfg.setMasterImage(machineImage.getProperty("master"));
                     } else {
-                        log.error("-M option is required! Please specify the AMI ID for your master node.");
+                        LOG.error("-M option is required! Please specify the AMI ID for your master node.");
                         return false;
                     }
                 }
-                log.info(V, "Master image set. ({})", cfg.getMasterImage());
+                LOG.info(V, "Master image set. ({})", cfg.getMasterImage());
             }
 
             ////////////////////////////////////////////////////////////////////////
@@ -418,7 +419,7 @@ public class CommandLineValidator {
                 try {
                     String slaveTypeString = this.cl.getOptionValue("s", defaults.getProperty("slave-instance-type"));
                     if (slaveTypeString == null) {
-                        log.error("-s option is required! Please specify the instance type of your slave nodes(slave-instance-type=t1.micro).");
+                        LOG.error("-s option is required! Please specify the instance type of your slave nodes(slave-instance-type=t1.micro).");
                         return false;
                     }
                     InstanceType slaveType = null;
@@ -435,17 +436,17 @@ public class CommandLineValidator {
                     cfg.setSlaveInstanceType(slaveType);
                     if (slaveType.getSpec().clusterInstance || cfg.getMasterInstanceType().getSpec().clusterInstance) {
                         if (!slaveType.toString().equals(cfg.getMasterInstanceType().toString())) {
-                            log.warn("The instance types should be the same when using cluster types.");
-                            log.warn("Master Instance Type: " + cfg.getMasterInstanceType().toString());
-                            log.warn("Slave Instance Type: " + slaveType.toString());
+                            LOG.warn("The instance types should be the same when using cluster types.");
+                            LOG.warn("Master Instance Type: " + cfg.getMasterInstanceType().toString());
+                            LOG.warn("Slave Instance Type: " + slaveType.toString());
 
                         }
                     }
                 } catch (Exception e) {
-                    log.error("Invalid slave instance type specified!");
+                    LOG.error("Invalid slave instance type specified!");
                     return false;
                 }
-                log.info(V, "Slave instance type set. ({})", this.cfg.getSlaveInstanceType());
+                LOG.info(V, "Slave instance type set. ({})", this.cfg.getSlaveInstanceType());
             }
 
             ////////////////////////////////////////////////////////////////////////
@@ -456,7 +457,7 @@ public class CommandLineValidator {
                         this.cfg.setSlaveInstanceCount(Integer.parseInt(defaults.getProperty("slave-instance-count")));
                     }
                 } catch (NumberFormatException nfe) {
-                    log.error("Invalid property value for slave-instance-max. Please make sure you have a positive integer here.");
+                    LOG.error("Invalid property value for slave-instance-max. Please make sure you have a positive integer here.");
                     return false;
                 }
                 if (this.cl.hasOption("n")) {
@@ -465,17 +466,17 @@ public class CommandLineValidator {
                         if (numSlaves >= 0) {
                             this.cfg.setSlaveInstanceCount(numSlaves);
                         } else {
-                            log.error("Number of slave nodes has to be at least 0.");
+                            LOG.error("Number of slave nodes has to be at least 0.");
                         }
                     } catch (NumberFormatException nfe) {
-                        log.error("Invalid argument for -n. Please make sure you have a positive integer here.");
+                        LOG.error("Invalid argument for -n. Please make sure you have a positive integer here.");
                     }
                 }
                 if (this.cfg.getSlaveInstanceCount() < 0) {
-                    log.error("-n option is required! Please specify the number of slave nodes. (at least 0)");
+                    LOG.error("-n option is required! Please specify the number of slave nodes. (at least 0)");
                     return false;
                 } else {
-                    log.info(V, "Slave instance count set. ({})", this.cfg.getSlaveInstanceCount());
+                    LOG.info(V, "Slave instance count set. ({})", this.cfg.getSlaveInstanceCount());
                 }
             }
 
@@ -498,7 +499,7 @@ public class CommandLineValidator {
                         }
                     }
                 } catch (IllegalArgumentException iae) {
-                    log.error("Invalid value for use-master-as-compute. Please make sure it is set as yes or no.");
+                    LOG.error("Invalid value for use-master-as-compute. Please make sure it is set as yes or no.");
                 }
                 if (this.cl.hasOption("b")) {
                     try {
@@ -514,14 +515,14 @@ public class CommandLineValidator {
                             throw new IllegalArgumentException("Value not yes or no");
                         }
                     } catch (IllegalArgumentException iae) {
-                        log.error("Invalid value for use-master-as-compute. Please make sure it is set as yes or no.");
+                        LOG.error("Invalid value for use-master-as-compute. Please make sure it is set as yes or no.");
                     }
                 }
                 if (!valueSet) {
-                    log.error("-b option is required! Please make sure it is set as yes or no");
+                    LOG.error("-b option is required! Please make sure it is set as yes or no");
                     return false;
                 } else {
-                    log.info(V, "Use Master as compute instance. ({})", this.cfg.isUseMasterAsCompute());
+                    LOG.info(V, "Use Master as compute instance. ({})", this.cfg.isUseMasterAsCompute());
                 }
             }
             ////////////////////////////////////////////////////////////////////////
@@ -536,11 +537,11 @@ public class CommandLineValidator {
                         cfg.setSlaveImage(machineImage.getProperty("slave"));
                     } else {
 
-                        log.error("-S option is required! Please specify the AMI ID for your slave nodes.");
+                        LOG.error("-S option is required! Please specify the AMI ID for your slave nodes.");
                         return false;
                     }
                 } else {
-                    log.info(V, "Slave image set. ({})", this.cfg.getSlaveImage());
+                    LOG.info(V, "Slave image set. ({})", this.cfg.getSlaveImage());
                 }
             }
 
@@ -590,7 +591,7 @@ public class CommandLineValidator {
                         cfg.getPorts().add(port);
                     }
                 } catch (Exception e) {
-                    log.error("Could not parse the supplied port list, please make "
+                    LOG.error("Could not parse the supplied port list, please make "
                             + "sure you have a list of comma-separated valid ports "
                             + "without spaces in between. Valid ports have following pattern :"
                             + "[(current|'ip4v-address'|'ip4v-range/CIDR'):]'portnumber'", e);
@@ -602,7 +603,7 @@ public class CommandLineValidator {
                         portsDisplay.append(port.iprange).append(":").append(port.number);
                         portsDisplay.append(" ");
                     }
-                    log.info(V, "Additional open ports set: {}", portsDisplay);
+                    LOG.info(V, "Additional open ports set: {}", portsDisplay);
                 }
             }
 
@@ -618,16 +619,16 @@ public class CommandLineValidator {
             if (scriptFilePath != null) {
                 Path script = FileSystems.getDefault().getPath(scriptFilePath);
                 if (!script.toFile().exists()) {
-                    log.error("The supplied shell script file '{}' does not exist!", script);
+                    LOG.error("The supplied shell script file '{}' does not exist!", script);
                     return false;
                 }
                 this.cfg.setShellScriptFile(script);
-                log.info(V, "Shell script file found! ({})", script);
+                LOG.info(V, "Shell script file found! ({})", script);
             }
 
             ////////////////////////////////////////////////////////////////////////
             ///// master-mounts ////////////////////////////////////////////////////
-            this.cfg.setMasterMounts(new HashMap<String, String>());
+            cfg.setMasterMounts(new HashMap<>());
             String masterMountsCsv = this.cl.getOptionValue("d", defaults.getProperty("master-mounts"));
             if (masterMountsCsv != null && !masterMountsCsv.isEmpty()) {
                 try {
@@ -639,7 +640,7 @@ public class CommandLineValidator {
                         this.cfg.getMasterMounts().put(snapshot, mountpoint);
                     }
                 } catch (Exception e) {
-                    log.error("Could not parse the list of master mounts, please make "
+                    LOG.error("Could not parse the list of master mounts, please make "
                             + "sure you have a list of comma-separated key=value pairs without spaces in between.");
                     return false;
                 }
@@ -651,7 +652,7 @@ public class CommandLineValidator {
                         masterMountsDisplay.append(mount.getValue());
                         masterMountsDisplay.append(" ; ");
                     }
-                    log.info(V, "Master mounts: {}", masterMountsDisplay);
+                    LOG.info(V, "Master mounts: {}", masterMountsDisplay);
                 }
             }
 
@@ -669,7 +670,7 @@ public class CommandLineValidator {
                         this.cfg.getSlaveMounts().put(snapshot, mountpoint);
                     }
                 } catch (Exception e) {
-                    log.error("Could not parse the list of slave mounts, please make "
+                    LOG.error("Could not parse the list of slave mounts, please make "
                             + "sure you have a list of comma-separated key=value pairs without spaces in between.");
                     return false;
                 }
@@ -681,7 +682,7 @@ public class CommandLineValidator {
                         slaveMountsDisplay.append(mount.getValue());
                         slaveMountsDisplay.append(" ; ");
                     }
-                    log.info(V, "Slave mounts: {}", slaveMountsDisplay);
+                    LOG.info(V, "Slave mounts: {}", slaveMountsDisplay);
                 }
             }
 
@@ -696,7 +697,7 @@ public class CommandLineValidator {
                         this.cfg.getNfsShares().add(share.trim());
                     }
                 } catch (Exception e) {
-                    log.error("Could not parse the supplied list of shares, please make "
+                    LOG.error("Could not parse the supplied list of shares, please make "
                             + "sure you have a list of comma-separated paths without spaces in between.");
                     return false;
                 }
@@ -706,9 +707,31 @@ public class CommandLineValidator {
                         nfsSharesDisplay.append(share);
                         nfsSharesDisplay.append(" ");
                     }
-                    log.info(V, "NFS shares set: {}", nfsSharesDisplay);
+                    LOG.info(V, "NFS shares set: {}", nfsSharesDisplay);
                 }
             }
+            
+            ////////////////////////////////////////////////////////////////////////
+            ///// extern-nfs-shares ////////////////////////////////////////////////
+            cfg.setExtNfsShares(new HashMap<>());
+            String extNfsShareMap = cl.getOptionValue("ge", defaults.getProperty("ext-nfs-shares"));
+            if (extNfsShareMap != null && !extNfsShareMap.isEmpty()) {
+              try {
+                String [] tmp = extNfsShareMap.split(",");
+                for (String share : tmp) {
+                  String []  kv = share.split("=");
+                  if (kv.length == 2) {
+                    cfg.getExtNfsShares().put(kv[0], kv[1]);
+                  } else { 
+                    throw new Exception();
+                  }
+                }
+              } catch (Exception e) {
+                LOG.error("Could not parse the supplied list of external shares, please make " +
+                    "sure you have list of comma-separated nfsserver=path pairs without spaces in between.");
+              }
+            }
+            
 
             /* ------------------------ early shell script Master ------------------------- */
             String earlyMasterScriptFilePath = null;
@@ -721,11 +744,11 @@ public class CommandLineValidator {
             if (earlyMasterScriptFilePath != null) {
                 Path script = FileSystems.getDefault().getPath(earlyMasterScriptFilePath);
                 if (!script.toFile().exists()) {
-                    log.error("The supplied early master shell script file '{}' does not exist!", script);
+                    LOG.error("The supplied early master shell script file '{}' does not exist!", script);
                     return false;
                 }
                 cfg.setEarlyMasterShellScriptFile(script);
-                log.info(V, "Early master shell script file found! ({})", script);
+                LOG.info(V, "Early master shell script file found! ({})", script);
             }
 
             /* ------------------------ early shell script Master ------------------------- */
@@ -739,11 +762,11 @@ public class CommandLineValidator {
             if (earlySlaveScriptFilePath != null) {
                 Path script = FileSystems.getDefault().getPath(earlySlaveScriptFilePath);
                 if (!script.toFile().exists()) {
-                    log.error("The supplied early slave shell script file '{}' does not exist!", script);
+                    LOG.error("The supplied early slave shell script file '{}' does not exist!", script);
                     return false;
                 }
                 cfg.setEarlySlaveShellScriptFile(script);
-                log.info(V, "Early slave shell script file found! ({})", script);
+                LOG.info(V, "Early slave shell script file found! ({})", script);
             }
 
             /* ------------------------ public ip address for all slaves ------------------------- */
@@ -764,11 +787,11 @@ public class CommandLineValidator {
                                 throw new NumberFormatException();
                             }
                         } catch (NumberFormatException e) {
-                            log.error("Argument bp/bidprice is not a valid double value  and must be > 0.0 !");
+                            LOG.error("Argument bp/bidprice is not a valid double value  and must be > 0.0 !");
                             return false;
                         }
                     } else {
-                        log.error("If use-spot-instance-request is set, a bidprice must defined!");
+                        LOG.error("If use-spot-instance-request is set, a bidprice must defined!");
                         return false;
                     }
 
@@ -779,19 +802,19 @@ public class CommandLineValidator {
                                 throw new NumberFormatException();
                             }
                         } catch (NumberFormatException e) {
-                            log.error("Argument bpm/bidprice-master is not a valid double value and must be > 0.0 !");
+                            LOG.error("Argument bpm/bidprice-master is not a valid double value and must be > 0.0 !");
                             return false;
                         }
                     } else {
-                        log.info(V, "Bidprice master is not set, use general bidprice instead!");
+                        LOG.info(V, "Bidprice master is not set, use general bidprice instead!");
                     }
 
-                    log.info(V, "Use spot request for all");
+                    LOG.info(V, "Use spot request for all");
                 } else if (value.equalsIgnoreCase("no")) {
-                    log.info(V, "SpotInstance ussage disabled.");
+                    LOG.info(V, "SpotInstance ussage disabled.");
                     this.cfg.setMesos(false);
                 } else {
-                    log.error("SpotInstanceRequest value not recognized. Please use yes/no.");
+                    LOG.error("SpotInstanceRequest value not recognized. Please use yes/no.");
                     return false;
                 }
             }
@@ -803,7 +826,7 @@ public class CommandLineValidator {
                     FS fs = FS.valueOf(value.toUpperCase());
                     cfg.setLocalFS(fs);
                 } catch (IllegalArgumentException e) {
-                    log.error("Local filesustem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
+                    LOG.error("Local filesustem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
                     return false;
                 }
 
@@ -821,11 +844,11 @@ public class CommandLineValidator {
             if (gridpropertiesfile != null) {
                 Path prop = FileSystems.getDefault().getPath(gridpropertiesfile);
                 if (prop.toFile().exists()) {
-                    log.warn("Overwrite an existing properties file '{}'!", prop);
+                    LOG.warn("Overwrite an existing properties file '{}'!", prop);
 
                 }
                 this.cfg.setGridPropertiesFile(prop.toFile());
-                log.info(V, "Wrote grid properties to '{}' after successful grid startup!", prop);
+                LOG.info(V, "Wrote grid properties to '{}' after successful grid startup!", prop);
             }
 
             ////////////////////////////////////////////////////////////////////////
@@ -868,9 +891,9 @@ public class CommandLineValidator {
                 throw new IOException("Key/value for slave image is missing in properties file!");
             }
         } catch (IOException ex) {
-            log.warn("No machine image properties file found for " + cfg.getMode().name() + " and region '" + cfg.getRegion() + "' found!");
-            log.error(V, "Exception: {}", ex.getMessage());
-            log.error(V, "Try : {}", str);
+            LOG.warn("No machine image properties file found for " + cfg.getMode().name() + " and region '" + cfg.getRegion() + "' found!");
+            LOG.error(V, "Exception: {}", ex.getMessage());
+            LOG.error(V, "Try : {}", str);
             machineImage = null;
         }
 

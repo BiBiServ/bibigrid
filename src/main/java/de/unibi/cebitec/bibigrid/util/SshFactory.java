@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.slf4j.Logger;
@@ -101,7 +102,7 @@ public class SshFactory {
                 sb.append(" ");
                 sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
                 sb.append("\n");
-                //sb.append("sudo service gridengine-exec start\n");
+                sb.append("sudo service gridengine-exec start\n");
             }
             if (slaveInstances != null) {
                 for (Instance instance : slaveInstances) {
@@ -113,7 +114,7 @@ public class SshFactory {
                 }
             }
         } else {
-            //sb.append("sudo service gridengine-master stop\n");
+            sb.append("sudo service gridengine-master stop\n");
         }
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
@@ -147,7 +148,7 @@ public class SshFactory {
         }
         if (cfg.isOge()) {
             // wait for sge_master started
-            sb.append("check ").append(master.getIp()).append(" 6444\n");
+            sb.append("ch_s ").append(master.getIp()).append(" 6444\n");
             // configure submit host
             sb.append("qconf -as ").append(master.getNeutronHostname()).append(" 2>&1\n");
             // clean-up possible previous configuration (could be happend if you use a configured masterimage snapshot as image)
@@ -165,6 +166,26 @@ public class SshFactory {
             }
         }
         
+        if (cfg.isCassandra()) {
+              
+  
+            List<String> cassandra_hosts = new ArrayList<>();
+            // add master
+            cassandra_hosts.add(master.getIp());
+            // add add all slaves
+            for (CreateClusterOpenstack.Instance slave : slaves) {              
+                cassandra_hosts.add(slave.getIp());
+            }
+            // now configure cassandra on all hosts and starts it afterwards
+            String ch = String.join(",",cassandra_hosts);
+            String ssh_opt="-q -o CheckHostIP=no -o StrictHostKeyChecking=no";
+            for (String host : cassandra_hosts) {
+                sb.append("ch_f /var/log/bibigrid/").append(host).append("\n");
+                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo -u cassandra /opt/cassandra/bin/create_cassandra_config.sh  /opt/cassandra/ /vol/scratch/cassandra/ cassandra ").append(ch).append(" \"\n");
+                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo service cassandra start\"\n");   
+            }
+        }
+        
         if (cfg.isHdfs()) {
             for (CreateClusterOpenstack.Instance slave : slaves) {
                 sb.append("echo ").append(slave.getIp()).append(" >> /opt/hadoop/etc/hadoop/slaves\n");
@@ -174,7 +195,7 @@ public class SshFactory {
         }
         
         sb.append("sudo service gmetad restart \n");
-        sb.append("sudo service ganglia-monitor restart \n");
+        sb.append("sudo service ganglia-monitor start \n");
         sb.append("echo CONFIGURATION_FINISHED \n");
         return sb.toString();
     }
