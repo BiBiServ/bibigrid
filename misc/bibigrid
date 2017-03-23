@@ -1,2 +1,0 @@
-#!/bin/bash
-java  $JVM_OPTS -jar `dirname $0`/bibigrid-java-full.jar $@
