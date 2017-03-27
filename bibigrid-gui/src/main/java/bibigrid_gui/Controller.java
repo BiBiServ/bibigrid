@@ -45,7 +45,6 @@ public class Controller {
     public void process(@RequestBody Map<String,Object> payload)
             throws Exception {
 
-        System.out.println(payload.get("data"));
         List<LinkedHashMap> resJson = (List<LinkedHashMap>) payload.get("data");
         List<String> tmpArgList = new ArrayList<String>();
 
@@ -59,7 +58,6 @@ public class Controller {
         }
 
         String[] arguments = new String[tmpArgList.size()];
-        System.out.println(tmpArgList);
         arguments = tmpArgList.toArray(arguments);
 
 

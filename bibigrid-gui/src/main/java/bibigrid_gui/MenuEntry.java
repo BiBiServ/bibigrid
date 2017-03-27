@@ -2,9 +2,6 @@ package bibigrid_gui;
 
 import de.unibi.techfak.bibiserv.cms.Tprimitive;
 
-/**
- * Created by benedikt on 30.11.16.
- */
 public class MenuEntry {
     private final String sFlag;
     private final String lFlag;

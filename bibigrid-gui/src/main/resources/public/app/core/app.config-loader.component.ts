@@ -51,11 +51,11 @@ import {configLink} from '../shared/configLink';
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h4 class="modal-title" id="errorModalLabel">Configuration invalide:</h4>
+        <h4 class="modal-title" id="errorModalLabel">Configuration invalid:</h4>
       </div>
         <div class="modal-body">
             Some flags defined by the configuration file you are loading, are missing in BiBiGrid.
-            Either your configuration file is outdated/falty or your BiBiGrid version is too old.
+            Either your configuration file is outdated/faulty or your BiBiGrid version is too old.
             Missing flags are skipped. The program may not function properly.            
         </div>
       <div class="modal-footer">
@@ -77,7 +77,7 @@ import {configLink} from '../shared/configLink';
         <h4 class="modal-title" id="clearModalLabel">Clear options:</h4>
       </div>
         <div class="modal-body">
-            Do you want to clear all input fields bevor loading the configuration parameters ?
+            Do you want to clear all input fields before loading the configuration parameters?
             The configuration file will be loaded exactly as it is therefore your own inputs will be deleted.
         </div>
       <div class="modal-footer">
