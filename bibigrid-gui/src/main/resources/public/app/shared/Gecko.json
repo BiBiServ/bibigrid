@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "sFlag": "m",
+      "value": "Gecko"
+    },
+    {
+      "sFlag": "mme",
+      "value": "15"
+    },
+    {
+      "sFlag": "M",
+      "value": "Magneta"
+    },
+    {
+      "sFlag": "Xop",
+      "value": "Magneta"
+    },
+    {
+      "sFlag": "v",
+      "value": "true"
+    },
+    {
+      "sFlag": "s",
+      "value": "Tornado"
+    }
+  ]
+}
