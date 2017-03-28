@@ -213,20 +213,27 @@ public class CreateClusterEnvironmentOpenstack
             ComputeSecurityGroupService csgs = cluster.getOs().compute().securityGroups();
             sge = csgs.create("sg-" + cluster.getClusterId(), "Security Group for cluster: " + cluster.getClusterId());
 
+            // allow ssh access (TCP:22) from everywhere
             csgs.createRule(Builders.secGroupRule()
                     .parentGroupId(sge.getId())
                     .protocol(IPProtocol.TCP)
                     .cidr("0.0.0.0/0")
                     .range(22, 22)
                     .build());
-
+            
+            // no restriction within the security group
             csgs.createRule(Builders.secGroupRule()
                     .parentGroupId(sge.getId())
                     .protocol(IPProtocol.TCP)
                     .groupId(sge.getId())
                     .range(1, 65535)
                     .build());
-
+            csgs.createRule(Builders.secGroupRule()
+                    .parentGroupId(sge.getId())
+                    .protocol(IPProtocol.UDP)
+                    .groupId(sge.getId())
+                    .range(1, 65535)
+                    .build());
             /**
              * User selected Ports.
              */
@@ -235,10 +242,10 @@ public class CreateClusterEnvironmentOpenstack
 
                 csgs.createRule(Builders.secGroupRule()
                         .parentGroupId(sge.getId())
-                        .protocol(IPProtocol.TCP)
+                        .protocol(p.type.equals(Port.TPort.TCP)?IPProtocol.TCP:(p.type.equals(Port.TPort.UDP)?IPProtocol.UDP:IPProtocol.ICMP))
                         .cidr(p.iprange)
                         .range(p.number, p.number)
-                        .build());
+                        .build());               
             }
             LOG.info("SecurityGroup (name: {}) created.", sge.getName());
         } catch (ClientResponseException e) {

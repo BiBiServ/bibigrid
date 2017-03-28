@@ -15,15 +15,24 @@ configured and ready to use cluster is available within a few minutes.
 
 
 ## Compile & Package
+
 Java >= 8 and Maven >= 3.0.4  is required to build and run BiBiGrid.
-~~~
+
+~~~BASH
 > git clone https://github.com/BiBiServ/bibigrid.git
 > cd bibigrid
 > mvn clean package
+~~~
+
+## Development-Guidelines
+
+https://github.com/BiBiServ/Development-Guidelines
 
 ## Usage:
-~~~
+
+~~~BASJ
 java -jar BiBiGrid-1.0.jar <options>
+~~~
 
 See homepage for a more detail usage description
 
