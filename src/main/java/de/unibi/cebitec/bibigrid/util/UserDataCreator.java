@@ -539,6 +539,12 @@ public class UserDataCreator {
                 log.info("Early shell script could not be read.");
             }
         }
+
+        log.info("Installing Ansible...");
+        masterUserData.append("apt-get -y install ansible\n");
+        masterUserData.append("apt-get -y install sl\n");
+
+
         masterUserData.append("log \"userdata.finished\"\n");
         masterUserData.append("cp /var/log/userdata.log /vol/spool/log/master.log\n");
         masterUserData.append("exit 0\n");
