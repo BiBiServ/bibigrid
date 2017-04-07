@@ -540,7 +540,7 @@ public class UserDataCreator {
             }
         }
 
-        log.info("Installing Ansible...");
+        //log.info("Installing Ansible...");
         masterUserData.append("apt-get -y install ansible\n");
         masterUserData.append("apt-get -y install sl\n");
 

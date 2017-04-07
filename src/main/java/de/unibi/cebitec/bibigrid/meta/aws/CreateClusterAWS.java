@@ -46,10 +46,8 @@ import de.unibi.cebitec.bibigrid.util.JSchLogger;
 import de.unibi.cebitec.bibigrid.util.SshFactory;
 import de.unibi.cebitec.bibigrid.util.UserDataCreator;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
-import java.io.BufferedReader;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -687,6 +685,8 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         boolean uploaded = false;
         boolean configured = false;
 
+
+
         int ssh_attempts = 25; // @TODO attempts
         while (!configured && ssh_attempts > 0) {
             try {
@@ -705,6 +705,9 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                  */
                 sshSession.connect();
                 log.info("Connected to master!");
+
+
+
 
 //                if (!uploaded || ssh_attempts > 0) {
 //                    String remoteDirectory = "/home/ubuntu/.ssh";

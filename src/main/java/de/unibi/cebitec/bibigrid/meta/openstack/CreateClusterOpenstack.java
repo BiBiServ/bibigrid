@@ -1,9 +1,6 @@
 package de.unibi.cebitec.bibigrid.meta.openstack;
 
-import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.util.DeviceMapper;
@@ -13,9 +10,8 @@ import de.unibi.cebitec.bibigrid.util.SshFactory;
 import de.unibi.cebitec.bibigrid.util.UserDataCreator;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -430,13 +426,16 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
         boolean uploaded = false;
         boolean configured = false;
+        File playbook = new File("/homes/awalende/test.yaml");
+        String lfile = "/homes/awalende/test.yaml";
+
 
         int ssh_attempts = 50; // @TODO attempts
         while (!configured && ssh_attempts > 0) {
             try {
 
                 ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
-                LOG.info("Trying to connect to master ({})...", ssh_attempts);
+                LOG.info("Trying to connect to omaster ({})...", ssh_attempts);
                 Thread.sleep(5000);
 
                 /*
@@ -447,7 +446,31 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 /*
                  * Start connect attempt
                  */
+
                 sshSession.connect();
+
+
+                ChannelSftp sftpChannel = null;
+                sftpChannel = (ChannelSftp) sshSession.openChannel("sftp");
+                sftpChannel.connect();
+                try {
+                    sftpChannel.cd("/home/ubuntu/");
+                } catch (SftpException e) {
+                    LOG.info("Could not change remote directory.");
+                    e.printStackTrace();
+                }
+                LOG.info("Trying to transfer file: " + playbook.getPath());
+                try {
+                    sftpChannel.put(new FileInputStream(playbook), playbook.getName());
+                } catch (SftpException e) {
+                    LOG.info("Could not transfer file to remote master host.");
+                    e.printStackTrace();
+                }
+                sftpChannel.disconnect();
+
+
+
+
                 LOG.info("Connected to master!");
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
 
