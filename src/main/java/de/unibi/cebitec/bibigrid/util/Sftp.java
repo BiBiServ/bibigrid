@@ -9,8 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 
 /**
  * Simple usage of sftp for copying local files to remote hosts.
@@ -20,15 +24,15 @@ import java.util.List;
 public class Sftp {
 
     public static final Logger LOG = LoggerFactory.getLogger(Sftp.class);
+    private static List<String> alreadyCreatedFolders = new ArrayList<>();
+
     private final String SSH_MODE = "sftp";
     private String currentRemotePath = "~/";
-
     private Session session;
     private ChannelSftp channelSftp;
 
 
-
-    private List<File> fileList;
+    private List<EntryFile> fileList;
 
 
     public Sftp(Session session) throws JSchException {
@@ -38,31 +42,121 @@ public class Sftp {
         fileList = new ArrayList<>();
     }
 
-    public void putSingle(String localFilePath, String remoteFilePath){
-        File localFile = new File(localFilePath);
-        //@TODO Work here...
 
+    /**
+     * Adds a file to the worker list.
+     * @param localFilePath The absolute path of the local file.
+     * @param remotePath The absolute path on the remote host, where the local should be copied to.
+     */
+    public void addSingleEntryToList(String localFilePath, String remotePath){
+        fileList.add(new EntryFile(new File(localFilePath), remotePath));
     }
 
-    public void mkdir(String path) {
+    /**
+     * Adds a file to the worker list.
+     * @param file The local file which will be copied.
+     * @param remotePath The absolute path on the remote host, where the local should be copied to.
+     */
+    public void addSingleEntryToList(File file, String remotePath){
+        fileList.add(new EntryFile(file, remotePath));
+    }
+
+
+    /**
+     * Copys a local file to a remote host over sftp. It uses the local filename as remote filename.
+     * Will also create the target directory if it's not nested.
+     * @param localFilePath The absolute path of the local file.
+     * @param remoteFilePath The absolute path of where the file should be copied to.
+     */
+    public void putSingleToRemote(String localFilePath, String remoteFilePath){
+        File localFile = new File(localFilePath);
+        mkdir(remoteFilePath);
         try {
-            channelSftp.mkdir(path);
-            currentRemotePath = path;
+            channelSftp.cd(currentRemotePath);
+            channelSftp.put(new FileInputStream(localFile), localFile.getName());
         } catch (SftpException e) {
-            LOG.error("Could not make a directory in remote host.");
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Transfers all files at once, which are contained in the worker list, to the remote host.
+     */
+    public void putListToRemote(){
+        for(EntryFile e : fileList){
+            mkdir(e.getRemotePath());
+            try{
+                channelSftp.cd(currentRemotePath);
+                channelSftp.put(new FileInputStream(e.getFile()), e.getFile().getName());
+            } catch (FileNotFoundException e1) {
+                e1.printStackTrace();
+            } catch (SftpException e1) {
+                e1.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Creates a directory in the given absolute path on a remote host.
+     * Warning: Don't try to create nested directorys, right now you have to create every directory manually.
+     * It maybe featured in future releases.
+     * @param path The absolute path which shall be created on the remote host.
+     **/
+    public void mkdir(String path) {
+        if(alreadyCreatedFolders.contains(path)){
+            return;
+        }
+        try {
+            channelSftp.mkdir(path);
+            currentRemotePath = path;
+            alreadyCreatedFolders.add(path);
+        } catch (SftpException e) {
+            LOG.error(V, "Could not make a directory in remote host.");
+        }
+    }
+
+    /**
+     * Disconnects the ssh channel to the remote host.
+     */
     public void disconnectChannel(){
         channelSftp.disconnect();
     }
 
+    /**
+     * Disconnects the whole ssh connection to the host.
+     */
     public void disconnectSession(){
         session.disconnect();
     }
 
 
-    public List<File> getFileList() {
+    public List<EntryFile> getFileList() {
         return fileList;
     }
+
+    /**
+     * Container class for managing file and path.
+     */
+    private class EntryFile {
+        private File file;
+        private String remotePath;
+
+
+        public EntryFile(File file, String remotePath){
+            this.file = file;
+            this.remotePath = remotePath;
+        }
+
+        public File getFile() {
+            return file;
+        }
+
+        public String getRemotePath() {
+            return remotePath;
+        }
+    }
 }
+
+

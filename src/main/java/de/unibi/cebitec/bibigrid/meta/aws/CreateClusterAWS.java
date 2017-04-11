@@ -40,11 +40,9 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.util.DeviceMapper;
+import de.unibi.cebitec.bibigrid.util.*;
+
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
-import de.unibi.cebitec.bibigrid.util.JSchLogger;
-import de.unibi.cebitec.bibigrid.util.SshFactory;
-import de.unibi.cebitec.bibigrid.util.UserDataCreator;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 
 import java.io.*;
@@ -705,6 +703,8 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
                  */
                 sshSession.connect();
                 log.info("Connected to master!");
+
+
 
 
 

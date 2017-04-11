@@ -3,12 +3,9 @@ package de.unibi.cebitec.bibigrid.meta.openstack;
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.util.DeviceMapper;
+import de.unibi.cebitec.bibigrid.util.*;
+
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
-import de.unibi.cebitec.bibigrid.util.JSchLogger;
-import de.unibi.cebitec.bibigrid.util.SshFactory;
-import de.unibi.cebitec.bibigrid.util.UserDataCreator;
-import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 
 import java.io.*;
@@ -450,6 +447,17 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 sshSession.connect();
 
 
+
+                Sftp sftp = new Sftp(sshSession);
+                sftp.addSingleEntryToList("/homes/awalende/test.yaml", "/home/ubuntu/tmp");
+                sftp.addSingleEntryToList("/homes/awalende/datei1", "/home/ubuntu/tmp");
+                sftp.addSingleEntryToList("/homes/awalende/datei2", "/home/ubuntu/tmp");
+                sftp.putListToRemote();
+                sftp.disconnectChannel();
+
+
+                /* BRAUCH ICH VIELLEICHT NOCH
+
                 ChannelSftp sftpChannel = null;
                 sftpChannel = (ChannelSftp) sshSession.openChannel("sftp");
                 sftpChannel.connect();
@@ -467,7 +475,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                     e.printStackTrace();
                 }
                 sftpChannel.disconnect();
-
+*/
 
 
 
