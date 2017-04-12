@@ -5,6 +5,12 @@
   <artifactId>BiBiGrid</artifactId>
   <version>1.0</version>
   <build>
+    <resources>
+      <resource>
+        <targetPath>../playbooks</targetPath>
+        <directory>src/main/resources/playbooks</directory>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>

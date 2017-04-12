@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.meta.openstack;
 
 import com.jcraft.jsch.*;
+import de.unibi.cebitec.bibigrid.ansible.PlaybookBuilder;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.util.*;
@@ -449,33 +450,12 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
 
                 Sftp sftp = new Sftp(sshSession);
-                sftp.addSingleEntryToList("/homes/awalende/test.yaml", "/home/ubuntu/tmp");
-                sftp.addSingleEntryToList("/homes/awalende/datei1", "/home/ubuntu/tmp");
-                sftp.addSingleEntryToList("/homes/awalende/datei2", "/home/ubuntu/tmp");
+                Map<String, File> map = PlaybookBuilder.extractBuiltInPlaybooks();
+                sftp.addSingleEntryToList(map.get("test.yaml"), "/home/ubuntu/tmp");
+
                 sftp.putListToRemote();
                 sftp.disconnectChannel();
 
-
-                /* BRAUCH ICH VIELLEICHT NOCH
-
-                ChannelSftp sftpChannel = null;
-                sftpChannel = (ChannelSftp) sshSession.openChannel("sftp");
-                sftpChannel.connect();
-                try {
-                    sftpChannel.cd("/home/ubuntu/");
-                } catch (SftpException e) {
-                    LOG.info("Could not change remote directory.");
-                    e.printStackTrace();
-                }
-                LOG.info("Trying to transfer file: " + playbook.getPath());
-                try {
-                    sftpChannel.put(new FileInputStream(playbook), playbook.getName());
-                } catch (SftpException e) {
-                    LOG.info("Could not transfer file to remote master host.");
-                    e.printStackTrace();
-                }
-                sftpChannel.disconnect();
-*/
 
 
 

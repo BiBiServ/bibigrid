@@ -167,6 +167,12 @@
                 </executions>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources/playbooks</directory>
+                <targetPath>../playbooks</targetPath>
+            </resource>
+        </resources>
     </build>
     
 </project>
