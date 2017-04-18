@@ -433,7 +433,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             try {
 
                 ssh.addIdentity(this.getConfiguration().getIdentityFile().toString());
-                LOG.info("Trying to connect to omaster ({})...", ssh_attempts);
+                LOG.info("Trying to connect to master ({})...", ssh_attempts);
                 Thread.sleep(5000);
 
                 /*
@@ -450,9 +450,20 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
 
                 Sftp sftp = new Sftp(sshSession);
-                Map<String, File> map = PlaybookBuilder.extractBuiltInPlaybooks();
-                sftp.addSingleEntryToList(map.get("test.yaml"), "/home/ubuntu/tmp");
+                List<File> mandatoryPlaybookList = PlaybookBuilder.extractPlaybooks("playbooks/mandatory");
+                List<File> additionalPlaybookList = PlaybookBuilder.extractPlaybooks("playbooks/additional");
 
+                sftp.mkdir("/home/ubuntu/tmp");
+                sftp.mkdir("/home/ubuntu/tmp/ansible");
+                for(File file : mandatoryPlaybookList){
+                    sftp.addSingleEntryToList(file, "/home/ubuntu/tmp/ansible/mandatory");
+                }
+
+                if(!additionalPlaybookList.isEmpty()){
+                    for(File file : additionalPlaybookList){
+                        sftp.addSingleEntryToList(file, "/home/ubuntu/tmp/ansible/additional");
+                    }
+                }
                 sftp.putListToRemote();
                 sftp.disconnectChannel();
 

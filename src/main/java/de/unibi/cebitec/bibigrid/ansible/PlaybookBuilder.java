@@ -14,18 +14,17 @@ public class PlaybookBuilder {
 
 
 
-    public static Map<String, File> extractBuiltInPlaybooks(){
+    public static List<File> extractPlaybooks(String path){
 
 
-        Map<String, File> map =  new HashMap<>();
-        File folder = new File("playbooks/");
-        File[] listOfFiles = folder.listFiles();
-
-        for (int i = 0; i < listOfFiles.length; i++){
-            if(listOfFiles[i].isFile()) map.put(listOfFiles[i].getName(), listOfFiles[i]);
-            System.out.println("ADDED: " + listOfFiles[i].getName());
+        File folder = new File(path);
+        File[] files = folder.listFiles();
+        List<File> listOfFiles = new ArrayList<>();
+        for(int i = 0; i < files.length; i++){
+            if(files[i].isFile()) listOfFiles.add(files[i]);
         }
-
-        return map;
+        return listOfFiles;
     }
+
+
 }

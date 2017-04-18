@@ -128,7 +128,20 @@ public class SshFactory {
         
         UserDataCreator.updateHostname(sb);
         UserDataCreator.shellFct(sb);
-        
+
+
+        sb.append("sudo mkdir /etc/ansible\n");
+        sb.append("sudo touch /etc/ansible/hosts\n");
+        sb.append("sudo cp /etc/ansible/hosts /etc/ansible/hosts.bak\n");
+        sb.append("sudo sh -c \"echo [defaults] >> /etc/ansible/ansible.cfg\"\n");
+        sb.append("sudo sh -c \"echo host_key_checking = False >> /etc/ansible/ansible.cfg\"\n");
+        sb.append("sudo sh -c \"echo [master] >> /etc/ansible/hosts\"\n");
+        sb.append("sudo sh -c \"echo ").append(master.getIp()).append(" >> /etc/ansible/hosts\"\n\n");
+        sb.append("sudo sh -c \"echo [slaves] >> /etc/ansible/hosts\"\n");
+        for(CreateClusterOpenstack.Instance instance : slaves){
+            sb.append("sudo sh -c \"echo ").append(instance.getIp()).append(" >> /etc/ansible/hosts\"\n");
+        }
+
         
         sb.append("sudo sed -i s/MASTER_IP/").append(master.getIp()).append("/g /etc/ganglia/gmond.conf\n");
 
