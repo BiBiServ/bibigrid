@@ -129,7 +129,9 @@ public class SshFactory {
         UserDataCreator.updateHostname(sb);
         UserDataCreator.shellFct(sb);
 
-
+        /*
+        Configure Ansible. TODO: Repair it, after an installed ansible is available in the image.
+         */
         sb.append("sudo mkdir /etc/ansible\n");
         sb.append("sudo touch /etc/ansible/hosts\n");
         sb.append("sudo cp /etc/ansible/hosts /etc/ansible/hosts.bak\n");
@@ -141,6 +143,10 @@ public class SshFactory {
         for(CreateClusterOpenstack.Instance instance : slaves){
             sb.append("sudo sh -c \"echo ").append(instance.getIp()).append(" >> /etc/ansible/hosts\"\n");
         }
+
+        //Test running ansible installer
+        sb.append("chmod +x /home/ubuntu/tmp/playbookinstall.sh\n");
+        sb.append("sh /home/ubuntu/tmp/playbookinstall.sh /home/ubuntu/tmp/ansible 10\n");
 
         
         sb.append("sudo sed -i s/MASTER_IP/").append(master.getIp()).append("/g /etc/ganglia/gmond.conf\n");

@@ -86,7 +86,7 @@ public class Sftp {
         for(EntryFile e : fileList){
             mkdir(e.getRemotePath());
             try{
-                channelSftp.cd(currentRemotePath);
+                channelSftp.cd(e.getRemotePath());
                 channelSftp.put(new FileInputStream(e.getFile()), e.getFile().getName());
             } catch (FileNotFoundException e1) {
                 e1.printStackTrace();

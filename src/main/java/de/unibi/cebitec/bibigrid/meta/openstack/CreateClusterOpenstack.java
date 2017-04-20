@@ -450,11 +450,16 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
 
                 Sftp sftp = new Sftp(sshSession);
+                //You can transport ALL playbooks to the master instance, or cherry pick them to the worker list...
                 List<File> mandatoryPlaybookList = PlaybookBuilder.extractPlaybooks("playbooks/mandatory");
                 List<File> additionalPlaybookList = PlaybookBuilder.extractPlaybooks("playbooks/additional");
 
                 sftp.mkdir("/home/ubuntu/tmp");
                 sftp.mkdir("/home/ubuntu/tmp/ansible");
+
+                //...like this.
+                sftp.addSingleEntryToList("playbooks/playbookinstall.sh", "/home/ubuntu/tmp");
+
                 for(File file : mandatoryPlaybookList){
                     sftp.addSingleEntryToList(file, "/home/ubuntu/tmp/ansible/mandatory");
                 }
@@ -466,8 +471,6 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 }
                 sftp.putListToRemote();
                 sftp.disconnectChannel();
-
-
 
 
                 LOG.info("Connected to master!");

@@ -18,7 +18,6 @@ do
 	while [ $COUNTER -lt $MAX_RETRY ]
 	do
 		ansible-playbook $f >> $FOLDER_PATH/log/mand_$now.log
-		rm $FOLDER_PATH/mandatory/*.retry
 		if [ $? -eq 0 ]
 		then
 			break
@@ -26,7 +25,6 @@ do
 		COUNTER=$(($COUNTER+1))
 		sleep 10
 	done
-	echo "Could not install $f"
 done
 
 echo "_______________________________________"
@@ -39,7 +37,6 @@ do
 	while [ $COUNTER -lt $MAX_RETRY ]
 	do
 		ansible-playbook $f >> $FOLDER_PATH/log/add_$now.log
-		rm $FOLDER_PATH/additional/*.retry
 		if [ $? -eq 0 ]
 		then
 			break
@@ -47,6 +44,7 @@ do
 		COUNTER=$(($COUNTER+1))
 		sleep 10
 	done
-	echo "Could not install $f"
 done
+rm $FOLDER_PATH/mandatory/*.retry > /dev/null 2>&1
+rm $FOLDER_PATH/additional/*.retry > /dev/null 2>&1
 
