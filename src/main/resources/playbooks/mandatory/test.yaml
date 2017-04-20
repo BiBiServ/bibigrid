@@ -1,5 +1,6 @@
 ---
 - hosts: all
+  become: yes
   tasks:
    - name: Install sl
      apt: pkg=sl state=installed update_cache=true

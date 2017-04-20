@@ -129,12 +129,15 @@ public class SshFactory {
         UserDataCreator.updateHostname(sb);
         UserDataCreator.shellFct(sb);
 
-        /*
-        Configure Ansible. TODO: Repair it, after an installed ansible is available in the image.
-         */
-        sb.append("sudo mkdir /etc/ansible\n");
-        sb.append("sudo touch /etc/ansible/hosts\n");
-        sb.append("sudo cp /etc/ansible/hosts /etc/ansible/hosts.bak\n");
+
+        //Install Ansible (code is only temporarily, since there is no ansible installation right now...)
+        sb.append("sudo apt-get -y install software-properties-common\n");
+        sb.append("sudo -E apt-add-repository -y ppa:ansible/ansible\n");
+        sb.append("sudo apt-get update\n");
+        sb.append("sudo apt-get -y install ansible\n");
+
+        //Configure Ansible and build hosts file.
+        sb.append("sudo rm /etc/ansible/ansible.cfg\n");
         sb.append("sudo sh -c \"echo [defaults] >> /etc/ansible/ansible.cfg\"\n");
         sb.append("sudo sh -c \"echo host_key_checking = False >> /etc/ansible/ansible.cfg\"\n");
         sb.append("sudo sh -c \"echo [master] >> /etc/ansible/hosts\"\n");
@@ -143,6 +146,8 @@ public class SshFactory {
         for(CreateClusterOpenstack.Instance instance : slaves){
             sb.append("sudo sh -c \"echo ").append(instance.getIp()).append(" >> /etc/ansible/hosts\"\n");
         }
+
+
 
         //Test running ansible installer
         sb.append("chmod +x /home/ubuntu/tmp/playbookinstall.sh\n");

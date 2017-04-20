@@ -113,7 +113,7 @@ public class Sftp {
             currentRemotePath = path;
             alreadyCreatedFolders.add(path);
         } catch (SftpException e) {
-            LOG.error(V, "Could not make a directory in remote host.");
+            LOG.error("Could not make a directory in remote host.");
         }
     }
 

@@ -23,6 +23,10 @@ do
 			break
 		fi
 		COUNTER=$(($COUNTER+1))
+		if [ $COUNTER -eq 10 ]
+		then
+		    echo "Could not install playbook: $f"
+		fi
 		sleep 10
 	done
 done
@@ -42,9 +46,13 @@ do
 			break
 		fi
 		COUNTER=$(($COUNTER+1))
+		if [ $COUNTER -eq 10 ]
+		then
+		    echo "Could not install playbook: $f"
+		fi
 		sleep 10
 	done
 done
-rm $FOLDER_PATH/mandatory/*.retry > /dev/null 2>&1
-rm $FOLDER_PATH/additional/*.retry > /dev/null 2>&1
+#rm $FOLDER_PATH/mandatory/*.retry > /dev/null 2>&1
+#rm $FOLDER_PATH/additional/*.retry > /dev/null 2>&1
 
