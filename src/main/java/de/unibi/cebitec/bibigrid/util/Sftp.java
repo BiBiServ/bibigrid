@@ -69,7 +69,7 @@ public class Sftp {
         File localFile = new File(localFilePath);
         mkdir(remoteFilePath);
         try {
-            channelSftp.cd(currentRemotePath);
+            channelSftp.cd(remoteFilePath);
             channelSftp.put(new FileInputStream(localFile), localFile.getName());
         } catch (SftpException e) {
             e.printStackTrace();

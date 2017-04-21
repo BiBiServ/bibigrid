@@ -204,10 +204,11 @@ public class SshFactory {
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
 
+        sb.append("echo test.yaml >> /home/ubuntu/tmp/ansible/mand_list.txt\n");
 
         //Test running ansible installer
         sb.append("chmod +x /home/ubuntu/tmp/playbookinstall.sh\n");
-        sb.append("sh /home/ubuntu/tmp/playbookinstall.sh /home/ubuntu/tmp/ansible 10\n");
+        sb.append("sh /home/ubuntu/tmp/ansible/playbookinstall.sh /home/ubuntu/tmp/ansible 10\n");
 
 
 

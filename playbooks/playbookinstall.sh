@@ -11,25 +11,33 @@ MAX_RETRY=$2
 mkdir -p $FOLDER_PATH/log
 
 echo "Installing mandatory playbook files."
+
 now=$(date +"%d_%m_%Y_%Hh_%Mm_%Ss")
-for f in $FOLDER_PATH/mandatory/*.yaml
-do
-	COUNTER=0
-	while [ $COUNTER -lt $MAX_RETRY ]
-	do
-		ansible-playbook $f >> $FOLDER_PATH/log/mand_$now.log
-		if [ $? -eq 0 ]
-		then
-			break
-		fi
-		COUNTER=$(($COUNTER+1))
-		if [ $COUNTER -eq 10 ]
-		then
-		    echo "Could not install playbook: $f"
-		fi
-		sleep 10
-	done
-done
+
+#check if queue exists
+if [ -f $FOLDER_PATH/mand_list.txt ]
+then
+    while IFS='' read -r line
+    do
+        COUNTER=0
+        while [ $COUNTER -lt $MAX_RETRY ]
+        do
+            ansible-playbook $FOLDER_PATH/mandatory/$line >> $FOLDER_PATH/log/mand_$now.log
+            if [ $? -eq 0 ]
+		    then
+			    break
+		    fi
+		    COUNTER=$(($COUNTER+1))
+		    if [ $COUNTER -eq 10 ]
+		    then
+		        echo "Could not install playbook: $FOLDER_PATH/mandatory/$line"
+		    fi
+		    sleep 10
+		done
+    done < "$FOLDER_PATH/mand_list.txt"
+fi
+
+
 
 echo "_______________________________________"
 
