@@ -458,7 +458,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 sftp.mkdir("/home/ubuntu/tmp/ansible");
 
                 //...like this.
-                sftp.addSingleEntryToList("playbooks/playbookinstall.sh", "/home/ubuntu/tmp");
+                sftp.addSingleEntryToList(Sftp.jarPath + "playbooks/playbookinstall.sh", "/home/ubuntu/tmp");
 
                 for(File file : mandatoryPlaybookList){
                     sftp.addSingleEntryToList(file, "/home/ubuntu/tmp/ansible/mandatory");

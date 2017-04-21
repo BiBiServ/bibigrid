@@ -2,5 +2,20 @@
 - hosts: all
   become: yes
   tasks:
-   - name: Install sl
-     apt: pkg=sl state=installed update_cache=true
+   - name: restart ssh
+     service:
+        name: ssh
+        state: restarted
+
+   - name: restart ganglia monitor
+     service:
+        name: ganglia-monitor
+        state: restarted
+
+- hosts: master
+  become: yes
+  tasks:
+   - name: restart gmetad
+     service:
+        name: gmetad
+        state: restarted

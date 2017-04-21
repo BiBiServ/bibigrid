@@ -4,7 +4,7 @@ import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
-
+import de.unibi.cebitec.bibigrid.ansible.PlaybookBuilder;
 
 
 import java.io.*;
@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class Sftp {
 
-
+    public static String jarPath = PlaybookBuilder.transformToPath(Sftp.class.getProtectionDomain().getCodeSource().getLocation().getPath());
     private static List<String> alreadyCreatedFolders = new ArrayList<>();
 
     private final String SSH_MODE = "sftp";

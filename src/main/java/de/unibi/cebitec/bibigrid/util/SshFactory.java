@@ -131,15 +131,19 @@ public class SshFactory {
 
 
         //Install Ansible (code is only temporarily, since there is no ansible installation right now...)
-        sb.append("sudo apt-get -y install software-properties-common\n");
-        sb.append("sudo -E apt-add-repository -y ppa:ansible/ansible\n");
-        sb.append("sudo apt-get update\n");
-        sb.append("sudo apt-get -y install ansible\n");
+
+        sb.append("sudo apt-get -y install software-properties-common > /dev/null 2>&1\n");
+        sb.append("sudo -E apt-add-repository -y ppa:ansible/ansible > /dev/null 2>&1\n");
+        sb.append("sudo apt-get update > /dev/null 2>&1\n");
+        sb.append("sudo apt-get -y install ansible > /dev/null 2>&1\n");
+
 
         //Configure Ansible and build hosts file.
         sb.append("sudo rm /etc/ansible/ansible.cfg\n");
         sb.append("sudo sh -c \"echo [defaults] >> /etc/ansible/ansible.cfg\"\n");
         sb.append("sudo sh -c \"echo host_key_checking = False >> /etc/ansible/ansible.cfg\"\n");
+        sb.append("sudo sh -c \"echo [ssh_connection] >> /etc/ansible/ansible.cfg\"\n");
+        sb.append("sudo sh -c \"echo pipelining = True >> /etc/ansible/ansible.cfg\"\n");
         sb.append("sudo sh -c \"echo [master] >> /etc/ansible/hosts\"\n");
         sb.append("sudo sh -c \"echo ").append(master.getIp()).append(" >> /etc/ansible/hosts\"\n\n");
         sb.append("sudo sh -c \"echo [slaves] >> /etc/ansible/hosts\"\n");
@@ -149,9 +153,7 @@ public class SshFactory {
 
 
 
-        //Test running ansible installer
-        sb.append("chmod +x /home/ubuntu/tmp/playbookinstall.sh\n");
-        sb.append("sh /home/ubuntu/tmp/playbookinstall.sh /home/ubuntu/tmp/ansible 10\n");
+
 
         
         sb.append("sudo sed -i s/MASTER_IP/").append(master.getIp()).append("/g /etc/ganglia/gmond.conf\n");
@@ -201,10 +203,15 @@ public class SshFactory {
         
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor restart \n");
+
+
+        //Test running ansible installer
+        sb.append("chmod +x /home/ubuntu/tmp/playbookinstall.sh\n");
+        sb.append("sh /home/ubuntu/tmp/playbookinstall.sh /home/ubuntu/tmp/ansible 10\n");
+
+
+
         sb.append("echo CONFIGURATION_FINISHED \n");
-
-
-
 
 
         return sb.toString();
