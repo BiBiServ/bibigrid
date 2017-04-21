@@ -5,14 +5,13 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
+
 
 /**
  * Simple usage of sftp for copying local files to remote hosts.
@@ -21,7 +20,7 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
  */
 public class Sftp {
 
-    public static final Logger LOG = LoggerFactory.getLogger(Sftp.class);
+
     private static List<String> alreadyCreatedFolders = new ArrayList<>();
 
     private final String SSH_MODE = "sftp";
@@ -113,7 +112,7 @@ public class Sftp {
             currentRemotePath = path;
             alreadyCreatedFolders.add(path);
         } catch (SftpException e) {
-            LOG.error("Could not make a directory in remote host.");
+
         }
     }
 

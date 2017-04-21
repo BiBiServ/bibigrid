@@ -1,11 +1,8 @@
 package de.unibi.cebitec.bibigrid.ansible;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by awalende on 11.04.17.

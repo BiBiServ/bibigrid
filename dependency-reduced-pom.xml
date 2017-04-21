@@ -5,13 +5,27 @@
   <artifactId>BiBiGrid</artifactId>
   <version>1.0</version>
   <build>
-    <resources>
-      <resource>
-        <targetPath>../playbooks</targetPath>
-        <directory>src/main/resources/playbooks</directory>
-      </resource>
-    </resources>
     <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>copy playbook folder to target</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <tasks>
+                <copy>
+                  <fileset />
+                </copy>
+              </tasks>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <version>2.4.3</version>
