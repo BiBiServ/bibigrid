@@ -90,7 +90,8 @@ public class StartUp {
                 .addOption("osp", "openstack-password", true, "The given Openstack User-Password")
                 .addOption("ose", "openstack-endpoint", true, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/)")
                 .addOption("osd", "openstack-domain", true, "The given Openstack Domain")
-                .addOption("dr", "debug-requests", false, "Enable HTTP request and response logging.");
+                .addOption("dr", "debug-requests", false, "Enable HTTP request and response logging.")
+                .addOption("ansadd", "ansible-additionals", false, "Path to folder containing ansible playbooks which will be copied to the master instance.");
         return cmdLineOptions;
     }
 

@@ -24,40 +24,15 @@ public class Sftp {
     private static List<String> alreadyCreatedFolders = new ArrayList<>();
 
     private final String SSH_MODE = "sftp";
-    private String currentRemotePath = "~/";
     private Session session;
     private ChannelSftp channelSftp;
-
-
-    private List<EntryFile> fileList;
 
 
     public Sftp(Session session) throws JSchException {
         this.session = session;
         this.channelSftp = (ChannelSftp) this.session.openChannel(SSH_MODE);
         this.channelSftp.connect();
-        fileList = new ArrayList<>();
     }
-
-
-    /**
-     * Adds a file to the worker list.
-     * @param localFilePath The absolute path of the local file.
-     * @param remotePath The absolute path on the remote host, where the local should be copied to.
-     */
-    public void addSingleEntryToList(String localFilePath, String remotePath){
-        fileList.add(new EntryFile(new File(localFilePath), remotePath));
-    }
-
-    /**
-     * Adds a file to the worker list.
-     * @param file The local file which will be copied.
-     * @param remotePath The absolute path on the remote host, where the local should be copied to.
-     */
-    public void addSingleEntryToList(File file, String remotePath){
-        fileList.add(new EntryFile(file, remotePath));
-    }
-
 
     /**
      * Copys a local file to a remote host over sftp. It uses the local filename as remote filename.
@@ -80,13 +55,15 @@ public class Sftp {
 
     /**
      * Transfers all files at once, which are contained in the worker list, to the remote host.
+     * @param fileList The list of local files to be copied.
+     * @param targetPath The target path on the remote host where the copied files will be stored.
      */
-    public void putListToRemote(){
-        for(EntryFile e : fileList){
-            mkdir(e.getRemotePath());
+    public void putListToRemote(List<File> fileList, String targetPath){
+        for(File e : fileList){
+            mkdir(targetPath);
             try{
-                channelSftp.cd(e.getRemotePath());
-                channelSftp.put(new FileInputStream(e.getFile()), e.getFile().getName());
+                channelSftp.cd(targetPath);
+                channelSftp.put(new FileInputStream(e), e.getName());
             } catch (FileNotFoundException e1) {
                 e1.printStackTrace();
             } catch (SftpException e1) {
@@ -95,7 +72,25 @@ public class Sftp {
         }
     }
 
-
+    /**
+     * Transfers all files at once, which are contained in the worker list, to the remote host.
+     * @param fileList The list of local files to be copied.
+     * @param targetPath The target path on the remote host where the copied files will be stored.
+     * @param targetFileSuffix Adds a suffix to the target file name.
+     */
+    public void putListToRemote(List<File> fileList, String targetPath, String targetFileSuffix){
+        for(File e : fileList){
+            mkdir(targetPath);
+            try{
+                channelSftp.cd(targetPath);
+                channelSftp.put(new FileInputStream(e), targetFileSuffix + e.getName());
+            } catch (FileNotFoundException e1) {
+                e1.printStackTrace();
+            } catch (SftpException e1) {
+                e1.printStackTrace();
+            }
+        }
+    }
 
     /**
      * Creates a directory in the given absolute path on a remote host.
@@ -109,7 +104,6 @@ public class Sftp {
         }
         try {
             channelSftp.mkdir(path);
-            currentRemotePath = path;
             alreadyCreatedFolders.add(path);
         } catch (SftpException e) {
 
@@ -131,16 +125,8 @@ public class Sftp {
     }
 
 
-    public List<EntryFile> getFileList() {
-        return fileList;
-    }
-
-
-
-    /**
-     * Container class for managing file and path.
-     */
-    private class EntryFile {
+    /*
+    public class EntryFile {
         private File file;
         private String remotePath;
 
@@ -158,6 +144,7 @@ public class Sftp {
             return remotePath;
         }
     }
+    */
 }
 
 

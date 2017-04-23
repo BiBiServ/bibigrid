@@ -131,7 +131,7 @@ public class SshFactory {
 
 
         //Install Ansible (code is only temporarily, since there is no ansible installation right now...)
-
+        //TODO: Remove after we have a base image with pre-installed ansible, since it slows down everything B(
         sb.append("sudo apt-get -y install software-properties-common > /dev/null 2>&1\n");
         sb.append("sudo -E apt-add-repository -y ppa:ansible/ansible > /dev/null 2>&1\n");
         sb.append("sudo apt-get update > /dev/null 2>&1\n");
@@ -153,9 +153,6 @@ public class SshFactory {
 
 
 
-
-
-        
         sb.append("sudo sed -i s/MASTER_IP/").append(master.getIp()).append("/g /etc/ganglia/gmond.conf\n");
 
         if (cfg.getShellScriptFile() != null) {
@@ -207,7 +204,7 @@ public class SshFactory {
         sb.append("echo test.yaml >> /home/ubuntu/tmp/ansible/mand_list.txt\n");
 
         //Test running ansible installer
-        sb.append("chmod +x /home/ubuntu/tmp/playbookinstall.sh\n");
+        sb.append("chmod +x /home/ubuntu/tmp/ansible/playbookinstall.sh\n");
         sb.append("sh /home/ubuntu/tmp/ansible/playbookinstall.sh /home/ubuntu/tmp/ansible 10\n");
 
 

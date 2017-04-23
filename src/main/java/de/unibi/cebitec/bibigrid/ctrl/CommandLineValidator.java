@@ -17,6 +17,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -142,6 +143,7 @@ public class CommandLineValidator {
                     return false;
                 }
             }
+
 
             
             /////////// user name ///////////////
@@ -623,6 +625,33 @@ public class CommandLineValidator {
                 }
                 this.cfg.setShellScriptFile(script);
                 log.info(V, "Shell script file found! ({})", script);
+            }
+
+            ////////////////////////////////////////////////////////////////////////
+            ///// ansible-additionals  /////////////////////////////////////////////
+            String playbooksPath = null;
+            if (defaults.containsKey("ansible-additionals")){
+                playbooksPath = defaults.getProperty("ansible-additionals");
+            }
+            if(this.cl.hasOption("ansadd")){
+                playbooksPath = this.cl.getOptionValue("ansadd");
+            }
+            if(playbooksPath != null){
+                try{
+                    Path playbookFolder = FileSystems.getDefault().getPath(playbooksPath).toAbsolutePath();
+                    if(! new File(playbooksPath.toString()).isDirectory()){
+                        log.error("Path to user playbooks is not a valid path: " + playbooksPath.toString());
+                        return false;
+                    }
+                    log.info(V, "Using additional ansible playbooks from user: " + playbookFolder.toString());
+                    this.cfg.setAdditionalPlaybookPath(playbookFolder);
+
+                } catch(InvalidPathException e){
+                    log.error("Playbookspath " + playbooksPath + " is not a valid path.");
+                    return false;
+                }
+
+
             }
 
             ////////////////////////////////////////////////////////////////////////

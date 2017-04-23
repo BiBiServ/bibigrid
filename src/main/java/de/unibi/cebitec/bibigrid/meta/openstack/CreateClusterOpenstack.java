@@ -424,8 +424,6 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
         boolean uploaded = false;
         boolean configured = false;
-        File playbook = new File("/homes/awalende/test.yaml");
-        String lfile = "/homes/awalende/test.yaml";
 
 
         int ssh_attempts = 50; // @TODO attempts
@@ -446,35 +444,36 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                  */
 
                 sshSession.connect();
-
-
+                LOG.info("Connected to master!");
 
                 Sftp sftp = new Sftp(sshSession);
-                //You can transport ALL playbooks to the master instance
-                List<File> mandatoryPlaybookList = PlaybookBuilder.extractPlaybooks("playbooks/mandatory");
-                List<File> additionalPlaybookList = PlaybookBuilder.extractPlaybooks("playbooks/additional");
-
+                LOG.info(V, "Creating directory structure for ansible playbooks.");
                 sftp.mkdir("/home/ubuntu/tmp");
                 sftp.mkdir("/home/ubuntu/tmp/ansible");
 
-                sftp.addSingleEntryToList(Sftp.jarPath + "playbooks/playbookinstall.sh", "/home/ubuntu/tmp/ansible");
+                //You can transport ALL playbooks to the master instance
+                LOG.info(V, "Gathering ansible playbooks");
+                List<File> mandatoryPlaybookList = PlaybookBuilder.extractPlaybooks("playbooks/mandatory");
+                List<File> additionalPlaybookList = PlaybookBuilder.extractPlaybooks("playbooks/additional");
+                List<File> additionalUserPlaybookList = PlaybookBuilder.extractPlaybooks(this.getConfiguration());
+                //Copy installer bashscript for ansible playbooks to master instance.
+                LOG.info(V, "Transferring playbooks and installer script to master instance.");
+                sftp.putSingleToRemote(Sftp.jarPath + "playbooks/playbookinstall.sh", "/home/ubuntu/tmp/ansible");
 
-                for(File file : mandatoryPlaybookList){
-                    sftp.addSingleEntryToList(file, "/home/ubuntu/tmp/ansible/mandatory");
-                }
-
+                //Start copying all playbooks to master.
+                sftp.putListToRemote(mandatoryPlaybookList, "/home/ubuntu/tmp/ansible/mandatory");
                 if(!additionalPlaybookList.isEmpty()){
-                    for(File file : additionalPlaybookList){
-                        sftp.addSingleEntryToList(file, "/home/ubuntu/tmp/ansible/additional");
-                    }
+                    sftp.putListToRemote(additionalPlaybookList, "/home/ubuntu/tmp/ansible/additional");
                 }
-                sftp.putListToRemote();
+                if(!additionalUserPlaybookList.isEmpty()){
+                    sftp.putListToRemote(additionalUserPlaybookList, "/home/ubuntu/tmp/ansible/additional", "USR_");
+                }
+                //Kill this transport channel.
+                LOG.info(V, "Finished ansible playbook transport.");
                 sftp.disconnectChannel();
 
 
-                LOG.info("Connected to master!");
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-
                 BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
                 BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
 

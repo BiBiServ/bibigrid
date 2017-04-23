@@ -60,6 +60,9 @@ public class Configuration {
     /* security group configuration */
     private List<Port> ports = new ArrayList<>();
     private String securitygroup;
+
+    /* Ansible */
+    private Path additionalPlaybookPath = null;
     
 
     public static enum MODE {
@@ -428,9 +431,13 @@ public class Configuration {
     public void setSecuritygroup(String securitygroup) {
         this.securitygroup = securitygroup;
     }
-    
-    
-    
-    
-    
+
+
+    public Path getAdditionalPlaybookPath() {
+        return additionalPlaybookPath;
+    }
+
+    public void setAdditionalPlaybookPath(Path additionalPlaybookPath) {
+        this.additionalPlaybookPath = additionalPlaybookPath;
+    }
 }
