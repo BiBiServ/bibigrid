@@ -1,0 +1,6 @@
+#!/bin/bash
+echo Start $1 BiBiGrid cluster using ~/.bibigrid.properties.GCB.GI config file 
+for ((i=0;i<$1;i++)) ; do  
+	java -jar target/BiBiGrid-1.0.jar -o ~/.bibigrid.properties.GCB.GI -c 2>&1 > ~/tmp/bibigrid_$i.log & 
+done;
+wait

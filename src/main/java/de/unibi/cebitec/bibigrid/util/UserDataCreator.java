@@ -5,6 +5,7 @@
 package de.unibi.cebitec.bibigrid.util;
 
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
@@ -52,11 +53,6 @@ public class UserDataCreator {
         /* Save currentIP as env var */
         slaveUserData.append("CURRENT_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
 
-        /* "Hack" for CeBiTec OpenStack setup - set hostname */
-        if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
-            updateHostname(slaveUserData);
-        }
-
         slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -69,7 +65,7 @@ public class UserDataCreator {
          * GridEngine Block
          */
         if (cfg.isOge()) {
-            slaveUserData.append("echo ").append(masterIp).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
+            slaveUserData.append("echo ").append(masterDns).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
             // test for sge_master available
             slaveUserData.append("check ").append(masterIp).append(" 6444\n");
             // start sge_exed 
@@ -325,11 +321,6 @@ public class UserDataCreator {
         /* append additional shell fct */
         shellFct(masterUserData);
 
-        /* "Hack" for CeBiTec OpenStack setup - set hostname */
-        if (cfg.getMode().equals(Configuration.MODE.OPENSTACK)) {
-            updateHostname(masterUserData);
-        }
-
         masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -338,15 +329,7 @@ public class UserDataCreator {
         /*
          * Ephemeral/RAID Preperation
          */
-        String blockDeviceBase = "";
-        switch (cfg.getMode()) {
-            case AWS:
-                blockDeviceBase = "/dev/xvd";
-                break;
-            case OPENSTACK:
-                blockDeviceBase = "/dev/vd";
-                break;
-        }
+        String blockDeviceBase = DeviceMapper.getBlockDeviceBase(cfg.getMode());
         // if 1 ephemeral is available mount it as /vol/spool
         if (ephemeralamount == 1) {
             masterUserData.append("umount /mnt\n"); // 
@@ -444,7 +427,11 @@ public class UserDataCreator {
          * OGE Block
          */
         if (cfg.isOge()) {
-            masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 > /var/lib/gridengine/default/common/act_qmaster\n");
+            switch (cfg.getMode()) {
+                case AWS : masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/public-hostname > /var/lib/gridengine/default/common/act_qmaster\n"); break;
+                case OPENSTACK : masterUserData.append("echo $hostname > /var/lib/gridengine/default/common/act_qmaster\n"); break;
+            }
+            
             masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
             masterUserData.append("service gridengine-master start\n");
             masterUserData.append("log \"gridengine-master configured and started\"\n");
@@ -455,6 +442,8 @@ public class UserDataCreator {
          * Mesos Block
          */
         if (cfg.isMesos()) {
+            // start zookeeper
+            masterUserData.append("service zookeeper start\n");
             // configure mesos master
             masterUserData.append("mkdir -p /vol/spool/mesos\n");
             masterUserData.append("chmod -R 777 /vol/spool/mesos\n");
@@ -474,6 +463,19 @@ public class UserDataCreator {
             }
         }
 
+        
+        
+        /* Block Devices */
+        if (masterDeviceMapper != null) {
+            for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+                String device = masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e));
+                String mountpoint = masterDeviceMapper.getSnapshotIdToMountPoint().get(e);
+                masterUserData.append("umount ").append(device).append("\n");
+                masterUserData.append("mkdir -p ").append(mountpoint).append("\n");             
+                masterUserData.append("mount ").append(device).append(" ").append(mountpoint).append("\n");
+            }
+        }
+        
         /*
          * NFS//Mounts Block
          */
@@ -485,12 +487,6 @@ public class UserDataCreator {
             // export opt dir
             masterUserData.append("echo \"/opt/ ${ipbase}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
             
-
-            if (masterDeviceMapper != null) {
-                for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
-                    masterUserData.append("mkdir -p ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-                    masterUserData.append("mount ").append(masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e))).append(" ").append(masterDeviceMapper.getSnapshotIdToMountPoint().get(e)).append("\n");
-                }
                 for (String mastershare : masterNfsShares) {
                     masterUserData.append("mkdir -p ").append(mastershare).append("\n");
                     masterUserData.append("chmod 777 ").append(mastershare).append("\n");
@@ -498,9 +494,7 @@ public class UserDataCreator {
                 }
                 masterUserData.append("service nfs-kernel-server restart\n");
                 masterUserData.append("log \"NFS Server configured and restarted\"\n");
-            } else {
-                log.error("MasterDeviceMapper is null ...");
-            }
+           
         }
         /**
          * Enabling nat functions of master-instance (slave inet access) if
@@ -552,6 +546,7 @@ public class UserDataCreator {
         masterUserData.append("cp /var/log/userdata.log /vol/spool/log/master.log\n");
         masterUserData.append("exit 0\n");
 
+        log.info(V,"Master userdata:\n{}",masterUserData.toString());
         switch (cfg.getMode()) {
             case AWS:
                 return new String(Base64.encodeBase64(masterUserData.toString().getBytes()));
@@ -563,13 +558,6 @@ public class UserDataCreator {
     private static char ephemeral(int i) {
         return (char) (i + 98);
     }
-
-    public static void updateHostname(StringBuilder sb) {
-        sb.append("t=`curl -sS http://169.254.169.254/latest/meta-data/local-ipv4 | sed 's/\\./-/g'`\n");
-        sb.append("sudo hostname host-$t 2> /dev/null\n");
-    }
-
-
 
     public static void shellFct(StringBuilder sb) {
         sb.append("function log { date +\"%x %R:%S - ${1}\";}\n");

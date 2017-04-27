@@ -3,7 +3,7 @@ package de.unibi.cebitec.bibigrid.util;
 import java.util.Collection;
 
 /**
- * Class Subnet, provides  a function that returns next subnet
+ * Class Subnet, provides a function that returns next subnet
  * 
  * 
  * 

@@ -1,0 +1,48 @@
+#!/bin/bash
+GREP=$1
+if [ "x$GREP"="x" ]  ||   [ "$GREP" = "--help" ] ; then
+echo "usage : $0 <Filter> [-o <BiBiGrid.Properties]"
+cat   << "HELP"
+
+Terminates all BiBiGrid cluster resources filter by 
+1st argument for a cloud specified by bibigrid properties. 
+If no individual  bibigrid.propeties file is set, the 
+default is used instead (~/.bibigrid.properties)
+
+example : Search default cloud project for bibigrid cluster 
+containing "gcb" within user and/or key name.
+
+$ ./cleanUpProject gcb
+RPx1PhCQ9eKvml0 | gcbcc034 | 12/09/16 14:16:00 | gcbcc034
+cUNYc1gJToqBu3Q | gcbcc006 | 12/09/16 14:14:57 | gcbcc006
+wCHk1RijSQeN7tU | gcbcc002 | 12/09/16 13:47:43 | gcbcc002
+gSAtcTXeS466HIk | gcbcc035 | 12/09/16 14:05:51 | gcbcc035
+8FyTqXfqQdKS1n2 |   katrin | 12/09/16 13:44:55 | gcbcc003 
+HAmlJOkzQBiqDdF |     otto | 12/09/16 10:48:25 | gcbcc050 
+RxS9c6HTMCj19G2 | gcbcc025 | 12/09/16 13:42:32 | gcbcc025
+a9TxyxOS8i0A5oX | gcbcc012 | 12/09/16 14:03:52 | gcbcc012
+YRe4Tu3RSVy5Bke |    franz | 12/09/16 13:58:37 | gcbcc050
+QXe0yMkSQhmVXgO | gcbcc018 | 12/09/16 14:03:46 | gcbcc018
+yZU1KcmQAGipWoz | gcbcc043 | 12/09/16 14:09:25 | gcbcc043
+Do you wish to termiate above bibigrid cluster ? y
+Terminate RPx1PhCQ9eKvml0
+...
+
+HELP
+	exit;
+fi;
+
+exit;
+
+FILTERED=`java -jar target/BiBiGrid-1.0.jar -o ~/.bibigrid.properties.GCB -l | grep $GREP `;
+echo "$FILTERED"
+
+
+while true; do
+    read -p "Do you wish to termiate above bibigrid cluster ? " yn
+    case $yn in
+        [Yy]* ) for i in `echo "$FILTERED" | cut -f1 -d " "`; do echo "Terminate $i"; java -jar target/BiBiGrid-1.0.jar -o ~/.bibigrid.properties.GCB -t $i;  done;  break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done

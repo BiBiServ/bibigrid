@@ -131,7 +131,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         /////////////// preparing blockdevicemappings for master////////////////
         Map<String, String> masterSnapshotToMountPointMap = this.config.getMasterMounts();
         int ephemerals = config.getMasterInstanceType().getSpec().ephemerals;
-        DeviceMapper masterDeviceMapper = new DeviceMapper(masterSnapshotToMountPointMap, ephemerals);
+        DeviceMapper masterDeviceMapper = new DeviceMapper(config.getMode(),masterSnapshotToMountPointMap, ephemerals);
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
         if (!this.config.getMasterMounts().isEmpty()) {
@@ -198,7 +198,7 @@ public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateC
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
         int ephemerals = config.getSlaveInstanceType().getSpec().ephemerals;
-        slaveDeviceMapper = new DeviceMapper(snapShotToSlaveMounts, ephemerals);
+        slaveDeviceMapper = new DeviceMapper(config.getMode(),snapShotToSlaveMounts, ephemerals);
         slaveBlockDeviceMappings = new ArrayList<>();
         // configure volumes first ...
         if (!snapShotToSlaveMounts.isEmpty()) {

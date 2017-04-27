@@ -1,0 +1,2 @@
+#!/bin/bash
+while ( true ); do clear; tail -n 5 ~/tmp/bibigrid_$1?.log; sleep 2; done
