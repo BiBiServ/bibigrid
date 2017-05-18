@@ -160,7 +160,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
       masterMappings.add(bdmc);
     }
 
-    masterImage = conf.getRegion() + "/" + conf.getMasterImage();
+    //masterImage = conf.getRegion() + "/" + conf.getMasterImage();
+    masterImage =  conf.getMasterImage();
 
     String type = conf.getMasterInstanceType().getValue();
     masterFlavor = null;
@@ -208,7 +209,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     /**
      * Options.
      */
-    slaveImage = conf.getRegion() + "/" + conf.getSlaveImage();
+    //slaveImage = conf.getRegion() + "/" + conf.getSlaveImage();
+    slaveImage =  conf.getSlaveImage();
     String type = conf.getSlaveInstanceType().getValue();
     slaveFlavor = null;
 

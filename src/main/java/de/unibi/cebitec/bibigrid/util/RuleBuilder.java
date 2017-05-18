@@ -82,6 +82,7 @@ public class RuleBuilder {
         group.getParamrefOrParamGroupref().add(createBasicRule("osp", "openstack-password", Tprimitive.STRING, "The given Openstack User-Password"));
         group.getParamrefOrParamGroupref().add(createBasicRule("ose", "openstack-endpoint", Tprimitive.STRING, "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/));")); //Regex?
         group.getParamrefOrParamGroupref().add(createBasicRule("osd", "openstack-domain", Tprimitive.STRING, "The given Openstack Domain"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("osdt", "openstack-tenantdomain", Tprimitive.STRING, "The given Openstack Tenant Domain"));
         group.getParamrefOrParamGroupref().add(createBasicRule("dr", "debug-requests", null, "Enable HTTP request and response logging."));
 
     }

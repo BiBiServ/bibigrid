@@ -211,6 +211,14 @@ public class CommandLineValidator {
                     LOG.error("No suitable entry for OpenStack-Tenantname (ost) found! Exit");
                     return false;
                 }
+                
+                if (cl.hasOption("ostd")) {
+                    osc.setTenantName(cl.getOptionValue("ostd").trim());
+                } else if (defaults.getProperty("openstack-tenantdomain") != null) {
+                    osc.setTenantDomain(defaults.getProperty("openstack-tenantdomain"));
+                } else {
+                    LOG.info("No suitable entry for OpenStack-TenantDomain (ostd) found! Use OpenStack-Domain(osd) instead!");
+                }
                                 
                 if (cl.hasOption("osp")) {
                     osc.setPassword(cl.getOptionValue("osp").trim());
