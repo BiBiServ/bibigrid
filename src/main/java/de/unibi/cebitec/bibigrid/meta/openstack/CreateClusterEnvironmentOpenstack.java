@@ -102,7 +102,7 @@ public class CreateClusterEnvironmentOpenstack
                     throw new ConfigurationException("No Subnet with name '" + cfg.getSubnetname() + "' found!");
                 }
                 net = getNetworkById(osc, subnet.getNetworkId());
-                router = getRouterbyNetwork(osc, net);
+                router = getRouterbyNetwork(osc, net, subnet); // @ToDo
                 LOG.info("Use existing subnet (ID: {}, CIDR: {}).", subnet.getId(), subnet.getCidr());
                 return this;
             }
@@ -434,7 +434,7 @@ public class CreateClusterEnvironmentOpenstack
     }
 
     /**
-     * Deteremine Router by given network and subnetwork. Return router tjaty
+     * Determine Router by given network and subnetwork. Return router 
      *
      * @param osc
      * @param network
@@ -445,13 +445,18 @@ public class CreateClusterEnvironmentOpenstack
         PortService ps = osc.networking().port();
         PortListOptions plopt = PortListOptions.create();
         plopt.networkId(network.getId());
-
+        // 1st check for device_owner "network:router_interface
         plopt.deviceOwner("network:router_interface");
-
-        if (subnet == null && ps.list(plopt).size() > 1) {
+        List <? extends org.openstack4j.model.network.Port> lop = ps.list(plopt);
+        if (lop.isEmpty()) { // if no port found 2nd check for "network:ha_router_replicated_interface"
+          plopt.deviceOwner("network:ha_router_replicated_interface");
+          lop = ps.list(plopt);
+        }
+         
+        if (subnet == null && lop.size() > 1) {
             LOG.warn("Network (ID: {}) uses more than one router, return the 1st one !", network.getId());
         }
-        for (org.openstack4j.model.network.Port port : ps.list(plopt)) {
+        for (org.openstack4j.model.network.Port port : lop) {
             if (subnet == null) {
                 return getRouterById(osc, port.getDeviceId()); // if no subnet is given just return first router
             } else {
