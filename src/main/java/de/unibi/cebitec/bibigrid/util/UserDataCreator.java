@@ -440,7 +440,7 @@ public class UserDataCreator {
       }
 
       masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
-      masterUserData.append("service gridengine-master start\n");
+      masterUserData.append("ch_p sge_qmaster 10 'sudo service gridengine-master start'\n");
       masterUserData.append("log \"gridengine-master configured and started\"\n");
     }
 
@@ -468,6 +468,8 @@ public class UserDataCreator {
         masterUserData.append("service mesos-slave start\n");
         masterUserData.append("log \"mesos-slave configured and started\"\n");
       }
+    } else {
+      masterUserData.append("service chronos stop\n");
     }
 
     /* Block Devices */
