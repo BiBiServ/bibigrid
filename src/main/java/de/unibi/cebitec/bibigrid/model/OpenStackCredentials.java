@@ -19,10 +19,6 @@ public class OpenStackCredentials {
     private String domain;
     private String tenantDomain;
 
-    public OpenStackCredentials() {
-
-    }
-
 
     public String getTenantName() {
         return tenantName;

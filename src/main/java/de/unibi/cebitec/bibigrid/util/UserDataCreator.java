@@ -314,13 +314,14 @@ public class UserDataCreator {
     masterUserData.append("#!/bin/bash\n");
     masterUserData.append("exec > /var/log/userdata.log\n")
             .append("exec 2>&1\n");
-    masterUserData.append("echo 'MasterUserData executed!'\n");
+    masterUserData.append("echo 'MasterUserData executed! NEW'\n");
 
     /* append additional shell fct */
     shellFct(masterUserData);
 
     
     masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+    masterUserData.append("HOSTNAME=$(echo host-${IP} | tr . -)\n");
     masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -434,7 +435,7 @@ public class UserDataCreator {
           masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/public-hostname > /var/lib/gridengine/default/common/act_qmaster\n");
           break;
         case OPENSTACK:
-          masterUserData.append("echo $(hostname) > /var/lib/gridengine/default/common/act_qmaster\n");
+          masterUserData.append("echo ${HOSTNAME} > /var/lib/gridengine/default/common/act_qmaster\n");
           break;
       }
 
