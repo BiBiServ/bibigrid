@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 import com.amazonaws.services.ec2.AmazonEC2;
 import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.ValidateIntentAWS;
+import de.unibi.cebitec.bibigrid.meta.googlecloud.ValidateIntentGoogleCloud;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +31,8 @@ public class ValidationIntent extends Intent {
                 return Arrays.asList(new String[]{"ch", "m", "M", "s", "S", "n", "u", "k", "i", "e", "a", "z", "g", "r", "b"});
             case OPENSTACK:
                 return Arrays.asList(new String[]{"ch", "m", "M", "s", "S", "n", "u", "k", "i", "e", "z", "g", "r", "b", "ost", "osu", "osp", "ose"});
+            case GOOGLECLOUD:
+                return Arrays.asList("ch"); // TODO: Google Cloud
         }
         return null;
     }
@@ -45,8 +48,10 @@ public class ValidationIntent extends Intent {
                 return new ValidateIntentAWS(getConfiguration()).validate();
             case OPENSTACK:
                 return false;
+            case GOOGLECLOUD:
+                return new ValidateIntentGoogleCloud(getConfiguration()).validate();
             default:
-                log.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
+                log.error("Malformed meta-mode! [use: 'aws-ec2','openstack','googlecloud' or leave it blanc.");
                 return false;
         }
 

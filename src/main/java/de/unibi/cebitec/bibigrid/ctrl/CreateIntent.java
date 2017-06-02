@@ -4,6 +4,7 @@ import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUp;
 import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS;
+import de.unibi.cebitec.bibigrid.meta.googlecloud.CreateClusterGoogleCloud;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
@@ -27,6 +28,8 @@ public class CreateIntent extends Intent {
                 return Arrays.asList(new String[]{"m", "M", "s", "S", "n",  "k", "i", "e", "a", "z", "g", "r", "b"});
             case OPENSTACK:
                 return Arrays.asList(new String[]{"m", "M", "s", "S", "n",  "k", "i", "e", "z", "g", "r", "b", "osu", "ost", "osp", "ose"});
+            case GOOGLECLOUD:
+                return Arrays.asList("m", "s"); // TODO: Google Cloud
         }
         return null;
     }
@@ -73,9 +76,19 @@ public class CreateIntent extends Intent {
                         .configureClusterMasterInstance()
                         .configureClusterSlaveInstance()
                         .launchClusterInstances();
+            case GOOGLECLOUD:
+                return new CreateClusterGoogleCloud(getConfiguration())
+                        .createClusterEnvironment()
+                            .createVPC()
+                            .createSubnet()
+                            .createSecurityGroup()
+                            .createPlacementGroup()
+                        .configureClusterMasterInstance()
+                        .configureClusterSlaveInstance()
+                        .launchClusterInstances();
 
             default:
-                LOG.error("Malformed meta-mode! [use: 'aws-ec2','openstack' or leave it blanc.");
+                LOG.error("Malformed meta-mode! [use: 'aws-ec2','openstack','googlecloud' or leave it blanc.");
                 return false;
         }
     }

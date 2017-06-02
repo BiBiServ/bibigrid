@@ -47,8 +47,11 @@ public class Configuration {
     /* AWS related Configuration options */
     private double bidPrice, bidPriceMaster;
     private boolean useSpotInstances;
-    private boolean publicSlaveIps; 
-    
+    private boolean publicSlaveIps;
+
+    /* Google Cloud related Configuration options */
+    private String googleProjectId;
+    private String googleCredentialsFile;
     
     /* network configuration (for OpenStack)*/
     
@@ -65,7 +68,7 @@ public class Configuration {
 
     public static enum MODE {
 
-        AWS, OPENSTACK
+        AWS, OPENSTACK, GOOGLECLOUD
     }
     
     public static enum FS {
@@ -439,9 +442,20 @@ public class Configuration {
     public void setSecuritygroup(String securitygroup) {
         this.securitygroup = securitygroup;
     }
-    
-    
-    
-    
-    
+
+    public String getGoogleProjectId() {
+        return googleProjectId;
+    }
+
+    public void setGoogleProjectId(String googleProjectId) {
+        this.googleProjectId = googleProjectId;
+    }
+
+    public String getGoogleCredentialsFile() {
+        return googleCredentialsFile;
+    }
+
+    public void setGoogleCredentialsFile(String googleCredentialsFile) {
+        this.googleCredentialsFile = googleCredentialsFile;
+    }
 }

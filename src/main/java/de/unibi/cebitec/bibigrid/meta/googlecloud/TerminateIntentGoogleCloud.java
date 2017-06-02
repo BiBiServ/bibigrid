@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
+import com.google.cloud.compute.Compute;
 import de.unibi.cebitec.bibigrid.meta.TerminateIntent;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 
@@ -9,7 +10,10 @@ import de.unibi.cebitec.bibigrid.model.Configuration;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class TerminateIntentGoogleCloud implements TerminateIntent {
+    private final Compute compute;
+
     public TerminateIntentGoogleCloud(final Configuration conf) {
+        compute = GoogleCloudUtils.getComputeService(conf);
         // TODO: stub
     }
 
