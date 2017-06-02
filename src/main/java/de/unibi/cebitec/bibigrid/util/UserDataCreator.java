@@ -47,8 +47,13 @@ public class UserDataCreator {
     /* append additional service check fct */
     shellFct(slaveUserData);
 
-    /* Save currentIP as env var */
+    /* env vars, adjust /etc/hosts to be independend of any DNS resolver*/
     slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+//    slaveUserData.append("HOSTNAME=$(echo host-${IP} | tr . -)\n");
+//    slaveUserData.append("echo ${IP} ${HOSTNAME}.openstacklocal ${HOSTNAME} >> /etc/hosts\n");
+//    slaveUserData.append("echo ").append(masterIp).append(" ").append(masterDns).append(".openstacklocal ").append(masterDns).append(" >> /etc/hosts \n");
+    
+    
 
     slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
@@ -61,14 +66,14 @@ public class UserDataCreator {
     /*
          * GridEngine Block
      */
-    if (cfg.isOge()) {
-      slaveUserData.append("echo ").append(masterDns).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
-      // test for sge_master available
-      slaveUserData.append("ch_s ").append(masterIp).append(" 6444\n");
-      // start sge_exed 
-      slaveUserData.append("ch_p sge_execd 10 \"service gridengine-exec start\"\n");
-      slaveUserData.append("log 'sge_execd started'\n");
-    }
+//    if (cfg.isOge()) {
+//      slaveUserData.append("echo ").append(masterDns).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
+//      // test for sge_master available
+//      slaveUserData.append("ch_s ").append(masterIp).append(" 6444\n");
+//      // start sge_exed 
+//      slaveUserData.append("ch_p sge_execd 10 \"service gridengine-exec start\"\n");
+//      slaveUserData.append("log 'sge_execd started'\n");
+//    }
 
     /*
          * Ganglia service monitor
@@ -314,14 +319,19 @@ public class UserDataCreator {
     masterUserData.append("#!/bin/bash\n");
     masterUserData.append("exec > /var/log/userdata.log\n")
             .append("exec 2>&1\n");
-    masterUserData.append("echo 'MasterUserData executed! NEW'\n");
+    masterUserData.append("echo 'MasterUserData executed!'\n");
+    masterUserData.append("ifconfig\n");
 
     /* append additional shell fct */
     shellFct(masterUserData);
-
     
+    //masterUserData.append("")
+
+    /* env vars, adjust /etc/hosts to be independend of any DNS resolver*/
     masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
-    masterUserData.append("HOSTNAME=$(echo host-${IP} | tr . -)\n");
+//    masterUserData.append("HOSTNAME=$(echo host-${IP} | tr . -)\n");
+//    masterUserData.append("echo ${IP} ${HOSTNAME}.openstacklocal ${HOSTNAME} >> /etc/hosts\n");
+//    =
     masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -427,22 +437,22 @@ public class UserDataCreator {
     }
 
     /*
-         * OGE Block
+         * OGE Block @REMOVE :: JK
      */
-    if (cfg.isOge()) {
-      switch (cfg.getMode()) {
-        case AWS:
-          masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/public-hostname > /var/lib/gridengine/default/common/act_qmaster\n");
-          break;
-        case OPENSTACK:
-          masterUserData.append("echo ${HOSTNAME} > /var/lib/gridengine/default/common/act_qmaster\n");
-          break;
-      }
-
-      masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
-      masterUserData.append("ch_p sge_qmaster 10 'sudo service gridengine-master start'\n");
-      masterUserData.append("log \"gridengine-master configured and started\"\n");
-    }
+//    if (cfg.isOge()) {
+//      switch (cfg.getMode()) {
+//        case AWS:
+//          masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/public-hostname > /var/lib/gridengine/default/common/act_qmaster\n");
+//          break;
+//        case OPENSTACK:
+//          masterUserData.append("echo $(hostname) > /var/lib/gridengine/default/common/act_qmaster\n");
+//          break;
+//      }
+//
+//      masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
+//      masterUserData.append("ch_p sge_qmaster 10 'sudo service gridengine-master start'\n");
+//      masterUserData.append("log \"gridengine-master configured and started\"\n");
+//    }
 
 
     /* 
@@ -565,6 +575,7 @@ public class UserDataCreator {
 
   public static void shellFct(StringBuilder sb) {
     sb.append("function log { date +\"%x %R:%S - ${1}\";}\n");
+    sb.append("function fqdn { nslookup ${1}  | grep name | sed -sr \"s/^.*name = (.*)/\\1/\"; }\n");
     sb.append("function ch_s {\n")
             .append("\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
             .append("\twhile test $? -eq 1; do\n")
@@ -589,6 +600,7 @@ public class UserDataCreator {
             .append("\t\tlog \"$(ps -e | grep ${1})\"\n")
             .append("\tdone;\n")
             .append("}\n");
+    
     
 
   }

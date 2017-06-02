@@ -23,7 +23,9 @@ import org.slf4j.LoggerFactory;
 
 public class SshFactory {
 
-    public static final Logger log = LoggerFactory.getLogger(SshFactory.class);
+    public static final Logger LOG = LoggerFactory.getLogger(SshFactory.class);
+    
+    private static final String SSH="ssh  -o CheckHostIP=no -o StrictHostKeyChecking=no ";
 
     public static Session createNewSshSession(JSch ssh, String dns, String user, Path identity) {
         try {
@@ -59,13 +61,13 @@ public class SshFactory {
 
                 @Override
                 public void showMessage(String string) {
-                    log.info("SSH: {}", string);
+                    LOG.info("SSH: {}", string);
                 }
             };
             sshSession.setUserInfo(userInfo);
             return sshSession;
         } catch (JSchException e) {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
             return null;
         }
     }
@@ -87,7 +89,7 @@ public class SshFactory {
                 sb.append("\nEOFCUSTOMSCRIPT\n");
                 sb.append("bash shellscript.sh &> shellscript.log &\n");
             } catch (IOException e) {
-                log.info("Shell script could not be read.");
+                LOG.info("Shell script could not be read.");
             }
         }
 
@@ -143,26 +145,55 @@ public class SshFactory {
                 sb.append("\nEOFCUSTOMSCRIPT\n");
                 sb.append("bash shellscript.sh &> shellscript.log &\n");
             } catch (IOException e) {
-                log.info("Shell script could not be read.");
+                LOG.info("Shell script could not be read.");
             }
         }
         if (cfg.isOge()) {
-            // wait for sge_master started
+            //adjust /etc/hosts to be independend from any DNS resolver, GridEngine needs hostnames, ip address ar not supported
+            //sb.append("echo ").append(master.getIp()).append(" ").append(master.getHostname()).append(" | sudo tee -a /etc/hosts > /dev/null\n");
+            //sb.append("echo ").append(master.getIp()).append(" ").append(master.getNeutronHostname()).append(" | sudo tee -a /etc/hosts > /dev/null\n");
+//            for (CreateClusterOpenstack.Instance slave : slaves) {    
+//              sb.append("echo ").append(slave.getIp()).append(" ").append(slave.getNeutronHostname()).append(".openstacklocal ").append(slave.getNeutronHostname()).append(" | sudo tee -a /etc/hosts > /dev/null\n");
+//              //sb.append("echo ").append(slave.getIp()).append(" ").append(slave.getHostname()).append(" | sudo tee -a /etc/hosts > /dev/null\n");  
+//            }
+            // get masters fqdn
+            sb.append("MFQDN=$(fqdn ").append(master.getIp()).append(")\n");
+            // configure and starts sge master
+            sb.append("echo ${MFQDN} | sudo tee /var/lib/gridengine/default/common/act_qmaster > /dev/null\n");
+            sb.append("sudo chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
+            sb.append("ch_p sge_qmaster 5 'sudo service gridengine-master start'\n");          
+            // and wait for sge_master available
             sb.append("ch_s ").append(master.getIp()).append(" 6444\n");
-            // configure submit host
-            sb.append("qconf -as ").append(master.getNeutronHostname()).append(" 2>&1\n");
+            sb.append("log \"gridengine-master configured and started.\"\n");
+            // add master as submit host
+            sb.append("sudo qconf -as ${MFQDN} 2>&1\n");
+            sb.append("log \"Master:${MFQDN} added as submit host.\"\n");
             // clean-up possible previous configuration (could be happend if you use a configured masterimage snapshot as image)
-            sb.append("for i in `qconf -sel 2>/dev/null`; do qconf -dattr hostgroup hostlist $i \\@allhosts 2>&1; qconf -de $i 2>&1; done;\n");
+            sb.append("for i in `qconf -sel 2>/dev/null`; do sudo qconf -dattr hostgroup hostlist $i \\@allhosts 2>&1; sudo qconf -de $i 2>&1; done;\n");
             
-            // add master as exec host  if set and start execd
+            // add master as execution host  if set and start execution daemon
             if (cfg.isUseMasterAsCompute()) {
-                sb.append("./add_exec ").append(master.getNeutronHostname()).append(" ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
-                sb.append("sudo service gridengine-exec start 2>&1\n");
+                //sb.append("./add_exec ").append(master.getNeutronHostname()).append(" ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
+                sb.append("/home/ubuntu/add_exec ${MFQDN} ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
+                sb.append("ch_p sge_execd 5 \"sudo service gridengine-exec start\"\n");
+                sb.append("log \"Master:${MFQDN} configured as execution host.\"\n");
                 
             }
-            // add slaves as exec hosts
-            for (CreateClusterOpenstack.Instance slave : slaves) {              
-                sb.append("./add_exec ").append(slave.getNeutronHostname()).append(" ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
+            // add slaves as execution hosts
+            for (CreateClusterOpenstack.Instance slave : slaves) {       
+               // wait for slave instance ready
+               sb.append("ch_s ").append(slave.getIp()).append(" 22\n");
+               // configure sge, start execution daemon and get slaves fqdn
+               sb.append("while \n");
+               sb.append(SSH).append(slave.getIp()).append(" \"echo ${MFQDN} | sudo tee /var/lib/gridengine/default/common/act_qmaster > /dev/null; sudo service gridengine-exec start\"\n");
+               sb.append("(( $? != 0 ));\ndo sleep 10;done;\n");
+               
+               sb.append("SFQDN=$(fqdn  ").append(slave.getIp()).append(")\n");
+               sb.append("/home/ubuntu/add_exec ${SFQDN} ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
+               sb.append("log \"Slave:${SFQDN} configured as execution host.\"\n");
+              
+                //sb.append("./add_exec ").append(slave.getHostname()).append(" ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
+                //sb.append("./add_exec $(ssh ").append(slave.getIp()).append(" hostname) ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
             }
         }
         
@@ -178,11 +209,11 @@ public class SshFactory {
             }
             // now configure cassandra on all hosts and starts it afterwards
             String ch = String.join(",",cassandra_hosts);
-            String ssh_opt="-q -o CheckHostIP=no -o StrictHostKeyChecking=no";
+            
             for (String host : cassandra_hosts) {
                 sb.append("ch_f /var/log/bibigrid/").append(host).append("\n");
-                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo -u cassandra /opt/cassandra/bin/create_cassandra_config.sh  /opt/cassandra/ /vol/scratch/cassandra/ cassandra ").append(ch).append(" \"\n");
-                sb.append("ssh ").append(ssh_opt).append(" ").append(host).append(" \"sudo service cassandra start\"\n");   
+                sb.append(SSH).append(host).append(" \"sudo -u cassandra /opt/cassandra/bin/create_cassandra_config.sh  /opt/cassandra/ /vol/scratch/cassandra/ cassandra ").append(ch).append(" \"\n");
+                sb.append(SSH).append(host).append(" \"sudo service cassandra start\"\n");   
             }
         }
         

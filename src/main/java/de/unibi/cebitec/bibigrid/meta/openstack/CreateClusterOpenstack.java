@@ -371,14 +371,17 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 .addSecurityGroup(environment.getSecGroupExtension().getId())
                 .availabilityZone(conf.getAvailabilityZone())
                 .userData(UserDataCreator.forSlave(master.getIp(),
-                        master.getNeutronHostname(),
+                        //master.getNeutronHostname(),
+                        master.getHostname(),
                         slaveDeviceMapper,
                         conf,
                         environment.getKeypair()))
                 .networks(Arrays.asList(environment.getNetwork().getId()))
                 .build();
         Server tmp = os.compute().servers().boot(sc);
-        slaves.put(tmp.getId(), new Instance(tmp.getId()));
+        Instance tmp_instance = new Instance(tmp.getId());
+        tmp_instance.setHostname("bibigrid-slave-" + (i + 1) + "-" + clusterId);
+        slaves.put(tmp.getId(),tmp_instance);
 
         //slaveIDs.add(tmp.getId());
         LOG.info(V, "Instance request for {}  ", sc.getName());
@@ -413,6 +416,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
       // wait for slave network finished ... update server instance list            
       for (Instance slave : slaves.values()) {
         slave.setIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
+        
         slave.updateNeutronHostname();
       }
       /* @ToDo: 
