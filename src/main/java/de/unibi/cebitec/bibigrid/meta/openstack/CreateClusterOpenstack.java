@@ -69,6 +69,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
   public static final String SUBNET_PREFIX = PREFIX + "subnet-";
 
   public static final long WAITTIME = 5000;
+  
+  public static final boolean CONFIGDRIVE = true;
 
   /*
      * Cluster ID
@@ -141,8 +143,13 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         LOG.warn("Volume/Snapshot with name/id {} not found!", nameorid);
       }
     }
-    masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals);
-
+    
+    if (CONFIGDRIVE) {
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, 1 + conf.getMasterInstanceType().getSpec().ephemerals);
+    } else {
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals);
+    }
+    
     /**
      * BlockDeviceMapping.
      *
@@ -185,8 +192,13 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
      * @ToDo
      */
     Map<String, String> snapShotToSlaveMounts = this.conf.getSlaveMounts();
-    slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals);
-
+    
+    if (CONFIGDRIVE) {
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, 1+conf.getMasterInstanceType().getSpec().ephemerals);
+    } else {
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals);     
+    }
+        
     /**
      * BlockDeviceMapping.
      *
@@ -240,10 +252,11 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
               .availabilityZone(conf.getAvailabilityZone())
               .userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()))
               .addMetadata(metadata)
+              .configDrive(CONFIGDRIVE)
               .networks(Arrays.asList(environment.getNetwork().getId()))
               .build();
       //Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
-      Server server = os.compute().servers().boot(sc); // boot an return immidiately
+      Server server = os.compute().servers().boot(sc); // boot and return immidiately
 
       // check if anything goes wrong,
       Fault fault = server.getFault();
@@ -376,6 +389,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                         slaveDeviceMapper,
                         conf,
                         environment.getKeypair()))
+                .configDrive(CONFIGDRIVE)
                 .networks(Arrays.asList(environment.getNetwork().getId()))
                 .build();
         Server tmp = os.compute().servers().boot(sc);
