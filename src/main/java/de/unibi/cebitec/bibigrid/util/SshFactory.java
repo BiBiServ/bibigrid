@@ -185,7 +185,7 @@ public class SshFactory {
                sb.append("ch_s ").append(slave.getIp()).append(" 22\n");
                // configure sge, start execution daemon and get slaves fqdn
                sb.append("while \n");
-               sb.append(SSH).append(slave.getIp()).append(" \"echo ${MFQDN} | sudo tee /var/lib/gridengine/default/common/act_qmaster 2>&1 >/dev/null; sudo service gridengine-exec start\"\n");
+               sb.append(SSH).append(slave.getIp()).append(" -E /dev/null \"echo ${MFQDN} | sudo tee /var/lib/gridengine/default/common/act_qmaster 2>&1 >/dev/null; sudo service gridengine-exec start\"\n");
                sb.append("(( $? != 0 ));\ndo sleep 10;done;\n");
                
                sb.append("SFQDN=$(fqdn  ").append(slave.getIp()).append(")\n");
