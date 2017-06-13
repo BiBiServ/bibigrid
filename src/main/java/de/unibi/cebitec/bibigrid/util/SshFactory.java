@@ -149,13 +149,6 @@ public class SshFactory {
             }
         }
         if (cfg.isOge()) {
-            //adjust /etc/hosts to be independend from any DNS resolver, GridEngine needs hostnames, ip address ar not supported
-            //sb.append("echo ").append(master.getIp()).append(" ").append(master.getHostname()).append(" | sudo tee -a /etc/hosts > /dev/null\n");
-            //sb.append("echo ").append(master.getIp()).append(" ").append(master.getNeutronHostname()).append(" | sudo tee -a /etc/hosts > /dev/null\n");
-//            for (CreateClusterOpenstack.Instance slave : slaves) {    
-//              sb.append("echo ").append(slave.getIp()).append(" ").append(slave.getNeutronHostname()).append(".openstacklocal ").append(slave.getNeutronHostname()).append(" | sudo tee -a /etc/hosts > /dev/null\n");
-//              //sb.append("echo ").append(slave.getIp()).append(" ").append(slave.getHostname()).append(" | sudo tee -a /etc/hosts > /dev/null\n");  
-//            }
             // get masters fqdn
             sb.append("MFQDN=$(fqdn ").append(master.getIp()).append(")\n");
             // configure and starts sge master
@@ -192,8 +185,6 @@ public class SshFactory {
                sb.append("/home/ubuntu/add_exec ${SFQDN} ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
                sb.append("log \"Slave:${SFQDN} configured as execution host.\"\n");
               
-                //sb.append("./add_exec ").append(slave.getHostname()).append(" ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
-                //sb.append("./add_exec $(ssh ").append(slave.getIp()).append(" hostname) ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
             }
         }
         

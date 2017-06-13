@@ -65,6 +65,7 @@ public class RuleBuilder {
         group.getParamrefOrParamGroupref().add(createBasicRule("o", "config", Tprimitive.STRING, "path to alternative config file"));
         group.getParamrefOrParamGroupref().add(createBasicRule("b", "use-master-as-compute", Tprimitive.BOOLEAN, "yes or no if master is supposed to be used as a compute instance"));
         group.getParamrefOrParamGroupref().add(createBasicRule("db", "cassandra", Tprimitive.BOOLEAN, "Enable Cassandra database support"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("spark","spark",Tprimitive.BOOLEAN, "Enable Spark cluster support"));
         group.getParamrefOrParamGroupref().add(createBasicRule("gpf", "grid-properties-file", Tprimitive.STRING, "store essential grid properties like master & slave dns values and grid id in a Java property file"));
         group.getParamrefOrParamGroupref().add(createBasicRule("vpc", "vpc-id", Tprimitive.STRING, "Vpc ID used instead of default vpc"));
         group.getParamrefOrParamGroupref().add(createBasicRule("router", "router", Tprimitive.STRING, "Name of router used (Openstack));, only one of --router --network or --subnet should be used. "));
