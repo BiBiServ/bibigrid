@@ -47,14 +47,7 @@ public class UserDataCreator {
     /* append additional service check fct */
     shellFct(slaveUserData);
 
-    /* env vars, adjust /etc/hosts to be independend of any DNS resolver*/
     slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
-//    slaveUserData.append("HOSTNAME=$(echo host-${IP} | tr . -)\n");
-//    slaveUserData.append("echo ${IP} ${HOSTNAME}.openstacklocal ${HOSTNAME} >> /etc/hosts\n");
-//    slaveUserData.append("echo ").append(masterIp).append(" ").append(masterDns).append(".openstacklocal ").append(masterDns).append(" >> /etc/hosts \n");
-    
-    
-
     slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -325,13 +318,7 @@ public class UserDataCreator {
     /* append additional shell fct */
     shellFct(masterUserData);
     
-    //masterUserData.append("")
-
-    /* env vars, adjust /etc/hosts to be independend of any DNS resolver*/
     masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
-//    masterUserData.append("HOSTNAME=$(echo host-${IP} | tr . -)\n");
-//    masterUserData.append("echo ${IP} ${HOSTNAME}.openstacklocal ${HOSTNAME} >> /etc/hosts\n");
-//    =
     masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -406,6 +393,7 @@ public class UserDataCreator {
          * create spool, scratch, log
      */
     masterUserData.append("mkdir -p /vol/spool/log\n");
+    masterUserData.append("mkdir -p /vol/spool/www\n");
     masterUserData.append("mkdir -p /vol/scratch/\n");
     masterUserData.append("chown -R ubuntu:ubuntu /vol/\n");
     masterUserData.append("chmod -R 777 /vol/\n");
@@ -435,25 +423,6 @@ public class UserDataCreator {
       masterUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
       masterUserData.append("log \"hdfs configured - nn/dn started\"\n");
     }
-
-    /*
-         * OGE Block @REMOVE :: JK
-     */
-//    if (cfg.isOge()) {
-//      switch (cfg.getMode()) {
-//        case AWS:
-//          masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/public-hostname > /var/lib/gridengine/default/common/act_qmaster\n");
-//          break;
-//        case OPENSTACK:
-//          masterUserData.append("echo $(hostname) > /var/lib/gridengine/default/common/act_qmaster\n");
-//          break;
-//      }
-//
-//      masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
-//      masterUserData.append("ch_p sge_qmaster 10 'sudo service gridengine-master start'\n");
-//      masterUserData.append("log \"gridengine-master configured and started\"\n");
-//    }
-
 
     /* 
          * Mesos Block

@@ -216,6 +216,20 @@ public class SshFactory {
             
         }
         
+        if (cfg.isSpark()) {
+            sb.append("echo SPARK_MASTER_OPTS='-Dspark.ui.reverseProxyUrl=http://").append(master.getPublicIp()).append("/spark/ -Dspark.ui.reverseProxy=true' >> /opt/spark/conf/spark-env.sh\n");
+            sb.append("echo SPARK_WORKER_OPTS='-Dspark.ui.reverseProxyUrl=http://").append(master.getPublicIp()).append("/spark/ -Dspark.ui.reverseProxy=true' >> /opt/spark/conf/spark-env.sh\n");
+            for (CreateClusterOpenstack.Instance slave : slaves) {
+                sb.append("echo ").append(slave.getIp()).append(" >> /opt/spark/conf/slaves\n");
+            }
+            sb.append("sudo /opt/spark/sbin/start-all.sh\n");
+            sb.append("sudo /usr/sbin/a2enconf spark\n");
+                    
+        }
+        
+        sb.append("sudo /usr/sbin/a2enconf result\n");
+        sb.append("sudo service apache2 restart\n");
+        
         sb.append("sudo service gmetad restart \n");
         sb.append("sudo service ganglia-monitor start \n");
         sb.append("echo CONFIGURATION_FINISHED \n");
