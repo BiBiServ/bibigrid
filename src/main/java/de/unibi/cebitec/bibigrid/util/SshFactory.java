@@ -217,8 +217,8 @@ public class SshFactory {
         }
         
         if (cfg.isSpark()) {
-            sb.append("echo SPARK_MASTER_OPTS='-Dspark.ui.reverseProxyUrl=http://").append(master.getPublicIp()).append("/spark/ -Dspark.ui.reverseProxy=true' >> /opt/spark/conf/spark-env.sh\n");
-            sb.append("echo SPARK_WORKER_OPTS='-Dspark.ui.reverseProxyUrl=http://").append(master.getPublicIp()).append("/spark/ -Dspark.ui.reverseProxy=true' >> /opt/spark/conf/spark-env.sh\n");
+            sb.append("echo SPARK_MASTER_OPTS='\"-Dspark.ui.reverseProxyUrl=http://").append(master.getPublicIp()).append("/spark/ -Dspark.ui.reverseProxy=true\"' >> /opt/spark/conf/spark-env.sh\n");
+            sb.append("echo SPARK_WORKER_OPTS='\"-Dspark.ui.reverseProxyUrl=http://").append(master.getPublicIp()).append("/spark/ -Dspark.ui.reverseProxy=true\"' >> /opt/spark/conf/spark-env.sh\n");
             for (CreateClusterOpenstack.Instance slave : slaves) {
                 sb.append("echo ").append(slave.getIp()).append(" >> /opt/spark/conf/slaves\n");
             }
