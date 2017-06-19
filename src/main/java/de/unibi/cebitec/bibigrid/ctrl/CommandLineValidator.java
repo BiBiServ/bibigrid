@@ -340,9 +340,28 @@ public class CommandLineValidator {
                     LOG.info(V, "Spark support enabled.");
                 } else if (value.equalsIgnoreCase("no")) {
                     LOG.info(V, "Spark support disabled.");
-                    this.cfg.setCassandra(false);
+                    this.cfg.setSpark(false);
                 } else {
                     LOG.error("Spark value in properties not recognized. Please use yes/no.");
+                    return false;
+                }
+            }
+            
+            ////////////////////////////////////////////////////////////////////////
+            ///// HDFS on/off /////////////////////////////////////////////////
+            if (cl.hasOption("hdfs")) {
+                cfg.setSpark(true);
+                LOG.info(V, "HDFS support enabled.");
+            } else if (defaults.containsKey("hdfs")) {
+                String value = defaults.getProperty("hdfs");
+                if (value.equalsIgnoreCase("yes")) {
+                    cfg.setHdfs(true);
+                    LOG.info(V, "HDFS support enabled.");
+                } else if (value.equalsIgnoreCase("no")) {
+                    LOG.info(V, "HDFS support disabled.");
+                    cfg.setHdfs(false);
+                } else {
+                    LOG.error("HDFS value in properties not recognized. Please use yes/no.");
                     return false;
                 }
             }

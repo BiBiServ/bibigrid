@@ -20,7 +20,7 @@
             <onMismatch>DENY</onMismatch>
         </filter>
         <encoder>
-            <pattern>%highlight(%-5level): %msg %n</pattern>
+            <pattern>%yellow(%-5level): %msg %n</pattern>
             <!-- http://logback.qos.ch/manual/layouts.html -->
         </encoder>
     </appender>

@@ -548,11 +548,16 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
               configured = true;
             }
             LOG.info(V, "SSH: {}", lineout);
+           
           }
 
           if (stderr.ready()) {
             lineerr = stderr.readLine();
-            LOG.error("SSH: {}", lineerr);
+            if (lineerr.contains("sudo: unable to resolve host")) {
+                LOG.warn(V,"SSH: {}",lineerr);
+            } else {
+                LOG.error("SSH: {}", lineerr);
+            }
           }
 
           Thread.sleep(500);

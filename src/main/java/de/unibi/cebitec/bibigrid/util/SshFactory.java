@@ -209,9 +209,14 @@ public class SshFactory {
         }
         
         if (cfg.isHdfs()) {
+            sb.append("/opt/hadoop/bin/hdfs namenode -format bibigrid 2>&1\n");
+            
+            
             for (CreateClusterOpenstack.Instance slave : slaves) {
                 sb.append("echo ").append(slave.getIp()).append(" >> /opt/hadoop/etc/hadoop/slaves\n");
             }
+            sb.append("/opt/hadoop/sbin/hadoop-daemon.sh --config /opt/hadoop/etc/hadoop/ --script hdfs start namenode\n");
+            sb.append("/opt/hadoop/sbin/hadoop-daemon.sh --config /opt/hadoop/etc/hadoop/ --script hdfs start datanode\n");
             sb.append("/opt/hadoop/sbin/start-dfs.sh\n");
             
         }
