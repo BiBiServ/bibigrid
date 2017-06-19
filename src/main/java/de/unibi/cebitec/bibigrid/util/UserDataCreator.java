@@ -606,7 +606,7 @@ public class UserDataCreator {
       for (Object obj : properties.keySet()) {
           String key = (String)obj;
           sb.append("<property><name>")
-                  .append("")
+                  .append(key)
                   .append("</name><value>")
                   .append(properties.getProperty(key))
                   .append("</value></property>\n");
