@@ -145,9 +145,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     }
     
     if (CONFIGDRIVE) {
-        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, 1 + conf.getMasterInstanceType().getSpec().ephemerals);
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, 1 + conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
     } else {
-        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals);
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
     }
     
     /**
@@ -194,9 +194,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     Map<String, String> snapShotToSlaveMounts = this.conf.getSlaveMounts();
     
     if (CONFIGDRIVE) {
-        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, 1+conf.getMasterInstanceType().getSpec().ephemerals);
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, 1+conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
     } else {
-        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals);     
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);     
     }
         
     /**

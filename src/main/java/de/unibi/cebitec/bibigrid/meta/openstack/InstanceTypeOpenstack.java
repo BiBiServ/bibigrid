@@ -27,8 +27,8 @@ public class InstanceTypeOpenstack extends InstanceType {
         os = OpenStackIntent.buildOSClient(conf);
         for (Flavor f : listFlavors()) {
             if (f.getName().equalsIgnoreCase(type)) {
-                value = f.getName();
-                spec = new InstanceInformation.InstanceSpecification(f.getVcpus(), (f.getEphemeral() == 0) ? 0 : 1, false, false, false);
+                value = f.getName();              
+                spec = new InstanceInformation.InstanceSpecification(f.getVcpus(), (f.getEphemeral() == 0) ? 0 : 1, (f.getSwap() > 0 ), false, false, false);
                 return;
             }
         }
