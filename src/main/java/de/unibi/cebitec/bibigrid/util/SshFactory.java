@@ -227,7 +227,7 @@ public class SshFactory {
             for (CreateClusterOpenstack.Instance slave : slaves) {
                 sb.append("echo ").append(slave.getIp()).append(" >> /opt/spark/conf/slaves\n");
             }
-            sb.append("sudo /opt/spark/sbin/start-all.sh\n");
+            sb.append("/opt/spark/sbin/start-all.sh\n");
             sb.append("sudo /usr/sbin/a2enconf spark\n");
                     
         }
