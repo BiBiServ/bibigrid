@@ -56,7 +56,8 @@ public class UserDataCreator {
     slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
     slaveUserData.append("cat > /home/ubuntu/.ssh/config << SSHCONFIG\n"
-            + "Host ${IPBASE}.*\n"
+//            + "Host ${IPBASE}.*\n"
+            + "Host *\n"
             + "\tCheckHostIP no\n"
             + "\tStrictHostKeyChecking no\n"
             + "\tUserKnownHostsfile /dev/null\n"
@@ -219,7 +220,7 @@ public class UserDataCreator {
        */
       if (cfg.isHdfs()) {
         slaveUserData.append("mkdir -p /vol/scratch/hadoop/dn\n");
-        slaveUserData.append("chown -R hadoop:hadoop /vol/scratch/hadoop\n");
+        slaveUserData.append("chown -R ubuntu:ubuntu /vol/scratch/hadoop\n");
         slaveUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
         slaveUserData.append("log \"hdfs configured and started\"\n");
       }
@@ -325,7 +326,8 @@ public class UserDataCreator {
     masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
     masterUserData.append("cat > /home/ubuntu/.ssh/config << SSHCONFIG\n"
-            + "Host ${IPBASE}.*\n"
+            //+ "Host ${IPBASE}.*\n"
+            + "Host *\n"
             + "\tCheckHostIP no\n"
             + "\tStrictHostKeyChecking no\n"
             + "\tUserKnownHostsfile /dev/null\n"
@@ -427,7 +429,7 @@ public class UserDataCreator {
     if (cfg.isHdfs()) {
       masterUserData.append("mkdir -p /vol/scratch/hadoop/nn\n");
       masterUserData.append("mkdir -p /vol/scratch/hadoop/dn\n");
-      masterUserData.append("chown -R hadoop:hadoop /vol/scratch/hadoop\n");
+      masterUserData.append("chown -R ubuntu:ubuntu /vol/scratch/hadoop\n");
       masterUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
       // core-site.xml configuration
       Properties hdfs_coresite = new Properties();
