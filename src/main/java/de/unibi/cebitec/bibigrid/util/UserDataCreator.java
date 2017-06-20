@@ -438,10 +438,10 @@ public class UserDataCreator {
       hdfs_site.put("dfs.permissions.superusergroup","hadoop");
       hdfs_site.put("dfs.namenode.name.dir","/vol/scratch/hadoop/nn");
       hdfs_site.put("dfs.datanode.data.dir","/vol/scratch/hadoop/dn");
-      masterUserData.append("cat > /opt/hadoop/etc/hadoop/hdfs-site.xml << HDFSSITE\n").append(property2Hadoopcfg(hdfs_coresite)).append("\nHDFSSITE\n");
+      masterUserData.append("cat > /opt/hadoop/etc/hadoop/hdfs-site.xml << HDFSSITE\n").append(property2Hadoopcfg(hdfs_site)).append("\nHDFSSITE\n");
       // env
       masterUserData.append("echo export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 >> /opt/hadoop/etc/hadoop/hadoop-env.sh\n");
-      masterUserData.append("log \"hdfs preconfigured\n");
+      masterUserData.append("log \"hdfs preconfigured\"\n");
     }
 
     /* 
