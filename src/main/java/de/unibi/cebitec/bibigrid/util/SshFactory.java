@@ -11,6 +11,7 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import java.io.Console;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -18,6 +19,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +38,18 @@ public class SshFactory {
 
                 @Override
                 public String getPassphrase() {
-                    return null;
+                    String passphrase = null;
+                    try {
+                        Console console = System.console();                              
+                        passphrase = new String(console.readPassword("Enter passphrase : "));
+                    }catch (NullPointerException e) {
+                        System.err.println("Attention! Your input is not hidden. Console access is not possible, use Scanner class instead ... do you run within an IDE ? ");    
+                        Scanner scanner = new Scanner(System.in);
+                        System.out.println("Enter passphrase :");
+                        passphrase =  scanner.next();
+                    }
+                    return passphrase;
+                    
                 }
 
                 @Override
@@ -51,7 +64,7 @@ public class SshFactory {
 
                 @Override
                 public boolean promptPassphrase(String string) {
-                    return false;
+                    return true;
                 }
 
                 @Override
