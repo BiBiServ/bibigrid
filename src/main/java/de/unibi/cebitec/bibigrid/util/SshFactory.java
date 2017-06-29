@@ -228,8 +228,6 @@ public class SshFactory {
             for (CreateClusterOpenstack.Instance slave : slaves) {
                 sb.append("echo ").append(slave.getIp()).append(" >> /opt/hadoop/etc/hadoop/slaves\n");
             }
-            // sb.append("/opt/hadoop/sbin/hadoop-daemon.sh --config /opt/hadoop/etc/hadoop/ --script hdfs start namenode\n");
-            // sb.append("/opt/hadoop/sbin/hadoop-daemon.sh --config /opt/hadoop/etc/hadoop/ --script hdfs start datanode\n");
             sb.append("/opt/hadoop/sbin/start-dfs.sh\n");
             
         }
@@ -241,6 +239,17 @@ public class SshFactory {
                 sb.append("echo ").append(slave.getIp()).append(" >> /opt/spark/conf/slaves\n");
             }
             sb.append("/opt/spark/sbin/start-all.sh\n");
+            
+            sb.append(" cat << \"A2ENSPARK\" | sudo tee /etc/apache2/conf-available/spark.conf\n")
+                    .append("RewriteEngine On")
+                    .append("ProxyPassMatch \"/spark/(.*)\" \"http://localhost:8080/$1\"\n")
+                    .append("ProxyPassReverse \"/spark/\" \"http://localhost:8080/\"\n")
+                    .append("ProxyPassMatch \"/static/(.*)\" \"http://localhost:8080/static/$\"\n")
+                    .append("ProxyPassReverse \"/static/\" \"http://localhost:8080/static/\"\n")
+                    .append("ProxyPassMatch \"/proxy/(.*)\" \"http://localhost:8080/proxy/$1\"\n")
+                    .append("ProxyPassReverse \"/proxy/\" \"http://localhost:8080/proxy/\"\n")
+                    .append("A2ENSPARK\n");
+            
             sb.append("sudo /usr/sbin/a2enconf spark\n");
                     
         }
