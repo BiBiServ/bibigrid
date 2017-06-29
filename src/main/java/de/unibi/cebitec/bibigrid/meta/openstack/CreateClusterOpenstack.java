@@ -373,9 +373,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
       }
 
       //boot slave instances ...
-      //List<String> slaveIDs = new ArrayList<>(); // temporary list
       for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
-        // ServerCreated createdSlave = serverApi.create("bibigrid-slave-" + (slave + 1) + "-" + clusterId, slaveImage, slaveFlavor.getId(), slaveOptions);
         sc = Builders.server()
                 .name("bibigrid-slave-" + (i + 1) + "-" + clusterId)
                 .flavor(slaveFlavor.getId())
@@ -390,7 +388,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                         conf,
                         environment.getKeypair()))
                 .configDrive(CONFIGDRIVE)
-                .networks(Arrays.asList(environment.getNetwork().getId()))
+                .networks(Arrays.asList(environment.getNetwork().getId()))             
                 .build();
         Server tmp = os.compute().servers().boot(sc);
         Instance tmp_instance = new Instance(tmp.getId());
