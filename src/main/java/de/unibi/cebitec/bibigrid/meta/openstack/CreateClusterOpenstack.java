@@ -68,7 +68,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
   public static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
   public static final String SUBNET_PREFIX = PREFIX + "subnet-";
 
-  public static final long WAITTIME = 5000;
+  public static final long WAITTIME = 2000;
   
   public static final boolean CONFIGDRIVE = true;
 
@@ -321,11 +321,11 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
       // wait for master available       
       do {
-        if (checkforServerAndUpdateInstance(server.getId(), master)) {
+        checkforServerAndUpdateInstance(server.getId(), master);
           if (!master.isActive()) { // if not yet active wait ....
             sleep();
-          }
-        } else { // error case
+        } else if (master.hasError()){
+            // if the master fails we can do nothing and must shutdown everything
           return false;
         }
       } while (!master.isActive());
@@ -405,33 +405,43 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
       // check     
       int active = 0;
-      while (slaves.size() != active) {
+      List<String> ignoreList = new ArrayList<>();
+      while (slaves.size() != active + ignoreList.size()) {
         // wait for some seconds to not overload REST API
         sleep();
         // get fresh server object for given server id
         for (Instance slave : slaves.values()) {
           //ignore if instance is already active ...
-          if (!slave.isActive()) {
+          if (!slave.isActive() || !slave.hasError()) {
             // check server status
-            if (checkforServerAndUpdateInstance(slave.getId(), slave)) {
+            checkforServerAndUpdateInstance(slave.getId(), slave);
               if (slave.isActive()) {
+                LOG.info("[{}/{}] Instance {} is active !",active,slaves.size(), slave.getHostname());
                 active++;
+              } else if (slave.hasError()){
+                  LOG.warn("Ignore slave instance '{}' ",slave.getHostname());
+                  ignoreList.add(slave.getHostname());
               } else {
                 sleep();
               }
-            } else { // error case
-              return false;
-            }
-
           }
         }
       }
+      
+      // remove ignored instances from slave map
+      for (String name : ignoreList){
+          slaves.remove(name);     
+      }
+      
+      
+      
       LOG.info(V, "Wait for slave network configuration finished ...");
       // wait for slave network finished ... update server instance list            
       for (Instance slave : slaves.values()) {
-        slave.setIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
-        
-        slave.updateNeutronHostname();
+          
+            slave.setIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
+            slave.updateNeutronHostname();
+          
       }
       /* @ToDo: 
                 Mount a volume to slave instance 
@@ -663,6 +673,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
   public class Instance {
 
     private boolean active = false;
+    private boolean error = false;
 
     private String id, ip, publicIp;
 
@@ -730,6 +741,14 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
 
     public void setActive(boolean active) {
       this.active = active;
+    }
+    
+    public boolean hasError() {
+        return error;
+    }
+    
+    public void setError(boolean error) {
+        this.error = error;
     }
 
   }
@@ -855,7 +874,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
    * @param instance
    * @return
    */
-  private boolean checkforServerAndUpdateInstance(String id, Instance instance) {
+  private void checkforServerAndUpdateInstance(String id, Instance instance) {
     Server si = os.compute().servers().get(id);
 
     // check for status available ...
@@ -866,10 +885,12 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
           instance.setActive(true);
           instance.setId(si.getId());
           instance.setHostname(si.getName());
-          LOG.info("Instance {} is active !", si.getName());
+         
           break;
         case ERROR:
-          // check and [rint error anything goes wrong,
+          // check and print error anything goes wrong,
+          instance.setError(true);
+          instance.setHostname(si.getName());
           Fault fault = si.getFault();
           if (fault != null) {
             LOG.error("Launch {} failed without message!", si.getName());
@@ -877,7 +898,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             LOG.error("Launch {} failed with Code {} :: {}", si.getName(), fault.getCode(), fault.getMessage());
 
           }
-          return false;
+          break;
 
         default:
           // other non critical state ... just wait
@@ -886,7 +907,6 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     } else {
       LOG.warn(V, "Status  of instance {} not available (== null)", si.getId());
     }
-    return true;
   }
 
   private void sleep() {
