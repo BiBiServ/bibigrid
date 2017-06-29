@@ -241,10 +241,10 @@ public class SshFactory {
             sb.append("/opt/spark/sbin/start-all.sh\n");
             
             sb.append(" cat << \"A2ENSPARK\" | sudo tee /etc/apache2/conf-available/spark.conf\n")
-                    .append("RewriteEngine On")
+                    .append("RewriteEngine On\n")
                     .append("ProxyPassMatch \"/spark/(.*)\" \"http://localhost:8080/$1\"\n")
                     .append("ProxyPassReverse \"/spark/\" \"http://localhost:8080/\"\n")
-                    .append("ProxyPassMatch \"/static/(.*)\" \"http://localhost:8080/static/$\"\n")
+                    .append("ProxyPassMatch \"/static/(.*)\" \"http://localhost:8080/static/$1\"\n")
                     .append("ProxyPassReverse \"/static/\" \"http://localhost:8080/static/\"\n")
                     .append("ProxyPassMatch \"/proxy/(.*)\" \"http://localhost:8080/proxy/$1\"\n")
                     .append("ProxyPassReverse \"/proxy/\" \"http://localhost:8080/proxy/\"\n")
