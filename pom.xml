@@ -55,7 +55,12 @@
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud</artifactId>
-            <version>0.13.0-alpha</version>
+            <version>0.20.1-alpha</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>22.0</version>
         </dependency>
 
         <!-- AWS Support -->
