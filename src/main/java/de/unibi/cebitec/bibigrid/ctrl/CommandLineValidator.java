@@ -409,7 +409,7 @@ public class CommandLineValidator {
                             masterType = new InstanceTypeOpenstack(cfg, masterTypeString.trim());
                             break;
                         case GOOGLECLOUD:
-                            masterType = new InstanceTypeGoogleCloud(masterTypeString.trim());
+                            masterType = new InstanceTypeGoogleCloud(cfg, masterTypeString.trim());
                             break;
                     }
                     this.cfg.setMasterInstanceType(masterType);
@@ -456,7 +456,7 @@ public class CommandLineValidator {
                             slaveType = new InstanceTypeOpenstack(cfg, slaveTypeString.trim());
                             break;
                         case GOOGLECLOUD:
-                            slaveType = new InstanceTypeGoogleCloud(slaveTypeString.trim());
+                            slaveType = new InstanceTypeGoogleCloud(cfg, slaveTypeString.trim());
                             break;
                     }
 

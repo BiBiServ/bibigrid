@@ -1,6 +1,6 @@
 package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
-import com.google.api.gax.core.Page;
+import com.google.api.gax.paging.Page;
 import com.google.cloud.compute.*;
 import de.unibi.cebitec.bibigrid.meta.ListIntent;
 import de.unibi.cebitec.bibigrid.model.Cluster;
@@ -69,7 +69,8 @@ public class ListIntentGoogleCloud implements ListIntent {
             instancePage = compute.listInstances();
         }
         for (Instance i : instancePage.iterateAll()) {
-            if (i.getStatus() == InstanceInfo.Status.STAGING // TODO: also PROVISIONING?
+            if (i.getStatus() == InstanceInfo.Status.PROVISIONING
+                    || i.getStatus() == InstanceInfo.Status.STAGING
                     || i.getStatus() == InstanceInfo.Status.RUNNING
                     || i.getStatus() == InstanceInfo.Status.STOPPING
                     || i.getStatus() == InstanceInfo.Status.TERMINATED) {
@@ -97,7 +98,7 @@ public class ListIntentGoogleCloud implements ListIntent {
                 // master//slave instance ?
                 if (name != null && name.contains("master-")) {
                     if (cluster.getMasterinstance() == null) {
-                        cluster.setMasterinstance(i.getInstanceId().toString());
+                        cluster.setMasterinstance(i.getInstanceId().getInstance());
 
                         cluster.setStarted(dateformatter.format(new Date(i.getCreationTimestamp())));
                     } else {
@@ -105,7 +106,7 @@ public class ListIntentGoogleCloud implements ListIntent {
                         System.exit(1);
                     }
                 } else {
-                    cluster.addSlaveInstance(i.getInstanceId().toString());
+                    cluster.addSlaveInstance(i.getInstanceId().getInstance());
                 }
 
                 //keyname - should be always the same for all instances of one cluster

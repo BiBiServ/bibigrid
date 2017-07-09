@@ -49,6 +49,7 @@ public class UserDataCreator {
 
     /* Save currentIP as env var */
     slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+    // TODO: Google cloud, check if the current ip can be obtained this way!
 
     slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
@@ -88,6 +89,9 @@ public class UserDataCreator {
         blockDeviceBase = "/dev/xvd";
         break;
       case OPENSTACK:
+        blockDeviceBase = "/dev/vd";
+        break;
+      case GOOGLECLOUD:
         blockDeviceBase = "/dev/vd";
         break;
     }
@@ -242,11 +246,14 @@ public class UserDataCreator {
         break;
       case OPENSTACK:
         break;
+      case GOOGLECLOUD:
+        // TODO: Google Cloud
+        break;
     }
 
 
     /* 
-         * Mesos Block
+     * Mesos Block
      */
     if (cfg.isMesos()) {
 
@@ -262,7 +269,7 @@ public class UserDataCreator {
     }
 
     /*
-         * Early Execute Script for Slave
+     * Early Execute Script for Slave
      */
     if (cfg.getEarlySlaveShellScriptFile() != null) {
       try {
@@ -327,7 +334,7 @@ public class UserDataCreator {
     masterUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
 
     /*
-         * Ephemeral/RAID Preperation
+     * Ephemeral/RAID Preperation
      */
     String blockDeviceBase = DeviceMapper.getBlockDeviceBase(cfg.getMode());
     // if 1 ephemeral is available mount it as /vol/spool
@@ -392,7 +399,7 @@ public class UserDataCreator {
     }
 
     /*
-         * create spool, scratch, log
+     * create spool, scratch, log
      */
     masterUserData.append("mkdir -p /vol/spool/log\n");
     masterUserData.append("mkdir -p /vol/scratch/\n");
@@ -405,7 +412,7 @@ public class UserDataCreator {
     masterUserData.append("chmod 775 /var/log/bibigrid\n");
 
     /*
-         * Cassandra Bloock
+     * Cassandra Bloock
      */
     if (cfg.isCassandra()) {
       masterUserData.append("mkdir -p /vol/scratch/cassandra\n");
@@ -415,7 +422,7 @@ public class UserDataCreator {
     }
 
     /*
-         * HDFS Block
+     * HDFS Block
      */
     if (cfg.isHdfs()) {
       masterUserData.append("mkdir -p /vol/scratch/hadoop/nn\n");
@@ -426,7 +433,7 @@ public class UserDataCreator {
     }
 
     /*
-         * OGE Block
+     * OGE Block
      */
     if (cfg.isOge()) {
       switch (cfg.getMode()) {
@@ -435,6 +442,9 @@ public class UserDataCreator {
           break;
         case OPENSTACK:
           masterUserData.append("echo $(hostname) > /var/lib/gridengine/default/common/act_qmaster\n");
+          break;
+        case GOOGLECLOUD:
+          // TODO: Google Cloud
           break;
       }
 
@@ -445,7 +455,7 @@ public class UserDataCreator {
 
 
     /* 
-         * Mesos Block
+     * Mesos Block
      */
     if (cfg.isMesos()) {
       // start zookeeper
@@ -481,7 +491,7 @@ public class UserDataCreator {
     }
 
     /*
-         * NFS//Mounts Block
+     * NFS//Mounts Block
      */
     if (cfg.isNfs()) {
 
@@ -526,10 +536,13 @@ public class UserDataCreator {
       case OPENSTACK:
         // currently nothing todo
         break;
+      case GOOGLECLOUD:
+        // TODO: Google Cloud
+        break;
 
     }
     /*
-         * Early Execute Script
+     * Early Execute Script
      */
     if (cfg.getEarlyMasterShellScriptFile() != null) {
       try {
@@ -570,14 +583,14 @@ public class UserDataCreator {
             .append("\t\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
             .append("\tdone\n")
             .append("}\n");
+
     sb.append("function ch_f {\n"
             + "\twhile [ ! -f ${1} ]; do\n"
             + "\t\tlog \"wait for file ${1}\"\n"
             + "\t\tsleep 2\n"
             + "\tdone\n"
             + "}\n");
-            
-    
+
     sb.append("function ch_p {\n")
             .append("\twhile [ $(ps -e | grep ${1} | wc -l) != '1' ]; do\n")
             .append("\t\t${3}\n")
@@ -586,7 +599,5 @@ public class UserDataCreator {
             .append("\t\tlog \"$(ps -e | grep ${1})\"\n")
             .append("\tdone;\n")
             .append("}\n");
-    
-
   }
 }

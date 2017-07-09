@@ -32,7 +32,7 @@ public class ValidationIntent extends Intent {
             case OPENSTACK:
                 return Arrays.asList(new String[]{"ch", "m", "M", "s", "S", "n", "u", "k", "i", "e", "z", "g", "r", "b", "ost", "osu", "osp", "ose"});
             case GOOGLECLOUD:
-                return Arrays.asList("ch"); // TODO: Google Cloud
+                return Arrays.asList("ch", "M", "S");
         }
         return null;
     }

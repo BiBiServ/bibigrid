@@ -127,7 +127,9 @@ public class DeviceMapper {
                
             case OPENSTACK:
                 return "/dev/vd";
-                
+
+            case GOOGLECLOUD:
+                return "/dev/vd";
         }
         return null;
     }

@@ -29,7 +29,7 @@ public class CreateIntent extends Intent {
             case OPENSTACK:
                 return Arrays.asList(new String[]{"m", "M", "s", "S", "n",  "k", "i", "e", "z", "g", "r", "b", "osu", "ost", "osp", "ose"});
             case GOOGLECLOUD:
-                return Arrays.asList("m", "s"); // TODO: Google Cloud
+                return Arrays.asList("m", "M", "s", "S", "k", "z"); // TODO: Google Cloud
         }
         return null;
     }
