@@ -30,6 +30,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
     private KEYPAIR keypair;
     private Network vpc;
     private Subnetwork subnet;
+    private String masterIP;
 
     CreateClusterEnvironmentGoogleCloud(final CreateClusterGoogleCloud cluster) {
         this.cluster = cluster;
@@ -92,10 +93,10 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         // create security group with full internal access / ssh from outside
         log.info("Creating security group...");
 
-        /* TODO
-        // MASTERIP
-        MASTERIP = SubNets.getFirstIP(subnet.getCidrBlock());
+        // Master IP
+        masterIP = SubNets.getFirstIP(subnet.getCidrBlock());
 
+        /* TODO: currently not available in the java api!
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());
 
         tcp     22  22      0.0.0.0/0
@@ -107,9 +108,6 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
             tcp     port.number     port.number     port.iprange
             udp     port.number     port.number     port.iprange
         }
-
-        AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();
-        ruleChangerReq.withGroupId(secReqResult.getGroupId()).withIpPermissions(allIpPermissions);
         */
         return this;
     }
@@ -124,5 +122,9 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
 
     public Subnetwork getSubnet() {
         return subnet;
+    }
+
+    String getMasterIP() {
+        return masterIP;
     }
 }

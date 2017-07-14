@@ -1,16 +1,24 @@
 package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
 import com.google.cloud.compute.*;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.util.DeviceMapper;
+import de.unibi.cebitec.bibigrid.util.JSchLogger;
+import de.unibi.cebitec.bibigrid.util.SshFactory;
 import de.unibi.cebitec.bibigrid.util.UserDataCreator;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -25,12 +33,15 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoogleCloud, CreateClusterEnvironmentGoogleCloud> {
     private static final Logger log = LoggerFactory.getLogger(CreateClusterGoogleCloud.class);
     private static final String PREFIX = "bibigrid-";
-    public static final String SUBNET_PREFIX = PREFIX + "subnet-";
+    static final String SUBNET_PREFIX = PREFIX + "subnet-";
+    private static final String MASTER_SSH_USER = "ubuntu";
     private final Configuration conf;
 
     private Compute compute;
     private Instance masterInstance;
     private List<Instance> slaveInstances;
+    private String base64MasterUserData;
+    private List<NetworkInterface> masterNetworkInterfaces, slaveNetworkInterfaces;
     private CreateClusterEnvironmentGoogleCloud environment;
     private String bibigridid, username;
     private String clusterId;
@@ -59,7 +70,53 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
     }
 
     public CreateClusterGoogleCloud configureClusterMasterInstance() {
-        // TODO: stub
+        // done for master. More volume description later when master is running
+
+        // preparing blockdevicemappings for master
+        Map<String, String> masterSnapshotToMountPointMap = conf.getMasterMounts();
+        int ephemerals = conf.getMasterInstanceType().getSpec().ephemerals;
+        DeviceMapper masterDeviceMapper = new DeviceMapper(conf.getMode(), masterSnapshotToMountPointMap, ephemerals);
+        /* TODO
+        masterDeviceMappings = new ArrayList<>();
+        // create Volumes first
+        if (!conf.getMasterMounts().isEmpty()) {
+            log.info(V, "Defining master volumes");
+            masterDeviceMappings = createBlockDeviceMappings(masterDeviceMapper);
+        }
+
+        List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
+        for (int i = 0; i < conf.getMasterInstanceType().getSpec().ephemerals; ++i) {
+            BlockDeviceMapping temp = new BlockDeviceMapping();
+            String virtualName = "ephemeral" + i;
+            String deviceName = "/dev/sd" + ephemeral(i);
+            temp.setVirtualName(virtualName);
+            temp.setDeviceName(deviceName);
+            ephemeralList.add(temp);
+        }
+
+        masterDeviceMappings.addAll(ephemeralList);
+        */
+
+        base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair());
+
+        log.info(V, "Master UserData:\n {}", new String(Base64.decodeBase64(base64MasterUserData)));
+
+        // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
+        masterNetworkInterfaces = new ArrayList<>();
+
+        NetworkInterface.Builder inis = NetworkInterface.newBuilder(environment.getSubnet().getNetwork());
+        inis.setSubnetwork(environment.getSubnet().getSubnetworkId())
+                .setAccessConfigurations(NetworkInterface.AccessConfig.of(environment.getMasterIP()));
+        // TODO .withAssociatePublicIpAddress(true)
+
+        masterNetworkInterfaces.add(inis.build()); // add eth0
+
+        slaveNetworkInterfaces = new ArrayList<>();
+        inis = NetworkInterface.newBuilder(environment.getSubnet().getNetwork());
+        inis.setSubnetwork(environment.getSubnet().getSubnetworkId());
+        // TODO .withAssociatePublicIpAddress(conf.isPublicSlaveIps())
+        slaveNetworkInterfaces.add(inis.build());
+
         return this;
     }
 
@@ -67,7 +124,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = conf.getSlaveMounts();
         int ephemerals = conf.getSlaveInstanceType().getSpec().ephemerals;
-        slaveDeviceMapper = new DeviceMapper(conf.getMode(),snapShotToSlaveMounts, ephemerals);
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, ephemerals);
         /* TODO
         slaveBlockDeviceMappings = new ArrayList<>();
         // configure volumes first ...
@@ -100,7 +157,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         String masterInstanceName = PREFIX + "master-" + clusterId;
         InstanceInfo.Builder masterBuilder = GoogleCloudUtils.getInstanceBuilder(conf.getMasterImage(),
                 zone, masterInstanceName, conf.getMasterInstanceType().getValue())
-                //.setNetworkInterfaces() // TODO
+                .setNetworkInterfaces(masterNetworkInterfaces)
                 .setTags(Tags.of(bibigridid, username, "Name:" + masterInstanceName))
                 .setMetadata(Metadata.newBuilder().add("startup-script", base64MasterUserData).build());
         // TODO .withBlockDeviceMappings(masterDeviceMappings)
@@ -133,7 +190,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
                 InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(conf.getSlaveImage(),
                         zone, slaveInstanceId, conf.getSlaveInstanceType().getValue())
-                        //.setNetworkInterfaces() // TODO
+                        .setNetworkInterfaces(slaveNetworkInterfaces)
                         .setTags(Tags.of(bibigridid, username, "Name:" + slaveInstanceName))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
                 // TODO .withBlockDeviceMappings(slaveBlockDeviceMappings)
@@ -243,7 +300,99 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
     }
 
     private void configureMaster() {
-        // TODO: stub
+        JSch ssh = new JSch();
+        JSch.setLogger(new JSchLogger());
+
+        // Building Command
+        log.info("Now configuring ...");
+        String execCommand = SshFactory.buildSshCommandGoogleCloud(clusterId, getConfig(), masterInstance, slaveInstances);
+
+        log.info(V, "Building SSH-Command : {}", execCommand);
+
+        boolean uploaded = false;
+        boolean configured = false;
+
+        int ssh_attempts = 25; // TODO attempts
+        while (!configured && ssh_attempts > 0) {
+            try {
+
+                ssh.addIdentity(getConfig().getIdentityFile().toString());
+                log.info("Trying to connect to master ({})...", ssh_attempts);
+                Thread.sleep(4000);
+
+                // Create new Session to avoid packet corruption.
+                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIpAddress(), MASTER_SSH_USER, getConfig().getIdentityFile());
+
+                // Start connect attempt
+                sshSession.connect();
+                log.info("Connected to master!");
+
+                //if (!uploaded || ssh_attempts > 0) {
+                //    String remoteDirectory = "/home/ubuntu/.ssh";
+                //    String filename = "id_rsa";
+                //    String localFile = getConfiguration().getIdentityFile().toString();
+                //    log.info(V, "Uploading key");
+                //    ChannelSftp channelPut = (ChannelSftp) sshSession.openChannel("sftp");
+                //    channelPut.connect();
+                //    channelPut.cd(remoteDirectory);
+                //    channelPut.put(new FileInputStream(localFile), filename);
+                //    channelPut.disconnect();
+                //    log.info(V, "Upload done");
+                //    uploaded = true;
+                //}
+                ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
+
+                BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+                BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
+
+                channel.setCommand(execCommand);
+
+                log.info(V, "Connecting ssh channel...");
+                channel.connect();
+
+                String lineout = null, lineerr = null;
+
+                while (((lineout = stdout.readLine()) != null) || ((lineerr = stderr.readLine()) != null)) {
+
+                    if (lineout != null) {
+                        if (lineout.contains("CONFIGURATION_FINISHED")) {
+                            configured = true;
+                        }
+                        log.info(V, "SSH: {}", lineout);
+                    }
+
+                    //if (lineerr != null) {
+                    if (lineerr != null && !configured) {
+                        log.error(V, "SSH: {}", lineerr);
+                    }
+                    //if (channel.isClosed() || configured) {
+                    if (channel.isClosed() && configured) {
+                        log.info(V, "SSH: exit-status: {}", channel.getExitStatus());
+                        configured = true;
+                    }
+
+                    Thread.sleep(2000);
+                }
+                if (configured) {
+                    channel.disconnect();
+                    sshSession.disconnect();
+                }
+            } catch (IOException | JSchException e) {
+                ssh_attempts--;
+                if (ssh_attempts == 0) {
+                    log.error(V, "SSH: {}", e);
+                }
+
+                //try {
+                //    Thread.sleep(2000);
+                //} catch (InterruptedException ex) {
+                //    log.error("Interrupted ...");
+                //}
+            } catch (InterruptedException ex) {
+                log.error("Interrupted ...");
+            }
+        }
+        log.info(I, "Master instance has been configured.");
     }
 
     public Configuration getConfig() {

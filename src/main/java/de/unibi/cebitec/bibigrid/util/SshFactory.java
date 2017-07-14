@@ -122,6 +122,12 @@ public class SshFactory {
         return sb.toString();
     }
 
+    public static String buildSshCommandGoogleCloud(String asGroupName, Configuration cfg,
+                                                    com.google.cloud.compute.Instance masterInstance,
+                                                    List<com.google.cloud.compute.Instance> slaveInstances) {
+        // TODO: stub
+    }
+
     public static String buildSshCommandOpenstack(String asGroupName, Configuration cfg, CreateClusterOpenstack.Instance master, Collection<CreateClusterOpenstack.Instance> slaves) {
         StringBuilder sb = new StringBuilder();
         
