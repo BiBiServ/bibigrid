@@ -23,11 +23,11 @@ public class TerminateIntent extends Intent {
     public List<String> getRequiredOptions(MODE mode) {
         switch (mode) {
             case AWS:
-                return Arrays.asList(new String[]{"t", "e", "a"});
+                return Arrays.asList("t", "e", "a");
             case OPENSTACK:
-                return Arrays.asList(new String[]{"t", "e", "osu", "ost", "osp", "ose"});
+                return Arrays.asList("t", "e", "osu", "ost", "osp", "ose");
             case GOOGLECLOUD:
-                return Arrays.asList("t"); // TODO: Google Cloud
+                return Arrays.asList("t", "e");
         }
         return null;
     }

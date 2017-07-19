@@ -17,7 +17,7 @@ import java.util.Map;
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-final class GoogleCloudUtils {
+public final class GoogleCloudUtils {
     private static final Logger log = LoggerFactory.getLogger(GoogleCloudUtils.class);
     private static final String METADATA_SSH_KEYS = "ssh-keys";
 
@@ -32,6 +32,14 @@ final class GoogleCloudUtils {
             return null;
         }
         return optionsBuilder.build().getService();
+    }
+
+    /**
+     * Get the internal fully qualified domain name (FQDN) for an instance.
+     * https://cloud.google.com/compute/docs/vpc/internal-dns#instance_fully_qualified_domain_names
+     */
+    public static String getInstanceFQDN(Instance instance) {
+        return getInstanceFQDN(instance.getInstanceId().getProject(), instance.getInstanceId().getInstance());
     }
 
     /**

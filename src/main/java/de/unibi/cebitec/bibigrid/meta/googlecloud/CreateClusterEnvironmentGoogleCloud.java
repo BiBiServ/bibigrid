@@ -50,7 +50,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         if (vpc == null) {
             throw new ConfigurationException("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
         } else {
-            log.info(V, "Use VPC {} ({})%n", vpc.getNetworkId().getNetwork(), vpc.getCidrBlock());
+            log.info(V, "Use VPC {}%n", vpc.getNetworkId().getNetwork());
         }
         return this;
     }
@@ -73,7 +73,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
                 listofUsedCidr.add(sn.getIpRange());
             }
         }
-        SubNets subnets = new SubNets(vpc.getCidrBlock(), 24);
+        SubNets subnets = new SubNets(listofUsedCidr.get(0), 24);
         String subnetCidr = subnets.nextCidr(listofUsedCidr);
         log.debug(V, "Use {} for generated SubNet.", subnetCidr);
 
@@ -94,7 +94,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         log.info("Creating security group...");
 
         // Master IP
-        masterIP = SubNets.getFirstIP(subnet.getCidrBlock());
+        masterIP = SubNets.getFirstIP(subnet.getIpRange());
 
         /* TODO: currently not available in the java api!
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());

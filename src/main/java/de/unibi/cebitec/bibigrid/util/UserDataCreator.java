@@ -48,8 +48,15 @@ public class UserDataCreator {
     shellFct(slaveUserData);
 
     /* Save currentIP as env var */
-    slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
-    // TODO: Google cloud, check if the current ip can be obtained this way!
+    switch (cfg.getMode()) {
+      case AWS:
+      case OPENSTACK:
+        slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+        break;
+      case GOOGLECLOUD:
+        slaveUserData.append("IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H \"Metadata-Flavor: Google\")\n");
+        break;
+    }
 
     slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
@@ -247,7 +254,10 @@ public class UserDataCreator {
       case OPENSTACK:
         break;
       case GOOGLECLOUD:
-        // TODO: Google Cloud
+        if (!cfg.isPublicSlaveIps()) {
+          slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
+          slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
+        }
         break;
     }
 
@@ -444,7 +454,7 @@ public class UserDataCreator {
           masterUserData.append("echo $(hostname) > /var/lib/gridengine/default/common/act_qmaster\n");
           break;
         case GOOGLECLOUD:
-          // TODO: Google Cloud
+          masterUserData.append("curl http://metadata.google.internal/computeMetadata/v1/instance/hostname -H \"Metadata-Flavor: Google\" > /var/lib/gridengine/default/common/act_qmaster\n");
           break;
       }
 
@@ -539,7 +549,6 @@ public class UserDataCreator {
       case GOOGLECLOUD:
         // TODO: Google Cloud
         break;
-
     }
     /*
      * Early Execute Script

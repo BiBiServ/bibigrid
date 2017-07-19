@@ -9,6 +9,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
+import de.unibi.cebitec.bibigrid.meta.googlecloud.GoogleCloudUtils;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import java.io.IOException;
@@ -125,7 +126,55 @@ public class SshFactory {
     public static String buildSshCommandGoogleCloud(String asGroupName, Configuration cfg,
                                                     com.google.cloud.compute.Instance masterInstance,
                                                     List<com.google.cloud.compute.Instance> slaveInstances) {
-        // TODO: stub
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
+
+        if (cfg.getShellScriptFile() != null) {
+            try {
+                List<String> lines = Files.readAllLines(cfg.getShellScriptFile(), StandardCharsets.UTF_8);
+                sb.append("cat > shellscript.sh << EOFCUSTOMSCRIPT \n");
+
+                for (String e : lines) {
+                    sb.append(e);
+                    sb.append("\n");
+                }
+                sb.append("\nEOFCUSTOMSCRIPT\n");
+                sb.append("bash shellscript.sh &> shellscript.log &\n");
+            } catch (IOException e) {
+                log.info("Shell script could not be read.");
+            }
+        }
+
+        if (cfg.isOge()) {
+            sb.append("qconf -as $(hostname)\n");
+            // clean-up possible previous configuration (could be happend if you use a configured masterimage snapshot as image)
+            sb.append("for i in `qconf -sel 2>/dev/null`; do qconf -dattr hostgroup hostlist $i \\@allhosts 2>&1; qconf -de $i 2>&1; done;\n");
+
+            if (cfg.isUseMasterAsCompute()) {
+                sb.append("./add_exec ");
+                sb.append(GoogleCloudUtils.getInstanceFQDN(masterInstance));
+                sb.append(" ");
+                sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
+                sb.append("\n");
+                sb.append("sudo service gridengine-exec start\n");
+            }
+            if (slaveInstances != null) {
+                for (com.google.cloud.compute.Instance instance : slaveInstances) {
+                    sb.append("./add_exec ");
+                    sb.append(GoogleCloudUtils.getInstanceFQDN(instance));
+                    sb.append(" ");
+                    sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
+                    sb.append("\n");
+                }
+            }
+        } else {
+            sb.append("sudo service gridengine-master stop\n");
+        }
+        sb.append("sudo service gmetad restart \n");
+        sb.append("sudo service ganglia-monitor restart \n");
+        sb.append("echo CONFIGURATION_FINISHED \n");
+        return sb.toString();
     }
 
     public static String buildSshCommandOpenstack(String asGroupName, Configuration cfg, CreateClusterOpenstack.Instance master, Collection<CreateClusterOpenstack.Instance> slaves) {

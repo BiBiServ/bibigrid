@@ -174,7 +174,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
 
         String masterPrivateIp = GoogleCloudUtils.getInstancePrivateIp(masterInstance);
         String masterPublicIp = GoogleCloudUtils.getInstancePublicIp(masterInstance);
-        String masterDnsName = GoogleCloudUtils.getInstanceFQDN(conf.getGoogleProjectId(), masterInstanceName);
+        String masterDnsName = GoogleCloudUtils.getInstanceFQDN(masterInstance);
 
         // run slave instances and supply userdata
         if (conf.getSlaveInstanceCount() > 0) {
@@ -235,7 +235,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         if (conf.getGridPropertiesFile() != null) {
             Properties gp = new Properties();
             gp.setProperty("BIBIGRID_MASTER", masterPublicIp);
-            gp.setProperty("IdentityFile", conf.getIdentityFile().toString()); // TODO: used?
+            gp.setProperty("IdentityFile", conf.getIdentityFile().toString());
             gp.setProperty("clusterId", clusterId);
             if (conf.isAlternativeConfigFile()) {
                 gp.setProperty("AlternativeConfigFile", conf.getAlternativeConfigPath());
