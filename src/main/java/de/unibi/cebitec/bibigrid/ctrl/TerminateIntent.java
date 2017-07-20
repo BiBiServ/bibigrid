@@ -27,7 +27,7 @@ public class TerminateIntent extends Intent {
             case OPENSTACK:
                 return Arrays.asList("t", "e", "osu", "ost", "osp", "ose");
             case GOOGLECLOUD:
-                return Arrays.asList("t", "e");
+                return Arrays.asList("t", "e", "gcf", "gpid");
         }
         return null;
     }
