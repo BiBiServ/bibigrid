@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -106,14 +107,25 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
 
         NetworkInterface.Builder inis = NetworkInterface.newBuilder(environment.getSubnet().getNetwork());
         inis.setSubnetwork(environment.getSubnet().getSubnetworkId())
-                .setAccessConfigurations(NetworkInterface.AccessConfig.of(environment.getMasterIP()));
-        // TODO .withAssociatePublicIpAddress(true)
+                .setAccessConfigurations(NetworkInterface.AccessConfig.newBuilder()
+                        .setType(NetworkInterface.AccessConfig.Type.ONE_TO_ONE_NAT)
+                        .setName("external-nat")
+                        .build());
+        // Currently only accessible through reflection. Should be public according to docs...
+        try {
+            Method m = NetworkInterface.Builder.class.getDeclaredMethod("setNetworkIp", String.class);
+            m.setAccessible(true);
+            m.invoke(inis, environment.getMasterIP());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         masterNetworkInterfaces.add(inis.build()); // add eth0
 
         slaveNetworkInterfaces = new ArrayList<>();
         inis = NetworkInterface.newBuilder(environment.getSubnet().getNetwork());
         inis.setSubnetwork(environment.getSubnet().getSubnetworkId());
+        // TODO: private-ip-google-accesss?
         // TODO .withAssociatePublicIpAddress(conf.isPublicSlaveIps())
         slaveNetworkInterfaces.add(inis.build());
 
@@ -321,7 +333,11 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 Thread.sleep(4000);
 
                 // Create new Session to avoid packet corruption.
-                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIpAddress(), MASTER_SSH_USER, getConfig().getIdentityFile());
+                Session sshSession = SshFactory.createNewSshSession(ssh,
+                        masterInstance.getNetworkInterfaces().get(0)
+                                .getAccessConfigurations().get(0)
+                                .getNatIp(),
+                        MASTER_SSH_USER, getConfig().getIdentityFile());
 
                 // Start connect attempt
                 sshSession.connect();
