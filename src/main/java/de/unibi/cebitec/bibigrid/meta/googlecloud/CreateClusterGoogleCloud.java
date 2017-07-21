@@ -179,7 +179,8 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         // Waiting for master instance to run
         log.info("Waiting for master instance to finish booting ...");
         Operation createMasterOperation = compute.create(masterBuilder.build());
-        masterInstance = waitForInstances(Collections.singletonList(createMasterOperation)).get(0);
+        masterInstance = waitForInstances(Collections.singletonList(InstanceId.of(zone, masterInstanceName)),
+                Collections.singletonList(createMasterOperation)).get(0);
         log.info(I, "Master instance is now running!");
 
         waitForStatusCheck("master", Collections.singletonList(masterInstance));
@@ -196,6 +197,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
             base64SlaveUserData = new String(Base64.decodeBase64(base64SlaveUserData));
             log.info(V, "Slave Userdata:\n{}", base64SlaveUserData);
 
+            List<InstanceId> slaveInstanceIds = new ArrayList<>();
             List<Operation> slaveInstanceOperations = new ArrayList<>();
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
                 String slaveInstanceName = PREFIX + "slave-" + clusterId;
@@ -210,10 +212,11 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
 
                 Operation createSlaveOperation = compute.create(slaveBuilder.build());
+                slaveInstanceIds.add(InstanceId.of(zone, slaveInstanceId));
                 slaveInstanceOperations.add(createSlaveOperation);
             }
             log.info("Waiting for slave instance(s) to finish booting ...");
-            slaveInstances = waitForInstances(slaveInstanceOperations);
+            slaveInstances = waitForInstances(slaveInstanceIds, slaveInstanceOperations);
             log.info(I, "Slave instance(s) is now running!");
         } else {
             log.info("No Slave instance(s) requested!");
@@ -279,21 +282,22 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         log.info(I, "Status checks successful.");
     }
 
-    private List<Instance> waitForInstances(List<Operation> operations) {
-        if (operations.isEmpty()) {
+    private List<Instance> waitForInstances(List<InstanceId> instanceIds, List<Operation> operations) {
+        if (instanceIds.isEmpty() || operations.isEmpty() || instanceIds.size() != operations.size()) {
             log.error("No instances found");
             return new ArrayList<>();
         }
 
         List<Instance> returnList = new ArrayList<>();
-        for (Operation operation : operations) {
+        for (int i = 0; i < instanceIds.size(); i++) {
+            Operation operation = operations.get(i);
             while (!operation.isDone()) {
                 log.info(V, "...");
                 sleep(1);
             }
             operation = operation.reload();
             if (operation.getErrors() == null) {
-                returnList.add(compute.getInstance(InstanceId.of(conf.getAvailabilityZone(), operation.getTargetId())));
+                returnList.add(compute.getInstance(instanceIds.get(i)));
             } else {
                 log.error("Creation of instance failed: {}", operation.getErrors());
                 break;
