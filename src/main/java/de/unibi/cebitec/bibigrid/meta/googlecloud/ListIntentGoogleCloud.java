@@ -134,7 +134,7 @@ public class ListIntentGoogleCloud implements ListIntent {
 
     private static String getValueforName(Tags tags, String name) {
         for (String t : tags.getValues()) {
-            String[] parts = t.split(":");
+            String[] parts = t.split("--");
             if (parts.length == 2 && parts[0].equalsIgnoreCase(name)) {
                 return parts[1];
             }

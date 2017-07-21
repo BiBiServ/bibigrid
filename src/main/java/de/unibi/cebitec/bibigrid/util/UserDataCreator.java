@@ -336,8 +336,16 @@ public class UserDataCreator {
     /* append additional shell fct */
     shellFct(masterUserData);
 
-    
-    masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+
+    switch (cfg.getMode()) {
+      case AWS:
+      case OPENSTACK:
+        masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+        break;
+      case GOOGLECLOUD:
+        masterUserData.append("IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H \"Metadata-Flavor: Google\")\n");
+        break;
+    }
     masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -547,7 +555,7 @@ public class UserDataCreator {
         // currently nothing todo
         break;
       case GOOGLECLOUD:
-        // TODO: Google Cloud
+        // currently nothing todo
         break;
     }
     /*

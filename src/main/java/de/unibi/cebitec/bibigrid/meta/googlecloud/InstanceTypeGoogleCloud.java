@@ -28,7 +28,9 @@ public class InstanceTypeGoogleCloud extends InstanceType {
             addType("n1-highmem-" + cores, cores);
         for (int cores : Arrays.asList(2, 4, 8, 16, 32, 64))
             addType("n1-highcpu-" + cores, cores);
-        // TODO: bursting (f1-micro, g1-small)
+
+        addType("f1-micro", 1);
+        addType("g1-small", 1);
     }
 
     public InstanceTypeGoogleCloud(Configuration conf, String type) throws Exception {

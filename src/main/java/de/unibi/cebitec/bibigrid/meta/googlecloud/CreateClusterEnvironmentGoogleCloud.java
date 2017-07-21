@@ -66,6 +66,10 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
     public CreateClusterEnvironmentGoogleCloud createSubnet() throws ConfigurationException {
         String region = cluster.getConfig().getRegion();
 
+        subnet = cluster.getCompute().listSubnetworks(region).iterateAll().iterator().next();
+        log.debug(V, "Use {} for generated SubNet.", subnet.getIpRange());
+
+        /* TODO: once we can create firewall rules, also create the subnet!
         // check for unused Subnet Cidr and create one
         List<String> listofUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
         for (Subnetwork sn : cluster.getCompute().listSubnetworks(region).iterateAll()) {
@@ -86,6 +90,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         } catch (InterruptedException | TimeoutException e) {
             log.error("Failed to create subnetwork {}", e);
         }
+        */
         return this;
     }
 
@@ -95,6 +100,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
 
         // Master IP
         masterIP = SubNets.getFirstIP(subnet.getIpRange());
+        log.debug(V, "masterIP: {}.", masterIP);
 
         /* TODO: currently not available in the java api!
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());

@@ -62,9 +62,10 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         bb.putLong(clusterIdUUID.getLeastSignificantBits());
         String clusterIdBase64 = Base64.encodeBase64URLSafeString(bb.array()).replace("-", "").replace("_", "");
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
-        clusterId = clusterIdBase64.substring(0, len);
-        bibigridid = "bibigrid-id:" + clusterId;
-        username = "user:" + conf.getUser();
+        // All resource ids must be lower case!
+        clusterId = clusterIdBase64.substring(0, len).toLowerCase(Locale.US);
+        bibigridid = "bibigrid-id-" + clusterId;
+        username = "user--" + conf.getUser();
         log.debug("cluster id: {}", clusterId);
 
         return environment = new CreateClusterEnvironmentGoogleCloud(this);
@@ -125,8 +126,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         slaveNetworkInterfaces = new ArrayList<>();
         inis = NetworkInterface.newBuilder(environment.getSubnet().getNetwork());
         inis.setSubnetwork(environment.getSubnet().getSubnetworkId());
-        // TODO: private-ip-google-accesss?
-        // TODO .withAssociatePublicIpAddress(conf.isPublicSlaveIps())
+        // TODO: conf.isPublicSlaveIps() => private-ip-google-accesss?
         slaveNetworkInterfaces.add(inis.build());
 
         return this;
@@ -170,7 +170,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         InstanceInfo.Builder masterBuilder = GoogleCloudUtils.getInstanceBuilder(conf.getMasterImage(),
                 zone, masterInstanceName, conf.getMasterInstanceType().getValue())
                 .setNetworkInterfaces(masterNetworkInterfaces)
-                .setTags(Tags.of(bibigridid, username, "Name:" + masterInstanceName))
+                .setTags(Tags.of(bibigridid, username, "name--" + masterInstanceName))
                 .setMetadata(Metadata.newBuilder().add("startup-script", base64MasterUserData).build());
         // TODO .withBlockDeviceMappings(masterDeviceMappings)
         // TODO .withKeyName(conf.getKeypair())
@@ -203,7 +203,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(conf.getSlaveImage(),
                         zone, slaveInstanceId, conf.getSlaveInstanceType().getValue())
                         .setNetworkInterfaces(slaveNetworkInterfaces)
-                        .setTags(Tags.of(bibigridid, username, "Name:" + slaveInstanceName))
+                        .setTags(Tags.of(bibigridid, username, "name--" + slaveInstanceName))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
                 // TODO .withBlockDeviceMappings(slaveBlockDeviceMappings)
                 // TODO .withKeyName(this.config.getKeypair())
@@ -321,7 +321,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
 
         log.info(V, "Building SSH-Command : {}", execCommand);
 
-        boolean uploaded = false;
+        //boolean uploaded = false;
         boolean configured = false;
 
         int ssh_attempts = 25; // TODO attempts
@@ -411,7 +411,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         log.info(I, "Master instance has been configured.");
     }
 
-    public Configuration getConfig() {
+    Configuration getConfig() {
         return conf;
     }
 
