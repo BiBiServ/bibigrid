@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.compute.*;
+import com.google.cloud.compute.spi.v1.HttpComputeRpc;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import org.slf4j.Logger;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
@@ -107,5 +109,17 @@ public final class GoogleCloudUtils {
             metadata = metadata.toBuilder().setValues(values).build();
         }
         instance.setMetadata(metadata);
+    }
+
+    static com.google.api.services.compute.Compute getInternalCompute(Compute compute) {
+        HttpComputeRpc computeRpc = ((HttpComputeRpc) compute.getOptions().getRpc());
+        try {
+            Field f = computeRpc.getClass().getDeclaredField("compute");
+            f.setAccessible(true);
+            return (com.google.api.services.compute.Compute) f.get(computeRpc);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

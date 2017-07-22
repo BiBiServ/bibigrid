@@ -1,20 +1,25 @@
 package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
+import com.google.api.services.compute.*;
+import com.google.api.services.compute.Compute;
+import com.google.api.services.compute.model.Firewall;
 import com.google.cloud.WaitForOption;
 import com.google.cloud.compute.*;
 import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
 import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
+import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.util.SubNets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static de.unibi.cebitec.bibigrid.meta.googlecloud.CreateClusterGoogleCloud.SECURITY_GROUP_PREFIX;
 import static de.unibi.cebitec.bibigrid.meta.googlecloud.CreateClusterGoogleCloud.SUBNET_PREFIX;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 
@@ -69,7 +74,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         subnet = cluster.getCompute().listSubnetworks(region).iterateAll().iterator().next();
         log.debug(V, "Use {} for generated SubNet.", subnet.getIpRange());
 
-        /* TODO: once we can create firewall rules, also create the subnet!
+        /* TODO:
         // check for unused Subnet Cidr and create one
         List<String> listofUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
         for (Subnetwork sn : cluster.getCompute().listSubnetworks(region).iterateAll()) {
@@ -94,6 +99,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         return this;
     }
 
+    @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
     public CreateClusterEnvironmentGoogleCloud createSecurityGroup() throws ConfigurationException {
         // create security group with full internal access / ssh from outside
         log.info("Creating security group...");
@@ -102,19 +108,51 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         masterIP = SubNets.getFirstIP(subnet.getIpRange());
         log.debug(V, "masterIP: {}.", masterIP);
 
-        /* TODO: currently not available in the java api!
-        UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());
-
-        tcp     22  22      0.0.0.0/0
-        tcp     0   65535               secGroupSelf
-        udp     0   65535               secGroupSelf
-        icmp    -1   -1                 secGroupSelf
-
-        for (Port port : cluster.getConfig().getPorts()) {
-            tcp     port.number     port.number     port.iprange
-            udp     port.number     port.number     port.iprange
+        // Since the google cloud java library currently doesn't support firewall rules,
+        // we use the underlying api library.
+        com.google.api.services.compute.Compute internalCompute =
+                GoogleCloudUtils.getInternalCompute(cluster.getCompute());
+        if (internalCompute == null) {
+            log.error("Failed to create firewall rules. Unable to get internal compute");
+            return this;
         }
-        */
+
+        // Collect all firewall rules grouped by the source ip range because the number of rules
+        // is limited and therefore should be combined!
+        Map<String, List<Firewall.Allowed>> firewallRuleMap = new HashMap<>();
+        firewallRuleMap.put("0.0.0.0/0", Arrays.asList(
+                new Firewall.Allowed().setIPProtocol("tcp").setPorts(Arrays.asList("22", "3389")),
+                new Firewall.Allowed().setIPProtocol("icmp")));
+        firewallRuleMap.put(subnet.getIpRange(), Arrays.asList(
+                new Firewall.Allowed().setIPProtocol("tcp").setPorts(Arrays.asList("0-65535")),
+                new Firewall.Allowed().setIPProtocol("udp").setPorts(Arrays.asList("0-65535")),
+                new Firewall.Allowed().setIPProtocol("icmp")
+        ));
+        for (Port port : cluster.getConfig().getPorts()) {
+            log.info("{}:{}", port.iprange, "" + port.number);
+            if (!firewallRuleMap.containsKey(port.iprange)) {
+                firewallRuleMap.put(port.iprange, new ArrayList<>());
+            }
+            List<String> portList = Collections.singletonList(String.valueOf(port.number));
+            firewallRuleMap.get(port.iprange).add(new Firewall.Allowed().setIPProtocol("tcp").setPorts(portList));
+            firewallRuleMap.get(port.iprange).add(new Firewall.Allowed().setIPProtocol("udp").setPorts(portList));
+        }
+
+        // Create the firewall rules
+        try {
+            int ruleIndex = 1;
+            for (String ipRange : firewallRuleMap.keySet()) {
+                Firewall firewall = new Firewall()
+                        .setName(SECURITY_GROUP_PREFIX + "rule" + ruleIndex + "-" + cluster.getClusterId())
+                        .setNetwork(vpc.getNetworkId().getSelfLink())
+                        .setSourceRanges(Collections.singletonList(ipRange));
+                // TODO: possibly add cluster instance ids to targetTags, to limit the access!
+                firewall.setAllowed(firewallRuleMap.get(ipRange));
+                internalCompute.firewalls().insert(cluster.getConfig().getGoogleProjectId(), firewall).execute();
+            }
+        } catch (Exception e) {
+            log.error("Failed to create firewall rules {}", e);
+        }
         return this;
     }
 

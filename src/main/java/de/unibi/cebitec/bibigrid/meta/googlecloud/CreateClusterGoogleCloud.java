@@ -35,6 +35,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
     private static final Logger log = LoggerFactory.getLogger(CreateClusterGoogleCloud.class);
     private static final String PREFIX = "bibigrid-";
     static final String SUBNET_PREFIX = PREFIX + "subnet-";
+    static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
     private static final String MASTER_SSH_USER = "ubuntu";
     private final Configuration conf;
 
@@ -183,7 +184,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 Collections.singletonList(createMasterOperation)).get(0);
         log.info(I, "Master instance is now running!");
 
-        waitForStatusCheck("master", Collections.singletonList(masterInstance));
+        waitForMasterStatusCheck(Collections.singletonList(masterInstance));
 
         String masterPrivateIp = GoogleCloudUtils.getInstancePrivateIp(masterInstance);
         String masterPublicIp = GoogleCloudUtils.getInstancePublicIp(masterInstance);
@@ -265,12 +266,12 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         return true;
     }
 
-    private void waitForStatusCheck(String type, List<Instance> instances) {
-        log.info("Waiting for Status Checks on {} ...", type);
+    private void waitForMasterStatusCheck(List<Instance> instances) {
+        log.info("Waiting for Status Checks on master ...");
         for (Instance instance : instances) {
             do {
                 InstanceInfo.Status status = instance.getStatus();
-                log.debug("Status of {} instance: " + status, type);
+                log.debug("Status of master instance: " + status);
                 if (status == InstanceInfo.Status.RUNNING) {
                     break;
                 } else {
