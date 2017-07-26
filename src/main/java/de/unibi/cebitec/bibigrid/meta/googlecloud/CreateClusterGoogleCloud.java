@@ -28,6 +28,8 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 
 /**
  * Implementation of the general CreateCluster interface for a Google based cluster.
+ * <p>
+ * TODO: device mapping for master and slaves, slaves with public ips on/off
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
@@ -174,7 +176,6 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 .setTags(Tags.of(bibigridid, username, "name--" + masterInstanceName))
                 .setMetadata(Metadata.newBuilder().add("startup-script", base64MasterUserData).build());
         // TODO .withBlockDeviceMappings(masterDeviceMappings)
-        // TODO .withKeyName(conf.getKeypair())
         GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
 
         // Waiting for master instance to run
@@ -209,7 +210,6 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                         .setTags(Tags.of(bibigridid, username, "name--" + slaveInstanceName))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
                 // TODO .withBlockDeviceMappings(slaveBlockDeviceMappings)
-                // TODO .withKeyName(this.config.getKeypair())
                 GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
 
                 Operation createSlaveOperation = compute.create(slaveBuilder.build());

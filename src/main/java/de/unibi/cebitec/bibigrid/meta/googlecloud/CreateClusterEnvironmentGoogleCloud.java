@@ -1,10 +1,11 @@
 package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
-import com.google.api.services.compute.*;
-import com.google.api.services.compute.Compute;
-import com.google.api.services.compute.model.Firewall;
+import com.google.api.services.compute.model.*;
 import com.google.cloud.WaitForOption;
 import com.google.cloud.compute.*;
+import com.google.cloud.compute.Network;
+import com.google.cloud.compute.Operation;
+import com.google.cloud.compute.Subnetwork;
 import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
 import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
@@ -71,31 +72,53 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
     public CreateClusterEnvironmentGoogleCloud createSubnet() throws ConfigurationException {
         String region = cluster.getConfig().getRegion();
 
-        subnet = cluster.getCompute().listSubnetworks(region).iterateAll().iterator().next();
-        log.debug(V, "Use {} for generated SubNet.", subnet.getIpRange());
+        // Use the internal compute api to get more information about the vpc to be used.
+        com.google.api.services.compute.Compute internalCompute =
+                GoogleCloudUtils.getInternalCompute(cluster.getCompute());
 
-        /* TODO:
-        // check for unused Subnet Cidr and create one
-        List<String> listofUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
-        for (Subnetwork sn : cluster.getCompute().listSubnetworks(region).iterateAll()) {
-            if (sn.getNetwork().getSelfLink().equals(vpc.getNetworkId().getSelfLink())) {
-                listofUsedCidr.add(sn.getIpRange());
+        // As default we assume that the vpc is auto creating subnets. Then we can
+        // only reuse the default subnets and can't create new ones!
+        boolean isAutoCreate = true;
+        try {
+            if (internalCompute != null) {
+                com.google.api.services.compute.model.Network internalVpc = internalCompute.networks().get(
+                        cluster.getConfig().getGoogleProjectId(),
+                        vpc.getNetworkId().getSelfLink()).execute();
+                if (internalVpc != null) {
+                    isAutoCreate = internalVpc.getAutoCreateSubnetworks();
+                    log.debug(V, "VPC auto create is {}.", isAutoCreate);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (isAutoCreate) {
+            // Reuse the first (and only) subnet for the vpc and region.
+            subnet = cluster.getCompute().listSubnetworks(region).iterateAll().iterator().next();
+            log.debug(V, "Use {} for reused SubNet.", subnet.getIpRange());
+        } else {
+            // check for unused Subnet Cidr and create one
+            List<String> listofUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
+            for (Subnetwork sn : cluster.getCompute().listSubnetworks(region).iterateAll()) {
+                if (sn.getNetwork().getSelfLink().equals(vpc.getNetworkId().getSelfLink())) {
+                    listofUsedCidr.add(sn.getIpRange());
+                }
+            }
+            SubNets subnets = new SubNets(listofUsedCidr.size() > 0 ? listofUsedCidr.get(0) : "10.128.0.0", 24);
+            String subnetCidr = subnets.nextCidr(listofUsedCidr);
+            log.debug(V, "Use {} for generated SubNet.", subnetCidr);
+
+            // create new subnet
+            SubnetworkId subnetId = SubnetworkId.of(region, SUBNET_PREFIX + cluster.getClusterId());
+            Operation createSubnetOperation = vpc.createSubnetwork(subnetId, subnetCidr);
+            try {
+                createSubnetOperation.waitFor(WaitForOption.checkEvery(1, TimeUnit.SECONDS));
+                subnet = cluster.getCompute().getSubnetwork(subnetId);
+            } catch (InterruptedException | TimeoutException e) {
+                log.error("Failed to create subnetwork {}", e);
             }
         }
-        SubNets subnets = new SubNets(listofUsedCidr.get(0), 24);
-        String subnetCidr = subnets.nextCidr(listofUsedCidr);
-        log.debug(V, "Use {} for generated SubNet.", subnetCidr);
-
-        // create new subnet
-        SubnetworkId subnetId = SubnetworkId.of(region, SUBNET_PREFIX + cluster.getClusterId());
-        Operation createSubnetOperation = vpc.createSubnetwork(subnetId, subnetCidr);
-        try {
-            createSubnetOperation.waitFor(WaitForOption.checkEvery(1, TimeUnit.SECONDS));
-            subnet = cluster.getCompute().getSubnetwork(subnetId);
-        } catch (InterruptedException | TimeoutException e) {
-            log.error("Failed to create subnetwork {}", e);
-        }
-        */
         return this;
     }
 
