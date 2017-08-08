@@ -28,8 +28,6 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 
 /**
  * Implementation of the general CreateCluster interface for a Google based cluster.
- * <p>
- * TODO: device mapping for master and slaves, slaves with public ips on/off
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
@@ -81,26 +79,6 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         Map<String, String> masterSnapshotToMountPointMap = conf.getMasterMounts();
         int ephemerals = conf.getMasterInstanceType().getSpec().ephemerals;
         DeviceMapper masterDeviceMapper = new DeviceMapper(conf.getMode(), masterSnapshotToMountPointMap, ephemerals);
-        /* TODO
-        masterDeviceMappings = new ArrayList<>();
-        // create Volumes first
-        if (!conf.getMasterMounts().isEmpty()) {
-            log.info(V, "Defining master volumes");
-            masterDeviceMappings = createBlockDeviceMappings(masterDeviceMapper);
-        }
-
-        List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
-        for (int i = 0; i < conf.getMasterInstanceType().getSpec().ephemerals; ++i) {
-            BlockDeviceMapping temp = new BlockDeviceMapping();
-            String virtualName = "ephemeral" + i;
-            String deviceName = "/dev/sd" + ephemeral(i);
-            temp.setVirtualName(virtualName);
-            temp.setDeviceName(deviceName);
-            ephemeralList.add(temp);
-        }
-
-        masterDeviceMappings.addAll(ephemeralList);
-        */
 
         base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair());
 
@@ -140,28 +118,6 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         Map<String, String> snapShotToSlaveMounts = conf.getSlaveMounts();
         int ephemerals = conf.getSlaveInstanceType().getSpec().ephemerals;
         slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, ephemerals);
-        /* TODO
-        slaveBlockDeviceMappings = new ArrayList<>();
-        // configure volumes first ...
-        if (!snapShotToSlaveMounts.isEmpty()) {
-            log.info(V, "configure slave volumes");
-            slaveBlockDeviceMappings = createBlockDeviceMappings(slaveDeviceMapper);
-        }
-        // configure ephemeral devices
-        List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
-        if (ephemerals > 0) {
-            for (int i = 0; i < ephemerals; ++i) {
-                BlockDeviceMapping temp = new BlockDeviceMapping();
-                String virtualName = "ephemeral" + i;
-                String deviceName = "/dev/sd" + ephemeral(i);
-                temp.setVirtualName(virtualName);
-                temp.setDeviceName(deviceName);
-                ephemeralList.add(temp);
-            }
-        }
-
-        slaveBlockDeviceMappings.addAll(ephemeralList);
-        */
         return this;
     }
 
@@ -170,12 +126,12 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
 
         String zone = conf.getAvailabilityZone();
         String masterInstanceName = PREFIX + "master-" + clusterId;
-        InstanceInfo.Builder masterBuilder = GoogleCloudUtils.getInstanceBuilder(conf.getMasterImage(),
-                zone, masterInstanceName, conf.getMasterInstanceType().getValue())
+        InstanceInfo.Builder masterBuilder = GoogleCloudUtils.getInstanceBuilder(zone, masterInstanceName,
+                conf.getMasterInstanceType().getValue())
                 .setNetworkInterfaces(masterNetworkInterfaces)
                 .setTags(Tags.of(bibigridid, username, "name--" + masterInstanceName))
                 .setMetadata(Metadata.newBuilder().add("startup-script", base64MasterUserData).build());
-        // TODO .withBlockDeviceMappings(masterDeviceMappings)
+        GoogleCloudUtils.attachDisks(compute, masterBuilder, conf.getMasterImage(), zone, conf.getMasterMounts());
         GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
 
         // Waiting for master instance to run
@@ -204,12 +160,12 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
             for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
                 String slaveInstanceName = PREFIX + "slave-" + clusterId;
                 String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
-                InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(conf.getSlaveImage(),
-                        zone, slaveInstanceId, conf.getSlaveInstanceType().getValue())
+                InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(zone, slaveInstanceId,
+                        conf.getSlaveInstanceType().getValue())
                         .setNetworkInterfaces(slaveNetworkInterfaces)
                         .setTags(Tags.of(bibigridid, username, "name--" + slaveInstanceName))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
-                // TODO .withBlockDeviceMappings(slaveBlockDeviceMappings)
+                GoogleCloudUtils.attachDisks(compute, slaveBuilder, conf.getSlaveImage(), zone, conf.getSlaveMounts());
                 GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
 
                 Operation createSlaveOperation = compute.create(slaveBuilder.build());
@@ -323,16 +279,11 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         // Building Command
         log.info("Now configuring ...");
         String execCommand = SshFactory.buildSshCommandGoogleCloud(clusterId, getConfig(), masterInstance, slaveInstances);
-
         log.info(V, "Building SSH-Command : {}", execCommand);
-
-        //boolean uploaded = false;
         boolean configured = false;
-
         int ssh_attempts = 25; // TODO attempts
         while (!configured && ssh_attempts > 0) {
             try {
-
                 ssh.addIdentity(getConfig().getIdentityFile().toString());
                 log.info("Trying to connect to master ({})...", ssh_attempts);
                 Thread.sleep(4000);
@@ -345,53 +296,33 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                         MASTER_SSH_USER, getConfig().getIdentityFile());
 
                 // Start connect attempt
+                //noinspection ConstantConditions
                 sshSession.connect();
                 log.info("Connected to master!");
 
-                //if (!uploaded || ssh_attempts > 0) {
-                //    String remoteDirectory = "/home/ubuntu/.ssh";
-                //    String filename = "id_rsa";
-                //    String localFile = getConfiguration().getIdentityFile().toString();
-                //    log.info(V, "Uploading key");
-                //    ChannelSftp channelPut = (ChannelSftp) sshSession.openChannel("sftp");
-                //    channelPut.connect();
-                //    channelPut.cd(remoteDirectory);
-                //    channelPut.put(new FileInputStream(localFile), filename);
-                //    channelPut.disconnect();
-                //    log.info(V, "Upload done");
-                //    uploaded = true;
-                //}
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-
                 BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
                 BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
-
                 channel.setCommand(execCommand);
 
                 log.info(V, "Connecting ssh channel...");
                 channel.connect();
 
-                String lineout = null, lineerr = null;
-
+                String lineout, lineerr = null;
                 while (((lineout = stdout.readLine()) != null) || ((lineerr = stderr.readLine()) != null)) {
-
                     if (lineout != null) {
                         if (lineout.contains("CONFIGURATION_FINISHED")) {
                             configured = true;
                         }
                         log.info(V, "SSH: {}", lineout);
                     }
-
-                    //if (lineerr != null) {
                     if (lineerr != null && !configured) {
                         log.error(V, "SSH: {}", lineerr);
                     }
-                    //if (channel.isClosed() || configured) {
                     if (channel.isClosed() && configured) {
                         log.info(V, "SSH: exit-status: {}", channel.getExitStatus());
                         configured = true;
                     }
-
                     Thread.sleep(2000);
                 }
                 if (configured) {
@@ -403,12 +334,6 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 if (ssh_attempts == 0) {
                     log.error(V, "SSH: {}", e);
                 }
-
-                //try {
-                //    Thread.sleep(2000);
-                //} catch (InterruptedException ex) {
-                //    log.error("Interrupted ...");
-                //}
             } catch (InterruptedException ex) {
                 log.error("Interrupted ...");
             }

@@ -11,8 +11,10 @@ import org.slf4j.LoggerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Utility methods for the google cloud.
@@ -48,7 +50,7 @@ public final class GoogleCloudUtils {
      * Get the internal fully qualified domain name (FQDN) for an instance.
      * https://cloud.google.com/compute/docs/vpc/internal-dns#instance_fully_qualified_domain_names
      */
-    static String getInstanceFQDN(String projectId, String instanceId) {
+    private static String getInstanceFQDN(String projectId, String instanceId) {
         return instanceId + ".c." + projectId + ".internal";
     }
 
@@ -65,7 +67,12 @@ public final class GoogleCloudUtils {
         return accessConfigs.isEmpty() ? null : accessConfigs.get(0).getNatIp();
     }
 
-    static AttachedDisk createBootDisk(String imageId) {
+    static InstanceInfo.Builder getInstanceBuilder(String zone, String instanceId, String machineType) {
+        return InstanceInfo
+                .newBuilder(InstanceId.of(zone, instanceId), MachineTypeId.of(zone, machineType));
+    }
+
+    private static AttachedDisk createBootDisk(String imageId) {
         AttachedDisk.CreateDiskConfiguration bootDisk = AttachedDisk.CreateDiskConfiguration
                 .newBuilder(ImageId.of(imageId))
                 .setAutoDelete(true)
@@ -73,11 +80,30 @@ public final class GoogleCloudUtils {
         return AttachedDisk.of(bootDisk);
     }
 
-    static InstanceInfo.Builder getInstanceBuilder(String imageId, String zone, String instanceId, String machineType) {
+    private static AttachedDisk createMountDisk(Compute compute, String zone, String snapshotId, String diskId) {
+        SnapshotDiskConfiguration mountDisk = SnapshotDiskConfiguration.of(SnapshotId.of(snapshotId));
+        DiskId disk = DiskId.of(zone, diskId);
+        DiskInfo diskInfo = DiskInfo.newBuilder(disk, mountDisk).build();
+        Operation operation = compute.create(diskInfo);
+        try {
+            operation.waitFor();
+        } catch (InterruptedException | TimeoutException e) {
+            log.error("Creation of mount disk failed: {}", operation.getErrors());
+        }
+        return AttachedDisk.of(AttachedDisk.PersistentDiskConfiguration.of(disk));
+    }
+
+    static void attachDisks(Compute compute, InstanceInfo.Builder instanceBuilder, String imageId,
+                            String zone, Map<String, String> mounts) {
+        List<AttachedDisk> attachedDisks = new ArrayList<>();
         AttachedDisk bootDisk = GoogleCloudUtils.createBootDisk(imageId);
-        return InstanceInfo
-                .newBuilder(InstanceId.of(zone, instanceId), MachineTypeId.of(zone, machineType))
-                .setAttachedDisks(bootDisk);
+        attachedDisks.add(bootDisk);
+        for (String key : mounts.keySet()) {
+            String diskId = "disk-" + key; // TODO: think of better disk name for snapshot
+            AttachedDisk mountDisk = createMountDisk(compute, zone, key, diskId);
+            attachedDisks.add(mountDisk);
+        }
+        instanceBuilder.setAttachedDisks(attachedDisks);
     }
 
     static void setInstanceSchedulingOptions(InstanceInfo.Builder builder, boolean preemtible) {
@@ -111,6 +137,10 @@ public final class GoogleCloudUtils {
         instance.setMetadata(metadata);
     }
 
+    /**
+     * Using reflection, we can access the internal api library compute instance to make
+     * calls like firewall rules creation that are currently not available in the cloud api.
+     */
     static com.google.api.services.compute.Compute getInternalCompute(Compute compute) {
         HttpComputeRpc computeRpc = ((HttpComputeRpc) compute.getOptions().getRpc());
         try {
