@@ -219,8 +219,10 @@ public class CommandLineValidator {
                     osc.setUsername(cl.getOptionValue("osu").trim());
                 } else if (defaults.getProperty("openstack-username") != null) {
                     osc.setUsername(defaults.getProperty("openstack-username"));
+                } else if (System.getenv("OS_USERNAME") != null) {
+                    osc.setUsername(System.getenv(("OS_USERNAME")));
                 } else {
-                    LOG.error("No suitable entry for OpenStack-Username (osu) found! Exit");
+                    LOG.error("No suitable entry for OpenStack-Username (osu) found nor environment OS_USERNAME set ! Exit");
                     return false;
                 }
 
@@ -228,17 +230,29 @@ public class CommandLineValidator {
                     osc.setTenantName(cl.getOptionValue("ost").trim());
                 } else if (defaults.getProperty("openstack-tenantname") != null) {
                     osc.setTenantName(defaults.getProperty("openstack-tenantname"));
+                } else if (System.getenv("OS_PROJECT_NAME") != null) {
+                    osc.setTenantName(System.getenv(("OS_PROJECT_NAME")));
                 } else {
-                    LOG.error("No suitable entry for OpenStack-Tenantname (ost) found! Exit");
+                    LOG.error("No suitable entry for OpenStack-Tenantname (ost) found nor environment OS_PROJECT_NAME set! Exit");
                     return false;
+                }
+                
+                if (cl.hasOption("ostd")) {
+                    osc.setTenantName(cl.getOptionValue("ostd").trim());
+                } else if (defaults.getProperty("openstack-tenantdomain") != null) {
+                    osc.setTenantDomain(defaults.getProperty("openstack-tenantdomain"));
+                } else {
+                    LOG.info("No suitable entry for OpenStack-TenantDomain (ostd) found! Use OpenStack-Domain(osd) instead!");
                 }
                                 
                 if (cl.hasOption("osp")) {
                     osc.setPassword(cl.getOptionValue("osp").trim());
                 } else if (defaults.getProperty("openstack-password") != null) {
                     osc.setPassword(defaults.getProperty("openstack-password"));
+                } else if (System.getenv("OS_PASSWORD") != null) {
+                    osc.setPassword(System.getenv(("OS_PASSWORD")));
                 } else {
-                    LOG.error("No suitable entry for OpenStack-Password (osp) found! Exit");
+                    LOG.error("No suitable entry for OpenStack-Password (osp) found nore environment OS_PASSWORD set! Exit"); 
                     return false;
                 }
 
@@ -246,20 +260,22 @@ public class CommandLineValidator {
                     osc.setEndpoint(cl.getOptionValue("ose").trim());
                 } else if (defaults.getProperty("openstack-endpoint") != null) {
                     osc.setEndpoint(defaults.getProperty("openstack-endpoint"));
+                } else if (System.getenv("OS_AUTH_URL") != null) {
+                    osc.setEndpoint(System.getenv(("OS_AUTH_URL")));
                 } else {
-                    LOG.error("No suitable entry for OpenStack-Endpoint (ose) found! Exit");
+                    LOG.error("No suitable entry for OpenStack-Endpoint (ose) found nor environment OS_AUTH_URL set! Exit");
                     return false;
                 }
 
                 if (cl.hasOption("osd")) {
                     osc.setDomain(cl.getOptionValue("osd").trim());
-                    LOG.info("Keystone V3 API.");
                 } else if (defaults.getProperty("openstack-domain") != null) {
                     osc.setDomain(defaults.getProperty("openstack-domain"));
-                    LOG.info("Keystone V3 API.");
+                } else if (System.getenv("OS_USER_DOMAIN_NAME") != null) {
+                    osc.setDomain(System.getenv(("OS_USER_DOMAIN_NAME")));
                 } else {
                     LOG.info("Keystone V2 API.");
-                    // V2
+                    
                 }
 
                 this.cfg.setOpenstackCredentials(osc);
@@ -330,6 +346,47 @@ public class CommandLineValidator {
                     return false;
                 }
             }
+            
+            
+            
+            ////////////////////////////////////////////////////////////////////////
+            ///// spark on/off /////////////////////////////////////////////////
+            if (cl.hasOption("spark")) {
+                cfg.setSpark(true);
+                LOG.info(V, "Spark support enabled.");
+            } else if (defaults.containsKey("spark")) {
+                String value = defaults.getProperty("spark");
+                if (value.equalsIgnoreCase("yes")) {
+                    cfg.setSpark(true);
+                    LOG.info(V, "Spark support enabled.");
+                } else if (value.equalsIgnoreCase("no")) {
+                    LOG.info(V, "Spark support disabled.");
+                    this.cfg.setSpark(false);
+                } else {
+                    LOG.error("Spark value in properties not recognized. Please use yes/no.");
+                    return false;
+                }
+            }
+            
+            ////////////////////////////////////////////////////////////////////////
+            ///// HDFS on/off /////////////////////////////////////////////////
+            if (cl.hasOption("hdfs")) {
+                cfg.setSpark(true);
+                LOG.info(V, "HDFS support enabled.");
+            } else if (defaults.containsKey("hdfs")) {
+                String value = defaults.getProperty("hdfs");
+                if (value.equalsIgnoreCase("yes")) {
+                    cfg.setHdfs(true);
+                    LOG.info(V, "HDFS support enabled.");
+                } else if (value.equalsIgnoreCase("no")) {
+                    LOG.info(V, "HDFS support disabled.");
+                    cfg.setHdfs(false);
+                } else {
+                    LOG.error("HDFS value in properties not recognized. Please use yes/no.");
+                    return false;
+                }
+            }
+            
 
             ////////////////////////////////////////////////////////////////////////
             ///// identity-file ////////////////////////////////////////////////////
@@ -368,11 +425,15 @@ public class CommandLineValidator {
             ////////////////////////////////////////////////////////////////////////
             ///// Region /////////////////////////////////////////////////////////
             if (req.contains("e")) {
-                this.cfg.setRegion(this.cl.getOptionValue("e", defaults.getProperty("region")));
-                if (this.cfg.getRegion() == null) {
-                    LOG.error("-e option is required! Please specify the url of your region "
-                            + "(e.g. region=eu-west-1).");
-                    return false;
+                cfg.setRegion(cl.getOptionValue("e", defaults.getProperty("region")));
+                if (this.cfg.getRegion() == null)  {
+                    if (System.getenv("OS_REGION_NAME") != null) {
+                        cfg.setRegion(System.getenv(("OS_REGION_NAME")));
+                    } else {
+                        LOG.error("-e option is required! Please specify the url of your region "
+                                + "(e.g. region=eu-west-1).");
+                        return false;
+                    }
                 }
                 LOG.info(V, "Region set. ({})", this.cfg.getRegion());
             }

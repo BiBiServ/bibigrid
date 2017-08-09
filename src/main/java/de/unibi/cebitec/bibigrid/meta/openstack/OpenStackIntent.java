@@ -35,7 +35,8 @@ abstract class OpenStackIntent {
             return OSFactory.builderV3()
                        .endpoint(conf.getOpenstackCredentials().getEndpoint())
                        .credentials(osc.getUsername(),osc.getPassword(),Identifier.byName(osc.getDomain()))
-                       .scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getDomain()))
+                       //.scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getDomain()))
+                       .scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getTenantDomain()))
                        .authenticate();
                 
         } else {

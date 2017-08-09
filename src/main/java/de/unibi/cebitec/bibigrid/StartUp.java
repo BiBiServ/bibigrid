@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid;
 
-import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.ctrl.*;
 import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.util.RuleBuilder;

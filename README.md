@@ -30,11 +30,67 @@ https://github.com/BiBiServ/Development-Guidelines
 
 ## Usage:
 
-~~~BASJ
-java -jar BiBiGrid-1.0.jar <options>
+Sourcing the bibigrid.sh script could make your life a bit easier.
+
+~~~BASH
+> source bibigrid.sh
 ~~~
 
-See homepage for a more detail usage description
+Before using BiBiGrid you have to create a configuration (default: `~/.bibigrid.properties`)
+
+### Start a new cluster
+
+	> bibigrid -c 
+	
+### List running cluster
+
+	> bibigrid -l
+	
+###  Terminate a cluster
+	
+	> bibigrid -t
+
+## example .bibigrid.properties
+
+- 1 master node 
+- 4 worker nodes
+- Gridengine, Spark and NFS services enabled
+- do not use the master node for compute purpose
+- opens port 80/443  (webserver) additional to default ssh port
+
+
+~~~BASH
+#use openstack
+mode=openstack
+
+#Access
+identity-file=/Users/juser/.ssh/id_rsa
+keypair=juser
+region=RegionOne
+availability-zone=nova
+
+#Network
+subnet=my-subnet
+
+#BiBiGrid-Master
+master-instance-type=de.NBI.medium
+master-image=<ID of bibigrid-master image>
+
+#BiBiGrid-Slave
+slave-instance-type=de.NBI.medium
+slave-instance-count=4
+slave-image=<ID of bibigrid-slave image>
+
+#Firewall/Security Group
+ports=80,443
+
+use-master-as-compute=no
+#services
+nfs=yes
+oge=yes
+spark=yes
+~~~
+The properties file **must** adjusted to your cloud configuration. See homepage for a more detail usage description
 
 ## Hompage
 https://wiki.cebitec.uni-bielefeld.de/bibiserv-1.25.2/index.php/BiBiGrid

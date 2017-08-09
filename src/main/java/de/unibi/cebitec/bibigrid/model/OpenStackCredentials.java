@@ -17,10 +17,7 @@ public class OpenStackCredentials {
     private String password;
     private String endpoint;
     private String domain;
-
-    public OpenStackCredentials() {
-
-    }
+    private String tenantDomain;
 
 
     public String getTenantName() {
@@ -62,6 +59,19 @@ public class OpenStackCredentials {
     public void setDomain(String domain) {
         this.domain = domain;
     }
+
+  public String getTenantDomain() {
+    if (tenantDomain == null) {
+      return domain;
+    }
+    return tenantDomain;
+  }
+
+  public void setTenantDomain(String tenantDomain) {
+    this.tenantDomain = tenantDomain;
+  }
+    
+    
 
 
     

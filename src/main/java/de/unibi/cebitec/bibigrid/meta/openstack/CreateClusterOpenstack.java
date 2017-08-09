@@ -69,6 +69,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
   public static final String SUBNET_PREFIX = PREFIX + "subnet-";
 
   public static final long WAITTIME = 5000;
+  
+  public static final boolean CONFIGDRIVE = true;
 
   /*
      * Cluster ID
@@ -141,8 +143,13 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         LOG.warn("Volume/Snapshot with name/id {} not found!", nameorid);
       }
     }
-    masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals);
-
+    
+    if (CONFIGDRIVE) {
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, 1 + conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
+    } else {
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
+    }
+    
     /**
      * BlockDeviceMapping.
      *
@@ -160,7 +167,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
       masterMappings.add(bdmc);
     }
 
-    masterImage = conf.getRegion() + "/" + conf.getMasterImage();
+    //masterImage = conf.getRegion() + "/" + conf.getMasterImage();
+    masterImage =  conf.getMasterImage();
 
     String type = conf.getMasterInstanceType().getValue();
     masterFlavor = null;
@@ -184,8 +192,13 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
      * @ToDo
      */
     Map<String, String> snapShotToSlaveMounts = this.conf.getSlaveMounts();
-    slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals);
-
+    
+    if (CONFIGDRIVE) {
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, 1+conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
+    } else {
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);     
+    }
+        
     /**
      * BlockDeviceMapping.
      *
@@ -208,7 +221,8 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     /**
      * Options.
      */
-    slaveImage = conf.getRegion() + "/" + conf.getSlaveImage();
+    //slaveImage = conf.getRegion() + "/" + conf.getSlaveImage();
+    slaveImage =  conf.getSlaveImage();
     String type = conf.getSlaveInstanceType().getValue();
     slaveFlavor = null;
 
@@ -238,10 +252,11 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
               .availabilityZone(conf.getAvailabilityZone())
               .userData(UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair()))
               .addMetadata(metadata)
+              .configDrive(CONFIGDRIVE)
               .networks(Arrays.asList(environment.getNetwork().getId()))
               .build();
       //Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
-      Server server = os.compute().servers().boot(sc); // boot an return immidiately
+      Server server = os.compute().servers().boot(sc); // boot and return immidiately
 
       // check if anything goes wrong,
       Fault fault = server.getFault();
@@ -369,14 +384,18 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
                 .addSecurityGroup(environment.getSecGroupExtension().getId())
                 .availabilityZone(conf.getAvailabilityZone())
                 .userData(UserDataCreator.forSlave(master.getIp(),
-                        master.getNeutronHostname(),
+                        //master.getNeutronHostname(),
+                        master.getHostname(),
                         slaveDeviceMapper,
                         conf,
                         environment.getKeypair()))
+                .configDrive(CONFIGDRIVE)
                 .networks(Arrays.asList(environment.getNetwork().getId()))
                 .build();
         Server tmp = os.compute().servers().boot(sc);
-        slaves.put(tmp.getId(), new Instance(tmp.getId()));
+        Instance tmp_instance = new Instance(tmp.getId());
+        tmp_instance.setHostname("bibigrid-slave-" + (i + 1) + "-" + clusterId);
+        slaves.put(tmp.getId(),tmp_instance);
 
         //slaveIDs.add(tmp.getId());
         LOG.info(V, "Instance request for {}  ", sc.getName());
@@ -411,6 +430,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
       // wait for slave network finished ... update server instance list            
       for (Instance slave : slaves.values()) {
         slave.setIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
+        
         slave.updateNeutronHostname();
       }
       /* @ToDo: 
@@ -528,11 +548,16 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
               configured = true;
             }
             LOG.info(V, "SSH: {}", lineout);
+           
           }
 
           if (stderr.ready()) {
             lineerr = stderr.readLine();
-            LOG.error("SSH: {}", lineerr);
+            if (lineerr.contains("sudo: unable to resolve host")) {
+                LOG.warn(V,"SSH: {}",lineerr);
+            } else {
+                LOG.error("SSH: {}", lineerr);
+            }
           }
 
           Thread.sleep(500);

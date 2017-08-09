@@ -9,6 +9,7 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Properties;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +45,10 @@ public class UserDataCreator {
     slaveUserData.append("#!/bin/bash\n");
     slaveUserData.append("exec > /var/log/userdata.log\n")
             .append("exec 2>&1\n");
+    slaveUserData.append("source /home/ubuntu/.bashrc\n");
     /* append additional service check fct */
     shellFct(slaveUserData);
 
-    /* Save currentIP as env var */
     switch (cfg.getMode()) {
       case AWS:
       case OPENSTACK:
@@ -57,26 +58,23 @@ public class UserDataCreator {
         slaveUserData.append("IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H \"Metadata-Flavor: Google\")\n");
         break;
     }
-
+    slaveUserData.append("IPBASE=`echo ${IP} | cut -f 1-3 -d .`\n");
+    
     slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
+    slaveUserData.append("cat > /home/ubuntu/.ssh/config << SSHCONFIG\n"
+//            + "Host ${IPBASE}.*\n"
+            + "Host *\n"
+            + "\tCheckHostIP no\n"
+            + "\tStrictHostKeyChecking no\n"
+            + "\tUserKnownHostsfile /dev/null\n"
+            + "SSHCONFIG\n");
+    
 
     slaveUserData.append("mkdir -p /vol/spool/log\n");
     slaveUserData.append("mkdir -p /vol/scratch/\n");
-
-    /*
-         * GridEngine Block
-     */
-    if (cfg.isOge()) {
-      slaveUserData.append("echo ").append(masterDns).append(" > /var/lib/gridengine/default/common/act_qmaster\n");
-      // test for sge_master available
-      slaveUserData.append("ch_s ").append(masterIp).append(" 6444\n");
-      // start sge_exed 
-      slaveUserData.append("ch_p sge_execd 10 \"service gridengine-exec start\"\n");
-      slaveUserData.append("log 'sge_execd started'\n");
-    }
 
     /*
          * Ganglia service monitor
@@ -234,7 +232,7 @@ public class UserDataCreator {
        */
       if (cfg.isHdfs()) {
         slaveUserData.append("mkdir -p /vol/scratch/hadoop/dn\n");
-        slaveUserData.append("chown -R hadoop:hadoop /vol/scratch/hadoop\n");
+        slaveUserData.append("chown -R ubuntu:ubuntu /vol/scratch/hadoop\n");
         slaveUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
         slaveUserData.append("log \"hdfs configured and started\"\n");
       }
@@ -332,11 +330,11 @@ public class UserDataCreator {
     masterUserData.append("exec > /var/log/userdata.log\n")
             .append("exec 2>&1\n");
     masterUserData.append("echo 'MasterUserData executed!'\n");
+    masterUserData.append("source /home/ubuntu/.bashrc\n");
 
     /* append additional shell fct */
     shellFct(masterUserData);
-
-
+    
     switch (cfg.getMode()) {
       case AWS:
       case OPENSTACK:
@@ -346,11 +344,22 @@ public class UserDataCreator {
         masterUserData.append("IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H \"Metadata-Flavor: Google\")\n");
         break;
     }
+    masterUserData.append("IPBASE=`echo ${IP} | cut -f 1-3 -d .`\n");
+    
+    // ssh configuration
     masterUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
     masterUserData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
-
+    masterUserData.append("cat > /home/ubuntu/.ssh/config << SSHCONFIG\n"
+            //+ "Host ${IPBASE}.*\n"
+            + "Host *\n"
+            + "\tCheckHostIP no\n"
+            + "\tStrictHostKeyChecking no\n"
+            + "\tUserKnownHostsfile /dev/null\n"
+            + "SSHCONFIG\n");
+    
+    
     /*
      * Ephemeral/RAID Preperation
      */
@@ -420,6 +429,7 @@ public class UserDataCreator {
      * create spool, scratch, log
      */
     masterUserData.append("mkdir -p /vol/spool/log\n");
+    masterUserData.append("mkdir -p /vol/spool/www\n");
     masterUserData.append("mkdir -p /vol/scratch/\n");
     masterUserData.append("chown -R ubuntu:ubuntu /vol/\n");
     masterUserData.append("chmod -R 777 /vol/\n");
@@ -445,32 +455,22 @@ public class UserDataCreator {
     if (cfg.isHdfs()) {
       masterUserData.append("mkdir -p /vol/scratch/hadoop/nn\n");
       masterUserData.append("mkdir -p /vol/scratch/hadoop/dn\n");
-      masterUserData.append("chown -R hadoop:hadoop /vol/scratch/hadoop\n");
+      masterUserData.append("chown -R ubuntu:ubuntu /vol/scratch/hadoop\n");
       masterUserData.append("chmod -R 777 /vol/scratch/hadoop\n");
-      masterUserData.append("log \"hdfs configured - nn/dn started\"\n");
+      // core-site.xml configuration
+      Properties hdfs_coresite = new Properties();
+      hdfs_coresite.put("fs.defaultFS","hdfs://${IP}/");
+      masterUserData.append("cat > /opt/hadoop/etc/hadoop/core-site.xml << CORESITE\n").append(property2Hadoopcfg(hdfs_coresite)).append("\nCORESITE\n");
+      // hdfs-site.xml configuration
+      Properties hdfs_site = new Properties();
+      hdfs_site.put("dfs.permissions.superusergroup","hadoop");
+      hdfs_site.put("dfs.namenode.name.dir","/vol/scratch/hadoop/nn");
+      hdfs_site.put("dfs.datanode.data.dir","/vol/scratch/hadoop/dn");
+      masterUserData.append("cat > /opt/hadoop/etc/hadoop/hdfs-site.xml << HDFSSITE\n").append(property2Hadoopcfg(hdfs_site)).append("\nHDFSSITE\n");
+      // env
+      masterUserData.append("echo export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 >> /opt/hadoop/etc/hadoop/hadoop-env.sh\n");
+      masterUserData.append("log \"hdfs preconfigured\"\n");
     }
-
-    /*
-     * OGE Block
-     */
-    if (cfg.isOge()) {
-      switch (cfg.getMode()) {
-        case AWS:
-          masterUserData.append("curl -sS http://169.254.169.254/latest/meta-data/public-hostname > /var/lib/gridengine/default/common/act_qmaster\n");
-          break;
-        case OPENSTACK:
-          masterUserData.append("echo $(hostname) > /var/lib/gridengine/default/common/act_qmaster\n");
-          break;
-        case GOOGLECLOUD:
-          masterUserData.append("curl http://metadata.google.internal/computeMetadata/v1/instance/hostname -H \"Metadata-Flavor: Google\" > /var/lib/gridengine/default/common/act_qmaster\n");
-          break;
-      }
-
-      masterUserData.append("chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
-      masterUserData.append("service gridengine-master start\n");
-      masterUserData.append("log \"gridengine-master configured and started\"\n");
-    }
-
 
     /* 
      * Mesos Block
@@ -495,6 +495,8 @@ public class UserDataCreator {
         masterUserData.append("service mesos-slave start\n");
         masterUserData.append("log \"mesos-slave configured and started\"\n");
       }
+    } else {
+      masterUserData.append("service chronos stop\n");
     }
 
     /* Block Devices */
@@ -513,7 +515,7 @@ public class UserDataCreator {
      */
     if (cfg.isNfs()) {
 
-      masterUserData.append("IPBASE=`echo ${IP} | cut -f 1-3 -d .`\n");
+     
       // export spool dir
       masterUserData.append("echo \"/vol/spool/ ${IPBASE}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
       // export opt dir
@@ -590,8 +592,13 @@ public class UserDataCreator {
     return (char) (i + 98);
   }
 
+  /**
+   * Provides a set of useful ShellFunction
+   * @param sb 
+   */
   public static void shellFct(StringBuilder sb) {
     sb.append("function log { date +\"%x %R:%S - ${1}\";}\n");
+    sb.append("function fqdn { nslookup ${1}  | grep name | sed -sr \"s/^.*name = (.*)/\\1/\"; }\n");
     sb.append("function ch_s {\n")
             .append("\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
             .append("\twhile test $? -eq 1; do\n")
@@ -616,5 +623,26 @@ public class UserDataCreator {
             .append("\t\tlog \"$(ps -e | grep ${1})\"\n")
             .append("\tdone;\n")
             .append("}\n");
+    
+
+  }
+ 
+  public static String property2Hadoopcfg(Properties properties){
+      StringBuilder sb = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+"<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>\n");
+      sb.append("<configuration>\n");       
+      
+      for (Object obj : properties.keySet()) {
+          String key = (String)obj;
+          sb.append("<property><name>")
+                  .append(key)
+                  .append("</name><value>")
+                  .append(properties.getProperty(key))
+                  .append("</value></property>\n");
+          
+  
+      }
+      sb.append("</configuration>\n");
+      return sb.toString();
   }
 }

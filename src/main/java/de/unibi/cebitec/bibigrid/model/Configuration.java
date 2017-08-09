@@ -41,6 +41,7 @@ public class Configuration {
     private boolean nfs = true;
     private boolean oge = true;
     private boolean hdfs = false;
+    private boolean spark = false;
 
     private String user = System.getProperty("user.name");
     
@@ -441,6 +442,14 @@ public class Configuration {
 
     public void setSecuritygroup(String securitygroup) {
         this.securitygroup = securitygroup;
+    }
+
+    public boolean isSpark() {
+        return spark;
+    }
+
+    public void setSpark(boolean spark) {
+        this.spark = spark;
     }
 
     public String getGoogleProjectId() {
