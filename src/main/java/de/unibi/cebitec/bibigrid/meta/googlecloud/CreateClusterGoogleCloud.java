@@ -65,8 +65,8 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
         // All resource ids must be lower case!
         clusterId = clusterIdBase64.substring(0, len).toLowerCase(Locale.US);
-        bibigridid = "bibigrid-id-" + clusterId;
-        username = "user--" + conf.getUser();
+        bibigridid = "bibigrid-id" + GoogleCloudUtils.TAG_SEPARATOR + clusterId;
+        username = "user" + GoogleCloudUtils.TAG_SEPARATOR + conf.getUser();
         log.debug("cluster id: {}", clusterId);
 
         return environment = new CreateClusterEnvironmentGoogleCloud(this);
@@ -129,9 +129,9 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         InstanceInfo.Builder masterBuilder = GoogleCloudUtils.getInstanceBuilder(zone, masterInstanceName,
                 conf.getMasterInstanceType().getValue())
                 .setNetworkInterfaces(masterNetworkInterfaces)
-                .setTags(Tags.of(bibigridid, username, "name--" + masterInstanceName))
+                .setTags(Tags.of(bibigridid, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + masterInstanceName))
                 .setMetadata(Metadata.newBuilder().add("startup-script", base64MasterUserData).build());
-        GoogleCloudUtils.attachDisks(compute, masterBuilder, conf.getMasterImage(), zone, conf.getMasterMounts());
+        GoogleCloudUtils.attachDisks(compute, masterBuilder, conf.getMasterImage(), zone, conf.getMasterMounts(), clusterId);
         GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
 
         // Waiting for master instance to run
@@ -163,9 +163,9 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(zone, slaveInstanceId,
                         conf.getSlaveInstanceType().getValue())
                         .setNetworkInterfaces(slaveNetworkInterfaces)
-                        .setTags(Tags.of(bibigridid, username, "name--" + slaveInstanceName))
+                        .setTags(Tags.of(bibigridid, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + slaveInstanceName))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
-                GoogleCloudUtils.attachDisks(compute, slaveBuilder, conf.getSlaveImage(), zone, conf.getSlaveMounts());
+                GoogleCloudUtils.attachDisks(compute, slaveBuilder, conf.getSlaveImage(), zone, conf.getSlaveMounts(), clusterId);
                 GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
 
                 Operation createSlaveOperation = compute.create(slaveBuilder.build());

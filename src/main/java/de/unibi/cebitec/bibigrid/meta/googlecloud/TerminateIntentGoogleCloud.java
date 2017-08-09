@@ -38,13 +38,10 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
             LOG.warn("No cluster with id {} found.", conf.getClusterId());
             return false;
         }
-
         LOG.info("Terminating cluster with ID: {}", conf.getClusterId());
-
         terminateInstances();
         terminateNetwork();
-        // TODO: more
-
+        // TODO: remove disks created from snapshots?
         LOG.info("Cluster '{}' terminated!", conf.getClusterId());
         return true;
     }
@@ -54,7 +51,6 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
         if (cluster.getMasterinstance() != null) {
             instances.add(cluster.getMasterinstance());
         }
-
         if (instances.size() > 0) {
             LOG.info("Wait for {} instances to shut down. This can take a while, so please be patient!", instances.size());
             for (String i : instances) {

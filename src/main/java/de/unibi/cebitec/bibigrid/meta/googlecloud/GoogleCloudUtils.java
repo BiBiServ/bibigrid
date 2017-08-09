@@ -22,8 +22,10 @@ import java.util.concurrent.TimeoutException;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public final class GoogleCloudUtils {
+    public static final String TAG_SEPARATOR = "--";
     private static final Logger log = LoggerFactory.getLogger(GoogleCloudUtils.class);
     private static final String METADATA_SSH_KEYS = "ssh-keys";
+    private static long diskCounter = 1;
 
     static Compute getComputeService(final Configuration conf) {
         ComputeOptions.Builder optionsBuilder = ComputeOptions.newBuilder();
@@ -73,6 +75,7 @@ public final class GoogleCloudUtils {
     }
 
     private static AttachedDisk createBootDisk(String imageId) {
+        // Create a simple persistent disk from the image that will be deleted automatically with the instance.
         AttachedDisk.CreateDiskConfiguration bootDisk = AttachedDisk.CreateDiskConfiguration
                 .newBuilder(ImageId.of(imageId))
                 .setAutoDelete(true)
@@ -81,6 +84,7 @@ public final class GoogleCloudUtils {
     }
 
     private static AttachedDisk createMountDisk(Compute compute, String zone, String snapshotId, String diskId) {
+        // In order to attach a snapshot, we have to create a persistent disk with the snapshot as disk config.
         SnapshotDiskConfiguration mountDisk = SnapshotDiskConfiguration.of(SnapshotId.of(snapshotId));
         DiskId disk = DiskId.of(zone, diskId);
         DiskInfo diskInfo = DiskInfo.newBuilder(disk, mountDisk).build();
@@ -94,12 +98,16 @@ public final class GoogleCloudUtils {
     }
 
     static void attachDisks(Compute compute, InstanceInfo.Builder instanceBuilder, String imageId,
-                            String zone, Map<String, String> mounts) {
+                            String zone, Map<String, String> mounts, String clusterId) {
         List<AttachedDisk> attachedDisks = new ArrayList<>();
+        // First add the boot disk
         AttachedDisk bootDisk = GoogleCloudUtils.createBootDisk(imageId);
         attachedDisks.add(bootDisk);
         for (String key : mounts.keySet()) {
-            String diskId = "disk-" + key; // TODO: think of better disk name for snapshot
+            // For the creation of the cluster it's sufficient to add a counter as suffix.
+            // The cluster ID is already the greatest difference between multiple clusters.
+            String diskId = "disk-" + clusterId + "-" + key + diskCounter;
+            diskCounter++;
             AttachedDisk mountDisk = createMountDisk(compute, zone, key, diskId);
             attachedDisks.add(mountDisk);
         }

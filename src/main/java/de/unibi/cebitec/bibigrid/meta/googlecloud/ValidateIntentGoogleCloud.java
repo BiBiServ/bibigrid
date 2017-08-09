@@ -28,26 +28,22 @@ public class ValidateIntentGoogleCloud implements ValidateIntent {
     public boolean validate() {
         log.info("Validating config file...");
         Compute compute = GoogleCloudUtils.getComputeService(conf);
-
         if (compute == null) {
             log.error("API connection not successful. Please check your configuration.");
             return false;
         }
-
         if (checkImages(compute)) {
             log.info(I, "Image check has been successful.");
         } else {
             log.error("Failed to check images.");
             return false;
         }
-
         if (checkSnapshots(compute)) {
             log.info(I, "Snapshot check has been successful.");
         } else {
             log.error("One or more snapshots could not be found.");
             return false;
         }
-
         log.info(I, "You can now start your cluster.");
         return true;
     }
@@ -57,9 +53,6 @@ public class ValidateIntentGoogleCloud implements ValidateIntent {
         boolean allCheck = true;
         boolean foundMaster = false;
         boolean foundSlave = false;
-
-        // TODO: compare instance types?
-
         for (Image img : compute.listImages().iterateAll()) {
             String name = img.getImageId().getImage();
             foundMaster = foundMaster || name.equals(conf.getMasterImage());
@@ -78,13 +71,14 @@ public class ValidateIntentGoogleCloud implements ValidateIntent {
         log.info("Checking snapshots...");
         boolean allcheck = true;
         List<String> snapShotList = new ArrayList<>(conf.getMasterMounts().keySet());
+        snapShotList.addAll(conf.getSlaveMounts().keySet());
         for (String e : snapShotList) { //snapshot ids have to be checked individually to find out which one is missing or malformed.
             try {
                 if (e.contains(":")) {
                     e = e.substring(0, e.indexOf(":"));
                 }
                 Snapshot snapshot = compute.getSnapshot(e);
-                if (snapshot == null) {
+                if (snapshot == null || !snapshot.exists()) {
                     log.error("Snapshot {} could not be found.", e);
                     allcheck = false;
                     continue;
