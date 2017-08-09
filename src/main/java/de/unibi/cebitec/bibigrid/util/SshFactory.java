@@ -157,7 +157,7 @@ public class SshFactory {
                 sb.append("\nEOFCUSTOMSCRIPT\n");
                 sb.append("bash shellscript.sh &> shellscript.log &\n");
             } catch (IOException e) {
-                log.info("Shell script could not be read.");
+                LOG.info("Shell script could not be read.");
             }
         }
 

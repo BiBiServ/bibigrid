@@ -18,7 +18,7 @@ public class InstanceTypeGoogleCloud extends InstanceType {
 
     private static void addType(String id, int cores) {
         // TODO: decide ephemeral size
-        count.put(id, new InstanceInformation.InstanceSpecification(cores, 0, false, true, true));
+        count.put(id, new InstanceInformation.InstanceSpecification(cores, 0, false, false, true, true));
     }
 
     static {
