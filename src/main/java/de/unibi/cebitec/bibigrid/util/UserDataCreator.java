@@ -97,7 +97,7 @@ public class UserDataCreator {
         blockDeviceBase = "/dev/vd";
         break;
       case GOOGLECLOUD:
-        blockDeviceBase = "/dev/vd";
+        blockDeviceBase = "/dev/sd";
         break;
     }
 

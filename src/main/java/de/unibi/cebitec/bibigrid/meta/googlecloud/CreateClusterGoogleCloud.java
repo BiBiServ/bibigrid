@@ -81,8 +81,9 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         DeviceMapper masterDeviceMapper = new DeviceMapper(conf.getMode(), masterSnapshotToMountPointMap, ephemerals);
 
         base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair());
+        base64MasterUserData = new String(Base64.decodeBase64(base64MasterUserData));
 
-        log.info(V, "Master UserData:\n {}", new String(Base64.decodeBase64(base64MasterUserData)));
+        log.info(V, "Master UserData:\n {}", base64MasterUserData);
 
         // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
         masterNetworkInterfaces = new ArrayList<>();

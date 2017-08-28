@@ -129,7 +129,7 @@ public class DeviceMapper {
                 return "/dev/vd";
 
             case GOOGLECLOUD:
-                return "/dev/vd";
+                return "/dev/sd";
         }
         return null;
     }
