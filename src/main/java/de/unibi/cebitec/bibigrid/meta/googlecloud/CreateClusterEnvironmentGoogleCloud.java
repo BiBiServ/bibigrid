@@ -83,7 +83,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
             if (internalCompute != null) {
                 com.google.api.services.compute.model.Network internalVpc = internalCompute.networks().get(
                         cluster.getConfig().getGoogleProjectId(),
-                        vpc.getNetworkId().getSelfLink()).execute();
+                        vpc.getNetworkId().getNetwork()).execute();
                 if (internalVpc != null) {
                     isAutoCreate = internalVpc.getAutoCreateSubnetworks();
                     log.debug(V, "VPC auto create is {}.", isAutoCreate);
@@ -143,14 +143,13 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         // Collect all firewall rules grouped by the source ip range because the number of rules
         // is limited and therefore should be combined!
         Map<String, List<Firewall.Allowed>> firewallRuleMap = new HashMap<>();
-        firewallRuleMap.put("0.0.0.0/0", Arrays.asList(
-                new Firewall.Allowed().setIPProtocol("tcp").setPorts(Arrays.asList("22", "3389")),
-                new Firewall.Allowed().setIPProtocol("icmp")));
-        firewallRuleMap.put(subnet.getIpRange(), Arrays.asList(
-                new Firewall.Allowed().setIPProtocol("tcp").setPorts(Arrays.asList("0-65535")),
-                new Firewall.Allowed().setIPProtocol("udp").setPorts(Arrays.asList("0-65535")),
-                new Firewall.Allowed().setIPProtocol("icmp")
-        ));
+        firewallRuleMap.put("0.0.0.0/0", new ArrayList<>());
+        firewallRuleMap.get("0.0.0.0/0").add(new Firewall.Allowed().setIPProtocol("tcp").setPorts(Arrays.asList("22", "3389")));
+        firewallRuleMap.get("0.0.0.0/0").add(new Firewall.Allowed().setIPProtocol("icmp"));
+        firewallRuleMap.put(subnet.getIpRange(), new ArrayList<>());
+        firewallRuleMap.get(subnet.getIpRange()).add(new Firewall.Allowed().setIPProtocol("tcp").setPorts(Arrays.asList("0-65535")));
+        firewallRuleMap.get(subnet.getIpRange()).add(new Firewall.Allowed().setIPProtocol("udp").setPorts(Arrays.asList("0-65535")));
+        firewallRuleMap.get(subnet.getIpRange()).add(new Firewall.Allowed().setIPProtocol("icmp"));
         for (Port port : cluster.getConfig().getPorts()) {
             log.info("{}:{}", port.iprange, "" + port.number);
             if (!firewallRuleMap.containsKey(port.iprange)) {
@@ -169,6 +168,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
                         .setName(SECURITY_GROUP_PREFIX + "rule" + ruleIndex + "-" + cluster.getClusterId())
                         .setNetwork(vpc.getNetworkId().getSelfLink())
                         .setSourceRanges(Collections.singletonList(ipRange));
+                ruleIndex++;
                 // TODO: possibly add cluster instance ids to targetTags, to limit the access!
                 firewall.setAllowed(firewallRuleMap.get(ipRange));
                 internalCompute.firewalls().insert(cluster.getConfig().getGoogleProjectId(), firewall).execute();
