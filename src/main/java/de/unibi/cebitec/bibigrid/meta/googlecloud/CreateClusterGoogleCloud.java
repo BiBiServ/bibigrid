@@ -81,6 +81,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         DeviceMapper masterDeviceMapper = new DeviceMapper(conf.getMode(), masterSnapshotToMountPointMap, ephemerals);
 
         base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair());
+        // Google doesn't use base64 encoded startup scripts. Just use plain text
         base64MasterUserData = new String(Base64.decodeBase64(base64MasterUserData));
 
         log.info(V, "Master UserData:\n {}", base64MasterUserData);

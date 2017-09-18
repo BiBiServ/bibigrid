@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
+import com.google.api.services.compute.model.Firewall;
+import com.google.api.services.compute.model.FirewallList;
 import com.google.cloud.compute.Compute;
 import com.google.cloud.compute.Instance;
 import com.google.cloud.compute.InstanceId;
@@ -9,8 +11,12 @@ import de.unibi.cebitec.bibigrid.model.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+
+import static de.unibi.cebitec.bibigrid.meta.googlecloud.CreateClusterGoogleCloud.SECURITY_GROUP_PREFIX;
 
 /**
  * Implementation of the general TerminateIntent interface for a Google based cluster.
@@ -41,7 +47,6 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
         LOG.info("Terminating cluster with ID: {}", conf.getClusterId());
         terminateInstances();
         terminateNetwork();
-        // TODO: remove disks created from snapshots?
         LOG.info("Cluster '{}' terminated!", conf.getClusterId());
         return true;
     }
@@ -64,7 +69,25 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void terminateNetwork() {
-        // TODO
+        com.google.api.services.compute.Compute internalCompute = GoogleCloudUtils.getInternalCompute(compute);
+        List<String> firewallsToRemove = new ArrayList<>();
+        try {
+            // Collect all firewall rules that were created for this cluster
+            FirewallList list = internalCompute.firewalls().list(conf.getGoogleProjectId()).execute();
+            for (Firewall firewall : list.getItems()) {
+                if(firewall.getName().startsWith(SECURITY_GROUP_PREFIX + "rule") &&
+                        firewall.getName().endsWith(conf.getClusterId())) {
+                    firewallsToRemove.add(firewall.getSelfLink());
+                }
+            }
+            // Sequentially remove all the firewall rules
+            for(String firewallLink : firewallsToRemove) {
+                internalCompute.firewalls().delete(conf.getGoogleProjectId(), firewallLink).execute();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
