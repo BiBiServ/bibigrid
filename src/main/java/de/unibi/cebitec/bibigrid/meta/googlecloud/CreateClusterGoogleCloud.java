@@ -189,9 +189,8 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
             log.info("No Slave instance(s) requested!");
         }
 
-        log.info(I, "sleep start...");
-        sleep(15);
-        log.info(I, "...sleep end.");
+        // just to be sure, everything is present, wait 5 seconds
+        sleep(5);
 
         // post configure master
         configureMaster();
