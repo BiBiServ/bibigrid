@@ -79,7 +79,7 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
             for (Firewall firewall : list.getItems()) {
                 if(firewall.getName().startsWith(SECURITY_GROUP_PREFIX + "rule") &&
                         firewall.getName().endsWith(conf.getClusterId())) {
-                    firewallsToRemove.add(firewall.getSelfLink());
+                    firewallsToRemove.add(firewall.getName());
                 }
             }
             // Sequentially remove all the firewall rules

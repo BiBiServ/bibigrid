@@ -86,120 +86,41 @@ public class SshFactory {
         }
     }
 
-    public static String buildSshCommand(String asGroupName, Configuration cfg, Instance masterInstance, List<Instance> slaveInstances) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
-
-        if (cfg.getShellScriptFile() != null) {
-            try {
-                List<String> lines = Files.readAllLines(cfg.getShellScriptFile(), StandardCharsets.UTF_8);
-                sb.append("cat > shellscript.sh << EOFCUSTOMSCRIPT \n");
-
-                for (String e : lines) {
-                    sb.append(e);
-                    sb.append("\n");
-                }
-                sb.append("\nEOFCUSTOMSCRIPT\n");
-                sb.append("bash shellscript.sh &> shellscript.log &\n");
-            } catch (IOException e) {
-                LOG.info("Shell script could not be read.");
-            }
+    public static String buildSshCommand(String asGroupName, Configuration cfg, Instance master, List<Instance> slaves) {
+        List<String> slaveIps = new ArrayList<>();
+        for (Instance slave : slaves) {
+            slaveIps.add(slave.getPrivateDnsName());
         }
-
-        if (cfg.isOge()) {
-            sb.append("qconf -as $(hostname)\n");
-            // clean-up possible previous configuration (could be happend if you use a configured masterimage snapshot as image)
-            sb.append("for i in `qconf -sel 2>/dev/null`; do qconf -dattr hostgroup hostlist $i \\@allhosts 2>&1; qconf -de $i 2>&1; done;\n");
-            
-            if (cfg.isUseMasterAsCompute()) {
-                sb.append("./add_exec ");
-                sb.append(masterInstance.getPrivateDnsName());
-                sb.append(" ");
-                sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
-                sb.append("\n");
-                sb.append("sudo service gridengine-exec start\n");
-            }
-            if (slaveInstances != null) {
-                for (Instance instance : slaveInstances) {
-                    sb.append("./add_exec ");
-                    sb.append(instance.getPrivateDnsName());
-                    sb.append(" ");
-                    sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
-                    sb.append("\n");
-                }
-            }
-        } else {
-            sb.append("sudo service gridengine-master stop\n");
-        }
-        sb.append("sudo service gmetad restart \n");
-        sb.append("sudo service ganglia-monitor restart \n");
-        sb.append("echo CONFIGURATION_FINISHED \n");
-        return sb.toString();
+        return buildSshCommandUnified(master.getPrivateDnsName(), master.getPublicDnsName(), slaveIps, cfg);
     }
 
-    public static String buildSshCommandGoogleCloud(String asGroupName, Configuration cfg,
-                                                    com.google.cloud.compute.Instance masterInstance,
-                                                    List<com.google.cloud.compute.Instance> slaveInstances) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("sudo sed -i s/MASTER_IP/$(hostname)/g /etc/ganglia/gmond.conf\n");
-
-        if (cfg.getShellScriptFile() != null) {
-            try {
-                List<String> lines = Files.readAllLines(cfg.getShellScriptFile(), StandardCharsets.UTF_8);
-                sb.append("cat > shellscript.sh << EOFCUSTOMSCRIPT \n");
-
-                for (String e : lines) {
-                    sb.append(e);
-                    sb.append("\n");
-                }
-                sb.append("\nEOFCUSTOMSCRIPT\n");
-                sb.append("bash shellscript.sh &> shellscript.log &\n");
-            } catch (IOException e) {
-                LOG.info("Shell script could not be read.");
-            }
+    public static String buildSshCommand(String asGroupName, Configuration cfg, com.google.cloud.compute.Instance master,
+                                                    List<com.google.cloud.compute.Instance> slaves) {
+        List<String> slaveIps = new ArrayList<>();
+        for (com.google.cloud.compute.Instance slave : slaves) {
+            slaveIps.add(GoogleCloudUtils.getInstancePrivateIp(slave));
         }
-
-        if (cfg.isOge()) {
-            sb.append("qconf -as $(hostname)\n");
-            // clean-up possible previous configuration (could be happend if you use a configured masterimage snapshot as image)
-            sb.append("for i in `qconf -sel 2>/dev/null`; do qconf -dattr hostgroup hostlist $i \\@allhosts 2>&1; qconf -de $i 2>&1; done;\n");
-
-            if (cfg.isUseMasterAsCompute()) {
-                sb.append("./add_exec ");
-                sb.append(GoogleCloudUtils.getInstanceFQDN(masterInstance));
-                sb.append(" ");
-                sb.append(cfg.getMasterInstanceType().getSpec().instanceCores);
-                sb.append("\n");
-                sb.append("sudo service gridengine-exec start\n");
-            }
-            if (slaveInstances != null) {
-                for (com.google.cloud.compute.Instance instance : slaveInstances) {
-                    sb.append("./add_exec ");
-                    sb.append(GoogleCloudUtils.getInstanceFQDN(instance));
-                    sb.append(" ");
-                    sb.append(cfg.getSlaveInstanceType().getSpec().instanceCores);
-                    sb.append("\n");
-                }
-            }
-        } else {
-            sb.append("sudo service gridengine-master stop\n");
-        }
-        sb.append("sudo service gmetad restart \n");
-        sb.append("sudo service ganglia-monitor restart \n");
-        sb.append("echo CONFIGURATION_FINISHED \n");
-        return sb.toString();
+        return buildSshCommandUnified(GoogleCloudUtils.getInstancePrivateIp(master),
+                GoogleCloudUtils.getInstancePublicIp(master), slaveIps, cfg);
     }
 
-    public static String buildSshCommandOpenstack(String asGroupName, Configuration cfg, CreateClusterOpenstack.Instance master, Collection<CreateClusterOpenstack.Instance> slaves) {
+    public static String buildSshCommandOpenstack(String asGroupName, Configuration cfg,
+                                                  CreateClusterOpenstack.Instance master,
+                                                  Collection<CreateClusterOpenstack.Instance> slaves) {
+        List<String> slaveIps = new ArrayList<>();
+        for (CreateClusterOpenstack.Instance slave : slaves) {
+            slaveIps.add(slave.getIp());
+        }
+        return buildSshCommandUnified(master.getIp(), master.getPublicIp(), slaveIps, cfg);
+    }
+
+    private static String buildSshCommandUnified(String masterIp, String masterPublicIp, List<String> slaveIps,
+                                                 Configuration cfg) {
         StringBuilder sb = new StringBuilder();
-        
         
         UserDataCreator.shellFct(sb);
-        
-        
-        sb.append("sudo sed -i s/MASTER_IP/").append(master.getIp()).append("/g /etc/ganglia/gmond.conf\n");
+
+        sb.append("sudo sed -i s/MASTER_IP/").append(masterIp).append("/g /etc/ganglia/gmond.conf\n");
 
         if (cfg.getShellScriptFile() != null) {
             try {
@@ -218,13 +139,13 @@ public class SshFactory {
         }
         if (cfg.isOge()) {
             // get masters fqdn
-            sb.append("MFQDN=$(fqdn ").append(master.getIp()).append(")\n");
+            sb.append("MFQDN=$(fqdn ").append(masterIp).append(")\n");
             // configure and starts sge master
             sb.append("echo ${MFQDN} | sudo tee /var/lib/gridengine/default/common/act_qmaster > /dev/null\n");
             sb.append("sudo chown sgeadmin:sgeadmin /var/lib/gridengine/default/common/act_qmaster\n");
             sb.append("ch_p sge_qmaster 5 'sudo service gridengine-master start'\n");          
             // and wait for sge_master available
-            sb.append("ch_s ").append(master.getIp()).append(" 6444\n");
+            sb.append("ch_s ").append(masterIp).append(" 6444\n");
             sb.append("log \"gridengine-master configured and started.\"\n");
             // add master as submit host
             sb.append("sudo qconf -as ${MFQDN} 2>&1\n");
@@ -238,34 +159,28 @@ public class SshFactory {
                 sb.append("/home/ubuntu/add_exec ${MFQDN} ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
                 sb.append("ch_p sge_execd 5 \"sudo service gridengine-exec start\"\n");
                 sb.append("log \"Master:${MFQDN} configured as execution host.\"\n");
-                
             }
             // add slaves as execution hosts
-            for (CreateClusterOpenstack.Instance slave : slaves) {       
+            for (String slaveIp : slaveIps) {
                // wait for slave instance ready
-               sb.append("ch_s ").append(slave.getIp()).append(" 22\n");
+               sb.append("ch_s ").append(slaveIp).append(" 22\n");
                // configure sge, start execution daemon and get slaves fqdn
                sb.append("while \n");
-               sb.append(SSH).append(slave.getIp()).append(" -E /dev/null \"echo ${MFQDN} | sudo tee /var/lib/gridengine/default/common/act_qmaster 2>&1 >/dev/null; sudo service gridengine-exec start\"\n");
+               sb.append(SSH).append(slaveIp).append(" -E /dev/null \"echo ${MFQDN} | sudo tee /var/lib/gridengine/default/common/act_qmaster 2>&1 >/dev/null; sudo service gridengine-exec start\"\n");
                sb.append("(( $? != 0 ));\ndo sleep 10;done;\n");
                
-               sb.append("SFQDN=$(fqdn  ").append(slave.getIp()).append(")\n");
+               sb.append("SFQDN=$(fqdn  ").append(slaveIp).append(")\n");
                sb.append("/home/ubuntu/add_exec ${SFQDN} ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
                sb.append("log \"Slave:${SFQDN} configured as execution host.\"\n");
-              
             }
         }
         
         if (cfg.isCassandra()) {
-              
-  
             List<String> cassandra_hosts = new ArrayList<>();
             // add master
-            cassandra_hosts.add(master.getIp());
+            cassandra_hosts.add(masterIp);
             // add add all slaves
-            for (CreateClusterOpenstack.Instance slave : slaves) {              
-                cassandra_hosts.add(slave.getIp());
-            }
+            cassandra_hosts.addAll(slaveIps);
             // now configure cassandra on all hosts and starts it afterwards
             String ch = String.join(",",cassandra_hosts);
             
@@ -279,19 +194,18 @@ public class SshFactory {
         if (cfg.isHdfs()) {
             sb.append("/opt/hadoop/bin/hdfs namenode -format bibigrid 2>&1\n");
             
-            sb.append("echo ").append(master.getIp()).append(" > /opt/hadoop/etc/hadoop/slaves\n");
-            for (CreateClusterOpenstack.Instance slave : slaves) {
-                sb.append("echo ").append(slave.getIp()).append(" >> /opt/hadoop/etc/hadoop/slaves\n");
+            sb.append("echo ").append(masterIp).append(" > /opt/hadoop/etc/hadoop/slaves\n");
+            for (String slaveIp : slaveIps) {
+                sb.append("echo ").append(slaveIp).append(" >> /opt/hadoop/etc/hadoop/slaves\n");
             }
             sb.append("/opt/hadoop/sbin/start-dfs.sh\n");
-            
         }
         
         if (cfg.isSpark()) {
-            sb.append("echo SPARK_MASTER_OPTS='\"-Dspark.ui.reverseProxyUrl=http://").append(master.getPublicIp()).append("/spark/ -Dspark.ui.reverseProxy=true\"' >> /opt/spark/conf/spark-env.sh\n");
-            sb.append("echo SPARK_WORKER_OPTS='\"-Dspark.ui.reverseProxyUrl=http://").append(master.getPublicIp()).append("/spark/ -Dspark.ui.reverseProxy=true\"' >> /opt/spark/conf/spark-env.sh\n");
-            for (CreateClusterOpenstack.Instance slave : slaves) {
-                sb.append("echo ").append(slave.getIp()).append(" >> /opt/spark/conf/slaves\n");
+            sb.append("echo SPARK_MASTER_OPTS='\"-Dspark.ui.reverseProxyUrl=http://").append(masterPublicIp).append("/spark/ -Dspark.ui.reverseProxy=true\"' >> /opt/spark/conf/spark-env.sh\n");
+            sb.append("echo SPARK_WORKER_OPTS='\"-Dspark.ui.reverseProxyUrl=http://").append(masterPublicIp).append("/spark/ -Dspark.ui.reverseProxy=true\"' >> /opt/spark/conf/spark-env.sh\n");
+            for (String slaveIp : slaveIps) {
+                sb.append("echo ").append(slaveIp).append(" >> /opt/spark/conf/slaves\n");
             }
             sb.append("/opt/spark/sbin/start-all.sh\n");
             
@@ -306,7 +220,6 @@ public class SshFactory {
                     .append("A2ENSPARK\n");
             
             sb.append("sudo /usr/sbin/a2enconf spark\n");
-                    
         }
         
         sb.append("sudo /usr/sbin/a2enconf result\n");
@@ -317,6 +230,4 @@ public class SshFactory {
         sb.append("echo CONFIGURATION_FINISHED \n");
         return sb.toString();
     }
-    
-
 }

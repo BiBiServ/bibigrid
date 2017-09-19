@@ -252,10 +252,6 @@ public class UserDataCreator {
       case OPENSTACK:
         break;
       case GOOGLECLOUD:
-        if (!cfg.isPublicSlaveIps()) {
-          slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
-          slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
-        }
         break;
     }
 

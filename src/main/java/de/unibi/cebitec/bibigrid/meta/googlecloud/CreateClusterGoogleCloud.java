@@ -108,9 +108,15 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
 
         slaveNetworkInterfaces = new ArrayList<>();
         inis = NetworkInterface.newBuilder(environment.getSubnet().getNetwork());
-        inis.setSubnetwork(environment.getSubnet().getSubnetworkId());
-        // TODO: conf.isPublicSlaveIps() => private-ip-google-accesss?
-        slaveNetworkInterfaces.add(inis.build());
+        inis.setSubnetwork(environment.getSubnet().getSubnetworkId())
+                .setAccessConfigurations(NetworkInterface.AccessConfig.newBuilder()
+                        .setType(NetworkInterface.AccessConfig.Type.ONE_TO_ONE_NAT)
+                        .setName("external-nat")
+                        .build());
+        for (int i = 0; i < conf.getSlaveInstanceCount(); i++) {
+            // TODO: conf.isPublicSlaveIps() => private-ip-google-accesss?
+            slaveNetworkInterfaces.add(inis.build());
+        }
 
         return this;
     }
@@ -143,7 +149,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 Collections.singletonList(createMasterOperation)).get(0);
         log.info(I, "Master instance is now running!");
 
-        waitForMasterStatusCheck(Collections.singletonList(masterInstance));
+        waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
 
         String masterPrivateIp = GoogleCloudUtils.getInstancePrivateIp(masterInstance);
         String masterPublicIp = GoogleCloudUtils.getInstancePublicIp(masterInstance);
@@ -164,7 +170,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
                 String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
                 InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(zone, slaveInstanceId,
                         conf.getSlaveInstanceType().getValue())
-                        .setNetworkInterfaces(slaveNetworkInterfaces)
+                        .setNetworkInterfaces(slaveNetworkInterfaces.get(i))
                         .setTags(Tags.of(bibigridid, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + slaveInstanceName))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
                 GoogleCloudUtils.attachDisks(compute, slaveBuilder, conf.getSlaveImage(), zone, conf.getSlaveMounts(), clusterId);
@@ -177,9 +183,15 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
             log.info("Waiting for slave instance(s) to finish booting ...");
             slaveInstances = waitForInstances(slaveInstanceIds, slaveInstanceOperations);
             log.info(I, "Slave instance(s) is now running!");
+
+            waitForInstancesStatusCheck(slaveInstances);
         } else {
             log.info("No Slave instance(s) requested!");
         }
+
+        log.info(I, "sleep start...");
+        sleep(15);
+        log.info(I, "...sleep end.");
 
         // post configure master
         configureMaster();
@@ -224,12 +236,12 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
         return true;
     }
 
-    private void waitForMasterStatusCheck(List<Instance> instances) {
-        log.info("Waiting for Status Checks on master ...");
+    private void waitForInstancesStatusCheck(List<Instance> instances) {
+        log.info("Waiting for Status Checks on instances ...");
         for (Instance instance : instances) {
             do {
                 InstanceInfo.Status status = instance.getStatus();
-                log.debug("Status of master instance: " + status);
+                log.debug("Status of " + instance.getInstanceId().getInstance() + " instance: " + status);
                 if (status == InstanceInfo.Status.RUNNING) {
                     break;
                 } else {
@@ -271,6 +283,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException ie) {
             log.error("Thread.sleep interrupted!");
+            ie.printStackTrace();
         }
     }
 
@@ -280,7 +293,7 @@ public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoog
 
         // Building Command
         log.info("Now configuring ...");
-        String execCommand = SshFactory.buildSshCommandGoogleCloud(clusterId, getConfig(), masterInstance, slaveInstances);
+        String execCommand = SshFactory.buildSshCommand(clusterId, getConfig(), masterInstance, slaveInstances);
         log.info(V, "Building SSH-Command : {}", execCommand);
         boolean configured = false;
         int ssh_attempts = 25; // TODO attempts

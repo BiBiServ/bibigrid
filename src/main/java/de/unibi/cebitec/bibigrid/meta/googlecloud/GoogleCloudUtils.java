@@ -56,12 +56,12 @@ public final class GoogleCloudUtils {
         return instanceId + ".c." + projectId + ".internal";
     }
 
-    static String getInstancePrivateIp(Instance instance) {
+    public static String getInstancePrivateIp(Instance instance) {
         List<NetworkInterface> interfaces = instance.getNetworkInterfaces();
         return interfaces.isEmpty() ? null : interfaces.get(0).getNetworkIp();
     }
 
-    static String getInstancePublicIp(Instance instance) {
+    public static String getInstancePublicIp(Instance instance) {
         List<NetworkInterface> interfaces = instance.getNetworkInterfaces();
         if (interfaces.isEmpty())
             return null;
