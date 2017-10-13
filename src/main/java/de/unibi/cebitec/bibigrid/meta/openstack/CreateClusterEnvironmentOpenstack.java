@@ -452,6 +452,10 @@ public class CreateClusterEnvironmentOpenstack
           plopt.deviceOwner("network:ha_router_replicated_interface");
           lop = ps.list(plopt);
         }
+        if (lop.isEmpty()) { // if no port found 3nd check for "network:router_interface_distributed"
+            plopt.deviceOwner("network:router_interface_distributed");
+            lop = ps.list(plopt);
+        }
          
         if (subnet == null && lop.size() > 1) {
             LOG.warn("Network (ID: {}) uses more than one router, return the 1st one !", network.getId());
