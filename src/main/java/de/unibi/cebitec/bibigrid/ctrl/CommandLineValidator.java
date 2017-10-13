@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import de.unibi.cebitec.bibigrid.meta.aws.InstanceTypeAWS;
+import de.unibi.cebitec.bibigrid.meta.googlecloud.InstanceTypeGoogleCloud;
 import de.unibi.cebitec.bibigrid.meta.openstack.InstanceTypeOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.model.Configuration.FS;
@@ -154,8 +155,8 @@ public class CommandLineValidator {
                     LOG.error("User (-u) can't be null or empty.");
                     return false;
                 }
-
             }
+
             ////////////////////////////////////////////////////////////////////////
             ///// Network Options ///////////////////////////////////////////////////////////
 
@@ -181,10 +182,30 @@ public class CommandLineValidator {
             } else if (defaults.containsKey("subnet")) {
                 cfg.setSubnetname(defaults.getProperty("subnet"));
             }
-   
 
-            
-            
+
+            // Google Cloud meta area.
+            if (cfg.getMode().equals(MODE.GOOGLECLOUD)) {
+                /////////// google project id ///////////////
+                if (cl.hasOption("gpid")) {  // Google Cloud - required
+                    cfg.setGoogleProjectId(cl.getOptionValue("gpid").trim());
+                } else if (defaults.containsKey("google-projectid")) {
+                    cfg.setGoogleProjectId(defaults.getProperty("google-projectid"));
+                } else {
+                    LOG.error("No suitable entry for Google-ProjectId (gpid) found! Exit");
+                    return false;
+                }
+
+                /////////// google credentials file ///////////////
+                if (cl.hasOption("gcf")) {  // Google Cloud - required
+                    cfg.setGoogleCredentialsFile(cl.getOptionValue("gcf"));
+                } else if (defaults.containsKey("google-credentials-file")) {
+                    cfg.setGoogleCredentialsFile(defaults.getProperty("google-credentials-file"));
+                } else {
+                    LOG.error("No suitable entry for Google-Credentials-File (gcf) found! Exit");
+                    return false;
+                }
+            }
             
             /**
              * Openstack meta area.
@@ -448,6 +469,9 @@ public class CommandLineValidator {
                         case OPENSTACK:
                             masterType = new InstanceTypeOpenstack(cfg, masterTypeString.trim());
                             break;
+                        case GOOGLECLOUD:
+                            masterType = new InstanceTypeGoogleCloud(cfg, masterTypeString.trim());
+                            break;
                     }
                     this.cfg.setMasterInstanceType(masterType);
                 } catch (Exception e) {
@@ -491,6 +515,9 @@ public class CommandLineValidator {
                             break;
                         case OPENSTACK:
                             slaveType = new InstanceTypeOpenstack(cfg, slaveTypeString.trim());
+                            break;
+                        case GOOGLECLOUD:
+                            slaveType = new InstanceTypeGoogleCloud(cfg, slaveTypeString.trim());
                             break;
                     }
 
