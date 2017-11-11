@@ -1,0 +1,7 @@
+target/
+out/
+dependency-reduced-pom.xml
+*.ipr
+*.iws
+*.iml
+.idea/

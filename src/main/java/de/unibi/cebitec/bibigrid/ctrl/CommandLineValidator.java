@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import de.unibi.cebitec.bibigrid.meta.aws.InstanceTypeAWS;
+import de.unibi.cebitec.bibigrid.meta.googlecloud.InstanceTypeGoogleCloud;
 import de.unibi.cebitec.bibigrid.meta.openstack.InstanceTypeOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.model.Configuration.FS;
@@ -154,8 +155,8 @@ public class CommandLineValidator {
                     LOG.error("User (-u) can't be null or empty.");
                     return false;
                 }
-
             }
+
             ////////////////////////////////////////////////////////////////////////
             ///// Network Options ///////////////////////////////////////////////////////////
 
@@ -181,10 +182,30 @@ public class CommandLineValidator {
             } else if (defaults.containsKey("subnet")) {
                 cfg.setSubnetname(defaults.getProperty("subnet"));
             }
-   
 
-            
-            
+
+            // Google Cloud meta area.
+            if (cfg.getMode().equals(MODE.GOOGLECLOUD)) {
+                /////////// google project id ///////////////
+                if (cl.hasOption("gpid")) {  // Google Cloud - required
+                    cfg.setGoogleProjectId(cl.getOptionValue("gpid").trim());
+                } else if (defaults.containsKey("google-projectid")) {
+                    cfg.setGoogleProjectId(defaults.getProperty("google-projectid"));
+                } else {
+                    LOG.error("No suitable entry for Google-ProjectId (gpid) found! Exit");
+                    return false;
+                }
+
+                /////////// google credentials file ///////////////
+                if (cl.hasOption("gcf")) {  // Google Cloud - required
+                    cfg.setGoogleCredentialsFile(cl.getOptionValue("gcf"));
+                } else if (defaults.containsKey("google-credentials-file")) {
+                    cfg.setGoogleCredentialsFile(defaults.getProperty("google-credentials-file"));
+                } else {
+                    LOG.error("No suitable entry for Google-Credentials-File (gcf) found! Exit");
+                    return false;
+                }
+            }
             
             /**
              * Openstack meta area.
@@ -217,7 +238,7 @@ public class CommandLineValidator {
                 }
                 
                 if (cl.hasOption("ostd")) {
-                    osc.setTenantName(cl.getOptionValue("ostd").trim());
+                    osc.setTenantDomain(cl.getOptionValue("ostd").trim());
                 } else if (defaults.getProperty("openstack-tenantdomain") != null) {
                     osc.setTenantDomain(defaults.getProperty("openstack-tenantdomain"));
                 } else {
@@ -231,7 +252,7 @@ public class CommandLineValidator {
                 } else if (System.getenv("OS_PASSWORD") != null) {
                     osc.setPassword(System.getenv(("OS_PASSWORD")));
                 } else {
-                    LOG.error("No suitable entry for OpenStack-Password (osp) found nore environment OS_PASSWORD set! Exit"); 
+                    LOG.error("No suitable entry for OpenStack-Password (osp) found nor environment OS_PASSWORD set! Exit");
                     return false;
                 }
 
@@ -350,7 +371,7 @@ public class CommandLineValidator {
             ////////////////////////////////////////////////////////////////////////
             ///// HDFS on/off /////////////////////////////////////////////////
             if (cl.hasOption("hdfs")) {
-                cfg.setSpark(true);
+                cfg.setHdfs(true);
                 LOG.info(V, "HDFS support enabled.");
             } else if (defaults.containsKey("hdfs")) {
                 String value = defaults.getProperty("hdfs");
@@ -448,6 +469,9 @@ public class CommandLineValidator {
                         case OPENSTACK:
                             masterType = new InstanceTypeOpenstack(cfg, masterTypeString.trim());
                             break;
+                        case GOOGLECLOUD:
+                            masterType = new InstanceTypeGoogleCloud(cfg, masterTypeString.trim());
+                            break;
                     }
                     this.cfg.setMasterInstanceType(masterType);
                 } catch (Exception e) {
@@ -491,6 +515,9 @@ public class CommandLineValidator {
                             break;
                         case OPENSTACK:
                             slaveType = new InstanceTypeOpenstack(cfg, slaveTypeString.trim());
+                            break;
+                        case GOOGLECLOUD:
+                            slaveType = new InstanceTypeGoogleCloud(cfg, slaveTypeString.trim());
                             break;
                     }
 
@@ -872,7 +899,7 @@ public class CommandLineValidator {
 
                     LOG.info(V, "Use spot request for all");
                 } else if (value.equalsIgnoreCase("no")) {
-                    LOG.info(V, "SpotInstance ussage disabled.");
+                    LOG.info(V, "SpotInstance usage disabled.");
                     this.cfg.setMesos(false);
                 } else {
                     LOG.error("SpotInstanceRequest value not recognized. Please use yes/no.");
@@ -887,7 +914,7 @@ public class CommandLineValidator {
                     FS fs = FS.valueOf(value.toUpperCase());
                     cfg.setLocalFS(fs);
                 } catch (IllegalArgumentException e) {
-                    LOG.error("Local filesustem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
+                    LOG.error("Local filesystem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
                     return false;
                 }
 
@@ -920,7 +947,7 @@ public class CommandLineValidator {
 
         }
 
-        // if successfull validated set configuration to intent
+        // if successful validated set configuration to intent
         intent.setConfiguration(cfg);
         return true;
     }

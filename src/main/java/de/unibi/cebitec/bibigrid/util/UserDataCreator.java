@@ -49,8 +49,17 @@ public class UserDataCreator {
     /* append additional service check fct */
     shellFct(slaveUserData);
 
-    slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+    switch (cfg.getMode()) {
+      case AWS:
+      case OPENSTACK:
+        slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+        break;
+      case GOOGLECLOUD:
+        slaveUserData.append("IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H \"Metadata-Flavor: Google\")\n");
+        break;
+    }
     slaveUserData.append("IPBASE=`echo ${IP} | cut -f 1-3 -d .`\n");
+    
     slaveUserData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
     slaveUserData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -86,6 +95,9 @@ public class UserDataCreator {
         break;
       case OPENSTACK:
         blockDeviceBase = "/dev/vd";
+        break;
+      case GOOGLECLOUD:
+        blockDeviceBase = "/dev/sd";
         break;
     }
 
@@ -239,11 +251,13 @@ public class UserDataCreator {
         break;
       case OPENSTACK:
         break;
+      case GOOGLECLOUD:
+        break;
     }
 
 
     /* 
-         * Mesos Block
+     * Mesos Block
      */
     if (cfg.isMesos()) {
 
@@ -259,7 +273,7 @@ public class UserDataCreator {
     }
 
     /*
-         * Early Execute Script for Slave
+     * Early Execute Script for Slave
      */
     if (cfg.getEarlySlaveShellScriptFile() != null) {
       try {
@@ -317,7 +331,15 @@ public class UserDataCreator {
     /* append additional shell fct */
     shellFct(masterUserData);
     
-    masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+    switch (cfg.getMode()) {
+      case AWS:
+      case OPENSTACK:
+        masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+        break;
+      case GOOGLECLOUD:
+        masterUserData.append("IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H \"Metadata-Flavor: Google\")\n");
+        break;
+    }
     masterUserData.append("IPBASE=`echo ${IP} | cut -f 1-3 -d .`\n");
     
     // ssh configuration
@@ -335,7 +357,7 @@ public class UserDataCreator {
     
     
     /*
-         * Ephemeral/RAID Preperation
+     * Ephemeral/RAID Preperation
      */
     String blockDeviceBase = DeviceMapper.getBlockDeviceBase(cfg.getMode());
     // if 1 ephemeral is available mount it as /vol/spool
@@ -400,7 +422,7 @@ public class UserDataCreator {
     }
 
     /*
-         * create spool, scratch, log
+     * create spool, scratch, log
      */
     masterUserData.append("mkdir -p /vol/spool/log\n");
     masterUserData.append("mkdir -p /vol/spool/www\n");
@@ -414,7 +436,7 @@ public class UserDataCreator {
     masterUserData.append("chmod 775 /var/log/bibigrid\n");
 
     /*
-         * Cassandra Bloock
+     * Cassandra Bloock
      */
     if (cfg.isCassandra()) {
       masterUserData.append("mkdir -p /vol/scratch/cassandra\n");
@@ -447,7 +469,7 @@ public class UserDataCreator {
     }
 
     /* 
-         * Mesos Block
+     * Mesos Block
      */
     if (cfg.isMesos()) {
       // start zookeeper
@@ -485,7 +507,7 @@ public class UserDataCreator {
     }
 
     /*
-         * NFS//Mounts Block
+     * NFS//Mounts Block
      */
     if (cfg.isNfs()) {
 
@@ -530,10 +552,12 @@ public class UserDataCreator {
       case OPENSTACK:
         // currently nothing todo
         break;
-
+      case GOOGLECLOUD:
+        // currently nothing todo
+        break;
     }
     /*
-         * Early Execute Script
+     * Early Execute Script
      */
     if (cfg.getEarlyMasterShellScriptFile() != null) {
       try {
@@ -579,14 +603,14 @@ public class UserDataCreator {
             .append("\t\t/bin/nc ${1} ${2} </dev/null 2>/dev/null\n")
             .append("\tdone\n")
             .append("}\n");
+
     sb.append("function ch_f {\n"
             + "\twhile [ ! -f ${1} ]; do\n"
             + "\t\tlog \"wait for file ${1}\"\n"
             + "\t\tsleep 2\n"
             + "\tdone\n"
             + "}\n");
-            
-    
+
     sb.append("function ch_p {\n")
             .append("\twhile [ $(ps -e | grep ${1} | wc -l) != '1' ]; do\n")
             .append("\t\t${3}\n")
@@ -595,7 +619,6 @@ public class UserDataCreator {
             .append("\t\tlog \"$(ps -e | grep ${1})\"\n")
             .append("\tdone;\n")
             .append("}\n");
-    
     
 
   }

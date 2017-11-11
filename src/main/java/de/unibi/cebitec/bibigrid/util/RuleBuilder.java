@@ -24,7 +24,7 @@ public class RuleBuilder {
         mme.setMin(minValue);
         group.getParamrefOrParamGroupref().add(mme);
 
-        group.getParamrefOrParamGroupref().add(createBasicRule("M", "master-image", Tprimitive.STRING, "machine image id for master, if not set  images defined at https://bibiserv.cebitec.uni-bielefeld.de/resoruces/bibigrid/<framework>/<region>.ami.properties are used!"));
+        group.getParamrefOrParamGroupref().add(createBasicRule("M", "master-image", Tprimitive.STRING, "machine image id for master, if not set  images defined at https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/<framework>/<region>.ami.properties are used!"));
         group.getParamrefOrParamGroupref().add(createBasicRule("s", "slave-instance-type", Tprimitive.STRING, "see INSTANCE-TYPES below"));
 
         Tparam mse = createBasicRule("mse", "max-slave-ephemerals", Tprimitive.INT, "limits the maxium number of used ephemerals for slave spool volume (raid 0 )");
