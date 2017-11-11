@@ -238,7 +238,7 @@ public class CommandLineValidator {
                 }
                 
                 if (cl.hasOption("ostd")) {
-                    osc.setTenantName(cl.getOptionValue("ostd").trim());
+                    osc.setTenantDomain(cl.getOptionValue("ostd").trim());
                 } else if (defaults.getProperty("openstack-tenantdomain") != null) {
                     osc.setTenantDomain(defaults.getProperty("openstack-tenantdomain"));
                 } else {
@@ -252,7 +252,7 @@ public class CommandLineValidator {
                 } else if (System.getenv("OS_PASSWORD") != null) {
                     osc.setPassword(System.getenv(("OS_PASSWORD")));
                 } else {
-                    LOG.error("No suitable entry for OpenStack-Password (osp) found nore environment OS_PASSWORD set! Exit"); 
+                    LOG.error("No suitable entry for OpenStack-Password (osp) found nor environment OS_PASSWORD set! Exit");
                     return false;
                 }
 
@@ -371,7 +371,7 @@ public class CommandLineValidator {
             ////////////////////////////////////////////////////////////////////////
             ///// HDFS on/off /////////////////////////////////////////////////
             if (cl.hasOption("hdfs")) {
-                cfg.setSpark(true);
+                cfg.setHdfs(true);
                 LOG.info(V, "HDFS support enabled.");
             } else if (defaults.containsKey("hdfs")) {
                 String value = defaults.getProperty("hdfs");
@@ -899,7 +899,7 @@ public class CommandLineValidator {
 
                     LOG.info(V, "Use spot request for all");
                 } else if (value.equalsIgnoreCase("no")) {
-                    LOG.info(V, "SpotInstance ussage disabled.");
+                    LOG.info(V, "SpotInstance usage disabled.");
                     this.cfg.setMesos(false);
                 } else {
                     LOG.error("SpotInstanceRequest value not recognized. Please use yes/no.");
@@ -914,7 +914,7 @@ public class CommandLineValidator {
                     FS fs = FS.valueOf(value.toUpperCase());
                     cfg.setLocalFS(fs);
                 } catch (IllegalArgumentException e) {
-                    LOG.error("Local filesustem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
+                    LOG.error("Local filesystem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
                     return false;
                 }
 
@@ -947,7 +947,7 @@ public class CommandLineValidator {
 
         }
 
-        // if successfull validated set configuration to intent
+        // if successful validated set configuration to intent
         intent.setConfiguration(cfg);
         return true;
     }
