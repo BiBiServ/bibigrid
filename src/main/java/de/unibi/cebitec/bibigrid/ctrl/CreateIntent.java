@@ -8,12 +8,14 @@ import de.unibi.cebitec.bibigrid.meta.googlecloud.CreateClusterGoogleCloud;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
+
 import java.util.*;
+
+import de.unibi.cebitec.bibigrid.util.RuleBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CreateIntent extends Intent {
-
     public static final Logger LOG = LoggerFactory.getLogger(CreateIntent.class);
 
     @Override
@@ -25,11 +27,51 @@ public class CreateIntent extends Intent {
     public List<String> getRequiredOptions(MODE mode) {
         switch (mode) {
             case AWS:
-                return Arrays.asList("m", "M", "s", "S", "n", "k", "i", "e", "a", "z", "g", "r", "b");
+                return Arrays.asList(
+                        RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString(),
+                        RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString(),
+                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
+                        RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
+                        RuleBuilder.RuleNames.REGION_S.toString(),
+                        RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
+                        RuleBuilder.RuleNames.NFS_SHARES_S.toString(),
+                        RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
+                        RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
             case OPENSTACK:
-                return Arrays.asList("m", "M", "s", "S", "n", "k", "i", "e", "z", "g", "r", "b", "osu", "ost", "osp", "ose");
+                return Arrays.asList(
+                        RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString(),
+                        RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString(),
+                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
+                        RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
+                        RuleBuilder.RuleNames.REGION_S.toString(),
+                        RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
+                        RuleBuilder.RuleNames.NFS_SHARES_S.toString(),
+                        RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
+                        RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString(),
+                        RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString(),
+                        RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString(),
+                        RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
             case GOOGLECLOUD:
-                return Arrays.asList("m", "M", "s", "S", "n", "k", "i", "e", "z", "g", "r", "b", "gcf", "gpid");
+                return Arrays.asList(
+                        RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString(),
+                        RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
+                        RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString(),
+                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
+                        RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
+                        RuleBuilder.RuleNames.REGION_S.toString(),
+                        RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
+                        RuleBuilder.RuleNames.NFS_SHARES_S.toString(),
+                        RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
+                        RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString(),
+                        RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString());
         }
         return null;
     }
@@ -48,49 +90,47 @@ public class CreateIntent extends Intent {
                 return false;
             }
         } catch (ConfigurationException | JSchException ace) {
-            LOG.error("Exception : {}",ace.getMessage());
+            LOG.error("Exception : {}", ace.getMessage());
             return false;
         }
         return true;
     }
 
-    private boolean startClusterAtSelectedCloudProvider() throws ConfigurationException,  JSchException {
+    private boolean startClusterAtSelectedCloudProvider() throws ConfigurationException, JSchException {
         switch (getConfiguration().getMode()) {
             case AWS:
                 return new CreateClusterAWS(getConfiguration())
                         .createClusterEnvironment()
-                            .createVPC()
-                            .createSubnet()
-                            .createSecurityGroup()
-                            .createPlacementGroup()
+                        .createVPC()
+                        .createSubnet()
+                        .createSecurityGroup()
+                        .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .configureClusterSlaveInstance()
                         .launchClusterInstances();
             case OPENSTACK:
                 return new CreateClusterOpenstack(getConfiguration())
                         .createClusterEnvironment()
-                            .createVPC()
-                            .createSubnet()
-                            .createSecurityGroup()
-                            .createPlacementGroup()
+                        .createVPC()
+                        .createSubnet()
+                        .createSecurityGroup()
+                        .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .configureClusterSlaveInstance()
                         .launchClusterInstances();
             case GOOGLECLOUD:
                 return new CreateClusterGoogleCloud(getConfiguration())
                         .createClusterEnvironment()
-                            .createVPC()
-                            .createSubnet()
-                            .createSecurityGroup()
-                            .createPlacementGroup()
+                        .createVPC()
+                        .createSubnet()
+                        .createSecurityGroup()
+                        .createPlacementGroup()
                         .configureClusterMasterInstance()
                         .configureClusterSlaveInstance()
                         .launchClusterInstances();
-
             default:
-                LOG.error("Malformed meta-mode! [use: 'aws-ec2','openstack','googlecloud' or leave it blanc.");
+                LOG.error("Malformed meta-mode! [use: 'aws-ec2','openstack','googlecloud' or leave it blank.");
                 return false;
         }
     }
-
 }

@@ -3,10 +3,10 @@ package de.unibi.cebitec.bibigrid.ctrl;
 import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
+
 import java.util.List;
 
 public abstract class Intent {
-
     private Configuration configuration = null;
 
     public Intent() {
