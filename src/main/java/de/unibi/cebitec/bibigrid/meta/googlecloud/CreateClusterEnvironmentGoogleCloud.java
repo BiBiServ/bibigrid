@@ -29,7 +29,7 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnvironment<CreateClusterEnvironmentGoogleCloud, CreateClusterGoogleCloud> {
+public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnvironment {
     public static final Logger log = LoggerFactory.getLogger(CreateClusterEnvironmentGoogleCloud.class);
 
     private final CreateClusterGoogleCloud cluster;

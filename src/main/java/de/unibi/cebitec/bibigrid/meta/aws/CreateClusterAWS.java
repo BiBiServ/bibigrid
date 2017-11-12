@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.meta.aws;
 
 import com.amazonaws.AmazonServiceException;
@@ -69,7 +64,7 @@ import org.slf4j.LoggerFactory;
  * @author Johannes Steiner <jsteiner@techfak.uni-bielefeld.de>
  *         Jan Krueger <jkrueger@cebitec.uni-bielefeld.de>
  */
-public class CreateClusterAWS implements CreateCluster<CreateClusterAWS, CreateClusterEnvironmentAWS> {
+public class CreateClusterAWS implements CreateCluster {
 
     public static final Logger log = LoggerFactory.getLogger(CreateClusterAWS.class);
     public static final String PREFIX = "bibigrid-";

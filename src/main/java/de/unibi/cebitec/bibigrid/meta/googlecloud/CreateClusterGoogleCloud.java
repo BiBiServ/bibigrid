@@ -31,7 +31,7 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public class CreateClusterGoogleCloud implements CreateCluster<CreateClusterGoogleCloud, CreateClusterEnvironmentGoogleCloud> {
+public class CreateClusterGoogleCloud implements CreateCluster {
     private static final Logger log = LoggerFactory.getLogger(CreateClusterGoogleCloud.class);
     private static final String PREFIX = "bibigrid-";
     static final String SUBNET_PREFIX = PREFIX + "subnet-";

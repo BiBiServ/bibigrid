@@ -40,8 +40,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Johannes Steiner, Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class CreateClusterEnvironmentOpenstack
-        implements CreateClusterEnvironment<CreateClusterEnvironmentOpenstack, CreateClusterOpenstack> {
+public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironment {
 
     private CreateClusterOpenstack cluster;
 

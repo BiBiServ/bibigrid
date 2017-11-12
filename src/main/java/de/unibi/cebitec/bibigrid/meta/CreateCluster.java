@@ -1,29 +1,20 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.meta;
 
 /**
- * CreateCluster Interface must be implemented by all "real" CreateCluster classes and 
+ * CreateCluster Interface must be implemented by all "real" CreateCluster classes and
  * provides the minimum of general functions for the environment, the configuration of
  * master and slave instances and launching the cluster.
- * 
- * 
+ *
  * @author Johannes Steiner <jsteiner(at)cebitec.uni-bielefeld.de>
- * @param <P> The Provider Instance P
- * @param <E> The Environment Instance E
  */
-public interface CreateCluster<P, E> {
-
+public interface CreateCluster {
     /**
      * The environment creation procedure. For a successful environment creation
      * you will need an Environment-Instance which implements the
      * CreateClusterEnvironment interface.
-     *
+     * <p>
      * <h1><u>Example</u></h1>
-     *
+     * <p>
      * <br />
      * <h2> The default procedure (AWS) </h2>
      * Configuration conf;
@@ -50,27 +41,21 @@ public interface CreateCluster<P, E> {
      * .launchClusterInstances()
      * </li>
      * </ol>
-     *
-     * @return
      */
-    public E createClusterEnvironment();
+    CreateClusterEnvironment createClusterEnvironment();
 
     /**
      * Configure and manage Master-instance to launch.
-     * @return Provider P
      */
-    public P configureClusterMasterInstance();
+    CreateCluster configureClusterMasterInstance();
 
     /**
      * Configure and manage Slave-instances to launch.
-     * @return Provider P
      */
-    public P configureClusterSlaveInstance();
+    CreateCluster configureClusterSlaveInstance();
 
     /**
      * Start the configurated cluster now.
-     * @return true if success
      */
-    public boolean launchClusterInstances();
-
+    boolean launchClusterInstances();
 }

@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author jsteiner
  */
-public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment<CreateClusterEnvironmentAWS, CreateClusterAWS> {
+public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
 
     public static final Logger log = LoggerFactory.getLogger(CreateClusterEnvironmentAWS.class);
 
@@ -234,7 +234,6 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment<Cre
      * given it is returned wether it is default or not. Return null in the case
      * no default or fitting VPC is found.
      *
-     * @param ec2 - AmazonEC2Client
      * @param vpcIds - String...
      * @return
      */

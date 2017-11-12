@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * @author Jan Krueger - jkrueger (at)cebitec.uni-bielfeld.de 1st version by
  * Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public class CreateClusterOpenstack extends OpenStackIntent implements CreateCluster<CreateClusterOpenstack, CreateClusterEnvironmentOpenstack> {
+public class CreateClusterOpenstack extends OpenStackIntent implements CreateCluster {
 
   public static final Logger LOG = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 

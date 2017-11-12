@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.ctrl;
 
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUp;
+import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.exceptions.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS;
 import de.unibi.cebitec.bibigrid.meta.googlecloud.CreateClusterGoogleCloud;
@@ -97,40 +98,29 @@ public class CreateIntent extends Intent {
     }
 
     private boolean startClusterAtSelectedCloudProvider() throws ConfigurationException, JSchException {
+        CreateCluster cluster;
         switch (getConfiguration().getMode()) {
             case AWS:
-                return new CreateClusterAWS(getConfiguration())
-                        .createClusterEnvironment()
-                        .createVPC()
-                        .createSubnet()
-                        .createSecurityGroup()
-                        .createPlacementGroup()
-                        .configureClusterMasterInstance()
-                        .configureClusterSlaveInstance()
-                        .launchClusterInstances();
+                cluster = new CreateClusterAWS(getConfiguration());
+                break;
             case OPENSTACK:
-                return new CreateClusterOpenstack(getConfiguration())
-                        .createClusterEnvironment()
-                        .createVPC()
-                        .createSubnet()
-                        .createSecurityGroup()
-                        .createPlacementGroup()
-                        .configureClusterMasterInstance()
-                        .configureClusterSlaveInstance()
-                        .launchClusterInstances();
+                cluster = new CreateClusterOpenstack(getConfiguration());
+                break;
             case GOOGLECLOUD:
-                return new CreateClusterGoogleCloud(getConfiguration())
-                        .createClusterEnvironment()
-                        .createVPC()
-                        .createSubnet()
-                        .createSecurityGroup()
-                        .createPlacementGroup()
-                        .configureClusterMasterInstance()
-                        .configureClusterSlaveInstance()
-                        .launchClusterInstances();
+                cluster = new CreateClusterGoogleCloud(getConfiguration());
+                break;
             default:
                 LOG.error("Malformed meta-mode! [use: 'aws-ec2','openstack','googlecloud' or leave it blank.");
                 return false;
         }
+        return cluster
+                .createClusterEnvironment()
+                .createVPC()
+                .createSubnet()
+                .createSecurityGroup()
+                .createPlacementGroup()
+                .configureClusterMasterInstance()
+                .configureClusterSlaveInstance()
+                .launchClusterInstances();
     }
 }
