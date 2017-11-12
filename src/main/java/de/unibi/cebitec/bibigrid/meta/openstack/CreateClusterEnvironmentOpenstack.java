@@ -8,7 +8,7 @@ package de.unibi.cebitec.bibigrid.meta.openstack;
 import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
+import de.unibi.cebitec.bibigrid.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.util.SubNets;

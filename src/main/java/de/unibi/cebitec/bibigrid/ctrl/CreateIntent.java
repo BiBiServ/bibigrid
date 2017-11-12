@@ -2,12 +2,12 @@ package de.unibi.cebitec.bibigrid.ctrl;
 
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.StartUp;
-import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.model.exceptions.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS;
 import de.unibi.cebitec.bibigrid.meta.googlecloud.CreateClusterGoogleCloud;
 import de.unibi.cebitec.bibigrid.meta.openstack.CreateClusterOpenstack;
 import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
-import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
+import de.unibi.cebitec.bibigrid.model.exceptions.ConfigurationException;
 
 import java.util.*;
 

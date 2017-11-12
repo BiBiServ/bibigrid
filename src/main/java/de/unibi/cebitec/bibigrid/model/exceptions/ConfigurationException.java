@@ -1,5 +1,4 @@
-
-package de.unibi.cebitec.bibigrid.exception;
+package de.unibi.cebitec.bibigrid.model.exceptions;
 
 /**
  *

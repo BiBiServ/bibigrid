@@ -23,7 +23,7 @@ import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.UserIdGroupPair;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.jcraft.jsch.JSchException;
-import de.unibi.cebitec.bibigrid.exception.ConfigurationException;
+import de.unibi.cebitec.bibigrid.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.meta.CreateClusterEnvironment;
 import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.PLACEMENT_GROUP_PREFIX;
 import static de.unibi.cebitec.bibigrid.meta.aws.CreateClusterAWS.SECURITY_GROUP_PREFIX;

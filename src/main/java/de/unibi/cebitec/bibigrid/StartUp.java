@@ -1,7 +1,7 @@
 package de.unibi.cebitec.bibigrid;
 
 import de.unibi.cebitec.bibigrid.ctrl.*;
-import de.unibi.cebitec.bibigrid.exception.IntentNotConfiguredException;
+import de.unibi.cebitec.bibigrid.model.exceptions.IntentNotConfiguredException;
 import de.unibi.cebitec.bibigrid.util.RuleBuilder;
 import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 
