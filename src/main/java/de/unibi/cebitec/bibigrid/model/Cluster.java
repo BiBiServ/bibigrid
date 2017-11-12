@@ -4,44 +4,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a cluster, consisting of instances, network (router,net,subnet, placementgroup and vpc) and firewall rules (security group)
- * 
- * 
+ * Represents a cluster, consisting of instances, network (router,net,subnet, placementGroup and vpc) and firewall rules (security group)
+ *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class Cluster {
+    private String masterInstance;
+    private List<String> slaveInstances = new ArrayList<>();
 
-    private String masterinstance;
-    private List<String> slaveinstances = new ArrayList<>();
-    
     private String router; // OpenStack
     private String net; // OpenStack
-    private String subnet; 
-    
-    private String placementgroup; // AWS
-    private String vpc; //AWS
-    
+    private String subnet;
+
+    private String placementGroup; // AWS
+
     private String publicIp;
-    private String securitygroup;
-    private String keyname;
+    private String securityGroup;
+    private String keyName;
     private String user;
-    
+
     private String started = "unknown";
 
-    public String getMasterinstance() {
-        return masterinstance;
+    public String getMasterInstance() {
+        return masterInstance;
     }
 
-    public void setMasterinstance(String masterinstance) {
-        this.masterinstance = masterinstance;
+    public void setMasterInstance(String masterInstance) {
+        this.masterInstance = masterInstance;
     }
 
-    public String getPlacementgroup() {
-        return placementgroup;
+    public String getPlacementGroup() {
+        return placementGroup;
     }
 
-    public void setPlacementgroup(String placementgroup) {
-        this.placementgroup = placementgroup;
+    public void setPlacementGroup(String placementGroup) {
+        this.placementGroup = placementGroup;
     }
 
     public String getSubnet() {
@@ -52,40 +49,32 @@ public class Cluster {
         this.subnet = subnet;
     }
 
-    public String getVpc() {
-        return vpc;
+    public String getSecurityGroup() {
+        return securityGroup;
     }
 
-    public void setVpc(String vpc) {
-        this.vpc = vpc;
+    public void setSecurityGroup(String securityGroup) {
+        this.securityGroup = securityGroup;
     }
 
-    public String getSecuritygroup() {
-        return securitygroup;
+    public List<String> getSlaveInstances() {
+        return slaveInstances;
     }
 
-    public void setSecuritygroup(String securitygroup) {
-        this.securitygroup = securitygroup;
-    }
-
-    public List<String> getSlaveinstances() {
-        return slaveinstances;
-    }
-
-    public void setSlaveinstances(List<String> slaveinstances) {
-        this.slaveinstances = slaveinstances;
+    public void setSlaveInstances(List<String> slaveInstances) {
+        this.slaveInstances = slaveInstances;
     }
 
     public void addSlaveInstance(String id) {
-        slaveinstances.add(id);
+        slaveInstances.add(id);
     }
 
-    public String getKeyname() {
-        return keyname;
+    public String getKeyName() {
+        return keyName;
     }
 
-    public void setKeyname(String keyname) {
-        this.keyname = keyname;
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
     }
 
     public String getStarted() {
@@ -127,8 +116,4 @@ public class Cluster {
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
     }
-    
-    
-    
-
 }

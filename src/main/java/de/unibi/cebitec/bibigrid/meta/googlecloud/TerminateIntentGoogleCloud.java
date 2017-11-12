@@ -52,9 +52,9 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
     }
 
     private void terminateInstances() {
-        List<String> instances = cluster.getSlaveinstances();
-        if (cluster.getMasterinstance() != null) {
-            instances.add(cluster.getMasterinstance());
+        List<String> instances = cluster.getSlaveInstances();
+        if (cluster.getMasterInstance() != null) {
+            instances.add(cluster.getMasterInstance());
         }
         if (instances.size() > 0) {
             LOG.info("Wait for {} instances to shut down. This can take a while, so please be patient!", instances.size());

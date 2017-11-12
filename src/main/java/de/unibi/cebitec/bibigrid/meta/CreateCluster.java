@@ -55,7 +55,7 @@ public interface CreateCluster {
     CreateCluster configureClusterSlaveInstance();
 
     /**
-     * Start the configurated cluster now.
+     * Start the configured cluster now.
      */
     boolean launchClusterInstances();
 }

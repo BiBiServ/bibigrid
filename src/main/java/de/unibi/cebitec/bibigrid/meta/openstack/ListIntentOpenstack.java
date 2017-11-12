@@ -69,9 +69,9 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
 
                 // master / slave
                 if (name.contains("master")) {
-                    cluster.setMasterinstance(serv.getId());
+                    cluster.setMasterInstance(serv.getId());
                     cluster.setStarted(dateformatter.format(serv.getCreated()));
-                    cluster.setKeyname(serv.getKeyName());
+                    cluster.setKeyName(serv.getKeyName());
                     Map <String,List<? extends Address>> madr = serv.getAddresses().getAddresses();
                     // map should contain only one  network
                     if (madr.keySet().size() == 1) {
@@ -107,7 +107,7 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
                     cluster = new Cluster();
                     clustermap.put(clusterid, cluster);
                 }                       
-                cluster.setSecuritygroup(sg.getId());
+                cluster.setSecurityGroup(sg.getId());
                 
             }
         }
@@ -194,10 +194,10 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
                         id,
                         (v.getUser() == null) ? "<NA>" :v.getUser(),
                         (v.getStarted() == null) ? "-" : v.getStarted(),
-                        (v.getKeyname() == null ? "-" : v.getKeyname()),
+                        (v.getKeyName() == null ? "-" : v.getKeyName()),
                         (v.getPublicIp() == null ? "-" : v.getPublicIp()),
-                        ((v.getMasterinstance() != null ? 1 : 0) + v.getSlaveinstances().size()),
-                        (v.getSecuritygroup() == null ? "-" : "+"),
+                        ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
+                        (v.getSecurityGroup() == null ? "-" : "+"),
                         (v.getRouter() == null ? "-" : "+"),
                         (v.getNet()== null ? "-" : "+"),
                         (v.getSubnet() == null ? "-" : "+"));

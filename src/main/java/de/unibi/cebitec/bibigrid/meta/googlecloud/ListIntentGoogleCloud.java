@@ -53,8 +53,8 @@ public class ListIntentGoogleCloud implements ListIntent {
                         id,
                         (v.getUser() == null) ? "<NA>" : v.getUser(),
                         (v.getStarted() == null) ? "-" : v.getStarted(),
-                        (v.getKeyname() == null ? "-" : v.getKeyname()),
-                        ((v.getMasterinstance() != null ? 1 : 0) + v.getSlaveinstances().size()),
+                        (v.getKeyName() == null ? "-" : v.getKeyName()),
+                        ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
                         "-",
                         (v.getSubnet() == null ? "-" : v.getSubnet()));
             }
@@ -82,12 +82,12 @@ public class ListIntentGoogleCloud implements ListIntent {
 
         // Check whether master or slave instance
         if (name != null && name.contains("master-")) {
-            if (cluster.getMasterinstance() == null) {
-                cluster.setMasterinstance(instance.getInstanceId().getInstance());
+            if (cluster.getMasterInstance() == null) {
+                cluster.setMasterInstance(instance.getInstanceId().getInstance());
                 cluster.setStarted(dateformatter.format(new Date(instance.getCreationTimestamp())));
             } else {
                 log.error("Detect two master instances ({},{}) for cluster '{}' ",
-                        cluster.getMasterinstance(), instance.getInstanceId(), clusterid);
+                        cluster.getMasterInstance(), instance.getInstanceId(), clusterid);
                 System.exit(1);
             }
         } else {
@@ -96,13 +96,13 @@ public class ListIntentGoogleCloud implements ListIntent {
 
         //keyname - should be always the same for all instances of one cluster
         String keyName = ""; // TODO: getKeyName
-        if (cluster.getKeyname() != null) {
-            if (!cluster.getKeyname().equals(keyName)) {
+        if (cluster.getKeyName() != null) {
+            if (!cluster.getKeyName().equals(keyName)) {
                 log.error("Detect two different keynames ({},{}) for cluster '{}'",
-                        cluster.getKeyname(), keyName, clusterid);
+                        cluster.getKeyName(), keyName, clusterid);
             }
         } else {
-            cluster.setKeyname(keyName);
+            cluster.setKeyName(keyName);
         }
 
         // user - should be always the same for all instances of one cluser

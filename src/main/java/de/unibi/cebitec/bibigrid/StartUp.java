@@ -28,7 +28,7 @@ public class StartUp {
             "I will try to shut them down but in case of an error they might remain running. Please check manually " +
             "afterwards.";
 
-    public static OptionGroup getCMDLineOptionGroup() {
+    private static OptionGroup getCMDLineOptionGroup() {
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
         Option terminate = new Option("t", "terminate", true, "terminate running cluster");
@@ -43,7 +43,7 @@ public class StartUp {
         return intentOptions;
     }
 
-    public static Options getRulesToOptions() {
+    private static Options getRulesToOptions() {
         RuleBuilder ruleBuild = new RuleBuilder();
         TparamGroup ruleSet = ruleBuild.getRules();
         Options ruleOptions = new Options();
@@ -63,63 +63,65 @@ public class StartUp {
         cmdLineOptions.addOptionGroup(intentOptions);
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
-            CommandLineValidator validator = null;
-            Intent intent = null;
             if (cl.hasOption("v")) {
                 VerboseOutputFilter.SHOW_VERBOSE = true;
             }
             switch (intentOptions.getSelected()) {
                 case "V":
-                    try {
-                        URL jarUrl = StartUp.class.getProtectionDomain().getCodeSource().getLocation();
-                        String jarPath = URLDecoder.decode(jarUrl.getFile(), "UTF-8");
-                        JarFile jarFile = new JarFile(jarPath);
-                        Manifest m = jarFile.getManifest();
-                        System.out.println(String.format("v%s (Build: %s)",
-                                m.getMainAttributes().getValue("Bibigrid-version"),
-                                m.getMainAttributes().getValue("Bibigrid-build-date")));
-                    } catch (Exception e) {
-                        log.error("Version info could not be read.");
-                    }
+                    printVersionInfo();
                     break;
                 case "h":
-                    HelpFormatter help = new HelpFormatter();
-                    String header = ""; //TODO: infotext (auf default props hinweisen); instanzgroessen auflisten
-                    String footer = "";
-                    help.printHelp("bibigrid --create|--list|--terminate|--check [...]", header, cmdLineOptions, footer);
+                    printHelp(cmdLineOptions);
                     break;
                 case "c":
-                    intent = new CreateIntent();
-                    validator = new CommandLineValidator(cl, intent);
+                    runIntent(cl, new CreateIntent());
                     break;
                 case "l":
-                    intent = new ListIntent();
-                    validator = new CommandLineValidator(cl, intent);
+                    runIntent(cl, new ListIntent());
                     break;
                 case "t":
-                    intent = new TerminateIntent();
-                    validator = new CommandLineValidator(cl, intent);
+                    runIntent(cl, new TerminateIntent());
                     break;
                 case "ch":
-                    intent = new ValidationIntent();
-                    validator = new CommandLineValidator(cl, intent);
+                    runIntent(cl, new ValidationIntent());
                     break;
-                default:
-                    return;
-            }
-            if (intent != null) {
-                if (validator.validate()) {
-                    try {
-                        intent.execute();
-                    } catch (IntentNotConfiguredException e) {
-                        log.error(e.getMessage());
-                    }
-                } else {
-                    log.error(ABORT_WITH_NOTHING_STARTED);
-                }
             }
         } catch (ParseException pe) {
             log.error("Error while parsing the commandline arguments: {}", pe.getMessage());
+            log.error(ABORT_WITH_NOTHING_STARTED);
+        }
+    }
+
+    private static void printVersionInfo() {
+        try {
+            URL jarUrl = StartUp.class.getProtectionDomain().getCodeSource().getLocation();
+            String jarPath = URLDecoder.decode(jarUrl.getFile(), "UTF-8");
+            JarFile jarFile = new JarFile(jarPath);
+            Manifest m = jarFile.getManifest();
+            System.out.println(String.format("v%s (Build: %s)",
+                    m.getMainAttributes().getValue("Bibigrid-version"),
+                    m.getMainAttributes().getValue("Bibigrid-build-date")));
+        } catch (Exception e) {
+            log.error("Version info could not be read.");
+        }
+    }
+
+    private static void printHelp(Options cmdLineOptions) {
+        HelpFormatter help = new HelpFormatter();
+        String header = ""; //TODO: infotext (auf default props hinweisen); instanzgroessen auflisten
+        String footer = "";
+        help.printHelp("bibigrid --create|--list|--terminate|--check [...]", header, cmdLineOptions, footer);
+    }
+
+    private static void runIntent(CommandLine cl, Intent intent) {
+        CommandLineValidator validator = new CommandLineValidator(cl, intent);
+        if (validator.validate()) {
+            try {
+                intent.execute();
+            } catch (IntentNotConfiguredException e) {
+                log.error(e.getMessage());
+            }
+        } else {
             log.error(ABORT_WITH_NOTHING_STARTED);
         }
     }

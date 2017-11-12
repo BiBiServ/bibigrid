@@ -3,13 +3,11 @@ package de.unibi.cebitec.bibigrid.meta.openstack;
 import de.unibi.cebitec.bibigrid.meta.TerminateIntent;
 import de.unibi.cebitec.bibigrid.model.Cluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import java.util.List;
 import org.openstack4j.api.exceptions.ClientResponseException;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.network.Network;
 import org.openstack4j.model.network.Port;
 import org.openstack4j.model.network.Router;
-import org.openstack4j.model.network.RouterInterface;
 import org.openstack4j.model.network.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,21 +37,21 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
 
             LOG.info("Terminating cluster with ID: {}", conf.getClusterId());
             // master
-            if (cluster.getMasterinstance() != null) {
-                os.compute().servers().delete(cluster.getMasterinstance());
+            if (cluster.getMasterInstance() != null) {
+                os.compute().servers().delete(cluster.getMasterInstance());
             }
             // slaves
-            for (String slave : cluster.getSlaveinstances()) {
+            for (String slave : cluster.getSlaveInstances()) {
                 if (slave != null) {
                     os.compute().servers().delete(slave);
                 }
             }
             // security groups
-            if (cluster.getSecuritygroup() != null) {
+            if (cluster.getSecurityGroup() != null) {
                 while (true) {
                     try {
                         Thread.sleep(1000);
-                        ActionResponse ar = os.compute().securityGroups().delete(cluster.getSecuritygroup());
+                        ActionResponse ar = os.compute().securityGroups().delete(cluster.getSecurityGroup());
                         if (ar.isSuccess()) {
                             break;
                         }
@@ -63,7 +61,7 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                         // do nothing
                     }
                 }
-                LOG.info("SecurityGroup ({}) deleted.", cluster.getSecuritygroup());
+                LOG.info("SecurityGroup ({}) deleted.", cluster.getSecurityGroup());
             }
 
             // subnet work

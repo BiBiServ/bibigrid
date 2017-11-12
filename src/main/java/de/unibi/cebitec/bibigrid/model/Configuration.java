@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Configuration {
-
-    private InstanceType masterInstanceType;  
+    private InstanceType masterInstanceType;
     private String masterImage;
     private InstanceType slaveInstanceType;
     private int slaveInstanceCount;
@@ -55,8 +54,6 @@ public class Configuration {
     private String googleCredentialsFile;
     
     /* network configuration (for OpenStack)*/
-    
-    
     private String routername = null;
     private String networkname = null;
     private String subnetname  = null;
@@ -66,13 +63,11 @@ public class Configuration {
     private List<Port> ports = new ArrayList<>();
     private String securitygroup;
     
-
-    public static enum MODE {
-
+    public enum MODE {
         AWS, OPENSTACK, GOOGLECLOUD
     }
     
-    public static enum FS {
+    public enum FS {
         EXT2, EXT3, EXT4, XFS
     }
 

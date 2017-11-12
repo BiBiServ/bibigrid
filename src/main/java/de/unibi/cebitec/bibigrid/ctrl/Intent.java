@@ -7,10 +7,7 @@ import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
 import java.util.List;
 
 public abstract class Intent {
-    private Configuration configuration = null;
-
-    public Intent() {
-    }
+    private Configuration configuration;
 
     public abstract String getCmdLineOption();
 

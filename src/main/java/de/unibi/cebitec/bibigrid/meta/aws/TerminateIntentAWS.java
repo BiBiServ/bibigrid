@@ -53,9 +53,9 @@ public class TerminateIntentAWS implements TerminateIntent {
 
         ////////////////////////////////////////////////////////////////////////
         ///// terminate instance(s)
-        List<String> instances = cluster.getSlaveinstances();
-        if (cluster.getMasterinstance() != null) {
-            instances.add(cluster.getMasterinstance());
+        List<String> instances = cluster.getSlaveInstances();
+        if (cluster.getMasterInstance() != null) {
+            instances.add(cluster.getMasterInstance());
         }
         if (instances.size() > 0) {
             TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
@@ -98,9 +98,9 @@ public class TerminateIntentAWS implements TerminateIntent {
 
         ////////////////////////////////////////////////////////////////////////
         ///// terminate placement group
-        if (cluster.getPlacementgroup() != null) {
+        if (cluster.getPlacementGroup() != null) {
             DeletePlacementGroupRequest deletePalacementGroupRequest = new DeletePlacementGroupRequest();
-            deletePalacementGroupRequest.setGroupName(cluster.getPlacementgroup());
+            deletePalacementGroupRequest.setGroupName(cluster.getPlacementGroup());
             ec2.deletePlacementGroup(deletePalacementGroupRequest);
             log.info("PlacementGroup terminated.");
         }
@@ -116,9 +116,9 @@ public class TerminateIntentAWS implements TerminateIntent {
 
         ////////////////////////////////////////////////////////////////////////
         ///// terminate security group
-        if (cluster.getSecuritygroup() != null) {
+        if (cluster.getSecurityGroup() != null) {
             DeleteSecurityGroupRequest deleteSecurityGroupRequest = new DeleteSecurityGroupRequest();
-            deleteSecurityGroupRequest.setGroupId(cluster.getSecuritygroup());
+            deleteSecurityGroupRequest.setGroupId(cluster.getSecurityGroup());
             ec2.deleteSecurityGroup(deleteSecurityGroupRequest);
         }
 

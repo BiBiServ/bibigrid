@@ -13,7 +13,6 @@ import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.Tag;
 import de.unibi.cebitec.bibigrid.ctrl.TerminateIntent;
 import de.unibi.cebitec.bibigrid.meta.ListIntent;
-import de.unibi.cebitec.bibigrid.meta.openstack.ListIntentOpenstack;
 import de.unibi.cebitec.bibigrid.model.Cluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import java.text.SimpleDateFormat;
@@ -74,9 +73,9 @@ public class ListIntentAWS implements ListIntent {
                         id,
                         (v.getUser() == null) ? "<NA>" : v.getUser(),
                         (v.getStarted() == null) ? "-" : v.getStarted(),
-                        (v.getKeyname() == null ? "-" : v.getKeyname()),
-                        ((v.getMasterinstance() != null ? 1 : 0) + v.getSlaveinstances().size()),
-                        (v.getSecuritygroup() == null ? "-" : (v.getSecuritygroup().length() > 11 ? v.getSecuritygroup().substring(0, 9) + ".." : v.getSecuritygroup())),
+                        (v.getKeyName() == null ? "-" : v.getKeyName()),
+                        ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
+                        (v.getSecurityGroup() == null ? "-" : (v.getSecurityGroup().length() > 11 ? v.getSecurityGroup().substring(0, 9) + ".." : v.getSecurityGroup())),
                         (v.getSubnet() == null ? "-" : v.getSubnet()));
             }
         }
@@ -120,12 +119,12 @@ public class ListIntentAWS implements ListIntent {
 
                     // master//slave instance ?
                     if (name != null && name.contains("master-")) {
-                        if (cluster.getMasterinstance() == null) {
-                            cluster.setMasterinstance(i.getInstanceId());
+                        if (cluster.getMasterInstance() == null) {
+                            cluster.setMasterInstance(i.getInstanceId());
 
                             cluster.setStarted(dateformatter.format(i.getLaunchTime()));
                         } else {
-                            log.error("Detect two master instances ({},{}) for cluster '{}' ", cluster.getMasterinstance(), i.getInstanceId(), clusterid); // ???
+                            log.error("Detect two master instances ({},{}) for cluster '{}' ", cluster.getMasterInstance(), i.getInstanceId(), clusterid); // ???
                             System.exit(1);
                         }
                     } else {
@@ -133,13 +132,13 @@ public class ListIntentAWS implements ListIntent {
                     }
 
                     //keyname - should be always the same for all instances of one cluster
-                    if (cluster.getKeyname() != null) {
-                        if (!cluster.getKeyname().equals(i.getKeyName())) {
-                            log.error("Detect two different keynames ({},{}) for cluster '{}'", cluster.getKeyname(), i.getKeyName(), clusterid);
+                    if (cluster.getKeyName() != null) {
+                        if (!cluster.getKeyName().equals(i.getKeyName())) {
+                            log.error("Detect two different keynames ({},{}) for cluster '{}'", cluster.getKeyName(), i.getKeyName(), clusterid);
                         }
 
                     } else {
-                        cluster.setKeyname(i.getKeyName());
+                        cluster.setKeyName(i.getKeyName());
                     }
 
                     // user - should be always the same for all instances of one cluser
