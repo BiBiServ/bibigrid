@@ -242,8 +242,8 @@ public class CreateClusterEnvironmentOpenstack
 
                 csgs.createRule(Builders.secGroupRule()
                         .parentGroupId(sge.getId())
-                        .protocol(p.type.equals(Port.TPort.TCP)?IPProtocol.TCP:(p.type.equals(Port.TPort.UDP)?IPProtocol.UDP:IPProtocol.ICMP))
-                        .cidr(p.iprange)
+                        .protocol(p.type.equals(Port.Protocol.TCP)?IPProtocol.TCP:(p.type.equals(Port.Protocol.UDP)?IPProtocol.UDP:IPProtocol.ICMP))
+                        .cidr(p.ipRange)
                         .range(p.number, p.number)
                         .build());               
             }

@@ -1,16 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.model;
 
 /**
- *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class OpenStackCredentials {
-
     private String tenantName;
     private String tenantID;
     private String username;
@@ -18,7 +11,6 @@ public class OpenStackCredentials {
     private String endpoint;
     private String domain;
     private String tenantDomain;
-
 
     public String getTenantName() {
         return tenantName;
@@ -60,19 +52,11 @@ public class OpenStackCredentials {
         this.domain = domain;
     }
 
-  public String getTenantDomain() {
-    if (tenantDomain == null) {
-      return domain;
+    public String getTenantDomain() {
+        return tenantDomain == null ? domain : tenantDomain;
     }
-    return tenantDomain;
-  }
 
-  public void setTenantDomain(String tenantDomain) {
-    this.tenantDomain = tenantDomain;
-  }
-    
-    
-
-
-    
+    public void setTenantDomain(String tenantDomain) {
+        this.tenantDomain = tenantDomain;
+    }
 }

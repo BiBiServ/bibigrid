@@ -176,20 +176,20 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment<Cre
         allIpPermissions.add(secGroupSelfAccessUdp);
         allIpPermissions.add(secGroupSelfAccessIcmp);
         for (Port port : cluster.getConfig().getPorts()) {
-            log.info("{}:{}", port.iprange, "" + port.number);
+            log.info(port.toString());
             IpPermission additionalPortTcp = new IpPermission();
             additionalPortTcp
                     .withIpProtocol("tcp")
                     .withFromPort(port.number)
                     .withToPort(port.number)
-                    .withIpRanges(port.iprange);
+                    .withIpRanges(port.ipRange);
             allIpPermissions.add(additionalPortTcp);
             IpPermission additionalPortUdp = new IpPermission();
             additionalPortUdp
                     .withIpProtocol("udp")
                     .withFromPort(port.number)
                     .withToPort(port.number)
-                    .withIpRanges(port.iprange);
+                    .withIpRanges(port.ipRange);
             allIpPermissions.add(additionalPortUdp);
         }
 

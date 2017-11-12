@@ -151,13 +151,13 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         firewallRuleMap.get(subnet.getIpRange()).add(new Firewall.Allowed().setIPProtocol("udp").setPorts(Arrays.asList("0-65535")));
         firewallRuleMap.get(subnet.getIpRange()).add(new Firewall.Allowed().setIPProtocol("icmp"));
         for (Port port : cluster.getConfig().getPorts()) {
-            log.info("{}:{}", port.iprange, "" + port.number);
-            if (!firewallRuleMap.containsKey(port.iprange)) {
-                firewallRuleMap.put(port.iprange, new ArrayList<>());
+            log.info(port.toString());
+            if (!firewallRuleMap.containsKey(port.ipRange)) {
+                firewallRuleMap.put(port.ipRange, new ArrayList<>());
             }
             List<String> portList = Collections.singletonList(String.valueOf(port.number));
-            firewallRuleMap.get(port.iprange).add(new Firewall.Allowed().setIPProtocol("tcp").setPorts(portList));
-            firewallRuleMap.get(port.iprange).add(new Firewall.Allowed().setIPProtocol("udp").setPorts(portList));
+            firewallRuleMap.get(port.ipRange).add(new Firewall.Allowed().setIPProtocol("tcp").setPorts(portList));
+            firewallRuleMap.get(port.ipRange).add(new Firewall.Allowed().setIPProtocol("udp").setPorts(portList));
         }
 
         // Create the firewall rules

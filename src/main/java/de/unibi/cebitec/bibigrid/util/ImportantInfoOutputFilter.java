@@ -7,8 +7,8 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 public class ImportantInfoOutputFilter extends AbstractMatcherFilter<ILoggingEvent> {
-
     public static final Marker I = MarkerFactory.getMarker("IMPORTANT");
+
     @Override
     public FilterReply decide(ILoggingEvent event) {
         Marker evtMarker = event.getMarker();
@@ -21,7 +21,6 @@ public class ImportantInfoOutputFilter extends AbstractMatcherFilter<ILoggingEve
         if (evtMarker.contains(I)) {
             return FilterReply.ACCEPT;
         }
-        
         return FilterReply.DENY;
     }
 }

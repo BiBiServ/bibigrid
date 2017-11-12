@@ -1,37 +1,32 @@
 package de.unibi.cebitec.bibigrid.util;
 
-
 import de.unibi.cebitec.bibigrid.model.Configuration;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class DeviceMapper {
+    // vdb ... vdz
+    private static final int MAX_DEVICES = 25;
 
-
-    private Configuration.MODE MODE;
-    
-    private static final int MAX_DEVICES = 25; // vdb ... vdz
-       
-    //private int AVAIL_DEVICES;
-    private int USED_DEVICES = 0;
-    
+    private final Configuration.MODE mode;
     // snap-0a12b34c -> /my/dir/
-    private Map<String, String> snapshotToMountPoint;
-
+    private final Map<String, String> snapshotToMountPoint;
     // snap-0a12b34c -> /dev/sdf
-    private Map<String, String> snapshotToDeviceName;
-
+    private final Map<String, String> snapshotToDeviceName;
     // /my/dir/ -> /dev/xvdf
-    private Map<String, String> mountPointToRealDeviceName;
+    private final Map<String, String> mountPointToRealDeviceName;
 
-    public DeviceMapper(Configuration.MODE mode, Map<String, String> snapshotIdToMountPoint, int used_devices) throws IllegalArgumentException {
-        // set mode
-        MODE = mode;
-        
-        // calculate the number of avail devices after  removing all used ephemerals
-       USED_DEVICES = used_devices;
+    private int usedDevices = 0;
 
-        if (snapshotIdToMountPoint.size() > (MAX_DEVICES-USED_DEVICES)) {
+    public DeviceMapper(Configuration.MODE mode, Map<String, String> snapshotIdToMountPoint, int usedDevices)
+            throws IllegalArgumentException {
+        this.mode = mode;
+
+        // calculate the number of avail devices after removing all used ephemerals
+        this.usedDevices = usedDevices;
+
+        if (snapshotIdToMountPoint.size() > (MAX_DEVICES - this.usedDevices)) {
             throw new IllegalArgumentException("Too many volumes in map. Not enough device drivers left!");
         }
         this.snapshotToMountPoint = snapshotIdToMountPoint;
@@ -47,7 +42,6 @@ public class DeviceMapper {
             }
             this.mountPointToRealDeviceName.put(mapping.getValue(), realDeviceName.toString());
         }
-
     }
 
     public Map<String, String> getSnapshotIdToMountPoint() {
@@ -58,25 +52,22 @@ public class DeviceMapper {
         return this.snapshotToDeviceName.get(snapshotId);
     }
 
-    public String getRealDeviceNameforMountPoint(String mountPoint) {
+    public String getRealDeviceNameForMountPoint(String mountPoint) {
         return this.mountPointToRealDeviceName.get(mountPoint);
     }
 
-    
-  
-    
     private char nextAvailableDeviceLetter() {
-        char nextLetter = (char)(USED_DEVICES+98);
-        USED_DEVICES ++;
+        char nextLetter = (char) (usedDevices + 98);
+        usedDevices++;
         return nextLetter;
     }
 
     private String createDeviceName(char letter) {
-        return new StringBuilder("/dev/sd").append(letter).toString();
+        return "/dev/sd" + letter;
     }
 
     private String createRealDeviceName(char letter) {
-        return new StringBuilder(getBlockDeviceBase()).append(letter).toString();
+        return getBlockDeviceBase() + letter;
     }
 
     private int getPartitionNumber(String rawSnapshotId) {
@@ -86,9 +77,7 @@ public class DeviceMapper {
                 String[] idParts = rawSnapshotId.split(":");
                 return Integer.parseInt(idParts[1]);
             } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-                throw new IllegalArgumentException(
-                        new StringBuilder().append("The partition number for snapshotId '")
-                        .append(rawSnapshotId).append("' is invalid!").toString());
+                throw new IllegalArgumentException("The partition number for snapshotId '" + rawSnapshotId + "' is invalid!");
             }
         } else {
             return -1;
@@ -108,30 +97,23 @@ public class DeviceMapper {
         }
         return rawSnapshotId;
     }
-    
-    private String getBlockDeviceBase(){
-        return getBlockDeviceBase(MODE);
+
+    private String getBlockDeviceBase() {
+        return getBlockDeviceBase(mode);
     }
-    
+
     /**
      * Return BlockDeviceBase in dependence of used cluster mode
-     * 
-     * @param mode
-     * @return 
      */
     public static String getBlockDeviceBase(Configuration.MODE mode) {
-    
         switch (mode) {
             case AWS:
                 return "/dev/xvd";
-               
             case OPENSTACK:
                 return "/dev/vd";
-
             case GOOGLECLOUD:
                 return "/dev/sd";
         }
         return null;
     }
-
 }

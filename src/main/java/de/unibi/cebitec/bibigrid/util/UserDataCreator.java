@@ -202,7 +202,7 @@ public class UserDataCreator {
                 .append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))
                 .append("\n");
         slaveUserData.append("mount ")
-                .append(slaveDeviceMapper.getRealDeviceNameforMountPoint(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)))
+                .append(slaveDeviceMapper.getRealDeviceNameForMountPoint(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e)))
                 .append(" ")
                 .append(slaveDeviceMapper.getSnapshotIdToMountPoint().get(e))
                 .append("\n");
@@ -498,7 +498,7 @@ public class UserDataCreator {
     /* Block Devices */
     if (masterDeviceMapper != null) {
       for (String e : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
-        String device = masterDeviceMapper.getRealDeviceNameforMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e));
+        String device = masterDeviceMapper.getRealDeviceNameForMountPoint(masterDeviceMapper.getSnapshotIdToMountPoint().get(e));
         String mountpoint = masterDeviceMapper.getSnapshotIdToMountPoint().get(e);
         masterUserData.append("umount ").append(device).append("\n");
         masterUserData.append("mkdir -p ").append(mountpoint).append("\n");

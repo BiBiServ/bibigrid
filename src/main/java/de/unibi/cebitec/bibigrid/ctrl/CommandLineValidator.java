@@ -651,7 +651,7 @@ public class CommandLineValidator {
             if (!this.cfg.getPorts().isEmpty()) {
                 StringBuilder portsDisplay = new StringBuilder();
                 for (Port port : cfg.getPorts()) {
-                    portsDisplay.append(String.format("%s:%s ", port.iprange, port.number));
+                    portsDisplay.append(port.toString()).append(" ");
                 }
                 LOG.info(V, "Additional open ports set: {}", portsDisplay);
             }

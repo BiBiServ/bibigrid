@@ -7,7 +7,6 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 public class VerboseOutputFilter extends AbstractMatcherFilter<ILoggingEvent> {
-
     public static boolean SHOW_VERBOSE = false;
     public static final Marker V = MarkerFactory.getMarker("VERBOSE");
 
@@ -21,14 +20,11 @@ public class VerboseOutputFilter extends AbstractMatcherFilter<ILoggingEvent> {
             return FilterReply.NEUTRAL;
         }
         if (evtMarker.contains(V) && !SHOW_VERBOSE) {
-            
             return FilterReply.DENY;
-        } 
+        }
         if (evtMarker.contains(ImportantInfoOutputFilter.I)) {
             return FilterReply.DENY;
         }
-        
         return FilterReply.NEUTRAL;
     }
-
 }

@@ -2,29 +2,32 @@ package de.unibi.cebitec.bibigrid.model;
 
 /**
  * Simple definition of an network. Used to build security rules.
- * 
- * 
+ *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class Port {
-    
-    public enum TPort {TCP,UDP,ICMP};
-  
-    public String iprange;   
-    public int number;
-    public TPort type;
-   
-    
-    public Port(String iprange, int number){
-        this.iprange = iprange;
-        this.number = number;
-        type = TPort.TCP;
+    public enum Protocol {
+        TCP, UDP, ICMP
     }
-    
-    public Port(String iprange, int number, TPort type){
-        this.iprange = iprange;
+
+    public final String ipRange;
+    public final int number;
+    public final Protocol type;
+
+    public Port(String ipRange, int number) {
+        this.ipRange = ipRange;
+        this.number = number;
+        type = Protocol.TCP;
+    }
+
+    public Port(String ipRange, int number, Protocol type) {
+        this.ipRange = ipRange;
         this.number = number;
         this.type = type;
     }
-    
+
+    @Override
+    public String toString() {
+        return String.format("%s:%s", ipRange, number);
+    }
 }
