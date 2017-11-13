@@ -62,7 +62,7 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
                 Instance instance = compute.getInstance(InstanceId.of(zone, i));
                 try {
                     instance.delete().waitFor();
-                } catch (TimeoutException | InterruptedException e) {
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }

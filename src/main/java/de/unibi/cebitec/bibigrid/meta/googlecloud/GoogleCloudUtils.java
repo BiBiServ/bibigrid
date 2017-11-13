@@ -91,7 +91,7 @@ public final class GoogleCloudUtils {
         Operation operation = compute.create(diskInfo);
         try {
             operation.waitFor();
-        } catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException e) {
             log.error("Creation of mount disk failed: {}", operation.getErrors());
         }
         return AttachedDisk.of(AttachedDisk.PersistentDiskConfiguration.of(disk));

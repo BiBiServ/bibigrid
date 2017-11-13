@@ -1,7 +1,7 @@
 package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
 import com.google.api.services.compute.model.*;
-import com.google.cloud.WaitForOption;
+import com.google.cloud.RetryOption;
 import com.google.cloud.compute.*;
 import com.google.cloud.compute.Network;
 import com.google.cloud.compute.Operation;
@@ -14,6 +14,7 @@ import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.util.SubNets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.threeten.bp.Duration;
 
 import java.io.IOException;
 import java.util.*;
@@ -113,9 +114,9 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
             SubnetworkId subnetId = SubnetworkId.of(region, SUBNET_PREFIX + cluster.getClusterId());
             Operation createSubnetOperation = vpc.createSubnetwork(subnetId, subnetCidr);
             try {
-                createSubnetOperation.waitFor(WaitForOption.checkEvery(1, TimeUnit.SECONDS));
+                createSubnetOperation.waitFor(RetryOption.initialRetryDelay(Duration.ZERO));
                 subnet = cluster.getCompute().getSubnetwork(subnetId);
-            } catch (InterruptedException | TimeoutException e) {
+            } catch (InterruptedException e) {
                 log.error("Failed to create subnetwork {}", e);
             }
         }
