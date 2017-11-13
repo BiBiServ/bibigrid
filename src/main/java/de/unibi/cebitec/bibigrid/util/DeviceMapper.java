@@ -57,7 +57,7 @@ public class DeviceMapper {
     }
 
     private char nextAvailableDeviceLetter() {
-        char nextLetter = (char) (usedDevices + 98);
+        char nextLetter = (char) (usedDevices + 98); // b
         usedDevices++;
         return nextLetter;
     }
@@ -67,7 +67,7 @@ public class DeviceMapper {
     }
 
     private String createRealDeviceName(char letter) {
-        return getBlockDeviceBase() + letter;
+        return getBlockDeviceBase(mode) + letter;
     }
 
     private int getPartitionNumber(String rawSnapshotId) {
@@ -91,15 +91,7 @@ public class DeviceMapper {
      * @return A snapshot id without partition information. (e.g. snap-0a12b34c)
      */
     public static String stripSnapshotId(String rawSnapshotId) {
-        if (rawSnapshotId.contains(":")) {
-            String[] idParts = rawSnapshotId.split(":");
-            return idParts[0];
-        }
-        return rawSnapshotId;
-    }
-
-    private String getBlockDeviceBase() {
-        return getBlockDeviceBase(mode);
+        return rawSnapshotId != null ? rawSnapshotId.split(":")[0] : null;
     }
 
     /**
