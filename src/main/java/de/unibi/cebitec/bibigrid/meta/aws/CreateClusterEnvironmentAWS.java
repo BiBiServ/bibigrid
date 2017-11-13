@@ -211,8 +211,8 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
 
         // if both instance-types fulfill the cluster specifications, create a 
         // placementGroup.
-        if (cluster.getConfig().getMasterInstanceType().getSpec().clusterInstance
-                && cluster.getConfig().getSlaveInstanceType().getSpec().clusterInstance) {
+        if (cluster.getConfig().getMasterInstanceType().getSpec().isClusterInstance()
+                && cluster.getConfig().getSlaveInstanceType().getSpec().isClusterInstance()) {
 
             placementGroup = (PLACEMENT_GROUP_PREFIX + cluster.getClusterId());
             log.info("Creating placement group...");

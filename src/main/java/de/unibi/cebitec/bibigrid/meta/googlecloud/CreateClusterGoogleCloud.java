@@ -77,7 +77,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
 
         // preparing blockdevicemappings for master
         Map<String, String> masterSnapshotToMountPointMap = conf.getMasterMounts();
-        int ephemerals = conf.getMasterInstanceType().getSpec().ephemerals;
+        int ephemerals = conf.getMasterInstanceType().getSpec().getEphemerals();
         DeviceMapper masterDeviceMapper = new DeviceMapper(conf.getMode(), masterSnapshotToMountPointMap, ephemerals);
 
         base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair());
@@ -124,7 +124,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
     public CreateClusterGoogleCloud configureClusterSlaveInstance() {
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = conf.getSlaveMounts();
-        int ephemerals = conf.getSlaveInstanceType().getSpec().ephemerals;
+        int ephemerals = conf.getSlaveInstanceType().getSpec().getEphemerals();
         slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, ephemerals);
         return this;
     }

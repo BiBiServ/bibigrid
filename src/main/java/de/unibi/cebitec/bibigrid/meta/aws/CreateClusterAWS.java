@@ -129,7 +129,7 @@ public class CreateClusterAWS implements CreateCluster {
         ////////////////////////////////////////////////////////////////////////
         /////////////// preparing blockdevicemappings for master////////////////
         Map<String, String> masterSnapshotToMountPointMap = this.config.getMasterMounts();
-        int ephemerals = config.getMasterInstanceType().getSpec().ephemerals;
+        int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
         DeviceMapper masterDeviceMapper = new DeviceMapper(config.getMode(),masterSnapshotToMountPointMap, ephemerals);
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
@@ -139,7 +139,7 @@ public class CreateClusterAWS implements CreateCluster {
         }
 
         List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
-        for (int i = 0; i < this.config.getMasterInstanceType().getSpec().ephemerals; ++i) {
+        for (int i = 0; i < this.config.getMasterInstanceType().getSpec().getEphemerals(); ++i) {
             BlockDeviceMapping temp = new BlockDeviceMapping();
             String virtualName = "ephemeral" + i;
             String deviceName = "/dev/sd" + ephemeral(i);
@@ -156,7 +156,7 @@ public class CreateClusterAWS implements CreateCluster {
         //////////////////////////////////////////////////////////////////////////
         /////// create Placementgroup ////////////////////
 
-        if (this.config.getMasterInstanceType().getSpec().clusterInstance) {
+        if (this.config.getMasterInstanceType().getSpec().isClusterInstance()) {
             if (config.isUseSpotInstances()) {
                 spotInstancePlacement = new SpotPlacement(config.getAvailabilityZone());
                 spotInstancePlacement.setGroupName(environment.getPlacementGroup());
@@ -196,7 +196,7 @@ public class CreateClusterAWS implements CreateCluster {
     public CreateClusterAWS configureClusterSlaveInstance() {
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
-        int ephemerals = config.getSlaveInstanceType().getSpec().ephemerals;
+        int ephemerals = config.getSlaveInstanceType().getSpec().getEphemerals();
         slaveDeviceMapper = new DeviceMapper(config.getMode(),snapShotToSlaveMounts, ephemerals);
         slaveBlockDeviceMappings = new ArrayList<>();
         // configure volumes first ...

@@ -11,14 +11,13 @@ import java.util.Map;
  *         Jan Krueger - jkrueger(a)cebitec.uni-bielefeld.de
  */
 public interface ListIntent {
-
     /**
      * Return a Map of Cluster objects within current configuration.
      */
     Map<String, Cluster> getList();
 
     /**
-     * Return a String representation of founded map of cluster objects
+     * Return a String representation of found cluster objects map.
      */
     @Override
     String toString();

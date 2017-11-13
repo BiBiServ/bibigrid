@@ -145,9 +145,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     }
     
     if (CONFIGDRIVE) {
-        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, 1 + conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, 1 + conf.getMasterInstanceType().getSpec().getEphemerals() + conf.getMasterInstanceType().getSpec().getSwap());
     } else {
-        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
+        masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().getEphemerals() + conf.getMasterInstanceType().getSpec().getSwap());
     }
     
     /**
@@ -156,7 +156,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
      */
     masterMappings = new HashSet<>();
     String[] ephemerals = {"b", "c", "d", "e"};
-    for (int i = 0; i < this.conf.getMasterInstanceType().getSpec().ephemerals; ++i) {
+    for (int i = 0; i < this.conf.getMasterInstanceType().getSpec().getEphemerals(); ++i) {
       BlockDeviceMappingCreate bdmc = Builders.blockDeviceMapping()
               .deviceName("sd" + ephemerals[i])
               .deleteOnTermination(true)
@@ -194,9 +194,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     Map<String, String> snapShotToSlaveMounts = this.conf.getSlaveMounts();
     
     if (CONFIGDRIVE) {
-        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, 1+conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, 1+conf.getMasterInstanceType().getSpec().getEphemerals() + conf.getMasterInstanceType().getSpec().getSwap());
     } else {
-        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().ephemerals + conf.getMasterInstanceType().getSpec().swap);     
+        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().getEphemerals() + conf.getMasterInstanceType().getSpec().getSwap());
     }
         
     /**
@@ -206,7 +206,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
      */
     slaveMappings = new HashSet<>();
     String[] ephemerals = {"b", "c", "d", "e"};
-    for (int i = 0; i < this.conf.getSlaveInstanceType().getSpec().ephemerals; ++i) {
+    for (int i = 0; i < this.conf.getSlaveInstanceType().getSpec().getEphemerals(); ++i) {
       BlockDeviceMappingCreate bdmc = Builders.blockDeviceMapping()
               .deviceName("sd" + ephemerals[i])
               .deleteOnTermination(true)

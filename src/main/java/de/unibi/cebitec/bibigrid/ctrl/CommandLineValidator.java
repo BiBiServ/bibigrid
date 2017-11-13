@@ -451,7 +451,7 @@ public class CommandLineValidator {
                         masterType = new InstanceTypeOpenstack(cfg, masterTypeString.trim());
                         break;
                     case GOOGLECLOUD:
-                        masterType = new InstanceTypeGoogleCloud(cfg, masterTypeString.trim());
+                        masterType = new InstanceTypeGoogleCloud(masterTypeString.trim());
                         break;
                 }
                 this.cfg.setMasterInstanceType(masterType);
@@ -504,11 +504,11 @@ public class CommandLineValidator {
                         slaveType = new InstanceTypeOpenstack(cfg, slaveTypeString.trim());
                         break;
                     case GOOGLECLOUD:
-                        slaveType = new InstanceTypeGoogleCloud(cfg, slaveTypeString.trim());
+                        slaveType = new InstanceTypeGoogleCloud(slaveTypeString.trim());
                         break;
                 }
                 cfg.setSlaveInstanceType(slaveType);
-                if (slaveType.getSpec().clusterInstance || cfg.getMasterInstanceType().getSpec().clusterInstance) {
+                if (slaveType.getSpec().isClusterInstance() || cfg.getMasterInstanceType().getSpec().isClusterInstance()) {
                     if (!slaveType.toString().equals(cfg.getMasterInstanceType().toString())) {
                         LOG.warn("The instance types should be the same when using cluster types.");
                         LOG.warn("Master Instance Type: " + cfg.getMasterInstanceType().toString());

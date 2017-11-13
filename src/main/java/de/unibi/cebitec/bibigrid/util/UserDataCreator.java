@@ -83,7 +83,7 @@ public class UserDataCreator {
     slaveUserData.append("service ganglia-monitor start \n");
     slaveUserData.append("log 'ganglia configured and started'\n");
 
-    int ephemeralamount = cfg.getSlaveInstanceType().getSpec().ephemerals;
+    int ephemeralamount = cfg.getSlaveInstanceType().getSpec().getEphemerals();
 
     /*
          * Ephemeral Block
@@ -320,7 +320,7 @@ public class UserDataCreator {
   public static String masterUserData(DeviceMapper masterDeviceMapper, Configuration cfg, KEYPAIR keypair) {
     StringBuilder masterUserData = new StringBuilder();
 
-    int ephemeralamount = cfg.getMasterInstanceType().getSpec().ephemerals;
+    int ephemeralamount = cfg.getMasterInstanceType().getSpec().getEphemerals();
     List<String> masterNfsShares = cfg.getNfsShares();
     masterUserData.append("#!/bin/bash\n");
     masterUserData.append("exec > /var/log/userdata.log\n")

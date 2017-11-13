@@ -156,7 +156,7 @@ public class SshFactory {
             // add master as execution host  if set and start execution daemon
             if (cfg.isUseMasterAsCompute()) {
                 //sb.append("./add_exec ").append(master.getNeutronHostname()).append(" ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
-                sb.append("/home/ubuntu/add_exec ${MFQDN} ").append(cfg.getMasterInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
+                sb.append("/home/ubuntu/add_exec ${MFQDN} ").append(cfg.getMasterInstanceType().getSpec().getInstanceCores()).append(" 2>&1 \n");
                 sb.append("ch_p sge_execd 5 \"sudo service gridengine-exec start\"\n");
                 sb.append("log \"Master:${MFQDN} configured as execution host.\"\n");
             }
@@ -170,7 +170,7 @@ public class SshFactory {
                sb.append("(( $? != 0 ));\ndo sleep 10;done;\n");
                
                sb.append("SFQDN=$(fqdn  ").append(slaveIp).append(")\n");
-               sb.append("/home/ubuntu/add_exec ${SFQDN} ").append(cfg.getSlaveInstanceType().getSpec().instanceCores).append(" 2>&1 \n");
+               sb.append("/home/ubuntu/add_exec ${SFQDN} ").append(cfg.getSlaveInstanceType().getSpec().getInstanceCores()).append(" 2>&1 \n");
                sb.append("log \"Slave:${SFQDN} configured as execution host.\"\n");
             }
         }

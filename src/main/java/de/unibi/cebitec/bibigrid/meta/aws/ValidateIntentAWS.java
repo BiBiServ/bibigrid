@@ -21,7 +21,6 @@ import static de.unibi.cebitec.bibigrid.ctrl.ValidationIntent.log;
 import de.unibi.cebitec.bibigrid.meta.ValidateIntent;
 import de.unibi.cebitec.bibigrid.model.Configuration;
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
-import de.unibi.cebitec.bibigrid.util.InstanceInformation;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,8 +131,8 @@ public class ValidateIntentAWS implements ValidateIntent {
             DescribeImagesRequest imageRequest = new DescribeImagesRequest().withImageIds(Arrays.asList(conf.getMasterImage(), conf.getSlaveImage()));
             DescribeImagesResult imageResult = ec2.describeImages(imageRequest);
             boolean slave = false, master = false;
-            boolean masterClusterType = conf.getMasterInstanceType().getSpec().clusterInstance;
-            boolean slaveClusterType = conf.getSlaveInstanceType().getSpec().clusterInstance;
+            boolean masterClusterType = conf.getMasterInstanceType().getSpec().isClusterInstance();
+            boolean slaveClusterType = conf.getSlaveInstanceType().getSpec().isClusterInstance();
             /*
              * Checking if both are hvm or paravirtual types
              */
@@ -156,16 +155,16 @@ public class ValidateIntentAWS implements ValidateIntent {
                 if (image.getImageId().equals(conf.getMasterImage())) {
                     master = true;
                     if (image.getVirtualizationType().equals("hvm")) { // Image detected is of HVM Type
-                        if (conf.getMasterInstanceType().getSpec().hvm) {
+                        if (conf.getMasterInstanceType().getSpec().isHvm()) {
                             log.info(I, "Master instance can use HVM images."); // Instance and Image is HVM type
-                        } else if (conf.getMasterInstanceType().getSpec().pvm) {
+                        } else if (conf.getMasterInstanceType().getSpec().isPvm()) {
                             log.error("Master Instance type does not support hardware-assisted virtualization."); // HVM Image but instance type is not correct 
                             allCheck = false;
                         }
                     } else {
-                        if (conf.getMasterInstanceType().getSpec().pvm) {
+                        if (conf.getMasterInstanceType().getSpec().isPvm()) {
                             log.info(I, "Master instance can use paravirtual images."); // Instance and Image fits.
-                        } else if (conf.getMasterInstanceType().getSpec().hvm) {
+                        } else if (conf.getMasterInstanceType().getSpec().isHvm()) {
                             log.error("Master Instance type does not support paravirtual images."); // Paravirtual Image but cluster instance type
                             allCheck = false;
                         }
@@ -178,16 +177,16 @@ public class ValidateIntentAWS implements ValidateIntent {
                 if (image.getImageId().equals(conf.getSlaveImage())) {
                     slave = true;
                     if (image.getVirtualizationType().equals("hvm")) { // Image detected is of HVM Type
-                        if (conf.getSlaveInstanceType().getSpec().hvm) {
+                        if (conf.getSlaveInstanceType().getSpec().isHvm()) {
                             log.info(I, "Slave instance can use HVM images."); // Instance and Image is HVM type
-                        } else if (conf.getSlaveInstanceType().getSpec().pvm) {
+                        } else if (conf.getSlaveInstanceType().getSpec().isPvm()) {
                             log.error("Slave Instance type does not support hardware-assisted virtualization."); // HVM Image but instance type is not correct 
                             allCheck = false;
                         }
                     } else {
-                        if (conf.getSlaveInstanceType().getSpec().pvm) {
+                        if (conf.getSlaveInstanceType().getSpec().isPvm()) {
                             log.info(I, "Slave instance can use paravirtual images."); // Instance and Image fits.
-                        } else if (conf.getSlaveInstanceType().getSpec().hvm) {
+                        } else if (conf.getSlaveInstanceType().getSpec().isHvm()) {
                             log.error("Slave Instance type does not support paravirtual images."); // Paravirtual Image but cluster instance type
                             allCheck = false;
                         }
