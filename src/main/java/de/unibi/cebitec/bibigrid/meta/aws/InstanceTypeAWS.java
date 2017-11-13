@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Implementation of the general InstanceType for a AWS based cluster.
  *
- * @author jsteiner
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class InstanceTypeAWS extends de.unibi.cebitec.bibigrid.model.InstanceType {
     private static final Map<InstanceType, InstanceSpecification> typeSpecMap = new HashMap<>();

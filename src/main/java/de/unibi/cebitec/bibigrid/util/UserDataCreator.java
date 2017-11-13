@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.util;
 
 import de.unibi.cebitec.bibigrid.model.Configuration;
@@ -17,9 +13,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Creates UserData for master and slave instances.
  *
- *
- * @author jkrueger(at)cebitec.uni-bielefeld.de,
- * alueckne(at)cebitec.uni-bielefeld.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
+ * @author alueckne(at)cebitec.uni-bielefeld.de
  */
 public class UserDataCreator {
 

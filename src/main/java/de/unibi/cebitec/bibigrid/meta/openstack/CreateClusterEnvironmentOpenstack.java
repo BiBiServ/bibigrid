@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.meta.openstack;
 
 import com.jcraft.jsch.JSchException;
@@ -37,8 +32,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Prepare the cloud environment for an OpenStack cluster.
  *
- *
- * @author Johannes Steiner, Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironment {
 

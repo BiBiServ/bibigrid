@@ -5,7 +5,7 @@ package de.unibi.cebitec.bibigrid.meta;
  * provides the minimum of general functions for the environment, the configuration of
  * master and slave instances and launching the cluster.
  *
- * @author Johannes Steiner <jsteiner(at)cebitec.uni-bielefeld.de>
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public interface CreateCluster {
     /**

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.meta.aws;
 
 import com.amazonaws.services.ec2.model.AuthorizeSecurityGroupIngressRequest;
@@ -39,8 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author jsteiner
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
 

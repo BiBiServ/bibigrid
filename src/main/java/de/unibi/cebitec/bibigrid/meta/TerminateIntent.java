@@ -1,7 +1,7 @@
 package de.unibi.cebitec.bibigrid.meta;
 
 /**
- * @author Johanes Steiner
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public interface TerminateIntent {
 

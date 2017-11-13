@@ -19,9 +19,8 @@ import org.openstack4j.model.network.Subnet;
 /**
  * Implements ListIntent for Openstack.
  *
- *
- * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de Jan Krueger -
- * jkrueger(at)cebitec.unj-bielefeld.de
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
 

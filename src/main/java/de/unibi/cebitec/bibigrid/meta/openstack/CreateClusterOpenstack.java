@@ -51,9 +51,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Openstack specific implementation of CreateCluster interface.
  *
- *
- * @author Jan Krueger - jkrueger (at)cebitec.uni-bielfeld.de 1st version by
- * Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterOpenstack extends OpenStackIntent implements CreateCluster {
 

@@ -1,7 +1,7 @@
 package de.unibi.cebitec.bibigrid.model;
 
 /**
- * @author jsteiner
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public abstract class InstanceType {
     protected String value;

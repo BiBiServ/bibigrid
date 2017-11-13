@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Implements TerminateIntent for Openstack.
  *
- * @author Johannes Steiner (1st version), Jan Krueger
- * (jkrueger@cebitec.uni-bielefeld.de)
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class TerminateIntentOpenstack extends OpenStackIntent implements TerminateIntent {
 

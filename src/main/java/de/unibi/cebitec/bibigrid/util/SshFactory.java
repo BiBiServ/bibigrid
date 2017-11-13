@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.util;
 
 import com.amazonaws.services.ec2.model.Instance;

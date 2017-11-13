@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Startup/Main class of BiBiGrid.
  *
- * @author Jan Krueger - jkrueger(at)cebitec.un-bielefel.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class StartUp {
     public static final Logger log = LoggerFactory.getLogger(StartUp.class);

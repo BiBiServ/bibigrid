@@ -61,8 +61,8 @@ import org.slf4j.LoggerFactory;
  * First implementation was done by Johannes within a student project.
  * 
  * 
- * @author Johannes Steiner <jsteiner@techfak.uni-bielefeld.de>
- *         Jan Krueger <jkrueger@cebitec.uni-bielefeld.de>
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterAWS implements CreateCluster {
 

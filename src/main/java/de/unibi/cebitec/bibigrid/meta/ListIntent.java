@@ -8,7 +8,7 @@ import java.util.Map;
  * Creates a Map of BiBiGrid cluster instances
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
- *         Jan Krueger - jkrueger(a)cebitec.uni-bielefeld.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public interface ListIntent {
     /**

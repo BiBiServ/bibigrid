@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.unibi.cebitec.bibigrid.meta.aws;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -25,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ListIntentAWS implements ListIntent {
@@ -43,14 +37,6 @@ public class ListIntentAWS implements ListIntent {
         ec2.setEndpoint("ec2." + conf.getRegion() + ".amazonaws.com");
         searchCluster();
     }
-
-   
-    
-    
-    
-    
-
-   
 
     @Override
     public Map<String, Cluster> getList() {
@@ -167,7 +153,4 @@ public class ListIntentAWS implements ListIntent {
         }
         return null;
     }
-
-
-
 }

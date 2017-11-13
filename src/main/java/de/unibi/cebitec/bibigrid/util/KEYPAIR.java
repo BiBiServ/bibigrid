@@ -8,7 +8,7 @@ import java.io.ByteArrayOutputStream;
 /**
  *  Generates a public/private KeyPair.
  * 
- * @author Jan Krueger -<jkrueger(at)cebitec.uni-bielefeld.de>
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class KEYPAIR {
 

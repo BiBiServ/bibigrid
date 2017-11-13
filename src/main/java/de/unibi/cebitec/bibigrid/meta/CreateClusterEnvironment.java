@@ -3,7 +3,7 @@ package de.unibi.cebitec.bibigrid.meta;
 import de.unibi.cebitec.bibigrid.model.exceptions.ConfigurationException;
 
 /**
- * @author jsteiner
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public interface CreateClusterEnvironment {
     /**

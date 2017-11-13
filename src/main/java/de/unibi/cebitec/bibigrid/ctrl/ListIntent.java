@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  * All resources created by BiBiGrid follows a naming schema and are tagged.
  * Bundles all resources having the same cluster-id and list them.
  *
- * @author Jan Krueger - jkrueger
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ListIntent extends Intent {
 
