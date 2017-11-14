@@ -44,7 +44,7 @@ public class CommandLineValidator {
         boolean success;
 
         boolean getEnabled() {
-            return value.equalsIgnoreCase(KEYWORD_YES);
+            return value != null && value.equalsIgnoreCase(KEYWORD_YES);
         }
     }
 
