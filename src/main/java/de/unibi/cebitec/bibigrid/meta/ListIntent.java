@@ -10,7 +10,7 @@ import java.util.Map;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public interface ListIntent {
+public interface ListIntent extends Intent {
     /**
      * Return a Map of Cluster objects within current configuration.
      */

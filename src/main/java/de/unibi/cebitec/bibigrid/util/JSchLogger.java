@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JSchLogger implements com.jcraft.jsch.Logger {
-    public static final Logger log = LoggerFactory.getLogger(JSchLogger.class);
+    public static final Logger LOG = LoggerFactory.getLogger(JSchLogger.class);
     private static final Map<Integer, String> levelNameMap = new HashMap<>();
 
     static {
@@ -25,6 +25,6 @@ public class JSchLogger implements com.jcraft.jsch.Logger {
 
     @Override
     public void log(int level, String message) {
-        log.debug("JSCH {} {}", levelNameMap.get(level), message);
+        LOG.debug("JSCH {} {}", levelNameMap.get(level), message);
     }
 }

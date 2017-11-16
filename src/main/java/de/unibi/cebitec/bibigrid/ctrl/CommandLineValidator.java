@@ -1,100 +1,56 @@
 package de.unibi.cebitec.bibigrid.ctrl;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.PropertiesCredentials;
-import de.unibi.cebitec.bibigrid.meta.aws.InstanceTypeAWS;
-import de.unibi.cebitec.bibigrid.meta.googlecloud.InstanceTypeGoogleCloud;
-import de.unibi.cebitec.bibigrid.meta.openstack.InstanceTypeOpenstack;
-import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.model.Configuration.FS;
-import de.unibi.cebitec.bibigrid.model.Configuration.MODE;
-import de.unibi.cebitec.bibigrid.model.InstanceType;
-import de.unibi.cebitec.bibigrid.model.OpenStackCredentials;
-import de.unibi.cebitec.bibigrid.model.Port;
+import de.unibi.cebitec.bibigrid.Provider;
+import de.unibi.cebitec.bibigrid.model.*;
 
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.unibi.cebitec.bibigrid.model.exceptions.InstanceTypeNotFoundException;
+import de.unibi.cebitec.bibigrid.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CommandLineValidator {
-    private static final String CMD_PARAMETER_MODE = "mode";
-    private static final String KEYWORD_YES = "yes";
-    private static final String KEYWORD_NO = "no";
-
-    private class ParseResult {
-        String value;
-        boolean success;
+public abstract class CommandLineValidator {
+    protected class ParseResult {
+        public String value;
+        public boolean success;
 
         boolean getEnabled() {
             return value != null && value.equalsIgnoreCase(KEYWORD_YES);
         }
     }
 
-    private static final String DEFAULT_PROPERTIES_DIRNAME = System.getProperty("user.home");
-    private static final String DEFAULT_PROPERTIES_FILENAME = ".bibigrid.properties";
+    private static final String KEYWORD_YES = "yes";
+    private static final String KEYWORD_NO = "no";
     public static final Logger LOG = LoggerFactory.getLogger(CommandLineValidator.class);
-    private final CommandLine cl;
-    private final Configuration cfg;
-    private final Intent intent;
-    private Path propertiesFilePath;
+    protected final CommandLine cl;
+    protected final DefaultPropertiesFile defaultPropertiesFile;
+    protected final IntentMode intentMode;
+    protected final Configuration cfg;
 
     private Properties machineImage = null;
 
-    public CommandLineValidator(CommandLine cl, Intent intent) {
+    public CommandLineValidator(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
+                                final IntentMode intentMode) {
         this.cl = cl;
-        this.intent = intent;
+        this.defaultPropertiesFile = defaultPropertiesFile;
+        this.intentMode = intentMode;
         this.cfg = new Configuration();
-        if (cl.hasOption("o")) {
-            String path = this.cl.getOptionValue("o");
-            Path newPath = FileSystems.getDefault().getPath(path);
-            if (Files.isReadable(newPath)) {
-                propertiesFilePath = newPath;
-                LOG.info("Alternative config file {} will be used.", newPath.toString());
-                cfg.setAlternativeConfigFile(true);
-                cfg.setAlternativeConfigPath(newPath.toString());
-            } else {
-                LOG.error("Alternative config ({}) file is not readable. Try to use default.", newPath.toString());
-            }
+        if (defaultPropertiesFile.isAlternativeFilepath()) {
+            cfg.setAlternativeConfigFile(true);
+            cfg.setAlternativeConfigPath(defaultPropertiesFile.getPropertiesFilePath().toString());
         }
-        if (propertiesFilePath == null) {
-            propertiesFilePath = FileSystems.getDefault().getPath(DEFAULT_PROPERTIES_DIRNAME, DEFAULT_PROPERTIES_FILENAME);
-        }
-        // some messages
-        if (Files.exists(propertiesFilePath)) {
-            LOG.info(V, "Reading default options from properties file at '{}'.", propertiesFilePath);
-        } else {
-            LOG.info("No properties file for default options found ({}). Using command line parameters only.", propertiesFilePath);
-        }
-    }
-
-    private Properties loadDefaultsFromPropertiesFile() {
-        Properties defaultProperties = new Properties();
-        try {
-            if (propertiesFilePath != null) {
-                defaultProperties.load(Files.newInputStream(propertiesFilePath));
-            }
-        } catch (IOException e) {
-            //nothing to do here, just return empty properties. validate() will catch that.
-        }
-        return defaultProperties;
     }
 
     private ParseResult parseYesNoParameter(Properties defaults, String name, RuleBuilder.RuleNames shortParam,
@@ -120,8 +76,8 @@ public class CommandLineValidator {
         return result;
     }
 
-    private ParseResult parseParameter(Properties defaults, RuleBuilder.RuleNames shortParam,
-                                       RuleBuilder.RuleNames longParam, RuleBuilder.RuleNames envParam) {
+    protected ParseResult parseParameter(Properties defaults, RuleBuilder.RuleNames shortParam,
+                                         RuleBuilder.RuleNames longParam, RuleBuilder.RuleNames envParam) {
         ParseResult result = new ParseResult();
         result.success = true;
         if (cl.hasOption(shortParam.toString())) {
@@ -144,123 +100,6 @@ public class CommandLineValidator {
         return true;
     }
 
-    private boolean parseAwsCredentialsFileParameter(List<String> req, Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString();
-        final String longParam = RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_L.toString();
-        if (req.contains(shortParam)) {
-            String awsCredentialsFilePath = null;
-            if (defaults.containsKey(longParam)) {
-                awsCredentialsFilePath = defaults.getProperty(longParam);
-            }
-            if (this.cl.hasOption(shortParam)) {
-                awsCredentialsFilePath = this.cl.getOptionValue(shortParam);
-            }
-            if (awsCredentialsFilePath == null) {
-                if (Files.exists(this.propertiesFilePath)) {
-                    awsCredentialsFilePath = this.propertiesFilePath.toString();
-                } else {
-                    LOG.error("Default credentials file not found! ({})", this.propertiesFilePath);
-                    LOG.error("-" + shortParam + " option is required! Please specify the properties file containing the aws credentials.");
-                    return false;
-                }
-            }
-            File credentialsFile = new File(awsCredentialsFilePath);
-            try {
-                AWSCredentials keys = new PropertiesCredentials(credentialsFile);
-                this.cfg.setCredentials(keys);
-                LOG.info(V, "AWS-Credentials successfully loaded! ({})", awsCredentialsFilePath);
-            } catch (IOException | IllegalArgumentException e) {
-                LOG.error("AWS-Credentials from properties: {}", e.getMessage());
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean parseGoogleCloudParameters(Properties defaults) {
-        final String shortParamProject = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString();
-        final String longParamProject = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_L.toString();
-        if (cfg.getMode().equals(MODE.GOOGLECLOUD)) {
-            if (cl.hasOption(shortParamProject)) {  // Google Cloud - required
-                cfg.setGoogleProjectId(cl.getOptionValue(shortParamProject).trim());
-            } else if (defaults.containsKey(longParamProject)) {
-                cfg.setGoogleProjectId(defaults.getProperty(longParamProject));
-            } else {
-                LOG.error("No suitable entry for Google-ProjectId (" + shortParamProject + ") found! Exit");
-                return false;
-            }
-
-            final String shortParamCredentials = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString();
-            final String longParamCredentials = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_L.toString();
-            if (cl.hasOption(shortParamCredentials)) {  // Google Cloud - required
-                cfg.setGoogleCredentialsFile(cl.getOptionValue(shortParamCredentials));
-            } else if (defaults.containsKey(longParamCredentials)) {
-                cfg.setGoogleCredentialsFile(defaults.getProperty(longParamCredentials));
-            } else {
-                LOG.error("No suitable entry for Google-Credentials-File (" + shortParamCredentials + ") found! Exit");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean parseOpenStackParameters(Properties defaults) {
-        if (!cfg.getMode().equals(MODE.OPENSTACK)) {
-            return true;
-        }
-        OpenStackCredentials osc = new OpenStackCredentials();
-        // OpenStack username
-        ParseResult result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_USERNAME_S,
-                RuleBuilder.RuleNames.OPENSTACK_USERNAME_L, RuleBuilder.RuleNames.OPENSTACK_USERNAME_ENV);
-        if (!result.success) {
-            LOG.error("No suitable entry for OpenStack-Username (osu) found nor environment OS_USERNAME set! Exit");
-            return false;
-        }
-        osc.setUsername(result.value);
-        // OpenStack tenant name
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S,
-                RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_L, RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_ENV);
-        if (!result.success) {
-            LOG.error("No suitable entry for OpenStack-Tenantname (ost) found nor environment OS_PROJECT_NAME set! Exit");
-            return false;
-        }
-        osc.setTenantDomain(result.value);
-        // OpenStack tenant domain
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_S,
-                RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_L, null);
-        if (!result.success) {
-            LOG.info("No suitable entry for OpenStack-TenantDomain (ostd) found! Use OpenStack-Domain(osd) instead!");
-            return false;
-        }
-        osc.setTenantDomain(result.value);
-        // OpenStack password
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S,
-                RuleBuilder.RuleNames.OPENSTACK_PASSWORD_L, RuleBuilder.RuleNames.OPENSTACK_PASSWORD_ENV);
-        if (!result.success) {
-            LOG.error("No suitable entry for OpenStack-Password (osp) found nor environment OS_PASSWORD set! Exit");
-            return false;
-        }
-        osc.setPassword(result.value);
-        // OpenStack endpoint
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S,
-                RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_L, RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_ENV);
-        if (!result.success) {
-            LOG.error("No suitable entry for OpenStack-Endpoint (ose) found nor environment OS_AUTH_URL set! Exit");
-            return false;
-        }
-        osc.setEndpoint(result.value);
-        // OpenStack domain
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_DOMAIN_S,
-                RuleBuilder.RuleNames.OPENSTACK_DOMAIN_L, RuleBuilder.RuleNames.OPENSTACK_DOMAIN_ENV);
-        if (result.success) {
-            osc.setDomain(result.value);
-        } else {
-            LOG.info("Keystone V2 API.");
-        }
-        this.cfg.setOpenstackCredentials(osc);
-        return true;
-    }
-
     private boolean parseUserNameParameter(Properties defaults) {
         final String shortParam = RuleBuilder.RuleNames.USER_S.toString();
         final String longParam = RuleBuilder.RuleNames.USER_L.toString();
@@ -280,22 +119,22 @@ public class CommandLineValidator {
         // AWS - required
         ParseResult result = parseParameter(defaults, RuleBuilder.RuleNames.VPC_S, RuleBuilder.RuleNames.VPC_L, null);
         if (result.success) {
-            cfg.setVpcid(result.value);
+            cfg.setVpcId(result.value);
         }
         // Openstack - optional, but recommend
         result = parseParameter(defaults, RuleBuilder.RuleNames.ROUTER_S, RuleBuilder.RuleNames.ROUTER_L, null);
         if (result.success) {
-            cfg.setRoutername(result.value);
+            cfg.setRouterName(result.value);
         }
         // Openstack - optional
         result = parseParameter(defaults, RuleBuilder.RuleNames.NETWORK_S, RuleBuilder.RuleNames.NETWORK_L, null);
         if (result.success) {
-            cfg.setNetworkname(result.value);
+            cfg.setNetworkName(result.value);
         }
         // Openstack - optional
         result = parseParameter(defaults, RuleBuilder.RuleNames.SUBNET_S, RuleBuilder.RuleNames.SUBNET_L, null);
         if (result.success) {
-            cfg.setSubnetname(result.value);
+            cfg.setSubnetName(result.value);
         }
         return true;
     }
@@ -441,21 +280,12 @@ public class CommandLineValidator {
                             "master node. (e.g. master-instance-type=t1.micro)");
                     return false;
                 }
-
-                InstanceType masterType = null;
-                switch (cfg.getMode()) {
-                    case AWS:
-                        masterType = new InstanceTypeAWS(masterTypeString.trim());
-                        break;
-                    case OPENSTACK:
-                        masterType = new InstanceTypeOpenstack(cfg, masterTypeString.trim());
-                        break;
-                    case GOOGLECLOUD:
-                        masterType = new InstanceTypeGoogleCloud(masterTypeString.trim());
-                        break;
+                ProviderModule provider = Provider.getInstance().getProviderModule(cfg.getMode());
+                if (provider != null) {
+                    InstanceType masterType = provider.getInstanceType(cfg, masterTypeString.trim());
+                    this.cfg.setMasterInstanceType(masterType);
                 }
-                this.cfg.setMasterInstanceType(masterType);
-            } catch (Exception e) {
+            } catch (InstanceTypeNotFoundException e) {
                 LOG.error("Invalid master instance type specified!", e);
                 return false;
             }
@@ -495,27 +325,19 @@ public class CommandLineValidator {
                             "slave nodes (" + longParam + "=t1.micro).");
                     return false;
                 }
-                InstanceType slaveType = null;
-                switch (cfg.getMode()) {
-                    case AWS:
-                        slaveType = new InstanceTypeAWS(slaveTypeString.trim());
-                        break;
-                    case OPENSTACK:
-                        slaveType = new InstanceTypeOpenstack(cfg, slaveTypeString.trim());
-                        break;
-                    case GOOGLECLOUD:
-                        slaveType = new InstanceTypeGoogleCloud(slaveTypeString.trim());
-                        break;
-                }
-                cfg.setSlaveInstanceType(slaveType);
-                if (slaveType.getSpec().isClusterInstance() || cfg.getMasterInstanceType().getSpec().isClusterInstance()) {
-                    if (!slaveType.toString().equals(cfg.getMasterInstanceType().toString())) {
-                        LOG.warn("The instance types should be the same when using cluster types.");
-                        LOG.warn("Master Instance Type: " + cfg.getMasterInstanceType().toString());
-                        LOG.warn("Slave Instance Type: " + slaveType.toString());
+                ProviderModule provider = Provider.getInstance().getProviderModule(cfg.getMode());
+                if (provider != null) {
+                    InstanceType slaveType = provider.getInstanceType(cfg, slaveTypeString.trim());
+                    this.cfg.setSlaveInstanceType(slaveType);
+                    if (slaveType.getSpec().isClusterInstance() || cfg.getMasterInstanceType().getSpec().isClusterInstance()) {
+                        if (!slaveType.toString().equals(cfg.getMasterInstanceType().toString())) {
+                            LOG.warn("The instance types should be the same when using cluster types.");
+                            LOG.warn("Master Instance Type: " + cfg.getMasterInstanceType().toString());
+                            LOG.warn("Slave Instance Type: " + slaveType.toString());
+                        }
                     }
                 }
-            } catch (Exception e) {
+            } catch (InstanceTypeNotFoundException e) {
                 LOG.error("Invalid slave instance type specified!");
                 return false;
             }
@@ -599,7 +421,7 @@ public class CommandLineValidator {
     private boolean parseSecurityGroupParameter(Properties defaults) {
         final String shortParam = RuleBuilder.RuleNames.SECURITY_GROUP_S.toString();
         final String longParam = RuleBuilder.RuleNames.SECURITY_GROUP_L.toString();
-        cfg.setSecuritygroup(cl.getOptionValue(shortParam, defaults.getProperty(longParam)));
+        cfg.setSecurityGroup(cl.getOptionValue(shortParam, defaults.getProperty(longParam)));
         return true;
     }
 
@@ -893,7 +715,7 @@ public class CommandLineValidator {
         if (cl.hasOption(shortParam) || defaults.containsKey(longParam)) {
             String value = cl.getOptionValue(shortParam, defaults.getProperty(longParam));
             try {
-                FS fs = FS.valueOf(value.toUpperCase());
+                Configuration.FS fs = Configuration.FS.valueOf(value.toUpperCase());
                 cfg.setLocalFS(fs);
             } catch (IllegalArgumentException e) {
                 LOG.error("Local filesystem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
@@ -929,24 +751,13 @@ public class CommandLineValidator {
         }
     }
 
-    public boolean validate() {
-        Properties defaults = this.loadDefaultsFromPropertiesFile();
-        // if no mode aws given keep default mode instead.
-        try {
-            if (cl.hasOption(CMD_PARAMETER_MODE) || defaults.containsKey(CMD_PARAMETER_MODE)) {
-                String mode = cl.getOptionValue(CMD_PARAMETER_MODE, defaults.getProperty(CMD_PARAMETER_MODE)).trim();
-                cfg.setMode(MODE.valueOf(mode.toUpperCase()));
-            }
-        } catch (IllegalArgumentException iae) {
-            LOG.error("No suitable mode found. Exit");
-            return false;
-        }
-        List<String> req = intent.getRequiredOptions(cfg.getMode());
-        if (!req.isEmpty()) {
+    public boolean validate(String mode) {
+        Properties defaults = this.defaultPropertiesFile.getDefaultProperties();
+        cfg.setMode(mode);
+        List<String> req = getRequiredOptions();
+        if (req != null && !req.isEmpty()) {
+            if (!validateProviderParameters(req, defaults)) return false;
             if (!parseTerminateParameter(req)) return false;
-            if (!parseAwsCredentialsFileParameter(req, defaults)) return false;
-            if (!parseGoogleCloudParameters(defaults)) return false;
-            if (!parseOpenStackParameters(defaults)) return false;
             if (!parseUserNameParameter(defaults)) return false;
             if (!parseNetworkParameters(defaults)) return false;
             if (!parseMesosParameters(defaults)) return false;
@@ -980,10 +791,12 @@ public class CommandLineValidator {
             parseGridPropertiesFileParameter(defaults);
             parseDebugRequestsParameter(defaults);
         }
-        // if successful validated set configuration to intent
-        intent.setConfiguration(cfg);
         return true;
     }
+
+    protected abstract List<String> getRequiredOptions();
+
+    protected abstract boolean validateProviderParameters(List<String> req, Properties defaults);
 
     private int checkStringAsInt(String s, int max) throws Exception {
         int v = Integer.parseInt(s);
@@ -996,7 +809,7 @@ public class CommandLineValidator {
     private void loadMachineImageId() {
         machineImage = new Properties();
         String str = "https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/" +
-                cfg.getMode().name().toLowerCase() + "/" + cfg.getRegion() + ".ami.properties";
+                cfg.getMode().toLowerCase() + "/" + cfg.getRegion() + ".ami.properties";
         try {
             URL url = new URL(str);
             machineImage.load(url.openStream());
@@ -1007,11 +820,15 @@ public class CommandLineValidator {
                 throw new IOException("Key/value for slave image is missing in properties file!");
             }
         } catch (IOException ex) {
-            LOG.warn("No machine image properties file found for " + cfg.getMode().name() + " and region '" +
+            LOG.warn("No machine image properties file found for " + cfg.getMode() + " and region '" +
                     cfg.getRegion() + "' found!");
             LOG.error(V, "Exception: {}", ex.getMessage());
             LOG.error(V, "Try : {}", str);
             machineImage = null;
         }
+    }
+
+    public Configuration getConfig() {
+        return cfg;
     }
 }

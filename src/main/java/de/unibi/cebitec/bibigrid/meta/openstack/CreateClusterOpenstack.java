@@ -6,12 +6,9 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.util.DeviceMapper;
+import de.unibi.cebitec.bibigrid.util.*;
+
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
-import de.unibi.cebitec.bibigrid.util.JSchLogger;
-import de.unibi.cebitec.bibigrid.util.SshFactory;
-import de.unibi.cebitec.bibigrid.util.UserDataCreator;
-import de.unibi.cebitec.bibigrid.util.VerboseOutputFilter;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -44,7 +41,6 @@ import org.openstack4j.model.network.NetFloatingIP;
 import org.openstack4j.model.storage.block.Volume;
 import org.openstack4j.model.storage.block.Volume.Status;
 import org.openstack4j.model.storage.block.VolumeSnapshot;
-import org.openstack4j.openstack.storage.block.domain.CinderVolume.Volumes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +51,6 @@ import org.slf4j.LoggerFactory;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterOpenstack extends OpenStackIntent implements CreateCluster {
-
   public static final Logger LOG = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
   private CreateClusterEnvironmentOpenstack environment;
@@ -71,18 +66,15 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
   
   public static final boolean CONFIGDRIVE = true;
 
-  /*
-     * Cluster ID
-   */
-  private final String clusterId;
-
-  /*
-     * MetaData
-   */
+  private String clusterId;
   private final Map<String, String> metadata = new HashMap<>();
 
-  public CreateClusterOpenstack(Configuration conf) {
+  CreateClusterOpenstack(Configuration conf) {
     super(conf);
+  }
+
+  @Override
+  public CreateClusterEnvironmentOpenstack createClusterEnvironment() {
     // MetaData
     metadata.put("user", conf.getUser());
 
@@ -99,10 +91,6 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     LOG.debug("cluster id: {}", clusterId);
 
     LOG.info("Openstack connection established ...");
-  }
-
-  @Override
-  public CreateClusterEnvironmentOpenstack createClusterEnvironment() {
     return environment = new CreateClusterEnvironmentOpenstack(this);
   }
 

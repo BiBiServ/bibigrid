@@ -24,15 +24,6 @@ public class UserDataCreator {
 
   /**
    * Creates slaveUserData content.
-   *
-   *
-   * @param masterIp
-   * @param masterDns
-   * @param slaveDeviceMapper
-   * @param cfg
-   * @param keypair
-   *
-   * @return
    */
   public static String forSlave(String masterIp, String masterDns, DeviceMapper slaveDeviceMapper, Configuration cfg, KEYPAIR keypair) {
     StringBuilder slaveUserData = new StringBuilder();
@@ -45,11 +36,10 @@ public class UserDataCreator {
     shellFct(slaveUserData);
 
     switch (cfg.getMode()) {
-      case AWS:
-      case OPENSTACK:
+      default:
         slaveUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
         break;
-      case GOOGLECLOUD:
+      case "googlecloud":
         slaveUserData.append("IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H \"Metadata-Flavor: Google\")\n");
         break;
     }
@@ -71,49 +61,29 @@ public class UserDataCreator {
     slaveUserData.append("mkdir -p /vol/spool/log\n");
     slaveUserData.append("mkdir -p /vol/scratch/\n");
 
-    /*
-         * Ganglia service monitor
-     */
+    // Ganglia service monitor
     slaveUserData.append("sed -i s/MASTER_IP/").append(masterIp).append("/g /etc/ganglia/gmond.conf\n");
     slaveUserData.append("service ganglia-monitor start \n");
     slaveUserData.append("log 'ganglia configured and started'\n");
 
     int ephemeralamount = cfg.getSlaveInstanceType().getSpec().getEphemerals();
 
-    /*
-         * Ephemeral Block
-     */
-    String blockDeviceBase = "";
-    switch (cfg.getMode()) {
-      case AWS:
-        blockDeviceBase = "/dev/xvd";
-        break;
-      case OPENSTACK:
-        blockDeviceBase = "/dev/vd";
-        break;
-      case GOOGLECLOUD:
-        blockDeviceBase = "/dev/sd";
-        break;
-    }
-
+    // Ephemeral Block
+    String blockDeviceBase = DeviceMapper.getBlockDeviceBase(cfg.getMode());
     if (ephemeralamount == 1) {
       slaveUserData.append("umount /mnt\n");
       switch (cfg.getLocalFS()) {
-        case EXT2: {
+        case EXT2:
           slaveUserData.append("mkfs.ext2 ").append(blockDeviceBase).append("b\n");
           break;
-        }
-        case EXT3: {
+        case EXT3:
           slaveUserData.append("mkfs.ext3 ").append(blockDeviceBase).append("b\n");
           break;
-        }
-        case EXT4: {
+        case EXT4:
           slaveUserData.append("mkfs.ext4 ").append(blockDeviceBase).append("b\n");
           break;
-        }
-        default: {
+        default:
           slaveUserData.append("mkfs.xfs -f /").append(blockDeviceBase).append("b\n");
-        }
       }
       slaveUserData.append("mount ").append(blockDeviceBase).append("b /vol/scratch\n");
       slaveUserData.append("log 'ephemeral configured'\n");
@@ -233,23 +203,11 @@ public class UserDataCreator {
       }
 
     }
-    /**
-     * route all traffic to master-instance (inet access) if slaves not
-     * configured with public ip address
-     */
-    switch (cfg.getMode()) {
-      case AWS:
-        if (!cfg.isPublicSlaveIps()) {
-          slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
-          slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
-        }
-        break;
-      case OPENSTACK:
-        break;
-      case GOOGLECLOUD:
-        break;
+    // route all traffic to master-instance (inet access) if slaves not configured with public ip address
+    if (cfg.getMode().equals("aws") && !cfg.isPublicSlaveIps()) {
+      slaveUserData.append("route del default gw `ip route | grep default | awk '{print $3}'` eth0 \n");
+      slaveUserData.append("route add default gw ").append(masterIp).append(" eth0 \n");
     }
-
 
     /* 
      * Mesos Block
@@ -327,11 +285,10 @@ public class UserDataCreator {
     shellFct(masterUserData);
     
     switch (cfg.getMode()) {
-      case AWS:
-      case OPENSTACK:
+      default:
         masterUserData.append("IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n");
         break;
-      case GOOGLECLOUD:
+      case "googlecloud":
         masterUserData.append("IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H \"Metadata-Flavor: Google\")\n");
         break;
     }
@@ -349,8 +306,7 @@ public class UserDataCreator {
             + "\tStrictHostKeyChecking no\n"
             + "\tUserKnownHostsfile /dev/null\n"
             + "SSHCONFIG\n");
-    
-    
+
     /*
      * Ephemeral/RAID Preperation
      */
@@ -451,13 +407,13 @@ public class UserDataCreator {
       // core-site.xml configuration
       Properties hdfs_coresite = new Properties();
       hdfs_coresite.put("fs.defaultFS","hdfs://${IP}/");
-      masterUserData.append("cat > /opt/hadoop/etc/hadoop/core-site.xml << CORESITE\n").append(property2Hadoopcfg(hdfs_coresite)).append("\nCORESITE\n");
+      masterUserData.append("cat > /opt/hadoop/etc/hadoop/core-site.xml << CORESITE\n").append(property2HadoopCfg(hdfs_coresite)).append("\nCORESITE\n");
       // hdfs-site.xml configuration
       Properties hdfs_site = new Properties();
       hdfs_site.put("dfs.permissions.superusergroup","hadoop");
       hdfs_site.put("dfs.namenode.name.dir","/vol/scratch/hadoop/nn");
       hdfs_site.put("dfs.datanode.data.dir","/vol/scratch/hadoop/dn");
-      masterUserData.append("cat > /opt/hadoop/etc/hadoop/hdfs-site.xml << HDFSSITE\n").append(property2Hadoopcfg(hdfs_site)).append("\nHDFSSITE\n");
+      masterUserData.append("cat > /opt/hadoop/etc/hadoop/hdfs-site.xml << HDFSSITE\n").append(property2HadoopCfg(hdfs_site)).append("\nHDFSSITE\n");
       // env
       masterUserData.append("echo export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 >> /opt/hadoop/etc/hadoop/hadoop-env.sh\n");
       masterUserData.append("log \"hdfs preconfigured\"\n");
@@ -505,8 +461,6 @@ public class UserDataCreator {
      * NFS//Mounts Block
      */
     if (cfg.isNfs()) {
-
-     
       // export spool dir
       masterUserData.append("echo \"/vol/spool/ ${IPBASE}.0/24(rw,nohide,insecure,no_subtree_check,async)\" >> /etc/exports\n");
       // export opt dir
@@ -531,25 +485,11 @@ public class UserDataCreator {
       }
 
     }
-    /**
-     * Enabling nat functions of master-instance (slave inet access) if slaves
-     * configured without public ip address WARNING! 10.10.0.0 is a hardcoded
-     * SUBNET-proto...ensure generic access later.
-     */
-
-    switch (cfg.getMode()) {
-      case AWS:
-        if (!cfg.isPublicSlaveIps()) {
-          masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n"
-                  + "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE\n");
-        }
-        break;
-      case OPENSTACK:
-        // currently nothing todo
-        break;
-      case GOOGLECLOUD:
-        // currently nothing todo
-        break;
+    // Enabling nat functions of master-instance (slave inet access) if slaves configured without public ip address
+    // WARNING! 10.10.0.0 is a hardcoded SUBNET-proto...ensure generic access later.
+    if (cfg.getMode().equals("aws") && !cfg.isPublicSlaveIps()) {
+      masterUserData.append("sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.eth0.send_redirects=0\n" +
+              "iptables -t nat -C POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE 2> /dev/null || iptables -t nat -A POSTROUTING -o eth0 -s 10.10.0.0/24 -j MASQUERADE\n");
     }
     /*
      * Early Execute Script
@@ -585,9 +525,8 @@ public class UserDataCreator {
 
   /**
    * Provides a set of useful ShellFunction
-   * @param sb 
    */
-  public static void shellFct(StringBuilder sb) {
+  static void shellFct(StringBuilder sb) {
     sb.append("function log { date +\"%x %R:%S - ${1}\";}\n");
     sb.append("function fqdn { nslookup ${1}  | grep name | sed -sr \"s/^.*name = (.*)/\\1/\"; }\n");
     sb.append("function ch_s {\n")
@@ -614,26 +553,17 @@ public class UserDataCreator {
             .append("\t\tlog \"$(ps -e | grep ${1})\"\n")
             .append("\tdone;\n")
             .append("}\n");
-    
-
   }
- 
-  public static String property2Hadoopcfg(Properties properties){
-      StringBuilder sb = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-"<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>\n");
-      sb.append("<configuration>\n");       
-      
-      for (Object obj : properties.keySet()) {
-          String key = (String)obj;
-          sb.append("<property><name>")
-                  .append(key)
-                  .append("</name><value>")
-                  .append(properties.getProperty(key))
-                  .append("</value></property>\n");
-          
-  
-      }
-      sb.append("</configuration>\n");
-      return sb.toString();
+
+  private static String property2HadoopCfg(Properties properties) {
+    StringBuilder sb = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>\n");
+    sb.append("<configuration>\n");
+    for (Object obj : properties.keySet()) {
+      String key = (String) obj;
+      sb.append(String.format("<property><name>%s</name><value>%s</value></property>\n", key, properties.getProperty(key)));
+    }
+    sb.append("</configuration>\n");
+    return sb.toString();
   }
 }

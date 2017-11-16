@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.util;
 
-import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.Provider;
+import de.unibi.cebitec.bibigrid.model.ProviderModule;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +10,7 @@ public class DeviceMapper {
     // vdb ... vdz
     private static final int MAX_DEVICES = 25;
 
-    private final Configuration.MODE mode;
+    private final String mode;
     // snap-0a12b34c -> /my/dir/
     private final Map<String, String> snapshotToMountPoint;
     // snap-0a12b34c -> /dev/sdf
@@ -19,7 +20,7 @@ public class DeviceMapper {
 
     private int usedDevices = 0;
 
-    public DeviceMapper(Configuration.MODE mode, Map<String, String> snapshotIdToMountPoint, int usedDevices)
+    public DeviceMapper(String mode, Map<String, String> snapshotIdToMountPoint, int usedDevices)
             throws IllegalArgumentException {
         this.mode = mode;
 
@@ -62,15 +63,15 @@ public class DeviceMapper {
         return nextLetter;
     }
 
-    private String createDeviceName(char letter) {
+    private String createDeviceName(final char letter) {
         return "/dev/sd" + letter;
     }
 
-    private String createRealDeviceName(char letter) {
+    private String createRealDeviceName(final char letter) {
         return getBlockDeviceBase(mode) + letter;
     }
 
-    private int getPartitionNumber(String rawSnapshotId) {
+    private int getPartitionNumber(final String rawSnapshotId) {
         // rawSnapshotId is e.g. 'snap-0a12b34c:1' where 1 is the partition number
         if (rawSnapshotId.contains(":")) {
             try {
@@ -90,22 +91,15 @@ public class DeviceMapper {
      * @param rawSnapshotId The raw snapshot id (e.g. snap-0a12b34c:1)
      * @return A snapshot id without partition information. (e.g. snap-0a12b34c)
      */
-    public static String stripSnapshotId(String rawSnapshotId) {
+    public static String stripSnapshotId(final String rawSnapshotId) {
         return rawSnapshotId != null ? rawSnapshotId.split(":")[0] : null;
     }
 
     /**
      * Return BlockDeviceBase in dependence of used cluster mode
      */
-    public static String getBlockDeviceBase(Configuration.MODE mode) {
-        switch (mode) {
-            case AWS:
-                return "/dev/xvd";
-            case OPENSTACK:
-                return "/dev/vd";
-            case GOOGLECLOUD:
-                return "/dev/sd";
-        }
-        return null;
+    public static String getBlockDeviceBase(final String mode) {
+        ProviderModule providerModule = Provider.getInstance().getProviderModule(mode);
+        return providerModule != null ? providerModule.getBlockDeviceBase() : null;
     }
 }

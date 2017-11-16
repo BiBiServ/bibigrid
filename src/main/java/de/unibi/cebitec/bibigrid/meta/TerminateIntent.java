@@ -3,8 +3,7 @@ package de.unibi.cebitec.bibigrid.meta;
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public interface TerminateIntent {
-
+public interface TerminateIntent extends Intent {
     /**
      * Terminate a cluster.
      *

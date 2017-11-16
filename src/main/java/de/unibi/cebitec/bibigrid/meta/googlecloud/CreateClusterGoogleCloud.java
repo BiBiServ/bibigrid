@@ -7,10 +7,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.meta.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
-import de.unibi.cebitec.bibigrid.util.DeviceMapper;
-import de.unibi.cebitec.bibigrid.util.JSchLogger;
-import de.unibi.cebitec.bibigrid.util.SshFactory;
-import de.unibi.cebitec.bibigrid.util.UserDataCreator;
+import de.unibi.cebitec.bibigrid.util.*;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +29,7 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class CreateClusterGoogleCloud implements CreateCluster {
-    private static final Logger log = LoggerFactory.getLogger(CreateClusterGoogleCloud.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CreateClusterGoogleCloud.class);
     private static final String PREFIX = "bibigrid-";
     static final String SUBNET_PREFIX = PREFIX + "subnet-";
     static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
@@ -45,11 +42,11 @@ public class CreateClusterGoogleCloud implements CreateCluster {
     private String base64MasterUserData;
     private List<NetworkInterface> masterNetworkInterfaces, slaveNetworkInterfaces;
     private CreateClusterEnvironmentGoogleCloud environment;
-    private String bibigridid, username;
+    private String bibigridId, username;
     private String clusterId;
     private DeviceMapper slaveDeviceMapper;
 
-    public CreateClusterGoogleCloud(final Configuration conf) {
+    CreateClusterGoogleCloud(final Configuration conf) {
         this.conf = conf;
     }
 
@@ -65,9 +62,9 @@ public class CreateClusterGoogleCloud implements CreateCluster {
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
         // All resource ids must be lower case!
         clusterId = clusterIdBase64.substring(0, len).toLowerCase(Locale.US);
-        bibigridid = "bibigrid-id" + GoogleCloudUtils.TAG_SEPARATOR + clusterId;
+        bibigridId = "bibigrid-id" + GoogleCloudUtils.TAG_SEPARATOR + clusterId;
         username = "user" + GoogleCloudUtils.TAG_SEPARATOR + conf.getUser();
-        log.debug("cluster id: {}", clusterId);
+        LOG.debug("cluster id: {}", clusterId);
 
         return environment = new CreateClusterEnvironmentGoogleCloud(this);
     }
@@ -84,7 +81,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
         // Google doesn't use base64 encoded startup scripts. Just use plain text
         base64MasterUserData = new String(Base64.decodeBase64(base64MasterUserData));
 
-        log.info(V, "Master UserData:\n {}", base64MasterUserData);
+        LOG.info(V, "Master UserData:\n {}", base64MasterUserData);
 
         // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
         masterNetworkInterfaces = new ArrayList<>();
@@ -130,24 +127,24 @@ public class CreateClusterGoogleCloud implements CreateCluster {
     }
 
     public boolean launchClusterInstances() {
-        log.info("Requesting master instance ...");
+        LOG.info("Requesting master instance ...");
 
         String zone = conf.getAvailabilityZone();
         String masterInstanceName = PREFIX + "master-" + clusterId;
         InstanceInfo.Builder masterBuilder = GoogleCloudUtils.getInstanceBuilder(zone, masterInstanceName,
                 conf.getMasterInstanceType().getValue())
                 .setNetworkInterfaces(masterNetworkInterfaces)
-                .setTags(Tags.of(bibigridid, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + masterInstanceName))
+                .setTags(Tags.of(bibigridId, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + masterInstanceName))
                 .setMetadata(Metadata.newBuilder().add("startup-script", base64MasterUserData).build());
         GoogleCloudUtils.attachDisks(compute, masterBuilder, conf.getMasterImage(), zone, conf.getMasterMounts(), clusterId);
         GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
 
         // Waiting for master instance to run
-        log.info("Waiting for master instance to finish booting ...");
+        LOG.info("Waiting for master instance to finish booting ...");
         Operation createMasterOperation = compute.create(masterBuilder.build());
         masterInstance = waitForInstances(Collections.singletonList(InstanceId.of(zone, masterInstanceName)),
                 Collections.singletonList(createMasterOperation)).get(0);
-        log.info(I, "Master instance is now running!");
+        LOG.info(I, "Master instance is now running!");
 
         waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
 
@@ -161,7 +158,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
                     conf, environment.getKeypair());
             // Google doesn't use base64 encoded startup scripts. Just use plain text
             base64SlaveUserData = new String(Base64.decodeBase64(base64SlaveUserData));
-            log.info(V, "Slave Userdata:\n{}", base64SlaveUserData);
+            LOG.info(V, "Slave Userdata:\n{}", base64SlaveUserData);
 
             List<InstanceId> slaveInstanceIds = new ArrayList<>();
             List<Operation> slaveInstanceOperations = new ArrayList<>();
@@ -171,7 +168,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
                 InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(zone, slaveInstanceId,
                         conf.getSlaveInstanceType().getValue())
                         .setNetworkInterfaces(slaveNetworkInterfaces.get(i))
-                        .setTags(Tags.of(bibigridid, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + slaveInstanceName))
+                        .setTags(Tags.of(bibigridId, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + slaveInstanceName))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
                 GoogleCloudUtils.attachDisks(compute, slaveBuilder, conf.getSlaveImage(), zone, conf.getSlaveMounts(), clusterId);
                 GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, conf.isUseSpotInstances());
@@ -180,13 +177,13 @@ public class CreateClusterGoogleCloud implements CreateCluster {
                 slaveInstanceIds.add(InstanceId.of(zone, slaveInstanceId));
                 slaveInstanceOperations.add(createSlaveOperation);
             }
-            log.info("Waiting for slave instance(s) to finish booting ...");
+            LOG.info("Waiting for slave instance(s) to finish booting ...");
             slaveInstances = waitForInstances(slaveInstanceIds, slaveInstanceOperations);
-            log.info(I, "Slave instance(s) is now running!");
+            LOG.info(I, "Slave instance(s) is now running!");
 
             waitForInstancesStatusCheck(slaveInstances);
         } else {
-            log.info("No Slave instance(s) requested!");
+            LOG.info("No Slave instance(s) requested!");
         }
 
         // just to be sure, everything is present, wait 5 seconds
@@ -214,7 +211,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
 
         sb.append("\n");
 
-        log.info(sb.toString());
+        LOG.info(sb.toString());
 
         // Grid Properties file
         if (conf.getGridPropertiesFile() != null) {
@@ -228,7 +225,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
             try {
                 gp.store(new FileOutputStream(conf.getGridPropertiesFile()), "Autogenerated by BiBiGrid");
             } catch (IOException e) {
-                log.error(I, "Exception while creating grid properties file : " + e.getMessage());
+                LOG.error(I, "Exception while creating grid properties file : " + e.getMessage());
             }
         }
 
@@ -236,25 +233,25 @@ public class CreateClusterGoogleCloud implements CreateCluster {
     }
 
     private void waitForInstancesStatusCheck(List<Instance> instances) {
-        log.info("Waiting for Status Checks on instances ...");
+        LOG.info("Waiting for Status Checks on instances ...");
         for (Instance instance : instances) {
             do {
                 InstanceInfo.Status status = instance.getStatus();
-                log.debug("Status of " + instance.getInstanceId().getInstance() + " instance: " + status);
+                LOG.debug("Status of " + instance.getInstanceId().getInstance() + " instance: " + status);
                 if (status == InstanceInfo.Status.RUNNING) {
                     break;
                 } else {
-                    log.info(V, "...");
+                    LOG.info(V, "...");
                     sleep(10);
                 }
             } while (true);
         }
-        log.info(I, "Status checks successful.");
+        LOG.info(I, "Status checks successful.");
     }
 
     private List<Instance> waitForInstances(List<InstanceId> instanceIds, List<Operation> operations) {
         if (instanceIds.isEmpty() || operations.isEmpty() || instanceIds.size() != operations.size()) {
-            log.error("No instances found");
+            LOG.error("No instances found");
             return new ArrayList<>();
         }
 
@@ -262,14 +259,14 @@ public class CreateClusterGoogleCloud implements CreateCluster {
         for (int i = 0; i < instanceIds.size(); i++) {
             Operation operation = operations.get(i);
             while (!operation.isDone()) {
-                log.info(V, "...");
+                LOG.info(V, "...");
                 sleep(1);
             }
             operation = operation.reload();
             if (operation.getErrors() == null) {
                 returnList.add(compute.getInstance(instanceIds.get(i)));
             } else {
-                log.error("Creation of instance failed: {}", operation.getErrors());
+                LOG.error("Creation of instance failed: {}", operation.getErrors());
                 break;
             }
         }
@@ -281,7 +278,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
         try {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException ie) {
-            log.error("Thread.sleep interrupted!");
+            LOG.error("Thread.sleep interrupted!");
             ie.printStackTrace();
         }
     }
@@ -291,15 +288,15 @@ public class CreateClusterGoogleCloud implements CreateCluster {
         JSch.setLogger(new JSchLogger());
 
         // Building Command
-        log.info("Now configuring ...");
+        LOG.info("Now configuring ...");
         String execCommand = SshFactory.buildSshCommand(clusterId, getConfig(), masterInstance, slaveInstances);
-        log.info(V, "Building SSH-Command : {}", execCommand);
+        LOG.info(V, "Building SSH-Command : {}", execCommand);
         boolean configured = false;
         int ssh_attempts = 25; // TODO attempts
         while (!configured && ssh_attempts > 0) {
             try {
                 ssh.addIdentity(getConfig().getIdentityFile().toString());
-                log.info("Trying to connect to master ({})...", ssh_attempts);
+                LOG.info("Trying to connect to master ({})...", ssh_attempts);
                 Thread.sleep(4000);
 
                 // Create new Session to avoid packet corruption.
@@ -312,14 +309,14 @@ public class CreateClusterGoogleCloud implements CreateCluster {
                 // Start connect attempt
                 //noinspection ConstantConditions
                 sshSession.connect();
-                log.info("Connected to master!");
+                LOG.info("Connected to master!");
 
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
                 BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
                 BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
                 channel.setCommand(execCommand);
 
-                log.info(V, "Connecting ssh channel...");
+                LOG.info(V, "Connecting ssh channel...");
                 channel.connect();
 
                 String lineout, lineerr = null;
@@ -328,13 +325,13 @@ public class CreateClusterGoogleCloud implements CreateCluster {
                         if (lineout.contains("CONFIGURATION_FINISHED")) {
                             configured = true;
                         }
-                        log.info(V, "SSH: {}", lineout);
+                        LOG.info(V, "SSH: {}", lineout);
                     }
                     if (lineerr != null && !configured) {
-                        log.error(V, "SSH: {}", lineerr);
+                        LOG.error(V, "SSH: {}", lineerr);
                     }
                     if (channel.isClosed() && configured) {
-                        log.info(V, "SSH: exit-status: {}", channel.getExitStatus());
+                        LOG.info(V, "SSH: exit-status: {}", channel.getExitStatus());
                         configured = true;
                     }
                     Thread.sleep(2000);
@@ -346,13 +343,13 @@ public class CreateClusterGoogleCloud implements CreateCluster {
             } catch (IOException | JSchException e) {
                 ssh_attempts--;
                 if (ssh_attempts == 0) {
-                    log.error(V, "SSH: {}", e);
+                    LOG.error(V, "SSH: {}", e);
                 }
             } catch (InterruptedException ex) {
-                log.error("Interrupted ...");
+                LOG.error("Interrupted ...");
             }
         }
-        log.info(I, "Master instance has been configured.");
+        LOG.info(I, "Master instance has been configured.");
     }
 
     Configuration getConfig() {

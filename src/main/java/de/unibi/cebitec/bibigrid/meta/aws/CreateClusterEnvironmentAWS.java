@@ -37,21 +37,14 @@ import org.slf4j.LoggerFactory;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
-
-    public static final Logger log = LoggerFactory.getLogger(CreateClusterEnvironmentAWS.class);
+    public static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentAWS.class);
 
     private KEYPAIR keypair;
-
     private Vpc vpc;
-
     private Subnet subnet;
-
     private String placementGroup;
-
     private final CreateClusterAWS cluster;
-
     private String MASTERIP;
-
     private CreateSecurityGroupResult secReqResult;
 
     public CreateClusterEnvironmentAWS(CreateClusterAWS cluster) {
@@ -70,16 +63,16 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
 
         ////////////////////////////////////////////////////////////////////////
         ///// check for (default) VPC
-        if (cluster.getConfig().getVpcid() == null) {
+        if (cluster.getConfig().getVpcId() == null) {
             vpc = getVPC();
         } else {
-            vpc = getVPC(cluster.getConfig().getVpcid());
+            vpc = getVPC(cluster.getConfig().getVpcId());
         }
 
         if (vpc == null) {
             throw new ConfigurationException("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
         } else {
-            log.info(V, "Use VPC {} ({})%n", vpc.getVpcId(), vpc.getCidrBlock());
+            LOG.info(V, "Use VPC {} ({})%n", vpc.getVpcId(), vpc.getCidrBlock());
         }
         return this;
     }
@@ -103,7 +96,7 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         SubNets subnets = new SubNets(vpc.getCidrBlock(), 24);
         String SUBNETCIDR = subnets.nextCidr(listofUsedCidr);
 
-        log.debug(V, "Use {} for generated SubNet.", SUBNETCIDR);
+        LOG.debug(V, "Use {} for generated SubNet.", SUBNETCIDR);
 
         // create new subnetdir      
         CreateSubnetRequest createsubnetreq = new CreateSubnetRequest(vpc.getVpcId(), SUBNETCIDR);
@@ -127,7 +120,7 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
 
         ////////////////////////////////////////////////////////////////////////
         ///// create security group with full internal access / ssh from outside
-        log.info("Creating security group...");
+        LOG.info("Creating security group...");
 
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + cluster.getClusterId())
@@ -135,7 +128,7 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
                 .withVpcId(vpc.getVpcId());
         secReqResult = cluster.getEc2().createSecurityGroup(secReq);
 
-        log.info(V, "security group id: {}", secReqResult.getGroupId());
+        LOG.info(V, "security group id: {}", secReqResult.getGroupId());
 
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());
 
@@ -170,7 +163,7 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         allIpPermissions.add(secGroupSelfAccessUdp);
         allIpPermissions.add(secGroupSelfAccessIcmp);
         for (Port port : cluster.getConfig().getPorts()) {
-            log.info(port.toString());
+            LOG.info(port.toString());
             IpPermission additionalPortTcp = new IpPermission();
             additionalPortTcp
                     .withIpProtocol("tcp")
@@ -207,18 +200,13 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         // placementGroup.
         if (cluster.getConfig().getMasterInstanceType().getSpec().isClusterInstance()
                 && cluster.getConfig().getSlaveInstanceType().getSpec().isClusterInstance()) {
-
             placementGroup = (PLACEMENT_GROUP_PREFIX + cluster.getClusterId());
-            log.info("Creating placement group...");
+            LOG.info("Creating placement group...");
             cluster.getEc2().createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
-
         } else {
-
-            log.info(V, "Placement Group not available for selected Instances-types ...");
+            LOG.info(V, "Placement Group not available for selected Instances-types ...");
             return cluster;
-
         }
-
         return cluster;
     }
 

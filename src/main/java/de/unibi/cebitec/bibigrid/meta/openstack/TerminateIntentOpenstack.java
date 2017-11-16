@@ -19,22 +19,16 @@ import org.slf4j.LoggerFactory;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class TerminateIntentOpenstack extends OpenStackIntent implements TerminateIntent {
-
     public static final Logger LOG = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
 
-    private final String os_region;
-    private final Cluster cluster;
-
-    public TerminateIntentOpenstack(Configuration conf) {
+    TerminateIntentOpenstack(Configuration conf) {
         super(conf);
-        os_region = conf.getRegion();
-        cluster = new ListIntentOpenstack(conf).getList().get(conf.getClusterId());
     }
 
     @Override
     public boolean terminate() {
+        final Cluster cluster = new ListIntentOpenstack(conf).getList().get(conf.getClusterId());
         if (cluster != null) {
-
             LOG.info("Terminating cluster with ID: {}", conf.getClusterId());
             // master
             if (cluster.getMasterInstance() != null) {
@@ -56,24 +50,21 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                             break;
                         }
                         LOG.warn("{} Try again in a second ...", ar.getFault());
-
                     } catch (InterruptedException ex) {
                         // do nothing
                     }
                 }
                 LOG.info("SecurityGroup ({}) deleted.", cluster.getSecurityGroup());
             }
-
-            // subnet work
+            // sub-network
             if (cluster.getSubnet() != null) {
-                // get subnetwork
+                // get sub-network
                 Subnet subnet = CreateClusterEnvironmentOpenstack.getSubnetworkById(os, cluster.getSubnet());
-
                 // get network
                 Network net = CreateClusterEnvironmentOpenstack.getNetworkById(os, subnet.getNetworkId());
                 // get router
                 Router router = CreateClusterEnvironmentOpenstack.getRouterbyNetwork(os, net, subnet);
-                
+
                 if (router == null) {
                     return false;
                 }
@@ -93,12 +84,9 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                 } catch (ClientResponseException e) {
                     LOG.warn(e.getMessage());
                 }
-
             }
-
             // network
             if (cluster.getNet() != null) {
-
                 // delete network
                 ActionResponse ar = os.networking().network().delete(cluster.getNet());
                 if (ar.isSuccess()) {
@@ -107,7 +95,6 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                     LOG.warn("Can't remove network (ID:{}) : {}", cluster.getNet(), ar.getFault());
                 }
             }
-
             // router
             if (cluster.getRouter() != null) {
                 ActionResponse ar = os.networking().router().delete(cluster.getRouter());
@@ -117,14 +104,10 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                     LOG.warn("Can't remove router (ID:{}) : {}", cluster.getRouter(), ar.getFault());
                 }
             }
-
             LOG.info("Cluster (ID: {}) successfully terminated", conf.getClusterId().trim());
             return true;
         }
-
         LOG.warn("No cluster with id {} found.", conf.getClusterId());
-
         return false;
     }
-
 }

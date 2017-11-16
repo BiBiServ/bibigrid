@@ -14,7 +14,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Utility methods for the google cloud.
@@ -22,8 +21,8 @@ import java.util.concurrent.TimeoutException;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public final class GoogleCloudUtils {
-    public static final String TAG_SEPARATOR = "--";
-    private static final Logger log = LoggerFactory.getLogger(GoogleCloudUtils.class);
+    static final String TAG_SEPARATOR = "--";
+    private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudUtils.class);
     private static final String METADATA_SSH_KEYS = "ssh-keys";
     private static long diskCounter = 1;
 
@@ -34,7 +33,7 @@ public final class GoogleCloudUtils {
             optionsBuilder.setCredentials(GoogleCredentials.fromStream(
                     new FileInputStream(conf.getGoogleCredentialsFile())));
         } catch (IOException e) {
-            log.error("{}", e);
+            LOG.error("{}", e);
             return null;
         }
         return optionsBuilder.build().getService();
@@ -44,7 +43,7 @@ public final class GoogleCloudUtils {
      * Get the internal fully qualified domain name (FQDN) for an instance.
      * https://cloud.google.com/compute/docs/vpc/internal-dns#instance_fully_qualified_domain_names
      */
-    public static String getInstanceFQDN(Instance instance) {
+    static String getInstanceFQDN(Instance instance) {
         return getInstanceFQDN(instance.getInstanceId().getProject(), instance.getInstanceId().getInstance());
     }
 
@@ -92,7 +91,7 @@ public final class GoogleCloudUtils {
         try {
             operation.waitFor();
         } catch (InterruptedException e) {
-            log.error("Creation of mount disk failed: {}", operation.getErrors());
+            LOG.error("Creation of mount disk failed: {}", operation.getErrors());
         }
         return AttachedDisk.of(AttachedDisk.PersistentDiskConfiguration.of(disk));
     }

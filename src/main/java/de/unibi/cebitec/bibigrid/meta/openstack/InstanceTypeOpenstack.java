@@ -7,6 +7,7 @@ import de.unibi.cebitec.bibigrid.model.InstanceType;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.unibi.cebitec.bibigrid.model.exceptions.InstanceTypeNotFoundException;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Flavor;
 
@@ -18,7 +19,7 @@ import org.openstack4j.model.compute.Flavor;
 public class InstanceTypeOpenstack extends InstanceType {
     private OSClient os;
 
-    public InstanceTypeOpenstack(Configuration conf, String type) throws Exception {
+    public InstanceTypeOpenstack(Configuration conf, String type) throws InstanceTypeNotFoundException {
         os = OpenStackIntent.buildOSClient(conf);
         for (Flavor f : listFlavors()) {
             if (f.getName().equalsIgnoreCase(type)) {
@@ -27,7 +28,7 @@ public class InstanceTypeOpenstack extends InstanceType {
                 return;
             }
         }
-        throw new Exception("Invalid instance type");
+        throw new InstanceTypeNotFoundException("Invalid instance type " + type);
     }
 
     private List<Flavor> listFlavors() {

@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.meta.aws;
 
 import de.unibi.cebitec.bibigrid.model.InstanceSpecification;
 import com.amazonaws.services.ec2.model.InstanceType;
+import de.unibi.cebitec.bibigrid.model.exceptions.InstanceTypeNotFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -88,13 +89,13 @@ public class InstanceTypeAWS extends de.unibi.cebitec.bibigrid.model.InstanceTyp
         typeSpecMap.put(InstanceType.T2Large, new InstanceSpecification(2, 0, false, false, true, false));
     }
 
-    public InstanceTypeAWS(String type) throws Exception {
+    public InstanceTypeAWS(String type) throws InstanceTypeNotFoundException {
         try {
             InstanceType tmp = InstanceType.fromValue(type);
             value = tmp.toString();
             spec = typeSpecMap.get(tmp);
         } catch (Exception e) {
-            throw new Exception("Invalid instance type");
+            throw new InstanceTypeNotFoundException("Invalid instance type " + type);
         }
     }
 }

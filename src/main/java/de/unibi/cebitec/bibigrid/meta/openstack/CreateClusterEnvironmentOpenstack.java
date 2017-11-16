@@ -89,11 +89,11 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
             String clusterid = cluster.getClusterId();
 
             // if subnet is set just use it
-            if (cfg.getSubnetname() != null) {
+            if (cfg.getSubnetName() != null) {
                 // check if subnet exists
-                subnet = getSubnetworkByName(osc, cfg.getSubnetname());
+                subnet = getSubnetworkByName(osc, cfg.getSubnetName());
                 if (subnet == null) {
-                    throw new ConfigurationException("No Subnet with name '" + cfg.getSubnetname() + "' found!");
+                    throw new ConfigurationException("No Subnet with name '" + cfg.getSubnetName() + "' found!");
                 }
                 net = getNetworkById(osc, subnet.getNetworkId());
                 router = getRouterbyNetwork(osc, net, subnet); // @ToDo
@@ -102,11 +102,11 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
             }
 
             // if network is set try to determine router
-            if (cfg.getNetworkname() != null) {
+            if (cfg.getNetworkName() != null) {
                 // check if net exists
-                net = getNetworkByName(osc, cfg.getNetworkname());
+                net = getNetworkByName(osc, cfg.getNetworkName());
                 if (net == null) {
-                    throw new ConfigurationException("No Net with name '" + cfg.getSubnetname() + "' found!");
+                    throw new ConfigurationException("No Net with name '" + cfg.getSubnetName() + "' found!");
                 }
                 router = getRouterbyNetwork(osc, net);
                 LOG.info("Use existing net (ID: {}) and router (ID: {}).", net.getId(), router.getId());
@@ -115,17 +115,17 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
 
             if (router == null) {
                 // create a new one
-                if (cfg.getRoutername() == null) {
+                if (cfg.getRouterName() == null) {
                     router = osc.networking().router().create(Builders.router()
                             .name(ROUTERPREFIX + clusterid)
-                            .externalGateway(cfg.getGatewayname())
+                            .externalGateway(cfg.getGatewayName())
                             .build());
                     LOG.info("Router (ID: {}) created.", router.getId());
                     // otherwise use existing one
                 } else {
-                    router = getRouterByName(osc, cfg.getRoutername());
+                    router = getRouterByName(osc, cfg.getRouterName());
                     if (router == null) {
-                        throw new ConfigurationException("No Router with name '" + cfg.getRoutername() + "' found!");
+                        throw new ConfigurationException("No Router with name '" + cfg.getRouterName() + "' found!");
                     }
                     LOG.info("Use existing router (ID: {}).", router.getId());
                 }
@@ -134,7 +134,7 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
                         .name(NETWORKPREFIX + cluster.getClusterId())
                         .adminStateUp(true)
                         .build());
-                cfg.setNetworkname(net.getName());
+                cfg.setNetworkName(net.getName());
                 LOG.info("Network (ID: {}, NAME: {}) created.", net.getId(), net.getName());
 
             }
@@ -168,7 +168,7 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
                     .cidr(CIDR)
                     .build());
 
-            cfg.setSubnetname(subnet.getName());
+            cfg.setSubnetName(subnet.getName());
             LOG.info("Subnet (ID: {}, NAME: {}, CIDR: {}) created.", subnet.getId(), subnet.getName(), subnet.getCidr());
 
             RouterInterface iface = osc.networking().router().attachInterface(router.getId(), AttachInterfaceType.SUBNET, subnet.getId());
@@ -187,13 +187,13 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     public CreateClusterEnvironmentOpenstack createSecurityGroup() throws ConfigurationException {
         OSClient osc = cluster.getOs();
         // if a  security group is configured then used it
-        if (cluster.getConfiguration().getSecuritygroup() != null) {
+        if (cluster.getConfiguration().getSecurityGroup() != null) {
             
-            sge = getSecGroupExtensionByName(osc, cluster.getConfiguration().getSecuritygroup());
+            sge = getSecGroupExtensionByName(osc, cluster.getConfiguration().getSecurityGroup());
             
             
             if (sge == null) {
-                LOG.warn("Configured Security Group (name: {}) not found. Try to create a new one ... ", cluster.getConfiguration().getSecuritygroup());
+                LOG.warn("Configured Security Group (name: {}) not found. Try to create a new one ... ", cluster.getConfiguration().getSecurityGroup());
             } else {
                 LOG.info("Use existing Security Group (name: {}).", sge.getName());
                 return this;

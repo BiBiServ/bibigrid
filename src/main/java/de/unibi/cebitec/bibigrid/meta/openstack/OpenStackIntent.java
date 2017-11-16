@@ -14,44 +14,39 @@ import org.slf4j.LoggerFactory;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 abstract class OpenStackIntent {
-    
+    public static final Logger LOG = LoggerFactory.getLogger(OpenStackIntent.class);
+
     protected Configuration conf;
     protected OSClient os;
     
-    public static final Logger LOG = LoggerFactory.getLogger(OpenStackIntent.class);
-    
-    public OpenStackIntent(Configuration conf) {
+    OpenStackIntent(Configuration conf) {
         this.conf = conf;
         os = buildOSClient(conf);
-        
     }
     
-    public static OSClient buildOSClient(Configuration conf){
-        OpenStackCredentials osc = conf.getOpenstackCredentials();
-       
+    static OSClient buildOSClient(Configuration conf){
         OSFactory.enableHttpLoggingFilter(conf.isLogHttpRequests());
-        if (osc.getDomain() != null) {
-            //v3
-            return OSFactory.builderV3()
-                       .endpoint(conf.getOpenstackCredentials().getEndpoint())
-                       .credentials(osc.getUsername(),osc.getPassword(),Identifier.byName(osc.getDomain()))
-                       //.scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getDomain()))
-                       .scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getTenantDomain()))
-                       .authenticate();
-                
-        } else {
-            //v2
-             return OSFactory.builderV2()
-                       .endpoint(conf.getOpenstackCredentials().getEndpoint())
-                       .credentials(osc.getUsername(),osc.getPassword())                   
-                       .tenantName(osc.getTenantName())
-                       .authenticate();
-           
-        }
-        
-        
+        return conf.getOpenstackCredentials().getDomain() != null ?
+                buildOSClientV3(conf) :
+                buildOSClientV2(conf);
     }
-    
-    
-    
+
+    private static OSClient buildOSClientV2(Configuration conf) {
+        OpenStackCredentials osc = conf.getOpenstackCredentials();
+        return OSFactory.builderV2()
+                .endpoint(conf.getOpenstackCredentials().getEndpoint())
+                .credentials(osc.getUsername(),osc.getPassword())
+                .tenantName(osc.getTenantName())
+                .authenticate();
+    }
+
+    private static OSClient buildOSClientV3(Configuration conf) {
+        OpenStackCredentials osc = conf.getOpenstackCredentials();
+        return OSFactory.builderV3()
+                .endpoint(conf.getOpenstackCredentials().getEndpoint())
+                .credentials(osc.getUsername(),osc.getPassword(),Identifier.byName(osc.getDomain()))
+                //.scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getDomain()))
+                .scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getTenantDomain()))
+                .authenticate();
+    }
 }

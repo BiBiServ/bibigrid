@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.model;
 
 import com.amazonaws.auth.AWSCredentials;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,24 +18,23 @@ public class Configuration {
     private String keypair;
     private Path identityFile;
     private String region;
-    private AWSCredentials credentials;
     private String clusterId;
-    
+
     private Path shellScriptFile;
-    private Path earlyMasterShellScriptFile,earlySlaveShellScriptFile;
+    private Path earlyMasterShellScriptFile, earlySlaveShellScriptFile;
     private Map<String, String> masterMounts;
     private Map<String, String> slaveMounts;
     private List<String> nfsShares;
-    private Map<String,String> extNfsShares;
+    private Map<String, String> extNfsShares;
     private boolean logHttpRequests;
-    
+
     private FS localFS = FS.XFS;
-    
+
     private boolean useMasterAsCompute;
     private boolean cassandra = false;
     private boolean alternativeConfigFile = false;
     private String alternativeConfigPath = "";
-    private String vpcid;
+    private String vpcId;
 
     private boolean mesos = false;
     private boolean nfs = true;
@@ -43,8 +43,9 @@ public class Configuration {
     private boolean spark = false;
 
     private String user = System.getProperty("user.name");
-    
+
     /* AWS related Configuration options */
+    private AWSCredentials credentials;
     private double bidPrice, bidPriceMaster;
     private boolean useSpotInstances;
     private boolean publicSlaveIps;
@@ -52,26 +53,22 @@ public class Configuration {
     /* Google Cloud related Configuration options */
     private String googleProjectId;
     private String googleCredentialsFile;
-    
+
     /* network configuration (for OpenStack)*/
-    private String routername = null;
-    private String networkname = null;
-    private String subnetname  = null;
-    private String gatewayname = null;
-    
+    private String routerName = null;
+    private String networkName = null;
+    private String subnetName = null;
+    private String gatewayName = null;
+
     /* security group configuration */
     private List<Port> ports = new ArrayList<>();
-    private String securitygroup;
-    
-    public enum MODE {
-        AWS, OPENSTACK, GOOGLECLOUD
-    }
-    
+    private String securityGroup;
+
     public enum FS {
         EXT2, EXT3, EXT4, XFS
     }
 
-    private MODE mode = MODE.AWS;
+    private String mode = "aws";
 
     private OpenStackCredentials openstackCredentials;
 
@@ -222,7 +219,7 @@ public class Configuration {
     public void setEarlyMasterShellScriptFile(Path shellEarlyScriptFile) {
         this.earlyMasterShellScriptFile = shellEarlyScriptFile;
     }
-    
+
     public Path getEarlySlaveShellScriptFile() {
         return earlySlaveShellScriptFile;
     }
@@ -255,15 +252,13 @@ public class Configuration {
         this.nfsShares = nfsShares;
     }
 
-  public Map<String, String> getExtNfsShares() {
-    return extNfsShares;
-  }
+    public Map<String, String> getExtNfsShares() {
+        return extNfsShares;
+    }
 
-  public void setExtNfsShares(Map<String, String> extNfsShares) {
-    this.extNfsShares = extNfsShares;
-  }
-    
-    
+    public void setExtNfsShares(Map<String, String> extNfsShares) {
+        this.extNfsShares = extNfsShares;
+    }
 
     public boolean isAlternativeConfigFile() {
         return alternativeConfigFile;
@@ -281,12 +276,12 @@ public class Configuration {
         this.alternativeConfigPath = alternativeConfigPath;
     }
 
-    public String getVpcid() {
-        return vpcid;
+    public String getVpcId() {
+        return vpcId;
     }
 
-    public void setVpcid(String vpcid) {
-        this.vpcid = vpcid;
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 
     public boolean isMesos() {
@@ -313,11 +308,11 @@ public class Configuration {
         this.oge = oge;
     }
 
-    public MODE getMode() {
+    public String getMode() {
         return mode;
     }
 
-    public void setMode(MODE mode) {
+    public void setMode(String mode) {
         this.mode = mode;
     }
 
@@ -346,10 +341,7 @@ public class Configuration {
     }
 
     public double getBidPriceMaster() {
-        if (bidPriceMaster <= 0.0) {
-            return bidPrice;
-        }
-        return bidPriceMaster;
+        return bidPriceMaster <= 0.0 ? bidPrice : bidPriceMaster;
     }
 
     public void setBidPriceMaster(double bidPriceMaster) {
@@ -386,43 +378,43 @@ public class Configuration {
 
     public void setHdfs(boolean hdfs) {
         this.hdfs = hdfs;
-         if (hdfs) {
+        if (hdfs) {
             nfs = true;
         }
     }
 
-    public String getSubnetname() {
-        return subnetname;
+    public String getSubnetName() {
+        return subnetName;
     }
 
-    public void setSubnetname(String subnetname) {
-        this.subnetname = subnetname;
+    public void setSubnetName(String subnetName) {
+        this.subnetName = subnetName;
     }
 
-    public String getNetworkname() {
-        return networkname;
+    public String getNetworkName() {
+        return networkName;
     }
 
-    public void setNetworkname(String networkname) {
-        this.networkname = networkname;
+    public void setNetworkName(String networkName) {
+        this.networkName = networkName;
     }
 
-    public String getRoutername() {
-        return routername;
+    public String getRouterName() {
+        return routerName;
     }
 
-    public void setRoutername(String routername) {
-        this.routername = routername;
+    public void setRouterName(String routerName) {
+        this.routerName = routerName;
     }
 
-    public String getGatewayname() {
-        return gatewayname;
+    public String getGatewayName() {
+        return gatewayName;
     }
 
-    public void setGatewayname(String gatewayname) {
-        this.gatewayname = gatewayname;
+    public void setGatewayName(String gatewayName) {
+        this.gatewayName = gatewayName;
     }
-    
+
     public boolean isLogHttpRequests() {
         return logHttpRequests;
     }
@@ -431,12 +423,12 @@ public class Configuration {
         this.logHttpRequests = logHttpRequests;
     }
 
-    public String getSecuritygroup() {
-        return securitygroup;
+    public String getSecurityGroup() {
+        return securityGroup;
     }
 
-    public void setSecuritygroup(String securitygroup) {
-        this.securitygroup = securitygroup;
+    public void setSecurityGroup(String securityGroup) {
+        this.securityGroup = securityGroup;
     }
 
     public boolean isSpark() {

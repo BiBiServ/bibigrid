@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.meta.googlecloud;
 
 import de.unibi.cebitec.bibigrid.model.InstanceSpecification;
 import de.unibi.cebitec.bibigrid.model.InstanceType;
+import de.unibi.cebitec.bibigrid.model.exceptions.InstanceTypeNotFoundException;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,12 +33,12 @@ public class InstanceTypeGoogleCloud extends InstanceType {
         addType("g1-small", 1);
     }
 
-    public InstanceTypeGoogleCloud(String type) throws Exception {
+    public InstanceTypeGoogleCloud(String type) throws InstanceTypeNotFoundException {
         try {
             value = type;
             spec = typeSpecMap.get(type);
         } catch (Exception e) {
-            throw new Exception("Invalid instance type");
+            throw new InstanceTypeNotFoundException("Invalid instance type " + type);
         }
     }
 }
