@@ -1,9 +1,8 @@
 package de.unibi.cebitec.bibigrid;
 
-import de.unibi.cebitec.bibigrid.ctrl.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.meta.CreateCluster;
-import de.unibi.cebitec.bibigrid.meta.TerminateIntent;
-import de.unibi.cebitec.bibigrid.meta.ValidateIntent;
+import de.unibi.cebitec.bibigrid.intents.CreateCluster;
+import de.unibi.cebitec.bibigrid.intents.TerminateIntent;
+import de.unibi.cebitec.bibigrid.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.model.IntentMode;
 import de.unibi.cebitec.bibigrid.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.model.exceptions.ConfigurationException;

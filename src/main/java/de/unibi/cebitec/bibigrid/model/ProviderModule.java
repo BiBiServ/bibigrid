@@ -1,10 +1,10 @@
 package de.unibi.cebitec.bibigrid.model;
 
-import de.unibi.cebitec.bibigrid.ctrl.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.meta.CreateCluster;
-import de.unibi.cebitec.bibigrid.meta.ListIntent;
-import de.unibi.cebitec.bibigrid.meta.TerminateIntent;
-import de.unibi.cebitec.bibigrid.meta.ValidateIntent;
+import de.unibi.cebitec.bibigrid.CommandLineValidator;
+import de.unibi.cebitec.bibigrid.intents.CreateCluster;
+import de.unibi.cebitec.bibigrid.intents.ListIntent;
+import de.unibi.cebitec.bibigrid.intents.TerminateIntent;
+import de.unibi.cebitec.bibigrid.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
