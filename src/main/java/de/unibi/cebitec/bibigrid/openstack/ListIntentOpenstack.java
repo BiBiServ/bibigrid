@@ -100,7 +100,7 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
         // Network
         for (Network net : os.networking().network().list()) {
             String name = net.getName();
-            if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.NETWORKPREFIX)) {
+            if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.NETWORK_PREFIX)) {
                 String[] t = name.split("-");
                 String clusterId = t[t.length - 1];
                 // check if entry already available
@@ -116,7 +116,7 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
         // Subnet Work
         for (Subnet subnet : os.networking().subnet().list()) {
             String name = subnet.getName();
-            if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.SUBNETWORKPREFIX)) {
+            if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.SUBNET_PREFIX)) {
                 String[] t = name.split("-");
                 String clusterId = t[t.length - 1];
                 // check if entry already available
@@ -132,7 +132,7 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
         // Router
         for (Router router : os.networking().router().list()) {
             String name = router.getName();
-            if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.ROUTERPREFIX)) {
+            if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.ROUTER_PREFIX)) {
                 String[] t = name.split("-");
                 String clusterId = t[t.length - 1];
                 // check if entry already available

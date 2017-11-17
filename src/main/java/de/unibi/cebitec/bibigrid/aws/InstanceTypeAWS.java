@@ -89,7 +89,7 @@ public class InstanceTypeAWS extends de.unibi.cebitec.bibigrid.model.InstanceTyp
         typeSpecMap.put(InstanceType.T2Large, new InstanceSpecification(2, 0, false, false, true, false));
     }
 
-    public InstanceTypeAWS(String type) throws InstanceTypeNotFoundException {
+    InstanceTypeAWS(String type) throws InstanceTypeNotFoundException {
         try {
             InstanceType tmp = InstanceType.fromValue(type);
             value = tmp.toString();

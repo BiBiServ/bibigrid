@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Abstract class that must be implemented by all OpenStack intents
- * 
+ *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 abstract class OpenStackIntent {
@@ -18,13 +18,13 @@ abstract class OpenStackIntent {
 
     protected Configuration conf;
     protected OSClient os;
-    
+
     OpenStackIntent(Configuration conf) {
         this.conf = conf;
         os = buildOSClient(conf);
     }
-    
-    static OSClient buildOSClient(Configuration conf){
+
+    static OSClient buildOSClient(Configuration conf) {
         OSFactory.enableHttpLoggingFilter(conf.isLogHttpRequests());
         return conf.getOpenstackCredentials().getDomain() != null ?
                 buildOSClientV3(conf) :
@@ -35,7 +35,7 @@ abstract class OpenStackIntent {
         OpenStackCredentials osc = conf.getOpenstackCredentials();
         return OSFactory.builderV2()
                 .endpoint(conf.getOpenstackCredentials().getEndpoint())
-                .credentials(osc.getUsername(),osc.getPassword())
+                .credentials(osc.getUsername(), osc.getPassword())
                 .tenantName(osc.getTenantName())
                 .authenticate();
     }
@@ -44,7 +44,7 @@ abstract class OpenStackIntent {
         OpenStackCredentials osc = conf.getOpenstackCredentials();
         return OSFactory.builderV3()
                 .endpoint(conf.getOpenstackCredentials().getEndpoint())
-                .credentials(osc.getUsername(),osc.getPassword(),Identifier.byName(osc.getDomain()))
+                .credentials(osc.getUsername(), osc.getPassword(), Identifier.byName(osc.getDomain()))
                 //.scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getDomain()))
                 .scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getTenantDomain()))
                 .authenticate();

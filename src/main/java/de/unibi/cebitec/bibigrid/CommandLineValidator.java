@@ -47,7 +47,6 @@ public abstract class CommandLineValidator {
         this.intentMode = intentMode;
         this.cfg = new Configuration();
         if (defaultPropertiesFile.isAlternativeFilepath()) {
-            cfg.setAlternativeConfigFile(true);
             cfg.setAlternativeConfigPath(defaultPropertiesFile.getPropertiesFilePath().toString());
         }
     }

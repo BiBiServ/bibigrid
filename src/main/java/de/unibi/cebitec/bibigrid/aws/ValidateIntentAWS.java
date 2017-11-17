@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public class ValidateIntentAWS implements ValidateIntent {
+public class ValidateIntentAWS extends IntentAWS implements ValidateIntent {
     public static final Logger LOG = LoggerFactory.getLogger(ValidateIntentAWS.class);
     private final Configuration conf;
     private AmazonEC2Client ec2;
@@ -39,11 +39,8 @@ public class ValidateIntentAWS implements ValidateIntent {
     @Override
     public boolean validate() {
         LOG.info("Validating config file...");
-        /*
-         * Access Key Check
-         */
-        ec2 = new AmazonEC2Client(conf.getCredentials());
-        ec2.setEndpoint("ec2." + conf.getRegion() + ".amazonaws.com");
+        // Access Key Check
+        ec2 = getClient(conf);
         boolean success = true;
         try {
             DryRunSupportedRequest<CreateTagsRequest> tryKeys = () -> new CreateTagsRequest().getDryRunRequest();
@@ -58,21 +55,21 @@ public class ValidateIntentAWS implements ValidateIntent {
             LOG.error("The access or secret key does not seem to valid.");
             return false;
         }
-        sleepOneSecond();
+        sleep(1);
         if (checkImages()) {
             LOG.info(I, "Image check has been successful.");
         } else {
             success = false;
             LOG.error("There were one or more errors during the last step.");
         }
-        sleepOneSecond();
+        sleep(1);
         if (checkSnapshots()) {
             LOG.info(I, "Snapshot check has been successful.");
         } else {
             success = false;
             LOG.error("One or more snapshots could not be found.");
         }
-        sleepOneSecond();
+        sleep(1);
         if (success) {
             LOG.info(I, "You can now start your cluster.");
         } else {
@@ -83,11 +80,12 @@ public class ValidateIntentAWS implements ValidateIntent {
 
     private boolean checkSnapshots() {
         LOG.info("Checking snapshots");
-        boolean allcheck = true;
+        boolean allCheck = true;
         conf.getMasterMounts().keySet();
         List<String> snapShotList = new ArrayList<>(conf.getMasterMounts().keySet());
         snapShotList.addAll(conf.getSlaveMounts().keySet());
-        for (String e : snapShotList) { //snapshot ids have to be checked individually to find out which one is missing or malformed.
+        // snapshot ids have to be checked individually to find out which one is missing or malformed.
+        for (String e : snapShotList) {
             try {
                 if (e.contains(":")) {
                     e = e.substring(0, e.indexOf(":"));
@@ -99,79 +97,79 @@ public class ValidateIntentAWS implements ValidateIntent {
                 }
             } catch (AmazonServiceException f) {
                 LOG.error("Snapshot {} could not be found.", e);
-                allcheck = false;
+                allCheck = false;
             }
         }
-        return allcheck;
+        return allCheck;
     }
 
     private boolean checkImages() {
         LOG.info("Checking Images...");
         boolean allCheck = true;
-        /*
-         * Checking for Images in Config File
-         */
+        // Checking for Images in Config File
         try {
-            DescribeImagesRequest imageRequest = new DescribeImagesRequest().withImageIds(Arrays.asList(conf.getMasterImage(), conf.getSlaveImage()));
+            DescribeImagesRequest imageRequest = new DescribeImagesRequest().withImageIds(
+                    Arrays.asList(conf.getMasterImage(), conf.getSlaveImage()));
             DescribeImagesResult imageResult = ec2.describeImages(imageRequest);
             boolean slave = false, master = false;
             boolean masterClusterType = conf.getMasterInstanceType().getSpec().isClusterInstance();
             boolean slaveClusterType = conf.getSlaveInstanceType().getSpec().isClusterInstance();
-            /*
-             * Checking if both are hvm or paravirtual types
-             */
+            // Checking if both are hvm or paravirtual types
             if (masterClusterType != slaveClusterType) {
                 LOG.error("If cluster instances are used please create a homogeneous group.");
                 allCheck = false;
             } else if (masterClusterType) {
-                /*
-                 * If master instance is a cluster instance check if the types are the same
-                 */
+                // If master instance is a cluster instance check if the types are the same
                 if (conf.getMasterInstanceType() != conf.getSlaveInstanceType()) {
                     LOG.error("If cluster instances are used please create a homogeneous group.");
                     allCheck = false;
                 }
             }
             for (Image image : imageResult.getImages()) {
-                /*
-                 * Checking if Master Image is available.
-                 */
+                // Checking if Master Image is available.
                 if (image.getImageId().equals(conf.getMasterImage())) {
                     master = true;
-                    if (image.getVirtualizationType().equals("hvm")) { // Image detected is of HVM Type
+                    if (image.getVirtualizationType().equals("hvm")) {
+                        // Image detected is of HVM Type
                         if (conf.getMasterInstanceType().getSpec().isHvm()) {
-                            LOG.info(I, "Master instance can use HVM images."); // Instance and Image is HVM type
+                            // Instance and Image is HVM type
+                            LOG.info(I, "Master instance can use HVM images.");
                         } else if (conf.getMasterInstanceType().getSpec().isPvm()) {
-                            LOG.error("Master Instance type does not support hardware-assisted virtualization."); // HVM Image but instance type is not correct
+                            // HVM Image but instance type is not correct
+                            LOG.error("Master Instance type does not support hardware-assisted virtualization.");
                             allCheck = false;
                         }
                     } else {
                         if (conf.getMasterInstanceType().getSpec().isPvm()) {
-                            LOG.info(I, "Master instance can use paravirtual images."); // Instance and Image fits.
+                            // Instance and Image fits.
+                            LOG.info(I, "Master instance can use paravirtual images.");
                         } else if (conf.getMasterInstanceType().getSpec().isHvm()) {
-                            LOG.error("Master Instance type does not support paravirtual images."); // Paravirtual Image but cluster instance type
+                            // Paravirtual Image but cluster instance type
+                            LOG.error("Master Instance type does not support paravirtual images.");
                             allCheck = false;
                         }
                     }
-
                 }
-                /*
-                 * Checking if Slave Image is available.
-                 */
+                // Checking if Slave Image is available.
                 if (image.getImageId().equals(conf.getSlaveImage())) {
                     slave = true;
-                    if (image.getVirtualizationType().equals("hvm")) { // Image detected is of HVM Type
+                    if (image.getVirtualizationType().equals("hvm")) {
+                        // Image detected is of HVM Type
                         if (conf.getSlaveInstanceType().getSpec().isHvm()) {
-                            LOG.info(I, "Slave instance can use HVM images."); // Instance and Image is HVM type
+                            // Instance and Image is HVM type
+                            LOG.info(I, "Slave instance can use HVM images.");
                         } else if (conf.getSlaveInstanceType().getSpec().isPvm()) {
-                            LOG.error("Slave Instance type does not support hardware-assisted virtualization."); // HVM Image but instance type is not correct
+                            // HVM Image but instance type is not correct
+                            LOG.error("Slave Instance type does not support hardware-assisted virtualization.");
                             allCheck = false;
                         }
                     } else {
                         if (conf.getSlaveInstanceType().getSpec().isPvm()) {
-                            LOG.info(I, "Slave instance can use paravirtual images."); // Instance and Image fits.
+                            // Instance and Image fits.
+                            LOG.info(I, "Slave instance can use paravirtual images.");
                         } else if (conf.getSlaveInstanceType().getSpec().isHvm()) {
-                            LOG.error("Slave Instance type does not support paravirtual images."); // Paravirtual Image but cluster instance type
+                            // Paravirtual Image but cluster instance type
+                            LOG.error("Slave Instance type does not support paravirtual images.");
                             allCheck = false;
                         }
                     }
@@ -188,13 +186,5 @@ public class ValidateIntentAWS implements ValidateIntent {
             allCheck = false;
         }
         return allCheck;
-    }
-
-    private void sleepOneSecond() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ie) {
-            LOG.error("Thread.sleep interrupted!");
-        }
     }
 }

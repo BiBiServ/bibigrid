@@ -2,7 +2,6 @@ package de.unibi.cebitec.bibigrid.aws;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.BlockDeviceMapping;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
@@ -39,6 +38,7 @@ import de.unibi.cebitec.bibigrid.util.*;
 
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
+
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,12 +58,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Implementation of the general CreateClusterAWs interface for an AWS based cluster.
  * First implementation was done by Johannes within a student project.
- * 
- * 
+ *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class CreateClusterAWS implements CreateCluster {
+public class CreateClusterAWS extends IntentAWS implements CreateCluster {
     public static final Logger LOG = LoggerFactory.getLogger(CreateClusterAWS.class);
     public static final String PREFIX = "bibigrid-";
     public static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
@@ -78,7 +78,6 @@ public class CreateClusterAWS implements CreateCluster {
 
     private String base64MasterUserData;
 
-    private InstanceNetworkInterfaceSpecification inis;
     private List<InstanceNetworkInterfaceSpecification> masterNetworkInterfaces, slaveNetworkInterfaces;
     private List<BlockDeviceMapping> masterDeviceMappings;
     private Tag bibigridid, username;
@@ -86,8 +85,8 @@ public class CreateClusterAWS implements CreateCluster {
     private DeviceMapper slaveDeviceMapper;
     private List<BlockDeviceMapping> slaveBlockDeviceMappings;
 
-    Instance masterInstance;
-    List<Instance> slaveInstances;
+    private Instance masterInstance;
+    private List<Instance> slaveInstances;
 
     private final Configuration config;
 
@@ -101,8 +100,7 @@ public class CreateClusterAWS implements CreateCluster {
     public CreateClusterEnvironmentAWS createClusterEnvironment() {
         ////////////////////////////////////////////////////////////////////////
         ///// create client and unique cluster-id //////////////////////////////
-        ec2 = new AmazonEC2Client(this.config.getCredentials());
-        ec2.setEndpoint("ec2." + this.config.getRegion() + ".amazonaws.com");
+        ec2 = getClient(config);
 
         // Cluster ID is a cut down base64 encoded version of a random UUID:
         UUID clusterIdUUID = UUID.randomUUID();
@@ -122,12 +120,10 @@ public class CreateClusterAWS implements CreateCluster {
     @Override
     public CreateClusterAWS configureClusterMasterInstance() {
         // done for master. More volume description later when master is running
-
-        ////////////////////////////////////////////////////////////////////////
-        /////////////// preparing blockdevicemappings for master////////////////
+        // preparing block device mappings for master
         Map<String, String> masterSnapshotToMountPointMap = this.config.getMasterMounts();
         int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
-        DeviceMapper masterDeviceMapper = new DeviceMapper(config.getMode(),masterSnapshotToMountPointMap, ephemerals);
+        DeviceMapper masterDeviceMapper = new DeviceMapper(config.getMode(), masterSnapshotToMountPointMap, ephemerals);
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
         if (!this.config.getMasterMounts().isEmpty()) {
@@ -150,9 +146,7 @@ public class CreateClusterAWS implements CreateCluster {
         base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.config, environment.getKeypair());
 
         LOG.info(V, "Master UserData:\n {}", new String(Base64.decodeBase64(base64MasterUserData)));
-        //////////////////////////////////////////////////////////////////////////
-        /////// create Placementgroup ////////////////////
-
+        // create placement group
         if (this.config.getMasterInstanceType().getSpec().isClusterInstance()) {
             if (config.isUseSpotInstances()) {
                 spotInstancePlacement = new SpotPlacement(config.getAvailabilityZone());
@@ -167,8 +161,8 @@ public class CreateClusterAWS implements CreateCluster {
         /////// create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
         masterNetworkInterfaces = new ArrayList<>();
 
-        inis = new InstanceNetworkInterfaceSpecification();
-        inis.withPrivateIpAddress(environment.getMASTERIP())
+        InstanceNetworkInterfaceSpecification inis = new InstanceNetworkInterfaceSpecification();
+        inis.withPrivateIpAddress(environment.getMasterIp())
                 .withGroups(environment.getSecReqResult().getGroupId())
                 .withAssociatePublicIpAddress(true)
                 .withSubnetId(environment.getSubnet().getSubnetId())
@@ -182,10 +176,8 @@ public class CreateClusterAWS implements CreateCluster {
                 .withSubnetId(environment.getSubnet().getSubnetId())
                 .withAssociatePublicIpAddress(config.isPublicSlaveIps())
                 .withDeviceIndex(0);
-        
-       
-        slaveNetworkInterfaces.add(inis);
 
+        slaveNetworkInterfaces.add(inis);
         return this;
     }
 
@@ -194,7 +186,7 @@ public class CreateClusterAWS implements CreateCluster {
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
         int ephemerals = config.getSlaveInstanceType().getSpec().getEphemerals();
-        slaveDeviceMapper = new DeviceMapper(config.getMode(),snapShotToSlaveMounts, ephemerals);
+        slaveDeviceMapper = new DeviceMapper(config.getMode(), snapShotToSlaveMounts, ephemerals);
         slaveBlockDeviceMappings = new ArrayList<>();
         // configure volumes first ...
         if (!snapShotToSlaveMounts.isEmpty()) {
@@ -213,9 +205,7 @@ public class CreateClusterAWS implements CreateCluster {
                 ephemeralList.add(temp);
             }
         }
-
         slaveBlockDeviceMappings.addAll(ephemeralList);
-
         return this;
     }
 
@@ -252,7 +242,7 @@ public class CreateClusterAWS implements CreateCluster {
                 spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
 
             }
-            // Tag spotrequest
+            // Tag spot request
             CreateTagsRequest ctr = new CreateTagsRequest();
             ctr.withResources(spotInstanceRequestIds);
             ctr.withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
@@ -278,10 +268,8 @@ public class CreateClusterAWS implements CreateCluster {
             masterInstance = masterReqResult.getReservation().getInstances().get(0);
             LOG.info("Waiting for master instance to finish booting ...");
 
-            /////////////////////////////////////////////
-            //// Waiting for master instance to run ////
+            // Waiting for master instance to run
             masterInstance = waitForInstances(Arrays.asList(masterInstance.getInstanceId())).get(0);
-
         }
         LOG.info(I, "Master instance is now running!");
 
@@ -290,25 +278,20 @@ public class CreateClusterAWS implements CreateCluster {
         ia_req.setSourceDestCheck(Boolean.FALSE);
         ec2.modifyInstanceAttribute(ia_req);
 
-        ////////////////////////////////////
-        //// Tagging Master with a name ////
+        // Tagging Master with a name
         CreateTagsRequest masterNameTagRequest = new CreateTagsRequest();
         masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(bibigridid, username, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
 
         ec2.createTags(masterNameTagRequest);
 
-        /*
-         * Waiting for Status Checks to finish
-         *
-         */
+        // Waiting for Status Checks to finish
         LOG.info("Waiting for Status Checks on master ...");
         do {
             DescribeInstanceStatusRequest request
                     = new DescribeInstanceStatusRequest();
             request.setInstanceIds((Arrays.asList(masterInstance.getInstanceId())));
 
-            DescribeInstanceStatusResult response
-                    = ec2.describeInstanceStatus(request);
+            DescribeInstanceStatusResult response = ec2.describeInstanceStatus(request);
 
             InstanceStatus status = response.getInstanceStatuses().get(0);
             String instanceStatus = status.getInstanceStatus().getStatus();
@@ -364,13 +347,7 @@ public class CreateClusterAWS implements CreateCluster {
                     spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
 
                 }
-                // wait for a second
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-
-                }
-
+                sleep(1);
                 LOG.info(V, "tag spot request instances");
 
                 // tag spot requests (slave)
@@ -389,10 +366,7 @@ public class CreateClusterAWS implements CreateCluster {
                     } catch (AmazonServiceException ase) {
                         if (counter < 5) {
                             LOG.warn("{} ... try again in 10 seconds.", ase.getMessage());
-                            try {
-                                Thread.sleep(10000);
-                            } catch (InterruptedException ignored) {
-                            }
+                            sleep(10);
                             counter++;
                         } else {
                             throw ase;
@@ -491,20 +465,10 @@ public class CreateClusterAWS implements CreateCluster {
         return true;
     }
 
-    private void sleep(int seconds) {
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException ie) {
-            LOG.error("Thread.sleep interrupted!");
-        }
-    }
-
     /**
      * Takes a list of instance IDs as Strings and monitors their system status
      *
-     * @param listOfInstances Returns a list of Instances when they have been
-     * started.
-     * @return
+     * @param listOfInstances Returns a list of Instances when they have been started.
      */
     private List<Instance> waitForInstances(List<String> listOfInstances) {
         do {
@@ -514,7 +478,7 @@ public class CreateClusterAWS implements CreateCluster {
             }
             DescribeInstancesRequest instanceDescrReq = new DescribeInstancesRequest();
             instanceDescrReq.setInstanceIds(listOfInstances);
-            boolean allrunning = true;
+            boolean allRunning = true;
             try {
                 DescribeInstancesResult instanceDescrReqResult = ec2.describeInstances(instanceDescrReq);
 
@@ -524,12 +488,12 @@ public class CreateClusterAWS implements CreateCluster {
                         state = e.getState().getName();
                         if (!state.equals(InstanceStateName.Running.toString())) {
                             LOG.debug(V, "ID " + e.getInstanceId() + "in state:" + state);
-                            allrunning = false;
+                            allRunning = false;
                             break;
                         }
                     }
                 }
-                if (allrunning) {
+                if (allRunning) {
                     List<Instance> returnList = new ArrayList<>();
                     for (Reservation e : instanceDescrReqResult.getReservations()) {
                         returnList.addAll(e.getInstances());
@@ -548,62 +512,41 @@ public class CreateClusterAWS implements CreateCluster {
     }
 
     /**
-     * Get a lost of spotInstance IDs as Strings and monitors their spot request
-     * status
-     *
-     *
-     * @param listOfSpotInstances
-     * @return
+     * Get a lost of spotInstance IDs as Strings and monitors their spot request status
      */
     private List<String> waitForSpotInstances(List<String> listOfSpotInstances) {
-        // Create a variable that will track whether there are any
-        // requests still in the open state.
+        // Create a variable that will track whether there are any requests still in the open state.
         boolean anyOpen;
-
-        List<String> fullfilled = new ArrayList<>();
-
+        List<String> fulfilled = new ArrayList<>();
         do {
-            // Create the describeRequest object with all of the request ids
-            // to monitor (e.g. that we started).
+            // Create the describeRequest object with all of the request ids to monitor (e.g. that we started).
             DescribeSpotInstanceRequestsRequest describeRequest = new DescribeSpotInstanceRequestsRequest();
             describeRequest.setSpotInstanceRequestIds(listOfSpotInstances);
-
-            // Initialize the anyOpen variable to false - which assumes there
-            // are no requests open unless we find one that is still open.
+            // Initialize the anyOpen variable to false - which assumes there are no requests open unless we find
+            // one that is still open.
             anyOpen = false;
-
             try {
                 // Retrieve all of the requests we want to monitor.
                 DescribeSpotInstanceRequestsResult describeResult = ec2.describeSpotInstanceRequests(describeRequest);
                 List<SpotInstanceRequest> describeResponses = describeResult.getSpotInstanceRequests();
-
-                // Look through each request and determine if they are all in
-                // the active state.
+                // Look through each request and determine if they are all in the active state.
                 for (SpotInstanceRequest describeResponse : describeResponses) {
-                    // If the state is open, it hasn't changed since we attempted
-                    // to request it. There is the potential for it to transition
-                    // almost immediately to closed or cancelled so we compare
+                    // If the state is open, it hasn't changed since we attempted to request it. There is the
+                    // potential for it to transition almost immediately to closed or cancelled so we compare
                     // against open instead of active.
                     if (describeResponse.getState().equals("open")) {
                         anyOpen = true;
                         break;
                     }
-
                 }
             } catch (AmazonServiceException e) {
-                // If we have an exception, ensure we don't break out of
-                // the loop. This prevents the scenario where there was
-                // blip on the wire.
+                // If we have an exception, ensure we don't break out of the loop. This prevents the scenario where
+                // there was blip on the wire.
                 anyOpen = true;
             }
-
-            try {
-                // Sleep for 30 seconds.
-                LOG.debug(V, "Wait for spot instance request finished!");
-                Thread.sleep(30 * 1000);
-            } catch (Exception e) {
-                // Do nothing because it woke up early.
-            }
+            // Sleep for 30 seconds.
+            LOG.debug(V, "Wait for spot instance request finished!");
+            sleep(30);
         } while (anyOpen);
 
         // get all instance id's
@@ -615,30 +558,23 @@ public class CreateClusterAWS implements CreateCluster {
             LOG.info(V, "{} : {}", describeResponse.getInstanceId(), describeResponse.getState());
             if (describeResponse.getState().equals("active")) {
                 LOG.info(V, "{} - {}", describeResponse.getInstanceId(), describeResponse.getInstanceId());
-                fullfilled.add(describeResponse.getInstanceId());
+                fulfilled.add(describeResponse.getInstanceId());
             }
         }
-
-        return fullfilled;
+        return fulfilled;
     }
 
     private List<BlockDeviceMapping> createBlockDeviceMappings(DeviceMapper deviceMapper) {
-
         List<BlockDeviceMapping> mappings = new ArrayList<>();
-
         Map<String, String> snapshotToMountPointMap = deviceMapper.getSnapshotIdToMountPoint();
         for (Map.Entry<String, String> snapshotIdMountPoint : snapshotToMountPointMap.entrySet()) {
             try {
-
                 BlockDeviceMapping blockDeviceMapping = new BlockDeviceMapping();
                 blockDeviceMapping.setEbs(new EbsBlockDevice().withSnapshotId(DeviceMapper.stripSnapshotId(snapshotIdMountPoint.getKey())));
                 blockDeviceMapping.setDeviceName(deviceMapper.getDeviceNameForSnapshotId(snapshotIdMountPoint.getKey()));
-
                 mappings.add(blockDeviceMapping);
-
             } catch (AmazonServiceException ex) {
                 LOG.debug("{}", ex.getMessage());
-
             }
         }
         return mappings;
@@ -667,36 +603,25 @@ public class CreateClusterAWS implements CreateCluster {
     private void configureMaster() {
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
-        /*
-         * Building Command
-         */
+        // Building Command
         LOG.info("Now configuring ...");
         String execCommand = SshFactory.buildSshCommand(clusterId, getConfig(), masterInstance, slaveInstances);
-
         LOG.info(V, "Building SSH-Command : {}", execCommand);
-
         boolean uploaded = false;
         boolean configured = false;
-
         int ssh_attempts = 25; // @TODO attempts
         while (!configured && ssh_attempts > 0) {
             try {
 
                 ssh.addIdentity(getConfig().getIdentityFile().toString());
                 LOG.info("Trying to connect to master ({})...", ssh_attempts);
-                Thread.sleep(4000);
-
-                /*
-                 * Create new Session to avoid packet corruption.
-                 */
-                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIpAddress(), MASTER_SSH_USER, getConfig().getIdentityFile());
-
-                /*
-                 * Start connect attempt
-                 */
+                sleep(4);
+                // Create new Session to avoid packet corruption.
+                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIpAddress(),
+                        MASTER_SSH_USER, getConfig().getIdentityFile());
+                // Start connect attempt
                 sshSession.connect();
                 LOG.info("Connected to master!");
-
 //                if (!uploaded || ssh_attempts > 0) {
 //                    String remoteDirectory = "/home/ubuntu/.ssh";
 //                    String filename = "id_rsa";
@@ -720,47 +645,35 @@ public class CreateClusterAWS implements CreateCluster {
                 LOG.info(V, "Connecting ssh channel...");
                 channel.connect();
 
-                String lineout = null, lineerr = null;
-
-                while (((lineout = stdout.readLine()) != null) || ((lineerr = stderr.readLine()) != null)) {
-
-                    if (lineout != null) {
-                        if (lineout.contains("CONFIGURATION_FINISHED")) {
+                String lineOut = null, lineError = null;
+                while (((lineOut = stdout.readLine()) != null) || ((lineError = stderr.readLine()) != null)) {
+                    if (lineOut != null) {
+                        if (lineOut.contains("CONFIGURATION_FINISHED")) {
                             configured = true;
                         }
-                        LOG.info(V, "SSH: {}", lineout);
+                        LOG.info(V, "SSH: {}", lineOut);
                     }
-
-//                    if (lineerr != null) {
-                    if (lineerr != null && !configured) {
-                        LOG.error(V, "SSH: {}", lineerr);
+//                    if (lineError != null) {
+                    if (lineError != null && !configured) {
+                        LOG.error(V, "SSH: {}", lineError);
                     }
 //                    if (channel.isClosed() || configured) {
                     if (channel.isClosed() && configured) {
                         LOG.info(V, "SSH: exit-status: {}", channel.getExitStatus());
                         configured = true;
                     }
-
-                    Thread.sleep(2000);
+                    sleep(2);
                 }
                 if (configured) {
                     channel.disconnect();
                     sshSession.disconnect();
                 }
-
             } catch (IOException | JSchException e) {
                 ssh_attempts--;
                 if (ssh_attempts == 0) {
                     LOG.error(V, "SSH: {}", e);
                 }
-
-//                try {
-//                    Thread.sleep(2000);
-//                } catch (InterruptedException ex) {
-//                    log.error("Interrupted ...");
-//                }
-            } catch (InterruptedException ex) {
-                LOG.error("Interrupted ...");
+                //sleep(2);
             }
         }
         LOG.info(I, "Master instance has been configured.");

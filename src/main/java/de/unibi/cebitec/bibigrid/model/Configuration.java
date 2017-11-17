@@ -31,11 +31,10 @@ public class Configuration {
     private FS localFS = FS.XFS;
 
     private boolean useMasterAsCompute;
-    private boolean cassandra = false;
-    private boolean alternativeConfigFile = false;
-    private String alternativeConfigPath = "";
+    private String alternativeConfigPath;
     private String vpcId;
 
+    private boolean cassandra = false;
     private boolean mesos = false;
     private boolean nfs = true;
     private boolean oge = true;
@@ -73,14 +72,14 @@ public class Configuration {
     private OpenStackCredentials openstackCredentials;
 
     //grid-properties-file
-    private File gridpropertiesfile = null;
+    private File gridPropertiesFile = null;
 
-    public void setGridPropertiesFile(File s) {
-        this.gridpropertiesfile = s;
+    public void setGridPropertiesFile(File gridPropertiesFile) {
+        this.gridPropertiesFile = gridPropertiesFile;
     }
 
     public File getGridPropertiesFile() {
-        return gridpropertiesfile;
+        return gridPropertiesFile;
     }
 
     public boolean isCassandra() {
@@ -163,10 +162,7 @@ public class Configuration {
     }
 
     public void setMasterImage(String masterImage) {
-        if (masterImage != null) {
-            masterImage = masterImage.trim();
-        }
-        this.masterImage = masterImage;
+        this.masterImage = masterImage != null ? masterImage.trim() : null;
     }
 
     public String getSlaveImage() {
@@ -174,10 +170,7 @@ public class Configuration {
     }
 
     public void setSlaveImage(String slaveImage) {
-        if (slaveImage != null) {
-            slaveImage = slaveImage.trim();
-        }
-        this.slaveImage = slaveImage;
+        this.slaveImage = slaveImage != null ? slaveImage.trim() : null;
     }
 
     public String getAvailabilityZone() {
@@ -261,11 +254,7 @@ public class Configuration {
     }
 
     public boolean isAlternativeConfigFile() {
-        return alternativeConfigFile;
-    }
-
-    public void setAlternativeConfigFile(boolean alternativeConfigFile) {
-        this.alternativeConfigFile = alternativeConfigFile;
+        return alternativeConfigPath != null;
     }
 
     public String getAlternativeConfigPath() {

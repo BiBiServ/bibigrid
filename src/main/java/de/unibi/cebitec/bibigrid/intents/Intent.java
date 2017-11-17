@@ -1,7 +1,5 @@
 package de.unibi.cebitec.bibigrid.intents;
 
-import java.util.List;
-
 /**
  * Provider module interface for accessing the implementation details for a specific cloud provider.
  *

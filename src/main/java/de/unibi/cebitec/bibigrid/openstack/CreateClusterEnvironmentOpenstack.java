@@ -7,9 +7,12 @@ import de.unibi.cebitec.bibigrid.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.util.SubNets;
+
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.compute.ComputeSecurityGroupService;
@@ -48,16 +51,16 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
 
     private KEYPAIR keypair;
 
-    public static final String ROUTERPREFIX = "router-";
-    public static final String NETWORKPREFIX = "net-";
-    public static final String SUBNETWORKPREFIX = "subnet-";
-    public static final String PORTPREFIX = "port-";
-    public static final String NETWORKCIDR = "192.168.0.0/16";
+    public static final String ROUTER_PREFIX = "router-";
+    public static final String NETWORK_PREFIX = "net-";
+    public static final String SUBNET_PREFIX = "subnet-";
+    public static final String PORT_PREFIX = "port-";
+    public static final String NETWORK_CIDR = "192.168.0.0/16";
 
     public static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
 
     public CreateClusterEnvironmentOpenstack(CreateClusterOpenstack cluster) {
-        this.cluster = cluster;   
+        this.cluster = cluster;
         try {
             keypair = new KEYPAIR();
         } catch (JSchException ex) {
@@ -74,33 +77,26 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     @Override
     public CreateClusterEnvironmentOpenstack createSubnet() throws ConfigurationException {
         try {
-            /*
-        User can specify three parameters to define the network connection for a
-        BiBiGrid cluster
-        
-        1) router
-        2) network
-        3) subnetwork
-        
-        
-             */
+            // User can specify three parameters to define the network connection for a BiBiGrid cluster
+            // 1) router
+            // 2) network
+            // 3) subnetwork
             OSClient osc = cluster.getOs();
             Configuration cfg = cluster.getConfiguration();
-            String clusterid = cluster.getClusterId();
+            String clusterId = cluster.getClusterId();
 
             // if subnet is set just use it
             if (cfg.getSubnetName() != null) {
                 // check if subnet exists
-                subnet = getSubnetworkByName(osc, cfg.getSubnetName());
+                subnet = getSubnetByName(osc, cfg.getSubnetName());
                 if (subnet == null) {
                     throw new ConfigurationException("No Subnet with name '" + cfg.getSubnetName() + "' found!");
                 }
                 net = getNetworkById(osc, subnet.getNetworkId());
-                router = getRouterbyNetwork(osc, net, subnet); // @ToDo
+                router = getRouterByNetwork(osc, net, subnet); // @ToDo
                 LOG.info("Use existing subnet (ID: {}, CIDR: {}).", subnet.getId(), subnet.getCidr());
                 return this;
             }
-
             // if network is set try to determine router
             if (cfg.getNetworkName() != null) {
                 // check if net exists
@@ -108,16 +104,14 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
                 if (net == null) {
                     throw new ConfigurationException("No Net with name '" + cfg.getSubnetName() + "' found!");
                 }
-                router = getRouterbyNetwork(osc, net);
+                router = getRouterByNetwork(osc, net);
                 LOG.info("Use existing net (ID: {}) and router (ID: {}).", net.getId(), router.getId());
-
             }
-
             if (router == null) {
                 // create a new one
                 if (cfg.getRouterName() == null) {
                     router = osc.networking().router().create(Builders.router()
-                            .name(ROUTERPREFIX + clusterid)
+                            .name(ROUTER_PREFIX + clusterId)
                             .externalGateway(cfg.getGatewayName())
                             .build());
                     LOG.info("Router (ID: {}) created.", router.getId());
@@ -131,39 +125,34 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
                 }
                 // create a new network
                 net = osc.networking().network().create(Builders.network()
-                        .name(NETWORKPREFIX + cluster.getClusterId())
+                        .name(NETWORK_PREFIX + cluster.getClusterId())
                         .adminStateUp(true)
                         .build());
                 cfg.setNetworkName(net.getName());
                 LOG.info("Network (ID: {}, NAME: {}) created.", net.getId(), net.getName());
-
             }
             // get new free /24 subnetwork
-            SubNets sn = new SubNets(NETWORKCIDR, 24);
+            SubNets sn = new SubNets(NETWORK_CIDR, 24);
 
             List<String> usedCIDR = new ArrayList<>();
 
-            for (org.openstack4j.model.network.Port p : getPortsbyRouter(osc, router)) {
-                Network net_tmp = getNetworkById(osc, p.getNetworkId());
-                if (net_tmp.getNeutronSubnets() != null) {
-                    for (Subnet s : net_tmp.getNeutronSubnets()) {
+            for (org.openstack4j.model.network.Port p : getPortsByRouter(osc, router)) {
+                Network network = getNetworkById(osc, p.getNetworkId());
+                if (network.getNeutronSubnets() != null) {
+                    for (Subnet s : network.getNeutronSubnets()) {
                         usedCIDR.add(s.getCidr());
                     }
                 }
-
             }
-
             String CIDR = sn.nextCidr(usedCIDR);
-
             if (CIDR == null) {
-                throw new ConfigurationException("No free /24 network found in " + NETWORKCIDR + " for router " + router.getName());
+                throw new ConfigurationException("No free /24 network found in " + NETWORK_CIDR + " for router " + router.getName());
             }
-
             // now we can create a new subnet
             subnet = osc.networking().subnet().create(Builders.subnet()
-                    .name(SUBNETWORKPREFIX + cluster.getClusterId())
+                    .name(SUBNET_PREFIX + cluster.getClusterId())
                     .network(net)
-                    .ipVersion(IPVersionType.V4)    
+                    .ipVersion(IPVersionType.V4)
                     .enableDHCP(true)
                     .cidr(CIDR)
                     .build());
@@ -171,15 +160,14 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
             cfg.setSubnetName(subnet.getName());
             LOG.info("Subnet (ID: {}, NAME: {}, CIDR: {}) created.", subnet.getId(), subnet.getName(), subnet.getCidr());
 
-            RouterInterface iface = osc.networking().router().attachInterface(router.getId(), AttachInterfaceType.SUBNET, subnet.getId());
+            RouterInterface routerInterface = osc.networking().router().attachInterface(router.getId(),
+                    AttachInterfaceType.SUBNET, subnet.getId());
 
-            LOG.info("Interface (ID: {}) added .", iface.getId());
-
+            LOG.info("Interface (ID: {}) added .", routerInterface.getId());
         } catch (ClientResponseException crs) {
             LOG.error(V, crs.getMessage(), crs);
             throw new ConfigurationException(crs.getMessage(), crs);
         }
-
         return this;
     }
 
@@ -188,21 +176,14 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
         OSClient osc = cluster.getOs();
         // if a  security group is configured then used it
         if (cluster.getConfiguration().getSecurityGroup() != null) {
-            
             sge = getSecGroupExtensionByName(osc, cluster.getConfiguration().getSecurityGroup());
-            
-            
             if (sge == null) {
                 LOG.warn("Configured Security Group (name: {}) not found. Try to create a new one ... ", cluster.getConfiguration().getSecurityGroup());
             } else {
                 LOG.info("Use existing Security Group (name: {}).", sge.getName());
                 return this;
             }
-            
         }
-        
-        
-        
         try {
             ComputeSecurityGroupService csgs = cluster.getOs().compute().securityGroups();
             sge = csgs.create("sg-" + cluster.getClusterId(), "Security Group for cluster: " + cluster.getClusterId());
@@ -214,7 +195,7 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
                     .cidr("0.0.0.0/0")
                     .range(22, 22)
                     .build());
-            
+
             // no restriction within the security group
             csgs.createRule(Builders.secGroupRule()
                     .parentGroupId(sge.getId())
@@ -228,18 +209,15 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
                     .groupId(sge.getId())
                     .range(1, 65535)
                     .build());
-            /**
-             * User selected Ports.
-             */
+            // User selected Ports.
             List<Port> ports = cluster.getConfiguration().getPorts();
             for (Port p : ports) {
-
                 csgs.createRule(Builders.secGroupRule()
                         .parentGroupId(sge.getId())
-                        .protocol(p.type.equals(Port.Protocol.TCP)?IPProtocol.TCP:(p.type.equals(Port.Protocol.UDP)?IPProtocol.UDP:IPProtocol.ICMP))
+                        .protocol(p.type.equals(Port.Protocol.TCP) ? IPProtocol.TCP : (p.type.equals(Port.Protocol.UDP) ? IPProtocol.UDP : IPProtocol.ICMP))
                         .cidr(p.ipRange)
                         .range(p.number, p.number)
-                        .build());               
+                        .build());
             }
             LOG.info("SecurityGroup (name: {}) created.", sge.getName());
         } catch (ClientResponseException e) {
@@ -278,51 +256,39 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     public Subnet getSubnet() {
         return subnet;
     }
-    
+
     /**
      * Determine secgroupExt by given id. Returns secgroupext object or null in the
      * case that no suitable secgroupexetension is found.
-     * @param osc
-     * @param id
-     * @return 
      */
-    public static SecGroupExtension getSecGroupExtensionById(OSClient osc, String id ){
-        for (SecGroupExtension sge : osc.compute().securityGroups().list()){
-            if (sge.getId().equals(id)){
+    public static SecGroupExtension getSecGroupExtensionById(OSClient osc, String id) {
+        for (SecGroupExtension sge : osc.compute().securityGroups().list()) {
+            if (sge.getId().equals(id)) {
                 return sge;
             }
         }
         return null;
     }
-       /**
+
+    /**
      * Determine secgroupExt by given name. Returns secgroupext object or null in the
      * case that no suitable secgroupexetension is found.
-     * @param osc
-     * @param name
-     * @return 
      */
-    public static SecGroupExtension getSecGroupExtensionByName(OSClient osc, String name ){
-        for (SecGroupExtension sge : osc.compute().securityGroups().list()){
-            if (sge.getName().equals(name)){
+    static SecGroupExtension getSecGroupExtensionByName(OSClient osc, String name) {
+        for (SecGroupExtension sge : osc.compute().securityGroups().list()) {
+            if (sge.getName().equals(name)) {
                 return sge;
             }
         }
         return null;
     }
-    
-    
 
     /**
-     * Determine router by given router name. Returns router object or null in
-     * the case that no suitable router is found.
-     *
-     * @param osc OSClient
-     * @param routername
-     * @return
+     * Determine router by given router name. Returns router object or null in the case that no suitable router is found.
      */
-    public static Router getRouterByName(OSClient osc, String routername) {
+    static Router getRouterByName(OSClient osc, String routerName) {
         for (Router router : osc.networking().router().list()) {
-            if (router.getName().equals(routername)) {
+            if (router.getName().equals(routerName)) {
                 return router;
             }
         }
@@ -330,16 +296,11 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     }
 
     /**
-     * Determine router by given router id. Returns router object or null in the
-     * case that no suitable router is found
-     *
-     * @param osc
-     * @param routerid
-     * @return
+     * Determine router by given router id. Returns router object or null in the case that no suitable router is found.
      */
-    public static Router getRouterById(OSClient osc, String routerid) {
+    static Router getRouterById(OSClient osc, String routerId) {
         for (Router router : osc.networking().router().list()) {
-            if (router.getId().equals(routerid)) {
+            if (router.getId().equals(routerId)) {
                 return router;
             }
         }
@@ -347,17 +308,11 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     }
 
     /**
-     * Determine network by given network name. Returns Network object or null
-     * if no network with given name is found.
-     *
-     *
-     * @param osc OSClient
-     * @param networkname
-     * @return
+     * Determine network by given network name. Returns Network object or null if no network with given name is found.
      */
-    public static Network getNetworkByName(OSClient osc, String networkname) {
+    static Network getNetworkByName(OSClient osc, String networkName) {
         for (Network net : osc.networking().network().list()) {
-            if (net.getName().equals(networkname)) {
+            if (net.getName().equals(networkName)) {
                 return net;
             }
         }
@@ -365,16 +320,11 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     }
 
     /**
-     * Determine network by given network id. Returns Network object or null if
-     * no network with given id is found.
-     *
-     * @param osc
-     * @param networkid
-     * @return
+     * Determine network by given network id. Returns Network object or null if no network with given id is found.
      */
-    public static Network getNetworkById(OSClient osc, String networkid) {
+    static Network getNetworkById(OSClient osc, String networkId) {
         for (Network net : osc.networking().network().list()) {
-            if (net.getId().equals(networkid)) {
+            if (net.getId().equals(networkId)) {
                 return net;
             }
         }
@@ -382,16 +332,11 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     }
 
     /**
-     * Determine subnetwork by given subnetwork name. Returns Subnetwork object
-     * or null in the case no suitable subnetwork is found.
-     *
-     * @param osc OSClient
-     * @param subnetworkname
-     * @return
+     * Determine subnet by given subnet name. Returns subnet object or null in the case no suitable subnet is found.
      */
-    public static Subnet getSubnetworkByName(OSClient osc, String subnetworkname) {
+    static Subnet getSubnetByName(OSClient osc, String subnetName) {
         for (Subnet subnet : osc.networking().subnet().list()) {
-            if (subnet.getName().equals(subnetworkname)) {
+            if (subnet.getName().equals(subnetName)) {
                 return subnet;
             }
         }
@@ -399,16 +344,11 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     }
 
     /**
-     * Determine subnetwork by given subnetwork id. Returns Subnetwork object or
-     * null in the case no suitable subnetwork is found.
-     *
-     * @param osc
-     * @param subnetid
-     * @return
+     * Determine subnet by given subnet id. Returns subnet object or null in the case no suitable subnet is found.
      */
-    public static Subnet getSubnetworkById(OSClient osc, String subnetid) {
+    static Subnet getSubnetById(OSClient osc, String subnetId) {
         for (Subnet subnet : osc.networking().subnet().list()) {
-            if (subnet.getId().equals(subnetid)) {
+            if (subnet.getId().equals(subnetId)) {
                 return subnet;
             }
         }
@@ -416,41 +356,31 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
     }
 
     /**
-     * Deteremine Router by given network. If more than one Router is connected
-     * to the network -> return first
-     *
-     * @param osc
-     * @param network
-     * @return
+     * Determine Router by given network. If more than one Router is connected to the network -> return first.
      */
-    public static Router getRouterbyNetwork(OSClient osc, Network network) {
-        return getRouterbyNetwork(osc, network, null);
+    static Router getRouterByNetwork(OSClient osc, Network network) {
+        return getRouterByNetwork(osc, network, null);
     }
 
     /**
-     * Determine Router by given network and subnetwork. Return router 
-     *
-     * @param osc
-     * @param network
-     * @param subnet
-     * @return
+     * Determine Router by given network and subnet.
      */
-    public static Router getRouterbyNetwork(OSClient osc, Network network, Subnet subnet) {
+    static Router getRouterByNetwork(OSClient osc, Network network, Subnet subnet) {
         PortService ps = osc.networking().port();
         PortListOptions plopt = PortListOptions.create();
         plopt.networkId(network.getId());
         // 1st check for device_owner "network:router_interface
         plopt.deviceOwner("network:router_interface");
-        List <? extends org.openstack4j.model.network.Port> lop = ps.list(plopt);
+        List<? extends org.openstack4j.model.network.Port> lop = ps.list(plopt);
         if (lop.isEmpty()) { // if no port found 2nd check for "network:ha_router_replicated_interface"
-          plopt.deviceOwner("network:ha_router_replicated_interface");
-          lop = ps.list(plopt);
+            plopt.deviceOwner("network:ha_router_replicated_interface");
+            lop = ps.list(plopt);
         }
         if (lop.isEmpty()) { // if no port found 3nd check for "network:router_interface_distributed"
             plopt.deviceOwner("network:router_interface_distributed");
             lop = ps.list(plopt);
         }
-         
+
         if (subnet == null && lop.size() > 1) {
             LOG.warn("Network (ID: {}) uses more than one router, return the 1st one !", network.getId());
         }
@@ -469,28 +399,28 @@ public class CreateClusterEnvironmentOpenstack implements CreateClusterEnvironme
         return null;
     }
 
-    public static List<? extends org.openstack4j.model.network.Port> getPortsbyRouter(OSClient osc, Router router) {
+    static List<? extends org.openstack4j.model.network.Port> getPortsByRouter(OSClient osc, Router router) {
         PortService ps = osc.networking().port();
-        PortListOptions plopt = PortListOptions.create();
-        plopt.deviceId(router.getId());
-        return ps.list(plopt);
+        PortListOptions portListOptions = PortListOptions.create();
+        portListOptions.deviceId(router.getId());
+        return ps.list(portListOptions);
     }
 
-    public static org.openstack4j.model.network.Port getPortbyRouterAndNetworkAndSubnet(OSClient osc, Router router, Network net,Subnet subnet) {
+    static org.openstack4j.model.network.Port getPortByRouterAndNetworkAndSubnet(OSClient osc, Router router,
+                                                                                 Network net, Subnet subnet) {
         PortService ps = osc.networking().port();
-        PortListOptions plopt = PortListOptions.create();
-        plopt.deviceId(router.getId());
-        plopt.networkId(net.getId());
-        
-        for (org.openstack4j.model.network.Port port : ps.list(plopt)) {
-            for (IP ip : port.getFixedIps()) { 
+        PortListOptions portListOptions = PortListOptions.create();
+        portListOptions.deviceId(router.getId());
+        portListOptions.networkId(net.getId());
+
+        for (org.openstack4j.model.network.Port port : ps.list(portListOptions)) {
+            for (IP ip : port.getFixedIps()) {
                 if (ip.getSubnetId().equals(subnet.getId())) {
-                        return port;
-                    } 
+                    return port;
+                }
             }
         }
         LOG.warn("No Port matches givens constraints ...");
         return null;
     }
-
 }

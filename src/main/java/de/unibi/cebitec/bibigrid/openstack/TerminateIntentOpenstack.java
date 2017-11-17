@@ -59,17 +59,17 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
             // sub-network
             if (cluster.getSubnet() != null) {
                 // get sub-network
-                Subnet subnet = CreateClusterEnvironmentOpenstack.getSubnetworkById(os, cluster.getSubnet());
+                Subnet subnet = CreateClusterEnvironmentOpenstack.getSubnetById(os, cluster.getSubnet());
                 // get network
                 Network net = CreateClusterEnvironmentOpenstack.getNetworkById(os, subnet.getNetworkId());
                 // get router
-                Router router = CreateClusterEnvironmentOpenstack.getRouterbyNetwork(os, net, subnet);
+                Router router = CreateClusterEnvironmentOpenstack.getRouterByNetwork(os, net, subnet);
 
                 if (router == null) {
                     return false;
                 }
                 // get  port which handled connects router with network/subnet
-                Port port = CreateClusterEnvironmentOpenstack.getPortbyRouterAndNetworkAndSubnet(os, router, net, subnet);
+                Port port = CreateClusterEnvironmentOpenstack.getPortByRouterAndNetworkAndSubnet(os, router, net, subnet);
 
                 // detach interface  from router 
                 try {

@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class ListIntentAWS implements ListIntent {
+public class ListIntentAWS extends IntentAWS implements ListIntent {
     public static final Logger LOG = LoggerFactory.getLogger(ListIntentAWS.class);
     private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
 
@@ -67,8 +67,7 @@ public class ListIntentAWS implements ListIntent {
             return;
         }
         clusterMap = new HashMap<>();
-        AmazonEC2Client ec2 = new AmazonEC2Client(conf.getCredentials());
-        ec2.setEndpoint("ec2." + conf.getRegion() + ".amazonaws.com");
+        AmazonEC2Client ec2 = getClient(conf);
         Cluster cluster;
 
         // Instances
@@ -96,11 +95,7 @@ public class ListIntentAWS implements ListIntent {
                         continue;
                     }
                     // check if map contains a value object
-                    if (clusterMap.containsKey(clusterId)) {
-                        cluster = clusterMap.get(clusterId);
-                    } else {
-                        cluster = new Cluster();
-                    }
+                    cluster = clusterMap.containsKey(clusterId) ? clusterMap.get(clusterId) : new Cluster();
                     // master/slave instance ?
                     if (name != null && name.contains("master-")) {
                         if (cluster.getMasterInstance() == null) {

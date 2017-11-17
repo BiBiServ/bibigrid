@@ -19,7 +19,7 @@ import org.openstack4j.model.compute.Flavor;
 public class InstanceTypeOpenstack extends InstanceType {
     private OSClient os;
 
-    public InstanceTypeOpenstack(Configuration conf, String type) throws InstanceTypeNotFoundException {
+    InstanceTypeOpenstack(Configuration conf, String type) throws InstanceTypeNotFoundException {
         os = OpenStackIntent.buildOSClient(conf);
         for (Flavor f : listFlavors()) {
             if (f.getName().equalsIgnoreCase(type)) {

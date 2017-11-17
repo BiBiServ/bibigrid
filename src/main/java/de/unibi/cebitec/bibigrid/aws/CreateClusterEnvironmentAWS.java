@@ -20,16 +20,21 @@ import com.amazonaws.services.ec2.model.Vpc;
 import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.intents.CreateClusterEnvironment;
+
 import static de.unibi.cebitec.bibigrid.aws.CreateClusterAWS.PLACEMENT_GROUP_PREFIX;
 import static de.unibi.cebitec.bibigrid.aws.CreateClusterAWS.SECURITY_GROUP_PREFIX;
 import static de.unibi.cebitec.bibigrid.aws.CreateClusterAWS.SUBNET_PREFIX;
+
 import de.unibi.cebitec.bibigrid.model.Port;
 import de.unibi.cebitec.bibigrid.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.util.SubNets;
+
 import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,33 +49,25 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
     private Subnet subnet;
     private String placementGroup;
     private final CreateClusterAWS cluster;
-    private String MASTERIP;
+    private String masterIp;
     private CreateSecurityGroupResult secReqResult;
 
-    public CreateClusterEnvironmentAWS(CreateClusterAWS cluster) {
+    CreateClusterEnvironmentAWS(CreateClusterAWS cluster) {
         this.cluster = cluster;
     }
 
     @Override
     public CreateClusterEnvironmentAWS createVPC() throws ConfigurationException {
-
         try {
             // create KeyPair for cluster communication
             keypair = new KEYPAIR();
-        } catch (JSchException ex) {      
+        } catch (JSchException ex) {
             throw new ConfigurationException(ex.getMessage());
         }
-
-        ////////////////////////////////////////////////////////////////////////
-        ///// check for (default) VPC
-        if (cluster.getConfig().getVpcId() == null) {
-            vpc = getVPC();
-        } else {
-            vpc = getVPC(cluster.getConfig().getVpcId());
-        }
-
+        // check for (default) VPC
+        vpc = cluster.getConfig().getVpcId() == null ? getVPC() : getVPC(cluster.getConfig().getVpcId());
         if (vpc == null) {
-            throw new ConfigurationException("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
+            throw new ConfigurationException("No suitable vpc found. Define a default VPC for you account or set VPC_ID");
         } else {
             LOG.info(V, "Use VPC {} ({})%n", vpc.getVpcId(), vpc.getCidrBlock());
         }
@@ -79,9 +76,7 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
 
     @Override
     public CreateClusterEnvironmentAWS createSubnet() {
-
-        ///////////////////////////////////////////////////////////////////////
-        ///// check for unused Subnet Cidr and create one
+        // check for unused Subnet CIDR and create one
         DescribeSubnetsRequest describesubnetsreq = new DescribeSubnetsRequest();
         DescribeSubnetsResult describesubnetres = cluster.getEc2().describeSubnets(describesubnetsreq);
         List<Subnet> loSubnets = describesubnetres.getSubnets();
@@ -94,12 +89,12 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         }
 
         SubNets subnets = new SubNets(vpc.getCidrBlock(), 24);
-        String SUBNETCIDR = subnets.nextCidr(listofUsedCidr);
+        String subnetCidr = subnets.nextCidr(listofUsedCidr);
 
-        LOG.debug(V, "Use {} for generated SubNet.", SUBNETCIDR);
+        LOG.debug(V, "Use {} for generated SubNet.", subnetCidr);
 
         // create new subnetdir      
-        CreateSubnetRequest createsubnetreq = new CreateSubnetRequest(vpc.getVpcId(), SUBNETCIDR);
+        CreateSubnetRequest createsubnetreq = new CreateSubnetRequest(vpc.getVpcId(), subnetCidr);
         createsubnetreq.withAvailabilityZone(cluster.getConfig().getAvailabilityZone());
         CreateSubnetResult createsubnetres = cluster.getEc2().createSubnet(createsubnetreq);
         subnet = createsubnetres.getSubnet();
@@ -113,15 +108,10 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         tagRequest.withResources(subnet.getSubnetId())
                 .withTags(cluster.getBibigridid(), new Tag("Name", SUBNET_PREFIX + cluster.getClusterId()));
         cluster.getEc2().createTags(tagRequest);
-
-        ///////////////////////////////////////////////////////////////////////
-        ///// MASTERIP
-        MASTERIP = SubNets.getFirstIP(subnet.getCidrBlock());
-
-        ////////////////////////////////////////////////////////////////////////
-        ///// create security group with full internal access / ssh from outside
+        // master IP
+        masterIp = SubNets.getFirstIP(subnet.getCidrBlock());
+        // create security group with full internal access / ssh from outside
         LOG.info("Creating security group...");
-
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + cluster.getClusterId())
                 .withDescription(cluster.getClusterId())
@@ -131,53 +121,15 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         LOG.info(V, "security group id: {}", secReqResult.getGroupId());
 
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());
-
-        IpPermission secGroupAccessSsh = new IpPermission();
-        secGroupAccessSsh
-                .withIpProtocol("tcp")
-                .withFromPort(22)
-                .withToPort(22)
-                .withIpRanges("0.0.0.0/0");
-        IpPermission secGroupSelfAccessTcp = new IpPermission();
-        secGroupSelfAccessTcp
-                .withIpProtocol("tcp")
-                .withFromPort(0)
-                .withToPort(65535)
-                .withUserIdGroupPairs(secGroupSelf);
-        IpPermission secGroupSelfAccessUdp = new IpPermission();
-        secGroupSelfAccessUdp
-                .withIpProtocol("udp")
-                .withFromPort(0)
-                .withToPort(65535)
-                .withUserIdGroupPairs(secGroupSelf);
-        IpPermission secGroupSelfAccessIcmp = new IpPermission();
-        secGroupSelfAccessIcmp
-                .withIpProtocol("icmp")
-                .withFromPort(-1)
-                .withToPort(-1)
-                .withUserIdGroupPairs(secGroupSelf);
-
         List<IpPermission> allIpPermissions = new ArrayList<>();
-        allIpPermissions.add(secGroupAccessSsh);
-        allIpPermissions.add(secGroupSelfAccessTcp);
-        allIpPermissions.add(secGroupSelfAccessUdp);
-        allIpPermissions.add(secGroupSelfAccessIcmp);
+        allIpPermissions.add(buildIpPermission("tcp", 22, 22).withIpRanges("0.0.0.0/0"));
+        allIpPermissions.add(buildIpPermission("tcp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
+        allIpPermissions.add(buildIpPermission("udp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
+        allIpPermissions.add(buildIpPermission("icmp", -1, -1).withUserIdGroupPairs(secGroupSelf));
         for (Port port : cluster.getConfig().getPorts()) {
             LOG.info(port.toString());
-            IpPermission additionalPortTcp = new IpPermission();
-            additionalPortTcp
-                    .withIpProtocol("tcp")
-                    .withFromPort(port.number)
-                    .withToPort(port.number)
-                    .withIpRanges(port.ipRange);
-            allIpPermissions.add(additionalPortTcp);
-            IpPermission additionalPortUdp = new IpPermission();
-            additionalPortUdp
-                    .withIpProtocol("udp")
-                    .withFromPort(port.number)
-                    .withToPort(port.number)
-                    .withIpRanges(port.ipRange);
-            allIpPermissions.add(additionalPortUdp);
+            allIpPermissions.add(buildIpPermission("tcp", port.number, port.number).withIpRanges(port.ipRange));
+            allIpPermissions.add(buildIpPermission("udp", port.number, port.number).withIpRanges(port.ipRange));
         }
 
         AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();
@@ -187,10 +139,12 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         tagRequest.withResources(secReqResult.getGroupId())
                 .withTags(cluster.getBibigridid(), new Tag("Name", SECURITY_GROUP_PREFIX + cluster.getClusterId()));
         cluster.getEc2().createTags(tagRequest);
-
         cluster.getEc2().authorizeSecurityGroupIngress(ruleChangerReq);
-
         return this;
+    }
+
+    private IpPermission buildIpPermission(String protocol, int fromPort, int toPort) {
+        return new IpPermission().withIpProtocol(protocol).withFromPort(fromPort).withToPort(toPort);
     }
 
     @Override
@@ -211,13 +165,9 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
     }
 
     /**
-     * Return a VPC that currently exists in selected region. Returns either the
-     * *default* vpc from all or the given vpcIds list. If only one vpcId is
-     * given it is returned wether it is default or not. Return null in the case
+     * Return a VPC that currently exists in selected region. Returns either the *default* vpc from all or the given
+     * vpcIds list. If only one vpcId is given it is returned wether it is default or not. Return null in the case
      * no default or fitting VPC is found.
-     *
-     * @param vpcIds - String...
-     * @return
      */
     private Vpc getVPC(String... vpcIds) {
         DescribeVpcsRequest dvreq = new DescribeVpcsRequest();
@@ -247,14 +197,6 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         this.keypair = keypair;
     }
 
-    public Vpc getVpc() {
-        return vpc;
-    }
-
-    public void setVpc(Vpc vpc) {
-        this.vpc = vpc;
-    }
-
     public Subnet getSubnet() {
         return subnet;
     }
@@ -271,12 +213,11 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
         this.placementGroup = placementGroup;
     }
 
-    public String getMASTERIP() {
-        return MASTERIP;
+    public String getMasterIp() {
+        return masterIp;
     }
 
     public CreateSecurityGroupResult getSecReqResult() {
         return secReqResult;
     }
-
 }

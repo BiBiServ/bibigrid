@@ -9,7 +9,6 @@ import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
-import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import de.unibi.cebitec.bibigrid.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.model.Cluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
@@ -23,31 +22,38 @@ import java.util.Map;
 
 /**
  * AWS specific implementation of terminate intent.
- * 
- * 
+ *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class TerminateIntentAWS implements TerminateIntent {
+public class TerminateIntentAWS extends IntentAWS implements TerminateIntent {
     public static final Logger LOG = LoggerFactory.getLogger(TerminateIntentAWS.class);
-    private final Configuration conf;
+    private final Configuration config;
 
-    TerminateIntentAWS(final Configuration conf) {
-        this.conf = conf;
+    TerminateIntentAWS(final Configuration config) {
+        this.config = config;
     }
 
     @Override
     public boolean terminate() {
-        AmazonEC2Client ec2 = new AmazonEC2Client(conf.getCredentials());
-        ec2.setEndpoint("ec2." + conf.getRegion() + ".amazonaws.com");
-        Map<String, Cluster> clusterMap = new ListIntentAWS(conf).getList();
+        final AmazonEC2Client ec2 = getClient(config);
+        final Map<String, Cluster> clusterMap = new ListIntentAWS(config).getList();
+        final String clusterId = config.getClusterId();
         // check if cluster with given id exists
-        if (!clusterMap.containsKey(conf.getClusterId())) {
+        if (!clusterMap.containsKey(clusterId)) {
             LOG.error("Cluster with '{}' not found.");
             return false;
         }
-        Cluster cluster = clusterMap.get(conf.getClusterId());
-        // terminate instance(s)
+        Cluster cluster = clusterMap.get(clusterId);
+        terminateInstances(ec2, cluster);
+        terminatePlacementGroup(ec2, cluster);
+        terminateSubnet(ec2, cluster);
+        terminateSecurityGroup(ec2, cluster);
+        LOG.info("Cluster '{}' terminated!", clusterId);
+        return true;
+    }
+
+    private void terminateInstances(final AmazonEC2Client ec2, final Cluster cluster) {
         List<String> instances = cluster.getSlaveInstances();
         if (cluster.getMasterInstance() != null) {
             instances.add(cluster.getMasterInstance());
@@ -55,58 +61,53 @@ public class TerminateIntentAWS implements TerminateIntent {
         if (instances.size() > 0) {
             TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
             terminateInstanceRequest.setInstanceIds(instances);
-            TerminateInstancesResult terminateInstanceResult = ec2.terminateInstances(terminateInstanceRequest);
-
+            ec2.terminateInstances(terminateInstanceRequest);
             LOG.info("Wait for instances to shut down. This can take a while, so please be patient!");
             do {
-//                DescribeInstanceStatusRequest describeInstanceStatusRequest = new  DescribeInstanceStatusRequest();
-//                describeInstanceStatusRequest.setInstanceIds(instances);
-
                 DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
                 describeInstancesRequest.setInstanceIds(instances);
-
                 DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesRequest);
-                boolean allterminated = true;
-                for (Reservation r : describeInstancesResult.getReservations()) {
-                    List<Instance> li = r.getInstances();
-                    for (Instance i : li) {
-                        LOG.info(V, "Instance {} {}", i.getInstanceId(), i.getState().getName());
-                        allterminated = allterminated & i.getState().getName().equals("terminated");
+                boolean allTerminated = true;
+                for (Reservation reservation : describeInstancesResult.getReservations()) {
+                    for (Instance instance : reservation.getInstances()) {
+                        LOG.info(V, "Instance {} {}", instance.getInstanceId(), instance.getState().getName());
+                        allTerminated &= instance.getState().getName().equals("terminated");
                     }
                 }
-                if (allterminated) {
+                if (allTerminated) {
                     break;
                 }
                 // wait until instances are shut down
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ex) {
-                    LOG.error("Can't sleep.");
-                }
+                sleep(5);
             } while (true);
-           // log.info("Instance(s) ({}) terminated.",join(",", instances));
+            // log.info("Instance(s) ({}) terminated.",join(",", instances));
         }
-        // terminate placement group
+    }
+
+    private void terminatePlacementGroup(final AmazonEC2Client ec2, final Cluster cluster) {
         if (cluster.getPlacementGroup() != null) {
-            DeletePlacementGroupRequest deletePalacementGroupRequest = new DeletePlacementGroupRequest();
-            deletePalacementGroupRequest.setGroupName(cluster.getPlacementGroup());
-            ec2.deletePlacementGroup(deletePalacementGroupRequest);
+            DeletePlacementGroupRequest deletePlacementGroupRequest = new DeletePlacementGroupRequest();
+            deletePlacementGroupRequest.setGroupName(cluster.getPlacementGroup());
+            ec2.deletePlacementGroup(deletePlacementGroupRequest);
             LOG.info("PlacementGroup terminated.");
         }
-        // terminate subnet
+    }
+
+    private void terminateSubnet(final AmazonEC2Client ec2, final Cluster cluster) {
         if (cluster.getSubnet() != null) {
             DeleteSubnetRequest deleteSubnetRequest = new DeleteSubnetRequest();
             deleteSubnetRequest.setSubnetId(cluster.getSubnet());
             ec2.deleteSubnet(deleteSubnetRequest);
             LOG.info("Subnet terminated.");
         }
-        // terminate security group
+    }
+
+    private void terminateSecurityGroup(final AmazonEC2Client ec2, final Cluster cluster) {
         if (cluster.getSecurityGroup() != null) {
             DeleteSecurityGroupRequest deleteSecurityGroupRequest = new DeleteSecurityGroupRequest();
             deleteSecurityGroupRequest.setGroupId(cluster.getSecurityGroup());
             ec2.deleteSecurityGroup(deleteSecurityGroupRequest);
+            LOG.info("Security group terminated.");
         }
-        LOG.info("Cluster '{}' terminated!", conf.getClusterId());
-        return true;
     }
 }
