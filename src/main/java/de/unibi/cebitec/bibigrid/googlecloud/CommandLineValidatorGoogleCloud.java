@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.googlecloud;
 
 import de.unibi.cebitec.bibigrid.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.model.IntentMode;
+import de.unibi.cebitec.bibigrid.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
@@ -15,8 +16,8 @@ import java.util.Properties;
  */
 public final class CommandLineValidatorGoogleCloud extends CommandLineValidator {
     CommandLineValidatorGoogleCloud(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
-                                    final IntentMode intentMode) {
-        super(cl, defaultPropertiesFile, intentMode);
+                                    final IntentMode intentMode, final ProviderModule providerModule) {
+        super(cl, defaultPropertiesFile, intentMode, providerModule);
     }
 
     @Override

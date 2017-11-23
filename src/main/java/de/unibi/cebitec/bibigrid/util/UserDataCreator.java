@@ -69,7 +69,7 @@ public class UserDataCreator {
     int ephemeralamount = cfg.getSlaveInstanceType().getSpec().getEphemerals();
 
     // Ephemeral Block
-    String blockDeviceBase = DeviceMapper.getBlockDeviceBase(cfg.getMode());
+    String blockDeviceBase = slaveDeviceMapper.getBlockDeviceBase();
     if (ephemeralamount == 1) {
       slaveUserData.append("umount /mnt\n");
       switch (cfg.getLocalFS()) {
@@ -310,7 +310,7 @@ public class UserDataCreator {
     /*
      * Ephemeral/RAID Preperation
      */
-    String blockDeviceBase = DeviceMapper.getBlockDeviceBase(cfg.getMode());
+    String blockDeviceBase = masterDeviceMapper.getBlockDeviceBase();
     // if 1 ephemeral is available mount it as /vol/spool
     if (ephemeralamount == 1) {
       masterUserData.append("umount /mnt\n"); // 

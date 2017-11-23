@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import de.unibi.cebitec.bibigrid.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.model.IntentMode;
+import de.unibi.cebitec.bibigrid.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
@@ -24,8 +25,8 @@ import static de.unibi.cebitec.bibigrid.util.VerboseOutputFilter.V;
  */
 public final class CommandLineValidatorAWS extends CommandLineValidator {
     CommandLineValidatorAWS(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
-                            final IntentMode intentMode) {
-        super(cl, defaultPropertiesFile, intentMode);
+                            final IntentMode intentMode, final ProviderModule providerModule) {
+        super(cl, defaultPropertiesFile, intentMode, providerModule);
     }
 
     @Override

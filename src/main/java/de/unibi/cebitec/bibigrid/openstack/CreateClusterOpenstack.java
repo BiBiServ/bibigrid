@@ -6,6 +6,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.util.*;
 
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
@@ -56,6 +57,7 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     public static final Logger LOG = LoggerFactory.getLogger(CreateClusterOpenstack.class);
 
     private CreateClusterEnvironmentOpenstack environment;
+    private final ProviderModule providerModule;
 
     public static final String PREFIX = "bibigrid-";
     public static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
@@ -71,8 +73,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
     private String clusterId;
     private final Map<String, String> metadata = new HashMap<>();
 
-    CreateClusterOpenstack(Configuration conf) {
+    CreateClusterOpenstack(final Configuration conf, final ProviderModule providerModule) {
         super(conf);
+        this.providerModule = providerModule;
     }
 
     @Override
@@ -130,11 +133,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
             }
         }
 
-        if (CONFIGDRIVE) {
-            masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, 1 + conf.getMasterInstanceType().getSpec().getEphemerals() + conf.getMasterInstanceType().getSpec().getSwap());
-        } else {
-            masterDeviceMapper = new DeviceMapper(conf.getMode(), masterVolumetoMountPointMap, conf.getMasterInstanceType().getSpec().getEphemerals() + conf.getMasterInstanceType().getSpec().getSwap());
-        }
+        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumetoMountPointMap,
+                (CONFIGDRIVE ? 1 : 0) + conf.getMasterInstanceType().getSpec().getEphemerals() +
+                        conf.getMasterInstanceType().getSpec().getSwap());
 
         // BlockDeviceMapping.
         masterMappings = new HashSet<>();
@@ -172,11 +173,9 @@ public class CreateClusterOpenstack extends OpenStackIntent implements CreateClu
         // DeviceMapper Slave. @ToDo
         Map<String, String> snapShotToSlaveMounts = this.conf.getSlaveMounts();
 
-        if (CONFIGDRIVE) {
-            slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, 1 + conf.getMasterInstanceType().getSpec().getEphemerals() + conf.getMasterInstanceType().getSpec().getSwap());
-        } else {
-            slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, conf.getMasterInstanceType().getSpec().getEphemerals() + conf.getMasterInstanceType().getSpec().getSwap());
-        }
+        slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
+                (CONFIGDRIVE ? 1 : 0) + conf.getMasterInstanceType().getSpec().getEphemerals() +
+                        conf.getMasterInstanceType().getSpec().getSwap());
 
         // BlockDeviceMapping. @ToDo
         slaveMappings = new HashSet<>();

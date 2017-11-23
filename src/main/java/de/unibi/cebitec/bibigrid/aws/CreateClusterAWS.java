@@ -34,6 +34,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.util.*;
 
 import static de.unibi.cebitec.bibigrid.util.ImportantInfoOutputFilter.I;
@@ -89,11 +90,13 @@ public class CreateClusterAWS extends IntentAWS implements CreateCluster {
     private List<Instance> slaveInstances;
 
     private final Configuration config;
+    private final ProviderModule providerModule;
 
     private CreateClusterEnvironmentAWS environment;
 
-    CreateClusterAWS(Configuration conf) {
+    CreateClusterAWS(Configuration conf, final ProviderModule providerModule) {
         this.config = conf;
+        this.providerModule = providerModule;
     }
 
     @Override
@@ -123,7 +126,7 @@ public class CreateClusterAWS extends IntentAWS implements CreateCluster {
         // preparing block device mappings for master
         Map<String, String> masterSnapshotToMountPointMap = this.config.getMasterMounts();
         int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
-        DeviceMapper masterDeviceMapper = new DeviceMapper(config.getMode(), masterSnapshotToMountPointMap, ephemerals);
+        DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
         if (!this.config.getMasterMounts().isEmpty()) {
@@ -186,7 +189,7 @@ public class CreateClusterAWS extends IntentAWS implements CreateCluster {
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
         int ephemerals = config.getSlaveInstanceType().getSpec().getEphemerals();
-        slaveDeviceMapper = new DeviceMapper(config.getMode(), snapShotToSlaveMounts, ephemerals);
+        slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
         slaveBlockDeviceMappings = new ArrayList<>();
         // configure volumes first ...
         if (!snapShotToSlaveMounts.isEmpty()) {

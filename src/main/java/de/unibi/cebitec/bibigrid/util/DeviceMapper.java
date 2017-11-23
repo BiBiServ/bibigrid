@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.util;
 
-import de.unibi.cebitec.bibigrid.Provider;
 import de.unibi.cebitec.bibigrid.model.ProviderModule;
 
 import java.util.HashMap;
@@ -10,7 +9,7 @@ public class DeviceMapper {
     // vdb ... vdz
     private static final int MAX_DEVICES = 25;
 
-    private final String mode;
+    private final ProviderModule providerModule;
     // snap-0a12b34c -> /my/dir/
     private final Map<String, String> snapshotToMountPoint;
     // snap-0a12b34c -> /dev/sdf
@@ -20,9 +19,9 @@ public class DeviceMapper {
 
     private int usedDevices = 0;
 
-    public DeviceMapper(String mode, Map<String, String> snapshotIdToMountPoint, int usedDevices)
+    public DeviceMapper(ProviderModule providerModule, Map<String, String> snapshotIdToMountPoint, int usedDevices)
             throws IllegalArgumentException {
-        this.mode = mode;
+        this.providerModule = providerModule;
 
         // calculate the number of avail devices after removing all used ephemerals
         this.usedDevices = usedDevices;
@@ -68,7 +67,7 @@ public class DeviceMapper {
     }
 
     private String createRealDeviceName(final char letter) {
-        return getBlockDeviceBase(mode) + letter;
+        return getBlockDeviceBase(providerModule) + letter;
     }
 
     private int getPartitionNumber(final String rawSnapshotId) {
@@ -98,8 +97,14 @@ public class DeviceMapper {
     /**
      * Return BlockDeviceBase in dependence of used cluster mode
      */
-    public static String getBlockDeviceBase(final String mode) {
-        ProviderModule providerModule = Provider.getInstance().getProviderModule(mode);
+    public static String getBlockDeviceBase(final ProviderModule providerModule) {
         return providerModule != null ? providerModule.getBlockDeviceBase() : null;
+    }
+
+    /**
+     * Return BlockDeviceBase in dependence of used cluster mode
+     */
+    public String getBlockDeviceBase() {
+        return getBlockDeviceBase(providerModule);
     }
 }

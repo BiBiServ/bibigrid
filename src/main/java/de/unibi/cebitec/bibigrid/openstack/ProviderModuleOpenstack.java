@@ -27,7 +27,7 @@ public class ProviderModuleOpenstack implements ProviderModule {
     public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
                                                         final DefaultPropertiesFile defaultPropertiesFile,
                                                         final IntentMode intentMode) {
-        return new CommandLineValidatorOpenstack(commandLine, defaultPropertiesFile, intentMode);
+        return new CommandLineValidatorOpenstack(commandLine, defaultPropertiesFile, intentMode, this);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class ProviderModuleOpenstack implements ProviderModule {
 
     @Override
     public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterOpenstack(config);
+        return new CreateClusterOpenstack(config, this);
     }
 
     @Override

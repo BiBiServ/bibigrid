@@ -27,7 +27,7 @@ public class ProviderModuleAWS implements ProviderModule {
     public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
                                                         final DefaultPropertiesFile defaultPropertiesFile,
                                                         final IntentMode intentMode) {
-        return new CommandLineValidatorAWS(commandLine, defaultPropertiesFile, intentMode);
+        return new CommandLineValidatorAWS(commandLine, defaultPropertiesFile, intentMode, this);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class ProviderModuleAWS implements ProviderModule {
 
     @Override
     public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterAWS(config);
+        return new CreateClusterAWS(config, this);
     }
 
     @Override

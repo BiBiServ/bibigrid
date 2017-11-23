@@ -36,15 +36,17 @@ public abstract class CommandLineValidator {
     protected final CommandLine cl;
     protected final DefaultPropertiesFile defaultPropertiesFile;
     protected final IntentMode intentMode;
+    protected final ProviderModule providerModule;
     protected final Configuration cfg;
 
     private Properties machineImage = null;
 
     public CommandLineValidator(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
-                                final IntentMode intentMode) {
+                                final IntentMode intentMode, final ProviderModule providerModule) {
         this.cl = cl;
         this.defaultPropertiesFile = defaultPropertiesFile;
         this.intentMode = intentMode;
+        this.providerModule = providerModule;
         this.cfg = new Configuration();
         if (defaultPropertiesFile.isAlternativeFilepath()) {
             cfg.setAlternativeConfigPath(defaultPropertiesFile.getPropertiesFilePath().toString());
@@ -278,9 +280,8 @@ public abstract class CommandLineValidator {
                             "master node. (e.g. master-instance-type=t1.micro)");
                     return false;
                 }
-                ProviderModule provider = Provider.getInstance().getProviderModule(cfg.getMode());
-                if (provider != null) {
-                    InstanceType masterType = provider.getInstanceType(cfg, masterTypeString.trim());
+                if (providerModule != null) {
+                    InstanceType masterType = providerModule.getInstanceType(cfg, masterTypeString.trim());
                     this.cfg.setMasterInstanceType(masterType);
                 }
             } catch (InstanceTypeNotFoundException e) {
@@ -323,9 +324,8 @@ public abstract class CommandLineValidator {
                             "slave nodes (" + longParam + "=t1.micro).");
                     return false;
                 }
-                ProviderModule provider = Provider.getInstance().getProviderModule(cfg.getMode());
-                if (provider != null) {
-                    InstanceType slaveType = provider.getInstanceType(cfg, slaveTypeString.trim());
+                if (providerModule != null) {
+                    InstanceType slaveType = providerModule.getInstanceType(cfg, slaveTypeString.trim());
                     this.cfg.setSlaveInstanceType(slaveType);
                     if (slaveType.getSpec().isClusterInstance() || cfg.getMasterInstanceType().getSpec().isClusterInstance()) {
                         if (!slaveType.toString().equals(cfg.getMasterInstanceType().toString())) {

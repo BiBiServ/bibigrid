@@ -7,6 +7,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.model.Configuration;
+import de.unibi.cebitec.bibigrid.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.util.*;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
@@ -35,6 +36,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
     static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
     private static final String MASTER_SSH_USER = "ubuntu";
     private final Configuration conf;
+    private final ProviderModule providerModule;
 
     private Compute compute;
     private Instance masterInstance;
@@ -46,8 +48,9 @@ public class CreateClusterGoogleCloud implements CreateCluster {
     private String clusterId;
     private DeviceMapper slaveDeviceMapper;
 
-    CreateClusterGoogleCloud(final Configuration conf) {
+    CreateClusterGoogleCloud(final Configuration conf, final ProviderModule providerModule) {
         this.conf = conf;
+        this.providerModule = providerModule;
     }
 
     public CreateClusterEnvironmentGoogleCloud createClusterEnvironment() {
@@ -75,7 +78,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
         // preparing blockdevicemappings for master
         Map<String, String> masterSnapshotToMountPointMap = conf.getMasterMounts();
         int ephemerals = conf.getMasterInstanceType().getSpec().getEphemerals();
-        DeviceMapper masterDeviceMapper = new DeviceMapper(conf.getMode(), masterSnapshotToMountPointMap, ephemerals);
+        DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
 
         base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, conf, environment.getKeypair());
         // Google doesn't use base64 encoded startup scripts. Just use plain text
@@ -122,7 +125,7 @@ public class CreateClusterGoogleCloud implements CreateCluster {
         //now defining Slave Volumes
         Map<String, String> snapShotToSlaveMounts = conf.getSlaveMounts();
         int ephemerals = conf.getSlaveInstanceType().getSpec().getEphemerals();
-        slaveDeviceMapper = new DeviceMapper(conf.getMode(), snapShotToSlaveMounts, ephemerals);
+        slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
         return this;
     }
 

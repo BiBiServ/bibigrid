@@ -27,7 +27,7 @@ public class ProviderModuleGoogleCloud implements ProviderModule {
     public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
                                                         final DefaultPropertiesFile defaultPropertiesFile,
                                                         final IntentMode intentMode) {
-        return new CommandLineValidatorGoogleCloud(commandLine, defaultPropertiesFile, intentMode);
+        return new CommandLineValidatorGoogleCloud(commandLine, defaultPropertiesFile, intentMode, this);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class ProviderModuleGoogleCloud implements ProviderModule {
 
     @Override
     public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterGoogleCloud(config);
+        return new CreateClusterGoogleCloud(config, this);
     }
 
     @Override

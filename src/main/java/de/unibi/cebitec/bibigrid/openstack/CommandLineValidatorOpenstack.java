@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.openstack;
 import de.unibi.cebitec.bibigrid.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.model.IntentMode;
 import de.unibi.cebitec.bibigrid.model.OpenStackCredentials;
+import de.unibi.cebitec.bibigrid.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
@@ -16,8 +17,8 @@ import java.util.Properties;
  */
 public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     CommandLineValidatorOpenstack(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
-                                  final IntentMode intentMode) {
-        super(cl, defaultPropertiesFile, intentMode);
+                                  final IntentMode intentMode, final ProviderModule providerModule) {
+        super(cl, defaultPropertiesFile, intentMode, providerModule);
     }
 
     @Override
