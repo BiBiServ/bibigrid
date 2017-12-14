@@ -1,0 +1,19 @@
+- name: Add Mesosphere project key
+  apt_key:
+    id: E56151BF
+    keyserver: keyserver.ubuntu.com
+    state: present
+
+- name: Add Mesosphere repositories
+  apt_repository:
+    repo: "deb-src http://repos.mesosphere.io/ubuntu {{ ansible_lsb.codename }} main"
+    state: present
+
+- name: Install mesosphere meta package ( includes the zookeeper, mesos, marathon, and chronos )
+  apt:
+    name: "mesosphere"
+    update_cache: "yes"
+    state: present  # not using latest package to avoid time consuming checks for prepared images
+
+
+# Configuration see https://www.digitalocean.com/community/tutorials/how-to-configure-a-production-ready-mesosphere-cluster-on-ubuntu-14-04

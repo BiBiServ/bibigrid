@@ -1,0 +1,228 @@
+- name: Install gridengine packages
+  apt:
+    name: "{{ item }}"
+    state: "latest"
+  with_items:
+    - gridengine-client # Utilities for Grid Engine queue management
+    - gridengine-common # Distributed resource management - common files
+    - gridengine-drmaa-dev # Distributed resource management Application API library
+    - gridengine-drmaa1.0 # Distributed resource management Application API library
+    - gridengine-exec # Distributed resource management - Execution Server
+    - gridengine-master # Distributed resource management - Master Server
+
+
+#check if hostname >> /var/lib/gridengine/default/common/act_qmaster
+#- name: update act_qmaster
+#  lineinfile:
+#    path: /var/lib/gridengine/default/common/act_qmaster
+#    state: present
+#    regexp: '^{{ ansible_hostname }}$'
+#    line: '{{ ansible_hostname }}'
+#  register: act_qmaster
+
+- name: update act_qmaster
+  copy:
+    content: "{{ master.hostname }}"
+    dest: /var/lib/gridengine/default/common/act_qmaster
+    owner: sgeadmin
+    group: sgeadmin
+    mode: 0644
+  register: act_qmaster
+
+
+# (Re-)start Master daemon (systemd)
+- name: Restart qmaster (in case of config change)
+  systemd:
+    name: gridengine-master
+    state: restarted
+  when: act_qmaster | changed
+
+# Make sure that master daemon is running
+- name: Start gridengine master daemon
+  systemd:
+    name: gridengine-master
+    state: started
+
+
+
+
+# Config Dir
+- name: Create Config Dir
+  file:
+    path: /etc/bibigrid/gridengine
+    state: directory
+    owner: root
+    group: root
+    mode: 0750
+
+#sudo -u sgeadmin qconf -am ubuntu
+
+- name: Check if default_user is already in manager list
+  shell: 'qconf -sm | grep {{ default_user }}'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  register: manager_list
+  ignore_errors: yes
+
+- name: Add default_user to gridengine manager list
+  shell: 'qconf -am {{ default_user }}'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  when: manager_list.rc != 0
+
+#qconf -au ubuntu users
+
+- name: Check if default_user is already in users list
+  shell: 'qconf -su  users | grep entries | grep {{ default_user }}'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  register: user_list
+  ignore_errors: yes
+
+- name: Add default_user to gridengine users list
+  shell: 'qconf -au {{ default_user }} users'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  when: user_list.rc != 0
+
+#qconf -Ahgrp ./hostgroup.conf
+
+- name: Copy hostgroup.conf
+  copy:
+    src: gridengine/hostgroup.conf
+    dest: /etc/bibigrid/gridengine/hostgroup.conf
+    mode: 0440
+    owner: root
+    group: root
+  register: hostgroup_conf
+
+- name: Generate hostgroup from hostgroup.conf
+  shell: 'qconf -Ahgrp /etc/bibigrid/gridengine/hostgroup.conf'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  when: hostgroup_conf | changed
+
+#qconf -Ap ./pe.conf
+
+- name: Copy pe.conf
+  copy:
+    src: gridengine/pe.conf
+    dest: /etc/bibigrid/gridengine/pe.conf
+    mode: 0440
+    owner: root
+    group: root
+  register: pe.conf
+
+- name: Generate parallel environment from pe.conf
+  shell: 'qconf -Ap /etc/bibigrid/gridengine/pe.conf && touch /etc/bibigrid/gridengine/pe.created'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  args:
+    creates: /etc/bibigrid/gridengine/pe.created
+
+#qconf -Aq ./queue.conf
+
+- name: Copy queue.conf
+  copy:
+    src: gridengine/queue.conf
+    dest: /etc/bibigrid/gridengine/queue.conf
+    mode: 0440
+    owner: root
+    group: root
+
+- name: Generate queue from queue.conf
+  shell: 'qconf -Aq /etc/bibigrid/gridengine/queue.conf && touch /etc/bibigrid/gridengine/queue.created'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  args:
+    creates: /etc/bibigrid/gridengine/queue.created
+
+#qconf -Msconf ./schedule.conf
+
+- name: Copy schedule.conf
+  copy:
+    src: gridengine/schedule.conf
+    dest: /etc/bibigrid/gridengine/schedule.conf
+    mode: 0440
+    owner: root
+    group: root
+
+- name: Generate schedule config from schedule.conf
+  shell: 'qconf -Msconf /etc/bibigrid/gridengine/schedule.conf && touch /etc/bibigrid/gridengine/schedule.created'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  args:
+    creates: /etc/bibigrid/gridengine/schedule.created
+
+#qconf -Mconf ./global
+
+- name: Copy global.conf
+  copy:
+    src: gridengine/global.conf
+    dest: /etc/bibigrid/gridengine/global
+    mode: 0440
+    owner: root
+    group: root
+
+- name: Generate global configuration from global.conf
+  shell: 'qconf -Mconf /etc/bibigrid/gridengine/global && touch /etc/bibigrid/gridengine/global.created'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  args:
+    creates: /etc/bibigrid/gridengine/global.created
+
+
+#update user environment
+
+- name: update defaults user environment (.bashrc)
+  lineinfile:
+    path: /home/{{ default_user }}/.bashrc
+    state: present
+    regexp: '^export SGE_ROOT=/var/lib/gridengine$'
+    line: 'export SGE_ROOT=/var/lib/gridengine'
+
+# submit host
+
+- name : add master as submit host
+  shell: 'qconf -as {{ master.hostname }} && touch /etc/bibigrid/gridengine/submit_host.added'
+  environment:
+    SGE_ROOT: /var/lib/gridengine
+  args:
+    creates: /etc/bibigrid/gridengine/submit_host.added
+
+- name: Copy add_exec.sh
+  copy:
+    src: gridengine/add_exec.sh
+    dest: /etc/bibigrid/gridengine/add_exec.sh
+    mode: 0550
+    owner: root
+    group: root
+
+
+# add master as exec host (if configured)
+- block :
+
+  - name: Start gridengine exec daemon
+    systemd:
+      name: gridengine-exec
+      state: started
+
+  - name: Add master as exec host
+    shell: '/etc/bibigrid/gridengine/add_exec.sh {{ master.hostname }} {{ master.cores }} && touch /etc/bibigrid/master_exec_host.added'
+    environment:
+      SGE_ROOT: /var/lib/gridengine
+    args:
+      creates: /etc/bibigrid/master_exec_host.added
+
+  when: use_master_as_compute == 'yes'
+
+
+# add all slaves as exec host
+#- name: add all slaves as exec host
+#  shell: '/etc/bibigrid/gridengine/add_exec.sh {{ item.hostname }} {{ item.cores }}'
+#  environment:
+#    SGE_ROOT: /var/lib/gridengine
+#  with items: {{ slaves }}
+
+
+
