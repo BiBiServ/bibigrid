@@ -2,12 +2,12 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import org.openstack4j.api.OSClient;
 import org.openstack4j.api.exceptions.ClientResponseException;
+import org.openstack4j.api.networking.PortService;
 import org.openstack4j.model.common.ActionResponse;
-import org.openstack4j.model.network.Network;
-import org.openstack4j.model.network.Port;
-import org.openstack4j.model.network.Router;
-import org.openstack4j.model.network.Subnet;
+import org.openstack4j.model.network.*;
+import org.openstack4j.model.network.options.PortListOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,11 +17,14 @@ import org.slf4j.LoggerFactory;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class TerminateIntentOpenstack extends OpenStackIntent implements TerminateIntent {
+public class TerminateIntentOpenstack implements TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
+    private final ConfigurationOpenstack config;
+    private final OSClient os;
 
     TerminateIntentOpenstack(ConfigurationOpenstack config) {
-        super(config);
+        this.config = config;
+        os = OpenStackUtils.buildOSClient(config);
     }
 
     @Override
@@ -55,22 +58,23 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
                 }
                 LOG.info("SecurityGroup ({}) deleted.", cluster.getSecurityGroup());
             }
-            // sub-network
+            // subnet
             if (cluster.getSubnet() != null) {
-                // get sub-network
-                Subnet subnet = CreateClusterEnvironmentOpenstack.getSubnetById(os, cluster.getSubnet());
-                // get network
+                Subnet subnet = getSubnetById(os, cluster.getSubnet());
+                if (subnet == null) {
+                    return false;
+                }
                 Network net = CreateClusterEnvironmentOpenstack.getNetworkById(os, subnet.getNetworkId());
-                // get router
                 Router router = CreateClusterEnvironmentOpenstack.getRouterByNetwork(os, net, subnet);
-
                 if (router == null) {
                     return false;
                 }
-                // get  port which handled connects router with network/subnet
-                Port port = CreateClusterEnvironmentOpenstack.getPortByRouterAndNetworkAndSubnet(os, router, net, subnet);
-
-                // detach interface  from router 
+                // get port which handled connects router with network/subnet
+                Port port = getPortByRouterAndNetworkAndSubnet(os, router, net, subnet);
+                if (port == null) {
+                    return false;
+                }
+                // detach interface from router
                 try {
                     os.networking().router().detachInterface(router.getId(), subnet.getId(), port.getId());
                     // delete subnet
@@ -108,5 +112,34 @@ public class TerminateIntentOpenstack extends OpenStackIntent implements Termina
         }
         LOG.warn("No cluster with id {} found.", config.getClusterId());
         return false;
+    }
+
+    /**
+     * Determine subnet by given subnet id. Returns subnet object or null in the case no suitable subnet is found.
+     */
+    private static Subnet getSubnetById(OSClient osc, String subnetId) {
+        for (Subnet subnet : osc.networking().subnet().list()) {
+            if (subnet.getId().equals(subnetId)) {
+                return subnet;
+            }
+        }
+        return null;
+    }
+
+    private static org.openstack4j.model.network.Port getPortByRouterAndNetworkAndSubnet(OSClient osc, Router router,
+                                                                                         Network net, Subnet subnet) {
+        PortService ps = osc.networking().port();
+        PortListOptions portListOptions = PortListOptions.create();
+        portListOptions.deviceId(router.getId());
+        portListOptions.networkId(net.getId());
+        for (org.openstack4j.model.network.Port port : ps.list(portListOptions)) {
+            for (IP ip : port.getFixedIps()) {
+                if (ip.getSubnetId().equals(subnet.getId())) {
+                    return port;
+                }
+            }
+        }
+        LOG.warn("No Port matches givens constraints ...");
+        return null;
     }
 }

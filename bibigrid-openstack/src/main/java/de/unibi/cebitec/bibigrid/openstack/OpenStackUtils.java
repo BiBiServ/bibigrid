@@ -5,19 +5,11 @@ import org.openstack4j.model.common.Identifier;
 import org.openstack4j.openstack.OSFactory;
 
 /**
- * Abstract class that must be implemented by all OpenStack intents
+ * Helper class for OpenStack Intents
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-abstract class OpenStackIntent {
-    protected ConfigurationOpenstack config;
-    protected OSClient os;
-
-    OpenStackIntent(ConfigurationOpenstack config) {
-        this.config = config;
-        os = buildOSClient(config);
-    }
-
+final class OpenStackUtils {
     static OSClient buildOSClient(ConfigurationOpenstack config) {
         OSFactory.enableHttpLoggingFilter(config.isLogHttpRequests());
         return config.getOpenstackCredentials().getDomain() != null ?

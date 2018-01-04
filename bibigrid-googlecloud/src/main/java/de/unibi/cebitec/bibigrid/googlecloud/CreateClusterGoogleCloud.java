@@ -1,7 +1,7 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
 import com.google.cloud.compute.*;
-import org.apache.commons.codec.binary.Base64;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.*;
@@ -21,174 +21,156 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  */
 public class CreateClusterGoogleCloud extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterGoogleCloud.class);
-    static final String SUBNET_PREFIX = PREFIX + "subnet-";
-    static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
     private final ConfigurationGoogleCloud config;
-
     private Compute compute;
-    private String base64MasterUserData;
-    private List<NetworkInterface> masterNetworkInterfaces, slaveNetworkInterfaces;
+    private Metadata masterStartupScript;
+    private NetworkInterface masterNetworkInterface;
     private CreateClusterEnvironmentGoogleCloud environment;
-    private String bibigridId, username;
-    private DeviceMapper slaveDeviceMapper;
+    private String bibigridId;
 
     CreateClusterGoogleCloud(final ConfigurationGoogleCloud config, final ProviderModule providerModule) {
-        super(providerModule);
+        super(config, providerModule);
         this.config = config;
     }
 
-    public CreateClusterEnvironmentGoogleCloud createClusterEnvironment() {
+    @Override
+    public CreateClusterEnvironmentGoogleCloud createClusterEnvironment() throws ConfigurationException {
         compute = GoogleCloudUtils.getComputeService(config);
-
-        clusterId = generateClusterId();
-        config.setClusterId(clusterId);
         bibigridId = "bibigrid-id" + GoogleCloudUtils.TAG_SEPARATOR + clusterId;
-        username = "user" + GoogleCloudUtils.TAG_SEPARATOR + config.getUser();
-
+        // username = "user" + GoogleCloudUtils.TAG_SEPARATOR + config.getUser();
         return environment = new CreateClusterEnvironmentGoogleCloud(this);
     }
 
+    @Override
     public CreateClusterGoogleCloud configureClusterMasterInstance() {
-        // done for master. More volume description later when master is running
-
         // preparing block device mappings for master
-        Map<String, String> masterSnapshotToMountPointMap = config.getMasterMounts();
-        int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
-        DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
+        // Map<String, String> masterSnapshotToMountPointMap = config.getMasterMounts();
+        // int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
+        // DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
 
-        base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, config, environment.getKeypair());
-        // Google doesn't use base64 encoded startup scripts. Just use plain text
-        base64MasterUserData = new String(Base64.decodeBase64(base64MasterUserData));
+        String startupScript = ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), false);
+        masterStartupScript = Metadata.newBuilder().add("startup-script", startupScript).build();
+        buildMasterNetworkInterface();
+        return this;
+    }
 
-        LOG.info(V, "Master UserData:\n {}", base64MasterUserData);
-
+    private void buildMasterNetworkInterface() {
         // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
-        masterNetworkInterfaces = new ArrayList<>();
-
-        NetworkInterface.Builder inis = NetworkInterface.newBuilder(environment.getSubnet().getNetwork());
-        inis.setSubnetwork(environment.getSubnet().getSubnetworkId())
-                .setAccessConfigurations(NetworkInterface.AccessConfig.newBuilder()
-                        .setType(NetworkInterface.AccessConfig.Type.ONE_TO_ONE_NAT)
-                        .setName("external-nat")
-                        .build());
+        NetworkInterface.Builder networkInterfaceBuilder = buildExternalNetworkInterface();
         // Currently only accessible through reflection. Should be public according to docs...
         try {
             Method m = NetworkInterface.Builder.class.getDeclaredMethod("setNetworkIp", String.class);
             m.setAccessible(true);
-            m.invoke(inis, environment.getMasterIP());
+            m.invoke(networkInterfaceBuilder, environment.getMasterIP());
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Failed to assign fixed IP to master instance! {}", e.getMessage());
         }
-
-        masterNetworkInterfaces.add(inis.build()); // add eth0
-
-        slaveNetworkInterfaces = new ArrayList<>();
-        inis = NetworkInterface.newBuilder(environment.getSubnet().getNetwork());
-        inis.setSubnetwork(environment.getSubnet().getSubnetworkId())
-                .setAccessConfigurations(NetworkInterface.AccessConfig.newBuilder()
-                        .setType(NetworkInterface.AccessConfig.Type.ONE_TO_ONE_NAT)
-                        .setName("external-nat")
-                        .build());
-        for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
-            slaveNetworkInterfaces.add(inis.build());
-        }
-
-        return this;
+        masterNetworkInterface = networkInterfaceBuilder.build();
     }
 
+    private NetworkInterface.Builder buildExternalNetworkInterface() {
+        NetworkInterface.AccessConfig accessConfig = NetworkInterface.AccessConfig.newBuilder()
+                .setType(NetworkInterface.AccessConfig.Type.ONE_TO_ONE_NAT)
+                .setName("external-nat")
+                .build();
+        return NetworkInterface.newBuilder(environment.getSubnet().getNetwork())
+                .setSubnetwork(environment.getSubnet().getSubnetworkId())
+                .setAccessConfigurations(accessConfig);
+    }
+
+    @Override
     public CreateClusterGoogleCloud configureClusterSlaveInstance() {
         //now defining Slave Volumes
-        Map<String, String> snapShotToSlaveMounts = config.getSlaveMounts();
-        int ephemerals = config.getSlaveInstanceType().getSpec().getEphemerals();
-        slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
+        // Map<String, String> snapShotToSlaveMounts = config.getSlaveMounts();
+        // int ephemerals = config.getSlaveInstanceType().getSpec().getEphemerals();
+        // slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
         return this;
     }
 
+    @Override
     public boolean launchClusterInstances() {
-        LOG.info("Requesting master instance ...");
+        Instance masterInstance = launchClusterMasterInstance();
+        List<Instance> slaveInstances = launchClusterSlaveInstances();
+        // just to be sure, everything is present, wait 5 seconds
+        sleep(5);
+        // post configure master
+        List<String> slaveIps = new ArrayList<>();
+        List<String> slaveHostnames = new ArrayList<>();
+        if (slaveInstances != null) {
+            for (Instance slave : slaveInstances) {
+                slaveIps.add(GoogleCloudUtils.getInstancePrivateIp(slave));
+                slaveHostnames.add(GoogleCloudUtils.getInstanceFQDN(slave));
+            }
+        }
+        String masterPublicIp = GoogleCloudUtils.getInstancePublicIp(masterInstance);
+        configureMaster(GoogleCloudUtils.getInstancePrivateIp(masterInstance), masterPublicIp,
+                GoogleCloudUtils.getInstanceFQDN(masterInstance), slaveIps, slaveHostnames, environment.getSubnetCidr());
+        logFinishedInfoMessage(masterPublicIp);
+        saveGridPropertiesFile(masterPublicIp);
+        return true;
+    }
 
+    private Instance launchClusterMasterInstance() {
+        LOG.info("Requesting master instance...");
         String zone = config.getAvailabilityZone();
         String masterInstanceName = PREFIX + "master-" + clusterId;
         InstanceInfo.Builder masterBuilder = GoogleCloudUtils.getInstanceBuilder(zone, masterInstanceName,
                 config.getMasterInstanceType().getValue())
-                .setNetworkInterfaces(masterNetworkInterfaces)
-                .setTags(Tags.of(bibigridId, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + masterInstanceName))
-                .setMetadata(Metadata.newBuilder().add("startup-script", base64MasterUserData).build());
-        GoogleCloudUtils.attachDisks(compute, masterBuilder, config.getMasterImage(), zone, config.getMasterMounts(), clusterId);
+                .setNetworkInterfaces(masterNetworkInterface)
+                .setTags(Tags.of(bibigridId, "name" + GoogleCloudUtils.TAG_SEPARATOR + masterInstanceName))
+                .setMetadata(masterStartupScript);
+        GoogleCloudUtils.attachDisks(compute, masterBuilder, config.getMasterImage(), zone, config.getMasterMounts(),
+                clusterId, config.getGoogleProjectId());
         GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, config.isUseSpotInstances());
-
         // Waiting for master instance to run
-        LOG.info("Waiting for master instance to finish booting ...");
+        LOG.info("Waiting for master instance to finish booting...");
         Operation createMasterOperation = compute.create(masterBuilder.build());
-        Instance masterInstance = waitForInstances(Collections.singletonList(InstanceId.of(zone, masterInstanceName)),
-                Collections.singletonList(createMasterOperation)).get(0);
+        Instance masterInstance = waitForInstances(new InstanceId[]{InstanceId.of(zone, masterInstanceName)},
+                new Operation[]{createMasterOperation}).get(0);
         LOG.info(I, "Master instance is now running!");
-
         waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
+        return masterInstance;
+    }
 
-        String masterPrivateIp = GoogleCloudUtils.getInstancePrivateIp(masterInstance);
-        String masterPublicIp = GoogleCloudUtils.getInstancePublicIp(masterInstance);
-        String masterDnsName = GoogleCloudUtils.getInstanceFQDN(masterInstance);
-
-        // run slave instances and supply userdata
+    private List<Instance> launchClusterSlaveInstances() {
         List<Instance> slaveInstances = null;
-        if (config.getSlaveInstanceCount() > 0) {
-            String base64SlaveUserData = UserDataCreator.forSlave(masterPrivateIp, masterDnsName, slaveDeviceMapper,
-                    config, environment.getKeypair());
-            // Google doesn't use base64 encoded startup scripts. Just use plain text
-            base64SlaveUserData = new String(Base64.decodeBase64(base64SlaveUserData));
-            LOG.info(V, "Slave Userdata:\n{}", base64SlaveUserData);
-
-            List<InstanceId> slaveInstanceIds = new ArrayList<>();
-            List<Operation> slaveInstanceOperations = new ArrayList<>();
-            for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
-                String slaveInstanceName = PREFIX + "slave-" + clusterId;
+        int instanceCount = config.getSlaveInstanceCount();
+        if (instanceCount > 0) {
+            LOG.info("Requesting slave instances...");
+            String zone = config.getAvailabilityZone();
+            String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), false);
+            String slaveInstanceNameTag = "name" + GoogleCloudUtils.TAG_SEPARATOR + PREFIX + "slave-" + clusterId;
+            InstanceId[] slaveInstanceIds = new InstanceId[instanceCount];
+            Operation[] slaveInstanceOperations = new Operation[instanceCount];
+            for (int i = 0; i < instanceCount; i++) {
                 String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
                 InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(zone, slaveInstanceId,
                         config.getSlaveInstanceType().getValue())
-                        .setNetworkInterfaces(slaveNetworkInterfaces.get(i))
-                        .setTags(Tags.of(bibigridId, username, "name" + GoogleCloudUtils.TAG_SEPARATOR + slaveInstanceName))
+                        .setNetworkInterfaces(buildExternalNetworkInterface().build())
+                        .setTags(Tags.of(bibigridId, slaveInstanceNameTag))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
-                GoogleCloudUtils.attachDisks(compute, slaveBuilder, config.getSlaveImage(), zone, config.getSlaveMounts(), clusterId);
-                GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, config.isUseSpotInstances());
-
-                Operation createSlaveOperation = compute.create(slaveBuilder.build());
-                slaveInstanceIds.add(InstanceId.of(zone, slaveInstanceId));
-                slaveInstanceOperations.add(createSlaveOperation);
+                GoogleCloudUtils.attachDisks(compute, slaveBuilder, config.getSlaveImage(), zone,
+                        config.getSlaveMounts(), clusterId, config.getGoogleProjectId());
+                GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
+                slaveInstanceOperations[i] = compute.create(slaveBuilder.build());
+                slaveInstanceIds[i] = InstanceId.of(zone, slaveInstanceId);
             }
-            LOG.info("Waiting for slave instance(s) to finish booting ...");
+            LOG.info("Waiting for slave instance(s) to finish booting...");
             slaveInstances = waitForInstances(slaveInstanceIds, slaveInstanceOperations);
             LOG.info(I, "Slave instance(s) is now running!");
-
             waitForInstancesStatusCheck(slaveInstances);
         } else {
             LOG.info("No Slave instance(s) requested!");
         }
-
-        // just to be sure, everything is present, wait 5 seconds
-        sleep(5);
-
-        // post configure master
-        List<String> slaveIps = new ArrayList<>();
-        if (slaveInstances != null) {
-            for (com.google.cloud.compute.Instance slave : slaveInstances) {
-                slaveIps.add(GoogleCloudUtils.getInstancePrivateIp(slave));
-            }
-        }
-        configureMaster(GoogleCloudUtils.getInstancePrivateIp(masterInstance),
-                GoogleCloudUtils.getInstancePublicIp(masterInstance), slaveIps, config);
-
-        logFinishedInfoMessage(masterPublicIp, config, clusterId);
-        saveGridPropertiesFile(masterPublicIp, config, clusterId);
-        return true;
+        return slaveInstances;
     }
 
     private void waitForInstancesStatusCheck(List<Instance> instances) {
-        LOG.info("Waiting for Status Checks on instances ...");
+        LOG.info("Waiting for Status Checks on instances...");
         for (Instance instance : instances) {
             do {
                 InstanceInfo.Status status = instance.getStatus();
-                LOG.debug("Status of " + instance.getInstanceId().getInstance() + " instance: " + status);
+                LOG.info(V, "Status of " + instance.getInstanceId().getInstance() + " instance: " + status);
                 if (status == InstanceInfo.Status.RUNNING) {
                     break;
                 } else {
@@ -200,21 +182,21 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         LOG.info(I, "Status checks successful.");
     }
 
-    private List<Instance> waitForInstances(List<InstanceId> instanceIds, List<Operation> operations) {
-        if (instanceIds.isEmpty() || operations.isEmpty() || instanceIds.size() != operations.size()) {
+    private List<Instance> waitForInstances(InstanceId[] instanceIds, Operation[] operations) {
+        if (instanceIds.length == 0 || operations.length == 0 || instanceIds.length != operations.length) {
             LOG.error("No instances found");
             return new ArrayList<>();
         }
         List<Instance> returnList = new ArrayList<>();
-        for (int i = 0; i < instanceIds.size(); i++) {
-            Operation operation = operations.get(i);
+        for (int i = 0; i < instanceIds.length; i++) {
+            Operation operation = operations[i];
             while (!operation.isDone()) {
                 LOG.info(V, "...");
                 sleep(1);
             }
             operation = operation.reload();
             if (operation.getErrors() == null) {
-                returnList.add(compute.getInstance(instanceIds.get(i)));
+                returnList.add(compute.getInstance(instanceIds[i]));
             } else {
                 LOG.error("Creation of instance failed: {}", operation.getErrors());
                 break;

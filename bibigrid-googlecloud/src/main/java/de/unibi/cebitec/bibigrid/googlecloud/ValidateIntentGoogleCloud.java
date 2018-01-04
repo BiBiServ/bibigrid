@@ -18,43 +18,29 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public class ValidateIntentGoogleCloud implements ValidateIntent {
+public class ValidateIntentGoogleCloud extends ValidateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntentGoogleCloud.class);
     private final ConfigurationGoogleCloud config;
+    private Compute compute;
 
     ValidateIntentGoogleCloud(final ConfigurationGoogleCloud config) {
+        super(config);
         this.config = config;
     }
 
-    public boolean validate() {
-        LOG.info("Validating config file...");
-        Compute compute = GoogleCloudUtils.getComputeService(config);
-        if (compute == null) {
-            LOG.error("API connection not successful. Please check your configuration.");
-            return false;
-        }
-        if (checkImages(compute)) {
-            LOG.info(I, "Image check has been successful.");
-        } else {
-            LOG.error("Failed to check images.");
-            return false;
-        }
-        if (checkSnapshots(compute)) {
-            LOG.info(I, "Snapshot check has been successful.");
-        } else {
-            LOG.error("One or more snapshots could not be found.");
-            return false;
-        }
-        LOG.info(I, "You can now start your cluster.");
-        return true;
+    @Override
+    protected boolean connect() {
+        compute = GoogleCloudUtils.getComputeService(config);
+        return compute != null;
     }
 
-    private boolean checkImages(final Compute compute) {
-        LOG.info("Checking images...");
+    @Override
+    protected boolean checkImages() {
         boolean allCheck = true;
         boolean foundMaster = false;
         boolean foundSlave = false;
-        for (Image img : compute.listImages().iterateAll()) {
+        String projectId = GoogleCloudUtils.getProjectIdForImage(config.getMasterImage(), config.getGoogleProjectId());
+        for (Image img : compute.listImages(projectId).iterateAll()) {
             String name = img.getImageId().getImage();
             foundMaster = foundMaster || name.equals(config.getMasterImage());
             foundSlave = foundSlave || name.equals(config.getSlaveImage());
@@ -68,30 +54,17 @@ public class ValidateIntentGoogleCloud implements ValidateIntent {
         return allCheck;
     }
 
-    private boolean checkSnapshots(final Compute compute) {
-        LOG.info("Checking snapshots...");
-        boolean allCheck = true;
-        List<String> snapShotList = new ArrayList<>(config.getMasterMounts().keySet());
-        snapShotList.addAll(config.getSlaveMounts().keySet());
-        for (String e : snapShotList) { //snapshot ids have to be checked individually to find out which one is missing or malformed.
-            try {
-                if (e.contains(":")) {
-                    e = e.substring(0, e.indexOf(":"));
-                }
-                Snapshot snapshot = compute.getSnapshot(e);
-                if (snapshot == null || !snapshot.exists()) {
-                    LOG.error("Snapshot {} could not be found.", e);
-                    allCheck = false;
-                    continue;
-                }
-                if (snapshot.getSnapshotId().getSnapshot().equals(e)) {
-                    LOG.info(V, "{} found.", e);
-                }
-            } catch (Exception f) {
-                LOG.error("Snapshot {} could not be found.", e);
-                allCheck = false;
-            }
+    @Override
+    protected boolean checkSnapshot(String snapshotId) throws Exception {
+        if (snapshotId.contains(":")) {
+            snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
         }
-        return allCheck;
+        Snapshot snapshot = compute.getSnapshot(snapshotId);
+        if (snapshot == null || !snapshot.exists() || !snapshot.getSnapshotId().getSnapshot().equals(snapshotId)) {
+            LOG.error("Snapshot {} could not be found.", snapshotId);
+            return false;
+        }
+        LOG.info(V, "Snapshot {} found.", snapshotId);
+        return true;
     }
 }

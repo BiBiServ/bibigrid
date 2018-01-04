@@ -1,14 +1,12 @@
 package de.unibi.cebitec.bibigrid.aws;
 
 import com.amazonaws.services.ec2.model.*;
-import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 
 import static de.unibi.cebitec.bibigrid.aws.CreateClusterAWS.PREFIX;
 
 import de.unibi.cebitec.bibigrid.core.model.Port;
-import de.unibi.cebitec.bibigrid.core.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.core.util.SubNets;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -16,6 +14,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +22,12 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
+public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentAWS.class);
     private static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
     private static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
     private static final String SUBNET_PREFIX = PREFIX + "subnet-";
 
-    private KEYPAIR keypair;
     private Vpc vpc;
     private Subnet subnet;
     private String placementGroup;
@@ -37,24 +35,19 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
     private String masterIp;
     private CreateSecurityGroupResult secReqResult;
 
-    CreateClusterEnvironmentAWS(CreateClusterAWS cluster) {
+    CreateClusterEnvironmentAWS(CreateClusterAWS cluster) throws ConfigurationException {
+        super();
         this.cluster = cluster;
     }
 
     @Override
     public CreateClusterEnvironmentAWS createVPC() throws ConfigurationException {
-        try {
-            // create KeyPair for cluster communication
-            keypair = new KEYPAIR();
-        } catch (JSchException ex) {
-            throw new ConfigurationException(ex.getMessage());
-        }
         // check for (default) VPC
         vpc = cluster.getConfig().getVpcId() == null ? getVPC() : getVPC(cluster.getConfig().getVpcId());
         if (vpc == null) {
             throw new ConfigurationException("No suitable vpc found. Define a default VPC for you account or set VPC_ID");
         } else {
-            LOG.info(V, "Use VPC {} ({})%n", vpc.getVpcId(), vpc.getCidrBlock());
+            LOG.info(V, "Use VPC {} ({})", vpc.getVpcId(), vpc.getCidrBlock());
         }
         return this;
     }
@@ -62,28 +55,21 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
     @Override
     public CreateClusterEnvironmentAWS createSubnet() {
         // check for unused Subnet CIDR and create one
-        DescribeSubnetsRequest describesubnetsreq = new DescribeSubnetsRequest();
-        DescribeSubnetsResult describesubnetres = cluster.getEc2().describeSubnets(describesubnetsreq);
-        List<Subnet> loSubnets = describesubnetres.getSubnets();
-
-        List<String> listofUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
-        for (Subnet sn : loSubnets) {
-            if (sn.getVpcId().equals(vpc.getVpcId())) {
-                listofUsedCidr.add(sn.getCidrBlock());
-            }
-        }
-
+        DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
+        DescribeSubnetsResult describeSubnetsResult = cluster.getEc2().describeSubnets(describeSubnetsRequest);
+        // contains all subnet.cidr which are in current vpc
+        List<String> listOfUsedCidr = describeSubnetsResult.getSubnets().stream()
+                .filter(s -> s.getVpcId().equals(vpc.getVpcId()))
+                .map(Subnet::getCidrBlock)
+                .collect(Collectors.toList());
         SubNets subnets = new SubNets(vpc.getCidrBlock(), 24);
-        String subnetCidr = subnets.nextCidr(listofUsedCidr);
-
+        String subnetCidr = subnets.nextCidr(listOfUsedCidr);
         LOG.debug(V, "Use {} for generated SubNet.", subnetCidr);
-
-        // create new subnetdir      
-        CreateSubnetRequest createsubnetreq = new CreateSubnetRequest(vpc.getVpcId(), subnetCidr);
-        createsubnetreq.withAvailabilityZone(cluster.getConfig().getAvailabilityZone());
-        CreateSubnetResult createsubnetres = cluster.getEc2().createSubnet(createsubnetreq);
-        subnet = createsubnetres.getSubnet();
-
+        // create new subnet
+        CreateSubnetRequest createSubnetRequest = new CreateSubnetRequest(vpc.getVpcId(), subnetCidr);
+        createSubnetRequest.withAvailabilityZone(cluster.getConfig().getAvailabilityZone());
+        CreateSubnetResult createSubnetResult = cluster.getEc2().createSubnet(createSubnetRequest);
+        subnet = createSubnetResult.getSubnet();
         return this;
     }
 
@@ -134,9 +120,7 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
 
     @Override
     public CreateClusterAWS createPlacementGroup() {
-
-        // if both instance-types fulfill the cluster specifications, create a 
-        // placementGroup.
+        // if both instance-types fulfill the cluster specifications, create a placementGroup.
         if (cluster.getConfig().getMasterInstanceType().getSpec().isClusterInstance()
                 && cluster.getConfig().getSlaveInstanceType().getSpec().isClusterInstance()) {
             placementGroup = (PLACEMENT_GROUP_PREFIX + cluster.getClusterId());
@@ -155,54 +139,36 @@ public class CreateClusterEnvironmentAWS implements CreateClusterEnvironment {
      * no default or fitting VPC is found.
      */
     private Vpc getVPC(String... vpcIds) {
-        DescribeVpcsRequest dvreq = new DescribeVpcsRequest();
-        dvreq.setVpcIds(Arrays.asList(vpcIds));
-
-        DescribeVpcsResult describeVpcsResult = cluster.getEc2().describeVpcs(dvreq);
-        List<Vpc> lvpcs = describeVpcsResult.getVpcs();
-
-        if (vpcIds.length == 1 && lvpcs.size() == 1) {
-            return lvpcs.get(0);
+        DescribeVpcsRequest describeVpcsRequest = new DescribeVpcsRequest();
+        describeVpcsRequest.setVpcIds(Arrays.asList(vpcIds));
+        DescribeVpcsResult describeVpcsResult = cluster.getEc2().describeVpcs(describeVpcsRequest);
+        List<Vpc> vpcs = describeVpcsResult.getVpcs();
+        if (vpcIds.length == 1 && vpcs.size() == 1) {
+            return vpcs.get(0);
         }
-        if (!lvpcs.isEmpty()) {
-            for (Vpc vpc_d : lvpcs) {
-                if (vpc_d.isDefault()) {
-                    return vpc_d;
+        if (!vpcs.isEmpty()) {
+            for (Vpc vpc : vpcs) {
+                if (vpc.isDefault()) {
+                    return vpc;
                 }
             }
         }
         return null;
     }
 
-    public KEYPAIR getKeypair() {
-        return keypair;
-    }
-
-    public void setKeypair(KEYPAIR keypair) {
-        this.keypair = keypair;
-    }
-
-    public Subnet getSubnet() {
+    Subnet getSubnet() {
         return subnet;
     }
 
-    public void setSubnet(Subnet subnet) {
-        this.subnet = subnet;
-    }
-
-    public String getPlacementGroup() {
+    String getPlacementGroup() {
         return placementGroup;
     }
 
-    public void setPlacementGroup(String placementGroup) {
-        this.placementGroup = placementGroup;
-    }
-
-    public String getMasterIp() {
+    String getMasterIp() {
         return masterIp;
     }
 
-    public CreateSecurityGroupResult getSecReqResult() {
+    CreateSecurityGroupResult getSecReqResult() {
         return secReqResult;
     }
 }

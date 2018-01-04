@@ -9,7 +9,6 @@ import com.amazonaws.services.ec2.model.Tag;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.slf4j.Logger;
@@ -20,11 +19,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class ListIntentAWS implements ListIntent {
+public class ListIntentAWS extends ListIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntentAWS.class);
-    private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-
-    private Map<String, Cluster> clusterMap;
     private final ConfigurationAWS conf;
 
     ListIntentAWS(final ConfigurationAWS conf) {
@@ -32,36 +28,7 @@ public class ListIntentAWS implements ListIntent {
     }
 
     @Override
-    public Map<String, Cluster> getList() {
-        searchClusterIfNecessary();
-        return clusterMap;
-    }
-
-    public String toString() {
-        searchClusterIfNecessary();
-        if (clusterMap.isEmpty()) {
-            return "No BiBiGrid cluster found!\n";
-        }
-        StringBuilder display = new StringBuilder();
-        Formatter formatter = new Formatter(display, Locale.US);
-        display.append("\n");
-        formatter.format("%15s | %10s | %19s | %20s | %7s | %11s | %11s%n", "cluster-id", "user", "launch date", "key name", "# inst", "group-id", "subnet-id");
-        display.append(new String(new char[115]).replace('\0', '-')).append("\n");
-        for (String id : clusterMap.keySet()) {
-            Cluster v = clusterMap.get(id);
-            formatter.format("%15s | %10s | %19s | %20s | %7d | %11s | %11s%n",
-                    id,
-                    (v.getUser() == null) ? "<NA>" : v.getUser(),
-                    (v.getStarted() == null) ? "-" : v.getStarted(),
-                    (v.getKeyName() == null ? "-" : v.getKeyName()),
-                    ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
-                    (v.getSecurityGroup() == null ? "-" : (v.getSecurityGroup().length() > 11 ? v.getSecurityGroup().substring(0, 9) + ".." : v.getSecurityGroup())),
-                    (v.getSubnet() == null ? "-" : v.getSubnet()));
-        }
-        return display.toString();
-    }
-
-    private void searchClusterIfNecessary() {
+    protected void searchClusterIfNecessary() {
         if (clusterMap != null) {
             return;
         }

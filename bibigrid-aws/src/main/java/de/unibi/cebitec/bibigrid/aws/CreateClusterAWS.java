@@ -5,17 +5,15 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +34,8 @@ public class CreateClusterAWS extends CreateCluster {
 
     private String base64MasterUserData;
 
-    private List<InstanceNetworkInterfaceSpecification> masterNetworkInterfaces, slaveNetworkInterfaces;
+    private InstanceNetworkInterfaceSpecification masterNetworkInterface;
+    private InstanceNetworkInterfaceSpecification slaveNetworkInterface;
     private List<BlockDeviceMapping> masterDeviceMappings;
     private Tag bibigridId, username;
     private DeviceMapper slaveDeviceMapper;
@@ -46,18 +45,15 @@ public class CreateClusterAWS extends CreateCluster {
 
     private CreateClusterEnvironmentAWS environment;
 
-    CreateClusterAWS(final ConfigurationAWS conf, final ProviderModule providerModule) {
-        super(providerModule);
-        this.config = conf;
+    CreateClusterAWS(final ConfigurationAWS config, final ProviderModule providerModule) {
+        super(config, providerModule);
+        this.config = config;
     }
 
     @Override
-    public CreateClusterEnvironmentAWS createClusterEnvironment() {
+    public CreateClusterEnvironmentAWS createClusterEnvironment() throws ConfigurationException {
         // create client and unique cluster-id
         ec2 = IntentUtils.getClient(config);
-
-        clusterId = generateClusterId();
-        config.setClusterId(clusterId);
         bibigridId = new Tag().withKey("bibigrid-id").withValue(clusterId);
         username = new Tag().withKey("user").withValue(config.getUser());
 
@@ -66,116 +62,134 @@ public class CreateClusterAWS extends CreateCluster {
 
     @Override
     public CreateClusterAWS configureClusterMasterInstance() {
-        // done for master. More volume description later when master is running
+        buildMasterDeviceMappings();
+        base64MasterUserData = ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), true);
+        buildMasterPlacementGroup();
+        buildMasterNetworkInterface();
+        return this;
+    }
+
+    private void buildMasterDeviceMappings() {
         // preparing block device mappings for master
-        Map<String, String> masterSnapshotToMountPointMap = this.config.getMasterMounts();
+        Map<String, String> masterSnapshotToMountPointMap = config.getMasterMounts();
         int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
         DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
-        if (!this.config.getMasterMounts().isEmpty()) {
+        if (!masterSnapshotToMountPointMap.isEmpty()) {
             LOG.info(V, "Defining master volumes");
             masterDeviceMappings = createBlockDeviceMappings(masterDeviceMapper);
         }
+        masterDeviceMappings.addAll(buildEphemeralList(ephemerals));
+    }
 
+    private List<BlockDeviceMapping> buildEphemeralList(int ephemerals) {
         List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
-        for (int i = 0; i < this.config.getMasterInstanceType().getSpec().getEphemerals(); ++i) {
+        for (int i = 0; i < ephemerals; i++) {
             BlockDeviceMapping temp = new BlockDeviceMapping();
-            String virtualName = "ephemeral" + i;
-            String deviceName = "/dev/sd" + ephemeral(i);
-            temp.setVirtualName(virtualName);
-            temp.setDeviceName(deviceName);
+            temp.setVirtualName("ephemeral" + i);
+            temp.setDeviceName("/dev/sd" + ephemeral(i));
             ephemeralList.add(temp);
         }
+        return ephemeralList;
+    }
 
-        masterDeviceMappings.addAll(ephemeralList);
+    private char ephemeral(int i) {
+        return (char) (i + 98);
+    }
 
-        base64MasterUserData = UserDataCreator.masterUserData(masterDeviceMapper, this.config, environment.getKeypair());
-
-        LOG.info(V, "Master UserData:\n {}", new String(Base64.decodeBase64(base64MasterUserData)));
-        // create placement group
-        if (this.config.getMasterInstanceType().getSpec().isClusterInstance()) {
+    private void buildMasterPlacementGroup() {
+        if (config.getMasterInstanceType().getSpec().isClusterInstance()) {
             if (config.isUseSpotInstances()) {
                 spotInstancePlacement = new SpotPlacement(config.getAvailabilityZone());
                 spotInstancePlacement.setGroupName(environment.getPlacementGroup());
             } else {
-                instancePlacement = new Placement(this.config.getAvailabilityZone());
+                instancePlacement = new Placement(config.getAvailabilityZone());
                 instancePlacement.setGroupName(environment.getPlacementGroup());
             }
         }
+    }
 
+    private void buildMasterNetworkInterface() {
         // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
-        masterNetworkInterfaces = new ArrayList<>();
-
-        InstanceNetworkInterfaceSpecification inis = new InstanceNetworkInterfaceSpecification();
-        inis.withPrivateIpAddress(environment.getMasterIp())
+        masterNetworkInterface = new InstanceNetworkInterfaceSpecification()
+                .withPrivateIpAddress(environment.getMasterIp())
                 .withGroups(environment.getSecReqResult().getGroupId())
                 .withAssociatePublicIpAddress(true)
                 .withSubnetId(environment.getSubnet().getSubnetId())
                 .withDeviceIndex(0);
-
-        masterNetworkInterfaces.add(inis); // add eth0
-
-        slaveNetworkInterfaces = new ArrayList<>();
-        inis = new InstanceNetworkInterfaceSpecification();
-        inis.withGroups(environment.getSecReqResult().getGroupId())
-                .withSubnetId(environment.getSubnet().getSubnetId())
-                .withAssociatePublicIpAddress(config.isPublicSlaveIps())
-                .withDeviceIndex(0);
-
-        slaveNetworkInterfaces.add(inis);
-        return this;
     }
 
     @Override
     public CreateClusterAWS configureClusterSlaveInstance() {
+        buildClientsNetworkInterface();
+        buildClientsDeviceMappings();
+        return this;
+    }
+
+    private void buildClientsNetworkInterface() {
+        slaveNetworkInterface = new InstanceNetworkInterfaceSpecification()
+                .withGroups(environment.getSecReqResult().getGroupId())
+                .withSubnetId(environment.getSubnet().getSubnetId())
+                .withAssociatePublicIpAddress(config.isPublicSlaveIps())
+                .withDeviceIndex(0);
+    }
+
+    private void buildClientsDeviceMappings() {
         //now defining Slave Volumes
-        Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
+        Map<String, String> snapShotToSlaveMounts = config.getSlaveMounts();
         int ephemerals = config.getSlaveInstanceType().getSpec().getEphemerals();
         slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
         slaveBlockDeviceMappings = new ArrayList<>();
-        // configure volumes first ...
+        // configure volumes first
         if (!snapShotToSlaveMounts.isEmpty()) {
             LOG.info(V, "configure slave volumes");
             slaveBlockDeviceMappings = createBlockDeviceMappings(slaveDeviceMapper);
         }
-        // configure ephemeral devices
-        List<BlockDeviceMapping> ephemeralList = new ArrayList<>();
-        if (ephemerals > 0) {
-            for (int i = 0; i < ephemerals; ++i) {
-                BlockDeviceMapping temp = new BlockDeviceMapping();
-                String virtualName = "ephemeral" + i;
-                String deviceName = "/dev/sd" + ephemeral(i);
-                temp.setVirtualName(virtualName);
-                temp.setDeviceName(deviceName);
-                ephemeralList.add(temp);
-            }
-        }
-        slaveBlockDeviceMappings.addAll(ephemeralList);
-        return this;
+        slaveBlockDeviceMappings.addAll(buildEphemeralList(ephemerals));
     }
 
     @Override
     public boolean launchClusterInstances() {
-        LOG.info("Requesting master instance ...");
+        Instance masterInstance = launchClusterMasterInstance();
+        List<Instance> slaveInstances = launchClusterSlaveInstances();
+        // post configure master
+        List<String> slaveIps = new ArrayList<>();
+        List<String> slaveHostnames = new ArrayList<>();
+        if (slaveInstances != null) {
+            for (Instance slave : slaveInstances) {
+                slaveIps.add(slave.getPrivateIpAddress());
+                slaveHostnames.add(slave.getPrivateDnsName());
+            }
+        }
+        String masterHostname = masterInstance.getPublicDnsName();
+        String subnetCidr = environment.getSubnet().getCidrBlock();
+        configureMaster(masterInstance.getPrivateDnsName(), masterInstance.getPublicIpAddress(), masterHostname,
+                slaveIps, slaveHostnames, subnetCidr);
+        logFinishedInfoMessage(masterInstance.getPublicIpAddress());
+        saveGridPropertiesFile(masterInstance.getPublicIpAddress());
+        return true;
+    }
 
+    private Instance launchClusterMasterInstance() {
+        LOG.info("Requesting master instance...");
         Instance masterInstance;
+        Tag masterNameTag = new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId);
         if (config.isUseSpotInstances()) {
-            RequestSpotInstancesRequest masterReq = new RequestSpotInstancesRequest();
-            masterReq.withType(SpotInstanceType.OneTime)
+            RequestSpotInstancesRequest masterReq = new RequestSpotInstancesRequest()
+                    .withType(SpotInstanceType.OneTime)
                     .withInstanceCount(1)
                     .withLaunchGroup("lg_" + clusterId)
                     .withSpotPrice(Double.toString(config.getBidPriceMaster()));
 
-            LaunchSpecification masterLaunchSpecification = new LaunchSpecification();
-            masterLaunchSpecification.withInstanceType(InstanceType.fromValue(config.getMasterInstanceType().getValue()))
+            LaunchSpecification masterLaunchSpecification = new LaunchSpecification()
+                    .withInstanceType(InstanceType.fromValue(config.getMasterInstanceType().getValue()))
                     .withPlacement(spotInstancePlacement)
                     .withKeyName(config.getKeypair())
                     .withImageId(config.getMasterImage())
                     .withUserData(base64MasterUserData)
                     .withBlockDeviceMappings(masterDeviceMappings)
-                    .withNetworkInterfaces(masterNetworkInterfaces);
-
+                    .withNetworkInterfaces(masterNetworkInterface);
             masterReq.setLaunchSpecification(masterLaunchSpecification);
 
             RequestSpotInstancesResult masterReqResult = ec2.requestSpotInstances(masterReq);
@@ -183,40 +197,33 @@ public class CreateClusterAWS extends CreateCluster {
             List<SpotInstanceRequest> masterReqResponses = masterReqResult.getSpotInstanceRequests();
             // collect all spotInstanceRequestIds ...
             List<String> spotInstanceRequestIds = new ArrayList<>();
-
             for (SpotInstanceRequest requestResponse : masterReqResponses) {
-
                 spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
-
             }
             // Tag spot request
-            CreateTagsRequest ctr = new CreateTagsRequest();
-            ctr.withResources(spotInstanceRequestIds);
-            ctr.withTags(bibigridId, username, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
-            ec2.createTags(ctr);
-            // Wait for spot request finished  
+            ec2.createTags(new CreateTagsRequest()
+                    .withResources(spotInstanceRequestIds)
+                    .withTags(bibigridId, username, masterNameTag));
+            // Wait for spot request finished
             LOG.info("Waiting for master instance (spot request) to finish booting ...");
             masterInstance = waitForInstances(waitForSpotInstances(spotInstanceRequestIds)).get(0);
         } else {
-
-            RunInstancesRequest masterReq = new RunInstancesRequest();
-            masterReq.withInstanceType(InstanceType.fromValue(config.getMasterInstanceType().getValue()))
+            RunInstancesRequest masterReq = new RunInstancesRequest()
+                    .withInstanceType(InstanceType.fromValue(config.getMasterInstanceType().getValue()))
                     .withMinCount(1).withMaxCount(1)
                     .withPlacement(instancePlacement)
                     .withKeyName(config.getKeypair())
                     .withImageId(config.getMasterImage())
                     .withUserData(base64MasterUserData)
                     .withBlockDeviceMappings(masterDeviceMappings)
-                    .withNetworkInterfaces(masterNetworkInterfaces);
-
+                    .withNetworkInterfaces(masterNetworkInterface);
             // mounting ephemerals
-            RunInstancesResult masterReqResult = ec2.runInstances(masterReq);
-            String masterReservationId = masterReqResult.getReservation().getReservationId();
-            masterInstance = masterReqResult.getReservation().getInstances().get(0);
+            RunInstancesResult runInstancesResult = ec2.runInstances(masterReq);
+            String masterReservationId = runInstancesResult.getReservation().getReservationId();
+            masterInstance = runInstancesResult.getReservation().getInstances().get(0);
             LOG.info("Waiting for master instance to finish booting ...");
-
             // Waiting for master instance to run
-            masterInstance = waitForInstances(Arrays.asList(masterInstance.getInstanceId())).get(0);
+            masterInstance = waitForInstances(Collections.singletonList(masterInstance.getInstanceId())).get(0);
         }
         LOG.info(I, "Master instance is now running!");
 
@@ -224,57 +231,51 @@ public class CreateClusterAWS extends CreateCluster {
         ia_req.setInstanceId(masterInstance.getInstanceId());
         ia_req.setSourceDestCheck(Boolean.FALSE);
         ec2.modifyInstanceAttribute(ia_req);
-
         // Tagging Master with a name
-        CreateTagsRequest masterNameTagRequest = new CreateTagsRequest();
-        masterNameTagRequest.withResources(masterInstance.getInstanceId()).withTags(bibigridId, username, new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId));
-
-        ec2.createTags(masterNameTagRequest);
-
+        ec2.createTags(new CreateTagsRequest()
+                .withResources(masterInstance.getInstanceId())
+                .withTags(bibigridId, username, masterNameTag));
         // Waiting for Status Checks to finish
         LOG.info("Waiting for Status Checks on master ...");
         do {
-            DescribeInstanceStatusRequest request
-                    = new DescribeInstanceStatusRequest();
-            request.setInstanceIds((Arrays.asList(masterInstance.getInstanceId())));
-
+            DescribeInstanceStatusRequest request = new DescribeInstanceStatusRequest();
+            request.setInstanceIds(Collections.singletonList(masterInstance.getInstanceId()));
             DescribeInstanceStatusResult response = ec2.describeInstanceStatus(request);
-
             InstanceStatus status = response.getInstanceStatuses().get(0);
             String instanceStatus = status.getInstanceStatus().getStatus();
             String systemStatus = status.getSystemStatus().getStatus();
             LOG.debug("Status of master instance: " + instanceStatus + "," + systemStatus);
             if (instanceStatus.equalsIgnoreCase("ok") && systemStatus.equalsIgnoreCase("ok")) {
                 break;
-            } else {
-                LOG.info(V, "...");
-                sleep(10);
             }
+            LOG.info(V, "...");
+            sleep(10);
         } while (true);
         LOG.info(I, "Status checks successful.");
+        return masterInstance;
+    }
+
+    private List<Instance> launchClusterSlaveInstances() {
         // run slave instances and supply userdata
         List<Instance> slaveInstances = null;
         if (config.getSlaveInstanceCount() > 0) {
-            String base64SlaveUserData = UserDataCreator.forSlave(masterInstance.getPrivateIpAddress(),
-                    masterInstance.getPrivateDnsName(), slaveDeviceMapper, config, environment.getKeypair());
-
-            LOG.info(V, "Slave Userdata:\n{}", new String(Base64.decodeBase64(base64SlaveUserData)));
-
+            Tag slaveNameTag = new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId);
+            String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true);
             if (config.isUseSpotInstances()) {
-                RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest();
-                slaveReq.withType(SpotInstanceType.OneTime)
+                RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest()
+                        .withType(SpotInstanceType.OneTime)
                         .withInstanceCount(config.getSlaveInstanceCount())
                         .withLaunchGroup("lg_" + clusterId)
                         .withSpotPrice(Double.toString(config.getBidPrice()));
 
-                LaunchSpecification slaveLaunchSpecification = new LaunchSpecification();
-                slaveLaunchSpecification.withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
+                LaunchSpecification slaveLaunchSpecification = new LaunchSpecification()
+                        .withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
                         .withPlacement(spotInstancePlacement)
                         .withKeyName(config.getKeypair())
                         .withImageId(config.getSlaveImage())
                         .withUserData(base64SlaveUserData)
                         .withBlockDeviceMappings(slaveBlockDeviceMappings)
-                        .withNetworkInterfaces(slaveNetworkInterfaces);
+                        .withNetworkInterfaces(slaveNetworkInterface);
 
                 slaveReq.setLaunchSpecification(slaveLaunchSpecification);
                 RequestSpotInstancesResult slaveReqResult = ec2.requestSpotInstances(slaveReq);
@@ -286,11 +287,10 @@ public class CreateClusterAWS extends CreateCluster {
                 }
                 sleep(1);
                 LOG.info(V, "tag spot request instances");
-
                 // tag spot requests (slave)
-                CreateTagsRequest ctr = new CreateTagsRequest();
-                ctr.withResources(spotInstanceRequestIds);
-                ctr.withTags(bibigridId, username, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
+                CreateTagsRequest ctr = new CreateTagsRequest()
+                        .withResources(spotInstanceRequestIds)
+                        .withTags(bibigridId, username, slaveNameTag);
                 // Setting tags for spot requests can cause an amazon service exception, if the spot request
                 // returns an id, but the id isn't registered in spot request registry yet.
                 int counter = 0;
@@ -313,8 +313,8 @@ public class CreateClusterAWS extends CreateCluster {
                 // wait for spot request (slave) finished
                 slaveInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
             } else {
-                RunInstancesRequest slaveReq = new RunInstancesRequest();
-                slaveReq.withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
+                RunInstancesRequest slaveReq = new RunInstancesRequest()
+                        .withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
                         .withMinCount(config.getSlaveInstanceCount())
                         .withMaxCount(config.getSlaveInstanceCount())
                         .withPlacement(instancePlacement)
@@ -322,13 +322,13 @@ public class CreateClusterAWS extends CreateCluster {
                         .withImageId(config.getSlaveImage())
                         .withUserData(base64SlaveUserData)
                         .withBlockDeviceMappings(slaveBlockDeviceMappings)
-                        .withNetworkInterfaces(slaveNetworkInterfaces);
+                        .withNetworkInterfaces(slaveNetworkInterface);
 
-                RunInstancesResult slaveReqResult = ec2.runInstances(slaveReq);
-                String slaveReservationId = slaveReqResult.getReservation().getReservationId();
+                RunInstancesResult runInstancesResult = ec2.runInstances(slaveReq);
+                String slaveReservationId = runInstancesResult.getReservation().getReservationId();
                 // create a list of all slave instances
                 List<String> slaveInstanceListIds = new ArrayList<>();
-                for (Instance i : slaveReqResult.getReservation().getInstances()) {
+                for (Instance i : runInstancesResult.getReservation().getInstances()) {
                     slaveInstanceListIds.add(i.getInstanceId());
                 }
                 LOG.info("Waiting for slave instance(s) to finish booting ...");
@@ -338,27 +338,14 @@ public class CreateClusterAWS extends CreateCluster {
             LOG.info(I, "Slave instance(s) is now running!");
             // Tagging all slaves with a name
             for (Instance si : slaveInstances) {
-                CreateTagsRequest slaveNameTagRequest = new CreateTagsRequest();
-                slaveNameTagRequest.withResources(si.getInstanceId())
-                        .withTags(bibigridId, username, new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId));
-                ec2.createTags(slaveNameTagRequest);
+                ec2.createTags(new CreateTagsRequest()
+                        .withResources(si.getInstanceId())
+                        .withTags(bibigridId, username, slaveNameTag));
             }
         } else {
             LOG.info("No Slave instance(s) requested !");
         }
-
-        // post configure master
-        List<String> slaveIps = new ArrayList<>();
-        if (slaveInstances != null) {
-            for (Instance slave : slaveInstances) {
-                slaveIps.add(slave.getPrivateDnsName());
-            }
-        }
-        configureMaster(masterInstance.getPrivateDnsName(), masterInstance.getPublicDnsName(), slaveIps, config);
-
-        logFinishedInfoMessage(masterInstance.getPublicIpAddress(), config, clusterId);
-        saveGridPropertiesFile(masterInstance.getPublicIpAddress(), config, clusterId);
-        return true;
+        return slaveInstances;
     }
 
     /**
@@ -367,39 +354,34 @@ public class CreateClusterAWS extends CreateCluster {
      * @param listOfInstances Returns a list of Instances when they have been started.
      */
     private List<Instance> waitForInstances(List<String> listOfInstances) {
+        if (listOfInstances.isEmpty()) {
+            LOG.error("No instances found");
+            return new ArrayList<>();
+        }
         do {
-            if (listOfInstances.isEmpty()) {
-                LOG.error("No instances found");
-                return new ArrayList<>();
-            }
-            DescribeInstancesRequest instanceDescrReq = new DescribeInstancesRequest();
-            instanceDescrReq.setInstanceIds(listOfInstances);
+            DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+            describeInstancesRequest.setInstanceIds(listOfInstances);
             boolean allRunning = true;
             try {
-                DescribeInstancesResult instanceDescrReqResult = ec2.describeInstances(instanceDescrReq);
-
-                String state;
-                for (Reservation v : instanceDescrReqResult.getReservations()) {
-                    for (Instance e : v.getInstances()) {
-                        state = e.getState().getName();
-                        if (!state.equals(InstanceStateName.Running.toString())) {
-                            LOG.debug(V, "ID " + e.getInstanceId() + "in state:" + state);
-                            allRunning = false;
-                            break;
-                        }
+                DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesRequest);
+                // Collect all instances from all reservations and check their state
+                List<Instance> reservationInstances = describeInstancesResult.getReservations().stream()
+                        .map(Reservation::getInstances)
+                        .flatMap(List::stream)
+                        .collect(Collectors.toList());
+                for (Instance e : reservationInstances) {
+                    String state = e.getState().getName();
+                    if (!state.equals(InstanceStateName.Running.toString())) {
+                        LOG.debug(V, "ID " + e.getInstanceId() + "in state:" + state);
+                        allRunning = false;
+                        break;
                     }
                 }
                 if (allRunning) {
-                    List<Instance> returnList = new ArrayList<>();
-                    for (Reservation e : instanceDescrReqResult.getReservations()) {
-                        returnList.addAll(e.getInstances());
-                    }
-                    return returnList;
-                } else {
-                    LOG.info(V, "...");
-                    sleep(10);
+                    return reservationInstances;
                 }
-
+                LOG.info(V, "...");
+                sleep(10);
             } catch (AmazonServiceException e) {
                 LOG.debug("{}", e);
                 sleep(3);
@@ -486,9 +468,5 @@ public class CreateClusterAWS extends CreateCluster {
 
     Tag getBibigridId() {
         return bibigridId;
-    }
-
-    private char ephemeral(int i) {
-        return (char) (i + 98);
     }
 }

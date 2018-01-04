@@ -6,11 +6,9 @@ import com.google.cloud.compute.*;
 import com.google.cloud.compute.Network;
 import com.google.cloud.compute.Operation;
 import com.google.cloud.compute.Subnetwork;
-import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.model.Port;
-import de.unibi.cebitec.bibigrid.core.util.KEYPAIR;
 import de.unibi.cebitec.bibigrid.core.util.SubNets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +17,6 @@ import org.threeten.bp.Duration;
 import java.io.IOException;
 import java.util.*;
 
-import static de.unibi.cebitec.bibigrid.googlecloud.CreateClusterGoogleCloud.SECURITY_GROUP_PREFIX;
-import static de.unibi.cebitec.bibigrid.googlecloud.CreateClusterGoogleCloud.SUBNET_PREFIX;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
@@ -28,34 +24,29 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnvironment {
+public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentGoogleCloud.class);
 
     private final CreateClusterGoogleCloud cluster;
-    private KEYPAIR keypair;
     private Network vpc;
     private Subnetwork subnet;
     private String masterIP;
+    private String subnetCidr;
 
-    CreateClusterEnvironmentGoogleCloud(final CreateClusterGoogleCloud cluster) {
+    CreateClusterEnvironmentGoogleCloud(final CreateClusterGoogleCloud cluster) throws ConfigurationException {
+        super();
         this.cluster = cluster;
     }
 
+    @Override
     public CreateClusterEnvironmentGoogleCloud createVPC() throws ConfigurationException {
-        try {
-            // create KeyPair for cluster communication
-            keypair = new KEYPAIR();
-        } catch (JSchException ex) {
-            throw new ConfigurationException(ex.getMessage());
-        }
-
         // check for (default) VPC
         String vpcId = cluster.getConfig().getVpcId() == null ? "default" : cluster.getConfig().getVpcId();
         vpc = getVpcById(vpcId);
         if (vpc == null) {
             throw new ConfigurationException("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
         } else {
-            LOG.info(V, "Use VPC {}%n", vpc.getNetworkId().getNetwork());
+            LOG.info(V, "Use VPC {}", vpc.getNetworkId().getNetwork());
         }
         return this;
     }
@@ -68,6 +59,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         return null;
     }
 
+    @Override
     public CreateClusterEnvironmentGoogleCloud createSubnet() throws ConfigurationException {
         String region = cluster.getConfig().getRegion();
 
@@ -98,14 +90,14 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
             LOG.debug(V, "Use {} for reused SubNet.", subnet.getIpRange());
         } else {
             // check for unused Subnet Cidr and create one
-            List<String> listofUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
+            List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
             for (Subnetwork sn : cluster.getCompute().listSubnetworks(region).iterateAll()) {
                 if (sn.getNetwork().getSelfLink().equals(vpc.getNetworkId().getSelfLink())) {
-                    listofUsedCidr.add(sn.getIpRange());
+                    listOfUsedCidr.add(sn.getIpRange());
                 }
             }
-            SubNets subnets = new SubNets(listofUsedCidr.size() > 0 ? listofUsedCidr.get(0) : "10.128.0.0", 24);
-            String subnetCidr = subnets.nextCidr(listofUsedCidr);
+            SubNets subnets = new SubNets(listOfUsedCidr.size() > 0 ? listOfUsedCidr.get(0) : "10.128.0.0", 24);
+            subnetCidr = subnets.nextCidr(listOfUsedCidr);
             LOG.debug(V, "Use {} for generated SubNet.", subnetCidr);
 
             // create new subnet
@@ -121,6 +113,7 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         return this;
     }
 
+    @Override
     @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
     public CreateClusterEnvironmentGoogleCloud createSecurityGroup() throws ConfigurationException {
         // create security group with full internal access / ssh from outside
@@ -143,20 +136,20 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         // is limited and therefore should be combined!
         Map<String, List<Firewall.Allowed>> firewallRuleMap = new HashMap<>();
         firewallRuleMap.put("0.0.0.0/0", new ArrayList<>());
-        firewallRuleMap.get("0.0.0.0/0").add(new Firewall.Allowed().setIPProtocol("tcp").setPorts(Arrays.asList("22", "3389")));
-        firewallRuleMap.get("0.0.0.0/0").add(new Firewall.Allowed().setIPProtocol("icmp"));
+        firewallRuleMap.get("0.0.0.0/0").add(buildFirewallRule("tcp", "22", "3389"));
+        firewallRuleMap.get("0.0.0.0/0").add(buildFirewallRule("icmp"));
         firewallRuleMap.put(subnet.getIpRange(), new ArrayList<>());
-        firewallRuleMap.get(subnet.getIpRange()).add(new Firewall.Allowed().setIPProtocol("tcp").setPorts(Arrays.asList("0-65535")));
-        firewallRuleMap.get(subnet.getIpRange()).add(new Firewall.Allowed().setIPProtocol("udp").setPorts(Arrays.asList("0-65535")));
-        firewallRuleMap.get(subnet.getIpRange()).add(new Firewall.Allowed().setIPProtocol("icmp"));
+        firewallRuleMap.get(subnet.getIpRange()).add(buildFirewallRule("tcp", "0-65535"));
+        firewallRuleMap.get(subnet.getIpRange()).add(buildFirewallRule("udp", "0-65535"));
+        firewallRuleMap.get(subnet.getIpRange()).add(buildFirewallRule("icmp"));
         for (Port port : cluster.getConfig().getPorts()) {
             LOG.info(port.toString());
             if (!firewallRuleMap.containsKey(port.ipRange)) {
                 firewallRuleMap.put(port.ipRange, new ArrayList<>());
             }
             List<String> portList = Collections.singletonList(String.valueOf(port.number));
-            firewallRuleMap.get(port.ipRange).add(new Firewall.Allowed().setIPProtocol("tcp").setPorts(portList));
-            firewallRuleMap.get(port.ipRange).add(new Firewall.Allowed().setIPProtocol("udp").setPorts(portList));
+            firewallRuleMap.get(port.ipRange).add(buildFirewallRule("tcp").setPorts(portList));
+            firewallRuleMap.get(port.ipRange).add(buildFirewallRule("udp").setPorts(portList));
         }
 
         // Create the firewall rules
@@ -178,19 +171,28 @@ public class CreateClusterEnvironmentGoogleCloud implements CreateClusterEnviron
         return this;
     }
 
+    private Firewall.Allowed buildFirewallRule(String protocol, String... ports) {
+        Firewall.Allowed rule = new Firewall.Allowed().setIPProtocol(protocol);
+        if (ports.length > 0) {
+            rule.setPorts(Arrays.asList(ports));
+        }
+        return rule;
+    }
+
+    @Override
     public CreateClusterGoogleCloud createPlacementGroup() throws ConfigurationException {
         return cluster;
     }
 
-    public KEYPAIR getKeypair() {
-        return keypair;
-    }
-
-    public Subnetwork getSubnet() {
+    Subnetwork getSubnet() {
         return subnet;
     }
 
     String getMasterIP() {
         return masterIP;
+    }
+
+    String getSubnetCidr() {
+        return subnetCidr;
     }
 }

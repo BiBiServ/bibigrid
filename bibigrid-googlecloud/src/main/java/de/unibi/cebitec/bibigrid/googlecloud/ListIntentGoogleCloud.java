@@ -7,7 +7,6 @@ import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -15,50 +14,16 @@ import java.util.*;
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public class ListIntentGoogleCloud implements ListIntent {
+public class ListIntentGoogleCloud extends ListIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntentGoogleCloud.class);
-    private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-
     private final ConfigurationGoogleCloud config;
-    private Map<String, Cluster> clusterMap;
 
     ListIntentGoogleCloud(final ConfigurationGoogleCloud config) {
         this.config = config;
     }
 
-    public Map<String, Cluster> getList() {
-        searchClusterIfNecessary();
-        return clusterMap;
-    }
-
     @Override
-    public String toString() {
-        searchClusterIfNecessary();
-        if (clusterMap.isEmpty()) {
-            return "No BiBiGrid cluster found!\n";
-        }
-        StringBuilder display = new StringBuilder();
-        Formatter formatter = new Formatter(display, Locale.US);
-        display.append("\n");
-        formatter.format("%15s | %10s | %19s | %20s | %7s | %11s | %11s%n",
-                "cluster-id", "user", "launch date", "key name", "# inst", "group-id", "subnet-id");
-        display.append(new String(new char[115]).replace('\0', '-')).append("\n");
-
-        for (String id : clusterMap.keySet()) {
-            Cluster v = clusterMap.get(id);
-            formatter.format("%15s | %10s | %19s | %20s | %7d | %11s | %11s%n",
-                    id,
-                    (v.getUser() == null) ? "<NA>" : v.getUser(),
-                    (v.getStarted() == null) ? "-" : v.getStarted(),
-                    (v.getKeyName() == null ? "-" : v.getKeyName()),
-                    ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
-                    "-",
-                    (v.getSubnet() == null ? "-" : v.getSubnet()));
-        }
-        return display.toString();
-    }
-
-    private void searchClusterIfNecessary() {
+    protected void searchClusterIfNecessary() {
         if (clusterMap != null) {
             return;
         }
@@ -69,9 +34,7 @@ public class ListIntentGoogleCloud implements ListIntent {
         Page<Instance> instancePage = config.getAvailabilityZone() != null ?
                 compute.listInstances(config.getAvailabilityZone()) :
                 compute.listInstances();
-        for (Instance instance : instancePage.iterateAll()) {
-            checkInstance(instance);
-        }
+        instancePage.iterateAll().forEach(this::checkInstance);
     }
 
     private void checkInstance(Instance instance) {

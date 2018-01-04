@@ -1,20 +1,13 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
-import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
-import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,7 +26,6 @@ import org.openstack4j.model.compute.BDMSourceType;
 import org.openstack4j.model.compute.BlockDeviceMappingCreate;
 import org.openstack4j.model.compute.Fault;
 import org.openstack4j.model.compute.Flavor;
-import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.compute.Server;
 import org.openstack4j.model.compute.ServerCreate;
 import org.openstack4j.model.compute.VolumeAttachment;
@@ -52,9 +44,6 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterOpenstack extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterOpenstack.class);
-    public static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
-    public static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
-    public static final String SUBNET_PREFIX = PREFIX + "subnet-";
     private static final boolean CONFIG_DRIVE = true;
 
     private final ConfigurationOpenstack config;
@@ -63,18 +52,14 @@ public class CreateClusterOpenstack extends CreateCluster {
     private final Map<String, String> metadata = new HashMap<>();
 
     CreateClusterOpenstack(final ConfigurationOpenstack config, final ProviderModule providerModule) {
-        super(providerModule);
+        super(config, providerModule);
         this.config = config;
-        os = OpenStackIntent.buildOSClient(config);
+        os = OpenStackUtils.buildOSClient(config);
     }
 
     @Override
-    public CreateClusterEnvironmentOpenstack createClusterEnvironment() {
+    public CreateClusterEnvironmentOpenstack createClusterEnvironment() throws ConfigurationException {
         metadata.put("user", config.getUser());
-
-        clusterId = generateClusterId();
-        config.setClusterId(clusterId);
-
         LOG.info("Openstack connection established ...");
         return environment = new CreateClusterEnvironmentOpenstack(this);
     }
@@ -90,30 +75,28 @@ public class CreateClusterOpenstack extends CreateCluster {
         List<Flavor> flavors = listFlavors();
 
         // DeviceMapper init.
-        Map<String, String> masterVolumetoMountPointMap = new HashMap<>();
-        for (String nameorid : config.getMasterMounts().keySet()) {
+        Map<String, String> masterVolumeToMountPointMap = new HashMap<>();
+        for (String nameOrId : config.getMasterMounts().keySet()) {
             // check if master mount is a volume
-            Volume v = getVolumeByNameOrId(nameorid);
+            Volume v = getVolumeByNameOrId(nameOrId);
             // could also be a snapshot
             if (v == null) {
-                VolumeSnapshot vss = getSnapshotByNameOrId(nameorid);
+                VolumeSnapshot vss = getSnapshotByNameOrId(nameOrId);
                 if (vss != null) {
-
-                    v = createVolumeFromSnapshot(vss, nameorid + "_" + clusterId);
-                    LOG.info(V, "Create volume ({}) from snapshot ({}).", v.getName(), nameorid);
+                    v = createVolumeFromSnapshot(vss, nameOrId + "_" + clusterId);
+                    LOG.info(V, "Create volume ({}) from snapshot ({}).", v.getName(), nameOrId);
                 }
-
             }
             if (v != null) { // Volume exists or created from snapshot
                 LOG.info(V, "Add volume ({}) to MasterVolumeMountMap", v.getName());
-                masterVolumetoMountPointMap.put(v.getId(), config.getMasterMounts().get(nameorid));
+                masterVolumeToMountPointMap.put(v.getId(), config.getMasterMounts().get(nameOrId));
 
             } else {
-                LOG.warn("Volume/Snapshot with name/id {} not found!", nameorid);
+                LOG.warn("Volume/Snapshot with name/id {} not found!", nameOrId);
             }
         }
 
-        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumetoMountPointMap,
+        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap,
                 (CONFIG_DRIVE ? 1 : 0) + config.getMasterInstanceType().getSpec().getEphemerals() +
                         config.getMasterInstanceType().getSpec().getSwap());
 
@@ -193,7 +176,6 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     @Override
     public boolean launchClusterInstances() {
-
         try {
             ServerCreate sc = Builders.server()
                     .name("bibigrid-master-" + clusterId)
@@ -202,7 +184,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .keypairName(config.getKeypair())
                     .addSecurityGroup(environment.getSecGroupExtension().getName())
                     .availabilityZone(config.getAvailabilityZone())
-                    .userData(UserDataCreator.masterUserData(masterDeviceMapper, config, environment.getKeypair()))
+                    .userData(ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), true))
                     .addMetadata(metadata)
                     .configDrive(CONFIG_DRIVE)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
@@ -250,11 +232,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                 ar = os.compute().floatingIps().addFloatingIP(server, floatingIp.getFloatingIpAddress());
                 // in case of success try  update master object
                 if (ar.isSuccess()) {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        // do nothing
-                    }
+                    sleep(1, false);
                     Server tmp = os.compute().servers().get(server.getId());
                     if (tmp != null) {
                         assigned = checkForFloatingIp(tmp, floatingIp.getFloatingIpAddress());
@@ -286,9 +264,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             if (!masterDeviceMapper.getSnapshotIdToMountPoint().isEmpty()) {
                 for (String volumeId : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
                     //check if volume is available
-
                     Volume v = os.blockStorage().volumes().get(volumeId);
-
                     boolean waiting = true;
                     while (waiting) {
                         switch (v.getStatus()) {
@@ -309,7 +285,8 @@ public class CreateClusterOpenstack extends CreateCluster {
 
                     if (v.getStatus().equals(Status.AVAILABLE)) {
                         // @ToDo: Test if a volume can be attached to a non active server instance ...
-                        VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeId, masterDeviceMapper.getDeviceNameForSnapshotId(volumeId));
+                        VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeId,
+                                masterDeviceMapper.getDeviceNameForSnapshotId(volumeId));
                         if (va == null) {
                             LOG.error("Attaching volume {} to master failed ...", volumeId);
                         } else {
@@ -320,7 +297,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                 LOG.info("{} Volume(s) attached to  Master.", masterDeviceMapper.getSnapshotIdToMountPoint().size());
             }
 
-            //boot slave instances ...
+            // boot slave instances
             for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
                 sc = Builders.server()
                         .name("bibigrid-slave-" + (i + 1) + "-" + clusterId)
@@ -329,12 +306,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                         .keypairName(config.getKeypair())
                         .addSecurityGroup(environment.getSecGroupExtension().getId())
                         .availabilityZone(config.getAvailabilityZone())
-                        .userData(UserDataCreator.forSlave(master.getIp(),
-                                //master.getNeutronHostname(),
-                                master.getHostname(),
-                                slaveDeviceMapper,
-                                config,
-                                environment.getKeypair()))
+                        .userData(ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true))
                         .configDrive(CONFIG_DRIVE)
                         .networks(Arrays.asList(environment.getNetwork().getId()))
                         .build();
@@ -382,21 +354,27 @@ public class CreateClusterOpenstack extends CreateCluster {
             LOG.info(V, "Wait for slave network configuration finished ...");
             // wait for slave network finished ... update server instance list
             for (Instance slave : slaves.values()) {
-
                 slave.setIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
                 slave.updateNeutronHostname();
             }
-      /* @ToDo: 
-                Mount a volume to slave instance 
-                - create (count of slave instances) snapshots
-                - mount each snapshot as volume to an instance */
-
+            // TODO
+            // Mount a volume to slave instance
+            // - create (count of slave instances) snapshots
+            // - mount each snapshot as volume to an instance
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
 
-            configureMaster();
+            List<String> slaveIps = new ArrayList<>();
+            List<String> slaveHostnames = new ArrayList<>();
+            for (Instance slave : slaves.values()) {
+                slaveIps.add(slave.getIp());
+                slaveHostnames.add(slave.getHostname());
+            }
+            String masterHostname = master.getHostname();
+            configureMaster(master.getIp(), master.getPublicIp(), masterHostname, slaveIps, slaveHostnames,
+                    environment.getSubnet().getCidr());
 
-            logFinishedInfoMessage(master.getPublicIp(), config, clusterId);
-            saveGridPropertiesFile(master.getPublicIp(), config, clusterId);
+            logFinishedInfoMessage(master.getPublicIp());
+            saveGridPropertiesFile(master.getPublicIp());
         } catch (Exception e) {
             // print stacktrace only verbose mode, otherwise the message returned by OS is fine
             if (VerboseOutputFilter.SHOW_VERBOSE) {
@@ -409,133 +387,10 @@ public class CreateClusterOpenstack extends CreateCluster {
         return true;
     }
 
-    /**
-     * Return first network address object of given instance (by its ID and
-     * network name). Block until address is available.
-     *
-     * @param instanceID - ID of given instances
-     * @param network    - Network name
-     * @return Address
-     */
-    private Address getLocalIp(String instanceID, String network) {
-        Address addr = null;
-        do {
-            Server instance = os.compute().servers().get(instanceID);
-            if (instance != null && instance.getAddresses() != null && instance.getAddresses().getAddresses(network) != null && instance.getAddresses().getAddresses(network).size() > 0) {
-                addr = instance.getAddresses().getAddresses(network).iterator().next();
-            } else {
-                sleep(2);
-            }
-        } while (addr == null);
-        return addr;
-    }
-
-    private void configureMaster() {
-        JSch ssh = new JSch();
-        JSch.setLogger(new JSchLogger());
-        LOG.info("Now configuring ...");
-        List<String> slaveIps = new ArrayList<>();
-        for (Instance slave : slaves.values()) {
-            slaveIps.add(slave.getIp());
-        }
-        String execCommand = SshFactory.buildSshCommand(master.getIp(), master.getPublicIp(), slaveIps, this.getConfig());
-        LOG.info(V, "Building SSH-Command : {}", execCommand);
-        boolean configured = false;
-        int ssh_attempts = 50; // @TODO attempts
-        while (!configured && ssh_attempts > 0) {
-            try {
-                ssh.addIdentity(this.getConfig().getIdentityFile().toString());
-                LOG.info("Trying to connect to master ({})...", ssh_attempts);
-                sleep(2);
-                // Create new Session to avoid packet corruption.
-                Session sshSession = SshFactory.createNewSshSession(ssh, master.getPublicIp(), MASTER_SSH_USER, getConfig().getIdentityFile());
-
-                // Start connect attempt
-                //noinspection ConstantConditions
-                sshSession.connect();
-                LOG.info("Connected to master!");
-
-                ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-                BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
-                BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
-                channel.setCommand(execCommand);
-
-                LOG.info(V, "Connecting ssh channel...");
-                channel.connect();
-
-                String lineout, lineerr = null;
-                while (!configured) {
-                    if (stdout.ready()) {
-                        lineout = stdout.readLine();
-                        if (lineout.equals("CONFIGURATION_FINISHED")) {
-                            configured = true;
-                        }
-                        LOG.info(V, "SSH: {}", lineout);
-                    }
-                    if (stderr.ready()) {
-                        lineerr = stderr.readLine();
-                        if (lineerr.contains("sudo: unable to resolve host")) {
-                            LOG.warn(V, "SSH: {}", lineerr);
-                        } else {
-                            LOG.error("SSH: {}", lineerr);
-                        }
-                    }
-                    Thread.sleep(500);
-                }
-                if (channel.isClosed()) {
-                    LOG.info(V, "SSH: exit-status: {}", channel.getExitStatus());
-                }
-                channel.disconnect();
-                sshSession.disconnect();
-            } catch (IOException | JSchException e) {
-                ssh_attempts--;
-                if (ssh_attempts == 0) {
-                    LOG.error(V, "SSH: {}", e.getMessage());
-                }
-            } catch (InterruptedException ex) {
-                LOG.warn("Interrupted ...");
-            }
-        }
-        if (configured) {
-            LOG.info(I, "Master instance has been configured.");
-        } else {
-            LOG.error("Master instance configuration failed!");
-        }
-    }
-
-    private List<Server> listServers(String region) {
-        List<Server> ret = new ArrayList<>();
-
-        for (Server server : os.compute().servers().list()) {
-            ret.add(server);
-        }
-        return ret;
-    }
-
     private List<Flavor> listFlavors() {
         List<Flavor> ret = new ArrayList<>();
-        for (Flavor r : os.compute().flavors().list()) {
-            ret.add(r);
-        }
+        ret.addAll(os.compute().flavors().list());
         return ret;
-    }
-
-    private List<Image> listImages() {
-        List<Image> ret = new ArrayList<>();
-        for (Image m : os.compute().images().list()) {
-            ret.add(m);
-        }
-        return ret;
-    }
-
-    /**
-     * Returns an available (not used) FloatingIP. Returns null in the case that
-     * no unused FloatingIP is available and no new FloatingIP could be allocated.
-     *
-     * @return
-     */
-    private NetFloatingIP getFloatingIP() {
-        return getFloatingIP(new ArrayList<>());
     }
 
     private NetFloatingIP getFloatingIP(List<String> blacklist) {
@@ -578,10 +433,9 @@ public class CreateClusterOpenstack extends CreateCluster {
         // following block is a ugly hack to refresh the server object
         // ####################################################### -> Start
         Addresses addresses;
-        List<? extends Address> addrlist;
+        List<? extends Address> addressList;
         Map<String, List<? extends Address>> map;
         Server server;
-
         do {
             try {
                 // wait a second
@@ -593,11 +447,11 @@ public class CreateClusterOpenstack extends CreateCluster {
             server = os.compute().servers().get(serverId);
             addresses = server.getAddresses();
             map = addresses.getAddresses();
-            addrlist = map.get(networkName);
-            LOG.info(V, "addrlist {}", addrlist);
-        } while (addrlist == null || addrlist.isEmpty());
+            addressList = map.get(networkName);
+            LOG.info(V, "addressList {}", addressList);
+        } while (addressList == null || addressList.isEmpty());
         // <- End ##########################################################
-        return addrlist.get(0);
+        return addressList.get(0);
     }
 
     /**
@@ -607,57 +461,44 @@ public class CreateClusterOpenstack extends CreateCluster {
      * @param floatingIp - floatingIp to be checked
      */
     private boolean checkForFloatingIp(Server server, String floatingIp) {
-        Map<String, List<? extends Address>> madr = server.getAddresses().getAddresses();
-        // map should contain only one  network
-        if (madr.keySet().size() == 1) {
-            for (Address address : madr.get((String) (madr.keySet().toArray()[0]))) {
+        Map<String, List<? extends Address>> addressMap = server.getAddresses().getAddresses();
+        // map should contain only one network
+        if (addressMap.size() == 1) {
+            for (Address address : addressMap.values().iterator().next()) {
                 if (address.getType().equals("floating") && address.getAddr().equals(floatingIp)) {
                     return true;
                 }
             }
-
         } else {
             LOG.warn("No or more than one network associated with instance {}", server.getId());
         }
         return false;
-
     }
 
     /**
-     * Return a Snapshot by its name/id or null if no snapshot is found ...
+     * Return a Snapshot by its name/id or null if no snapshot is found
      *
      * @param nameOrId - name or id of snapshot
      */
     private VolumeSnapshot getSnapshotByNameOrId(String nameOrId) {
         List<? extends VolumeSnapshot> allSnapshots = os.blockStorage().snapshots().list();
         for (VolumeSnapshot vss : allSnapshots) {
-            if (vss.getName() != null) {
-                if (vss.getName().equals(nameOrId)) {
-                    return vss;
-                }
-            }
-            if (vss.getId().equals(nameOrId)) {
+            if (vss.getName() != null && vss.getName().equals(nameOrId) || vss.getId().equals(nameOrId)) {
                 return vss;
             }
         }
-        // nothing found
         return null;
     }
 
     /**
-     * Return a Volume by its name/id or null if no volume is found ...
+     * Return a Volume by its name/id or null if no volume is found
      *
      * @param nameOrId - name or id of volume
      */
     private Volume getVolumeByNameOrId(String nameOrId) {
         List<? extends Volume> allVolumes = os.blockStorage().volumes().list();
         for (Volume v : allVolumes) {
-            if (v.getName() != null) {
-                if (v.getName().equals(nameOrId)) {
-                    return v;
-                }
-            }
-            if (v.getId().equals(nameOrId)) {
+            if (v.getName() != null && v.getName().equals(nameOrId) || v.getId().equals(nameOrId)) {
                 return v;
             }
         }
@@ -683,7 +524,7 @@ public class CreateClusterOpenstack extends CreateCluster {
      */
     private void checkForServerAndUpdateInstance(String id, Instance instance) {
         Server si = os.compute().servers().get(id);
-        // check for status available ...
+        // check for status available
         if (si.getStatus() != null) {
             switch (si.getStatus()) {
                 case ACTIVE:
@@ -696,7 +537,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     instance.setError(true);
                     instance.setHostname(si.getName());
                     Fault fault = si.getFault();
-                    if (fault != null) {
+                    if (fault == null) {
                         LOG.error("Launch {} failed without message!", si.getName());
                     } else {
                         LOG.error("Launch {} failed with Code {} :: {}", si.getName(), fault.getCode(), fault.getMessage());

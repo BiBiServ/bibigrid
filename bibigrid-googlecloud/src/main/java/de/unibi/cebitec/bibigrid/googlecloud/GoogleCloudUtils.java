@@ -67,15 +67,22 @@ final class GoogleCloudUtils {
         return accessConfigs.isEmpty() ? null : accessConfigs.get(0).getNatIp();
     }
 
+    static String getProjectIdForImage(String imageId, String projectId) {
+        // TODO: publicly available images are only listed with their respective project selected. This needs to be detected better!
+        return imageId.startsWith("ubuntu-") && imageId.contains("-xenial-v") ?
+                "ubuntu-os-cloud" :
+                projectId;
+    }
+
     static InstanceInfo.Builder getInstanceBuilder(String zone, String instanceId, String machineType) {
         return InstanceInfo
                 .newBuilder(InstanceId.of(zone, instanceId), MachineTypeId.of(zone, machineType));
     }
 
-    private static AttachedDisk createBootDisk(String imageId) {
+    private static AttachedDisk createBootDisk(String imageId, String projectId) {
         // Create a simple persistent disk from the image that will be deleted automatically with the instance.
         AttachedDisk.CreateDiskConfiguration bootDisk = AttachedDisk.CreateDiskConfiguration
-                .newBuilder(ImageId.of(imageId))
+                .newBuilder(ImageId.of(getProjectIdForImage(imageId, projectId), imageId))
                 .setAutoDelete(true)
                 .build();
         return AttachedDisk.of(bootDisk);
@@ -96,10 +103,10 @@ final class GoogleCloudUtils {
     }
 
     static void attachDisks(Compute compute, InstanceInfo.Builder instanceBuilder, String imageId,
-                            String zone, Map<String, String> mounts, String clusterId) {
+                            String zone, Map<String, String> mounts, String clusterId, String projectId) {
         List<AttachedDisk> attachedDisks = new ArrayList<>();
         // First add the boot disk
-        AttachedDisk bootDisk = GoogleCloudUtils.createBootDisk(imageId);
+        AttachedDisk bootDisk = GoogleCloudUtils.createBootDisk(imageId, projectId);
         attachedDisks.add(bootDisk);
         for (String key : mounts.keySet()) {
             // For the creation of the cluster it's sufficient to add a counter as suffix.
@@ -119,28 +126,6 @@ final class GoogleCloudUtils {
             builder.setSchedulingOptions(SchedulingOptions.standard(true,
                     SchedulingOptions.Maintenance.MIGRATE));
         }
-    }
-
-    /**
-     * https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#sshkeyformat
-     */
-    static void addKeypairToMetadata(Instance instance, KEYPAIR keypair) {
-        // TODO: check format
-        String sshKey = keypair.getPublicKey();
-
-        Metadata metadata = instance.getMetadata();
-        if (metadata == null)
-            metadata = Metadata.newBuilder().add(METADATA_SSH_KEYS, sshKey).build();
-        else {
-            Map<String, String> values = metadata.getValues();
-            if (values.containsKey(METADATA_SSH_KEYS)) {
-                values.put(METADATA_SSH_KEYS, values.get(METADATA_SSH_KEYS) + "\n" + sshKey);
-            } else {
-                values.put(METADATA_SSH_KEYS, sshKey);
-            }
-            metadata = metadata.toBuilder().setValues(values).build();
-        }
-        instance.setMetadata(metadata);
     }
 
     /**

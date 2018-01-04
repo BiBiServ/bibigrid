@@ -20,7 +20,7 @@ BiBiGrid now uses [Ansible](https://www.ansible.com) to configure the master and
 Using Ansible for configuration makes BiBiGrid more flexible. While it's possible to use prepared images to speed up the BiBiGrid initialization it is not necessary anymore. Ansible (tasks) take care that missing software is installed (and configured) during runtime.
 
 ### Distribution (version) independency
-Using Ansible tasks make BiBiGrid more independend from any distribution as long as the task itself is written in a distribution independed manner. In either case, adjusting a task to be compatible  with a new or other distribution is much easier than rewrite a BiBiGrid core source block.
+Using Ansible tasks make BiBiGrid more independent from any distribution as long as the task itself is written in a distribution independent manner. In either case, adjusting a task to be compatible  with a new or other distribution is much easier than rewrite a BiBiGrid core source block.
 
 ## Easy testing
 The ansible playbook can be easily tested without any cloud access using [Vagrant](https://www.vagrantup.com). The Vagrantfile coming with BiBiGrid configure 2 VMs (master and slave) on top of [VirtualBox](https://www.virtualbox.org).

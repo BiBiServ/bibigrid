@@ -1,11 +1,12 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
+import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Address;
 import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.compute.Server;
@@ -21,22 +22,16 @@ import org.slf4j.LoggerFactory;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
+public class ListIntentOpenstack extends ListIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntentOpenstack.class);
-    private static SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-    private Map<String, Cluster> clusterMap;
+    private final OSClient os;
 
     ListIntentOpenstack(ConfigurationOpenstack config) {
-        super(config);
+        os = OpenStackUtils.buildOSClient(config);
     }
 
     @Override
-    public Map<String, Cluster> getList() {
-        searchClusterIfNecessary();
-        return clusterMap;
-    }
-
-    private void searchClusterIfNecessary() {
+    protected void searchClusterIfNecessary() {
         if (clusterMap != null) {
             return;
         }
@@ -50,14 +45,7 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
             Map<String, String> metadata = server.getMetadata();
             if (name != null && (name.startsWith("bibigrid-master-") || name.startsWith("bibigrid-slave-"))) {
                 String[] t = name.split("-");
-                String clusterId = t[t.length - 1];
-                // check if entry already available
-                if (clusterMap.containsKey(clusterId)) {
-                    cluster = clusterMap.get(clusterId);
-                } else {
-                    cluster = new Cluster();
-                    clusterMap.put(clusterId, cluster);
-                }
+                cluster = getOrCreateCluster(t[t.length - 1]);
                 // get user from metadata map 
                 if (cluster.getUser() == null) {
                     cluster.setUser(metadata.get("user"));
@@ -67,10 +55,10 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
                     cluster.setMasterInstance(server.getId());
                     cluster.setStarted(dateFormatter.format(server.getCreated()));
                     cluster.setKeyName(server.getKeyName());
-                    Map<String, List<? extends Address>> madr = server.getAddresses().getAddresses();
+                    Map<String, List<? extends Address>> addressMap = server.getAddresses().getAddresses();
                     // map should contain only one  network
-                    if (madr.keySet().size() == 1) {
-                        for (Address address : madr.get((String) (madr.keySet().toArray()[0]))) {
+                    if (addressMap.keySet().size() == 1) {
+                        for (Address address : addressMap.values().iterator().next()) {
                             if (address.getType().equals("floating")) {
                                 cluster.setPublicIp(address.getAddr());
                             }
@@ -86,16 +74,9 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
         // Security Group
         for (SecGroupExtension sg : os.compute().securityGroups().list()) {
             String name = sg.getName();
-            if (name != null && name.startsWith("sg-")) {
+            if (name != null && name.startsWith(CreateClusterEnvironment.SECURITY_GROUP_PREFIX)) {
                 String[] t = name.split("-");
-                String clusterId = t[t.length - 1];
-                // check if entry already available
-                if (clusterMap.containsKey(clusterId)) {
-                    cluster = clusterMap.get(clusterId);
-                } else {
-                    cluster = new Cluster();
-                    clusterMap.put(clusterId, cluster);
-                }
+                cluster = getOrCreateCluster(t[t.length - 1]);
                 cluster.setSecurityGroup(sg.getId());
             }
         }
@@ -104,30 +85,16 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
             String name = net.getName();
             if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.NETWORK_PREFIX)) {
                 String[] t = name.split("-");
-                String clusterId = t[t.length - 1];
-                // check if entry already available
-                if (clusterMap.containsKey(clusterId)) {
-                    cluster = clusterMap.get(clusterId);
-                } else {
-                    cluster = new Cluster();
-                    clusterMap.put(clusterId, cluster);
-                }
+                cluster = getOrCreateCluster(t[t.length - 1]);
                 cluster.setNet(net.getId());
             }
         }
-        // Subnet Work
+        // Subnet
         for (Subnet subnet : os.networking().subnet().list()) {
             String name = subnet.getName();
             if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.SUBNET_PREFIX)) {
                 String[] t = name.split("-");
-                String clusterId = t[t.length - 1];
-                // check if entry already available
-                if (clusterMap.containsKey(clusterId)) {
-                    cluster = clusterMap.get(clusterId);
-                } else {
-                    cluster = new Cluster();
-                    clusterMap.put(clusterId, cluster);
-                }
+                cluster = getOrCreateCluster(t[t.length - 1]);
                 cluster.setSubnet(subnet.getId());
             }
         }
@@ -136,45 +103,21 @@ public class ListIntentOpenstack extends OpenStackIntent implements ListIntent {
             String name = router.getName();
             if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.ROUTER_PREFIX)) {
                 String[] t = name.split("-");
-                String clusterId = t[t.length - 1];
-                // check if entry already available
-                if (clusterMap.containsKey(clusterId)) {
-                    cluster = clusterMap.get(clusterId);
-                } else {
-                    cluster = new Cluster();
-                    clusterMap.put(clusterId, cluster);
-                }
+                cluster = getOrCreateCluster(t[t.length - 1]);
                 cluster.setRouter(router.getId());
             }
         }
     }
 
-    @Override
-    public String toString() {
-        searchClusterIfNecessary();
-        if (clusterMap.isEmpty()) {
-            return "No BiBiGrid cluster found!\n";
+    private Cluster getOrCreateCluster(String clusterId) {
+        Cluster cluster;
+        // check if entry already available
+        if (clusterMap.containsKey(clusterId)) {
+            cluster = clusterMap.get(clusterId);
+        } else {
+            cluster = new Cluster();
+            clusterMap.put(clusterId, cluster);
         }
-        StringBuilder display = new StringBuilder();
-        Formatter formatter = new Formatter(display, Locale.US);
-        display.append("\n");
-        formatter.format("%15s | %10s | %19s | %20s | %15s | %7s | %2s | %6s | %3s | %5s%n",
-                "cluster-id", "user", "launch date", "key name", "floating-ip", "# inst", "sg", "router", "net", " subnet");
-        display.append(new String(new char[115]).replace('\0', '-')).append("\n");
-        for (String id : clusterMap.keySet()) {
-            Cluster v = clusterMap.get(id);
-            formatter.format("%15s | %10s | %19s | %20s | %15s | %7d | %2s | %6s | %3s | %5s%n",
-                    id,
-                    (v.getUser() == null) ? "<NA>" : v.getUser(),
-                    (v.getStarted() == null) ? "-" : v.getStarted(),
-                    (v.getKeyName() == null ? "-" : v.getKeyName()),
-                    (v.getPublicIp() == null ? "-" : v.getPublicIp()),
-                    ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
-                    (v.getSecurityGroup() == null ? "-" : "+"),
-                    (v.getRouter() == null ? "-" : "+"),
-                    (v.getNet() == null ? "-" : "+"),
-                    (v.getSubnet() == null ? "-" : "+"));
-        }
-        return display.toString();
+        return cluster;
     }
 }

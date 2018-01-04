@@ -19,7 +19,7 @@ public class InstanceTypeOpenstack extends InstanceType {
     private OSClient os;
 
     InstanceTypeOpenstack(ConfigurationOpenstack config, String type) throws InstanceTypeNotFoundException {
-        os = OpenStackIntent.buildOSClient(config);
+        os = OpenStackUtils.buildOSClient(config);
         for (Flavor f : listFlavors()) {
             if (f.getName().equalsIgnoreCase(type)) {
                 value = f.getName();

@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a cluster, consisting of instances, network (router,net,subnet, placementGroup and vpc) and firewall rules (security group)
+ * Represents a cluster, consisting of instances, network (router,net,subnet, placementGroup and vpc) and
+ * firewall rules (security group)
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */

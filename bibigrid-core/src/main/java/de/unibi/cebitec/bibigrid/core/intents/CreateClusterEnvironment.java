@@ -1,32 +1,47 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
+import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
+import de.unibi.cebitec.bibigrid.core.util.KEYPAIR;
 
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public interface CreateClusterEnvironment {
+public abstract class CreateClusterEnvironment {
+    public static final String SECURITY_GROUP_PREFIX = CreateCluster.PREFIX + "sg-";
+    protected static final String SUBNET_PREFIX = CreateCluster.PREFIX + "subnet-";
+    private final KEYPAIR keypair;
+
+    protected CreateClusterEnvironment() throws ConfigurationException {
+        try {
+            // create KeyPair for cluster communication
+            keypair = new KEYPAIR();
+        } catch (JSchException ex) {
+            throw new ConfigurationException(ex.getMessage());
+        }
+    }
+
     /**
      * Api specific implementation of creating or choosing an existing
      * Virtual Private Cloud.
      *
      * @throws ConfigurationException
      */
-    CreateClusterEnvironment createVPC() throws ConfigurationException;
+    public abstract CreateClusterEnvironment createVPC() throws ConfigurationException;
 
     /**
      * Api specific implementation of creating or choosing a Subnet.
      *
      * @throws ConfigurationException
      */
-    CreateClusterEnvironment createSubnet() throws ConfigurationException;
+    public abstract CreateClusterEnvironment createSubnet() throws ConfigurationException;
 
     /**
      * Api specific implementation of creating or choosing a SecurityGroup.
      *
      * @throws ConfigurationException
      */
-    CreateClusterEnvironment createSecurityGroup() throws ConfigurationException;
+    public abstract CreateClusterEnvironment createSecurityGroup() throws ConfigurationException;
 
     /**
      * Api specific implementation of creating or choosing a placement group.
@@ -35,5 +50,9 @@ public interface CreateClusterEnvironment {
      *
      * @throws ConfigurationException
      */
-    CreateCluster createPlacementGroup() throws ConfigurationException;
+    public abstract CreateCluster createPlacementGroup() throws ConfigurationException;
+
+    public KEYPAIR getKeypair() {
+        return keypair;
+    }
 }

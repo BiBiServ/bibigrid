@@ -23,7 +23,7 @@ public final class DefaultPropertiesFile {
 
     private Path propertiesFilePath;
     private boolean isAlternativeFilepath;
-    private Properties defaultProperties;
+    private final Properties defaultProperties;
 
     public DefaultPropertiesFile(CommandLine commandLine) {
         if (commandLine.hasOption(PROPERTIES_FILEPATH_PARAMETER)) {

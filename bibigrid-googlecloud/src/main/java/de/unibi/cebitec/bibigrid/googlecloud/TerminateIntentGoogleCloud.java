@@ -5,6 +5,7 @@ import com.google.api.services.compute.model.FirewallList;
 import com.google.cloud.compute.Compute;
 import com.google.cloud.compute.Instance;
 import com.google.cloud.compute.InstanceId;
+import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import org.slf4j.Logger;
@@ -13,8 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static de.unibi.cebitec.bibigrid.googlecloud.CreateClusterGoogleCloud.SECURITY_GROUP_PREFIX;
 
 /**
  * Implementation of the general TerminateIntent interface for a Google based cluster.
@@ -71,7 +70,7 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
             // Collect all firewall rules that were created for this cluster
             FirewallList list = internalCompute.firewalls().list(config.getGoogleProjectId()).execute();
             for (Firewall firewall : list.getItems()) {
-                if (firewall.getName().startsWith(SECURITY_GROUP_PREFIX + "rule") &&
+                if (firewall.getName().startsWith(CreateClusterEnvironment.SECURITY_GROUP_PREFIX + "rule") &&
                         firewall.getName().endsWith(config.getClusterId())) {
                     firewallsToRemove.add(firewall.getName());
                 }
