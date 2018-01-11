@@ -2,12 +2,14 @@ package de.unibi.cebitec.bibigrid;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 /**
  * Factory scanning the classpath for mapping implementations.
@@ -34,8 +36,8 @@ public final class Factory {
      */
     private void loadAllClasses() {
         Set<String> allClassPaths = new HashSet<>();
-        URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-        for (URL url : classLoader.getURLs()) {
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        extractUrls(classLoader).forEach((URL url) -> {
             try {
                 File file = new File(url.toURI());
                 if (file.isDirectory()) {
@@ -61,9 +63,24 @@ public final class Factory {
             } catch (URISyntaxException | IOException e) {
                 e.printStackTrace();
             }
-        }
+        });
         for (String classPath : allClassPaths) {
             loadClass(classLoader, classPath);
+        }
+    }
+
+    private Stream<URL> extractUrls(ClassLoader classLoader) {
+        if (classLoader instanceof URLClassLoader) {
+            return Stream.of(((URLClassLoader) classLoader).getURLs());
+        }
+        return Stream.of(ManagementFactory.getRuntimeMXBean().getClassPath().split(File.pathSeparator)).map(this::toURL);
+    }
+
+    private URL toURL(String entry) {
+        try {
+            return new File(entry).toURI().toURL();
+        } catch (Exception ex) {
+            throw new IllegalArgumentException(ex);
         }
     }
 
@@ -99,7 +116,7 @@ public final class Factory {
         }
     }
 
-    private void loadClass(URLClassLoader classLoader, String classPath) {
+    private void loadClass(ClassLoader classLoader, String classPath) {
         Class<?> clazz = null;
         try {
             clazz = classLoader.loadClass(classPath);
