@@ -100,7 +100,7 @@ public final class ShellScriptCreator {
         script.append("echo \"Install ansible from pypi using pip\"\n");
         script.append("pip install ansible -q\n");
         script.append("echo \"Execute ansible playbook\"\n");
-        script.append("ansible-playbook ~/playbook/site.yml\n");
+        script.append("sudo -E env \"PATH=$PATH\" ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts\n");
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
         script.append("");
         script.append("");
