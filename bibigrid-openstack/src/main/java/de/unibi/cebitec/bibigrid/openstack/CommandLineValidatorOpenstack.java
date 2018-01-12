@@ -82,6 +82,14 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
             return false;
         }
         osc.setUsername(result.value);
+        // OpenStack domain
+        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_DOMAIN_S,
+                RuleBuilder.RuleNames.OPENSTACK_DOMAIN_L, RuleBuilder.RuleNames.OPENSTACK_DOMAIN_ENV);
+        if (result.success) {
+            osc.setDomain(result.value);
+        } else {
+            LOG.info("Keystone V2 API.");
+        }
         // OpenStack tenant name
         result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S,
                 RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_L, RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_ENV);
@@ -95,9 +103,10 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_L, null);
         if (!result.success) {
             LOG.info("No suitable entry for OpenStack-TenantDomain (ostd) found! Use OpenStack-Domain(osd) instead!");
-            return false;
+            osc.setTenantDomain(osc.getDomain());
+        } else {
+            osc.setTenantDomain(result.value);
         }
-        osc.setTenantDomain(result.value);
         // OpenStack password
         result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S,
                 RuleBuilder.RuleNames.OPENSTACK_PASSWORD_L, RuleBuilder.RuleNames.OPENSTACK_PASSWORD_ENV);
@@ -114,14 +123,6 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
             return false;
         }
         osc.setEndpoint(result.value);
-        // OpenStack domain
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_DOMAIN_S,
-                RuleBuilder.RuleNames.OPENSTACK_DOMAIN_L, RuleBuilder.RuleNames.OPENSTACK_DOMAIN_ENV);
-        if (result.success) {
-            osc.setDomain(result.value);
-        } else {
-            LOG.info("Keystone V2 API.");
-        }
         openstackConfig.setOpenstackCredentials(osc);
         return true;
     }

@@ -160,7 +160,6 @@ public abstract class CreateCluster implements Intent {
         int sshAttempts = SSH_ATTEMPTS;
         while (!configured && sshAttempts > 0) {
             try {
-                System.out.println(config.getIdentityFile().toString());
                 ssh.addIdentity(config.getIdentityFile().toString());
                 LOG.info("Trying to connect to master ({})...", sshAttempts);
                 sleep(4);
@@ -180,7 +179,7 @@ public abstract class CreateCluster implements Intent {
                 }
             } catch (IOException | JSchException e) {
                 sshAttempts--;
-                LOG.error(V, "SSH: {}", e);
+                LOG.error("SSH: {}", e);
                 if (sshAttempts == 0) {
                     LOG.error(V, "SSH: {}", e);
                 }
