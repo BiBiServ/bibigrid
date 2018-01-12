@@ -1,0 +1,2 @@
+# OpenStack credentials setup
+STUB
