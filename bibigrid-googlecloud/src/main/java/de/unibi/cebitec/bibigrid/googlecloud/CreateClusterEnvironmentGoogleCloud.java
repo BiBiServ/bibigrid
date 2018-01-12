@@ -87,6 +87,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         if (isAutoCreate) {
             // Reuse the first (and only) subnet for the vpc and region.
             subnet = cluster.getCompute().listSubnetworks(region).iterateAll().iterator().next();
+            // TODO: subnetCidr
             LOG.debug(V, "Use {} for reused SubNet.", subnet.getIpRange());
         } else {
             // check for unused Subnet Cidr and create one

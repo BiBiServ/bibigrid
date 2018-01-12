@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public final class ShellScriptCreator {
     private static final Logger LOG = LoggerFactory.getLogger(ShellScriptCreator.class);
 
-    public static String getSlaveUserData(Configuration cfg, KEYPAIR keypair, boolean base64) {
+    public static String getSlaveUserData(Configuration cfg, ClusterKeyPair keypair, boolean base64) {
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
         userData.append("exec > /var/log/userdata.log\n");
@@ -43,7 +43,7 @@ public final class ShellScriptCreator {
         return base64 ? new String(Base64.encodeBase64(userData.toString().getBytes())) : userData.toString();
     }
 
-    private static void appendSshConfiguration(StringBuilder userData, KEYPAIR keypair) {
+    private static void appendSshConfiguration(StringBuilder userData, ClusterKeyPair keypair) {
         userData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
         userData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
         userData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
@@ -74,7 +74,7 @@ public final class ShellScriptCreator {
         }
     }
 
-    public static String getMasterUserData(Configuration cfg, KEYPAIR keypair, boolean base64) {
+    public static String getMasterUserData(Configuration cfg, ClusterKeyPair keypair, boolean base64) {
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
         userData.append("exec > /var/log/userdata.log\n");
@@ -100,7 +100,7 @@ public final class ShellScriptCreator {
         script.append("echo \"Install ansible from pypi using pip\"\n");
         script.append("pip install ansible -q\n");
         script.append("echo \"Execute ansible playbook\"\n");
-        script.append("sudo -E env \"PATH=$PATH\" ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts\n");
+        script.append("sudo -E ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts\n");
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
         script.append("");
         script.append("");

@@ -89,7 +89,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
             LOG.error("No suitable entry for OpenStack-Tenantname (ost) found nor environment OS_PROJECT_NAME set! Exit");
             return false;
         }
-        osc.setTenantDomain(result.value);
+        osc.setTenantName(result.value);
         // OpenStack tenant domain
         result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_S,
                 RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_L, null);

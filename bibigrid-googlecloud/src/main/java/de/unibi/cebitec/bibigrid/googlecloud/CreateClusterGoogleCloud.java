@@ -120,7 +120,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                 .setTags(Tags.of(bibigridId, "name" + GoogleCloudUtils.TAG_SEPARATOR + masterInstanceName))
                 .setMetadata(masterStartupScript);
         GoogleCloudUtils.attachDisks(compute, masterBuilder, config.getMasterImage(), zone, config.getMasterMounts(),
-                clusterId, config.getGoogleProjectId());
+                clusterId, config.getGoogleImageProjectId());
         GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, config.isUseSpotInstances());
         // Waiting for master instance to run
         LOG.info("Waiting for master instance to finish booting...");
@@ -150,7 +150,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                         .setTags(Tags.of(bibigridId, slaveInstanceNameTag))
                         .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
                 GoogleCloudUtils.attachDisks(compute, slaveBuilder, config.getSlaveImage(), zone,
-                        config.getSlaveMounts(), clusterId, config.getGoogleProjectId());
+                        config.getSlaveMounts(), clusterId, config.getGoogleImageProjectId());
                 GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
                 slaveInstanceOperations[i] = compute.create(slaveBuilder.build());
                 slaveInstanceIds[i] = InstanceId.of(zone, slaveInstanceId);

@@ -56,6 +56,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
                         RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
                         RuleBuilder.RuleNames.NFS_SHARES_S.toString(),
                         RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
+                        RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString(),
                         RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString(),
                         RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString());
             case VALIDATE:
@@ -79,6 +80,19 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
         } else {
             LOG.error("No suitable entry for Google-ProjectId (" + shortParamProject + ") found! Exit");
             return false;
+        }
+
+        final String shortParamImageProject = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString();
+        final String longParamImageProject = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_L.toString();
+        if (req.contains(shortParamImageProject)) {
+            if (cl.hasOption(shortParamImageProject)) {
+                googleCloudConfig.setGoogleImageProjectId(cl.getOptionValue(shortParamImageProject).trim());
+            } else if (defaults.containsKey(longParamImageProject)) {
+                googleCloudConfig.setGoogleImageProjectId(defaults.getProperty(longParamImageProject));
+            } else {
+                LOG.error("No suitable entry for Google-Image-ProjectId (" + shortParamImageProject + ") found! Exit");
+                return false;
+            }
         }
 
         final String shortParamCredentials = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString();

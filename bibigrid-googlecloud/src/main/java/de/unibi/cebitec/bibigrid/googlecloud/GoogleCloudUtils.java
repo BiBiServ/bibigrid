@@ -3,7 +3,6 @@ package de.unibi.cebitec.bibigrid.googlecloud;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.compute.*;
 import com.google.cloud.compute.spi.v1.HttpComputeRpc;
-import de.unibi.cebitec.bibigrid.core.util.KEYPAIR;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +21,6 @@ import java.util.Map;
 final class GoogleCloudUtils {
     static final String TAG_SEPARATOR = "--";
     private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudUtils.class);
-    private static final String METADATA_SSH_KEYS = "ssh-keys";
     private static long diskCounter = 1;
 
     static Compute getComputeService(final ConfigurationGoogleCloud config) {
@@ -54,12 +52,12 @@ final class GoogleCloudUtils {
         return instanceId + ".c." + projectId + ".internal";
     }
 
-    public static String getInstancePrivateIp(Instance instance) {
+    static String getInstancePrivateIp(Instance instance) {
         List<NetworkInterface> interfaces = instance.getNetworkInterfaces();
         return interfaces.isEmpty() ? null : interfaces.get(0).getNetworkIp();
     }
 
-    public static String getInstancePublicIp(Instance instance) {
+    static String getInstancePublicIp(Instance instance) {
         List<NetworkInterface> interfaces = instance.getNetworkInterfaces();
         if (interfaces.isEmpty())
             return null;
@@ -67,22 +65,15 @@ final class GoogleCloudUtils {
         return accessConfigs.isEmpty() ? null : accessConfigs.get(0).getNatIp();
     }
 
-    static String getProjectIdForImage(String imageId, String projectId) {
-        // TODO: publicly available images are only listed with their respective project selected. This needs to be detected better!
-        return imageId.startsWith("ubuntu-") && imageId.contains("-xenial-v") ?
-                "ubuntu-os-cloud" :
-                projectId;
-    }
-
     static InstanceInfo.Builder getInstanceBuilder(String zone, String instanceId, String machineType) {
         return InstanceInfo
                 .newBuilder(InstanceId.of(zone, instanceId), MachineTypeId.of(zone, machineType));
     }
 
-    private static AttachedDisk createBootDisk(String imageId, String projectId) {
+    private static AttachedDisk createBootDisk(String imageId, String imageProjectId) {
         // Create a simple persistent disk from the image that will be deleted automatically with the instance.
         AttachedDisk.CreateDiskConfiguration bootDisk = AttachedDisk.CreateDiskConfiguration
-                .newBuilder(ImageId.of(getProjectIdForImage(imageId, projectId), imageId))
+                .newBuilder(ImageId.of(imageProjectId, imageId))
                 .setAutoDelete(true)
                 .build();
         return AttachedDisk.of(bootDisk);
@@ -103,10 +94,10 @@ final class GoogleCloudUtils {
     }
 
     static void attachDisks(Compute compute, InstanceInfo.Builder instanceBuilder, String imageId,
-                            String zone, Map<String, String> mounts, String clusterId, String projectId) {
+                            String zone, Map<String, String> mounts, String clusterId, String imageProjectId) {
         List<AttachedDisk> attachedDisks = new ArrayList<>();
         // First add the boot disk
-        AttachedDisk bootDisk = GoogleCloudUtils.createBootDisk(imageId, projectId);
+        AttachedDisk bootDisk = GoogleCloudUtils.createBootDisk(imageId, imageProjectId);
         attachedDisks.add(bootDisk);
         for (String key : mounts.keySet()) {
             // For the creation of the cluster it's sufficient to add a counter as suffix.
@@ -119,8 +110,8 @@ final class GoogleCloudUtils {
         instanceBuilder.setAttachedDisks(attachedDisks);
     }
 
-    static void setInstanceSchedulingOptions(InstanceInfo.Builder builder, boolean preemtible) {
-        if (preemtible) {
+    static void setInstanceSchedulingOptions(InstanceInfo.Builder builder, boolean preemptible) {
+        if (preemptible) {
             builder.setSchedulingOptions(SchedulingOptions.preemptible());
         } else {
             builder.setSchedulingOptions(SchedulingOptions.standard(true,

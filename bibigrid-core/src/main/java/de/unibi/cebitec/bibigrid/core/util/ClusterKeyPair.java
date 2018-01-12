@@ -6,15 +6,15 @@ import com.jcraft.jsch.KeyPair;
 import java.io.ByteArrayOutputStream;
 
 /**
- *  Generates a public/private KeyPair.
+ *  Generates a public/private key pair for the communication between cluster instances.
  * 
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class KEYPAIR {
+public class ClusterKeyPair {
     private String privateKey;
     private String publicKey;
 
-    public KEYPAIR() throws JSchException {
+    public ClusterKeyPair() throws JSchException {
         JSch ssh = new JSch();
         KeyPair keypair = KeyPair.genKeyPair(ssh, KeyPair.RSA);
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
@@ -32,5 +32,4 @@ public class KEYPAIR {
     public String getPublicKey() {
         return publicKey;
     }
-
 }

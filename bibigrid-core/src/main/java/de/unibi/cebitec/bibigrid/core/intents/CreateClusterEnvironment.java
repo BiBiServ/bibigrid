@@ -2,7 +2,7 @@ package de.unibi.cebitec.bibigrid.core.intents;
 
 import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
-import de.unibi.cebitec.bibigrid.core.util.KEYPAIR;
+import de.unibi.cebitec.bibigrid.core.util.ClusterKeyPair;
 
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
@@ -10,12 +10,12 @@ import de.unibi.cebitec.bibigrid.core.util.KEYPAIR;
 public abstract class CreateClusterEnvironment {
     public static final String SECURITY_GROUP_PREFIX = CreateCluster.PREFIX + "sg-";
     protected static final String SUBNET_PREFIX = CreateCluster.PREFIX + "subnet-";
-    private final KEYPAIR keypair;
+    private final ClusterKeyPair keypair;
 
     protected CreateClusterEnvironment() throws ConfigurationException {
         try {
             // create KeyPair for cluster communication
-            keypair = new KEYPAIR();
+            keypair = new ClusterKeyPair();
         } catch (JSchException ex) {
             throw new ConfigurationException(ex.getMessage());
         }
@@ -52,7 +52,7 @@ public abstract class CreateClusterEnvironment {
      */
     public abstract CreateCluster createPlacementGroup() throws ConfigurationException;
 
-    public KEYPAIR getKeypair() {
+    public ClusterKeyPair getKeypair() {
         return keypair;
     }
 }

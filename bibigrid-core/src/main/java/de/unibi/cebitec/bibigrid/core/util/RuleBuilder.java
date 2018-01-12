@@ -133,6 +133,8 @@ public class RuleBuilder {
 
         groupReference.add(createStringRule(RuleNames.GOOGLE_PROJECT_ID_S, RuleNames.GOOGLE_PROJECT_ID_L,
                 "Google compute engine project id"));
+        groupReference.add(createStringRule(RuleNames.GOOGLE_IMAGE_PROJECT_ID_S, RuleNames.GOOGLE_IMAGE_PROJECT_ID_L,
+                "Google compute engine image project id"));
         groupReference.add(createStringRule(RuleNames.GOOGLE_CREDENTIALS_FILE_S, RuleNames.GOOGLE_CREDENTIALS_FILE_L,
                 "Path to google compute engine service account credentials file"));
     }
@@ -267,6 +269,8 @@ public class RuleBuilder {
         // Google Cloud
         GOOGLE_PROJECT_ID_S("gpid"),
         GOOGLE_PROJECT_ID_L("google-projectid"),
+        GOOGLE_IMAGE_PROJECT_ID_S("gipid"),
+        GOOGLE_IMAGE_PROJECT_ID_L("google-image-projectid"),
         GOOGLE_CREDENTIALS_FILE_S("gcf"),
         GOOGLE_CREDENTIALS_FILE_L("google-credentials-file"),
         // OpenStack
@@ -285,7 +289,7 @@ public class RuleBuilder {
         OPENSTACK_DOMAIN_S("osd"),
         OPENSTACK_DOMAIN_L("openstack-domain"),
         OPENSTACK_DOMAIN_ENV("OS_USER_DOMAIN_NAME"),
-        OPENSTACK_TENANT_DOMAIN_S("osdt"),
+        OPENSTACK_TENANT_DOMAIN_S("ostd"),
         OPENSTACK_TENANT_DOMAIN_L("openstack-tenantdomain");
 
         private final String value;
