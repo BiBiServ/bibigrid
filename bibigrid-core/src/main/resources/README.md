@@ -1,14 +1,14 @@
 # Instance Configuration
-**This is work in progress, meaning that this part is not yet integrated into the BiBiGrid workflow nor the documentation is 
-complete.
 
-jkrue, 12/14/2017
-**
+This is work in progress, mainly meaning that the documentation is 
+incomplete.
+
+jkrue, 01/12/2018
 
 
 
 ## Current (previous) state
-After instance startup by used cloud API the further configuration is currently done by generated scripts, which will be executed during(cloud-init) or after (ssh) initialization. Special images for master and slave are needed, which must be prepared beforehand.
+After instance startup the further configuration is currently done by generated scripts, which will be executed during (cloud-init) or after (ssh) initialization. Special images for master and slave are needed, which must be prepared beforehand.
 
 On the one hand this kind of implementation is (very) fast to setup a BiBiGrid cluster, but on the other hand it is quite inflexible. Any changes (software and os updates, cloud infrastructure changes) must be implemented directly in the source.
 
@@ -24,3 +24,8 @@ Using Ansible tasks make BiBiGrid more independent from any distribution as long
 
 ## Easy testing
 The ansible playbook can be easily tested without any cloud access using [Vagrant](https://www.vagrantup.com). The Vagrantfile coming with BiBiGrid configure 2 VMs (master and slave) on top of [VirtualBox](https://www.virtualbox.org).
+
+```
+$ cd bibigrid-core/src/main/resources/vagrant
+$ vagrant up
+```

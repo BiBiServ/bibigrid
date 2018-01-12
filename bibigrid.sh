@@ -2,8 +2,8 @@
 
 
 if [ ${0} = "bash" -o ${0} = "-bash" ] ; then
- alias bibigrid="java -jar `pwd`/`ls target/BiBiGrid-*.jar`"
+ alias bibigrid="java -jar `pwd`/`ls bibigrid-main/target/BiBiGrid-*.jar`"
 else 
- java -jar `dirname ${0}`/`ls target/BiBiGrid-*.jar` $@
+ java -jar `dirname ${0}`/`ls bibigrid-main/target/BiBiGrid-*.jar` $@
 fi
 
