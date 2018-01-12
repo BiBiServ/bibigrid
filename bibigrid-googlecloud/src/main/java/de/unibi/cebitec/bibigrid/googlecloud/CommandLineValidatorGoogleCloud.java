@@ -64,6 +64,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
                         RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
                         RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
                         RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString(),
+                        RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString(),
                         RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString());
         }
         return null;
