@@ -39,7 +39,7 @@ public class ValidateIntentGoogleCloud extends ValidateIntent {
         boolean allCheck = true;
         boolean foundMaster = false;
         boolean foundSlave = false;
-        String projectId = GoogleCloudUtils.getProjectIdForImage(config.getMasterImage(), config.getGoogleProjectId());
+        String projectId = config.getGoogleImageProjectId();
         for (Image img : compute.listImages(projectId).iterateAll()) {
             String name = img.getImageId().getImage();
             foundMaster = foundMaster || name.equals(config.getMasterImage());

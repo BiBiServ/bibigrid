@@ -140,8 +140,9 @@ public abstract class CreateCluster implements Intent {
         }
     }
 
-    protected void configureMaster(String masterPrivateIp, String masterPublicIp, String masterHostname,
-                                   List<String> slaveIps, List<String> slaveHostnames, String subnetCidr) {
+    protected void configureMaster(final String masterPrivateIp, final String masterPublicIp,
+                                   final String masterHostname, final List<String> slaveIps,
+                                   final List<String> slaveHostnames, final String subnetCidr) {
         // TODO
         String user = config.getUser() != null ? config.getUser() : MASTER_SSH_USER;
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config);
