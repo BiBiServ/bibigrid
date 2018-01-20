@@ -95,10 +95,10 @@ public final class ShellScriptCreator {
         script.append("echo \"Update apt-get\"\n");
         script.append("sudo apt-get update\n");
         script.append("echo \"Install python2\"\n");
-        script.append("sudo apt-get install apt-transport-https ca-certificates software-properties-common ")
-                .append("python python-pip -qq\n");
+        script.append("sudo apt-get --yes --force-yes install apt-transport-https ca-certificates ")
+                .append("software-properties-common python python-pip\n"); // TODO: -qq
         script.append("echo \"Install ansible from pypi using pip\"\n");
-        script.append("pip install ansible -q\n");
+        script.append("sudo pip install ansible\n"); // TODO: -q
         script.append("echo \"Execute ansible playbook\"\n");
         script.append("sudo -E ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts\n");
         script.append("echo \"CONFIGURATION_FINISHED\"\n");

@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +37,7 @@ public abstract class CreateCluster implements Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
     public static final String MASTER_SSH_USER = "ubuntu";
+    private static final int SSH_POLL_ATTEMPTS = 25; // TODO: decide value or parameter
     private static final int SSH_ATTEMPTS = 25; // TODO: decide value or parameter
 
     protected final ProviderModule providerModule;
@@ -110,7 +113,7 @@ public abstract class CreateCluster implements Intent {
         sb.append("You can then log on the master node with:\n\n")
                 .append("ssh -i ")
                 .append(config.getIdentityFile())
-                .append(" ubuntu@$BIBIGRID_MASTER\n\n");
+                .append(" ").append(config.getUser()).append("@$BIBIGRID_MASTER\n\n");
         sb.append("The cluster id of your started cluster is : ")
                 .append(clusterId)
                 .append("\n\n");
@@ -140,6 +143,29 @@ public abstract class CreateCluster implements Intent {
         }
     }
 
+    private boolean pollSshPortIsAvailable(String masterPublicIp) {
+        LOG.info(V, "Check if SSH port is available and ready...");
+        int attempt = SSH_POLL_ATTEMPTS;
+        while (attempt > 0) {
+            try {
+                final Socket socket = new Socket();
+                socket.connect(new InetSocketAddress(masterPublicIp, 22), 2000);
+                byte[] buffer = new byte[1024];
+                int bytesRead = socket.getInputStream().read(buffer, 0, buffer.length);
+                String sshVersion = new String(buffer, 0, bytesRead).trim();
+                socket.close();
+                LOG.info(V, "Master instance SSH port is ready with version: {}", sshVersion);
+                return true;
+            } catch (Exception ex) {
+                attempt--;
+                LOG.error(V, "Poll SSH {}", ex.getMessage());
+            }
+            sleep(2, false);
+        }
+        LOG.error("Master instance SSH port is not reachable.");
+        return false;
+    }
+
     protected void configureMaster(final String masterPrivateIp, final String masterPublicIp,
                                    final String masterHostname, final List<String> slaveIps,
                                    final List<String> slaveHostnames, final String subnetCidr) {
@@ -157,9 +183,10 @@ public abstract class CreateCluster implements Intent {
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
         LOG.info("Now configuring ...");
+        boolean sshPortIsReady = pollSshPortIsAvailable(masterPublicIp);
         boolean configured = false;
         int sshAttempts = SSH_ATTEMPTS;
-        while (!configured && sshAttempts > 0) {
+        while (sshPortIsReady && !configured && sshAttempts > 0) {
             try {
                 ssh.addIdentity(config.getIdentityFile().toString());
                 LOG.info("Trying to connect to master ({})...", sshAttempts);
