@@ -48,7 +48,9 @@ public final class AnsibleConfig {
         map.put("master", getMasterMap());
         map.put("slaves", getSlavesMap());
         map.put("CIDR", subnetCidr);
-        map.put("nfs_mounts", getNfsSharesMap());
+        if (config.isNfs()) {
+            map.put("nfs_mounts", getNfsSharesMap());
+        }
         addBooleanOption(map, "enable_nfs", config.isNfs());
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());

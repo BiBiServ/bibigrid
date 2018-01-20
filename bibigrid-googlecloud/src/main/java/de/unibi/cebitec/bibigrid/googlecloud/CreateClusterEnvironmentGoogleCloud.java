@@ -60,7 +60,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     }
 
     @Override
-    public CreateClusterEnvironmentGoogleCloud createSubnet() throws ConfigurationException {
+    public CreateClusterEnvironmentGoogleCloud createSubnet() {
         String region = cluster.getConfig().getRegion();
 
         // Use the internal compute api to get more information about the vpc to be used.
@@ -116,7 +116,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
 
     @Override
     @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
-    public CreateClusterEnvironmentGoogleCloud createSecurityGroup() throws ConfigurationException {
+    public CreateClusterEnvironmentGoogleCloud createSecurityGroup() {
         // create security group with full internal access / ssh from outside
         LOG.info("Creating security group...");
 
@@ -181,7 +181,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     }
 
     @Override
-    public CreateClusterGoogleCloud createPlacementGroup() throws ConfigurationException {
+    public CreateClusterGoogleCloud createPlacementGroup() {
         return cluster;
     }
 

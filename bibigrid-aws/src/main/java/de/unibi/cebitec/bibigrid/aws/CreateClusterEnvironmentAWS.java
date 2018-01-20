@@ -26,7 +26,6 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentAWS.class);
     private static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
     private static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
-    private static final String SUBNET_PREFIX = PREFIX + "subnet-";
 
     private Vpc vpc;
     private Subnet subnet;
@@ -135,7 +134,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
 
     /**
      * Return a VPC that currently exists in selected region. Returns either the *default* vpc from all or the given
-     * vpcIds list. If only one vpcId is given it is returned wether it is default or not. Return null in the case
+     * vpcIds list. If only one vpcId is given it is returned whether it is default or not. Return null in the case
      * no default or fitting VPC is found.
      */
     private Vpc getVPC(String... vpcIds) {

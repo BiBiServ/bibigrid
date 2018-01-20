@@ -14,7 +14,30 @@ In order to upload and execute commands a valid ssh-keypair needs to be setup, t
 - [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md)
 
 ## Writing the configuration file
-STUB
+The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
+
+| Long parameter        | Short parameter | Description                                 |
+|-----------------------|-----------------|---------------------------------------------|
+| mode                  |                 | Provider mode [aws, googlecloud, openstack] | 
+| region                | e               | |
+| availability-zone     | z               | |
+| user                  | u               | |
+| master-instance-type  | m               | |
+| master-image          | M               | |
+| use-master-as-compute | b               | |
+| slave-instance-type   | s               | |
+| slave-image           | S               | |
+| slave-instance-count  | n               | |
+| (aws) public-slave-ip | psi             | |
+| nfs                   | nfs             | |
+| oge                   | oge             | |
+| spark                 | spark           | |
+| hdfs                  | hdfs            | |
+| mesos                 | me              | |
+| cassandra             | db              | |
+| local-fs              | lfs             | |
+| debug-requests        | dr              | |
+| verbose               | v               | |
 
 ## Starting the cluster
 STUB

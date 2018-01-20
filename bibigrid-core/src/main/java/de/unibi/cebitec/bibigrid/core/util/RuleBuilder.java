@@ -137,6 +137,8 @@ public class RuleBuilder {
                 "Google compute engine image project id"));
         groupReference.add(createStringRule(RuleNames.GOOGLE_CREDENTIALS_FILE_S, RuleNames.GOOGLE_CREDENTIALS_FILE_L,
                 "Path to google compute engine service account credentials file"));
+        groupReference.add(createStringRule(RuleNames.AZURE_CREDENTIALS_FILE_S, RuleNames.AZURE_CREDENTIALS_FILE_L,
+                "Path to microsoft azure credentials file"));
     }
 
     private Tparam createBasicRule(RuleNames shortFlag, RuleNames longFlag, Tprimitive type, String shortDescription) {
@@ -266,6 +268,9 @@ public class RuleBuilder {
         // Amazon AWS
         AWS_CREDENTIALS_FILE_S("a"),
         AWS_CREDENTIALS_FILE_L("aws-credentials-file"),
+        // Microsoft Azure
+        AZURE_CREDENTIALS_FILE_S("acf"),
+        AZURE_CREDENTIALS_FILE_L("azure-credentials-file"),
         // Google Cloud
         GOOGLE_PROJECT_ID_S("gpid"),
         GOOGLE_PROJECT_ID_L("google-projectid"),

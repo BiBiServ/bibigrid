@@ -11,6 +11,7 @@
         <module>bibigrid-aws</module>
         <module>bibigrid-openstack</module>
         <module>bibigrid-main</module>
+        <module>bibigrid-azure</module>
     </modules>
     <packaging>pom</packaging>
     <properties>
