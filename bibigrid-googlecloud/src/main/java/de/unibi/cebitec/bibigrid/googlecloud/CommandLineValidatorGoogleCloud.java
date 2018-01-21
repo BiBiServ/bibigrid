@@ -106,6 +106,15 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
             LOG.error("No suitable entry for Google-Credentials-File (" + shortParamCredentials + ") found! Exit");
             return false;
         }
+
+        final String spotShortParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString();
+        final String spotLongParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_L.toString();
+        if (cl.hasOption(spotShortParam) || defaults.containsKey(spotLongParam)) {
+            String value = cl.getOptionValue(spotShortParam, defaults.getProperty(spotLongParam));
+            if (value.equalsIgnoreCase(KEYWORD_YES)) {
+                cfg.setUseSpotInstances(true);
+            }
+        }
         return true;
     }
 }
