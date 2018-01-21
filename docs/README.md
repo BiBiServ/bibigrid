@@ -16,28 +16,77 @@ In order to upload and execute commands a valid ssh-keypair needs to be setup, t
 ## Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
 
-| Long parameter        | Short parameter | Description                                 |
-|-----------------------|-----------------|---------------------------------------------|
-| mode                  |                 | Provider mode [aws, googlecloud, openstack] | 
-| region                | e               | |
-| availability-zone     | z               | |
-| user                  | u               | |
-| master-instance-type  | m               | |
-| master-image          | M               | |
-| use-master-as-compute | b               | |
-| slave-instance-type   | s               | |
-| slave-image           | S               | |
-| slave-instance-count  | n               | |
-| (aws) public-slave-ip | psi             | |
-| nfs                   | nfs             | |
-| oge                   | oge             | |
-| spark                 | spark           | |
-| hdfs                  | hdfs            | |
-| mesos                 | me              | |
-| cassandra             | db              | |
-| local-fs              | lfs             | |
-| debug-requests        | dr              | |
-| verbose               | v               | |
+| Long parameter             | Short parameter | Environment variable | Description                                          |
+|----------------------------|-----------------|----------------------|------------------------------------------------------|
+| meta-mode                  | mode            |                      | Provider mode [aws, googlecloud, openstack, (azure)] | 
+| region                     | e               | OS_REGION_NAME       | |
+| availability-zone          | z               |                      | |
+| user                       | u               |                      | |
+| keypair                    | k               |                      | |
+| identity-file              | i               |                      | |
+| master-instance-type       | m               |                      | |
+| master-image               | M               |                      | |
+| master-mounts              | d               |                      | |
+| max-master-ephemerals      | mme             |                      | |
+| use-master-as-compute      | b               |                      | |
+| slave-instance-type        | s               |                      | |
+| slave-image                | S               |                      | |
+| slave-mounts               | f               |                      | |
+| max-slave-ephemerals       | mse             |                      | |
+| slave-instance-count       | n               |                      | |
+| use-spot-instance-request  | usir            |                      | |
+| ports                      | p               |                      | |
+| security-group             | sg              |                      | |
+| vpc                        | vpc             |                      | |
+| router                     | router          |                      | |
+| network                    | network         |                      | |
+| subnet                     | subnet          |                      | |
+| nfs                        | nfs             |                      | |
+| oge                        | oge             |                      | |
+| spark                      | spark           |                      | |
+| hdfs                       | hdfs            |                      | |
+| mesos                      | me              |                      | |
+| cassandra                  | db              |                      | |
+| execute-script             | x               |                      | |
+| early-execute-script       | ex              |                      | |
+| early-slave-execute-script | esx             |                      | |
+| local-fs                   | lfs             |                      | |
+| nfs-shares                 | g               |                      | |
+| ext-nfs-shares             | ge              |                      | |
+| debug-requests             | dr              |                      | |
+| verbose                    | v               |                      | |
+| config                     | o               |                      | |
+| grid-properties-file       | gpf             |                      | |
+
+### Openstack specific parameters
+| Long parameter             | Short parameter | Environment variable | Description                                          |
+|----------------------------|-----------------|----------------------|------------------------------------------------------|
+| openstack-username         | osu             | OS_USERNAME          | |
+| openstack-tenantname       | ost             | OS_PROJECT_NAME      | |
+| openstack-password         | osp             | OS_PASSWORD          | |
+| openstack-endpoint         | ose             | OS_AUTH_URL          | |
+| openstack-domain           | osd             | OS_USER_DOMAIN_NAME  | |
+| openstack-tenantdomain     | ostd            |                      | |
+
+### Google Compute specific parameters
+| Long parameter             | Short parameter | Environment variable | Description                                          |
+|----------------------------|-----------------|----------------------|------------------------------------------------------|
+| google-projectid           | gpid            |                      | |
+| google-image-projectid     | gipid           |                      | |
+| google-credentials-file    | gcf             |                      | |
+
+### Amazon AWS specific parameters
+| Long parameter             | Short parameter | Environment variable | Description                                          |
+|----------------------------|-----------------|----------------------|------------------------------------------------------|
+| aws-credentials-file       | a               |                      | |
+| public-slave-ip            | psi             |                      | |
+| bidprice                   | bp              |                      | |
+| bidprice-master            | bpm             |                      | |
+
+### Azure specific parameters
+| Long parameter             | Short parameter | Environment variable | Description                                          |
+|----------------------------|-----------------|----------------------|------------------------------------------------------|
+| azure-credentials-file     | acf             |                      | |
 
 ## Starting the cluster
 STUB
