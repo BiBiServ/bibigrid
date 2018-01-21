@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
@@ -46,14 +45,16 @@ public class CreateClusterOpenstack extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterOpenstack.class);
     private static final boolean CONFIG_DRIVE = true;
 
-    private final ConfigurationOpenstack config;
     private final OSClient os;
     private CreateClusterEnvironmentOpenstack environment;
     private final Map<String, String> metadata = new HashMap<>();
+    private Flavor masterFlavor, slaveFlavor;
+    private String masterImage, slaveImage;
+    private DeviceMapper masterDeviceMapper, slaveDeviceMapper;
+    private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
 
     CreateClusterOpenstack(final ConfigurationOpenstack config, final ProviderModule providerModule) {
         super(config, providerModule);
-        this.config = config;
         os = OpenStackUtils.buildOSClient(config);
     }
 
@@ -64,16 +65,8 @@ public class CreateClusterOpenstack extends CreateCluster {
         return environment = new CreateClusterEnvironmentOpenstack(this);
     }
 
-    private Flavor masterFlavor, slaveFlavor;
-    //private CreateServerOptions masterOptions, slaveOptions;  -> os.compute()
-    private String masterImage, slaveImage;
-    private DeviceMapper masterDeviceMapper, slaveDeviceMapper;
-    private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
-
     @Override
     public CreateClusterOpenstack configureClusterMasterInstance() {
-        List<Flavor> flavors = listFlavors();
-
         // DeviceMapper init.
         Map<String, String> masterVolumeToMountPointMap = new HashMap<>();
         for (String nameOrId : config.getMasterMounts().keySet()) {
@@ -116,23 +109,22 @@ public class CreateClusterOpenstack extends CreateCluster {
 
         //masterImage = config.getRegion() + "/" + config.getMasterImage();
         masterImage = config.getMasterImage();
-
-        String type = config.getMasterInstanceType().getValue();
-        masterFlavor = null;
-        for (Flavor f : flavors) {
-            if (f.getName().equals(type)) {
-                masterFlavor = f;
-                break;
-            }
-        }
+        masterFlavor = getFlavorByName(config.getMasterInstanceType().getValue());
         LOG.info("Master configured");
         return this;
     }
 
+    private Flavor getFlavorByName(String name) {
+        for (Flavor flavor : os.compute().flavors().list()) {
+            if (flavor.getName().equals(name)) {
+                return flavor;
+            }
+        }
+        return null;
+    }
+
     @Override
     public CreateClusterOpenstack configureClusterSlaveInstance() {
-        List<Flavor> flavors = listFlavors();
-
         // DeviceMapper Slave. @ToDo
         Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
 
@@ -152,245 +144,211 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .bootIndex(-1)
                     .build();
             slaveMappings.add(bdmc);
-
         }
 
-        // Options.
         //slaveImage = config.getRegion() + "/" + config.getSlaveImage();
         slaveImage = config.getSlaveImage();
-        String type = config.getSlaveInstanceType().getValue();
-        slaveFlavor = null;
-
-        for (Flavor f : flavors) {
-            if (f.getName().equals(type)) {
-                slaveFlavor = f;
-                break;
-            }
-        }
+        slaveFlavor = getFlavorByName(config.getSlaveInstanceType().getValue());
         LOG.info("Slave(s) configured");
         return this;
     }
 
-    private final Instance master = new Instance();
-    private final Map<String, Instance> slaves = new HashMap<>();
+    @Override
+    protected InstanceOpenstack launchClusterMasterInstance() {
+        ServerCreate sc = Builders.server()
+                .name("bibigrid-master-" + clusterId)
+                .flavor(masterFlavor.getId())
+                .image(masterImage)
+                .keypairName(config.getKeypair())
+                .addSecurityGroup(environment.getSecGroupExtension().getName())
+                .availabilityZone(config.getAvailabilityZone())
+                .userData(ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), true))
+                .addMetadata(metadata)
+                .configDrive(CONFIG_DRIVE)
+                .networks(Arrays.asList(environment.getNetwork().getId()))
+                .build();
+        //Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
+        Server server = os.compute().servers().boot(sc); // boot and return immediately
+
+        // check if anything goes wrong,
+        Fault fault = server.getFault();
+        if (fault != null) {
+            // some more debug information in verbose mode
+            LOG.info(V, "{},{}", fault.getCode(), fault.getMessage());
+            // print error message and abort launch
+            if (fault.getCode() == 500) {
+                LOG.error("Launch master :: {}", fault.getMessage());
+                return null;
+            }
+        }
+
+        // Network configuration
+        LOG.info("Master (ID: {}) started", server.getId());
+        InstanceOpenstack master = new InstanceOpenstack();
+        master.setId(server.getId());
+        master.setPrivateIp(waitForAddress(server.getId(), environment.getNetwork().getName()).getAddr());
+
+        master.setHostname("bibigrid-master-" + clusterId);
+        master.updateNeutronHostname();
+
+        // get and assign floating ip to master
+        ActionResponse ar = null;
+        boolean assigned = false;
+
+        List<String> blacklist = new ArrayList<>();
+        while (ar == null || !assigned) {
+            // get next free floatingIP
+            NetFloatingIP floatingIp = getFloatingIP(blacklist);
+            // if null  there is no free floating ip available
+            if (floatingIp == null) {
+                LOG.error("No unused FloatingIP available! Abort!");
+                return null;
+            }
+            // put ip on blacklist
+            blacklist.add(floatingIp.getFloatingIpAddress());
+            // try to assign floating ip to server
+            ar = os.compute().floatingIps().addFloatingIP(server, floatingIp.getFloatingIpAddress());
+            // in case of success try  update master object
+            if (ar.isSuccess()) {
+                sleep(1, false);
+                Server tmp = os.compute().servers().get(server.getId());
+                if (tmp != null) {
+                    assigned = checkForFloatingIp(tmp, floatingIp.getFloatingIpAddress());
+                    if (assigned) {
+                        master.setPublicIp(floatingIp.getFloatingIpAddress());
+                        LOG.info("FloatingIP {} assigned to Master(ID: {}) ", master.getPublicIp(), master.getId());
+                    } else {
+                        LOG.warn("FloatingIP {} assignment failed ! Try another one ...", floatingIp.getFloatingIpAddress());
+                    }
+                }
+            } else {
+                LOG.warn("FloatingIP {} assignment failed with fault : {}! Try another one ...", floatingIp.getFloatingIpAddress(), ar.getFault());
+            }
+        }
+        LOG.info("Master (ID: {}) network configuration finished", master.getId());
+
+        // wait for master available
+        do {
+            checkForServerAndUpdateInstance(server.getId(), master);
+            if (!master.isActive()) { // if not yet active wait ....
+                sleep(2);
+            } else if (master.hasError()) {
+                // if the master fails we can do nothing and must shutdown everything
+                return null;
+            }
+        } while (!master.isActive());
+
+        // attach Volumes
+        if (!masterDeviceMapper.getSnapshotIdToMountPoint().isEmpty()) {
+            for (String volumeId : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+                //check if volume is available
+                Volume v = os.blockStorage().volumes().get(volumeId);
+                boolean waiting = true;
+                while (waiting) {
+                    switch (v.getStatus()) {
+                        case AVAILABLE:
+                            waiting = false;
+                            break;
+                        case CREATING: {
+                            sleep(5);
+                            LOG.info(V, "Wait for Volume ({}) available", v.getId());
+                            v = os.blockStorage().volumes().get(volumeId);
+                            break;
+                        }
+                        default:
+                            waiting = false;
+                            LOG.error("Volume not available  (Status : {})", v.getStatus());
+                    }
+                }
+
+                if (v.getStatus().equals(Status.AVAILABLE)) {
+                    // @ToDo: Test if a volume can be attached to a non active server instance ...
+                    VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeId,
+                            masterDeviceMapper.getDeviceNameForSnapshotId(volumeId));
+                    if (va == null) {
+                        LOG.error("Attaching volume {} to master failed ...", volumeId);
+                    } else {
+                        LOG.info(V, "Volume {}  attached to Master.", va.getId());
+                    }
+                }
+            }
+            LOG.info("{} Volume(s) attached to  Master.", masterDeviceMapper.getSnapshotIdToMountPoint().size());
+        }
+        return master;
+    }
 
     @Override
-    public boolean launchClusterInstances() {
-        try {
+    protected List<InstanceOpenstack> launchClusterSlaveInstances() {
+        Map<String, InstanceOpenstack> slaves = new HashMap<>();
+        for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
             ServerCreate sc = Builders.server()
-                    .name("bibigrid-master-" + clusterId)
-                    .flavor(masterFlavor.getId())
-                    .image(masterImage)
+                    .name("bibigrid-slave-" + (i + 1) + "-" + clusterId)
+                    .flavor(slaveFlavor.getId())
+                    .image(slaveImage)
                     .keypairName(config.getKeypair())
-                    .addSecurityGroup(environment.getSecGroupExtension().getName())
+                    .addSecurityGroup(environment.getSecGroupExtension().getId())
                     .availabilityZone(config.getAvailabilityZone())
-                    .userData(ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), true))
-                    .addMetadata(metadata)
+                    .userData(ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true))
                     .configDrive(CONFIG_DRIVE)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();
-            //Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
-            Server server = os.compute().servers().boot(sc); // boot and return immediately
+            Server tmp = os.compute().servers().boot(sc);
+            InstanceOpenstack tmp_instance = new InstanceOpenstack(tmp.getId());
+            tmp_instance.setHostname("bibigrid-slave-" + (i + 1) + "-" + clusterId);
+            slaves.put(tmp.getId(), tmp_instance);
 
-            // check if anything goes wrong,
-            Fault fault = server.getFault();
-            if (fault != null) {
-                // some more debug information in verbose mode
-                LOG.info(V, "{},{}", fault.getCode(), fault.getMessage());
-                // print error message and abort launch
-                if (fault.getCode() == 500) {
-                    LOG.error("Launch master :: {}", fault.getMessage());
-                    return false;
-                }
-            }
-
-            // Network configuration
-            LOG.info("Master (ID: {}) started", server.getId());
-
-            master.setId(server.getId());
-            master.setIp(waitForAddress(server.getId(), environment.getNetwork().getName()).getAddr());
-
-            master.setHostname("bibigrid-master-" + clusterId);
-            master.updateNeutronHostname();
-
-            // get and assign floating ip to master
-            ActionResponse ar = null;
-            boolean assigned = false;
-
-            List<String> blacklist = new ArrayList<>();
-            while (ar == null || !assigned) {
-                // get next free floatingIP
-                NetFloatingIP floatingIp = getFloatingIP(blacklist);
-                // if null  there is no free floating ip available
-                if (floatingIp == null) {
-                    LOG.error("No unused FloatingIP available! Abort!");
-                    return false;
-                }
-                // put ip on blacklist
-                blacklist.add(floatingIp.getFloatingIpAddress());
-                // try to assign floating ip to server
-                ar = os.compute().floatingIps().addFloatingIP(server, floatingIp.getFloatingIpAddress());
-                // in case of success try  update master object
-                if (ar.isSuccess()) {
-                    sleep(1, false);
-                    Server tmp = os.compute().servers().get(server.getId());
-                    if (tmp != null) {
-                        assigned = checkForFloatingIp(tmp, floatingIp.getFloatingIpAddress());
-                        if (assigned) {
-                            master.setPublicIp(floatingIp.getFloatingIpAddress());
-                            LOG.info("FloatingIP {} assigned to Master(ID: {}) ", master.getPublicIp(), master.getId());
-                        } else {
-                            LOG.warn("FloatingIP {} assignment failed ! Try another one ...", floatingIp.getFloatingIpAddress());
-                        }
-                    }
-                } else {
-                    LOG.warn("FloatingIP {} assignment failed with fault : {}! Try another one ...", floatingIp.getFloatingIpAddress(), ar.getFault());
-                }
-            }
-            LOG.info("Master (ID: {}) network configuration finished", master.getId());
-
-            // wait for master available
-            do {
-                checkForServerAndUpdateInstance(server.getId(), master);
-                if (!master.isActive()) { // if not yet active wait ....
-                    sleep(2);
-                } else if (master.hasError()) {
-                    // if the master fails we can do nothing and must shutdown everything
-                    return false;
-                }
-            } while (!master.isActive());
-
-            // attach Volumes
-            if (!masterDeviceMapper.getSnapshotIdToMountPoint().isEmpty()) {
-                for (String volumeId : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
-                    //check if volume is available
-                    Volume v = os.blockStorage().volumes().get(volumeId);
-                    boolean waiting = true;
-                    while (waiting) {
-                        switch (v.getStatus()) {
-                            case AVAILABLE:
-                                waiting = false;
-                                break;
-                            case CREATING: {
-                                sleep(5);
-                                LOG.info(V, "Wait for Volume ({}) available", v.getId());
-                                v = os.blockStorage().volumes().get(volumeId);
-                                break;
-                            }
-                            default:
-                                waiting = false;
-                                LOG.error("Volume not available  (Status : {})", v.getStatus());
-                        }
-                    }
-
-                    if (v.getStatus().equals(Status.AVAILABLE)) {
-                        // @ToDo: Test if a volume can be attached to a non active server instance ...
-                        VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeId,
-                                masterDeviceMapper.getDeviceNameForSnapshotId(volumeId));
-                        if (va == null) {
-                            LOG.error("Attaching volume {} to master failed ...", volumeId);
-                        } else {
-                            LOG.info(V, "Volume {}  attached to Master.", va.getId());
-                        }
-                    }
-                }
-                LOG.info("{} Volume(s) attached to  Master.", masterDeviceMapper.getSnapshotIdToMountPoint().size());
-            }
-
-            // boot slave instances
-            for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
-                sc = Builders.server()
-                        .name("bibigrid-slave-" + (i + 1) + "-" + clusterId)
-                        .flavor(slaveFlavor.getId())
-                        .image(slaveImage)
-                        .keypairName(config.getKeypair())
-                        .addSecurityGroup(environment.getSecGroupExtension().getId())
-                        .availabilityZone(config.getAvailabilityZone())
-                        .userData(ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true))
-                        .configDrive(CONFIG_DRIVE)
-                        .networks(Arrays.asList(environment.getNetwork().getId()))
-                        .build();
-                Server tmp = os.compute().servers().boot(sc);
-                Instance tmp_instance = new Instance(tmp.getId());
-                tmp_instance.setHostname("bibigrid-slave-" + (i + 1) + "-" + clusterId);
-                slaves.put(tmp.getId(), tmp_instance);
-
-                //slaveIDs.add(tmp.getId());
-                LOG.info(V, "Instance request for {}  ", sc.getName());
-            }
-
-            LOG.info("Waiting for slave instances ready ...");
-
-            // check
-            int active = 0;
-            List<String> ignoreList = new ArrayList<>();
-            while (slaves.size() != active + ignoreList.size()) {
-                // wait for some seconds to not overload REST API
-                sleep(2);
-                // get fresh server object for given server id
-                for (Instance slave : slaves.values()) {
-                    //ignore if instance is already active ...
-                    if (!slave.isActive() || !slave.hasError()) {
-                        // check server status
-                        checkForServerAndUpdateInstance(slave.getId(), slave);
-                        if (slave.isActive()) {
-                            LOG.info("[{}/{}] Instance {} is active !", active, slaves.size(), slave.getHostname());
-                            active++;
-                        } else if (slave.hasError()) {
-                            LOG.warn("Ignore slave instance '{}' ", slave.getHostname());
-                            ignoreList.add(slave.getHostname());
-                        } else {
-                            sleep(2);
-                        }
-                    }
-                }
-            }
-
-            // remove ignored instances from slave map
-            for (String name : ignoreList) {
-                slaves.remove(name);
-            }
-
-            LOG.info(V, "Wait for slave network configuration finished ...");
-            // wait for slave network finished ... update server instance list
-            for (Instance slave : slaves.values()) {
-                slave.setIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
-                slave.updateNeutronHostname();
-            }
-            // TODO
-            // Mount a volume to slave instance
-            // - create (count of slave instances) snapshots
-            // - mount each snapshot as volume to an instance
-            LOG.info("Cluster (ID: {}) successfully created!", clusterId);
-
-            List<String> slaveIps = new ArrayList<>();
-            List<String> slaveHostnames = new ArrayList<>();
-            for (Instance slave : slaves.values()) {
-                slaveIps.add(slave.getIp());
-                slaveHostnames.add(slave.getHostname());
-            }
-            String masterHostname = master.getHostname();
-            configureMaster(master.getIp(), master.getPublicIp(), masterHostname, slaveIps, slaveHostnames,
-                    environment.getSubnet().getCidr());
-
-            logFinishedInfoMessage(master.getPublicIp());
-            saveGridPropertiesFile(master.getPublicIp());
-        } catch (Exception e) {
-            // print stacktrace only verbose mode, otherwise the message returned by OS is fine
-            if (VerboseOutputFilter.SHOW_VERBOSE) {
-                LOG.error(e.getMessage(), e);
-            } else {
-                LOG.error(e.getMessage());
-            }
-            return false;
+            //slaveIDs.add(tmp.getId());
+            LOG.info(V, "Instance request for {}  ", sc.getName());
         }
-        return true;
+
+        LOG.info("Waiting for slave instances ready ...");
+
+        // check
+        int active = 0;
+        List<String> ignoreList = new ArrayList<>();
+        while (slaves.size() != active + ignoreList.size()) {
+            // wait for some seconds to not overload REST API
+            sleep(2);
+            // get fresh server object for given server id
+            for (InstanceOpenstack slave : slaves.values()) {
+                //ignore if instance is already active ...
+                if (!slave.isActive() || !slave.hasError()) {
+                    // check server status
+                    checkForServerAndUpdateInstance(slave.getId(), slave);
+                    if (slave.isActive()) {
+                        LOG.info("[{}/{}] Instance {} is active !", active, slaves.size(), slave.getHostname());
+                        active++;
+                    } else if (slave.hasError()) {
+                        LOG.warn("Ignore slave instance '{}' ", slave.getHostname());
+                        ignoreList.add(slave.getHostname());
+                    } else {
+                        sleep(2);
+                    }
+                }
+            }
+        }
+
+        // remove ignored instances from slave map
+        for (String name : ignoreList) {
+            slaves.remove(name);
+        }
+
+        LOG.info(V, "Wait for slave network configuration finished ...");
+        // wait for slave network finished ... update server instance list
+        for (InstanceOpenstack slave : slaves.values()) {
+            slave.setPrivateIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
+            slave.updateNeutronHostname();
+        }
+        // TODO
+        // Mount a volume to slave instance
+        // - create (count of slave instances) snapshots
+        // - mount each snapshot as volume to an instance
+        return new ArrayList<>(slaves.values());
     }
 
-    private List<Flavor> listFlavors() {
-        List<Flavor> ret = new ArrayList<>();
-        ret.addAll(os.compute().flavors().list());
-        return ret;
+    @Override
+    protected String getSubnetCidr() {
+        return environment.getSubnet().getCidr();
     }
 
     private NetFloatingIP getFloatingIP(List<String> blacklist) {
@@ -418,10 +376,6 @@ public class CreateClusterOpenstack extends CreateCluster {
             LOG.error(e.getMessage());
         }
         return null;
-    }
-
-    Configuration getConfig() {
-        return this.config;
     }
 
     OSClient getClient() {
@@ -522,7 +476,7 @@ public class CreateClusterOpenstack extends CreateCluster {
      * Check for Server status and update instance with id, hostname and active
      * state. Returns false in the case of an error, true otherwise.
      */
-    private void checkForServerAndUpdateInstance(String id, Instance instance) {
+    private void checkForServerAndUpdateInstance(String id, InstanceOpenstack instance) {
         Server si = os.compute().servers().get(id);
         // check for status available
         if (si.getStatus() != null) {

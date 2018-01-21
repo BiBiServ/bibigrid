@@ -150,28 +150,7 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     @Override
-    public boolean launchClusterInstances() {
-        Instance masterInstance = launchClusterMasterInstance();
-        List<Instance> slaveInstances = launchClusterSlaveInstances();
-        // post configure master
-        List<String> slaveIps = new ArrayList<>();
-        List<String> slaveHostnames = new ArrayList<>();
-        if (slaveInstances != null) {
-            for (Instance slave : slaveInstances) {
-                slaveIps.add(slave.getPrivateIpAddress());
-                slaveHostnames.add(slave.getPrivateDnsName());
-            }
-        }
-        String masterHostname = masterInstance.getPublicDnsName();
-        String subnetCidr = environment.getSubnet().getCidrBlock();
-        configureMaster(masterInstance.getPrivateDnsName(), masterInstance.getPublicIpAddress(), masterHostname,
-                slaveIps, slaveHostnames, subnetCidr);
-        logFinishedInfoMessage(masterInstance.getPublicIpAddress());
-        saveGridPropertiesFile(masterInstance.getPublicIpAddress());
-        return true;
-    }
-
-    private Instance launchClusterMasterInstance() {
+    protected InstanceAWS launchClusterMasterInstance() {
         LOG.info("Requesting master instance...");
         Instance masterInstance;
         Tag masterNameTag = new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId);
@@ -252,100 +231,97 @@ public class CreateClusterAWS extends CreateCluster {
             sleep(10);
         } while (true);
         LOG.info(I, "Status checks successful.");
-        return masterInstance;
+        return new InstanceAWS(masterInstance);
     }
 
-    private List<Instance> launchClusterSlaveInstances() {
+    @Override
+    protected List<InstanceAWS> launchClusterSlaveInstances() {
         // run slave instances and supply userdata
-        List<Instance> slaveInstances = null;
-        if (config.getSlaveInstanceCount() > 0) {
-            Tag slaveNameTag = new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId);
-            String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true);
-            if (config.isUseSpotInstances()) {
-                RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest()
-                        .withType(SpotInstanceType.OneTime)
-                        .withInstanceCount(config.getSlaveInstanceCount())
-                        .withLaunchGroup("lg_" + clusterId)
-                        .withSpotPrice(Double.toString(config.getBidPrice()));
+        List<Instance> slaveInstances;
+        Tag slaveNameTag = new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId);
+        String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true);
+        if (config.isUseSpotInstances()) {
+            RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest()
+                    .withType(SpotInstanceType.OneTime)
+                    .withInstanceCount(config.getSlaveInstanceCount())
+                    .withLaunchGroup("lg_" + clusterId)
+                    .withSpotPrice(Double.toString(config.getBidPrice()));
 
-                LaunchSpecification slaveLaunchSpecification = new LaunchSpecification()
-                        .withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
-                        .withPlacement(spotInstancePlacement)
-                        .withKeyName(config.getKeypair())
-                        .withImageId(config.getSlaveImage())
-                        .withUserData(base64SlaveUserData)
-                        .withBlockDeviceMappings(slaveBlockDeviceMappings)
-                        .withNetworkInterfaces(slaveNetworkInterface);
+            LaunchSpecification slaveLaunchSpecification = new LaunchSpecification()
+                    .withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
+                    .withPlacement(spotInstancePlacement)
+                    .withKeyName(config.getKeypair())
+                    .withImageId(config.getSlaveImage())
+                    .withUserData(base64SlaveUserData)
+                    .withBlockDeviceMappings(slaveBlockDeviceMappings)
+                    .withNetworkInterfaces(slaveNetworkInterface);
 
-                slaveReq.setLaunchSpecification(slaveLaunchSpecification);
-                RequestSpotInstancesResult slaveReqResult = ec2.requestSpotInstances(slaveReq);
-                List<SpotInstanceRequest> slaveReqResponses = slaveReqResult.getSpotInstanceRequests();
-                // collect all spotInstanceRequestIds ...
-                List<String> spotInstanceRequestIds = new ArrayList<>();
-                for (SpotInstanceRequest requestResponse : slaveReqResponses) {
-                    spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
-                }
-                sleep(1);
-                LOG.info(V, "tag spot request instances");
-                // tag spot requests (slave)
-                CreateTagsRequest ctr = new CreateTagsRequest()
-                        .withResources(spotInstanceRequestIds)
-                        .withTags(bibigridId, username, slaveNameTag);
-                // Setting tags for spot requests can cause an amazon service exception, if the spot request
-                // returns an id, but the id isn't registered in spot request registry yet.
-                int counter = 0;
-                boolean finished = false;
-                while (!finished) {
-                    try {
-                        ec2.createTags(ctr);
-                        finished = true;
-                    } catch (AmazonServiceException ase) {
-                        if (counter < 5) {
-                            LOG.warn("{} ... try again in 10 seconds.", ase.getMessage());
-                            sleep(10);
-                            counter++;
-                        } else {
-                            throw ase;
-                        }
+            slaveReq.setLaunchSpecification(slaveLaunchSpecification);
+            RequestSpotInstancesResult slaveReqResult = ec2.requestSpotInstances(slaveReq);
+            List<SpotInstanceRequest> slaveReqResponses = slaveReqResult.getSpotInstanceRequests();
+            // collect all spotInstanceRequestIds ...
+            List<String> spotInstanceRequestIds = new ArrayList<>();
+            for (SpotInstanceRequest requestResponse : slaveReqResponses) {
+                spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
+            }
+            sleep(1);
+            LOG.info(V, "tag spot request instances");
+            // tag spot requests (slave)
+            CreateTagsRequest ctr = new CreateTagsRequest()
+                    .withResources(spotInstanceRequestIds)
+                    .withTags(bibigridId, username, slaveNameTag);
+            // Setting tags for spot requests can cause an amazon service exception, if the spot request
+            // returns an id, but the id isn't registered in spot request registry yet.
+            int counter = 0;
+            boolean finished = false;
+            while (!finished) {
+                try {
+                    ec2.createTags(ctr);
+                    finished = true;
+                } catch (AmazonServiceException ase) {
+                    if (counter < 5) {
+                        LOG.warn("{} ... try again in 10 seconds.", ase.getMessage());
+                        sleep(10);
+                        counter++;
+                    } else {
+                        throw ase;
                     }
                 }
-                LOG.info("Waiting for slave instance(s) (spot request) to finish booting ...");
-                // wait for spot request (slave) finished
-                slaveInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
-            } else {
-                RunInstancesRequest slaveReq = new RunInstancesRequest()
-                        .withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
-                        .withMinCount(config.getSlaveInstanceCount())
-                        .withMaxCount(config.getSlaveInstanceCount())
-                        .withPlacement(instancePlacement)
-                        .withKeyName(config.getKeypair())
-                        .withImageId(config.getSlaveImage())
-                        .withUserData(base64SlaveUserData)
-                        .withBlockDeviceMappings(slaveBlockDeviceMappings)
-                        .withNetworkInterfaces(slaveNetworkInterface);
-
-                RunInstancesResult runInstancesResult = ec2.runInstances(slaveReq);
-                String slaveReservationId = runInstancesResult.getReservation().getReservationId();
-                // create a list of all slave instances
-                List<String> slaveInstanceListIds = new ArrayList<>();
-                for (Instance i : runInstancesResult.getReservation().getInstances()) {
-                    slaveInstanceListIds.add(i.getInstanceId());
-                }
-                LOG.info("Waiting for slave instance(s) to finish booting ...");
-                slaveInstances = waitForInstances(slaveInstanceListIds);
             }
-            // Waiting for master instance to run
-            LOG.info(I, "Slave instance(s) is now running!");
-            // Tagging all slaves with a name
-            for (Instance si : slaveInstances) {
-                ec2.createTags(new CreateTagsRequest()
-                        .withResources(si.getInstanceId())
-                        .withTags(bibigridId, username, slaveNameTag));
-            }
+            LOG.info("Waiting for slave instance(s) (spot request) to finish booting ...");
+            // wait for spot request (slave) finished
+            slaveInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
         } else {
-            LOG.info("No Slave instance(s) requested !");
+            RunInstancesRequest slaveReq = new RunInstancesRequest()
+                    .withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
+                    .withMinCount(config.getSlaveInstanceCount())
+                    .withMaxCount(config.getSlaveInstanceCount())
+                    .withPlacement(instancePlacement)
+                    .withKeyName(config.getKeypair())
+                    .withImageId(config.getSlaveImage())
+                    .withUserData(base64SlaveUserData)
+                    .withBlockDeviceMappings(slaveBlockDeviceMappings)
+                    .withNetworkInterfaces(slaveNetworkInterface);
+
+            RunInstancesResult runInstancesResult = ec2.runInstances(slaveReq);
+            String slaveReservationId = runInstancesResult.getReservation().getReservationId();
+            // create a list of all slave instances
+            List<String> slaveInstanceListIds = new ArrayList<>();
+            for (Instance i : runInstancesResult.getReservation().getInstances()) {
+                slaveInstanceListIds.add(i.getInstanceId());
+            }
+            LOG.info("Waiting for slave instance(s) to finish booting ...");
+            slaveInstances = waitForInstances(slaveInstanceListIds);
         }
-        return slaveInstances;
+        // Waiting for master instance to run
+        LOG.info(I, "Slave instance(s) is now running!");
+        // Tagging all slaves with a name
+        for (Instance si : slaveInstances) {
+            ec2.createTags(new CreateTagsRequest()
+                    .withResources(si.getInstanceId())
+                    .withTags(bibigridId, username, slaveNameTag));
+        }
+        return slaveInstances.stream().map(InstanceAWS::new).collect(Collectors.toList());
     }
 
     /**
@@ -462,11 +438,12 @@ public class CreateClusterAWS extends CreateCluster {
         return ec2;
     }
 
-    ConfigurationAWS getConfig() {
-        return config;
-    }
-
     Tag getBibigridId() {
         return bibigridId;
+    }
+
+    @Override
+    protected String getSubnetCidr() {
+        return environment.getSubnet().getCidrBlock();
     }
 }

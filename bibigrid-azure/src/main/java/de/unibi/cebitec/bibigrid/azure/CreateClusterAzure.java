@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -22,14 +23,12 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  */
 public class CreateClusterAzure extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterAzure.class);
-    private final ConfigurationAzure config;
     private Azure compute;
     private String masterStartupScript;
     private CreateClusterEnvironmentAzure environment;
 
     CreateClusterAzure(final ConfigurationAzure config, final ProviderModule providerModule) {
         super(config, providerModule);
-        this.config = config;
     }
 
     @Override
@@ -59,30 +58,7 @@ public class CreateClusterAzure extends CreateCluster {
     }
 
     @Override
-    public boolean launchClusterInstances() {
-        VirtualMachine masterInstance = launchClusterMasterInstance();
-        List<VirtualMachine> slaveInstances = launchClusterSlaveInstances();
-        // just to be sure, everything is present, wait 5 seconds
-        sleep(5);
-        // post configure master
-        List<String> slaveIps = new ArrayList<>();
-        List<String> slaveHostnames = new ArrayList<>();
-        if (slaveInstances != null) {
-            for (VirtualMachine slave : slaveInstances) {
-                slaveIps.add(slave.getPrimaryPublicIPAddress().ipAddress());
-                slaveHostnames.add(slave.getPrimaryPublicIPAddress().fqdn());
-            }
-        }
-        String masterPublicIp = masterInstance.getPrimaryPublicIPAddress().ipAddress();
-        configureMaster(masterInstance.getPrimaryNetworkInterface().primaryPrivateIP(), masterPublicIp,
-                masterInstance.getPrimaryPublicIPAddress().fqdn(), slaveIps, slaveHostnames,
-                environment.getSubnetCidr());
-        logFinishedInfoMessage(masterPublicIp);
-        saveGridPropertiesFile(masterPublicIp);
-        return true;
-    }
-
-    private VirtualMachine launchClusterMasterInstance() {
+    protected InstanceAzure launchClusterMasterInstance() {
         LOG.info("Requesting master instance...");
         String masterInstanceName = PREFIX + "master-" + clusterId;
         //compute.publicIPAddresses().define("").withRegion("").withExistingResourceGroup("").withStaticIP().
@@ -112,49 +88,44 @@ public class CreateClusterAzure extends CreateCluster {
         // TODO
         LOG.info(I, "Master instance is now running!");
         waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
-        return masterInstance;
+        return new InstanceAzure(masterInstance);
     }
 
-    private List<VirtualMachine> launchClusterSlaveInstances() {
+    @Override
+    protected List<InstanceAzure> launchClusterSlaveInstances() {
         List<VirtualMachine> slaveInstances = new ArrayList<>();
-        int instanceCount = config.getSlaveInstanceCount();
-        if (instanceCount > 0) {
-            LOG.info("Requesting slave instances...");
-            String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true);
-            String slaveInstanceNameTag = PREFIX + "slave-" + clusterId;
-            for (int i = 0; i < instanceCount; i++) {
-                String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
-                VirtualMachine slaveInstance = compute.virtualMachines()
-                        .define(slaveInstanceId)
-                        .withRegion(config.getRegion())
-                        .withExistingResourceGroup(environment.getResourceGroup())
-                        .withExistingPrimaryNetwork(environment.getVpc())
-                        .withSubnet(environment.getSubnet().name())
-                        .withPrimaryPrivateIPAddressDynamic()
-                        .withNewPrimaryPublicIPAddress(environment.getMasterIP()) // TODO
-                        .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, config.getSlaveImage()))
-                        .withRootUsername(config.getUser())
-                        .withSsh("") // TODO
-                        .withCustomData(base64SlaveUserData)
-                        .withNewDataDisk(50)
-                        .withSize(config.getSlaveInstanceType().getValue())
-                        .withTag("bibigrid-id", clusterId)
-                        .withTag("user", config.getUser())
-                        .withTag("name", slaveInstanceNameTag)
-                        .withTag("creation", "" + new Date().getTime())
-                        .create();
-                // TODO .attachDisks(config.getSlaveMounts())
-                // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())
-                slaveInstances.add(slaveInstance);
-            }
-            LOG.info("Waiting for slave instance(s) to finish booting...");
-            // TODO
-            LOG.info(I, "Slave instance(s) is now running!");
-            waitForInstancesStatusCheck(slaveInstances);
-        } else {
-            LOG.info("No Slave instance(s) requested!");
+        String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true);
+        String slaveInstanceNameTag = PREFIX + "slave-" + clusterId;
+        for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
+            String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
+            VirtualMachine slaveInstance = compute.virtualMachines()
+                    .define(slaveInstanceId)
+                    .withRegion(config.getRegion())
+                    .withExistingResourceGroup(environment.getResourceGroup())
+                    .withExistingPrimaryNetwork(environment.getVpc())
+                    .withSubnet(environment.getSubnet().name())
+                    .withPrimaryPrivateIPAddressDynamic()
+                    .withNewPrimaryPublicIPAddress(environment.getMasterIP()) // TODO
+                    .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, config.getSlaveImage()))
+                    .withRootUsername(config.getUser())
+                    .withSsh("") // TODO
+                    .withCustomData(base64SlaveUserData)
+                    .withNewDataDisk(50)
+                    .withSize(config.getSlaveInstanceType().getValue())
+                    .withTag("bibigrid-id", clusterId)
+                    .withTag("user", config.getUser())
+                    .withTag("name", slaveInstanceNameTag)
+                    .withTag("creation", "" + new Date().getTime())
+                    .create();
+            // TODO .attachDisks(config.getSlaveMounts())
+            // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())
+            slaveInstances.add(slaveInstance);
         }
-        return slaveInstances;
+        LOG.info("Waiting for slave instance(s) to finish booting...");
+        // TODO
+        LOG.info(I, "Slave instance(s) is now running!");
+        waitForInstancesStatusCheck(slaveInstances);
+        return slaveInstances.stream().map(InstanceAzure::new).collect(Collectors.toList());
     }
 
     private void waitForInstancesStatusCheck(List<VirtualMachine> instances) {
@@ -174,11 +145,12 @@ public class CreateClusterAzure extends CreateCluster {
         LOG.info(I, "Status checks successful.");
     }
 
-    ConfigurationAzure getConfig() {
-        return config;
-    }
-
     Azure getCompute() {
         return compute;
+    }
+
+    @Override
+    protected String getSubnetCidr() {
+        return environment.getSubnetCidr();
     }
 }

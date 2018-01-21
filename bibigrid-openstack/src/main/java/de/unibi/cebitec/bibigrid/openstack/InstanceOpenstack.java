@@ -1,13 +1,14 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.model.Instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public class Instance {
-    private static final Logger LOG = LoggerFactory.getLogger(Instance.class);
+public final class InstanceOpenstack extends Instance {
+    private static final Logger LOG = LoggerFactory.getLogger(InstanceOpenstack.class);
 
     private boolean active = false;
     private boolean error = false;
@@ -17,10 +18,10 @@ public class Instance {
     private String hostname;
     private String neutronHostname;
 
-    Instance() {
+    InstanceOpenstack() {
     }
 
-    Instance(String id) {
+    InstanceOpenstack(String id) {
         this.id = id;
     }
 
@@ -32,15 +33,17 @@ public class Instance {
         this.id = id;
     }
 
-    String getIp() {
+    @Override
+    public String getPrivateIp() {
         return ip;
     }
 
-    void setIp(String ip) {
+    void setPrivateIp(String ip) {
         this.ip = ip;
     }
 
-    String getPublicIp() {
+    @Override
+    public String getPublicIp() {
         return publicIp;
     }
 
@@ -48,7 +51,8 @@ public class Instance {
         this.publicIp = publicIp;
     }
 
-    String getHostname() {
+    @Override
+    public String getHostname() {
         return hostname;
     }
 

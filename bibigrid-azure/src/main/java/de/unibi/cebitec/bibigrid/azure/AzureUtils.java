@@ -2,7 +2,6 @@ package de.unibi.cebitec.bibigrid.azure;
 
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.ImageReference;
-import com.microsoft.azure.management.compute.VirtualMachineImage;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
 import java.io.File;
@@ -12,9 +11,10 @@ import java.io.IOException;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 final class AzureUtils {
-    static Azure getComputeService(ConfigurationAzure config) {
+    static Azure getComputeService(Configuration config) {
         try {
-            return Azure.authenticate(new File(config.getAzureCredentialsFile())).withDefaultSubscription();
+            ConfigurationAzure azureConfig = (ConfigurationAzure) config;
+            return Azure.authenticate(new File(azureConfig.getAzureCredentialsFile())).withDefaultSubscription();
         } catch (IOException e) {
             e.printStackTrace();
         }

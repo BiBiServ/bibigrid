@@ -1,15 +1,9 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import com.jcraft.jsch.*;
-import de.unibi.cebitec.bibigrid.core.model.AnsibleConfig;
-import de.unibi.cebitec.bibigrid.core.model.AnsibleHostsConfig;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
-import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
-import de.unibi.cebitec.bibigrid.core.util.JSchLogger;
-import de.unibi.cebitec.bibigrid.core.util.ShellScriptCreator;
-import de.unibi.cebitec.bibigrid.core.util.SshFactory;
+import de.unibi.cebitec.bibigrid.core.util.*;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +12,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -41,7 +32,7 @@ public abstract class CreateCluster implements Intent {
     private static final int SSH_ATTEMPTS = 25; // TODO: decide value or parameter
 
     protected final ProviderModule providerModule;
-    private final Configuration config;
+    protected final Configuration config;
     protected final String clusterId;
 
     protected CreateCluster(Configuration config, ProviderModule providerModule) {
@@ -104,9 +95,54 @@ public abstract class CreateCluster implements Intent {
     /**
      * Start the configured cluster now.
      */
-    public abstract boolean launchClusterInstances();
+    public boolean launchClusterInstances() {
+        try {
+            Instance master = launchClusterMasterInstance();
+            if (master == null) {
+                return false;
+            }
+            List<? extends Instance> slaves;
+            if (config.getSlaveInstanceCount() > 0) {
+                LOG.info("Requesting {} slave instance(s)...", config.getSlaveInstanceCount());
+                slaves = launchClusterSlaveInstances();
+                if (slaves == null) {
+                    return false;
+                }
+            } else {
+                LOG.info("No Slave instance(s) requested!");
+                slaves = new ArrayList<>();
+            }
+            // just to be sure, everything is present, wait x seconds
+            sleep(4);
+            LOG.info("Cluster (ID: {}) successfully created!", clusterId);
+            configureMaster(master, slaves, getSubnetCidr());
+            logFinishedInfoMessage(master.getPublicIp());
+            saveGridPropertiesFile(master.getPublicIp());
+        } catch (Exception e) {
+            // print stacktrace only verbose mode, otherwise the message is fine
+            if (VerboseOutputFilter.SHOW_VERBOSE) {
+                LOG.error(e.getMessage(), e);
+            } else {
+                LOG.error(e.getMessage());
+            }
+            return false;
+        }
+        return true;
+    }
 
-    protected void logFinishedInfoMessage(String masterPublicIp) {
+    /**
+     * Start the configured cluster master instance.
+     */
+    protected abstract Instance launchClusterMasterInstance();
+
+    /**
+     * Start the configured cluster slave instances.
+     */
+    protected abstract List<? extends Instance> launchClusterSlaveInstances();
+
+    protected abstract String getSubnetCidr();
+
+    private void logFinishedInfoMessage(String masterPublicIp) {
         StringBuilder sb = new StringBuilder();
         sb.append("\n You might want to set the following environment variable:\n\n");
         sb.append("export BIBIGRID_MASTER=").append(masterPublicIp).append("\n\n");
@@ -126,7 +162,7 @@ public abstract class CreateCluster implements Intent {
         LOG.info(sb.toString());
     }
 
-    protected void saveGridPropertiesFile(String masterPublicIp) {
+    private void saveGridPropertiesFile(String masterPublicIp) {
         if (config.getGridPropertiesFile() != null) {
             Properties gp = new Properties();
             gp.setProperty("BIBIGRID_MASTER", masterPublicIp);
@@ -166,24 +202,23 @@ public abstract class CreateCluster implements Intent {
         return false;
     }
 
-    protected void configureMaster(final String masterPrivateIp, final String masterPublicIp,
-                                   final String masterHostname, final List<String> slaveIps,
-                                   final List<String> slaveHostnames, final String subnetCidr) {
+    private void configureMaster(final Instance masterInstance, final List<? extends Instance> slaveInstances,
+                                 final String subnetCidr) {
         // TODO
         String user = config.getUser() != null ? config.getUser() : MASTER_SSH_USER;
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config);
         AnsibleConfig ansibleConfig = new AnsibleConfig(config);
         ansibleConfig.setSubnetCidr(subnetCidr);
-        ansibleConfig.setMasterIpHostname(masterPrivateIp, masterHostname);
-        for (int i = 0; i < slaveIps.size(); i++) {
-            ansibleConfig.addSlaveIpHostname(slaveIps.get(i), slaveHostnames.get(i));
-            ansibleHostsConfig.addSlaveIp(slaveIps.get(i));
+        ansibleConfig.setMasterIpHostname(masterInstance.getPrivateIp(), masterInstance.getHostname());
+        for (Instance slaveInstance : slaveInstances) {
+            ansibleConfig.addSlaveIpHostname(slaveInstance.getPrivateIp(), slaveInstance.getHostname());
+            ansibleHostsConfig.addSlaveIp(slaveInstance.getPrivateIp());
         }
 
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
         LOG.info("Now configuring ...");
-        boolean sshPortIsReady = pollSshPortIsAvailable(masterPublicIp);
+        boolean sshPortIsReady = pollSshPortIsAvailable(masterInstance.getPublicIp());
         boolean configured = false;
         int sshAttempts = SSH_ATTEMPTS;
         while (sshPortIsReady && !configured && sshAttempts > 0) {
@@ -192,7 +227,8 @@ public abstract class CreateCluster implements Intent {
                 LOG.info("Trying to connect to master ({})...", sshAttempts);
                 sleep(4);
                 // Create new Session to avoid packet corruption.
-                Session sshSession = SshFactory.createNewSshSession(ssh, masterPublicIp, user, config.getIdentityFile());
+                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIp(), user,
+                        config.getIdentityFile());
                 if (sshSession == null)
                     continue;
                 // Start connection attempt
@@ -315,5 +351,9 @@ public abstract class CreateCluster implements Intent {
                 ie.printStackTrace();
             }
         }
+    }
+
+    public Configuration getConfig() {
+        return config;
     }
 }

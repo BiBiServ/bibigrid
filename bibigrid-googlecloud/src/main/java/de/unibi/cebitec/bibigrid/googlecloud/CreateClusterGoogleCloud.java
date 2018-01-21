@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -88,29 +89,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     }
 
     @Override
-    public boolean launchClusterInstances() {
-        Instance masterInstance = launchClusterMasterInstance();
-        List<Instance> slaveInstances = launchClusterSlaveInstances();
-        // just to be sure, everything is present, wait 5 seconds
-        sleep(5);
-        // post configure master
-        List<String> slaveIps = new ArrayList<>();
-        List<String> slaveHostnames = new ArrayList<>();
-        if (slaveInstances != null) {
-            for (Instance slave : slaveInstances) {
-                slaveIps.add(GoogleCloudUtils.getInstancePrivateIp(slave));
-                slaveHostnames.add(GoogleCloudUtils.getInstanceFQDN(slave));
-            }
-        }
-        String masterPublicIp = GoogleCloudUtils.getInstancePublicIp(masterInstance);
-        configureMaster(GoogleCloudUtils.getInstancePrivateIp(masterInstance), masterPublicIp,
-                GoogleCloudUtils.getInstanceFQDN(masterInstance), slaveIps, slaveHostnames, environment.getSubnetCidr());
-        logFinishedInfoMessage(masterPublicIp);
-        saveGridPropertiesFile(masterPublicIp);
-        return true;
-    }
-
-    private Instance launchClusterMasterInstance() {
+    protected InstanceGoogleCloud launchClusterMasterInstance() {
         LOG.info("Requesting master instance...");
         String zone = config.getAvailabilityZone();
         String masterInstanceName = PREFIX + "master-" + clusterId;
@@ -129,40 +108,35 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                 new Operation[]{createMasterOperation}).get(0);
         LOG.info(I, "Master instance is now running!");
         waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
-        return masterInstance;
+        return new InstanceGoogleCloud(masterInstance);
     }
 
-    private List<Instance> launchClusterSlaveInstances() {
-        List<Instance> slaveInstances = null;
-        int instanceCount = config.getSlaveInstanceCount();
-        if (instanceCount > 0) {
-            LOG.info("Requesting slave instances...");
-            String zone = config.getAvailabilityZone();
-            String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), false);
-            String slaveInstanceNameTag = "name" + GoogleCloudUtils.TAG_SEPARATOR + PREFIX + "slave-" + clusterId;
-            InstanceId[] slaveInstanceIds = new InstanceId[instanceCount];
-            Operation[] slaveInstanceOperations = new Operation[instanceCount];
-            for (int i = 0; i < instanceCount; i++) {
-                String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
-                InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(zone, slaveInstanceId,
-                        config.getSlaveInstanceType().getValue())
-                        .setNetworkInterfaces(buildExternalNetworkInterface().build())
-                        .setTags(Tags.of(bibigridId, slaveInstanceNameTag))
-                        .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
-                GoogleCloudUtils.attachDisks(compute, slaveBuilder, config.getSlaveImage(), zone,
-                        config.getSlaveMounts(), clusterId, config.getGoogleImageProjectId());
-                GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
-                slaveInstanceOperations[i] = compute.create(slaveBuilder.build());
-                slaveInstanceIds[i] = InstanceId.of(zone, slaveInstanceId);
-            }
-            LOG.info("Waiting for slave instance(s) to finish booting...");
-            slaveInstances = waitForInstances(slaveInstanceIds, slaveInstanceOperations);
-            LOG.info(I, "Slave instance(s) is now running!");
-            waitForInstancesStatusCheck(slaveInstances);
-        } else {
-            LOG.info("No Slave instance(s) requested!");
+    @Override
+    protected List<InstanceGoogleCloud> launchClusterSlaveInstances() {
+        final int instanceCount = config.getSlaveInstanceCount();
+        final String zone = config.getAvailabilityZone();
+        String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), false);
+        String slaveInstanceNameTag = "name" + GoogleCloudUtils.TAG_SEPARATOR + PREFIX + "slave-" + clusterId;
+        InstanceId[] slaveInstanceIds = new InstanceId[instanceCount];
+        Operation[] slaveInstanceOperations = new Operation[instanceCount];
+        for (int i = 0; i < instanceCount; i++) {
+            String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
+            InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(zone, slaveInstanceId,
+                    config.getSlaveInstanceType().getValue())
+                    .setNetworkInterfaces(buildExternalNetworkInterface().build())
+                    .setTags(Tags.of(bibigridId, slaveInstanceNameTag))
+                    .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
+            GoogleCloudUtils.attachDisks(compute, slaveBuilder, config.getSlaveImage(), zone,
+                    config.getSlaveMounts(), clusterId, config.getGoogleImageProjectId());
+            GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
+            slaveInstanceOperations[i] = compute.create(slaveBuilder.build());
+            slaveInstanceIds[i] = InstanceId.of(zone, slaveInstanceId);
         }
-        return slaveInstances;
+        LOG.info("Waiting for slave instance(s) to finish booting...");
+        List<Instance> slaveInstances = waitForInstances(slaveInstanceIds, slaveInstanceOperations);
+        LOG.info(I, "Slave instance(s) is now running!");
+        waitForInstancesStatusCheck(slaveInstances);
+        return slaveInstances.stream().map(InstanceGoogleCloud::new).collect(Collectors.toList());
     }
 
     private void waitForInstancesStatusCheck(List<Instance> instances) {
@@ -205,11 +179,12 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         return returnList;
     }
 
-    ConfigurationGoogleCloud getConfig() {
-        return config;
-    }
-
     Compute getCompute() {
         return compute;
+    }
+
+    @Override
+    protected String getSubnetCidr() {
+        return environment.getSubnetCidr();
     }
 }

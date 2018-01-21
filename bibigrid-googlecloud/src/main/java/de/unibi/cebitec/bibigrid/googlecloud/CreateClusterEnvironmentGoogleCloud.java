@@ -73,7 +73,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         try {
             if (internalCompute != null) {
                 com.google.api.services.compute.model.Network internalVpc = internalCompute.networks().get(
-                        cluster.getConfig().getGoogleProjectId(),
+                        ((ConfigurationGoogleCloud) cluster.getConfig()).getGoogleProjectId(),
                         vpc.getNetworkId().getNetwork()).execute();
                 if (internalVpc != null) {
                     isAutoCreate = internalVpc.getAutoCreateSubnetworks();
@@ -164,7 +164,9 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
                 ruleIndex++;
                 // TODO: possibly add cluster instance ids to targetTags, to limit the access!
                 firewall.setAllowed(firewallRuleMap.get(ipRange));
-                internalCompute.firewalls().insert(cluster.getConfig().getGoogleProjectId(), firewall).execute();
+                internalCompute.firewalls().insert(
+                        ((ConfigurationGoogleCloud) cluster.getConfig()).getGoogleProjectId(),
+                        firewall).execute();
             }
         } catch (Exception e) {
             LOG.error("Failed to create firewall rules {}", e);
