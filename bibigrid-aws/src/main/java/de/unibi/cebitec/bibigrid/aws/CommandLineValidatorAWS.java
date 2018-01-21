@@ -138,9 +138,12 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
             String value = cl.getOptionValue(spotShortParam, defaults.getProperty(spotLongParam));
             if (value.equalsIgnoreCase(KEYWORD_YES)) {
                 cfg.setUseSpotInstances(true);
-                if (cl.hasOption("bd") || defaults.containsKey("bidprice")) {
+                String bidPriceShortParam = RuleBuilder.RuleNames.BID_PRICE_S.toString();
+                String bidPriceLongParam = RuleBuilder.RuleNames.BID_PRICE_L.toString();
+                if (cl.hasOption(bidPriceShortParam) || defaults.containsKey(bidPriceLongParam)) {
                     try {
-                        awsConfig.setBidPrice(Double.parseDouble(cl.getOptionValue("bd", defaults.getProperty("bidprice"))));
+                        awsConfig.setBidPrice(Double.parseDouble(cl.getOptionValue(bidPriceShortParam,
+                                defaults.getProperty(bidPriceLongParam))));
                         if (awsConfig.getBidPrice() <= 0.0) {
                             throw new NumberFormatException();
                         }
@@ -152,9 +155,12 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                     LOG.error("If use-spot-instance-request is set, a bidprice must defined!");
                     return false;
                 }
-                if (cl.hasOption("bdm") || defaults.containsKey("bidprice-master")) {
+                String bidPriceMasterShortParam = RuleBuilder.RuleNames.BID_PRICE_MASTER_S.toString();
+                String bidPriceMasterLongParam = RuleBuilder.RuleNames.BID_PRICE_MASTER_L.toString();
+                if (cl.hasOption(bidPriceMasterShortParam) || defaults.containsKey(bidPriceMasterLongParam)) {
                     try {
-                        awsConfig.setBidPriceMaster(Double.parseDouble(cl.getOptionValue("bdm", defaults.getProperty("bidprice-master"))));
+                        awsConfig.setBidPriceMaster(Double.parseDouble(cl.getOptionValue(bidPriceMasterShortParam,
+                                defaults.getProperty(bidPriceMasterLongParam))));
                         if (awsConfig.getBidPriceMaster() <= 0.0) {
                             throw new NumberFormatException();
                         }
