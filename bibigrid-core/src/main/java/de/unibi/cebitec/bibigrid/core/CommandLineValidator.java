@@ -101,7 +101,7 @@ public abstract class CommandLineValidator {
     private boolean parseTerminateParameter(List<String> req) {
         // terminate (cluster-id)
         if (req.contains("t")) {
-            this.cfg.setClusterId(this.cl.getOptionValue("t"));
+            this.cfg.setClusterIds(this.cl.getOptionValue("t"));
         }
         return true;
     }

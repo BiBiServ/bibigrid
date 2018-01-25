@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of the general TerminateIntent interface for a Google based cluster.
@@ -31,16 +32,21 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
 
     public boolean terminate() {
         final Compute compute = GoogleCloudUtils.getComputeService(config);
-        final Cluster cluster = new ListIntentGoogleCloud(config).getList().get(config.getClusterId());
-        if (cluster == null) {
-            LOG.warn("No cluster with id {} found.", config.getClusterId());
-            return false;
+        final Map<String, Cluster> clusters = new ListIntentGoogleCloud(config).getList();
+        boolean success = true;
+        for (String clusterId : config.getClusterIds()) {
+            final Cluster cluster = clusters.get(clusterId);
+            if (cluster == null) {
+                LOG.warn("No cluster with id {} found.", clusterId);
+                success = false;
+                continue;
+            }
+            LOG.info("Terminating cluster with ID: {}", clusterId);
+            terminateInstances(compute, cluster);
+            terminateNetwork(compute, clusterId);
+            LOG.info("Cluster '{}' terminated!", clusterId);
         }
-        LOG.info("Terminating cluster with ID: {}", config.getClusterId());
-        terminateInstances(compute, cluster);
-        terminateNetwork(compute);
-        LOG.info("Cluster '{}' terminated!", config.getClusterId());
-        return true;
+        return success;
     }
 
     private void terminateInstances(final Compute compute, final Cluster cluster) {
@@ -63,7 +69,7 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
     }
 
     @SuppressWarnings("ConstantConditions")
-    private void terminateNetwork(final Compute compute) {
+    private void terminateNetwork(final Compute compute, final String clusterId) {
         com.google.api.services.compute.Compute internalCompute = GoogleCloudUtils.getInternalCompute(compute);
         List<String> firewallsToRemove = new ArrayList<>();
         try {
@@ -71,7 +77,7 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
             FirewallList list = internalCompute.firewalls().list(config.getGoogleProjectId()).execute();
             for (Firewall firewall : list.getItems()) {
                 if (firewall.getName().startsWith(CreateClusterEnvironment.SECURITY_GROUP_PREFIX + "rule") &&
-                        firewall.getName().endsWith(config.getClusterId())) {
+                        firewall.getName().endsWith(clusterId)) {
                     firewallsToRemove.add(firewall.getName());
                 }
             }

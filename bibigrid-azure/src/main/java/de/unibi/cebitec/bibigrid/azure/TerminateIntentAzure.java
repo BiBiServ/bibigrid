@@ -23,16 +23,20 @@ public class TerminateIntentAzure implements TerminateIntent {
 
     public boolean terminate() {
         final Azure compute = AzureUtils.getComputeService(config);
-        LOG.info("Terminating cluster with ID: {}", config.getClusterId());
-        try {
-            // Terminating the resource group deletes all associated resources, too.
-            if (compute != null) {
-                compute.resourceGroups().deleteByName(RESOURCE_GROUP_PREFIX + config.getClusterId());
+        boolean success = true;
+        for (String clusterId : config.getClusterIds()) {
+            LOG.info("Terminating cluster with ID: {}", clusterId);
+            try {
+                // Terminating the resource group deletes all associated resources, too.
+                if (compute != null) {
+                    compute.resourceGroups().deleteByName(RESOURCE_GROUP_PREFIX + clusterId);
+                }
+            } catch (Exception e) {
+                LOG.error("Failed to delete resource group {}", e);
+                success = false;
             }
-        } catch (Exception e) {
-            LOG.error("Failed to delete resource group {}", e);
+            LOG.info("Cluster '{}' terminated!", clusterId);
         }
-        LOG.info("Cluster '{}' terminated!", config.getClusterId());
-        return true;
+        return success;
     }
 }

@@ -36,20 +36,23 @@ public class TerminateIntentAWS implements TerminateIntent {
     @Override
     public boolean terminate() {
         final AmazonEC2Client ec2 = IntentUtils.getClient(config);
-        final Map<String, Cluster> clusterMap = new ListIntentAWS(config).getList();
-        final String clusterId = config.getClusterId();
-        // check if cluster with given id exists
-        if (!clusterMap.containsKey(clusterId)) {
-            LOG.error("Cluster with '{}' not found.");
-            return false;
+        final Map<String, Cluster> clusters = new ListIntentAWS(config).getList();
+        boolean success = true;
+        for (String clusterId : config.getClusterIds()) {
+            final Cluster cluster = clusters.get(clusterId);
+            if (cluster == null) {
+                LOG.warn("No cluster with id {} found.", clusterId);
+                success = false;
+                continue;
+            }
+            LOG.info("Terminating cluster with ID: {}", clusterId);
+            terminateInstances(ec2, cluster);
+            terminatePlacementGroup(ec2, cluster);
+            terminateSubnet(ec2, cluster);
+            terminateSecurityGroup(ec2, cluster);
+            LOG.info("Cluster '{}' terminated!", clusterId);
         }
-        Cluster cluster = clusterMap.get(clusterId);
-        terminateInstances(ec2, cluster);
-        terminatePlacementGroup(ec2, cluster);
-        terminateSubnet(ec2, cluster);
-        terminateSecurityGroup(ec2, cluster);
-        LOG.info("Cluster '{}' terminated!", clusterId);
-        return true;
+        return success;
     }
 
     private void terminateInstances(final AmazonEC2Client ec2, final Cluster cluster) {

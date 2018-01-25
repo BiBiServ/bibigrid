@@ -16,7 +16,7 @@ public abstract class Configuration {
     private String keypair;
     private Path identityFile;
     private String region;
-    private String clusterId;
+    private String[] clusterIds;
 
     private Path shellScriptFile;
     private Path earlyMasterShellScriptFile, earlySlaveShellScriptFile;
@@ -157,12 +157,15 @@ public abstract class Configuration {
         this.availabilityZone = availabilityZone;
     }
 
-    public String getClusterId() {
-        return clusterId;
+    public String[] getClusterIds() {
+        return clusterIds;
     }
 
-    public void setClusterId(String clusterId) {
-        this.clusterId = clusterId;
+    /**
+     * Set the cluster Id(s) either as a single cluster "id" or as multiple "id1/id2/id3".
+     */
+    public void setClusterIds(String clusterIds) {
+        this.clusterIds = clusterIds == null ? new String[0] : clusterIds.split("/");
     }
 
     public List<Port> getPorts() {

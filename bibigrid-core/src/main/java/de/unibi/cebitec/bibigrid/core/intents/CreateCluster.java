@@ -39,7 +39,7 @@ public abstract class CreateCluster implements Intent {
         this.config = config;
         this.providerModule = providerModule;
         clusterId = generateClusterId();
-        config.setClusterId(clusterId);
+        config.setClusterIds(clusterId);
     }
 
     private String generateClusterId() {

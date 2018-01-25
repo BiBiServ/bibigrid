@@ -11,6 +11,8 @@ import org.openstack4j.model.network.options.PortListOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 /**
  * Implements TerminateIntent for Openstack.
  *
@@ -29,89 +31,106 @@ public class TerminateIntentOpenstack implements TerminateIntent {
 
     @Override
     public boolean terminate() {
-        final Cluster cluster = new ListIntentOpenstack(config).getList().get(config.getClusterId());
-        if (cluster != null) {
-            LOG.info("Terminating cluster with ID: {}", config.getClusterId());
-            // master
-            if (cluster.getMasterInstance() != null) {
-                os.compute().servers().delete(cluster.getMasterInstance());
+        final Map<String, Cluster> clusters = new ListIntentOpenstack(config).getList();
+        boolean success = true;
+        for (String clusterId : config.getClusterIds()) {
+            final Cluster cluster = clusters.get(clusterId);
+            if (cluster == null) {
+                LOG.warn("No cluster with id {} found.", clusterId);
+                success = false;
+                continue;
             }
-            // slaves
-            for (String slave : cluster.getSlaveInstances()) {
-                if (slave != null) {
-                    os.compute().servers().delete(slave);
-                }
+            LOG.info("Terminating cluster with ID: {}", clusterId);
+            if (!terminateCluster(cluster)) {
+                success = false;
+                LOG.info("Cluster '{}' terminated with errors!", clusterId);
+            } else {
+                LOG.info("Cluster '{}' terminated!", clusterId);
             }
-            // security groups
-            if (cluster.getSecurityGroup() != null) {
-                while (true) {
-                    try {
-                        Thread.sleep(1000);
-                        ActionResponse ar = os.compute().securityGroups().delete(cluster.getSecurityGroup());
-                        if (ar.isSuccess()) {
-                            break;
-                        }
-                        LOG.warn("{} Try again in a second ...", ar.getFault());
-                    } catch (InterruptedException ex) {
-                        // do nothing
-                    }
-                }
-                LOG.info("SecurityGroup ({}) deleted.", cluster.getSecurityGroup());
-            }
-            // subnet
-            if (cluster.getSubnet() != null) {
-                Subnet subnet = getSubnetById(os, cluster.getSubnet());
-                if (subnet == null) {
-                    return false;
-                }
-                Network net = CreateClusterEnvironmentOpenstack.getNetworkById(os, subnet.getNetworkId());
-                Router router = CreateClusterEnvironmentOpenstack.getRouterByNetwork(os, net, subnet);
-                if (router == null) {
-                    return false;
-                }
-                // get port which handled connects router with network/subnet
-                Port port = getPortByRouterAndNetworkAndSubnet(os, router, net, subnet);
-                if (port == null) {
-                    return false;
-                }
-                // detach interface from router
-                try {
-                    os.networking().router().detachInterface(router.getId(), subnet.getId(), port.getId());
-                    // delete subnet
-                    ActionResponse ar = os.networking().subnet().delete(subnet.getId());
-                    if (ar.isSuccess()) {
-                        LOG.info("Subnet (ID:{}) deleted!", subnet.getId());
-                    } else {
-                        LOG.warn("Can't remove subnet (ID:{}) : {}", subnet.getId(), ar.getFault());
-                    }
-                } catch (ClientResponseException e) {
-                    LOG.warn(e.getMessage());
-                }
-            }
-            // network
-            if (cluster.getNet() != null) {
-                // delete network
-                ActionResponse ar = os.networking().network().delete(cluster.getNet());
-                if (ar.isSuccess()) {
-                    LOG.info("Network (ID:{}) deleted!", cluster.getNet());
-                } else {
-                    LOG.warn("Can't remove network (ID:{}) : {}", cluster.getNet(), ar.getFault());
-                }
-            }
-            // router
-            if (cluster.getRouter() != null) {
-                ActionResponse ar = os.networking().router().delete(cluster.getRouter());
-                if (ar.isSuccess()) {
-                    LOG.info("Router (ID:{}) deleted!", cluster.getRouter());
-                } else {
-                    LOG.warn("Can't remove router (ID:{}) : {}", cluster.getRouter(), ar.getFault());
-                }
-            }
-            LOG.info("Cluster (ID: {}) successfully terminated", config.getClusterId().trim());
-            return true;
         }
-        LOG.warn("No cluster with id {} found.", config.getClusterId());
-        return false;
+        return success;
+    }
+
+    private boolean terminateCluster(Cluster cluster) {
+        // master
+        if (cluster.getMasterInstance() != null) {
+            os.compute().servers().delete(cluster.getMasterInstance());
+        }
+        // slaves
+        for (String slave : cluster.getSlaveInstances()) {
+            if (slave != null) {
+                os.compute().servers().delete(slave);
+            }
+        }
+        // security groups
+        if (cluster.getSecurityGroup() != null) {
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                    ActionResponse ar = os.compute().securityGroups().delete(cluster.getSecurityGroup());
+                    if (ar.isSuccess()) {
+                        break;
+                    }
+                    LOG.warn("{} Try again in a second ...", ar.getFault());
+                } catch (InterruptedException ex) {
+                    // do nothing
+                }
+            }
+            LOG.info("SecurityGroup ({}) deleted.", cluster.getSecurityGroup());
+        }
+        // subnet
+        if (cluster.getSubnet() != null) {
+            Subnet subnet = getSubnetById(os, cluster.getSubnet());
+            if (subnet == null) {
+                return false;
+            }
+            Network net = CreateClusterEnvironmentOpenstack.getNetworkById(os, subnet.getNetworkId());
+            if (net == null) {
+                return false;
+            }
+            Router router = CreateClusterEnvironmentOpenstack.getRouterByNetwork(os, net, subnet);
+            if (router == null) {
+                return false;
+            }
+            // get port which handled connects router with network/subnet
+            Port port = getPortByRouterAndNetworkAndSubnet(os, router, net, subnet);
+            if (port == null) {
+                return false;
+            }
+            // detach interface from router
+            try {
+                os.networking().router().detachInterface(router.getId(), subnet.getId(), port.getId());
+                // delete subnet
+                ActionResponse ar = os.networking().subnet().delete(subnet.getId());
+                if (ar.isSuccess()) {
+                    LOG.info("Subnet (ID:{}) deleted!", subnet.getId());
+                } else {
+                    LOG.warn("Can't remove subnet (ID:{}) : {}", subnet.getId(), ar.getFault());
+                }
+            } catch (ClientResponseException e) {
+                LOG.warn(e.getMessage());
+            }
+        }
+        // network
+        if (cluster.getNet() != null) {
+            // delete network
+            ActionResponse ar = os.networking().network().delete(cluster.getNet());
+            if (ar.isSuccess()) {
+                LOG.info("Network (ID:{}) deleted!", cluster.getNet());
+            } else {
+                LOG.warn("Can't remove network (ID:{}) : {}", cluster.getNet(), ar.getFault());
+            }
+        }
+        // router
+        if (cluster.getRouter() != null) {
+            ActionResponse ar = os.networking().router().delete(cluster.getRouter());
+            if (ar.isSuccess()) {
+                LOG.info("Router (ID:{}) deleted!", cluster.getRouter());
+            } else {
+                LOG.warn("Can't remove router (ID:{}) : {}", cluster.getRouter(), ar.getFault());
+            }
+        }
+        return true;
     }
 
     /**
