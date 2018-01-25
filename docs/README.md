@@ -36,10 +36,7 @@ The configuration file specifies the composition of the requested cluster. Many 
 | slave-instance-count       | n               |                      | |
 | use-spot-instance-request  | usir            |                      | |
 | ports                      | p               |                      | |
-| security-group             | sg              |                      | |
 | vpc                        | vpc             |                      | |
-| router                     | router          |                      | |
-| network                    | network         |                      | |
 | subnet                     | subnet          |                      | |
 | nfs                        | nfs             |                      | |
 | oge                        | oge             |                      | |
@@ -53,8 +50,8 @@ The configuration file specifies the composition of the requested cluster. Many 
 | local-fs                   | lfs             |                      | |
 | nfs-shares                 | g               |                      | |
 | ext-nfs-shares             | ge              |                      | |
-| debug-requests             | dr              |                      | |
-| verbose                    | v               |                      | |
+| debug-requests             | dr              |                      | Log HTTP requests (currently openstack and googlecloud) |
+| verbose                    | v               |                      | Increase the logging level to verbose |
 | config                     | o               |                      | |
 | grid-properties-file       | gpf             |                      | |
 
@@ -67,6 +64,9 @@ The configuration file specifies the composition of the requested cluster. Many 
 | openstack-endpoint         | ose             | OS_AUTH_URL          | |
 | openstack-domain           | osd             | OS_USER_DOMAIN_NAME  | |
 | openstack-tenantdomain     | ostd            |                      | |
+| security-group             | sg              |                      | |
+| router                     | router          |                      | |
+| network                    | network         |                      | |
 
 ### Google Compute specific parameters
 | Long parameter             | Short parameter | Environment variable | Description                                          |
@@ -88,8 +88,15 @@ The configuration file specifies the composition of the requested cluster. Many 
 |----------------------------|-----------------|----------------------|------------------------------------------------------|
 | azure-credentials-file     | acf             |                      | |
 
+## Validating the cluster configuration
+STUB
+
 ## Starting the cluster
 STUB
 
 ## Cluster maintenance
+### List running clusters
+STUB
+
+### Terminate the cluster
 STUB

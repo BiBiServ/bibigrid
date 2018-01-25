@@ -127,16 +127,6 @@ public abstract class CommandLineValidator {
         if (result.success) {
             cfg.setVpcId(result.value);
         }
-        // Openstack - optional, but recommend
-        result = parseParameter(defaults, RuleBuilder.RuleNames.ROUTER_S, RuleBuilder.RuleNames.ROUTER_L, null);
-        if (result.success) {
-            cfg.setRouterName(result.value);
-        }
-        // Openstack - optional
-        result = parseParameter(defaults, RuleBuilder.RuleNames.NETWORK_S, RuleBuilder.RuleNames.NETWORK_L, null);
-        if (result.success) {
-            cfg.setNetworkName(result.value);
-        }
         // Openstack - optional
         result = parseParameter(defaults, RuleBuilder.RuleNames.SUBNET_S, RuleBuilder.RuleNames.SUBNET_L, null);
         if (result.success) {
@@ -419,13 +409,6 @@ public abstract class CommandLineValidator {
                 LOG.info(V, "Slave image set. ({})", this.cfg.getSlaveImage());
             }
         }
-        return true;
-    }
-
-    private boolean parseSecurityGroupParameter(Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.SECURITY_GROUP_S.toString();
-        final String longParam = RuleBuilder.RuleNames.SECURITY_GROUP_L.toString();
-        cfg.setSecurityGroup(cl.getOptionValue(shortParam, defaults.getProperty(longParam)));
         return true;
     }
 
@@ -743,7 +726,6 @@ public abstract class CommandLineValidator {
             if (!parseSlaveInstanceMaxParameter(req, defaults)) return false;
             if (!parseMasterAsComputeParameter(req, defaults)) return false;
             if (!parseSlaveImageParameter(req, defaults)) return false;
-            if (!parseSecurityGroupParameter(defaults)) return false;
             if (!parsePortsParameter(defaults)) return false;
             if (!parseExecuteScriptParameter(defaults)) return false;
             if (!parseMasterMountsParameter(defaults)) return false;

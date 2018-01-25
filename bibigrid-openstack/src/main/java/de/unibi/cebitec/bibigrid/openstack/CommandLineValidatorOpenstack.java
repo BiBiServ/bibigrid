@@ -73,6 +73,13 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
 
     @Override
     protected boolean validateProviderParameters(List<String> req, Properties defaults) {
+        if (!parseCredentialParameters(defaults)) return false;
+        if (!parseNetworkParameters(defaults)) return false;
+        if (!parseSecurityGroupParameter(defaults)) return false;
+        return true;
+    }
+
+    private boolean parseCredentialParameters(Properties defaults) {
         OpenStackCredentials osc = new OpenStackCredentials();
         // OpenStack username
         ParseResult result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_USERNAME_S,
@@ -124,6 +131,27 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
         }
         osc.setEndpoint(result.value);
         openstackConfig.setOpenstackCredentials(osc);
+        return true;
+    }
+
+    private boolean parseNetworkParameters(Properties defaults) {
+        // optional, but recommend
+        ParseResult result = parseParameter(defaults, RuleBuilder.RuleNames.ROUTER_S, RuleBuilder.RuleNames.ROUTER_L, null);
+        if (result.success) {
+            openstackConfig.setRouterName(result.value);
+        }
+        // optional
+        result = parseParameter(defaults, RuleBuilder.RuleNames.NETWORK_S, RuleBuilder.RuleNames.NETWORK_L, null);
+        if (result.success) {
+            openstackConfig.setNetworkName(result.value);
+        }
+        return true;
+    }
+
+    private boolean parseSecurityGroupParameter(Properties defaults) {
+        final String shortParam = RuleBuilder.RuleNames.SECURITY_GROUP_S.toString();
+        final String longParam = RuleBuilder.RuleNames.SECURITY_GROUP_L.toString();
+        openstackConfig.setSecurityGroup(cl.getOptionValue(shortParam, defaults.getProperty(longParam)));
         return true;
     }
 }

@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.Port;
 import de.unibi.cebitec.bibigrid.core.util.SubNets;
@@ -70,7 +69,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             // 2) network
             // 3) subnet
             OSClient osc = cluster.getClient();
-            Configuration cfg = cluster.getConfig();
+            ConfigurationOpenstack cfg = (ConfigurationOpenstack) cluster.getConfig();
             String clusterId = cluster.getClusterId();
             // if subnet is set just use it
             if (cfg.getSubnetName() != null) {
@@ -160,11 +159,11 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     public CreateClusterEnvironmentOpenstack createSecurityGroup() throws ConfigurationException {
         OSClient osc = cluster.getClient();
         // if a security group is configured then used it
-        if (cluster.getConfig().getSecurityGroup() != null) {
-            sge = getSecGroupExtensionByName(osc, cluster.getConfig().getSecurityGroup());
+        String securityGroup = ((ConfigurationOpenstack) cluster.getConfig()).getSecurityGroup();
+        if (securityGroup != null) {
+            sge = getSecGroupExtensionByName(osc, securityGroup);
             if (sge == null) {
-                LOG.warn("Configured Security Group (name: {}) not found. Try to create a new one ... ",
-                        cluster.getConfig().getSecurityGroup());
+                LOG.warn("Configured Security Group (name: {}) not found. Try to create a new one ... ", securityGroup);
             } else {
                 LOG.info("Use existing Security Group (name: {}).", sge.getName());
                 return this;

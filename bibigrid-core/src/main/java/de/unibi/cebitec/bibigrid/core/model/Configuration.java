@@ -44,14 +44,10 @@ public abstract class Configuration {
     private boolean useSpotInstances;
 
     /* network configuration (for OpenStack)*/
-    private String routerName = null;
-    private String networkName = null;
     private String subnetName = null;
-    private String gatewayName = null;
 
     /* security group configuration */
     private List<Port> ports = new ArrayList<>();
-    private String securityGroup;
 
     public enum FS {
         EXT2, EXT3, EXT4, XFS
@@ -320,44 +316,12 @@ public abstract class Configuration {
         this.subnetName = subnetName;
     }
 
-    public String getNetworkName() {
-        return networkName;
-    }
-
-    public void setNetworkName(String networkName) {
-        this.networkName = networkName;
-    }
-
-    public String getRouterName() {
-        return routerName;
-    }
-
-    public void setRouterName(String routerName) {
-        this.routerName = routerName;
-    }
-
-    public String getGatewayName() {
-        return gatewayName;
-    }
-
-    public void setGatewayName(String gatewayName) {
-        this.gatewayName = gatewayName;
-    }
-
     public boolean isLogHttpRequests() {
         return logHttpRequests;
     }
 
     public void setLogHttpRequests(boolean logHttpRequests) {
         this.logHttpRequests = logHttpRequests;
-    }
-
-    public String getSecurityGroup() {
-        return securityGroup;
-    }
-
-    public void setSecurityGroup(String securityGroup) {
-        this.securityGroup = securityGroup;
     }
 
     public boolean isSpark() {
