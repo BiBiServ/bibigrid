@@ -24,6 +24,9 @@ final class GoogleCloudUtils {
     private static long diskCounter = 1;
 
     static Compute getComputeService(final ConfigurationGoogleCloud config) {
+        if (config.isLogHttpRequests()) {
+            HttpRequestLogHandler.attachToCloudHttpTransport();
+        }
         ComputeOptions.Builder optionsBuilder = ComputeOptions.newBuilder();
         optionsBuilder.setProjectId(config.getGoogleProjectId());
         try {
