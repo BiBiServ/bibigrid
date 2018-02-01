@@ -27,15 +27,15 @@ import org.slf4j.LoggerFactory;
 public final class ShellScriptCreator {
     private static final Logger LOG = LoggerFactory.getLogger(ShellScriptCreator.class);
 
-    public static String getSlaveUserData(Configuration cfg, ClusterKeyPair keypair, boolean base64) {
+    public static String getSlaveUserData(Configuration config, ClusterKeyPair keypair, boolean base64) {
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
         userData.append("exec > /var/log/userdata.log\n");
         userData.append("exec 2>&1\n");
-        userData.append("source /home/ubuntu/.bashrc\n");
+        userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
         userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
-        appendSshConfiguration(userData, keypair);
-        appendEarlyExecuteScript(userData, cfg.getEarlySlaveShellScriptFile());
+        appendSshConfiguration(config, userData, keypair);
+        appendEarlyExecuteScript(userData, config.getEarlySlaveShellScriptFile());
         // Log the finished message to notify the read loop
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
@@ -43,12 +43,16 @@ public final class ShellScriptCreator {
         return base64 ? new String(Base64.encodeBase64(userData.toString().getBytes())) : userData.toString();
     }
 
-    private static void appendSshConfiguration(StringBuilder userData, ClusterKeyPair keypair) {
-        userData.append("echo '").append(keypair.getPrivateKey()).append("' > /home/ubuntu/.ssh/id_rsa\n");
-        userData.append("chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa\n");
-        userData.append("chmod 600 /home/ubuntu/.ssh/id_rsa\n");
-        userData.append("echo '").append(keypair.getPublicKey()).append("' >> /home/ubuntu/.ssh/authorized_keys\n");
-        userData.append("cat > /home/ubuntu/.ssh/config << SSHCONFIG\n");
+    private static void appendSshConfiguration(Configuration config, StringBuilder userData, ClusterKeyPair keypair) {
+        String user = config.getSshUser();
+        String userSshPath = "/home/" + user + "/.ssh/";
+        userData.append("echo '").append(keypair.getPrivateKey()).append("' > ").append(userSshPath).append("id_rsa\n");
+        userData.append("chown ").append(user).append(":").append(user).append(" ").append(userSshPath)
+                .append("id_rsa\n");
+        userData.append("chmod 600 ").append(userSshPath).append("id_rsa\n");
+        userData.append("echo '").append(keypair.getPublicKey()).append("' >> ").append(userSshPath)
+                .append("authorized_keys\n");
+        userData.append("cat > ").append(userSshPath).append("config << SSHCONFIG\n");
         userData.append("Host *\n");
         userData.append("\tCheckHostIP no\n");
         userData.append("\tStrictHostKeyChecking no\n");
@@ -74,15 +78,15 @@ public final class ShellScriptCreator {
         }
     }
 
-    public static String getMasterUserData(Configuration cfg, ClusterKeyPair keypair, boolean base64) {
+    public static String getMasterUserData(Configuration config, ClusterKeyPair keypair, boolean base64) {
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
         userData.append("exec > /var/log/userdata.log\n");
         userData.append("exec 2>&1\n");
-        userData.append("source /home/ubuntu/.bashrc\n");
+        userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
         userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
-        appendSshConfiguration(userData, keypair);
-        appendEarlyExecuteScript(userData, cfg.getEarlyMasterShellScriptFile());
+        appendSshConfiguration(config, userData, keypair);
+        appendEarlyExecuteScript(userData, config.getEarlyMasterShellScriptFile());
         // Log the finished message to notify the read loop
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");

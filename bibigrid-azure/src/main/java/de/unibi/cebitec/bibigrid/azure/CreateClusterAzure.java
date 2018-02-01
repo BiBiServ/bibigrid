@@ -71,7 +71,7 @@ public class CreateClusterAzure extends CreateCluster {
                 .withPrimaryPrivateIPAddressDynamic()
                 .withNewPrimaryPublicIPAddress(environment.getMasterIP())
                 .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, config.getMasterImage()))
-                .withRootUsername(config.getUser())
+                .withRootUsername(config.getSshUser())
                 .withSsh("") // TODO
                 .withCustomData(masterStartupScript)
                 .withNewDataDisk(50)
@@ -107,7 +107,7 @@ public class CreateClusterAzure extends CreateCluster {
                     .withPrimaryPrivateIPAddressDynamic()
                     .withNewPrimaryPublicIPAddress(environment.getMasterIP()) // TODO
                     .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, config.getSlaveImage()))
-                    .withRootUsername(config.getUser())
+                    .withRootUsername(config.getSshUser())
                     .withSsh("") // TODO
                     .withCustomData(base64SlaveUserData)
                     .withNewDataDisk(50)

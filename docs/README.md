@@ -21,7 +21,8 @@ The configuration file specifies the composition of the requested cluster. Many 
 | meta-mode                  | mode            |                      | Provider mode [aws, googlecloud, openstack, (azure)] | 
 | region                     | e               | OS_REGION_NAME       | |
 | availability-zone          | z               |                      | |
-| user                       | u               |                      | |
+| user                       | u               |                      | User name (just for VM tagging) |
+| ssh-user                   | su              |                      | SSH user name |
 | keypair                    | k               |                      | |
 | identity-file              | i               |                      | |
 | master-instance-type       | m               |                      | |

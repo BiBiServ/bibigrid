@@ -118,6 +118,8 @@ public class RuleBuilder {
                 "File system used for internal (empheral)); diskspace. One of 'ext2', 'ext3', 'ext4' or 'xfs'. Default is 'xfs'."));
         groupReference.add(createStringRule(RuleNames.USER_S, RuleNames.USER_L,
                 "User name (mandatory));"));
+        groupReference.add(createStringRule(RuleNames.SSH_USER_S, RuleNames.SSH_USER_L,
+                "SSH user name (mandatory));"));
         groupReference.add(createStringRule(RuleNames.OPENSTACK_USERNAME_S, RuleNames.OPENSTACK_USERNAME_L,
                 "The given Openstack Username"));
         groupReference.add(createStringRule(RuleNames.OPENSTACK_TENANT_NAME_S, RuleNames.OPENSTACK_TENANT_NAME_L,
@@ -263,6 +265,8 @@ public class RuleBuilder {
         LOCAL_FS_L("local-fs"),
         USER_S("u"),
         USER_L("user"),
+        SSH_USER_S("su"),
+        SSH_USER_L("ssh-user"),
         DEBUG_REQUESTS_S("dr"),
         DEBUG_REQUESTS_L("debug-requests"),
         // Amazon AWS

@@ -45,6 +45,7 @@ public final class AnsibleConfig {
         Yaml yaml = new Yaml();
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("default_user", config.getUser());
+        map.put("ssh_user", config.getSshUser());
         map.put("master", getMasterMap());
         map.put("slaves", getSlavesMap());
         map.put("CIDR", subnetCidr);

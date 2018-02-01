@@ -53,6 +53,7 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                         RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
             case CREATE:
                 return Arrays.asList(
+                        RuleBuilder.RuleNames.SSH_USER_S.toString(),
                         RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString(),
                         RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
                         RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),

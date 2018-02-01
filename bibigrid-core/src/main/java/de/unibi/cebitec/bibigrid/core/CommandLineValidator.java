@@ -121,6 +121,26 @@ public abstract class CommandLineValidator {
         return true;
     }
 
+    private boolean parseSshUserNameParameter(List<String> req, Properties defaults) {
+        final String shortParam = RuleBuilder.RuleNames.SSH_USER_S.toString();
+        final String longParam = RuleBuilder.RuleNames.SSH_USER_L.toString();
+        if (req.contains(shortParam)) {
+            if (cl.hasOption(shortParam) || defaults.containsKey(longParam)) {
+                String value = cl.getOptionValue(shortParam, defaults.getProperty(longParam));
+                if (value != null && !value.isEmpty()) {
+                    cfg.setSshUser(value);
+                } else {
+                    LOG.error("SSH user (-" + shortParam + ") can't be null or empty.");
+                    return false;
+                }
+            } else {
+                LOG.error("-" + shortParam + " option is required! Please specify a ssh user name.");
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean parseNetworkParameters(Properties defaults) {
         // AWS - required
         ParseResult result = parseParameter(defaults, RuleBuilder.RuleNames.VPC_S, RuleBuilder.RuleNames.VPC_L, null);
@@ -709,6 +729,7 @@ public abstract class CommandLineValidator {
             if (!validateProviderParameters(req, defaults)) return false;
             if (!parseTerminateParameter(req)) return false;
             if (!parseUserNameParameter(defaults)) return false;
+            if (!parseSshUserNameParameter(req, defaults)) return false;
             if (!parseNetworkParameters(defaults)) return false;
             if (!parseMesosParameters(defaults)) return false;
             if (!parseGridEngineParameters(defaults)) return false;

@@ -27,7 +27,6 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class CreateCluster implements Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
-    public static final String MASTER_SSH_USER = "ubuntu";
     private static final int SSH_POLL_ATTEMPTS = 25; // TODO: decide value or parameter
     private static final int SSH_ATTEMPTS = 25; // TODO: decide value or parameter
 
@@ -149,7 +148,7 @@ public abstract class CreateCluster implements Intent {
         sb.append("You can then log on the master node with:\n\n")
                 .append("ssh -i ")
                 .append(config.getIdentityFile())
-                .append(" ").append(config.getUser()).append("@$BIBIGRID_MASTER\n\n");
+                .append(" ").append(config.getSshUser()).append("@$BIBIGRID_MASTER\n\n");
         sb.append("The cluster id of your started cluster is : ")
                 .append(clusterId)
                 .append("\n\n");
@@ -204,8 +203,6 @@ public abstract class CreateCluster implements Intent {
 
     private void configureMaster(final Instance masterInstance, final List<? extends Instance> slaveInstances,
                                  final String subnetCidr) {
-        // TODO
-        String user = config.getUser() != null ? config.getUser() : MASTER_SSH_USER;
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config);
         AnsibleConfig ansibleConfig = new AnsibleConfig(config);
         ansibleConfig.setSubnetCidr(subnetCidr);
@@ -227,8 +224,8 @@ public abstract class CreateCluster implements Intent {
                 LOG.info("Trying to connect to master ({})...", sshAttempts);
                 sleep(4);
                 // Create new Session to avoid packet corruption.
-                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIp(), user,
-                        config.getIdentityFile());
+                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIp(),
+                        config.getSshUser(), config.getIdentityFile());
                 if (sshSession == null)
                     continue;
                 // Start connection attempt

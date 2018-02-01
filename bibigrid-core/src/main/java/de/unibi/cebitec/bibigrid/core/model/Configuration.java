@@ -40,6 +40,7 @@ public abstract class Configuration {
     private boolean spark = false;
 
     private String user = System.getProperty("user.name");
+    private String sshUser = "ubuntu";
 
     private boolean useSpotInstances;
 
@@ -290,6 +291,14 @@ public abstract class Configuration {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public String getSshUser() {
+        return sshUser;
+    }
+
+    public void setSshUser(String sshUser) {
+        this.sshUser = sshUser;
     }
 
     public FS getLocalFS() {

@@ -1,4 +1,5 @@
 default_user: ubuntu
+ssh_user: ubuntu
 
 
 master:
