@@ -306,23 +306,21 @@ public class CreateClusterOpenstack extends CreateCluster {
         // check
         int active = 0;
         List<String> ignoreList = new ArrayList<>();
-        while (slaves.size() != active + ignoreList.size()) {
+        while (slaves.size() > active + ignoreList.size()) {
             // wait for some seconds to not overload REST API
             sleep(2);
             // get fresh server object for given server id
             for (InstanceOpenstack slave : slaves.values()) {
                 //ignore if instance is already active ...
-                if (!slave.isActive() || !slave.hasError()) {
+                if (! (slave.isActive() || slave.hasError())) {
                     // check server status
                     checkForServerAndUpdateInstance(slave.getId(), slave);
                     if (slave.isActive()) {
-                        LOG.info("[{}/{}] Instance {} is active !", active, slaves.size(), slave.getHostname());
                         active++;
+                        LOG.info("[{}/{}] Instance {} is active !", active, slaves.size(), slave.getHostname());
                     } else if (slave.hasError()) {
                         LOG.warn("Ignore slave instance '{}' ", slave.getHostname());
                         ignoreList.add(slave.getHostname());
-                    } else {
-                        sleep(2);
                     }
                 }
             }
