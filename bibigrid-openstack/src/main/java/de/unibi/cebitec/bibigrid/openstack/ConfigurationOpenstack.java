@@ -7,7 +7,6 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
  */
 class ConfigurationOpenstack extends Configuration {
     private OpenStackCredentials openstackCredentials;
-    private String gatewayName;
     private String routerName;
     private String networkName;
     private String securityGroup;
@@ -20,35 +19,27 @@ class ConfigurationOpenstack extends Configuration {
         this.openstackCredentials = openstackCredentials;
     }
 
-    public String getNetworkName() {
+    String getNetworkName() {
         return networkName;
     }
 
-    public void setNetworkName(String networkName) {
+    void setNetworkName(String networkName) {
         this.networkName = networkName;
     }
 
-    public String getRouterName() {
+    String getRouterName() {
         return routerName;
     }
 
-    public void setRouterName(String routerName) {
+    void setRouterName(String routerName) {
         this.routerName = routerName;
     }
 
-    public String getGatewayName() {
-        return gatewayName;
-    }
-
-    public void setGatewayName(String gatewayName) {
-        this.gatewayName = gatewayName;
-    }
-
-    public String getSecurityGroup() {
+    String getSecurityGroup() {
         return securityGroup;
     }
 
-    public void setSecurityGroup(String securityGroup) {
+    void setSecurityGroup(String securityGroup) {
         this.securityGroup = securityGroup;
     }
 }
