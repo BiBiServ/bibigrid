@@ -15,6 +15,8 @@ In order to upload and execute commands a valid ssh-keypair needs to be setup, t
 
 ## Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
+You can either provide the necessary parameters via the command line, by using a configuration file or in some cases by using environment variables.
+The parameters provided via command line are listed below as "short parameter". Using them in a configuration file is done with the "long parameter".
 
 | Long parameter             | Short parameter | Environment variable | Description                                          |
 |----------------------------|-----------------|----------------------|------------------------------------------------------|
@@ -89,15 +91,43 @@ The configuration file specifies the composition of the requested cluster. Many 
 |----------------------------|-----------------|----------------------|------------------------------------------------------|
 | azure-credentials-file     | acf             |                      | |
 
+### Writing and using a configuration file
+The configuration file is a plain text file. A short example would be:
+```
+#use google cloud compute
+mode=googlecloud
+google-projectid=XXXXX
+google-credentials-file=XXXXX
+[...]
+```
+This file can now be used with the "-o" command line parameter and the path to the configuration file.
+
 ## Validating the cluster configuration
+Before starting the cluster directly after writing the configuration file, several components can be validated beforehand.
+```
+> bibigrid -ch -o ~/config.properties
+```
 STUB
 
 ## Starting the cluster
 STUB
+```
+> bibigrid -c -o ~/config.properties
+```
 
 ## Cluster maintenance
 ### List running clusters
 STUB
+```
+> bibigrid -l -o ~/config.properties
+```
 
 ### Terminate the cluster
-STUB
+When you're finished using the cluster, you can terminate it using the following command and the logged cluster-id when the cluster was created.
+```
+> bibigrid -t [cluster-id] -o ~/config.properties
+```
+If necessary multiple clusters can be terminated at once.
+```
+> bibigrid -t [id1]/[id2]/[id3] -o ~/config.properties
+```
