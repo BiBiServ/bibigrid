@@ -107,11 +107,11 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                     return false;
                 }
             }
-            File credentialsFile = new File(awsCredentialsFilePath);
+            File credentialsFile = new File(awsCredentialsFilePath.trim());
             try {
                 AWSCredentials keys = new PropertiesCredentials(credentialsFile);
                 ((ConfigurationAWS) cfg).setCredentials(keys);
-                LOG.info(V, "AWS-Credentials successfully loaded! ({})", awsCredentialsFilePath);
+                LOG.info(V, "AWS-Credentials successfully loaded! ({})", awsCredentialsFilePath.trim());
             } catch (IOException | IllegalArgumentException e) {
                 LOG.error("AWS-Credentials from properties: {}", e.getMessage());
                 return false;
@@ -127,7 +127,8 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
         final String longParam = RuleBuilder.RuleNames.PUBLIC_SLAVE_IP_L.toString();
         // public ip address for all slaves
         if (cl.hasOption(shortParam) || defaults.containsKey(longParam)) {
-            awsConfig.setPublicSlaveIps(cl.getOptionValue(shortParam, defaults.getProperty(longParam)).equalsIgnoreCase(KEYWORD_YES));
+            awsConfig.setPublicSlaveIps(
+                    parseParameterOrDefault(defaults, shortParam, longParam).equalsIgnoreCase(KEYWORD_YES));
         }
         return true;
     }
@@ -136,15 +137,15 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
         final String spotShortParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString();
         final String spotLongParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_L.toString();
         if (cl.hasOption(spotShortParam) || defaults.containsKey(spotLongParam)) {
-            String value = cl.getOptionValue(spotShortParam, defaults.getProperty(spotLongParam));
+            String value = parseParameterOrDefault(defaults, spotShortParam, spotLongParam);
             if (value.equalsIgnoreCase(KEYWORD_YES)) {
                 cfg.setUseSpotInstances(true);
                 String bidPriceShortParam = RuleBuilder.RuleNames.BID_PRICE_S.toString();
                 String bidPriceLongParam = RuleBuilder.RuleNames.BID_PRICE_L.toString();
                 if (cl.hasOption(bidPriceShortParam) || defaults.containsKey(bidPriceLongParam)) {
                     try {
-                        awsConfig.setBidPrice(Double.parseDouble(cl.getOptionValue(bidPriceShortParam,
-                                defaults.getProperty(bidPriceLongParam))));
+                        awsConfig.setBidPrice(Double.parseDouble(
+                                parseParameterOrDefault(defaults, bidPriceShortParam, bidPriceLongParam)));
                         if (awsConfig.getBidPrice() <= 0.0) {
                             throw new NumberFormatException();
                         }
@@ -160,8 +161,8 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                 String bidPriceMasterLongParam = RuleBuilder.RuleNames.BID_PRICE_MASTER_L.toString();
                 if (cl.hasOption(bidPriceMasterShortParam) || defaults.containsKey(bidPriceMasterLongParam)) {
                     try {
-                        awsConfig.setBidPriceMaster(Double.parseDouble(cl.getOptionValue(bidPriceMasterShortParam,
-                                defaults.getProperty(bidPriceMasterLongParam))));
+                        awsConfig.setBidPriceMaster(Double.parseDouble(
+                                parseParameterOrDefault(defaults, bidPriceMasterShortParam, bidPriceMasterLongParam)));
                         if (awsConfig.getBidPriceMaster() <= 0.0) {
                             throw new NumberFormatException();
                         }

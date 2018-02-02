@@ -68,10 +68,9 @@ public final class CommandLineValidatorAzure extends CommandLineValidator {
     protected boolean validateProviderParameters(List<String> req, Properties defaults) {
         final String shortParamCredentials = RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString();
         final String longParamCredentials = RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_L.toString();
-        if (cl.hasOption(shortParamCredentials)) {
-            azureConfig.setAzureCredentialsFile(cl.getOptionValue(shortParamCredentials));
-        } else if (defaults.containsKey(longParamCredentials)) {
-            azureConfig.setAzureCredentialsFile(defaults.getProperty(longParamCredentials));
+        if (cl.hasOption(shortParamCredentials) || defaults.containsKey(longParamCredentials)) {
+            azureConfig.setAzureCredentialsFile(
+                    parseParameterOrDefault(defaults, shortParamCredentials, longParamCredentials));
         } else {
             LOG.error("No suitable entry for Azure-Credentials-File (" + shortParamCredentials + ") found! Exit");
             return false;

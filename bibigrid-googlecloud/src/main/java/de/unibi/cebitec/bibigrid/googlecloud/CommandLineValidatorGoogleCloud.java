@@ -75,10 +75,8 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
     protected boolean validateProviderParameters(List<String> req, Properties defaults) {
         final String shortParamProject = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString();
         final String longParamProject = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_L.toString();
-        if (cl.hasOption(shortParamProject)) {  // Google Cloud - required
-            googleCloudConfig.setGoogleProjectId(cl.getOptionValue(shortParamProject).trim());
-        } else if (defaults.containsKey(longParamProject)) {
-            googleCloudConfig.setGoogleProjectId(defaults.getProperty(longParamProject));
+        if (cl.hasOption(shortParamProject) || defaults.containsKey(longParamProject)) {
+            googleCloudConfig.setGoogleProjectId(parseParameterOrDefault(defaults, shortParamProject, longParamProject));
         } else {
             LOG.error("No suitable entry for Google-ProjectId (" + shortParamProject + ") found! Exit");
             return false;
@@ -87,10 +85,9 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
         final String shortParamImageProject = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString();
         final String longParamImageProject = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_L.toString();
         if (req.contains(shortParamImageProject)) {
-            if (cl.hasOption(shortParamImageProject)) {
-                googleCloudConfig.setGoogleImageProjectId(cl.getOptionValue(shortParamImageProject).trim());
-            } else if (defaults.containsKey(longParamImageProject)) {
-                googleCloudConfig.setGoogleImageProjectId(defaults.getProperty(longParamImageProject));
+            if (cl.hasOption(shortParamImageProject) || defaults.containsKey(longParamImageProject)) {
+                googleCloudConfig.setGoogleImageProjectId(
+                        parseParameterOrDefault(defaults, shortParamImageProject, longParamImageProject));
             } else {
                 LOG.error("No suitable entry for Google-Image-ProjectId (" + shortParamImageProject + ") found! Exit");
                 return false;
@@ -99,10 +96,9 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
 
         final String shortParamCredentials = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString();
         final String longParamCredentials = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_L.toString();
-        if (cl.hasOption(shortParamCredentials)) {  // Google Cloud - required
-            googleCloudConfig.setGoogleCredentialsFile(cl.getOptionValue(shortParamCredentials));
-        } else if (defaults.containsKey(longParamCredentials)) {
-            googleCloudConfig.setGoogleCredentialsFile(defaults.getProperty(longParamCredentials));
+        if (cl.hasOption(shortParamCredentials) || defaults.containsKey(longParamCredentials)) {
+            googleCloudConfig.setGoogleCredentialsFile(
+                    parseParameterOrDefault(defaults, shortParamCredentials, longParamCredentials));
         } else {
             LOG.error("No suitable entry for Google-Credentials-File (" + shortParamCredentials + ") found! Exit");
             return false;
@@ -111,7 +107,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
         final String spotShortParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString();
         final String spotLongParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_L.toString();
         if (cl.hasOption(spotShortParam) || defaults.containsKey(spotLongParam)) {
-            String value = cl.getOptionValue(spotShortParam, defaults.getProperty(spotLongParam));
+            String value = parseParameterOrDefault(defaults, spotShortParam, spotLongParam);
             if (value.equalsIgnoreCase(KEYWORD_YES)) {
                 cfg.setUseSpotInstances(true);
             }

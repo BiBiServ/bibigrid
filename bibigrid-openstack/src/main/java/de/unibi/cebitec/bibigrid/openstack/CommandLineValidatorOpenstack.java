@@ -152,7 +152,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private boolean parseSecurityGroupParameter(Properties defaults) {
         final String shortParam = RuleBuilder.RuleNames.SECURITY_GROUP_S.toString();
         final String longParam = RuleBuilder.RuleNames.SECURITY_GROUP_L.toString();
-        openstackConfig.setSecurityGroup(cl.getOptionValue(shortParam, defaults.getProperty(longParam)));
+        openstackConfig.setSecurityGroup(parseParameterOrDefault(defaults, shortParam, longParam));
         return true;
     }
 }
