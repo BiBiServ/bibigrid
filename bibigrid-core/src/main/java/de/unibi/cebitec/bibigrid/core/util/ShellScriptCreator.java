@@ -34,6 +34,7 @@ public final class ShellScriptCreator {
         userData.append("exec 2>&1\n");
         userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
         userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
+        appendDisableAptDailyService(userData);
         appendSshConfiguration(config, userData, keypair);
         appendEarlyExecuteScript(userData, config.getEarlySlaveShellScriptFile());
         // Log the finished message to notify the read loop
@@ -41,6 +42,20 @@ public final class ShellScriptCreator {
         userData.append("exit 0\n");
         LOG.info(V, "Slave userdata:\n{}", userData.toString());
         return base64 ? new String(Base64.encodeBase64(userData.toString().getBytes())) : userData.toString();
+    }
+
+
+    private static void appendDisableAptDailyService(StringBuilder userData){
+        userData.append("systemctl stop apt-daily.service\n" +
+                        "systemctl disable apt-daily.service\n" +
+                        "systemctl stop apt-daily.timer\n" +
+                        "systemctl disable apt-daily.timer\n" +
+                        "systemctl kill --kill-who=all apt-daily.service\n" +
+                        "# wait until `apt-get updated` has been killed\n" +
+                        "while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)\n" +
+                        "do\n" +
+                        "  sleep 1;\n" +
+                        "done");
     }
 
     private static void appendSshConfiguration(Configuration config, StringBuilder userData, ClusterKeyPair keypair) {
@@ -85,6 +100,7 @@ public final class ShellScriptCreator {
         userData.append("exec 2>&1\n");
         userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
         userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
+        appendDisableAptDailyService(userData);
         appendSshConfiguration(config, userData, keypair);
         appendEarlyExecuteScript(userData, config.getEarlyMasterShellScriptFile());
         // Log the finished message to notify the read loop
