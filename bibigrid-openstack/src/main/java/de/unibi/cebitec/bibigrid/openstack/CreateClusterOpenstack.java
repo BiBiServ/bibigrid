@@ -160,7 +160,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                 .flavor(masterFlavor.getId())
                 .image(masterImage)
                 .keypairName(config.getKeypair())
-                .addSecurityGroup(environment.getSecGroupExtension().getName())
+                .addSecurityGroup(environment.getSecGroupExtension().getId())
                 .availabilityZone(config.getAvailabilityZone())
                 .userData(ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), true))
                 .addMetadata(metadata)

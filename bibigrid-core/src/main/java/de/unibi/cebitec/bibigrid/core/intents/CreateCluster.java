@@ -27,8 +27,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class CreateCluster implements Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
-    private static final int SSH_POLL_ATTEMPTS = 25; // TODO: decide value or parameter
-    private static final int SSH_ATTEMPTS = 25; // TODO: decide value or parameter
+    private static final int SSH_POLL_ATTEMPTS = 25;
 
     protected final ProviderModule providerModule;
     protected final Configuration config;
@@ -77,7 +76,7 @@ public abstract class CreateCluster implements Intent {
      * <li>.launchClusterInstances()</li>
      * </ol>
      *
-     * @throws ConfigurationException
+     * @throws ConfigurationException Throws an exception if the creation of the cluster environment failed.
      */
     public abstract CreateClusterEnvironment createClusterEnvironment() throws ConfigurationException;
 
@@ -214,36 +213,27 @@ public abstract class CreateCluster implements Intent {
 
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
-        LOG.info("Now configuring ...");
-        boolean sshPortIsReady = pollSshPortIsAvailable(masterInstance.getPublicIp());
+        LOG.info("Now configuring...");
         boolean configured = false;
-        int sshAttempts = SSH_ATTEMPTS;
-        while (sshPortIsReady && !configured && sshAttempts > 0) {
+        boolean sshPortIsReady = pollSshPortIsAvailable(masterInstance.getPublicIp());
+        if (sshPortIsReady) {
             try {
                 ssh.addIdentity(config.getIdentityFile().toString());
-                LOG.info("Trying to connect to master ({})...", sshAttempts);
+                LOG.info("Trying to connect to master...");
                 sleep(4);
                 // Create new Session to avoid packet corruption.
                 Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIp(),
                         config.getSshUser(), config.getIdentityFile());
-                if (sshSession == null)
-                    continue;
-                // Start connection attempt
-                sshSession.connect();
-                LOG.info("Connected to master!");
-                configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig) &&
-                        installAndExecuteAnsible(sshSession);
-                if (configured) {
+                if (sshSession != null) {
+                    // Start connection attempt
+                    sshSession.connect();
+                    LOG.info("Connected to master!");
+                    configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig) &&
+                            installAndExecuteAnsible(sshSession);
                     sshSession.disconnect();
-                } else {
-                    sshAttempts--;
                 }
             } catch (IOException | JSchException e) {
-                sshAttempts--;
                 LOG.error("SSH: {}", e);
-                if (sshAttempts == 0) {
-                    LOG.error(V, "SSH: {}", e);
-                }
             }
         }
         if (configured) {

@@ -114,7 +114,7 @@ public class CreateClusterAWS extends CreateCluster {
         // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
         masterNetworkInterface = new InstanceNetworkInterfaceSpecification()
                 .withPrivateIpAddress(environment.getMasterIp())
-                .withGroups(environment.getSecReqResult().getGroupId())
+                .withGroups(environment.getSecurityGroup())
                 .withAssociatePublicIpAddress(true)
                 .withSubnetId(environment.getSubnet().getSubnetId())
                 .withDeviceIndex(0);
@@ -129,7 +129,7 @@ public class CreateClusterAWS extends CreateCluster {
 
     private void buildClientsNetworkInterface() {
         slaveNetworkInterface = new InstanceNetworkInterfaceSpecification()
-                .withGroups(environment.getSecReqResult().getGroupId())
+                .withGroups(environment.getSecurityGroup())
                 .withSubnetId(environment.getSubnet().getSubnetId())
                 .withAssociatePublicIpAddress(config.isPublicSlaveIps())
                 .withDeviceIndex(0);

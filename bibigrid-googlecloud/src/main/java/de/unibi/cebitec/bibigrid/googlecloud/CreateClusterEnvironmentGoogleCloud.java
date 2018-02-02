@@ -137,8 +137,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         // is limited and therefore should be combined!
         Map<String, List<Firewall.Allowed>> firewallRuleMap = new HashMap<>();
         firewallRuleMap.put("0.0.0.0/0", new ArrayList<>());
-        firewallRuleMap.get("0.0.0.0/0").add(buildFirewallRule("tcp", "22", "3389"));
-        firewallRuleMap.get("0.0.0.0/0").add(buildFirewallRule("icmp"));
+        firewallRuleMap.get("0.0.0.0/0").add(buildFirewallRule("tcp", "22"));
         firewallRuleMap.put(subnet.getIpRange(), new ArrayList<>());
         firewallRuleMap.get(subnet.getIpRange()).add(buildFirewallRule("tcp", "0-65535"));
         firewallRuleMap.get(subnet.getIpRange()).add(buildFirewallRule("udp", "0-65535"));

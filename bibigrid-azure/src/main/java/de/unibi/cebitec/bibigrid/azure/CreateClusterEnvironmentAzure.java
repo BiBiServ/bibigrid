@@ -120,7 +120,6 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
             NetworkSecurityGroup.Update update = securityGroup.update();
             int ruleIndex = 1;
             update = addSecurityRule(update, ruleIndex++, "0.0.0.0/0", SecurityRuleProtocol.TCP, 22, 22);
-            update = addSecurityRule(update, ruleIndex++, "0.0.0.0/0", SecurityRuleProtocol.TCP, 3389, 3389);
             update = addSecurityRule(update, ruleIndex++, subnet.addressPrefix(), SecurityRuleProtocol.TCP, 0, 65535);
             update = addSecurityRule(update, ruleIndex++, subnet.addressPrefix(), SecurityRuleProtocol.UDP, 0, 65535);
             update = addSecurityRule(update, ruleIndex++, subnet.addressPrefix(), new SecurityRuleProtocol("icmp"), -1, -1);

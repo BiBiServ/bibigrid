@@ -32,7 +32,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     private String placementGroup;
     private final CreateClusterAWS cluster;
     private String masterIp;
-    private CreateSecurityGroupResult secReqResult;
+    private String securityGroup;
 
     CreateClusterEnvironmentAWS(CreateClusterAWS cluster) throws ConfigurationException {
         super();
@@ -86,11 +86,11 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         secReq.withGroupName(SECURITY_GROUP_PREFIX + cluster.getClusterId())
                 .withDescription(cluster.getClusterId())
                 .withVpcId(vpc.getVpcId());
-        secReqResult = cluster.getEc2().createSecurityGroup(secReq);
+        securityGroup = cluster.getEc2().createSecurityGroup(secReq).getGroupId();
 
-        LOG.info(V, "security group id: {}", secReqResult.getGroupId());
+        LOG.info(V, "security group id: {}", securityGroup);
 
-        UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(secReqResult.getGroupId());
+        UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(securityGroup);
         List<IpPermission> allIpPermissions = new ArrayList<>();
         allIpPermissions.add(buildIpPermission("tcp", 22, 22).withIpRanges("0.0.0.0/0"));
         allIpPermissions.add(buildIpPermission("tcp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
@@ -103,10 +103,10 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         }
 
         AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();
-        ruleChangerReq.withGroupId(secReqResult.getGroupId()).withIpPermissions(allIpPermissions);
+        ruleChangerReq.withGroupId(securityGroup).withIpPermissions(allIpPermissions);
 
         tagRequest = new CreateTagsRequest();
-        tagRequest.withResources(secReqResult.getGroupId())
+        tagRequest.withResources(securityGroup)
                 .withTags(cluster.getBibigridId(), new Tag("Name", SECURITY_GROUP_PREFIX + cluster.getClusterId()));
         cluster.getEc2().createTags(tagRequest);
         cluster.getEc2().authorizeSecurityGroupIngress(ruleChangerReq);
@@ -167,7 +167,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         return masterIp;
     }
 
-    CreateSecurityGroupResult getSecReqResult() {
-        return secReqResult;
+    String getSecurityGroup() {
+        return securityGroup;
     }
 }
