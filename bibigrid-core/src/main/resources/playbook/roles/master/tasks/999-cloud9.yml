@@ -1,0 +1,31 @@
+- name: Install cloud9 dependencies
+  apt:
+    name: "{{ item }}"
+    state: "latest"
+  with_items:
+    - build-essential
+    - python
+    - nodejs-legacy
+
+- name: Clone c9/core repository
+  git:
+    repo: git://github.com/c9/core.git
+    dest: /opt/c9sdk
+
+- name: Install c9/core
+  shell: |-
+    cd /opt/c9sdk
+    scripts/install-sdk.sh
+
+- name: Create cloud9 startup script
+  copy:
+    content: |-
+      #!/bin/bash
+      cd /opt/c9sdk
+      node server.js $@
+    dest: /usr/local/bin/cloud9
+    owner: root
+    group: root
+    mode: 0755
+
+

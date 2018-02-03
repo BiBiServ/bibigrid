@@ -1,7 +1,18 @@
 - import_tasks: 005-disk.yml
 - import_tasks: 010-nfs.yml
-  when: enable_nfs == 'yes'
+  when:
+    - enable_nfs
+    - enable_nfs == 'yes'
 - import_tasks: 020-gridengine.yml
-  when: enable_gridengine == 'yes'
+  when:
+    - enable_gridengine
+    - enable_gridengine == 'yes'
 - import_tasks: 030-mesos.yml
-  when: enable_mesos == 'yes'
+  when:
+    - enable_mesos
+    - enable_mesos == 'yes'
+
+- import_tasks: 999-cloud9.yml
+  when:
+    - enable_cloud9
+    - enable_cloud9 == 'yes'
