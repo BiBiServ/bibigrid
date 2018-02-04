@@ -44,7 +44,7 @@ public class CreateClusterAzure extends CreateCluster {
         // int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
         // DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
 
-        masterStartupScript = ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), true);
+        masterStartupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true);
         return this;
     }
 
@@ -94,7 +94,7 @@ public class CreateClusterAzure extends CreateCluster {
     @Override
     protected List<InstanceAzure> launchClusterSlaveInstances() {
         List<VirtualMachine> slaveInstances = new ArrayList<>();
-        String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true);
+        String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false);
         String slaveInstanceNameTag = PREFIX + "slave-" + clusterId;
         for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
             String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;

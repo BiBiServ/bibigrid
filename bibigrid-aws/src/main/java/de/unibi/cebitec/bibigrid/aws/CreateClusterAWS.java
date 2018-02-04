@@ -63,7 +63,7 @@ public class CreateClusterAWS extends CreateCluster {
     @Override
     public CreateClusterAWS configureClusterMasterInstance() {
         buildMasterDeviceMappings();
-        base64MasterUserData = ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), true);
+        base64MasterUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true);
         buildMasterPlacementGroup();
         buildMasterNetworkInterface();
         return this;
@@ -239,7 +239,7 @@ public class CreateClusterAWS extends CreateCluster {
         // run slave instances and supply userdata
         List<Instance> slaveInstances;
         Tag slaveNameTag = new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId);
-        String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true);
+        String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false);
         if (config.isUseSpotInstances()) {
             RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest()
                     .withType(SpotInstanceType.OneTime)

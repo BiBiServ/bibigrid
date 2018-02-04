@@ -162,7 +162,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                 .keypairName(config.getKeypair())
                 .addSecurityGroup(environment.getSecGroupExtension().getId())
                 .availabilityZone(config.getAvailabilityZone())
-                .userData(ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), true))
+                .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true))
                 .addMetadata(metadata)
                 .configDrive(CONFIG_DRIVE)
                 .networks(Arrays.asList(environment.getNetwork().getId()))
@@ -288,7 +288,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .keypairName(config.getKeypair())
                     .addSecurityGroup(environment.getSecGroupExtension().getId())
                     .availabilityZone(config.getAvailabilityZone())
-                    .userData(ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), true))
+                    .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true,false))
                     .configDrive(CONFIG_DRIVE)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();

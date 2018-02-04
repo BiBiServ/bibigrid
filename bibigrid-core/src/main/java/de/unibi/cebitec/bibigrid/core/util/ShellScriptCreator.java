@@ -13,13 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Creates user data and other shell scripts that are executed on instances.
- * <p/>
- * User data script steps executed on instance initialisation:
- * <ol>
- * <li>Add the generated keypair to ssh config</li>
- * <li>Execute early shell script provided by user</li>
- * </ol>
+ * Creates user data and other shell scripts that are executed on instances during startup.
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  * @author alueckne(at)cebitec.uni-bielefeld.de
@@ -27,20 +21,27 @@ import org.slf4j.LoggerFactory;
 public final class ShellScriptCreator {
     private static final Logger LOG = LoggerFactory.getLogger(ShellScriptCreator.class);
 
-    public static String getSlaveUserData(Configuration config, ClusterKeyPair keypair, boolean base64) {
+    public static String getUserData(Configuration config, ClusterKeyPair keypair, boolean base64, boolean log){
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
+        // redirect output
         userData.append("exec > /var/log/userdata.log\n");
         userData.append("exec 2>&1\n");
+        // source shell configuration
         userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
+        // simple log function
         userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
+        // @ToDo log $(hostname) and $(nsllookup local_ip)
+        // @ToDo force sethostname $(nslookup local_ip) ???
+
         appendDisableAptDailyService(userData);
         appendSshConfiguration(config, userData, keypair);
-        appendEarlyExecuteScript(userData, config.getEarlySlaveShellScriptFile());
-        // Log the finished message to notify the read loop
+        appendEarlyExecuteScript(userData, config.getEarlyMasterShellScriptFile());
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
-        LOG.info(V, "Slave userdata:\n{}", userData.toString());
+        if (log) {
+            LOG.info(V, "Userdata:\n{}", userData.toString());
+        }
         return base64 ? new String(Base64.encodeBase64(userData.toString().getBytes())) : userData.toString();
     }
 
@@ -91,23 +92,6 @@ public final class ShellScriptCreator {
         } catch (IOException e) {
             LOG.info("Early shell script could not be read.");
         }
-    }
-
-    public static String getMasterUserData(Configuration config, ClusterKeyPair keypair, boolean base64) {
-        StringBuilder userData = new StringBuilder();
-        userData.append("#!/bin/bash\n");
-        userData.append("exec > /var/log/userdata.log\n");
-        userData.append("exec 2>&1\n");
-        userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
-        userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
-        appendDisableAptDailyService(userData);
-        appendSshConfiguration(config, userData, keypair);
-        appendEarlyExecuteScript(userData, config.getEarlyMasterShellScriptFile());
-        // Log the finished message to notify the read loop
-        userData.append("log \"userdata.finished\"\n");
-        userData.append("exit 0\n");
-        LOG.info(V, "Master userdata:\n{}", userData.toString());
-        return base64 ? new String(Base64.encodeBase64(userData.toString().getBytes())) : userData.toString();
     }
 
     public static String getMasterAnsibleExecutionScript() {

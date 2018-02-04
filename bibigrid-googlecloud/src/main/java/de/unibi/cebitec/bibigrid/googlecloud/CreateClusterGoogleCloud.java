@@ -49,7 +49,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         // int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
         // DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
 
-        String startupScript = ShellScriptCreator.getMasterUserData(config, environment.getKeypair(), false);
+        String startupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), false, true);
         masterStartupScript = Metadata.newBuilder().add("startup-script", startupScript).build();
         buildMasterNetworkInterface();
         return this;
@@ -115,7 +115,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     protected List<InstanceGoogleCloud> launchClusterSlaveInstances() {
         final int instanceCount = config.getSlaveInstanceCount();
         final String zone = config.getAvailabilityZone();
-        String base64SlaveUserData = ShellScriptCreator.getSlaveUserData(config, environment.getKeypair(), false);
+        String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), false, false);
         String slaveInstanceNameTag = "name" + GoogleCloudUtils.TAG_SEPARATOR + PREFIX + "slave-" + clusterId;
         InstanceId[] slaveInstanceIds = new InstanceId[instanceCount];
         Operation[] slaveInstanceOperations = new Operation[instanceCount];
