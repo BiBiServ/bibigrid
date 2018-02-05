@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
  * Creates user data and other shell scripts that are executed on instances during startup.
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
- * @author alueckne(at)cebitec.uni-bielefeld.de
  */
 public final class ShellScriptCreator {
     private static final Logger LOG = LoggerFactory.getLogger(ShellScriptCreator.class);
@@ -31,11 +30,20 @@ public final class ShellScriptCreator {
         userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
         // simple log function
         userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
-        // @ToDo log $(hostname) and $(nsllookup local_ip)
-        // @ToDo force sethostname $(nslookup local_ip) ???
-
+        // iplookup function
+        userData.append("function iplookup { nslookup ${1} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.' | xargs; }\n");
+        // Log local & resolved hostname
+        userData.append("localip=$(curl --silent --show-error http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+        userData.append("log \"hostname is $(hostname)\"\n");
+        userData.append("log \"hostname should be $(iplookup $localip)\"\n");
+        // force set hostname
+        userData.append("log \"set hostname\"\n");
+        userData.append("hostname -b $(iplookup $localip)\n");
+        userData.append("log \"disable apt-daily.(service|timer)\"\n");
         appendDisableAptDailyService(userData);
+        userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData, keypair);
+        userData.append("log \"run early executescript\"\n");
         appendEarlyExecuteScript(userData, config.getEarlyMasterShellScriptFile());
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
@@ -52,11 +60,10 @@ public final class ShellScriptCreator {
                         "systemctl stop apt-daily.timer\n" +
                         "systemctl disable apt-daily.timer\n" +
                         "systemctl kill --kill-who=all apt-daily.service\n" +
-                        "# wait until `apt-get updated` has been killed\n" +
                         "while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)\n" +
                         "do\n" +
                         "  sleep 1;\n" +
-                        "done");
+                        "done\n");
     }
 
     private static void appendSshConfiguration(Configuration config, StringBuilder userData, ClusterKeyPair keypair) {

@@ -173,8 +173,8 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             // allow ssh access (TCP:22) from everywhere
             csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.TCP, 22, 22).cidr("0.0.0.0/0").build());
             // no restriction within the security group
-            csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.TCP, 0, 65535).groupId(sge.getId()).build());
-            csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.UDP, 0, 65535).groupId(sge.getId()).build());
+            csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.TCP, 1, 65535).groupId(sge.getId()).build());
+            csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.UDP, 1, 65535).groupId(sge.getId()).build());
             // User selected Ports.
             List<Port> ports = cluster.getConfig().getPorts();
             for (Port p : ports) {

@@ -162,12 +162,11 @@ public class CreateClusterOpenstack extends CreateCluster {
                 .keypairName(config.getKeypair())
                 .addSecurityGroup(environment.getSecGroupExtension().getId())
                 .availabilityZone(config.getAvailabilityZone())
-                .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true))
+                .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true))
                 .addMetadata(metadata)
                 .configDrive(CONFIG_DRIVE)
                 .networks(Arrays.asList(environment.getNetwork().getId()))
                 .build();
-        //Server server = os.compute().servers().bootAndWaitActive(sc, 60000);
         Server server = os.compute().servers().boot(sc); // boot and return immediately
 
         // check if anything goes wrong,

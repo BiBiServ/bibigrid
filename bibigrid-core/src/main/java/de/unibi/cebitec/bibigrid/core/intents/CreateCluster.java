@@ -247,6 +247,7 @@ public abstract class CreateCluster implements Intent {
             throws JSchException {
         boolean uploadCompleted;
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
+        LOG.info("Upload Ansible playbook to master instance.");
         LOG.info(V, "Connecting sftp channel...");
         channel.connect();
         try {
@@ -292,6 +293,7 @@ public abstract class CreateCluster implements Intent {
     }
 
     private boolean installAndExecuteAnsible(Session sshSession) throws JSchException, IOException {
+        LOG.info("Configure and execute Ansible.");
         boolean configured = false;
         String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript();
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
