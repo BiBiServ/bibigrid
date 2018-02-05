@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>BiBiGrid</artifactId>
-        <groupId>de.unibi.cebitec.bibiserv</groupId>
-        <version>2.0</version>
+        <groupId>com.github.bibiserv</groupId>
+        <version>development-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,9 +13,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>de.unibi.cebitec.bibiserv</groupId>
+            <groupId>com.github.bibiserv</groupId>
             <artifactId>BiBiGrid-Core</artifactId>
-            <version>2.0</version>
+            <version>development-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
