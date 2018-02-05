@@ -4,14 +4,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.unibi.cebitec.bibiserv</groupId>
     <artifactId>BiBiGrid</artifactId>
-    <version>1.1</version>
+    <version>2.0</version>
     <modules>
         <module>bibigrid-core</module>
-        <module>bibigrid-googlecloud</module>
-        <module>bibigrid-aws</module>
-        <module>bibigrid-openstack</module>
         <module>bibigrid-main</module>
+        <module>bibigrid-aws</module>
         <module>bibigrid-azure</module>
+        <module>bibigrid-googlecloud</module>
+        <module>bibigrid-openstack</module>
     </modules>
     <packaging>pom</packaging>
     <properties>
@@ -57,6 +57,14 @@
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/*</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <!--<filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*</exclude>
                                         <exclude>com/amazonaws/services/cloudformation/**/*</exclude>
                                         <exclude>com/amazonaws/services/cloudfront/**/*</exclude>
                                         <exclude>com/amazonaws/services/cloudfront_2012_03_15/**/*</exclude>
@@ -90,12 +98,15 @@
 
                                     </excludes>
                                 </filter>
-                            </filters>
+                            </filters>-->
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
+
+
+
 
 </project>

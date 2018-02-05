@@ -308,20 +308,20 @@ public abstract class CreateCluster implements Intent {
                 if (lineOut.contains("CONFIGURATION_FINISHED")) {
                     configured = true;
                 }
-                LOG.info(V, "SSH: {}", lineOut);
+                if (V.getName().equals("VERBOSE")) {
+                    LOG.info(V, "SSH: {}", lineOut);
+                } else {
+                    System.out.print(".");
+                }
+
             }
             if (lineError != null && !configured) {
-                if (lineError.contains("sudo: unable to resolve host")) {
-                    LOG.warn(V, "SSH: {}", lineError);
-                } else {
-                    LOG.error("SSH: {}", lineError);
-                }
+                LOG.error("SSH: {}", lineError);
             }
             if (channel.isClosed() && configured) {
                 LOG.info(V, "SSH: exit-status: {}", channel.getExitStatus());
                 configured = true;
             }
-            sleep(2);
         }
         channel.disconnect();
         return configured;

@@ -103,18 +103,19 @@ public final class ShellScriptCreator {
 
     public static String getMasterAnsibleExecutionScript() {
         StringBuilder script = new StringBuilder();
-        script.append("echo \"Update apt-get\"\n");
-        script.append("sudo apt-get update\n");
-        script.append("echo \"Install python2\"\n");
-        script.append("sudo apt-get --yes --force-yes install apt-transport-https ca-certificates ")
-                .append("software-properties-common python python-pip\n"); // TODO: -qq
-        script.append("echo \"Install ansible from pypi using pip\"\n");
-        script.append("sudo pip install ansible\n"); // TODO: -q
-        script.append("echo \"Execute ansible playbook\"\n");
-        script.append("sudo -E ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts\n");
+        // apt-get update
+        script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
+        // install python2
+        script.append("sudo apt-get --yes  install apt-transport-https ca-certificates ")
+                .append("software-properties-common python python-pip |sudo tee -a /var/log/ssh_exec.log\n");
+        // Install ansible from pypi using pip
+        script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n" );
+        // Install python2 on slaves instances
+        script.append("ansible slaves -i ~/playook/ansible_hosts --sudo -m raw \"apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
+
+        // Execute ansible playbook
+        script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts | sudo tee -a /var/log/ansible-playbook.log\n");
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
-        script.append("");
-        script.append("");
         return script.toString();
     }
 }

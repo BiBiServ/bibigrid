@@ -5,7 +5,7 @@
     <parent>
         <artifactId>BiBiGrid</artifactId>
         <groupId>de.unibi.cebitec.bibiserv</groupId>
-        <version>1.1</version>
+        <version>2.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -21,27 +21,27 @@
         <dependency>
             <groupId>de.unibi.cebitec.bibiserv</groupId>
             <artifactId>BiBiGrid-Core</artifactId>
-            <version>1.1</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>de.unibi.cebitec.bibiserv</groupId>
             <artifactId>BiBiGrid-GoogleCloud</artifactId>
-            <version>1.1</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>de.unibi.cebitec.bibiserv</groupId>
             <artifactId>BiBiGrid-Openstack</artifactId>
-            <version>1.1</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>de.unibi.cebitec.bibiserv</groupId>
             <artifactId>BiBiGrid-AWS</artifactId>
-            <version>1.1</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>de.unibi.cebitec.bibiserv</groupId>
             <artifactId>BiBiGrid-Azure</artifactId>
-            <version>1.1</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
