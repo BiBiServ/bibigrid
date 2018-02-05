@@ -3,13 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>BiBiGrid</artifactId>
+        <artifactId>bibigrid</artifactId>
         <groupId>com.github.bibiserv</groupId>
         <version>development-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>BiBiGrid-Main</artifactId>
+    <artifactId>bibigrid-main</artifactId>
 
     <dependencies>
         <!-- General -->
@@ -20,27 +20,27 @@
         </dependency>
         <dependency>
             <groupId>com.github.bibiserv</groupId>
-            <artifactId>BiBiGrid-Core</artifactId>
+            <artifactId>bibigrid-core</artifactId>
             <version>development-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.bibiserv</groupId>
-            <artifactId>BiBiGrid-GoogleCloud</artifactId>
+            <artifactId>bibigrid-googlecloud</artifactId>
             <version>development-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.bibiserv</groupId>
-            <artifactId>BiBiGrid-Openstack</artifactId>
+            <artifactId>bibigrid-openstack</artifactId>
             <version>development-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.bibiserv</groupId>
-            <artifactId>BiBiGrid-AWS</artifactId>
+            <artifactId>bibigrid-aws</artifactId>
             <version>development-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.bibiserv</groupId>
-            <artifactId>BiBiGrid-Azure</artifactId>
+            <artifactId>bibigrid-azure</artifactId>
             <version>development-SNAPSHOT</version>
         </dependency>
         <dependency>
