@@ -2,18 +2,84 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.github.bibiserv</groupId>
+
+    <groupId>de.unibi.cebitec.bibigrid</groupId>
     <artifactId>bibigrid</artifactId>
-    <version>development-SNAPSHOT</version>
-    <modules>
-        <module>bibigrid-core</module>
-        <module>bibigrid-main</module>
-        <module>bibigrid-aws</module>
-        <module>bibigrid-azure</module>
-        <module>bibigrid-googlecloud</module>
-        <module>bibigrid-openstack</module>
-    </modules>
+    <version>2.0</version>
+
+
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>bibigrid-core</module>
+                <module>bibigrid-aws</module>
+                <module>bibigrid-azure</module>
+                <module>bibigrid-googlecloud</module>
+                <module>bibigrid-openstack</module>
+                <module>bibigrid-main</module>
+            </modules>
+            <build>
+                <finalName>bibigrid-${project.version}</finalName>
+            </build>
+        </profile>
+
+        <profile>
+            <id>openstack</id>
+            <modules>
+                <module>bibigrid-core</module>
+                <module>bibigrid-openstack</module>
+                <module>bibigrid-main</module>
+            </modules>
+            <build>
+                <finalName>bibigrid-openstack-${project.version}</finalName>
+            </build>
+        </profile>
+
+        <profile>
+            <id>aws</id>
+            <modules>
+                <module>bibigrid-core</module>
+                <module>bibigrid-aws</module>
+                <module>bibigrid-main</module>
+            </modules>
+            <build>
+                <finalName>bibigrid-aws-${project.version}</finalName>
+            </build>
+        </profile>
+
+        <profile>
+            <id>azure</id>
+            <modules>
+                <module>bibigrid-core</module>
+                <module>bibigrid-azure</module>
+                <module>bibigrid-main</module>
+            </modules>
+            <build>
+                <finalName>bibigrid-azure-${project.version}</finalName>
+            </build>
+        </profile>
+
+        <profile>
+            <id>googlecloud</id>
+            <modules>
+                <module>bibigrid-core</module>
+                <module>bibigrid-googlecloud</module>
+                <module>bibigrid-main</module>
+            </modules>
+            <build>
+                <finalName>bibigrid-googlecloud-${project.version}</finalName>
+            </build>
+        </profile>
+
+    </profiles>
+
     <packaging>pom</packaging>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -32,7 +98,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -52,6 +118,7 @@
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
+
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
