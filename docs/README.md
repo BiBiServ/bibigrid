@@ -1,8 +1,7 @@
-# Documentation
-
-- [Instance configuration with Ansible](../bibigrid-core/src/main/resources/README.md)
-
 # Getting Started
+
+**This is work in progress, mainly meaning that the documentation is incomplete.**
+
 Starting a cluster requires a valid configuration file and credentials. Following are the necessary steps with detailed information for each cloud provider.
 
 ## Setting up credentials
@@ -12,6 +11,7 @@ In order to upload and execute commands a valid ssh-keypair needs to be setup, t
 - [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)
 - [Google compute credentials setup](../bibigrid-googlecloud/docs/Credentials_Setup.md)
 - [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md)
+- [Microsoft Azure credentials setup](../bibigrid-azure/docs/Credentials_Setup.md)
 
 ## Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
@@ -93,6 +93,7 @@ The parameters provided via command line are listed below as "short parameter". 
 
 ### Writing and using a configuration file
 The configuration file is a plain text file. A short example would be:
+
 ```
 #use google cloud compute
 mode=googlecloud
@@ -100,17 +101,21 @@ google-projectid=XXXXX
 google-credentials-file=XXXXX
 [...]
 ```
+
 This file can now be used with the "-o" command line parameter and the path to the configuration file.
 
 ## Validating the cluster configuration
 Before starting the cluster directly after writing the configuration file, several components can be validated beforehand.
+
 ```
 > bibigrid -ch -o ~/config.properties
 ```
+
 STUB
 
 ## Starting the cluster
 STUB
+
 ```
 > bibigrid -c -o ~/config.properties
 ```
@@ -118,16 +123,20 @@ STUB
 ## Cluster maintenance
 ### List running clusters
 STUB
+
 ```
 > bibigrid -l -o ~/config.properties
 ```
 
 ### Terminate the cluster
 When you're finished using the cluster, you can terminate it using the following command and the logged cluster-id when the cluster was created.
+
 ```
 > bibigrid -t [cluster-id] -o ~/config.properties
 ```
+
 If necessary multiple clusters can be terminated at once.
+
 ```
 > bibigrid -t [id1]/[id2]/[id3] -o ~/config.properties
 ```

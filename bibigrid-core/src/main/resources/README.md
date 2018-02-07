@@ -1,11 +1,5 @@
 # Instance Configuration
 
-This is work in progress, mainly meaning that the documentation is 
-incomplete.
-
-jkrue, 01/12/2018
-
-
 
 ## Current (previous) state
 After instance startup the further configuration is currently done by generated scripts, which will be executed during (cloud-init) or after (ssh) initialization. Special images for master and slave are needed, which must be prepared beforehand.
