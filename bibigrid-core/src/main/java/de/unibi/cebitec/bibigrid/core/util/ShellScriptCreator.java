@@ -111,7 +111,7 @@ public final class ShellScriptCreator {
         // Install ansible from pypi using pip
         script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n" );
         // Install python2 on slaves instances
-        script.append("ansible slaves -i ~/playook/ansible_hosts --sudo -m raw \"apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
+        script.append("ansible slaves -i ~/playbook/ansible_hosts --become -m raw -a \"apt-get udpate && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
         // Execute ansible playbook
         script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts | sudo tee -a /var/log/ansible-playbook.log\n");
