@@ -201,8 +201,8 @@ public abstract class CommandLineValidator {
     private boolean parseRegionParameter() {
         final String shortParam = RuleBuilder.RuleNames.REGION_S.toString();
         final String envParam = RuleBuilder.RuleNames.REGION_ENV.toString();
-        // Parse environment variable
-        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+        // Parse environment variable if not loaded from config file
+        if (isStringNullOrEmpty(config.getRegion()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             config.setRegion(System.getenv(envParam));
         }
         // Parse command line parameter
