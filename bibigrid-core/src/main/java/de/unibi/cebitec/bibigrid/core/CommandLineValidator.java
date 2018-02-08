@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
@@ -21,25 +22,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class CommandLineValidator {
-    protected class ParseResult {
-        public String value;
-        public boolean success;
-
-        boolean getEnabled() {
-            return value != null && value.equalsIgnoreCase(KEYWORD_YES);
-        }
-    }
-
-    protected static final String KEYWORD_YES = "yes";
-    protected static final String KEYWORD_NO = "no";
     protected static final Logger LOG = LoggerFactory.getLogger(CommandLineValidator.class);
     protected final CommandLine cl;
+    protected final List<String> req;
     protected final DefaultPropertiesFile defaultPropertiesFile;
     protected final IntentMode intentMode;
     private final ProviderModule providerModule;
-    protected final Configuration cfg;
-
-    private Properties machineImage = null;
+    protected final Configuration config;
+    private Configuration.SlaveInstanceConfiguration commandLineSlaveInstance;
 
     public CommandLineValidator(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
                                 final IntentMode intentMode, final ProviderModule providerModule) {
@@ -47,458 +37,449 @@ public abstract class CommandLineValidator {
         this.defaultPropertiesFile = defaultPropertiesFile;
         this.intentMode = intentMode;
         this.providerModule = providerModule;
-        cfg = createProviderConfiguration();
-        if (defaultPropertiesFile.isAlternativeFilepath()) {
-            cfg.setAlternativeConfigPath(defaultPropertiesFile.getPropertiesFilePath().toString());
+        config = defaultPropertiesFile.loadConfiguration(getProviderConfigurationClass());
+        if (config != null && defaultPropertiesFile.isAlternativeFilepath()) {
+            config.setAlternativeConfigPath(defaultPropertiesFile.getPropertiesFilePath().toString());
         }
+        req = getRequiredOptions();
     }
 
     /**
      * Create the {@link Configuration} model instance. Must be overridden by provider
      * implementations for specific configuration fields.
      */
-    protected abstract Configuration createProviderConfiguration();
+    protected abstract Class<? extends Configuration> getProviderConfigurationClass();
 
-    private ParseResult parseYesNoParameter(Properties defaults, String name, RuleBuilder.RuleNames shortParam,
-                                            RuleBuilder.RuleNames longParam) {
-        ParseResult result = new ParseResult();
-        result.success = true;
-        if (cl.hasOption(shortParam.toString())) {
-            result.value = KEYWORD_YES;
-            LOG.info(V, name + " support enabled.");
-        } else if (defaults.containsKey(longParam.toString())) {
-            String value = defaults.getProperty(longParam.toString()).trim();
-            if (value.equalsIgnoreCase(KEYWORD_YES)) {
-                result.value = KEYWORD_YES;
-                LOG.info(V, name + " support enabled.");
-            } else if (value.equalsIgnoreCase(KEYWORD_NO)) {
-                result.value = KEYWORD_NO;
-                LOG.info(V, name + " support disabled.");
-            } else {
-                LOG.error(name + " value not recognized. Please use yes/no.");
-                result.success = false;
-            }
-        }
-        return result;
-    }
-
-    protected ParseResult parseParameter(Properties defaults, RuleBuilder.RuleNames shortParam,
-                                         RuleBuilder.RuleNames longParam, RuleBuilder.RuleNames envParam) {
-        ParseResult result = new ParseResult();
-        result.success = true;
-        if (cl.hasOption(shortParam.toString())) {
-            result.value = cl.getOptionValue(shortParam.toString()).trim();
-        } else if (defaults.getProperty(longParam.toString()) != null) {
-            result.value = defaults.getProperty(longParam.toString()).trim();
-        } else if (envParam != null && System.getenv(envParam.toString()) != null) {
-            result.value = System.getenv(envParam.toString()).trim();
-        } else {
-            result.success = false;
-        }
-        return result;
-    }
-
-    protected String parseParameterOrDefault(Properties defaults, String shortParam, String longParam) {
-        String value = cl.getOptionValue(shortParam, defaults.getProperty(longParam));
-        return value == null ? null : value.trim();
-    }
-
-    private boolean parseTerminateParameter(List<String> req) {
+    private boolean parseTerminateParameter() {
         // terminate (cluster-id)
         if (req.contains("t")) {
-            cfg.setClusterIds(cl.getOptionValue("t").trim());
+            config.setClusterIds(cl.getOptionValue("t").trim());
         }
         return true;
     }
 
-    private boolean parseUserNameParameter(Properties defaults) {
+    private boolean parseUserNameParameter() {
         final String shortParam = RuleBuilder.RuleNames.USER_S.toString();
-        final String longParam = RuleBuilder.RuleNames.USER_L.toString();
-        if (cl.hasOption(shortParam) || defaults.containsKey(longParam)) {
-            String value = parseParameterOrDefault(defaults, shortParam, longParam);
-            if (value != null && !value.isEmpty()) {
-                cfg.setUser(value);
-            } else {
-                LOG.error("User (-" + shortParam + ") can't be null or empty.");
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setUser(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(config.getUser())) {
+                LOG.error("-" + shortParam + " option is required!");
                 return false;
             }
         }
         return true;
     }
 
-    private boolean parseSshUserNameParameter(List<String> req, Properties defaults) {
+    private boolean parseSshUserNameParameter() {
         final String shortParam = RuleBuilder.RuleNames.SSH_USER_S.toString();
-        final String longParam = RuleBuilder.RuleNames.SSH_USER_L.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setSshUser(value);
+            }
+        }
+        // Validate parameter if required
         if (req.contains(shortParam)) {
-            if (cl.hasOption(shortParam) || defaults.containsKey(longParam)) {
-                String value = parseParameterOrDefault(defaults, shortParam, longParam);
-                if (value != null && !value.isEmpty()) {
-                    cfg.setSshUser(value);
-                } else {
-                    LOG.error("SSH user (-" + shortParam + ") can't be null or empty.");
-                    return false;
-                }
-            } else {
-                LOG.error("-" + shortParam + " option is required! Please specify a ssh user name.");
+            if (isStringNullOrEmpty(config.getSshUser())) {
+                LOG.error("-" + shortParam + " option is required!");
                 return false;
             }
         }
         return true;
     }
 
-    private boolean parseNetworkParameters(Properties defaults) {
-        // AWS - required
-        ParseResult result = parseParameter(defaults, RuleBuilder.RuleNames.VPC_S, RuleBuilder.RuleNames.VPC_L, null);
-        if (result.success) {
-            cfg.setVpcId(result.value);
+    private boolean parseVpcParameter() {
+        final String shortParam = RuleBuilder.RuleNames.VPC_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setVpc(value);
+            }
         }
-        // Openstack - optional
-        result = parseParameter(defaults, RuleBuilder.RuleNames.SUBNET_S, RuleBuilder.RuleNames.SUBNET_L, null);
-        if (result.success) {
-            cfg.setSubnetName(result.value);
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(config.getVpc())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
         }
         return true;
     }
 
-    private boolean parseMesosParameters(Properties defaults) {
-        ParseResult result = parseYesNoParameter(defaults, "Mesos", RuleBuilder.RuleNames.MESOS_S,
-                RuleBuilder.RuleNames.MESOS_L);
-        if (result.success) {
-            cfg.setMesos(result.getEnabled());
+    private boolean parseSubnetParameter() {
+        final String shortParam = RuleBuilder.RuleNames.SUBNET_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setSubnet(value);
+            }
         }
-        return result.success;
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(config.getSubnet())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
     }
 
-    private boolean parseGridEngineParameters(Properties defaults) {
-        ParseResult result = parseYesNoParameter(defaults, "OpenGridEngine", RuleBuilder.RuleNames.OPEN_GRID_ENGINE_S,
-                RuleBuilder.RuleNames.OPEN_GRID_ENGINE_L);
-        if (result.success) {
-            cfg.setOge(result.getEnabled());
+    private boolean parseSoftwareParameters() {
+        if (cl.hasOption(RuleBuilder.RuleNames.MESOS_S.toString())) {
+            config.setMesos(true);
         }
-        return result.success;
+        if (cl.hasOption(RuleBuilder.RuleNames.OPEN_GRID_ENGINE_S.toString())) {
+            config.setOge(true);
+        }
+        if (cl.hasOption(RuleBuilder.RuleNames.NFS_S.toString())) {
+            config.setNfs(true);
+        }
+        if (cl.hasOption(RuleBuilder.RuleNames.CASSANDRA_S.toString())) {
+            config.setCassandra(true);
+        }
+        if (cl.hasOption(RuleBuilder.RuleNames.SPARK_S.toString())) {
+            config.setSpark(true);
+        }
+        if (cl.hasOption(RuleBuilder.RuleNames.HDFS_S.toString())) {
+            config.setHdfs(true);
+        }
+        return true;
     }
 
-    private boolean parseNfsParameters(Properties defaults) {
-        ParseResult result = parseYesNoParameter(defaults, "NFS", RuleBuilder.RuleNames.NFS_S,
-                RuleBuilder.RuleNames.NFS_L);
-        if (result.success) {
-            cfg.setNfs(result.getEnabled());
-        }
-        return result.success;
-    }
-
-    private boolean parseCassandraParameters(Properties defaults) {
-        ParseResult result = parseYesNoParameter(defaults, "Cassandra", RuleBuilder.RuleNames.CASSANDRA_S,
-                RuleBuilder.RuleNames.CASSANDRA_L);
-        if (result.success) {
-            cfg.setCassandra(result.getEnabled());
-        }
-        return result.success;
-    }
-
-    private boolean parseSparkParameters(Properties defaults) {
-        ParseResult result = parseYesNoParameter(defaults, "Spark", RuleBuilder.RuleNames.SPARK_S,
-                RuleBuilder.RuleNames.SPARK_L);
-        if (result.success) {
-            cfg.setHdfs(result.getEnabled());
-        }
-        return result.success;
-    }
-
-    private boolean parseHdfsParameters(Properties defaults) {
-        ParseResult result = parseYesNoParameter(defaults, "HDFS", RuleBuilder.RuleNames.HDFS_S,
-                RuleBuilder.RuleNames.HDFS_L);
-        if (result.success) {
-            cfg.setSpark(result.getEnabled());
-        }
-        return result.success;
-    }
-
-    private boolean parseIdentityFileParameter(List<String> req, Properties defaults) {
+    private boolean parseIdentityFileParameter() {
         final String shortParam = RuleBuilder.RuleNames.IDENTITY_FILE_S.toString();
-        final String longParam = RuleBuilder.RuleNames.IDENTITY_FILE_L.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setIdentityFile(FileSystems.getDefault().getPath(value.trim()).toString());
+            }
+        }
+        // Validate parameter if required
         if (req.contains(shortParam)) {
-            String identityFilePath = null;
-            if (defaults.containsKey(longParam)) {
-                identityFilePath = defaults.getProperty(longParam);
-            }
-            if (cl.hasOption(shortParam)) {
-                identityFilePath = cl.getOptionValue(shortParam);
-            }
-            if (identityFilePath == null) {
-                LOG.error("-" + shortParam + " option is required! Please specify the absolute path to your identity " +
-                        "file (private ssh key file).");
+            if (isStringNullOrEmpty(config.getIdentityFile())) {
+                LOG.error("-" + shortParam + " option is required! Please specify the absolute path to your " +
+                        "identity file (private ssh key file).");
+                return false;
+            } else if (!FileSystems.getDefault().getPath(config.getIdentityFile()).toFile().exists()) {
+                LOG.error("Identity private key file '{}' does not exist!", config.getIdentityFile());
                 return false;
             }
-            Path identity = FileSystems.getDefault().getPath(identityFilePath.trim());
-            if (!identity.toFile().exists()) {
-                LOG.error("Identity private key file '{}' does not exist!", identity);
-                return false;
-            }
-            cfg.setIdentityFile(identity);
-            LOG.info(V, "Identity file found! ({})", cfg.getIdentityFile());
         }
         return true;
     }
 
-    private boolean parseKeypairParameter(List<String> req, Properties defaults) {
+    private boolean parseKeypairParameter() {
         final String shortParam = RuleBuilder.RuleNames.KEYPAIR_S.toString();
-        final String longParam = RuleBuilder.RuleNames.KEYPAIR_L.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setKeypair(value);
+            }
+        }
+        // Validate parameter if required
         if (req.contains(shortParam)) {
-            String value = parseParameterOrDefault(defaults, shortParam, longParam);
-            if (value == null) {
+            if (isStringNullOrEmpty(config.getKeypair())) {
                 LOG.error("-" + shortParam + " option is required! Please specify the name of your keypair.");
                 return false;
             }
-            cfg.setKeypair(value);
-            LOG.info(V, "Keypair name set. ({})", cfg.getKeypair());
         }
         return true;
     }
 
-    private boolean parseRegionParameter(List<String> req, Properties defaults) {
+    private boolean parseRegionParameter() {
         final String shortParam = RuleBuilder.RuleNames.REGION_S.toString();
-        final String longParam = RuleBuilder.RuleNames.REGION_L.toString();
         final String envParam = RuleBuilder.RuleNames.REGION_ENV.toString();
-        if (req.contains(shortParam)) {
-            String value = parseParameterOrDefault(defaults, shortParam, longParam);
-            cfg.setRegion(value);
-            if (value == null) {
-                if (System.getenv(envParam) != null) {
-                    cfg.setRegion(System.getenv(envParam));
-                } else {
-                    LOG.error("-" + shortParam + " option is required! Please specify the url of your region " +
-                            "(e.g. region=eu-west-1).");
-                    return false;
-                }
+        // Parse environment variable
+        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+            config.setRegion(System.getenv(envParam));
+        }
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setRegion(value);
             }
-            LOG.info(V, "Region set. ({})", cfg.getRegion());
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(config.getRegion())) {
+                LOG.error("-" + shortParam + " option is required! Please specify a region (e.g. region: eu-west-1).");
+                return false;
+            }
         }
         return true;
     }
 
-    private boolean parseAvailabilityZoneParameter(List<String> req, Properties defaults) {
+    private boolean parseAvailabilityZoneParameter() {
         final String shortParam = RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString();
-        final String longParam = RuleBuilder.RuleNames.AVAILABILITY_ZONE_L.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setAvailabilityZone(value);
+            }
+        }
+        // Validate parameter if required
         if (req.contains(shortParam)) {
-            String value = parseParameterOrDefault(defaults, shortParam, longParam);
-            cfg.setAvailabilityZone(value);
-            if (value == null) {
+            if (isStringNullOrEmpty(config.getAvailabilityZone())) {
                 LOG.error("-" + shortParam + " option is required! Please specify an availability zone " +
-                        "(e.g. availability-zone=eu-west-1a).");
+                        "(e.g. availabilityZone: eu-west-1a).");
                 return false;
             }
-            LOG.info(V, "Availability zone set. ({})", cfg.getAvailabilityZone());
         }
         return true;
     }
 
-    private boolean parseMasterInstanceTypeParameter(List<String> req, Properties defaults) {
+    private boolean parseMasterInstanceTypeParameter() {
         final String shortParam = RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString();
-        final String longParam = RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_L.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.getMasterInstance().setType(value);
+            }
+        }
+        // Validate parameter if required
         if (req.contains(shortParam)) {
-            try {
-                String value = parseParameterOrDefault(defaults, shortParam, longParam);
-                if (value == null) {
-                    LOG.error("-" + shortParam + " option is required! Please specify the instance type of your " +
-                            "master node. (e.g. master-instance-type=t1.micro)");
-                    return false;
-                }
-                if (providerModule != null) {
-                    InstanceType masterType = providerModule.getInstanceType(cfg, value);
-                    cfg.setMasterInstanceType(masterType);
-                }
-            } catch (InstanceTypeNotFoundException e) {
-                LOG.error("Invalid master instance type specified!", e);
+            if (isStringNullOrEmpty(config.getMasterInstance().getType())) {
+                LOG.error("-" + shortParam + " option is required! Please specify the master instance type.");
                 return false;
             }
-            LOG.info(V, "Master instance type set. ({})", cfg.getMasterInstanceType());
+        }
+        try {
+            InstanceType masterType = providerModule.getInstanceType(config, config.getMasterInstance().getType());
+            config.getMasterInstance().setProviderType(masterType);
+        } catch (InstanceTypeNotFoundException e) {
+            LOG.error("Invalid master instance type specified!", e);
+            return false;
         }
         return true;
     }
 
-    private boolean parseMasterImageParameter(List<String> req, Properties defaults) {
+    private boolean parseMasterInstanceImageParameter() {
         final String shortParam = RuleBuilder.RuleNames.MASTER_IMAGE_S.toString();
-        final String longParam = RuleBuilder.RuleNames.MASTER_IMAGE_L.toString();
-        if (req.contains(shortParam)) {
-            String value = parseParameterOrDefault(defaults, shortParam, longParam);
-            cfg.setMasterImage(value);
-            if (value == null) {
-                // try to load machine image id from URL
-                loadMachineImageId();
-                if (machineImage != null) {
-                    cfg.setMasterImage(machineImage.getProperty("master"));
-                } else {
-                    LOG.error("-" + shortParam + " option is required! Please specify the AMI ID for your master node.");
-                    return false;
-                }
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.getMasterInstance().setImage(value);
             }
-            LOG.info(V, "Master image set. ({})", cfg.getMasterImage());
+        }
+        // try to load machine image id from URL
+        if (isStringNullOrEmpty(config.getMasterInstance().getImage())) {
+            Properties machineImage = loadMachineImageId();
+            if (machineImage != null) {
+                config.getMasterInstance().setImage(machineImage.getProperty("master"));
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(config.getMasterInstance().getImage())) {
+                LOG.error("-" + shortParam + " option is required! Please specify the master instance image.");
+                return false;
+            }
         }
         return true;
     }
 
-    private boolean parseSlaveInstanceTypeParameter(List<String> req, Properties defaults) {
+    private boolean parseMasterAsComputeParameter() {
+        if (cl.hasOption(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString())) {
+            config.setUseMasterAsCompute(true);
+        }
+        return true;
+    }
+
+    private boolean parseSlaveInstanceTypeParameter() {
         final String shortParam = RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString();
-        final String longParam = RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_L.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                if (commandLineSlaveInstance == null) {
+                    commandLineSlaveInstance = new Configuration.SlaveInstanceConfiguration();
+                    if (config.getSlaveInstances() == null) {
+                        config.setSlaveInstances(new ArrayList<>());
+                    }
+                    config.getSlaveInstances().add(commandLineSlaveInstance);
+                }
+                commandLineSlaveInstance.setType(value);
+            }
+        }
+        // Validate parameter if required
         if (req.contains(shortParam)) {
-            try {
-                String value = parseParameterOrDefault(defaults, shortParam, longParam);
-                if (value == null) {
-                    LOG.error("-" + shortParam + " option is required! Please specify the instance type of your " +
-                            "slave nodes (" + longParam + "=t1.micro).");
+            for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+                if (isStringNullOrEmpty(instanceConfiguration.getType())) {
+                    LOG.error("-" + shortParam + " option is required! Please specify the slave instance type.");
                     return false;
                 }
-                if (providerModule != null) {
-                    InstanceType slaveType = providerModule.getInstanceType(cfg, value);
-                    cfg.setSlaveInstanceType(slaveType);
-                    if (slaveType.getSpec().isClusterInstance() || cfg.getMasterInstanceType().getSpec().isClusterInstance()) {
-                        if (!slaveType.toString().equals(cfg.getMasterInstanceType().toString())) {
-                            LOG.warn("The instance types should be the same when using cluster types.");
-                            LOG.warn("Master Instance Type: " + cfg.getMasterInstanceType().toString());
-                            LOG.warn("Slave Instance Type: " + slaveType.toString());
-                        }
-                    }
-                }
-            } catch (InstanceTypeNotFoundException e) {
-                LOG.error("Invalid slave instance type specified!");
-                return false;
             }
-            LOG.info(V, "Slave instance type set. ({})", cfg.getSlaveInstanceType());
         }
+        try {
+            for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+                InstanceType slaveType = providerModule.getInstanceType(config, instanceConfiguration.getType());
+                instanceConfiguration.setProviderType(slaveType);
+            }
+        } catch (InstanceTypeNotFoundException e) {
+            LOG.error("Invalid slave instance type specified!", e);
+            return false;
+        }
+        /* TODO: better use check like in validate intent
+        if (slaveType.getSpec().isClusterInstance() || config.getMasterInstanceType().getSpec().isClusterInstance()) {
+            if (!slaveType.toString().equals(config.getMasterInstanceType().toString())) {
+                LOG.warn("The instance types should be the same when using cluster types.");
+                LOG.warn("Master Instance Type: " + config.getMasterInstanceType().toString());
+                LOG.warn("Slave Instance Type: " + slaveType.toString());
+            }
+        }
+        */
         return true;
     }
 
-    private boolean parseSlaveInstanceMaxParameter(List<String> req, Properties defaults) {
+    private boolean parseSlaveInstanceCountParameter() {
         final String shortParam = RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString();
-        final String longParam = RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_L.toString();
-        if (req.contains(shortParam)) {
-            try {
-                if (defaults.containsKey(longParam)) {
-                    cfg.setSlaveInstanceCount(Integer.parseInt(defaults.getProperty(longParam)));
-                }
-            } catch (NumberFormatException nfe) {
-                LOG.error("Invalid property value for " + longParam + ". Please make sure you have a positive integer here.");
-                return false;
-            }
-            if (cl.hasOption(shortParam)) {
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                int count;
                 try {
-                    int numSlaves = Integer.parseInt(cl.getOptionValue(shortParam));
-                    if (numSlaves >= 0) {
-                        cfg.setSlaveInstanceCount(numSlaves);
-                    } else {
-                        LOG.error("Number of slave nodes has to be at least 0.");
-                    }
+                    count = Integer.parseInt(value);
                 } catch (NumberFormatException nfe) {
-                    LOG.error("Invalid argument for -" + shortParam + ". Please make sure you have a positive integer here.");
-                }
-            }
-            if (cfg.getSlaveInstanceCount() < 0) {
-                LOG.error("-" + shortParam + " option is required! Please specify the number of slave nodes. (at least 0)");
-                return false;
-            } else {
-                LOG.info(V, "Slave instance count set. ({})", cfg.getSlaveInstanceCount());
-            }
-        }
-        return true;
-    }
-
-    private boolean parseMasterAsComputeParameter(List<String> req, Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString();
-        if (req.contains(shortParam)) {
-            ParseResult result = parseYesNoParameter(defaults, "Master as compute",
-                    RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S, RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_L);
-            if (result.success) {
-                cfg.setUseMasterAsCompute(result.getEnabled());
-            }
-            if (!result.success) {
-                LOG.error("-" + shortParam + " option is required! Please make sure it is set as yes or no");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean parseSlaveImageParameter(List<String> req, Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString();
-        final String longParam = RuleBuilder.RuleNames.SLAVE_IMAGE_L.toString();
-        if (req.contains(shortParam)) {
-            String value = parseParameterOrDefault(defaults, shortParam, longParam);
-            cfg.setSlaveImage(value);
-            if (value == null) {
-                // try to load machine image id from URL
-                loadMachineImageId();
-                if (machineImage != null) {
-                    cfg.setSlaveImage(machineImage.getProperty("slave"));
-                } else {
-
-                    LOG.error("-" + shortParam + " option is required! Please specify the AMI ID for your slave nodes.");
+                    LOG.error("Invalid property value for -" + shortParam +
+                            ". Please make sure you have a positive integer here.");
                     return false;
                 }
-            } else {
-                LOG.info(V, "Slave image set. ({})", cfg.getSlaveImage());
+                if (commandLineSlaveInstance == null) {
+                    commandLineSlaveInstance = new Configuration.SlaveInstanceConfiguration();
+                    if (config.getSlaveInstances() == null) {
+                        config.setSlaveInstances(new ArrayList<>());
+                    }
+                    config.getSlaveInstances().add(commandLineSlaveInstance);
+                }
+                commandLineSlaveInstance.setCount(count);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            for (Configuration.SlaveInstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+                if (instanceConfiguration.getCount() < 0) {
+                    LOG.error("-" + shortParam + " option is required! Please specify the slave instance count.");
+                    return false;
+                }
             }
         }
         return true;
     }
 
-    private boolean parsePortsParameter(Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.PORTS_S.toString();
-        final String longParam = RuleBuilder.RuleNames.PORTS_L.toString();
-        String portsCsv = parseParameterOrDefault(defaults, shortParam, longParam);
-        if (portsCsv != null && !portsCsv.isEmpty()) {
-            try {
-                Pattern p = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})(?:/(\\d{1,2}))*");
-                String[] portsStrings = portsCsv.split(",");
-                for (String portString : portsStrings) {
-                    Port port;
-                    // must distinguish between different notation
-                    // 5555
-                    // 0.0.0.0:5555
-                    // 0.0.0.0/0:5555
-                    // current:5555
-                    if (portString.contains(":")) {
-                        String address;
-                        String[] tmp = portString.split(":");
-                        if (tmp[0].equalsIgnoreCase("current")) {
-                            address = InetAddress.getLocalHost().getHostAddress() + "/32";
-                        } else {
-                            Matcher m = p.matcher(tmp[0]);
-                            //noinspection ResultOfMethodCallIgnored
-                            m.matches();
-                            for (int i = 1; i <= 4; i++) {
-                                checkStringAsInt(m.group(i), 255);
-                            }
-                            if (m.group(5) != null) {
-                                checkStringAsInt(m.group(5), 32);
-                            }
-                            address = tmp[0];
-                        }
-                        port = new Port(address, checkStringAsInt(tmp[1], 65535));
-                    } else {
-                        port = new Port("0.0.0.0/0", checkStringAsInt(portString.trim(), 65535));
-                    }
-                    cfg.getPorts().add(port);
+    private boolean parseSlaveImageParameter() {
+        final String shortParam = RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            String value = cl.getOptionValue(shortParam);
+            if (isStringNullOrEmpty(value)) {
+                // try to load machine image id from URL
+                Properties machineImage = loadMachineImageId();
+                if (machineImage != null) {
+                    value = machineImage.getProperty("slave");
                 }
-            } catch (Exception e) {
-                LOG.error("Could not parse the supplied port list, please make "
-                        + "sure you have a list of comma-separated valid ports "
-                        + "without spaces in between. Valid ports have following pattern :"
-                        + "[(current|'ip4v-address'|'ip4v-range/CIDR'):]'portnumber'", e);
+            }
+            if (!isStringNullOrEmpty(value)) {
+                if (commandLineSlaveInstance == null) {
+                    commandLineSlaveInstance = new Configuration.SlaveInstanceConfiguration();
+                    if (config.getSlaveInstances() == null) {
+                        config.setSlaveInstances(new ArrayList<>());
+                    }
+                    config.getSlaveInstances().add(commandLineSlaveInstance);
+                }
+                commandLineSlaveInstance.setImage(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            for (Configuration.SlaveInstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+                if (isStringNullOrEmpty(instanceConfiguration.getImage())) {
+                    LOG.error("-" + shortParam + " option is required! Please specify the slave instance image.");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean parsePortsParameter() {
+        final String shortParam = RuleBuilder.RuleNames.PORTS_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                try {
+                    Pattern p = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})(?:/(\\d{1,2}))*");
+                    String[] portsStrings = value.split(",");
+                    List<Port> ports = new ArrayList<>();
+                    for (String portString : portsStrings) {
+                        Port port;
+                        // must distinguish between different notation
+                        // 5555
+                        // 0.0.0.0:5555
+                        // 0.0.0.0/0:5555
+                        // current:5555
+                        // TODO: implement protocol parsing!
+                        if (portString.contains(":")) {
+                            String address;
+                            String[] tmp = portString.split(":");
+                            if (tmp[0].equalsIgnoreCase("current")) {
+                                address = InetAddress.getLocalHost().getHostAddress() + "/32";
+                            } else {
+                                Matcher m = p.matcher(tmp[0]);
+                                //noinspection ResultOfMethodCallIgnored
+                                m.matches();
+                                for (int i = 1; i <= 4; i++) {
+                                    checkStringAsInt(m.group(i), 255);
+                                }
+                                if (m.group(5) != null) {
+                                    checkStringAsInt(m.group(5), 32);
+                                }
+                                address = tmp[0];
+                            }
+                            port = new Port(address, checkStringAsInt(tmp[1], 65535));
+                        } else {
+                            port = new Port("0.0.0.0/0", checkStringAsInt(portString.trim(), 65535));
+                        }
+                        ports.add(port);
+                    }
+                    config.setPorts(ports);
+                } catch (Exception e) {
+                    LOG.error("Could not parse the supplied port list, please make sure you have a list of " +
+                            "comma-separated valid ports without spaces in between. Valid ports have following " +
+                            "pattern: [(current|'ip4v-address'|'ip4v-range/CIDR'):]'portnumber'", e);
+                    return false;
+                }
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (config.getPorts() == null) {
+                LOG.error("-" + shortParam + " option is required!");
                 return false;
             }
-            if (!cfg.getPorts().isEmpty()) {
-                StringBuilder portsDisplay = new StringBuilder();
-                for (Port port : cfg.getPorts()) {
-                    portsDisplay.append(port.toString()).append(" ");
-                }
-                LOG.info(V, "Additional open ports set: {}", portsDisplay);
-            }
         }
         return true;
     }
 
-    private boolean parseExecuteScriptParameter(Properties defaults) {
+    /*
+    private boolean parseExecuteScriptParameter() {
         final String shortParam = RuleBuilder.RuleNames.EXECUTE_SCRIPT_S.toString();
         final String longParam = RuleBuilder.RuleNames.EXECUTE_SCRIPT_L.toString();
         String scriptFilePath = cl.hasOption(shortParam) || defaults.containsKey(longParam) ?
@@ -509,126 +490,14 @@ public abstract class CommandLineValidator {
                 LOG.error("The supplied shell script file '{}' does not exist!", script);
                 return false;
             }
-            cfg.setShellScriptFile(script);
+            config.setShellScriptFile(script);
             LOG.info(V, "Shell script file found! ({})", script);
         }
         return true;
     }
 
-    private boolean parseMasterMountsParameter(Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.MASTER_MOUNTS_S.toString();
-        final String longParam = RuleBuilder.RuleNames.MASTER_MOUNTS_L.toString();
-        cfg.setMasterMounts(new HashMap<>());
-        String masterMountsCsv = parseParameterOrDefault(defaults, shortParam, longParam);
-        if (masterMountsCsv != null && !masterMountsCsv.isEmpty()) {
-            try {
-                String[] masterMounts = masterMountsCsv.split(",");
-                for (String masterMountsKeyValue : masterMounts) {
-                    String[] masterMountsSplit = masterMountsKeyValue.trim().split("=");
-                    String snapshot = masterMountsSplit[0].trim();
-                    String mountPoint = masterMountsSplit[1].trim();
-                    cfg.getMasterMounts().put(snapshot, mountPoint);
-                }
-            } catch (Exception e) {
-                LOG.error("Could not parse the list of master mounts, please make sure you have a list of " +
-                        "comma-separated key=value pairs without spaces in between.");
-                return false;
-            }
-            if (!cfg.getMasterMounts().isEmpty()) {
-                StringBuilder masterMountsDisplay = new StringBuilder();
-                for (Map.Entry<String, String> mount : cfg.getMasterMounts().entrySet()) {
-                    masterMountsDisplay.append(mount.getKey()).append(" => ").append(mount.getValue()).append(" ; ");
-                }
-                LOG.info(V, "Master mounts: {}", masterMountsDisplay);
-            }
-        }
-        return true;
-    }
-
-    private boolean parseSlaveMountsParameter(Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.SLAVE_MOUNTS_S.toString();
-        final String longParam = RuleBuilder.RuleNames.SLAVE_MOUNTS_L.toString();
-        cfg.setSlaveMounts(new HashMap<>());
-        String slaveMountsCsv = parseParameterOrDefault(defaults, shortParam, longParam);
-        if (slaveMountsCsv != null && !slaveMountsCsv.isEmpty()) {
-            try {
-                String[] slaveMounts = slaveMountsCsv.split(",");
-                for (String slaveMountsKeyValue : slaveMounts) {
-                    String[] slaveMountsSplit = slaveMountsKeyValue.trim().split("=");
-                    String snapshot = slaveMountsSplit[0].trim();
-                    String mountPoint = slaveMountsSplit[1].trim();
-                    cfg.getSlaveMounts().put(snapshot, mountPoint);
-                }
-            } catch (Exception e) {
-                LOG.error("Could not parse the list of slave mounts, please make sure you have a list of " +
-                        "comma-separated key=value pairs without spaces in between.");
-                return false;
-            }
-            if (!cfg.getSlaveMounts().isEmpty()) {
-                StringBuilder slaveMountsDisplay = new StringBuilder();
-                for (Map.Entry<String, String> mount : cfg.getSlaveMounts().entrySet()) {
-                    slaveMountsDisplay.append(mount.getKey()).append(" => ").append(mount.getValue()).append(" ; ");
-                }
-                LOG.info(V, "Slave mounts: {}", slaveMountsDisplay);
-            }
-        }
-        return true;
-    }
-
-    private boolean parseMasterNfsSharesParameter(Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.NFS_SHARES_S.toString();
-        final String longParam = RuleBuilder.RuleNames.NFS_SHARES_L.toString();
-        cfg.setNfsShares(new ArrayList<>());
-        String nfsSharesCsv = parseParameterOrDefault(defaults, shortParam, longParam);
-        if (nfsSharesCsv != null && !nfsSharesCsv.isEmpty()) {
-            try {
-                String[] nfsSharesArray = nfsSharesCsv.split(",");
-                for (String share : nfsSharesArray) {
-                    cfg.getNfsShares().add(share.trim());
-                }
-            } catch (Exception e) {
-                LOG.error("Could not parse the supplied list of shares, please make "
-                        + "sure you have a list of comma-separated paths without spaces in between.");
-                return false;
-            }
-            if (!cfg.getNfsShares().isEmpty()) {
-                StringBuilder nfsSharesDisplay = new StringBuilder();
-                for (String share : cfg.getNfsShares()) {
-                    nfsSharesDisplay.append(share).append(" ");
-                }
-                LOG.info(V, "NFS shares set: {}", nfsSharesDisplay);
-            }
-        }
-        return true;
-    }
-
-    private boolean parseExternNfsSharesParameter(Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.EXT_NFS_SHARES_S.toString();
-        final String longParam = RuleBuilder.RuleNames.EXT_NFS_SHARES_L.toString();
-        cfg.setExtNfsShares(new HashMap<>());
-        String extNfsShareMap = parseParameterOrDefault(defaults, shortParam, longParam);
-        if (extNfsShareMap != null && !extNfsShareMap.isEmpty()) {
-            try {
-                String[] tmp = extNfsShareMap.split(",");
-                for (String share : tmp) {
-                    String[] kv = share.split("=");
-                    if (kv.length == 2) {
-                        cfg.getExtNfsShares().put(kv[0], kv[1]);
-                    } else {
-                        throw new Exception();
-                    }
-                }
-            } catch (Exception e) {
-                LOG.error("Could not parse the supplied list of external shares, please make " +
-                        "sure you have list of comma-separated nfsserver=path pairs without spaces in between.");
-            }
-        }
-        return true;
-    }
-
-    private boolean parseEarlyExecuteScriptParameter(Properties defaults) {
+    private boolean parseEarlyExecuteScriptParameter() {
         final String shortParam = RuleBuilder.RuleNames.EARLY_EXECUTE_SCRIPT_S.toString();
-        final String longParam = RuleBuilder.RuleNames.EARLY_EXECUTE_SCRIPT_L.toString();
         String earlyMasterScriptFilePath = cl.hasOption(shortParam) || defaults.containsKey(longParam) ?
                 parseParameterOrDefault(defaults, shortParam, longParam) : null;
         if (earlyMasterScriptFilePath != null) {
@@ -637,15 +506,14 @@ public abstract class CommandLineValidator {
                 LOG.error("The supplied early master shell script file '{}' does not exist!", script);
                 return false;
             }
-            cfg.setEarlyMasterShellScriptFile(script);
+            config.setEarlyMasterShellScriptFile(script);
             LOG.info(V, "Early master shell script file found! ({})", script);
         }
         return true;
     }
 
-    private boolean parseEarlySlaveExecuteScriptParameter(Properties defaults) {
+    private boolean parseEarlySlaveExecuteScriptParameter() {
         final String shortParam = RuleBuilder.RuleNames.EARLY_SLAVE_EXECUTE_SCRIPT_S.toString();
-        final String longParam = RuleBuilder.RuleNames.EARLY_SLAVE_EXECUTE_SCRIPT_L.toString();
         String earlySlaveScriptFilePath = cl.hasOption(shortParam) || defaults.containsKey(longParam) ?
                 parseParameterOrDefault(defaults, shortParam, longParam) : null;
         if (earlySlaveScriptFilePath != null) {
@@ -654,115 +522,247 @@ public abstract class CommandLineValidator {
                 LOG.error("The supplied early slave shell script file '{}' does not exist!", script);
                 return false;
             }
-            cfg.setEarlySlaveShellScriptFile(script);
+            config.setEarlySlaveShellScriptFile(script);
             LOG.info(V, "Early slave shell script file found! ({})", script);
         }
         return true;
     }
+    */
 
-    private boolean parseSpotInstanceParameters(Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString();
-        final String longParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_L.toString();
-        if (cl.hasOption(shortParam) || defaults.containsKey(longParam)) {
-            String value = parseParameterOrDefault(defaults, shortParam, longParam);
-            if (value.equalsIgnoreCase(KEYWORD_YES)) {
-                cfg.setUseSpotInstances(true);
-                LOG.info(V, "Use spot request for all");
-            } else if (value.equalsIgnoreCase(KEYWORD_NO)) {
-                LOG.info(V, "SpotInstance usage disabled.");
-                cfg.setMesos(false);
-            } else {
-                LOG.error("SpotInstanceRequest value not recognized. Please use yes/no.");
+    private boolean parseMasterMountsParameter() {
+        final String shortParam = RuleBuilder.RuleNames.MASTER_MOUNTS_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                List<Configuration.MountPoint> mountPoints = parseMountCsv(value, "Master");
+                if (mountPoints != null) {
+                    config.setMasterMounts(mountPoints);
+                }
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (config.getMasterMounts() == null) {
+                LOG.error("-" + shortParam + " option is required!");
                 return false;
             }
         }
         return true;
     }
 
-    private boolean parseEphemeralFilesystemParameter(Properties defaults) {
-        final String shortParam = RuleBuilder.RuleNames.LOCAL_FS_S.toString();
-        final String longParam = RuleBuilder.RuleNames.LOCAL_FS_L.toString();
-        if (cl.hasOption(shortParam) || defaults.containsKey(longParam)) {
-            String value = parseParameterOrDefault(defaults, shortParam, longParam);
+    private static List<Configuration.MountPoint> parseMountCsv(String mountsCsv, String logName) {
+        List<Configuration.MountPoint> mountPoints = new ArrayList<>();
+        if (mountsCsv != null && !mountsCsv.isEmpty()) {
             try {
-                Configuration.FS fs = Configuration.FS.valueOf(value.toUpperCase());
-                cfg.setLocalFS(fs);
-            } catch (IllegalArgumentException e) {
-                LOG.error("Local filesystem must be one of 'ext2', 'ext3', 'ext4' or 'xfs'!");
+                String[] mounts = mountsCsv.split(",");
+                for (String mountKeyValue : mounts) {
+                    String[] mountSplit = mountKeyValue.trim().split("=");
+                    Configuration.MountPoint mountPoint = new Configuration.MountPoint();
+                    mountPoint.setSource(mountSplit[0].trim());
+                    mountPoint.setTarget(mountSplit[1].trim());
+                    mountPoints.add(mountPoint);
+                }
+            } catch (Exception e) {
+                LOG.error("Could not parse the list of {} mounts, please make sure you have a list of " +
+                        "comma-separated key=value pairs without spaces in between.", logName);
+                return null;
+            }
+            if (!mountPoints.isEmpty()) {
+                StringBuilder mountsDisplay = new StringBuilder();
+                for (Configuration.MountPoint mount : mountPoints) {
+                    mountsDisplay.append(mount.getSource()).append(" => ").append(mount.getTarget()).append(" ; ");
+                }
+                LOG.info(V, "{} mounts: {}", logName, mountsDisplay);
+            }
+        }
+        return mountPoints;
+    }
+
+    private boolean parseSlaveMountsParameter() {
+        final String shortParam = RuleBuilder.RuleNames.SLAVE_MOUNTS_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                List<Configuration.MountPoint> mountPoints = parseMountCsv(value, "Slave");
+                if (mountPoints != null) {
+                    config.setSlaveMounts(mountPoints);
+                }
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (config.getSlaveMounts() == null) {
+                LOG.error("-" + shortParam + " option is required!");
                 return false;
             }
         }
         return true;
     }
 
-    private void parseGridPropertiesFileParameter(Properties defaults) {
+    private boolean parseMasterNfsSharesParameter() {
+        final String shortParam = RuleBuilder.RuleNames.NFS_SHARES_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                try {
+                    config.setNfsShares(Arrays.stream(value.split(",")).map(String::trim).collect(Collectors.toList()));
+                } catch (Exception e) {
+                    LOG.error("Could not parse the supplied list of shares, please make sure you have a list of " +
+                            "comma-separated paths without spaces in between.");
+                    return false;
+                }
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (config.getNfsShares() == null) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parseExternalNfsSharesParameter() {
+        final String shortParam = RuleBuilder.RuleNames.EXT_NFS_SHARES_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                List<Configuration.MountPoint> mountPoints = parseMountCsv(value, "External share");
+                if (mountPoints != null) {
+                    config.setExtNfsShares(mountPoints);
+                }
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (config.getExtNfsShares() == null) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parseUseSpotInstanceRequestParameter() {
+        if (cl.hasOption(RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString())) {
+            config.setUseSpotInstances(true);
+        }
+        return true;
+    }
+
+    private boolean parseEphemeralFilesystemParameter() {
+        final String shortParam = RuleBuilder.RuleNames.LOCAL_FS_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                try {
+                    config.setLocalFS(Configuration.FS.valueOf(value.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    String options = String.join(", ", Arrays.stream(Configuration.FS.values())
+                            .map(x -> "'" + x.toString().toLowerCase() + "'").collect(Collectors.toList()));
+                    LOG.error("Local filesystem must be one of " + options + "!");
+                    return false;
+                }
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (config.getLocalFS() == null) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parseGridPropertiesFileParameter() {
         final String shortParam = RuleBuilder.RuleNames.GRID_PROPERTIES_FILE_S.toString();
-        final String longParam = RuleBuilder.RuleNames.GRID_PROPERTIES_FILE_L.toString();
-        String gridPropertiesFile = cl.hasOption(shortParam) || defaults.containsKey(longParam) ?
-                parseParameterOrDefault(defaults, shortParam, longParam) : null;
-        if (gridPropertiesFile != null) {
-            Path prop = FileSystems.getDefault().getPath(gridPropertiesFile);
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setGridPropertiesFile(value);
+            }
+        }
+        // Check if file already exists and warn
+        if (!isStringNullOrEmpty(config.getGridPropertiesFile())) {
+            Path prop = FileSystems.getDefault().getPath(config.getGridPropertiesFile());
             if (prop.toFile().exists()) {
                 LOG.warn("Overwrite an existing properties file '{}'!", prop);
             }
-            cfg.setGridPropertiesFile(prop.toFile());
-            LOG.info(V, "Wrote grid properties to '{}' after successful grid startup!", prop);
+            LOG.info(V, "Write grid properties to '{}' after successful grid startup!", prop);
         }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(config.getGridPropertiesFile())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
     }
 
-    private void parseDebugRequestsParameter(Properties defaults) {
-        ParseResult result = parseYesNoParameter(defaults, "Debug requests", RuleBuilder.RuleNames.DEBUG_REQUESTS_S,
-                RuleBuilder.RuleNames.DEBUG_REQUESTS_L);
-        if (result.success) {
-            cfg.setLogHttpRequests(result.getEnabled());
+    private boolean parseDebugRequestsParameter() {
+        if (cl.hasOption(RuleBuilder.RuleNames.DEBUG_REQUESTS_S.toString())) {
+            config.setDebugRequests(true);
         }
+        return true;
     }
 
     public boolean validate(String mode) {
-        Properties defaults = defaultPropertiesFile.getDefaultProperties();
-        cfg.setMode(mode);
-        List<String> req = getRequiredOptions();
-        if (req != null && !req.isEmpty()) {
-            if (!validateProviderParameters(req, defaults)) return false;
-            if (!parseTerminateParameter(req)) return false;
-            if (!parseUserNameParameter(defaults)) return false;
-            if (!parseSshUserNameParameter(req, defaults)) return false;
-            if (!parseNetworkParameters(defaults)) return false;
-            if (!parseMesosParameters(defaults)) return false;
-            if (!parseGridEngineParameters(defaults)) return false;
-            if (!parseNfsParameters(defaults)) return false;
-            if (!parseCassandraParameters(defaults)) return false;
-            if (!parseSparkParameters(defaults)) return false;
-            if (!parseHdfsParameters(defaults)) return false;
-            if (!parseIdentityFileParameter(req, defaults)) return false;
-            if (!parseKeypairParameter(req, defaults)) return false;
-            if (!parseRegionParameter(req, defaults)) return false;
-            if (!parseAvailabilityZoneParameter(req, defaults)) return false;
-            if (!parseMasterInstanceTypeParameter(req, defaults)) return false;
-            if (!parseMasterImageParameter(req, defaults)) return false;
-            if (!parseSlaveInstanceTypeParameter(req, defaults)) return false;
-            if (!parseSlaveInstanceMaxParameter(req, defaults)) return false;
-            if (!parseMasterAsComputeParameter(req, defaults)) return false;
-            if (!parseSlaveImageParameter(req, defaults)) return false;
-            if (!parsePortsParameter(defaults)) return false;
-            if (!parseExecuteScriptParameter(defaults)) return false;
-            if (!parseMasterMountsParameter(defaults)) return false;
-            if (!parseSlaveMountsParameter(defaults)) return false;
-            if (!parseMasterNfsSharesParameter(defaults)) return false;
-            if (!parseExternNfsSharesParameter(defaults)) return false;
-            if (!parseEarlyExecuteScriptParameter(defaults)) return false;
-            if (!parseEarlySlaveExecuteScriptParameter(defaults)) return false;
-            if (!parseSpotInstanceParameters(defaults)) return false;
-            if (!parseEphemeralFilesystemParameter(defaults)) return false;
-            parseGridPropertiesFileParameter(defaults);
-            parseDebugRequestsParameter(defaults);
+        config.setMode(mode);
+        if (providerModule == null) {
+            return false;
         }
-        return true;
+        if (req == null) {
+            return true;
+        }
+        /* TODO: will be replaced with ansible script extension
+        if (!parseExecuteScriptParameter()) return false;
+        if (!parseEarlyExecuteScriptParameter()) return false;
+        if (!parseEarlySlaveExecuteScriptParameter()) return false;
+        */
+        return validateProviderParameters() &&
+                parseTerminateParameter() &&
+                parseUserNameParameter() &&
+                parseSshUserNameParameter() &&
+                parseVpcParameter() &&
+                parseSubnetParameter() &&
+                parseIdentityFileParameter() &&
+                parseKeypairParameter() &&
+                parseRegionParameter() &&
+                parseAvailabilityZoneParameter() &&
+                parseMasterInstanceTypeParameter() &&
+                parseMasterInstanceImageParameter() &&
+                parseSlaveInstanceTypeParameter() &&
+                parseSlaveInstanceCountParameter() &&
+                parseMasterAsComputeParameter() &&
+                parseSlaveImageParameter() &&
+                parsePortsParameter() &&
+                parseMasterMountsParameter() &&
+                parseSlaveMountsParameter() &&
+                parseMasterNfsSharesParameter() &&
+                parseExternalNfsSharesParameter() &&
+                parseUseSpotInstanceRequestParameter() &&
+                parseEphemeralFilesystemParameter() &&
+                parseSoftwareParameters() &&
+                parseGridPropertiesFileParameter() &&
+                parseDebugRequestsParameter();
     }
 
     protected abstract List<String> getRequiredOptions();
 
-    protected abstract boolean validateProviderParameters(List<String> req, Properties defaults);
+    protected abstract boolean validateProviderParameters();
+
+    protected static boolean isStringNullOrEmpty(final String s) {
+        return s == null || s.trim().isEmpty();
+    }
 
     private int checkStringAsInt(String s, int max) throws Exception {
         int v = Integer.parseInt(s);
@@ -772,10 +772,10 @@ public abstract class CommandLineValidator {
         return v;
     }
 
-    private void loadMachineImageId() {
-        machineImage = new Properties();
+    private Properties loadMachineImageId() {
+        Properties machineImage = new Properties();
         String str = "https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/" +
-                cfg.getMode().toLowerCase() + "/" + cfg.getRegion() + ".ami.properties";
+                config.getMode().toLowerCase() + "/" + config.getRegion() + ".ami.properties";
         try {
             URL url = new URL(str);
             machineImage.load(url.openStream());
@@ -786,15 +786,16 @@ public abstract class CommandLineValidator {
                 throw new IOException("Key/value for slave image is missing in properties file!");
             }
         } catch (IOException ex) {
-            LOG.warn("No machine image properties file found for " + cfg.getMode() + " and region '" +
-                    cfg.getRegion() + "' found!");
+            LOG.warn("No machine image properties file found for " + config.getMode() + " and region '" +
+                    config.getRegion() + "' found!");
             LOG.error(V, "Exception: {}", ex.getMessage());
-            LOG.error(V, "Try : {}", str);
-            machineImage = null;
+            LOG.error(V, "Try: {}", str);
+            return null;
         }
+        return machineImage;
     }
 
     public Configuration getConfig() {
-        return cfg;
+        return config;
     }
 }

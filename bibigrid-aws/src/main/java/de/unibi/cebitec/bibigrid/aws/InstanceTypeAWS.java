@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.aws;
 
-import de.unibi.cebitec.bibigrid.core.model.InstanceSpecification;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 
@@ -13,89 +12,106 @@ import java.util.Map;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public class InstanceTypeAWS extends de.unibi.cebitec.bibigrid.core.model.InstanceType {
-    private static final Map<InstanceType, InstanceSpecification> typeSpecMap = new HashMap<>();
+    private static final Map<InstanceType, InstanceTypeAWS> typeSpecMap = new HashMap<>();
+
+    private static void addTypeSpec(InstanceType type, int cores, int ephemerals, boolean swap, boolean pvm,
+                                    boolean hvm, boolean clusterInstance) {
+        typeSpecMap.put(type, new InstanceTypeAWS(type, cores, ephemerals, swap, pvm, hvm, clusterInstance));
+    }
 
     static {
         // General use
-        typeSpecMap.put(InstanceType.M4Large, new InstanceSpecification(2, 0, false, false, true, false));
-        typeSpecMap.put(InstanceType.M4Xlarge, new InstanceSpecification(4, 0, false, false, true, false));
-        typeSpecMap.put(InstanceType.M42xlarge, new InstanceSpecification(8, 0, false, false, true, false));
-        typeSpecMap.put(InstanceType.M44xlarge, new InstanceSpecification(16, 0, false, false, true, false));
-        typeSpecMap.put(InstanceType.M410xlarge, new InstanceSpecification(40, 0, false, false, true, false));
+        addTypeSpec(InstanceType.M4Large, 2, 0, false, false, true, false);
+        addTypeSpec(InstanceType.M4Xlarge, 4, 0, false, false, true, false);
+        addTypeSpec(InstanceType.M42xlarge, 8, 0, false, false, true, false);
+        addTypeSpec(InstanceType.M44xlarge, 16, 0, false, false, true, false);
+        addTypeSpec(InstanceType.M410xlarge, 40, 0, false, false, true, false);
 
-        typeSpecMap.put(InstanceType.M3Medium, new InstanceSpecification(1, 1, false, true, true, false));
-        typeSpecMap.put(InstanceType.M3Large, new InstanceSpecification(2, 1, false, true, true, false));
-        typeSpecMap.put(InstanceType.M3Xlarge, new InstanceSpecification(4, 2, false, true, true, false));
-        typeSpecMap.put(InstanceType.M32xlarge, new InstanceSpecification(8, 2, false, true, true, false));
+        addTypeSpec(InstanceType.M3Medium, 1, 1, false, true, true, false);
+        addTypeSpec(InstanceType.M3Large, 2, 1, false, true, true, false);
+        addTypeSpec(InstanceType.M3Xlarge, 4, 2, false, true, true, false);
+        addTypeSpec(InstanceType.M32xlarge, 8, 2, false, true, true, false);
 
-        typeSpecMap.put(InstanceType.M1Small, new InstanceSpecification(1, 1, false, true, false, false));
-        typeSpecMap.put(InstanceType.M1Medium, new InstanceSpecification(1, 1, false, true, false, false));
-        typeSpecMap.put(InstanceType.M1Large, new InstanceSpecification(2, 2, false, true, false, false));
-        typeSpecMap.put(InstanceType.M1Xlarge, new InstanceSpecification(4, 4, false, true, false, false));
+        addTypeSpec(InstanceType.M1Small, 1, 1, false, true, false, false);
+        addTypeSpec(InstanceType.M1Medium, 1, 1, false, true, false, false);
+        addTypeSpec(InstanceType.M1Large, 2, 2, false, true, false, false);
+        addTypeSpec(InstanceType.M1Xlarge, 4, 4, false, true, false, false);
 
         //compute optimized
-        typeSpecMap.put(InstanceType.C4Large, new InstanceSpecification(2, 0, false, false, true, true));
-        typeSpecMap.put(InstanceType.C4Xlarge, new InstanceSpecification(4, 0, false, false, true, true));
-        typeSpecMap.put(InstanceType.C42xlarge, new InstanceSpecification(8, 0, false, false, true, true));
-        typeSpecMap.put(InstanceType.C44xlarge, new InstanceSpecification(16, 0, false, false, true, true));
-        typeSpecMap.put(InstanceType.C48xlarge, new InstanceSpecification(36, 0, false, false, true, true));
+        addTypeSpec(InstanceType.C4Large, 2, 0, false, false, true, true);
+        addTypeSpec(InstanceType.C4Xlarge, 4, 0, false, false, true, true);
+        addTypeSpec(InstanceType.C42xlarge, 8, 0, false, false, true, true);
+        addTypeSpec(InstanceType.C44xlarge, 16, 0, false, false, true, true);
+        addTypeSpec(InstanceType.C48xlarge, 36, 0, false, false, true, true);
 
-        typeSpecMap.put(InstanceType.C3Large, new InstanceSpecification(2, 2, false, true, true, true));
-        typeSpecMap.put(InstanceType.C3Xlarge, new InstanceSpecification(4, 2, false, true, true, true));
-        typeSpecMap.put(InstanceType.C32xlarge, new InstanceSpecification(8, 2, false, true, true, true));
-        typeSpecMap.put(InstanceType.C34xlarge, new InstanceSpecification(16, 2, false, true, true, true));
-        typeSpecMap.put(InstanceType.C38xlarge, new InstanceSpecification(32, 2, false, true, true, true));
+        addTypeSpec(InstanceType.C3Large, 2, 2, false, true, true, true);
+        addTypeSpec(InstanceType.C3Xlarge, 4, 2, false, true, true, true);
+        addTypeSpec(InstanceType.C32xlarge, 8, 2, false, true, true, true);
+        addTypeSpec(InstanceType.C34xlarge, 16, 2, false, true, true, true);
+        addTypeSpec(InstanceType.C38xlarge, 32, 2, false, true, true, true);
 
-        typeSpecMap.put(InstanceType.C1Medium, new InstanceSpecification(2, 1, false, true, false, false));
-        typeSpecMap.put(InstanceType.C1Xlarge, new InstanceSpecification(8, 4, false, true, false, false));
-        typeSpecMap.put(InstanceType.Cc28xlarge, new InstanceSpecification(32, 4, false, false, true, true));
+        addTypeSpec(InstanceType.C1Medium, 2, 1, false, true, false, false);
+        addTypeSpec(InstanceType.C1Xlarge, 8, 4, false, true, false, false);
+        addTypeSpec(InstanceType.Cc28xlarge, 32, 4, false, false, true, true);
 
         // GPU 
-        typeSpecMap.put(InstanceType.G22xlarge, new InstanceSpecification(8, 1, false, false, true, true));
-        typeSpecMap.put(InstanceType.Cg14xlarge, new InstanceSpecification(16, 2, false, false, true, true));
+        addTypeSpec(InstanceType.G22xlarge, 8, 1, false, false, true, true);
+        addTypeSpec(InstanceType.Cg14xlarge, 16, 2, false, false, true, true);
 
         // Memory optimized
-        typeSpecMap.put(InstanceType.M2Xlarge, new InstanceSpecification(2, 1, false, true, false, false));
-        typeSpecMap.put(InstanceType.M22xlarge, new InstanceSpecification(4, 1, false, true, false, false));
-        typeSpecMap.put(InstanceType.M24xlarge, new InstanceSpecification(8, 2, false, true, false, false));
-        typeSpecMap.put(InstanceType.Cr18xlarge, new InstanceSpecification(32, 2, false, false, true, true));
+        addTypeSpec(InstanceType.M2Xlarge, 2, 1, false, true, false, false);
+        addTypeSpec(InstanceType.M22xlarge, 4, 1, false, true, false, false);
+        addTypeSpec(InstanceType.M24xlarge, 8, 2, false, true, false, false);
+        addTypeSpec(InstanceType.Cr18xlarge, 32, 2, false, false, true, true);
 
-        typeSpecMap.put(InstanceType.R3Large, new InstanceSpecification(2, 1, false, false, true, true));
-        typeSpecMap.put(InstanceType.R3Xlarge, new InstanceSpecification(4, 1, false, false, true, true));
-        typeSpecMap.put(InstanceType.R32xlarge, new InstanceSpecification(8, 1, false, false, true, true));
-        typeSpecMap.put(InstanceType.R34xlarge, new InstanceSpecification(16, 1, false, false, true, true));
-        typeSpecMap.put(InstanceType.R38xlarge, new InstanceSpecification(32, 2, false, false, true, true));
+        addTypeSpec(InstanceType.R3Large, 2, 1, false, false, true, true);
+        addTypeSpec(InstanceType.R3Xlarge, 4, 1, false, false, true, true);
+        addTypeSpec(InstanceType.R32xlarge, 8, 1, false, false, true, true);
+        addTypeSpec(InstanceType.R34xlarge, 16, 1, false, false, true, true);
+        addTypeSpec(InstanceType.R38xlarge, 32, 2, false, false, true, true);
 
         // Storage optimized
-        typeSpecMap.put(InstanceType.D2Xlarge, new InstanceSpecification(4, 3, false, false, true, true));
-        typeSpecMap.put(InstanceType.D22xlarge, new InstanceSpecification(8, 6, false, false, true, true));
-        typeSpecMap.put(InstanceType.D24xlarge, new InstanceSpecification(16, 12, false, false, true, true));
-        typeSpecMap.put(InstanceType.D28xlarge, new InstanceSpecification(36, 24, false, false, true, true));
+        addTypeSpec(InstanceType.D2Xlarge, 4, 3, false, false, true, true);
+        addTypeSpec(InstanceType.D22xlarge, 8, 6, false, false, true, true);
+        addTypeSpec(InstanceType.D24xlarge, 16, 12, false, false, true, true);
+        addTypeSpec(InstanceType.D28xlarge, 36, 24, false, false, true, true);
 
-        typeSpecMap.put(InstanceType.Hi14xlarge, new InstanceSpecification(16, 2, false, true, true, true));
-        typeSpecMap.put(InstanceType.Hs18xlarge, new InstanceSpecification(16, 24, false, true, true, true));
+        addTypeSpec(InstanceType.Hi14xlarge, 16, 2, false, true, true, true);
+        addTypeSpec(InstanceType.Hs18xlarge, 16, 24, false, true, true, true);
 
         // I2 Instances
-        typeSpecMap.put(InstanceType.I2Xlarge, new InstanceSpecification(4, 1, false, false, true, true));
-        typeSpecMap.put(InstanceType.I22xlarge, new InstanceSpecification(8, 2, false, false, true, true));
-        typeSpecMap.put(InstanceType.I24xlarge, new InstanceSpecification(16, 4, false, false, true, true));
-        typeSpecMap.put(InstanceType.I28xlarge, new InstanceSpecification(32, 8, false, false, true, true));
+        addTypeSpec(InstanceType.I2Xlarge, 4, 1, false, false, true, true);
+        addTypeSpec(InstanceType.I22xlarge, 8, 2, false, false, true, true);
+        addTypeSpec(InstanceType.I24xlarge, 16, 4, false, false, true, true);
+        addTypeSpec(InstanceType.I28xlarge, 32, 8, false, false, true, true);
 
         // t1,t2
-        typeSpecMap.put(InstanceType.T1Micro, new InstanceSpecification(1, 0, false, true, false, false));
-        typeSpecMap.put(InstanceType.T2Micro, new InstanceSpecification(1, 0, false, false, true, false));
-        typeSpecMap.put(InstanceType.T2Small, new InstanceSpecification(1, 0, false, false, true, false));
-        typeSpecMap.put(InstanceType.T2Medium, new InstanceSpecification(2, 0, false, false, true, false));
-        typeSpecMap.put(InstanceType.T2Large, new InstanceSpecification(2, 0, false, false, true, false));
+        addTypeSpec(InstanceType.T1Micro, 1, 0, false, true, false, false);
+        addTypeSpec(InstanceType.T2Micro, 1, 0, false, false, true, false);
+        addTypeSpec(InstanceType.T2Small, 1, 0, false, false, true, false);
+        addTypeSpec(InstanceType.T2Medium, 2, 0, false, false, true, false);
+        addTypeSpec(InstanceType.T2Large, 2, 0, false, false, true, false);
     }
 
-    InstanceTypeAWS(String type) throws InstanceTypeNotFoundException {
+    private InstanceTypeAWS(InstanceType type, int cores, int ephemerals, boolean swap, boolean pvm, boolean hvm,
+                            boolean clusterInstance) {
+        value = type.toString();
+        this.instanceCores = cores;
+        this.ephemerals = ephemerals;
+        this.clusterInstance = clusterInstance;
+        this.pvm = pvm;
+        this.hvm = hvm;
+        this.swap = swap;
+    }
+
+    static InstanceTypeAWS getByType(String type) throws InstanceTypeNotFoundException {
         try {
-            InstanceType tmp = InstanceType.fromValue(type);
-            value = tmp.toString();
-            spec = typeSpecMap.get(tmp);
-        } catch (Exception e) {
-            throw new InstanceTypeNotFoundException("Invalid instance type " + type);
+            InstanceType enumType = InstanceType.fromValue(type);
+            if (typeSpecMap.containsKey(enumType)) {
+                return typeSpecMap.get(enumType);
+            }
+        } catch (IllegalArgumentException ignored) {
         }
+        throw new InstanceTypeNotFoundException("Invalid instance type " + type);
     }
 }

@@ -3,7 +3,11 @@ package de.unibi.cebitec.bibigrid.openstack;
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-final class OpenStackCredentials {
+@SuppressWarnings({"WeakerAccess", "unused"})
+public final class OpenStackCredentials {
+    public OpenStackCredentials() {
+    }
+
     private String tenantName;
     private String username;
     private String password;
@@ -11,51 +15,51 @@ final class OpenStackCredentials {
     private String domain;
     private String tenantDomain;
 
-    String getUsername() {
+    public String getUsername() {
         return username;
     }
 
-    void setUsername(String username) {
+    public void setUsername(String username) {
         this.username = username;
     }
 
-    String getPassword() {
+    public String getPassword() {
         return password;
     }
 
-    void setPassword(String password) {
+    public void setPassword(String password) {
         this.password = password;
     }
 
-    String getTenantName() {
+    public String getTenantName() {
         return tenantName;
     }
 
-    void setTenantName(String tenantName) {
+    public void setTenantName(String tenantName) {
         this.tenantName = tenantName;
     }
 
-    String getEndpoint() {
+    public String getEndpoint() {
         return endpoint;
     }
 
-    void setEndpoint(String endpoint) {
+    public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
     }
 
-    String getDomain() {
+    public String getDomain() {
         return domain;
     }
 
-    void setDomain(String domain) {
+    public void setDomain(String domain) {
         this.domain = domain;
     }
 
-    String getTenantDomain() {
+    public String getTenantDomain() {
         return tenantDomain == null ? domain : tenantDomain;
     }
 
-    void setTenantDomain(String tenantDomain) {
+    public void setTenantDomain(String tenantDomain) {
         this.tenantDomain = tenantDomain;
     }
 }

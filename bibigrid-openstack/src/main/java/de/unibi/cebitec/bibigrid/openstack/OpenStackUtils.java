@@ -11,7 +11,7 @@ import org.openstack4j.openstack.OSFactory;
  */
 final class OpenStackUtils {
     static OSClient buildOSClient(ConfigurationOpenstack config) {
-        OSFactory.enableHttpLoggingFilter(config.isLogHttpRequests());
+        OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
         return config.getOpenstackCredentials().getDomain() != null ?
                 buildOSClientV3(config) :
                 buildOSClientV2(config);

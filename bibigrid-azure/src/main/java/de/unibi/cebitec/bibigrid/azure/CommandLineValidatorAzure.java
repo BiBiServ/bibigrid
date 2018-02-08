@@ -1,16 +1,15 @@
 package de.unibi.cebitec.bibigrid.azure;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
 
+import java.nio.file.FileSystems;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -21,12 +20,12 @@ public final class CommandLineValidatorAzure extends CommandLineValidator {
     CommandLineValidatorAzure(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
                               final IntentMode intentMode, final ProviderModule providerModule) {
         super(cl, defaultPropertiesFile, intentMode, providerModule);
-        azureConfig = (ConfigurationAzure) cfg;
+        azureConfig = (ConfigurationAzure) config;
     }
 
     @Override
-    protected Configuration createProviderConfiguration() {
-        return new ConfigurationAzure();
+    protected Class<ConfigurationAzure> getProviderConfigurationClass() {
+        return ConfigurationAzure.class;
     }
 
     @Override
@@ -48,11 +47,9 @@ public final class CommandLineValidatorAzure extends CommandLineValidator {
                         RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),
                         RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
                         RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString(),
-                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
                         RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
                         RuleBuilder.RuleNames.REGION_S.toString(),
                         RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
-                        RuleBuilder.RuleNames.NFS_SHARES_S.toString(),
                         RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
                         RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString());
             case VALIDATE:
@@ -65,15 +62,24 @@ public final class CommandLineValidatorAzure extends CommandLineValidator {
     }
 
     @Override
-    protected boolean validateProviderParameters(List<String> req, Properties defaults) {
-        final String shortParamCredentials = RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString();
-        final String longParamCredentials = RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_L.toString();
-        if (cl.hasOption(shortParamCredentials) || defaults.containsKey(longParamCredentials)) {
-            azureConfig.setAzureCredentialsFile(
-                    parseParameterOrDefault(defaults, shortParamCredentials, longParamCredentials));
-        } else {
-            LOG.error("No suitable entry for Azure-Credentials-File (" + shortParamCredentials + ") found! Exit");
-            return false;
+    protected boolean validateProviderParameters() {
+        final String shortParam = RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                azureConfig.setAzureCredentialsFile(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(azureConfig.getAzureCredentialsFile())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            } else if (!FileSystems.getDefault().getPath(azureConfig.getAzureCredentialsFile()).toFile().exists()) {
+                LOG.error("Azure credentials file '{}' does not exist!", azureConfig.getAzureCredentialsFile());
+                return false;
+            }
         }
         return true;
     }

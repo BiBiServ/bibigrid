@@ -10,23 +10,13 @@ import static org.junit.Assert.*;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class FactoryTest {
-    /* TODO: decide if necessary
-    @After
-    public void tearDown() throws Exception {
-        // Reflection removal of factory
-        Field instanceField = Factory.class.getDeclaredField("instance");
-        instanceField.setAccessible(true);
-        instanceField.set(null, null);
-    }
-    */
-
     @Test
-    public void instanceTest() throws Exception {
+    public void instanceTest() {
         assertNotNull(Factory.getInstance());
     }
 
     @Test
-    public void getInterfaceImplementationsTest() throws Exception {
+    public void getInterfaceImplementationsTest() {
         List<Class<TestInterface>> result = Factory.getInstance().getImplementations(TestInterface.class);
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -35,7 +25,7 @@ public class FactoryTest {
     }
 
     @Test
-    public void getClassImplementationsTest() throws Exception {
+    public void getClassImplementationsTest() {
         List<Class<TestClass>> result = Factory.getInstance().getImplementations(TestClass.class);
         assertNotNull(result);
         assertEquals(1, result.size());

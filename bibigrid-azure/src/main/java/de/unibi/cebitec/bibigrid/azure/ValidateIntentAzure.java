@@ -3,10 +3,10 @@ package de.unibi.cebitec.bibigrid.azure;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
@@ -31,17 +31,8 @@ public class ValidateIntentAzure extends ValidateIntent {
     }
 
     @Override
-    protected boolean checkImages() {
-        boolean allCheck = true;
-        boolean foundMaster = AzureUtils.getImage(compute, config, config.getMasterImage()) != null;
-        boolean foundSlave = AzureUtils.getImage(compute, config, config.getSlaveImage()) != null;
-        if (foundSlave && foundMaster) {
-            LOG.info(I, "Master and Slave images have been found.");
-        } else {
-            LOG.error("Master and Slave images could not be found.");
-            allCheck = false;
-        }
-        return allCheck;
+    protected boolean checkImage(Configuration.InstanceConfiguration instanceConfiguration) {
+        return AzureUtils.getImage(compute, config, instanceConfiguration.getImage()) != null;
     }
 
     @Override

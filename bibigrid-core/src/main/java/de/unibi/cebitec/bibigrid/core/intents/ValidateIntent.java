@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,12 +62,55 @@ public abstract class ValidateIntent implements Intent {
 
     protected abstract boolean connect();
 
-    protected abstract boolean checkImages();
+    private boolean checkImages() {
+        boolean foundMaster = checkImage(config.getMasterInstance());
+        if (!foundMaster) {
+            LOG.error("Failed to find master image ({}).", config.getMasterInstance().getImage());
+        }
+        boolean foundAllSlaves = true;
+        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+            if (!checkImage(instanceConfiguration)) {
+                foundAllSlaves = false;
+                LOG.error("Failed to find slave image ({}).", instanceConfiguration.getImage());
+            }
+        }
+        if (!foundAllSlaves || !foundMaster) {
+            LOG.error("Master and Slave images could not be found.");
+            return false;
+        }
+        // Checking if both are hvm or paravirtual types
+        boolean allSlavesClusterInstances = config.getSlaveInstances().stream().allMatch(
+                x -> x.getProviderType().isClusterInstance());
+        final InstanceType masterClusterType = config.getMasterInstance().getProviderType();
+        if (masterClusterType.isClusterInstance() != allSlavesClusterInstances) {
+            LOG.error("If cluster instances are used please create a homogeneous group.");
+            return false;
+        } else if (masterClusterType.isClusterInstance()) {
+            // If master instance is a cluster instance check if the types are the same
+            if (config.getSlaveInstances().stream().anyMatch(x -> masterClusterType != x.getProviderType())) {
+                LOG.error("If cluster instances are used please create a homogeneous group.");
+                return false;
+            }
+        }
+        LOG.info(I, "Master and Slave images have been found.");
+        return true;
+    }
+
+    protected abstract boolean checkImage(Configuration.InstanceConfiguration instanceConfiguration);
 
     private boolean checkSnapshots() {
         boolean allCheck = true;
-        List<String> snapshotIds = new ArrayList<>(config.getMasterMounts().keySet());
-        snapshotIds.addAll(config.getSlaveMounts().keySet());
+        List<String> snapshotIds = new ArrayList<>();
+        if (config.getMasterMounts() != null) {
+            for (Configuration.MountPoint mount : config.getMasterMounts()) {
+                snapshotIds.add(mount.getSource());
+            }
+        }
+        if (config.getSlaveMounts() != null) {
+            for (Configuration.MountPoint mount : config.getSlaveMounts()) {
+                snapshotIds.add(mount.getSource());
+            }
+        }
         // snapshot ids have to be checked individually to find out which one is missing or malformed.
         for (String snapshotId : snapshotIds) {
             try {

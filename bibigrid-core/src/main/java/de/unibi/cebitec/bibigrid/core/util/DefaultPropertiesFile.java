@@ -1,14 +1,17 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
-import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
+import java.util.Map;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
@@ -18,12 +21,12 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public final class DefaultPropertiesFile {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultPropertiesFile.class);
     private static final String DEFAULT_DIRNAME = System.getProperty("user.home");
-    private static final String DEFAULT_FILENAME = ".bibigrid.properties";
+    private static final String DEFAULT_FILENAME = ".bibigrid.yml";
     private static final String PROPERTIES_FILEPATH_PARAMETER = "o";
 
     private Path propertiesFilePath;
     private boolean isAlternativeFilepath;
-    private final Properties defaultProperties;
+    private String propertiesMode;
 
     public DefaultPropertiesFile(CommandLine commandLine) {
         if (commandLine.hasOption(PROPERTIES_FILEPATH_PARAMETER)) {
@@ -42,16 +45,16 @@ public final class DefaultPropertiesFile {
         }
         if (Files.exists(propertiesFilePath)) {
             LOG.info(V, "Reading default options from properties file at '{}'.", propertiesFilePath);
+            try {
+                // In order to load the yaml file directly into the provider Configuration we have to peek the mode
+                Map<String, String> yamlMap = new Yaml().load(new FileInputStream(propertiesFilePath.toFile()));
+                propertiesMode = yamlMap.getOrDefault("mode", null);
+            } catch (FileNotFoundException e) {
+                LOG.error("Failed to load mode parameter from properties file.");
+            }
         } else {
             LOG.info("No properties file for default options found ({}). Using command line parameters only.",
                     propertiesFilePath);
-        }
-        defaultProperties = new Properties();
-        try {
-            if (propertiesFilePath != null) {
-                defaultProperties.load(Files.newInputStream(propertiesFilePath));
-            }
-        } catch (IOException ignored) {
         }
     }
 
@@ -63,7 +66,23 @@ public final class DefaultPropertiesFile {
         return propertiesFilePath;
     }
 
-    public Properties getDefaultProperties() {
-        return defaultProperties;
+    public String getPropertiesMode() {
+        return propertiesMode;
+    }
+
+    public Configuration loadConfiguration(Class<? extends Configuration> configurationClass) {
+        if (Files.exists(propertiesFilePath)) {
+            try {
+                return new Yaml().loadAs(new FileInputStream(propertiesFilePath.toFile()), configurationClass);
+            } catch (FileNotFoundException e) {
+                LOG.error("Failed to load properties file. {}", e);
+            }
+        }
+        try {
+            return configurationClass.getConstructor().newInstance();
+        } catch (Exception e) {
+            LOG.error("Failed to instantiate empty configuration. {}", e);
+        }
+        return null;
     }
 }

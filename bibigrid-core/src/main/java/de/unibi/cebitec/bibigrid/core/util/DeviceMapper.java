@@ -1,8 +1,10 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DeviceMapper {
@@ -11,16 +13,16 @@ public class DeviceMapper {
 
     private final ProviderModule providerModule;
     // snap-0a12b34c -> /my/dir/
-    private final Map<String, String> snapshotToMountPoint;
+    private final List<Configuration.MountPoint> snapshotToMountPoint;
     // snap-0a12b34c -> /dev/sdf
     private final Map<String, String> snapshotToDeviceName;
     // /my/dir/ -> /dev/xvdf
     private final Map<String, String> mountPointToRealDeviceName;
 
-    private int usedDevices = 0;
+    private int usedDevices;
 
-    public DeviceMapper(ProviderModule providerModule, Map<String, String> snapshotIdToMountPoint, int usedDevices)
-            throws IllegalArgumentException {
+    public DeviceMapper(ProviderModule providerModule, List<Configuration.MountPoint> snapshotIdToMountPoint,
+                        int usedDevices) throws IllegalArgumentException {
         this.providerModule = providerModule;
 
         // calculate the number of avail devices after removing all used ephemerals
@@ -32,19 +34,19 @@ public class DeviceMapper {
         this.snapshotToMountPoint = snapshotIdToMountPoint;
         this.snapshotToDeviceName = new HashMap<>();
         this.mountPointToRealDeviceName = new HashMap<>();
-        for (Map.Entry<String, String> mapping : this.snapshotToMountPoint.entrySet()) {
+        for (Configuration.MountPoint mapping : this.snapshotToMountPoint) {
             char letter = nextAvailableDeviceLetter();
-            this.snapshotToDeviceName.put(mapping.getKey(), createDeviceName(letter));
+            this.snapshotToDeviceName.put(mapping.getSource(), createDeviceName(letter));
             StringBuilder realDeviceName = new StringBuilder().append(createRealDeviceName(letter));
-            int partitionNumber = getPartitionNumber(mapping.getKey());
+            int partitionNumber = getPartitionNumber(mapping.getSource());
             if (partitionNumber > 0) {
                 realDeviceName.append(partitionNumber);
             }
-            this.mountPointToRealDeviceName.put(mapping.getValue(), realDeviceName.toString());
+            this.mountPointToRealDeviceName.put(mapping.getTarget(), realDeviceName.toString());
         }
     }
 
-    public Map<String, String> getSnapshotIdToMountPoint() {
+    public List<Configuration.MountPoint> getSnapshotIdToMountPoint() {
         return snapshotToMountPoint;
     }
 

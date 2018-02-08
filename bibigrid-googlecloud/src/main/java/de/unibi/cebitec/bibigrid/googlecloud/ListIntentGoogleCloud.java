@@ -59,16 +59,6 @@ public class ListIntentGoogleCloud extends ListIntent {
         } else {
             cluster.addSlaveInstance(instance.getInstanceId().getInstance());
         }
-        //keyname - should be always the same for all instances of one cluster
-        String keyName = ""; // TODO: getKeyName
-        if (cluster.getKeyName() != null) {
-            if (!cluster.getKeyName().equals(keyName)) {
-                LOG.error("Detect two different keynames ({},{}) for cluster '{}'",
-                        cluster.getKeyName(), keyName, clusterId);
-            }
-        } else {
-            cluster.setKeyName(keyName);
-        }
         // user - should be always the same for all instances of one cluster
         if (user != null) {
             if (cluster.getUser() == null) {

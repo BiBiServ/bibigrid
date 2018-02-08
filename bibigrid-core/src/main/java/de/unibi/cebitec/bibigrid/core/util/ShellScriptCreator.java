@@ -116,6 +116,8 @@ public final class ShellScriptCreator {
         // Execute ansible playbook
         script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts | sudo tee -a /var/log/ansible-playbook.log\n");
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
+        script.append("");
+        script.append("");
         return script.toString();
     }
 }

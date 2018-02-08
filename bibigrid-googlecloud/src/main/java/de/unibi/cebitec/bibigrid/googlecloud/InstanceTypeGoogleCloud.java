@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
-import de.unibi.cebitec.bibigrid.core.model.InstanceSpecification;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 
@@ -14,11 +13,10 @@ import java.util.Map;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class InstanceTypeGoogleCloud extends InstanceType {
-    private static final Map<String, InstanceSpecification> typeSpecMap = new HashMap<>();
+    private static final Map<String, InstanceTypeGoogleCloud> typeSpecMap = new HashMap<>();
 
     private static void addType(String id, int cores) {
-        // TODO: decide ephemeral size
-        typeSpecMap.put(id, new InstanceSpecification(cores, 0, false, false, true, true));
+        typeSpecMap.put(id, new InstanceTypeGoogleCloud(id, cores));
     }
 
     static {
@@ -33,12 +31,15 @@ public class InstanceTypeGoogleCloud extends InstanceType {
         addType("g1-small", 1);
     }
 
-    public InstanceTypeGoogleCloud(String type) throws InstanceTypeNotFoundException {
-        try {
-            value = type;
-            spec = typeSpecMap.get(type);
-        } catch (Exception e) {
-            throw new InstanceTypeNotFoundException("Invalid instance type " + type);
+    private InstanceTypeGoogleCloud(String type, int cores) {
+        value = type;
+        instanceCores = cores;
+    }
+
+    static InstanceTypeGoogleCloud getByType(String type) throws InstanceTypeNotFoundException {
+        if (typeSpecMap.containsKey(type)) {
+            return typeSpecMap.get(type);
         }
+        throw new InstanceTypeNotFoundException("Invalid instance type " + type);
     }
 }

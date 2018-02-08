@@ -67,17 +67,18 @@ public final class AnsibleConfig {
         Map<String, Object> masterMap = new LinkedHashMap<>();
         masterMap.put("ip", masterIp);
         masterMap.put("hostname", masterHostname);
-        masterMap.put("cores", config.getMasterInstanceType().getSpec().getInstanceCores());
+        masterMap.put("cores", config.getMasterInstance().getProviderType().getInstanceCores());
         return masterMap;
     }
 
     private List<Map<String, Object>> getSlavesMap() {
         List<Map<String, Object>> slavesMap = new ArrayList<>();
+        List<Configuration.SlaveInstanceConfiguration> slaveInstanceConfigurations = config.getExpandedSlaveInstances();
         for (int i = 0; i < slaveIps.size(); i++) {
             Map<String, Object> slaveMap = new LinkedHashMap<>();
             slaveMap.put("ip", slaveIps.get(i));
             slaveMap.put("hostname", slaveHostnames.get(i));
-            slaveMap.put("cores", config.getSlaveInstanceType().getSpec().getInstanceCores());
+            slaveMap.put("cores", slaveInstanceConfigurations.get(i).getProviderType().getInstanceCores());
             slavesMap.add(slaveMap);
         }
         return slavesMap;

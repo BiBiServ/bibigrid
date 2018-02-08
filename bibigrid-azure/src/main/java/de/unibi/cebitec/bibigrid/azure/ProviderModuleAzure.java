@@ -52,7 +52,7 @@ public class ProviderModuleAzure implements ProviderModule {
 
     @Override
     public InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
-        return new InstanceTypeAzure(type);
+        return InstanceTypeAzure.getByType(type);
     }
 
     @Override

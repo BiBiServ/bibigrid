@@ -1,69 +1,67 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
-import java.io.File;
-import java.nio.file.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
+
+@SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class Configuration {
-    private InstanceType masterInstanceType;
-    private String masterImage;
-    private InstanceType slaveInstanceType;
-    private int slaveInstanceCount;
-    private String slaveImage;
-    private String availabilityZone;
-    private String keypair;
-    private Path identityFile;
-    private String region;
-    private String[] clusterIds;
-
-    private Path shellScriptFile;
-    private Path earlyMasterShellScriptFile, earlySlaveShellScriptFile;
-    private Map<String, String> masterMounts;
-    private Map<String, String> slaveMounts;
-    private List<String> nfsShares;
-    private Map<String, String> extNfsShares;
-    private boolean logHttpRequests;
-
-    private FS localFS = FS.XFS;
-
-    private boolean useMasterAsCompute;
-    private String alternativeConfigPath;
-    private String vpcId;
-
-    private boolean cassandra = false;
-    private boolean mesos = false;
-    private boolean nfs = true;
-    private boolean oge = true;
-    private boolean hdfs = false;
-    private boolean spark = false;
-
+    protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
+    /*
+    private String shellScriptFile;
+    private String earlyMasterShellScriptFile;
+    private String earlySlaveShellScriptFile;
+    */
+    private String mode = "aws";
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
-
-    private boolean useSpotInstances;
-
-    /* network configuration (for OpenStack)*/
-    private String subnetName = null;
-
-    /* security group configuration */
+    private String keypair;
+    private String identityFile;
+    private String alternativeConfigPath;
+    private String gridPropertiesFile;
+    private String region;
+    private String availabilityZone;
     private List<Port> ports = new ArrayList<>();
+    private boolean useMasterAsCompute;
+    private InstanceConfiguration masterInstance = new InstanceConfiguration();
+    private List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
+    private boolean cassandra;
+    private boolean mesos;
+    private boolean oge = true;
+    private boolean hdfs;
+    private boolean spark;
+    private boolean nfs = true;
+    private List<String> nfsShares = new ArrayList<>();
+    private List<MountPoint> masterMounts = new ArrayList<>();
+    private List<MountPoint> slaveMounts = new ArrayList<>();
+    private List<MountPoint> extNfsShares = new ArrayList<>();
+    private FS localFS = FS.XFS;
+    private boolean debugRequests;
+    private boolean useSpotInstances;
+    private String vpc;
+    private String subnet;
+    private String[] clusterIds;
 
-    public enum FS {
-        EXT2, EXT3, EXT4, XFS
+    public int getSlaveInstanceCount() {
+        if (slaveInstances == null) {
+            return 0;
+        }
+        int slaveInstanceCount = 0;
+        for (SlaveInstanceConfiguration config : slaveInstances) {
+            slaveInstanceCount += config.getCount();
+        }
+        return slaveInstanceCount;
     }
 
-    private String mode = "aws";
-
-    //grid-properties-file
-    private File gridPropertiesFile = null;
-
-    public void setGridPropertiesFile(File gridPropertiesFile) {
-        this.gridPropertiesFile = gridPropertiesFile;
+    public void setGridPropertiesFile(String gridPropertiesFile) {
+        this.gridPropertiesFile = gridPropertiesFile.trim();
     }
 
-    public File getGridPropertiesFile() {
+    public String getGridPropertiesFile() {
         return gridPropertiesFile;
     }
 
@@ -73,6 +71,7 @@ public abstract class Configuration {
 
     public void setCassandra(boolean cassandra) {
         this.cassandra = cassandra;
+        LOG.info(V, "Cassandra support {}.", cassandra ? "enabled" : "disabled");
         if (cassandra) {
             nfs = true;
         }
@@ -86,44 +85,22 @@ public abstract class Configuration {
         this.useMasterAsCompute = useMasterAsCompute;
     }
 
-    public int getSlaveInstanceCount() {
-        return slaveInstanceCount;
-    }
-
-    public void setSlaveInstanceCount(int slaveInstanceCount) {
-        this.slaveInstanceCount = slaveInstanceCount;
-    }
-
-    public InstanceType getMasterInstanceType() {
-        return masterInstanceType;
-    }
-
-    public void setMasterInstanceType(InstanceType masterInstanceType) {
-        this.masterInstanceType = masterInstanceType;
-    }
-
-    public InstanceType getSlaveInstanceType() {
-        return slaveInstanceType;
-    }
-
-    public void setSlaveInstanceType(InstanceType slaveInstanceType) {
-        this.slaveInstanceType = slaveInstanceType;
-    }
-
     public String getKeypair() {
         return keypair;
     }
 
     public void setKeypair(String keypair) {
-        this.keypair = keypair;
+        this.keypair = keypair.trim();
+        LOG.info(V, "Keypair name set. ({})", this.keypair);
     }
 
-    public Path getIdentityFile() {
+    public String getIdentityFile() {
         return identityFile;
     }
 
-    public void setIdentityFile(Path identityFile) {
-        this.identityFile = identityFile;
+    public void setIdentityFile(String identityFile) {
+        this.identityFile = identityFile.trim();
+        LOG.info(V, "Identity file found! ({})", this.identityFile);
     }
 
     public String getRegion() {
@@ -131,23 +108,62 @@ public abstract class Configuration {
     }
 
     public void setRegion(String region) {
-        this.region = region;
+        this.region = region.trim();
+        LOG.info(V, "Region set. ({})", this.region);
     }
 
-    public String getMasterImage() {
-        return masterImage;
+    public InstanceConfiguration getMasterInstance() {
+        return masterInstance;
     }
 
-    public void setMasterImage(String masterImage) {
-        this.masterImage = masterImage != null ? masterImage.trim() : null;
+    public void setMasterInstance(InstanceConfiguration masterInstance) {
+        this.masterInstance = masterInstance;
+        if (masterInstance != null) {
+            StringBuilder display = new StringBuilder();
+            display.append("[type=").append(masterInstance.getType()).append(", image=")
+                    .append(masterInstance.getImage()).append("] ");
+            LOG.info(V, "Master instances set: {}", display);
+        }
     }
 
-    public String getSlaveImage() {
-        return slaveImage;
+    public List<SlaveInstanceConfiguration> getSlaveInstances() {
+        return slaveInstances;
     }
 
-    public void setSlaveImage(String slaveImage) {
-        this.slaveImage = slaveImage != null ? slaveImage.trim() : null;
+    public void setSlaveInstances(List<SlaveInstanceConfiguration> slaveInstances) {
+        this.slaveInstances = slaveInstances;
+        if (slaveInstances != null && !slaveInstances.isEmpty()) {
+            StringBuilder display = new StringBuilder();
+            for (SlaveInstanceConfiguration instanceConfiguration : slaveInstances) {
+                display.append("[type=").append(instanceConfiguration.getType())
+                        .append(", image=").append(instanceConfiguration.getImage())
+                        .append(", count=").append(instanceConfiguration.getCount()).append("] ");
+            }
+            LOG.info(V, "Slave instances set: {}", display);
+        }
+    }
+
+    /**
+     * Helper getter so multiple instance types can be used in a simple for loop.
+     */
+    public List<SlaveInstanceConfiguration> getExpandedSlaveInstances() {
+        List<SlaveInstanceConfiguration> result = new ArrayList<>();
+        if (slaveInstances.size() > 0) {
+            int typeIndex = 0;
+            int typeInstancesLeft = slaveInstances.get(0).getCount();
+            for (int i = 0; i < getSlaveInstanceCount(); i++) {
+                result.add(slaveInstances.get(typeIndex));
+                // If we reach the count of the current type, move to the next instance type
+                typeInstancesLeft--;
+                if (typeInstancesLeft == 0) {
+                    typeIndex += 1;
+                    if (typeIndex < slaveInstances.size()) {
+                        typeInstancesLeft = slaveInstances.get(typeIndex).getCount();
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     public String getAvailabilityZone() {
@@ -155,7 +171,8 @@ public abstract class Configuration {
     }
 
     public void setAvailabilityZone(String availabilityZone) {
-        this.availabilityZone = availabilityZone;
+        this.availabilityZone = availabilityZone.trim();
+        LOG.info(V, "Availability zone set. ({})", this.availabilityZone);
     }
 
     public String[] getClusterIds() {
@@ -175,8 +192,16 @@ public abstract class Configuration {
 
     public void setPorts(List<Port> ports) {
         this.ports = ports;
+        if (ports != null && !ports.isEmpty()) {
+            StringBuilder portsDisplay = new StringBuilder();
+            for (Port port : ports) {
+                portsDisplay.append(port.toString()).append(" ");
+            }
+            LOG.info(V, "Additional open ports set: {}", portsDisplay);
+        }
     }
 
+    /*
     public Path getShellScriptFile() {
         return shellScriptFile;
     }
@@ -200,20 +225,21 @@ public abstract class Configuration {
     public void setEarlySlaveShellScriptFile(Path shellEarlyScriptFile) {
         this.earlySlaveShellScriptFile = shellEarlyScriptFile;
     }
+    */
 
-    public Map<String, String> getMasterMounts() {
+    public List<MountPoint> getMasterMounts() {
         return masterMounts;
     }
 
-    public void setMasterMounts(Map<String, String> masterMounts) {
+    public void setMasterMounts(List<MountPoint> masterMounts) {
         this.masterMounts = masterMounts;
     }
 
-    public Map<String, String> getSlaveMounts() {
+    public List<MountPoint> getSlaveMounts() {
         return slaveMounts;
     }
 
-    public void setSlaveMounts(Map<String, String> slaveMounts) {
+    public void setSlaveMounts(List<MountPoint> slaveMounts) {
         this.slaveMounts = slaveMounts;
     }
 
@@ -223,13 +249,20 @@ public abstract class Configuration {
 
     public void setNfsShares(List<String> nfsShares) {
         this.nfsShares = nfsShares;
+        if (nfsShares != null && !nfsShares.isEmpty()) {
+            StringBuilder nfsSharesDisplay = new StringBuilder();
+            for (String share : nfsShares) {
+                nfsSharesDisplay.append(share).append(" ");
+            }
+            LOG.info(V, "NFS shares set: {}", nfsSharesDisplay);
+        }
     }
 
-    public Map<String, String> getExtNfsShares() {
+    public List<MountPoint> getExtNfsShares() {
         return extNfsShares;
     }
 
-    public void setExtNfsShares(Map<String, String> extNfsShares) {
+    public void setExtNfsShares(List<MountPoint> extNfsShares) {
         this.extNfsShares = extNfsShares;
     }
 
@@ -242,15 +275,15 @@ public abstract class Configuration {
     }
 
     public void setAlternativeConfigPath(String alternativeConfigPath) {
-        this.alternativeConfigPath = alternativeConfigPath;
+        this.alternativeConfigPath = alternativeConfigPath.trim();
     }
 
-    public String getVpcId() {
-        return vpcId;
+    public String getVpc() {
+        return vpc;
     }
 
-    public void setVpcId(String vpcId) {
-        this.vpcId = vpcId;
+    public void setVpc(String vpc) {
+        this.vpc = vpc.trim();
     }
 
     public boolean isMesos() {
@@ -259,6 +292,7 @@ public abstract class Configuration {
 
     public void setMesos(boolean mesos) {
         this.mesos = mesos;
+        LOG.info(V, "Mesos support {}.", mesos ? "enabled" : "disabled");
     }
 
     public boolean isNfs() {
@@ -267,6 +301,7 @@ public abstract class Configuration {
 
     public void setNfs(boolean nfs) {
         this.nfs = nfs;
+        LOG.info(V, "NFS support {}.", nfs ? "enabled" : "disabled");
     }
 
     public boolean isOge() {
@@ -275,6 +310,7 @@ public abstract class Configuration {
 
     public void setOge(boolean oge) {
         this.oge = oge;
+        LOG.info(V, "OpenGridEngine support {}.", oge ? "enabled" : "disabled");
     }
 
     public String getMode() {
@@ -282,7 +318,7 @@ public abstract class Configuration {
     }
 
     public void setMode(String mode) {
-        this.mode = mode;
+        this.mode = mode.trim();
     }
 
     public String getUser() {
@@ -290,7 +326,7 @@ public abstract class Configuration {
     }
 
     public void setUser(String user) {
-        this.user = user;
+        this.user = user.trim();
     }
 
     public String getSshUser() {
@@ -298,7 +334,7 @@ public abstract class Configuration {
     }
 
     public void setSshUser(String sshUser) {
-        this.sshUser = sshUser;
+        this.sshUser = sshUser.trim();
     }
 
     public FS getLocalFS() {
@@ -315,25 +351,27 @@ public abstract class Configuration {
 
     public void setHdfs(boolean hdfs) {
         this.hdfs = hdfs;
+        LOG.info(V, "HDFS support {}.", hdfs ? "enabled" : "disabled");
         if (hdfs) {
             nfs = true;
         }
     }
 
-    public String getSubnetName() {
-        return subnetName;
+    public String getSubnet() {
+        return subnet;
     }
 
-    public void setSubnetName(String subnetName) {
-        this.subnetName = subnetName;
+    public void setSubnet(String subnet) {
+        this.subnet = subnet.trim();
     }
 
-    public boolean isLogHttpRequests() {
-        return logHttpRequests;
+    public boolean isDebugRequests() {
+        return debugRequests;
     }
 
-    public void setLogHttpRequests(boolean logHttpRequests) {
-        this.logHttpRequests = logHttpRequests;
+    public void setDebugRequests(boolean debugRequests) {
+        this.debugRequests = debugRequests;
+        LOG.info(V, "Debug requests {}.", debugRequests ? "enabled" : "disabled");
     }
 
     public boolean isSpark() {
@@ -342,6 +380,7 @@ public abstract class Configuration {
 
     public void setSpark(boolean spark) {
         this.spark = spark;
+        LOG.info(V, "Spark support {}.", spark ? "enabled" : "disabled");
     }
 
     public boolean isUseSpotInstances() {
@@ -350,5 +389,95 @@ public abstract class Configuration {
 
     public void setUseSpotInstances(boolean useSpotInstances) {
         this.useSpotInstances = useSpotInstances;
+        if (useSpotInstances) {
+            LOG.info(V, "Use spot request for all");
+        }
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public static class InstanceConfiguration {
+        public InstanceConfiguration() {
+        }
+
+        private String type;
+        private String image;
+        private InstanceType providerType;
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type.trim();
+        }
+
+        public String getImage() {
+            return image;
+        }
+
+        public void setImage(String image) {
+            this.image = image.trim();
+        }
+
+        public InstanceType getProviderType() {
+            return providerType;
+        }
+
+        public void setProviderType(InstanceType providerType) {
+            this.providerType = providerType;
+        }
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public static class SlaveInstanceConfiguration extends InstanceConfiguration {
+        public SlaveInstanceConfiguration() {
+        }
+
+        private int count;
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+            if (count < 0) {
+                LOG.warn("Number of slave nodes has to be at least 0. ({})", count);
+            }
+        }
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public static class MountPoint {
+        public MountPoint() {
+        }
+
+        public MountPoint(String source, String target) {
+            this.source = source;
+            this.target = target;
+        }
+
+        private String source;
+        private String target;
+
+        public String getSource() {
+            return source;
+        }
+
+        public void setSource(String source) {
+            this.source = source.trim();
+        }
+
+        public String getTarget() {
+            return target;
+        }
+
+        public void setTarget(String target) {
+            this.target = target.trim();
+        }
+    }
+
+    public enum FS {
+        EXT2, EXT3, EXT4, XFS
     }
 }
