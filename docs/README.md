@@ -15,8 +15,8 @@ In order to upload and execute commands a valid ssh-keypair needs to be setup, t
 
 ## Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
-You can either provide the necessary parameters via the command line, by using a configuration file or in some cases by using environment variables.
-The parameters provided via command line are listed below as "short parameter". Using them in a configuration file is done with the "long parameter".
+You can either provide the necessary parameters via the command line, by using a configuration file in yaml format or in some cases by using environment variables.
+The parameters are listed below:
 
 | Long parameter             | Short parameter | Environment variable | Description                                          |
 |----------------------------|-----------------|----------------------|------------------------------------------------------|
@@ -25,8 +25,8 @@ The parameters provided via command line are listed below as "short parameter". 
 | availability-zone          | z               |                      | |
 | user                       | u               |                      | User name (just for VM tagging) |
 | ssh-user                   | su              |                      | SSH user name |
-| keypair                    | k               |                      | |
-| identity-file              | i               |                      | |
+| keypair                    | k               |                      | Keypair name for authentication (aws and openstack only) |
+| identity-file              | i               |                      | SSH private key file |
 | master-instance-type       | m               |                      | |
 | master-image               | M               |                      | |
 | master-mounts              | d               |                      | |
@@ -41,21 +41,21 @@ The parameters provided via command line are listed below as "short parameter". 
 | ports                      | p               |                      | |
 | vpc                        | vpc             |                      | |
 | subnet                     | subnet          |                      | |
-| nfs                        | nfs             |                      | |
-| oge                        | oge             |                      | |
-| spark                      | spark           |                      | |
-| hdfs                       | hdfs            |                      | |
-| mesos                      | me              |                      | |
-| cassandra                  | db              |                      | |
-| execute-script             | x               |                      | |
-| early-execute-script       | ex              |                      | |
-| early-slave-execute-script | esx             |                      | |
+| nfs                        | nfs             |                      | NFS support |
+| oge                        | oge             |                      | GridEngine support |
+| spark                      | spark           |                      | Spark support |
+| hdfs                       | hdfs            |                      | HDFS support |
+| mesos                      | me              |                      | Mesos support |
+| cassandra                  | db              |                      | Cassandra support |
+| execute-script             | x               |                      | (deprecated) |
+| early-execute-script       | ex              |                      | (deprecated) |
+| early-slave-execute-script | esx             |                      | (deprecated) |
 | local-fs                   | lfs             |                      | |
 | nfs-shares                 | g               |                      | |
 | ext-nfs-shares             | ge              |                      | |
 | debug-requests             | dr              |                      | Log HTTP requests (currently openstack and googlecloud) |
 | verbose                    | v               |                      | Increase the logging level to verbose |
-| config                     | o               |                      | |
+| config                     | o               |                      | YAML configuration file |
 | grid-properties-file       | gpf             |                      | |
 
 ### Openstack specific parameters
@@ -92,14 +92,37 @@ The parameters provided via command line are listed below as "short parameter". 
 | azure-credentials-file     | acf             |                      | |
 
 ### Writing and using a configuration file
-The configuration file is a plain text file. A short example would be:
+The configuration file is a plain text file in YAML format. A short example would be:
 
 ```
 #use google cloud compute
-mode=googlecloud
-google-projectid=XXXXX
-google-credentials-file=XXXXX
-[...]
+mode: googlecloud
+google-projectid: XXXXX
+google-credentials-file: XXXXX
+
+region: europe-west1
+
+vpc: default
+subnet: default
+
+user: testuser
+sshUser: testuser
+identityFile: ~/cloud.ppk
+
+masterInstance:
+  type: f1-micro
+  image: ubuntu-1604-xenial-v20171212
+
+slaveInstances:
+  - type: f1-micro
+    count: 2
+    image: ubuntu-1604-xenial-v20171212
+
+ports:
+  - type: TCP
+    number: 80
+  - type: TCP
+    number: 443
 ```
 
 This file can now be used with the "-o" command line parameter and the path to the configuration file.
@@ -108,7 +131,7 @@ This file can now be used with the "-o" command line parameter and the path to t
 Before starting the cluster directly after writing the configuration file, several components can be validated beforehand.
 
 ```
-> bibigrid -ch -o ~/config.properties
+> bibigrid -ch -o ~/config.yml
 ```
 
 STUB
@@ -117,7 +140,7 @@ STUB
 STUB
 
 ```
-> bibigrid -c -o ~/config.properties
+> bibigrid -c -o ~/config.yml
 ```
 
 ## Cluster maintenance
@@ -125,18 +148,18 @@ STUB
 STUB
 
 ```
-> bibigrid -l -o ~/config.properties
+> bibigrid -l -o ~/config.yml
 ```
 
 ### Terminate the cluster
 When you're finished using the cluster, you can terminate it using the following command and the logged cluster-id when the cluster was created.
 
 ```
-> bibigrid -t [cluster-id] -o ~/config.properties
+> bibigrid -t [cluster-id] -o ~/config.yml
 ```
 
 If necessary multiple clusters can be terminated at once.
 
 ```
-> bibigrid -t [id1]/[id2]/[id3] -o ~/config.properties
+> bibigrid -t [id1]/[id2]/[id3] -o ~/config.yml
 ```
