@@ -93,8 +93,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private boolean parseCredentialsUsernameParameter(OpenStackCredentials credentials) {
         String shortParam = RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString();
         String envParam = RuleBuilder.RuleNames.OPENSTACK_USERNAME_ENV.toString();
-        // Parse environment variable
-        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+        // Parse environment variable if not loaded from config file
+        if (isStringNullOrEmpty(credentials.getUsername()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setUsername(System.getenv(envParam));
         }
         // Parse command line parameter
@@ -117,8 +117,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private boolean parseCredentialsDomainParameter(OpenStackCredentials credentials) {
         String shortParam = RuleBuilder.RuleNames.OPENSTACK_DOMAIN_S.toString();
         String envParam = RuleBuilder.RuleNames.OPENSTACK_DOMAIN_ENV.toString();
-        // Parse environment variable
-        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+        // Parse environment variable if not loaded from config file
+        if (isStringNullOrEmpty(credentials.getDomain()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setDomain(System.getenv(envParam));
         }
         // Parse command line parameter
@@ -144,8 +144,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private boolean parseCredentialsTenantNameParameter(OpenStackCredentials credentials) {
         String shortParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString();
         String envParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_ENV.toString();
-        // Parse environment variable
-        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+        // Parse environment variable if not loaded from config file
+        if (isStringNullOrEmpty(credentials.getTenantName()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setTenantName(System.getenv(envParam));
         }
         // Parse command line parameter
@@ -191,8 +191,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private boolean parseCredentialsPasswordParameter(OpenStackCredentials credentials) {
         String shortParam = RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString();
         String envParam = RuleBuilder.RuleNames.OPENSTACK_PASSWORD_ENV.toString();
-        // Parse environment variable
-        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+        // Parse environment variable if not loaded from config file
+        if (isStringNullOrEmpty(credentials.getPassword()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setPassword(System.getenv(envParam));
         }
         // Parse command line parameter
@@ -215,8 +215,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private boolean parseCredentialsEndpointParameter(OpenStackCredentials credentials) {
         String shortParam = RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString();
         String envParam = RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_ENV.toString();
-        // Parse environment variable
-        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+        // Parse environment variable if not loaded from config file
+        if (isStringNullOrEmpty(credentials.getEndpoint()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setEndpoint(System.getenv(envParam));
         }
         // Parse command line parameter
