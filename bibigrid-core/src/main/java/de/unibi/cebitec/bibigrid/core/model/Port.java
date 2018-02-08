@@ -10,9 +10,15 @@ public class Port {
         TCP, UDP, ICMP
     }
 
-    public final String ipRange;
-    public final int number;
-    public final Protocol type;
+    public String ipRange;
+    public int number;
+    public Protocol type;
+
+    public Port() {
+        ipRange = "0.0.0.0/0";
+        number = 0;
+        type = Protocol.TCP;
+    }
 
     public Port(String ipRange, int number) {
         this.ipRange = ipRange;
@@ -28,6 +34,6 @@ public class Port {
 
     @Override
     public String toString() {
-        return String.format("%s:%s", ipRange, number);
+        return String.format("%s:%s (%s)", ipRange, number, type);
     }
 }

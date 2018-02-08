@@ -1,13 +1,14 @@
 package de.unibi.cebitec.bibigrid.util;
 
 import de.unibi.cebitec.bibigrid.Provider;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -25,14 +26,11 @@ public class DeviceMapperTest {
     private static final String MOUNT_POINT1 = "/vol/test1";
     private static final String MOUNT_POINT2 = "/vol/test2";
     private static final String MOUNT_POINT3 = "/vol/test3";
-    private static final Map<String, String> SNAPSHOT_ID_TO_MOUNT_POINT = new HashMap<String, String>() {
-        {
-            put(SNAPSHOT_ID1, MOUNT_POINT1);
-            put(SNAPSHOT_ID2, MOUNT_POINT2);
-            put(SNAPSHOT_ID3, MOUNT_POINT3);
-        }
-    };
-
+    private static final List<Configuration.MountPoint> SNAPSHOT_ID_TO_MOUNT_POINT =
+            Arrays.asList(
+                    new Configuration.MountPoint(SNAPSHOT_ID1, MOUNT_POINT1),
+                    new Configuration.MountPoint(SNAPSHOT_ID2, MOUNT_POINT2),
+                    new Configuration.MountPoint(SNAPSHOT_ID3, MOUNT_POINT3));
     private ProviderModule[] providerModules;
 
     @Before

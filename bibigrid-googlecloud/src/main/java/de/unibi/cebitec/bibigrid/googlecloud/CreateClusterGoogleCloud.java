@@ -1,9 +1,10 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
 import com.google.cloud.compute.*;
+import com.google.cloud.compute.Instance;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,12 +95,12 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         String zone = config.getAvailabilityZone();
         String masterInstanceName = PREFIX + "master-" + clusterId;
         InstanceInfo.Builder masterBuilder = GoogleCloudUtils.getInstanceBuilder(zone, masterInstanceName,
-                config.getMasterInstanceType().getValue())
+                config.getMasterInstance().getProviderType().getValue())
                 .setNetworkInterfaces(masterNetworkInterface)
                 .setTags(Tags.of(bibigridId, "name" + GoogleCloudUtils.TAG_SEPARATOR + masterInstanceName))
                 .setMetadata(masterStartupScript);
-        GoogleCloudUtils.attachDisks(compute, masterBuilder, config.getMasterImage(), zone, config.getMasterMounts(),
-                clusterId, config.getGoogleImageProjectId());
+        GoogleCloudUtils.attachDisks(compute, masterBuilder, config.getMasterInstance().getImage(), zone,
+                config.getMasterMounts(), clusterId, config.getGoogleImageProjectId());
         GoogleCloudUtils.setInstanceSchedulingOptions(masterBuilder, config.isUseSpotInstances());
         // Waiting for master instance to run
         LOG.info("Waiting for master instance to finish booting...");
@@ -112,21 +113,22 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     }
 
     @Override
-    protected List<InstanceGoogleCloud> launchClusterSlaveInstances() {
-        final int instanceCount = config.getSlaveInstanceCount();
+    protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchClusterSlaveInstances(
+            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration) {
+        final int instanceCount = instanceConfiguration.getCount();
         final String zone = config.getAvailabilityZone();
         String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), false, false);
         String slaveInstanceNameTag = "name" + GoogleCloudUtils.TAG_SEPARATOR + PREFIX + "slave-" + clusterId;
         InstanceId[] slaveInstanceIds = new InstanceId[instanceCount];
         Operation[] slaveInstanceOperations = new Operation[instanceCount];
         for (int i = 0; i < instanceCount; i++) {
-            String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
+            String slaveInstanceId = buildSlaveInstanceName(batchIndex, i);
             InstanceInfo.Builder slaveBuilder = GoogleCloudUtils.getInstanceBuilder(zone, slaveInstanceId,
-                    config.getSlaveInstanceType().getValue())
+                    instanceConfiguration.getProviderType().getValue())
                     .setNetworkInterfaces(buildExternalNetworkInterface().build())
                     .setTags(Tags.of(bibigridId, slaveInstanceNameTag))
                     .setMetadata(Metadata.newBuilder().add("startup-script", base64SlaveUserData).build());
-            GoogleCloudUtils.attachDisks(compute, slaveBuilder, config.getSlaveImage(), zone,
+            GoogleCloudUtils.attachDisks(compute, slaveBuilder, instanceConfiguration.getImage(), zone,
                     config.getSlaveMounts(), clusterId, config.getGoogleImageProjectId());
             GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
             slaveInstanceOperations[i] = compute.create(slaveBuilder.build());

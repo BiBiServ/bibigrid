@@ -3,6 +3,8 @@ package de.unibi.cebitec.bibigrid.azure;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -70,12 +72,13 @@ public class CreateClusterAzure extends CreateCluster {
                 .withSubnet(environment.getSubnet().name())
                 .withPrimaryPrivateIPAddressDynamic()
                 .withNewPrimaryPublicIPAddress(environment.getMasterIP())
-                .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, config.getMasterImage()))
+                .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config,
+                        config.getMasterInstance().getImage()))
                 .withRootUsername(config.getSshUser())
                 .withSsh("") // TODO
                 .withCustomData(masterStartupScript)
                 .withNewDataDisk(50)
-                .withSize(config.getMasterInstanceType().getValue())
+                .withSize(config.getMasterInstance().getProviderType().getValue())
                 .withTag("bibigrid-id", clusterId)
                 .withTag("user", config.getUser())
                 .withTag("name", masterInstanceName)
@@ -92,26 +95,26 @@ public class CreateClusterAzure extends CreateCluster {
     }
 
     @Override
-    protected List<InstanceAzure> launchClusterSlaveInstances() {
+    protected List<Instance> launchClusterSlaveInstances(int batchIndex,
+                                                         Configuration.SlaveInstanceConfiguration instanceConfiguration) {
         List<VirtualMachine> slaveInstances = new ArrayList<>();
         String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false);
         String slaveInstanceNameTag = PREFIX + "slave-" + clusterId;
-        for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
-            String slaveInstanceId = PREFIX + "slave" + i + "-" + clusterId;
+        for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             VirtualMachine slaveInstance = compute.virtualMachines()
-                    .define(slaveInstanceId)
+                    .define(buildSlaveInstanceName(batchIndex, i))
                     .withRegion(config.getRegion())
                     .withExistingResourceGroup(environment.getResourceGroup())
                     .withExistingPrimaryNetwork(environment.getVpc())
                     .withSubnet(environment.getSubnet().name())
                     .withPrimaryPrivateIPAddressDynamic()
                     .withNewPrimaryPublicIPAddress(environment.getMasterIP()) // TODO
-                    .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, config.getSlaveImage()))
+                    .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, instanceConfiguration.getImage()))
                     .withRootUsername(config.getSshUser())
                     .withSsh("") // TODO
                     .withCustomData(base64SlaveUserData)
                     .withNewDataDisk(50)
-                    .withSize(config.getSlaveInstanceType().getValue())
+                    .withSize(instanceConfiguration.getProviderType().getValue())
                     .withTag("bibigrid-id", clusterId)
                     .withTag("user", config.getUser())
                     .withTag("name", slaveInstanceNameTag)

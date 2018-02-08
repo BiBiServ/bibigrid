@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.FileSystems;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -99,16 +100,23 @@ public abstract class CreateCluster implements Intent {
             if (master == null) {
                 return false;
             }
-            List<? extends Instance> slaves;
-            if (config.getSlaveInstanceCount() > 0) {
-                LOG.info("Requesting {} slave instance(s)...", config.getSlaveInstanceCount());
-                slaves = launchClusterSlaveInstances();
-                if (slaves == null) {
-                    return false;
+            List<Instance> slaves = new ArrayList<>();
+            int totalSlaveInstanceCount = config.getSlaveInstanceCount();
+            if (totalSlaveInstanceCount > 0) {
+                LOG.info("Requesting {} slave instance(s) with {} different configurations...",
+                        totalSlaveInstanceCount, config.getSlaveInstances().size());
+                for (int i = 0; i < config.getSlaveInstances().size(); i++) {
+                    Configuration.SlaveInstanceConfiguration instanceConfiguration = config.getSlaveInstances().get(i);
+                    LOG.info("Requesting {} slave instance(s) with same configuration...",
+                            instanceConfiguration.getCount());
+                    List<Instance> slavesBatch = launchClusterSlaveInstances(i, instanceConfiguration);
+                    if (slavesBatch == null) {
+                        return false;
+                    }
+                    slaves.addAll(slavesBatch);
                 }
             } else {
                 LOG.info("No Slave instance(s) requested!");
-                slaves = new ArrayList<>();
             }
             // just to be sure, everything is present, wait x seconds
             sleep(4);
@@ -134,9 +142,14 @@ public abstract class CreateCluster implements Intent {
     protected abstract Instance launchClusterMasterInstance();
 
     /**
-     * Start the configured cluster slave instances.
+     * Start the batch of cluster slave instances.
      */
-    protected abstract List<? extends Instance> launchClusterSlaveInstances();
+    protected abstract List<Instance> launchClusterSlaveInstances(int batchIndex,
+            Configuration.SlaveInstanceConfiguration instanceConfiguration);
+
+    protected String buildSlaveInstanceName(int batchIndex, int slaveIndex) {
+        return PREFIX + "slave" + (batchIndex + 1) + "-" + (slaveIndex + 1) + "-" + clusterId;
+    }
 
     protected abstract String getSubnetCidr();
 
@@ -164,7 +177,7 @@ public abstract class CreateCluster implements Intent {
         if (config.getGridPropertiesFile() != null) {
             Properties gp = new Properties();
             gp.setProperty("BIBIGRID_MASTER", masterPublicIp);
-            gp.setProperty("IdentityFile", config.getIdentityFile().toString());
+            gp.setProperty("IdentityFile", config.getIdentityFile());
             gp.setProperty("clusterId", clusterId);
             if (config.isAlternativeConfigFile()) {
                 gp.setProperty("AlternativeConfigFile", config.getAlternativeConfigPath());
@@ -218,12 +231,12 @@ public abstract class CreateCluster implements Intent {
         boolean sshPortIsReady = pollSshPortIsAvailable(masterInstance.getPublicIp());
         if (sshPortIsReady) {
             try {
-                ssh.addIdentity(config.getIdentityFile().toString());
+                ssh.addIdentity(config.getIdentityFile());
                 LOG.info("Trying to connect to master...");
                 sleep(4);
                 // Create new Session to avoid packet corruption.
                 Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIp(),
-                        config.getSshUser(), config.getIdentityFile());
+                        config.getSshUser(), FileSystems.getDefault().getPath(config.getIdentityFile()));
                 if (sshSession != null) {
                     // Start connection attempt
                     sshSession.connect();
@@ -308,20 +321,20 @@ public abstract class CreateCluster implements Intent {
                 if (lineOut.contains("CONFIGURATION_FINISHED")) {
                     configured = true;
                 }
-                if (V.getName().equals("VERBOSE")) {
-                    LOG.info(V, "SSH: {}", lineOut);
-                } else {
-                    System.out.print(".");
-                }
-
+                LOG.info(V, "SSH: {}", lineOut);
             }
             if (lineError != null && !configured) {
-                LOG.error("SSH: {}", lineError);
+                if (lineError.contains("sudo: unable to resolve host")) {
+                    LOG.warn(V, "SSH: {}", lineError);
+                } else {
+                    LOG.error("SSH: {}", lineError);
+                }
             }
             if (channel.isClosed() && configured) {
                 LOG.info(V, "SSH: exit-status: {}", channel.getExitStatus());
                 configured = true;
             }
+            sleep(2);
         }
         channel.disconnect();
         return configured;

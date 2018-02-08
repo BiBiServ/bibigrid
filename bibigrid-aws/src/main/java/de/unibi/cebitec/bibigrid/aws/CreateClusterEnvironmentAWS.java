@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.aws;
 
 import com.amazonaws.services.ec2.model.*;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 
@@ -42,7 +43,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     @Override
     public CreateClusterEnvironmentAWS createVPC() throws ConfigurationException {
         // check for (default) VPC
-        vpc = cluster.getConfig().getVpcId() == null ? getVPC() : getVPC(cluster.getConfig().getVpcId());
+        vpc = cluster.getConfig().getVpc() == null ? getVPC() : getVPC(cluster.getConfig().getVpc());
         if (vpc == null) {
             throw new ConfigurationException("No suitable vpc found. Define a default VPC for you account or set VPC_ID");
         } else {
@@ -92,14 +93,16 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
 
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(securityGroup);
         List<IpPermission> allIpPermissions = new ArrayList<>();
-        allIpPermissions.add(buildIpPermission("tcp", 22, 22).withIpRanges("0.0.0.0/0"));
+        allIpPermissions.add(buildIpPermission("tcp", 22, 22).withIpv4Ranges(new IpRange().withCidrIp("0.0.0.0/0")));
         allIpPermissions.add(buildIpPermission("tcp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
         allIpPermissions.add(buildIpPermission("udp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
         allIpPermissions.add(buildIpPermission("icmp", -1, -1).withUserIdGroupPairs(secGroupSelf));
         for (Port port : cluster.getConfig().getPorts()) {
             LOG.info(port.toString());
-            allIpPermissions.add(buildIpPermission("tcp", port.number, port.number).withIpRanges(port.ipRange));
-            allIpPermissions.add(buildIpPermission("udp", port.number, port.number).withIpRanges(port.ipRange));
+            allIpPermissions.add(buildIpPermission("tcp", port.number, port.number)
+                    .withIpv4Ranges(new IpRange().withCidrIp(port.ipRange)));
+            allIpPermissions.add(buildIpPermission("udp", port.number, port.number)
+                    .withIpv4Ranges(new IpRange().withCidrIp(port.ipRange)));
         }
 
         AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();
@@ -119,14 +122,19 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
 
     @Override
     public CreateClusterAWS createPlacementGroup() {
-        // if both instance-types fulfill the cluster specifications, create a placementGroup.
-        if (cluster.getConfig().getMasterInstanceType().getSpec().isClusterInstance()
-                && cluster.getConfig().getSlaveInstanceType().getSpec().isClusterInstance()) {
+        // if all instance-types fulfill the cluster specifications, create a placementGroup.
+        boolean allTypesClusterInstances =
+                cluster.getConfig().getMasterInstance().getProviderType().isClusterInstance();
+        for (Configuration.InstanceConfiguration instanceConfiguration : cluster.getConfig().getSlaveInstances()) {
+            allTypesClusterInstances = allTypesClusterInstances &&
+                    instanceConfiguration.getProviderType().isClusterInstance();
+        }
+        if (allTypesClusterInstances) {
             placementGroup = (PLACEMENT_GROUP_PREFIX + cluster.getClusterId());
             LOG.info("Creating placement group...");
             cluster.getEc2().createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
         } else {
-            LOG.info(V, "Placement Group not available for selected Instances-types ...");
+            LOG.info(V, "Placement Group not available for selected Instances-types...");
             return cluster;
         }
         return cluster;

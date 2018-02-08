@@ -1,6 +1,9 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.Instance;
+import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
@@ -43,13 +46,11 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterOpenstack extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterOpenstack.class);
-    private static final boolean CONFIG_DRIVE = true;
+    private static final int CONFIG_DRIVE = 1;
 
     private final OSClient os;
     private CreateClusterEnvironmentOpenstack environment;
     private final Map<String, String> metadata = new HashMap<>();
-    private Flavor masterFlavor, slaveFlavor;
-    private String masterImage, slaveImage;
     private DeviceMapper masterDeviceMapper, slaveDeviceMapper;
     private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
 
@@ -68,48 +69,47 @@ public class CreateClusterOpenstack extends CreateCluster {
     @Override
     public CreateClusterOpenstack configureClusterMasterInstance() {
         // DeviceMapper init.
-        Map<String, String> masterVolumeToMountPointMap = new HashMap<>();
-        for (String nameOrId : config.getMasterMounts().keySet()) {
+        List<Configuration.MountPoint> masterVolumeToMountPointMap = new ArrayList<>();
+        for (Configuration.MountPoint mountPoint : config.getMasterMounts()) {
             // check if master mount is a volume
-            Volume v = getVolumeByNameOrId(nameOrId);
+            Volume v = getVolumeByNameOrId(mountPoint.getSource());
             // could also be a snapshot
             if (v == null) {
-                VolumeSnapshot vss = getSnapshotByNameOrId(nameOrId);
+                VolumeSnapshot vss = getSnapshotByNameOrId(mountPoint.getSource());
                 if (vss != null) {
-                    v = createVolumeFromSnapshot(vss, nameOrId + "_" + clusterId);
-                    LOG.info(V, "Create volume ({}) from snapshot ({}).", v.getName(), nameOrId);
+                    v = createVolumeFromSnapshot(vss, mountPoint.getSource() + "_" + clusterId);
+                    LOG.info(V, "Create volume ({}) from snapshot ({}).", v.getName(), mountPoint.getSource());
                 }
             }
             if (v != null) { // Volume exists or created from snapshot
                 LOG.info(V, "Add volume ({}) to MasterVolumeMountMap", v.getName());
-                masterVolumeToMountPointMap.put(v.getId(), config.getMasterMounts().get(nameOrId));
+                Configuration.MountPoint idTargetMount = new Configuration.MountPoint();
+                idTargetMount.setSource(v.getId());
+                idTargetMount.setTarget(mountPoint.getTarget());
+                masterVolumeToMountPointMap.add(idTargetMount);
 
             } else {
-                LOG.warn("Volume/Snapshot with name/id {} not found!", nameOrId);
+                LOG.warn("Volume/Snapshot with name/id {} not found!", mountPoint.getSource());
             }
         }
 
+        InstanceType masterSpec = config.getMasterInstance().getProviderType();
         masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap,
-                (CONFIG_DRIVE ? 1 : 0) + config.getMasterInstanceType().getSpec().getEphemerals() +
-                        config.getMasterInstanceType().getSpec().getSwap());
+                CONFIG_DRIVE + masterSpec.getEphemerals() + masterSpec.getSwap());
 
         // BlockDeviceMapping.
         masterMappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
-        for (int i = 0; i < this.config.getMasterInstanceType().getSpec().getEphemerals(); ++i) {
-            BlockDeviceMappingCreate bdmc = Builders.blockDeviceMapping()
+        for (int i = 0; i < masterSpec.getEphemerals(); ++i) {
+            BlockDeviceMappingCreate blockDeviceMappingCreate = Builders.blockDeviceMapping()
                     .deviceName("sd" + ephemerals[i])
                     .deleteOnTermination(true)
                     .sourceType(BDMSourceType.BLANK)
                     .destinationType(BDMDestType.LOCAL)
                     .bootIndex(-1)
                     .build();
-            masterMappings.add(bdmc);
+            masterMappings.add(blockDeviceMappingCreate);
         }
-
-        //masterImage = config.getRegion() + "/" + config.getMasterImage();
-        masterImage = config.getMasterImage();
-        masterFlavor = getFlavorByName(config.getMasterInstanceType().getValue());
         LOG.info("Master configured");
         return this;
     }
@@ -126,29 +126,28 @@ public class CreateClusterOpenstack extends CreateCluster {
     @Override
     public CreateClusterOpenstack configureClusterSlaveInstance() {
         // DeviceMapper Slave. @ToDo
-        Map<String, String> snapShotToSlaveMounts = this.config.getSlaveMounts();
+        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
 
+        // TODO: why was this always master instance spec?
+        InstanceType masterSpec = config.getMasterInstance().getProviderType();
         slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
-                (CONFIG_DRIVE ? 1 : 0) + config.getMasterInstanceType().getSpec().getEphemerals() +
-                        config.getMasterInstanceType().getSpec().getSwap());
+                CONFIG_DRIVE + masterSpec.getEphemerals() + masterSpec.getSwap());
 
         // BlockDeviceMapping. @ToDo
         slaveMappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
-        for (int i = 0; i < this.config.getSlaveInstanceType().getSpec().getEphemerals(); ++i) {
-            BlockDeviceMappingCreate bdmc = Builders.blockDeviceMapping()
+        /* TODO
+        for (int i = 0; i < config.getSlaveInstanceType().getSpec().getEphemerals(); ++i) {
+            BlockDeviceMappingCreate blockDeviceMappingCreate = Builders.blockDeviceMapping()
                     .deviceName("sd" + ephemerals[i])
                     .deleteOnTermination(true)
                     .sourceType(BDMSourceType.BLANK)
                     .destinationType(BDMDestType.LOCAL)
                     .bootIndex(-1)
                     .build();
-            slaveMappings.add(bdmc);
+            slaveMappings.add(blockDeviceMappingCreate);
         }
-
-        //slaveImage = config.getRegion() + "/" + config.getSlaveImage();
-        slaveImage = config.getSlaveImage();
-        slaveFlavor = getFlavorByName(config.getSlaveInstanceType().getValue());
+        */
         LOG.info("Slave(s) configured");
         return this;
     }
@@ -157,14 +156,14 @@ public class CreateClusterOpenstack extends CreateCluster {
     protected InstanceOpenstack launchClusterMasterInstance() {
         ServerCreate sc = Builders.server()
                 .name("bibigrid-master-" + clusterId)
-                .flavor(masterFlavor.getId())
-                .image(masterImage)
+                .flavor(getFlavorByName(config.getMasterInstance().getProviderType().getValue()).getId())
+                .image(config.getMasterInstance().getImage())
                 .keypairName(config.getKeypair())
                 .addSecurityGroup(environment.getSecGroupExtension().getId())
                 .availabilityZone(config.getAvailabilityZone())
                 .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true))
                 .addMetadata(metadata)
-                .configDrive(CONFIG_DRIVE)
+                .configDrive(CONFIG_DRIVE != 0)
                 .networks(Arrays.asList(environment.getNetwork().getId()))
                 .build();
         Server server = os.compute().servers().boot(sc); // boot and return immediately
@@ -239,9 +238,9 @@ public class CreateClusterOpenstack extends CreateCluster {
 
         // attach Volumes
         if (!masterDeviceMapper.getSnapshotIdToMountPoint().isEmpty()) {
-            for (String volumeId : masterDeviceMapper.getSnapshotIdToMountPoint().keySet()) {
+            for (Configuration.MountPoint mountPoint : masterDeviceMapper.getSnapshotIdToMountPoint()) {
                 //check if volume is available
-                Volume v = os.blockStorage().volumes().get(volumeId);
+                Volume v = os.blockStorage().volumes().get(mountPoint.getSource());
                 boolean waiting = true;
                 while (waiting) {
                     switch (v.getStatus()) {
@@ -251,7 +250,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                         case CREATING: {
                             sleep(5);
                             LOG.info(V, "Wait for Volume ({}) available", v.getId());
-                            v = os.blockStorage().volumes().get(volumeId);
+                            v = os.blockStorage().volumes().get(mountPoint.getSource());
                             break;
                         }
                         default:
@@ -262,10 +261,10 @@ public class CreateClusterOpenstack extends CreateCluster {
 
                 if (v.getStatus().equals(Status.AVAILABLE)) {
                     // @ToDo: Test if a volume can be attached to a non active server instance ...
-                    VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), volumeId,
-                            masterDeviceMapper.getDeviceNameForSnapshotId(volumeId));
+                    VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), mountPoint.getSource(),
+                            masterDeviceMapper.getDeviceNameForSnapshotId(mountPoint.getSource()));
                     if (va == null) {
-                        LOG.error("Attaching volume {} to master failed ...", volumeId);
+                        LOG.error("Attaching volume {} to master failed ...", mountPoint.getSource());
                     } else {
                         LOG.info(V, "Volume {}  attached to Master.", va.getId());
                     }
@@ -277,32 +276,29 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
     @Override
-    protected List<InstanceOpenstack> launchClusterSlaveInstances() {
+    protected List<Instance> launchClusterSlaveInstances(int batchIndex,
+                                                         Configuration.SlaveInstanceConfiguration instanceConfiguration) {
         Map<String, InstanceOpenstack> slaves = new HashMap<>();
-        for (int i = 0; i < config.getSlaveInstanceCount(); i++) {
+        for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             ServerCreate sc = Builders.server()
-                    .name("bibigrid-slave-" + (i + 1) + "-" + clusterId)
-                    .flavor(slaveFlavor.getId())
-                    .image(slaveImage)
+                    .name(buildSlaveInstanceName(batchIndex, i))
+                    .flavor(getFlavorByName(instanceConfiguration.getProviderType().getValue()).getId())
+                    .image(instanceConfiguration.getImage())
                     .keypairName(config.getKeypair())
                     .addSecurityGroup(environment.getSecGroupExtension().getId())
                     .availabilityZone(config.getAvailabilityZone())
-                    .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true,false))
-                    .configDrive(CONFIG_DRIVE)
+                    .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false))
+                    .configDrive(CONFIG_DRIVE != 0)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();
             Server tmp = os.compute().servers().boot(sc);
             InstanceOpenstack tmp_instance = new InstanceOpenstack(tmp.getId());
-            tmp_instance.setHostname("bibigrid-slave-" + (i + 1) + "-" + clusterId);
+            tmp_instance.setHostname(buildSlaveInstanceName(batchIndex, i));
             slaves.put(tmp.getId(), tmp_instance);
-
-            //slaveIDs.add(tmp.getId());
             LOG.info(V, "Instance request for {}  ", sc.getName());
         }
 
         LOG.info("Waiting for slave instances ready ...");
-
-        // check
         int active = 0;
         List<String> ignoreList = new ArrayList<>();
         while (slaves.size() > active + ignoreList.size()) {
@@ -311,7 +307,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             // get fresh server object for given server id
             for (InstanceOpenstack slave : slaves.values()) {
                 //ignore if instance is already active ...
-                if (! (slave.isActive() || slave.hasError())) {
+                if (!(slave.isActive() || slave.hasError())) {
                     // check server status
                     checkForServerAndUpdateInstance(slave.getId(), slave);
                     if (slave.isActive()) {

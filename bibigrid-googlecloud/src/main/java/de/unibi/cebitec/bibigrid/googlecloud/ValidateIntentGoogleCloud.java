@@ -1,16 +1,13 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
 import com.google.cloud.compute.Compute;
-import com.google.cloud.compute.Image;
+import com.google.cloud.compute.ImageId;
 import com.google.cloud.compute.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
@@ -35,27 +32,13 @@ public class ValidateIntentGoogleCloud extends ValidateIntent {
     }
 
     @Override
-    protected boolean checkImages() {
-        boolean allCheck = true;
-        boolean foundMaster = false;
-        boolean foundSlave = false;
-        String projectId = config.getGoogleImageProjectId();
-        for (Image img : compute.listImages(projectId).iterateAll()) {
-            String name = img.getImageId().getImage();
-            foundMaster = foundMaster || name.equals(config.getMasterImage());
-            foundSlave = foundSlave || name.equals(config.getSlaveImage());
-        }
-        if (foundSlave && foundMaster) {
-            LOG.info(I, "Master and Slave images have been found.");
-        } else {
-            LOG.error("Master and Slave images could not be found.");
-            allCheck = false;
-        }
-        return allCheck;
+    protected boolean checkImage(Configuration.InstanceConfiguration instanceConfiguration) {
+        ImageId imageId = ImageId.of(config.getGoogleImageProjectId(), instanceConfiguration.getImage());
+        return compute.getImage(imageId) != null;
     }
 
     @Override
-    protected boolean checkSnapshot(String snapshotId) throws Exception {
+    protected boolean checkSnapshot(String snapshotId) {
         if (snapshotId.contains(":")) {
             snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
         }

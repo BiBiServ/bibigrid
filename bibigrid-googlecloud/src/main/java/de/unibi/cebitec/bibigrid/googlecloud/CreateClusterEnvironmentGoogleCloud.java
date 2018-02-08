@@ -41,7 +41,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     @Override
     public CreateClusterEnvironmentGoogleCloud createVPC() throws ConfigurationException {
         // check for (default) VPC
-        String vpcId = cluster.getConfig().getVpcId() == null ? "default" : cluster.getConfig().getVpcId();
+        String vpcId = cluster.getConfig().getVpc() == null ? "default" : cluster.getConfig().getVpc();
         vpc = getVpcById(vpcId);
         if (vpc == null) {
             throw new ConfigurationException("No suitable vpc found ... define a default VPC for you account or set VPC_ID");

@@ -2,6 +2,9 @@ package de.unibi.cebitec.bibigrid.core.model;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
@@ -9,18 +12,45 @@ public class AnsibleConfigTest {
     private class TestConfiguration extends Configuration {
         TestConfiguration() {
             setUser("ubuntu");
-            setMasterInstanceType(new InstanceType() {
+            setMasterInstance(new InstanceConfiguration() {
                 @Override
-                public InstanceSpecification getSpec() {
-                    return new InstanceSpecification(2, 0, false, false, true, true);
+                public InstanceType getProviderType() {
+                    return new InstanceType() {
+                        @Override
+                        public String getValue() {
+                            return "de.NBI.Small";
+                        }
+
+                        @Override
+                        public int getInstanceCores() {
+                            return 2;
+                        }
+                    };
                 }
             });
-            setSlaveInstanceType(new InstanceType() {
+            List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
+            slaveInstances.add(new SlaveInstanceConfiguration() {
                 @Override
-                public InstanceSpecification getSpec() {
-                    return new InstanceSpecification(2, 0, false, false, true, true);
+                public int getCount() {
+                    return 1;
+                }
+
+                @Override
+                public InstanceType getProviderType() {
+                    return new InstanceType() {
+                        @Override
+                        public String getValue() {
+                            return "de.NBI.Large";
+                        }
+
+                        @Override
+                        public int getInstanceCores() {
+                            return 2;
+                        }
+                    };
                 }
             });
+            setSlaveInstances(slaveInstances);
         }
     }
 
@@ -33,9 +63,3 @@ public class AnsibleConfigTest {
         System.out.println(config);
     }
 }
-/*nfs_mounts:
-  - src: "/vol/spool"
-    dst: "/vol/spool"
-  - src: "/opt"
-    dst: "/opt"
-*/

@@ -5,41 +5,45 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-class ConfigurationOpenstack extends Configuration {
+@SuppressWarnings({"WeakerAccess", "unused"})
+public class ConfigurationOpenstack extends Configuration {
+    public ConfigurationOpenstack() {
+    }
+
     private OpenStackCredentials openstackCredentials;
-    private String routerName;
-    private String networkName;
+    private String router;
+    private String network;
     private String securityGroup;
 
-    OpenStackCredentials getOpenstackCredentials() {
+    public OpenStackCredentials getOpenstackCredentials() {
         return openstackCredentials;
     }
 
-    void setOpenstackCredentials(final OpenStackCredentials openstackCredentials) {
+    public void setOpenstackCredentials(final OpenStackCredentials openstackCredentials) {
         this.openstackCredentials = openstackCredentials;
     }
 
-    String getNetworkName() {
-        return networkName;
+    public String getNetwork() {
+        return network;
     }
 
-    void setNetworkName(String networkName) {
-        this.networkName = networkName;
+    public void setNetwork(String network) {
+        this.network = network;
     }
 
-    String getRouterName() {
-        return routerName;
+    public String getRouter() {
+        return router;
     }
 
-    void setRouterName(String routerName) {
-        this.routerName = routerName;
+    public void setRouter(String router) {
+        this.router = router;
     }
 
-    String getSecurityGroup() {
+    public String getSecurityGroup() {
         return securityGroup;
     }
 
-    void setSecurityGroup(String securityGroup) {
+    public void setSecurityGroup(String securityGroup) {
         this.securityGroup = securityGroup;
     }
 }

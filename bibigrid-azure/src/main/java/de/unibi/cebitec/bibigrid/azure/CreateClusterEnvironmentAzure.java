@@ -45,7 +45,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     @Override
     public CreateClusterEnvironmentAzure createVPC() throws ConfigurationException {
         // check for VPC
-        String vpcId = cluster.getConfig().getVpcId();
+        String vpcId = cluster.getConfig().getVpc();
         if (vpcId == null) {
             throw new ConfigurationException("vpc id is not defined");
         }
@@ -65,7 +65,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
 
     @Override
     public CreateClusterEnvironmentAzure createSubnet() {
-        String subnetName = cluster.getConfig().getSubnetName();
+        String subnetName = cluster.getConfig().getSubnet();
         if (subnetName != null && subnetName.length() > 0) {
             for (Subnet sn : vpc.subnets().values()) {
                 if (sn.name().equalsIgnoreCase(subnetName)) {

@@ -52,7 +52,7 @@ public class ProviderModuleGoogleCloud implements ProviderModule {
 
     @Override
     public InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
-        return new InstanceTypeGoogleCloud(type);
+        return InstanceTypeGoogleCloud.getByType(type);
     }
 
     @Override

@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.googlecloud;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.compute.*;
 import com.google.cloud.compute.spi.v1.HttpComputeRpc;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +12,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Utility methods for the google cloud.
@@ -24,7 +24,7 @@ final class GoogleCloudUtils {
     private static long diskCounter = 1;
 
     static Compute getComputeService(final ConfigurationGoogleCloud config) {
-        if (config.isLogHttpRequests()) {
+        if (config.isDebugRequests()) {
             HttpRequestLogHandler.attachToCloudHttpTransport();
         }
         ComputeOptions.Builder optionsBuilder = ComputeOptions.newBuilder();
@@ -97,17 +97,18 @@ final class GoogleCloudUtils {
     }
 
     static void attachDisks(Compute compute, InstanceInfo.Builder instanceBuilder, String imageId,
-                            String zone, Map<String, String> mounts, String clusterId, String imageProjectId) {
+                            String zone, List<Configuration.MountPoint> mounts, String clusterId,
+                            String imageProjectId) {
         List<AttachedDisk> attachedDisks = new ArrayList<>();
         // First add the boot disk
         AttachedDisk bootDisk = GoogleCloudUtils.createBootDisk(imageId, imageProjectId);
         attachedDisks.add(bootDisk);
-        for (String key : mounts.keySet()) {
+        for (Configuration.MountPoint mountPoint : mounts) {
             // For the creation of the cluster it's sufficient to add a counter as suffix.
             // The cluster ID is already the greatest difference between multiple clusters.
-            String diskId = "disk-" + clusterId + "-" + key + diskCounter;
+            String diskId = "disk-" + clusterId + "-" + mountPoint.getSource() + diskCounter;
             diskCounter++;
-            AttachedDisk mountDisk = createMountDisk(compute, zone, key, diskId);
+            AttachedDisk mountDisk = createMountDisk(compute, zone, mountPoint.getSource(), diskId);
             attachedDisks.add(mountDisk);
         }
         instanceBuilder.setAttachedDisks(attachedDisks);

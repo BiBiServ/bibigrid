@@ -5,14 +5,39 @@ package de.unibi.cebitec.bibigrid.core.model;
  */
 public abstract class InstanceType {
     protected String value;
-    protected InstanceSpecification spec;
+    protected int instanceCores;
+    protected int ephemerals;
+    protected boolean swap;
+    protected boolean clusterInstance;
+    protected boolean pvm;
+    protected boolean hvm;
 
     public String getValue() {
         return value;
     }
 
-    public InstanceSpecification getSpec() {
-        return spec;
+    public int getInstanceCores() {
+        return instanceCores;
+    }
+
+    public int getEphemerals() {
+        return ephemerals;
+    }
+
+    public int getSwap() {
+        return swap ? 1 : 0;
+    }
+
+    public boolean isClusterInstance() {
+        return clusterInstance;
+    }
+
+    public boolean isPvm() {
+        return pvm;
+    }
+
+    public boolean isHvm() {
+        return hvm;
     }
 
     @Override

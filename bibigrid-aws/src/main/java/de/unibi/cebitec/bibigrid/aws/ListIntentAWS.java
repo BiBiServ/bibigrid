@@ -1,6 +1,6 @@
 package de.unibi.cebitec.bibigrid.aws;
 
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
@@ -33,7 +33,7 @@ public class ListIntentAWS extends ListIntent {
             return;
         }
         clusterMap = new HashMap<>();
-        AmazonEC2Client ec2 = IntentUtils.getClient(conf);
+        AmazonEC2 ec2 = IntentUtils.getClient(conf);
         Cluster cluster;
 
         // Instances

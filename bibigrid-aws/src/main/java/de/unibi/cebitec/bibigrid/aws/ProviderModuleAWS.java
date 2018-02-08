@@ -52,7 +52,7 @@ public class ProviderModuleAWS implements ProviderModule {
 
     @Override
     public InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
-        return new InstanceTypeAWS(type);
+        return InstanceTypeAWS.getByType(type);
     }
 
     @Override

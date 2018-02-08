@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
@@ -10,7 +9,6 @@ import org.apache.commons.cli.CommandLine;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -21,12 +19,12 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     CommandLineValidatorOpenstack(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
                                   final IntentMode intentMode, final ProviderModule providerModule) {
         super(cl, defaultPropertiesFile, intentMode, providerModule);
-        openstackConfig = (ConfigurationOpenstack) cfg;
+        openstackConfig = (ConfigurationOpenstack) config;
     }
 
     @Override
-    protected Configuration createProviderConfiguration() {
-        return new ConfigurationOpenstack();
+    protected Class<ConfigurationOpenstack> getProviderConfigurationClass() {
+        return ConfigurationOpenstack.class;
     }
 
     @Override
@@ -60,7 +58,6 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                         RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
                         RuleBuilder.RuleNames.REGION_S.toString(),
                         RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
-                        RuleBuilder.RuleNames.NFS_SHARES_S.toString(),
                         RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
                         RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString(),
                         RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString(),
@@ -73,86 +70,226 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     @Override
-    protected boolean validateProviderParameters(List<String> req, Properties defaults) {
-        if (!parseCredentialParameters(defaults)) return false;
-        if (!parseNetworkParameters(defaults)) return false;
-        if (!parseSecurityGroupParameter(defaults)) return false;
+    protected boolean validateProviderParameters() {
+        return parseCredentialParameters() &&
+                parseRouterParameter() &&
+                parseNetworkParameter() &&
+                parseSecurityGroupParameter();
+    }
+
+    private boolean parseCredentialParameters() {
+        if (openstackConfig.getOpenstackCredentials() == null) {
+            openstackConfig.setOpenstackCredentials(new OpenStackCredentials());
+        }
+        OpenStackCredentials credentials = openstackConfig.getOpenstackCredentials();
+        return parseCredentialsUsernameParameter(credentials) &&
+                parseCredentialsDomainParameter(credentials) &&
+                parseCredentialsTenantNameParameter(credentials) &&
+                parseCredentialsTenantDomainParameter(credentials) &&
+                parseCredentialsPasswordParameter(credentials) &&
+                parseCredentialsEndpointParameter(credentials);
+    }
+
+    private boolean parseCredentialsUsernameParameter(OpenStackCredentials credentials) {
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_USERNAME_ENV.toString();
+        // Parse environment variable
+        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+            credentials.setUsername(System.getenv(envParam));
+        }
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                credentials.setUsername(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(credentials.getUsername())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
         return true;
     }
 
-    private boolean parseCredentialParameters(Properties defaults) {
-        OpenStackCredentials osc = new OpenStackCredentials();
-        // OpenStack username
-        ParseResult result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_USERNAME_S,
-                RuleBuilder.RuleNames.OPENSTACK_USERNAME_L, RuleBuilder.RuleNames.OPENSTACK_USERNAME_ENV);
-        if (!result.success) {
-            LOG.error("No suitable entry for OpenStack-Username (osu) found nor environment OS_USERNAME set! Exit");
-            return false;
+    private boolean parseCredentialsDomainParameter(OpenStackCredentials credentials) {
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_DOMAIN_S.toString();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_DOMAIN_ENV.toString();
+        // Parse environment variable
+        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+            credentials.setDomain(System.getenv(envParam));
         }
-        osc.setUsername(result.value);
-        // OpenStack domain
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_DOMAIN_S,
-                RuleBuilder.RuleNames.OPENSTACK_DOMAIN_L, RuleBuilder.RuleNames.OPENSTACK_DOMAIN_ENV);
-        if (result.success) {
-            osc.setDomain(result.value);
-        } else {
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                credentials.setDomain(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(credentials.getDomain())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        if (isStringNullOrEmpty(credentials.getDomain())) {
             LOG.info("Keystone V2 API.");
         }
-        // OpenStack tenant name
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S,
-                RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_L, RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_ENV);
-        if (!result.success) {
-            LOG.error("No suitable entry for OpenStack-Tenantname (ost) found nor environment OS_PROJECT_NAME set! Exit");
-            return false;
-        }
-        osc.setTenantName(result.value);
-        // OpenStack tenant domain
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_S,
-                RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_L, null);
-        if (!result.success) {
-            LOG.info("No suitable entry for OpenStack-TenantDomain (ostd) found! Use OpenStack-Domain(osd) instead!");
-            osc.setTenantDomain(osc.getDomain());
-        } else {
-            osc.setTenantDomain(result.value);
-        }
-        // OpenStack password
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S,
-                RuleBuilder.RuleNames.OPENSTACK_PASSWORD_L, RuleBuilder.RuleNames.OPENSTACK_PASSWORD_ENV);
-        if (!result.success) {
-            LOG.error("No suitable entry for OpenStack-Password (osp) found nor environment OS_PASSWORD set! Exit");
-            return false;
-        }
-        osc.setPassword(result.value);
-        // OpenStack endpoint
-        result = parseParameter(defaults, RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S,
-                RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_L, RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_ENV);
-        if (!result.success) {
-            LOG.error("No suitable entry for OpenStack-Endpoint (ose) found nor environment OS_AUTH_URL set! Exit");
-            return false;
-        }
-        osc.setEndpoint(result.value);
-        openstackConfig.setOpenstackCredentials(osc);
         return true;
     }
 
-    private boolean parseNetworkParameters(Properties defaults) {
-        // optional, but recommend
-        ParseResult result = parseParameter(defaults, RuleBuilder.RuleNames.ROUTER_S, RuleBuilder.RuleNames.ROUTER_L, null);
-        if (result.success) {
-            openstackConfig.setRouterName(result.value);
+    private boolean parseCredentialsTenantNameParameter(OpenStackCredentials credentials) {
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_ENV.toString();
+        // Parse environment variable
+        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+            credentials.setTenantName(System.getenv(envParam));
         }
-        // optional
-        result = parseParameter(defaults, RuleBuilder.RuleNames.NETWORK_S, RuleBuilder.RuleNames.NETWORK_L, null);
-        if (result.success) {
-            openstackConfig.setNetworkName(result.value);
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                credentials.setTenantName(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(credentials.getTenantName())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
         }
         return true;
     }
 
-    private boolean parseSecurityGroupParameter(Properties defaults) {
+    private boolean parseCredentialsTenantDomainParameter(OpenStackCredentials credentials) {
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                credentials.setTenantDomain(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(credentials.getTenantDomain())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        if (isStringNullOrEmpty(credentials.getTenantDomain())) {
+            LOG.info("OpenStack TenantDomain is empty! Use OpenStack Domain instead!");
+            credentials.setTenantDomain(credentials.getDomain());
+        }
+        return true;
+    }
+
+    private boolean parseCredentialsPasswordParameter(OpenStackCredentials credentials) {
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_PASSWORD_ENV.toString();
+        // Parse environment variable
+        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+            credentials.setPassword(System.getenv(envParam));
+        }
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                credentials.setPassword(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(credentials.getPassword())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parseCredentialsEndpointParameter(OpenStackCredentials credentials) {
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_ENV.toString();
+        // Parse environment variable
+        if (!isStringNullOrEmpty(System.getenv(envParam))) {
+            credentials.setEndpoint(System.getenv(envParam));
+        }
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                credentials.setEndpoint(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(credentials.getEndpoint())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parseRouterParameter() {
+        final String shortParam = RuleBuilder.RuleNames.ROUTER_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                openstackConfig.setRouter(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(openstackConfig.getRouter())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parseNetworkParameter() {
+        final String shortParam = RuleBuilder.RuleNames.NETWORK_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                openstackConfig.setNetwork(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(openstackConfig.getNetwork())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parseSecurityGroupParameter() {
         final String shortParam = RuleBuilder.RuleNames.SECURITY_GROUP_S.toString();
-        final String longParam = RuleBuilder.RuleNames.SECURITY_GROUP_L.toString();
-        openstackConfig.setSecurityGroup(parseParameterOrDefault(defaults, shortParam, longParam));
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                openstackConfig.setSecurityGroup(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(openstackConfig.getSecurityGroup())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
         return true;
     }
 }

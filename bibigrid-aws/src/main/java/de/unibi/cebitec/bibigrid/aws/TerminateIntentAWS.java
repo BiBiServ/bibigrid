@@ -1,6 +1,6 @@
 package de.unibi.cebitec.bibigrid.aws;
 
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DeletePlacementGroupRequest;
 import com.amazonaws.services.ec2.model.DeleteSecurityGroupRequest;
 import com.amazonaws.services.ec2.model.DeleteSubnetRequest;
@@ -35,7 +35,7 @@ public class TerminateIntentAWS implements TerminateIntent {
 
     @Override
     public boolean terminate() {
-        final AmazonEC2Client ec2 = IntentUtils.getClient(config);
+        final AmazonEC2 ec2 = IntentUtils.getClient(config);
         final Map<String, Cluster> clusters = new ListIntentAWS(config).getList();
         boolean success = true;
         for (String clusterId : config.getClusterIds()) {
@@ -55,7 +55,7 @@ public class TerminateIntentAWS implements TerminateIntent {
         return success;
     }
 
-    private void terminateInstances(final AmazonEC2Client ec2, final Cluster cluster) {
+    private void terminateInstances(final AmazonEC2 ec2, final Cluster cluster) {
         List<String> instances = cluster.getSlaveInstances();
         if (cluster.getMasterInstance() != null) {
             instances.add(cluster.getMasterInstance());
@@ -86,7 +86,7 @@ public class TerminateIntentAWS implements TerminateIntent {
         }
     }
 
-    private void terminatePlacementGroup(final AmazonEC2Client ec2, final Cluster cluster) {
+    private void terminatePlacementGroup(final AmazonEC2 ec2, final Cluster cluster) {
         if (cluster.getPlacementGroup() != null) {
             DeletePlacementGroupRequest deletePlacementGroupRequest = new DeletePlacementGroupRequest();
             deletePlacementGroupRequest.setGroupName(cluster.getPlacementGroup());
@@ -95,7 +95,7 @@ public class TerminateIntentAWS implements TerminateIntent {
         }
     }
 
-    private void terminateSubnet(final AmazonEC2Client ec2, final Cluster cluster) {
+    private void terminateSubnet(final AmazonEC2 ec2, final Cluster cluster) {
         if (cluster.getSubnet() != null) {
             DeleteSubnetRequest deleteSubnetRequest = new DeleteSubnetRequest();
             deleteSubnetRequest.setSubnetId(cluster.getSubnet());
@@ -104,7 +104,7 @@ public class TerminateIntentAWS implements TerminateIntent {
         }
     }
 
-    private void terminateSecurityGroup(final AmazonEC2Client ec2, final Cluster cluster) {
+    private void terminateSecurityGroup(final AmazonEC2 ec2, final Cluster cluster) {
         if (cluster.getSecurityGroup() != null) {
             DeleteSecurityGroupRequest deleteSecurityGroupRequest = new DeleteSecurityGroupRequest();
             deleteSecurityGroupRequest.setGroupId(cluster.getSecurityGroup());

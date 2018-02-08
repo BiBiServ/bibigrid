@@ -40,7 +40,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     public static final String ROUTER_PREFIX = "router-";
     public static final String NETWORK_PREFIX = "net-";
     public static final String SUBNET_PREFIX = "subnet-";
-    public static final String NETWORK_CIDR = "192.168.0.0/16";
+    private static final String NETWORK_CIDR = "192.168.0.0/16";
 
     private CreateClusterOpenstack cluster;
 
@@ -72,11 +72,11 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             ConfigurationOpenstack cfg = (ConfigurationOpenstack) cluster.getConfig();
             String clusterId = cluster.getClusterId();
             // if subnet is set just use it
-            if (cfg.getSubnetName() != null) {
+            if (cfg.getSubnet() != null) {
                 // check if subnet exists
-                subnet = getSubnetByName(osc, cfg.getSubnetName());
+                subnet = getSubnetByName(osc, cfg.getSubnet());
                 if (subnet == null) {
-                    throw new ConfigurationException("No Subnet with name '" + cfg.getSubnetName() + "' found!");
+                    throw new ConfigurationException("No Subnet with name '" + cfg.getSubnet() + "' found!");
                 }
                 net = getNetworkById(osc, subnet.getNetworkId());
                 if (net == null) {
@@ -87,22 +87,22 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 return this;
             }
             // if network is set try to determine router
-            if (cfg.getNetworkName() != null) {
+            if (cfg.getNetwork() != null) {
                 // check if net exists
-                net = getNetworkByName(osc, cfg.getNetworkName());
+                net = getNetworkByName(osc, cfg.getNetwork());
                 if (net == null) {
-                    throw new ConfigurationException("No Net with name '" + cfg.getSubnetName() + "' found!");
+                    throw new ConfigurationException("No Net with name '" + cfg.getSubnet() + "' found!");
                 }
                 router = getRouterByNetwork(osc, net);
                 LOG.info("Use existing net (ID: {}) and router (ID: {}).", net.getId(), router.getId());
             }
             if (router == null) {
-                if (cfg.getRouterName() == null) {
+                if (cfg.getRouter() == null) {
                     throw new ConfigurationException("No Router found and no router name provided!");
                 } else {
-                    router = getRouterByName(osc, cfg.getRouterName());
+                    router = getRouterByName(osc, cfg.getRouter());
                     if (router == null) {
-                        throw new ConfigurationException("No Router with name '" + cfg.getRouterName() + "' found!");
+                        throw new ConfigurationException("No Router with name '" + cfg.getRouter() + "' found!");
                     }
                     LOG.info("Use existing router (ID: {}).", router.getId());
                 }
@@ -111,7 +111,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                         .name(NETWORK_PREFIX + cluster.getClusterId())
                         .adminStateUp(true)
                         .build());
-                cfg.setNetworkName(net.getName());
+                cfg.setNetwork(net.getName());
                 LOG.info("Network (ID: {}, NAME: {}) created.", net.getId(), net.getName());
             }
             // get new free /24 subnet
@@ -138,7 +138,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                     .cidr(CIDR)
                     .build());
 
-            cfg.setSubnetName(subnet.getName());
+            cfg.setSubnet(subnet.getName());
             LOG.info("Subnet (ID: {}, NAME: {}, CIDR: {}) created.", subnet.getId(), subnet.getName(), subnet.getCidr());
 
             RouterInterface routerInterface = osc.networking().router().attachInterface(router.getId(),

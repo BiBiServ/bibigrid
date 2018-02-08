@@ -5,17 +5,21 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-class ConfigurationGoogleCloud extends Configuration {
+@SuppressWarnings({"WeakerAccess", "unused"})
+public class ConfigurationGoogleCloud extends Configuration {
+    public ConfigurationGoogleCloud() {
+    }
+
     private String googleProjectId;
     private String googleImageProjectId;
     private String googleCredentialsFile;
 
-    String getGoogleProjectId() {
+    public String getGoogleProjectId() {
         return googleProjectId;
     }
 
-    void setGoogleProjectId(String googleProjectId) {
-        this.googleProjectId = googleProjectId;
+    public void setGoogleProjectId(String googleProjectId) {
+        this.googleProjectId = googleProjectId.trim();
     }
 
     public String getGoogleImageProjectId() {
@@ -23,14 +27,14 @@ class ConfigurationGoogleCloud extends Configuration {
     }
 
     public void setGoogleImageProjectId(String googleImageProjectId) {
-        this.googleImageProjectId = googleImageProjectId;
+        this.googleImageProjectId = googleImageProjectId.trim();
     }
 
-    String getGoogleCredentialsFile() {
+    public String getGoogleCredentialsFile() {
         return googleCredentialsFile;
     }
 
-    void setGoogleCredentialsFile(String googleCredentialsFile) {
-        this.googleCredentialsFile = googleCredentialsFile;
+    public void setGoogleCredentialsFile(String googleCredentialsFile) {
+        this.googleCredentialsFile = googleCredentialsFile.trim();
     }
 }

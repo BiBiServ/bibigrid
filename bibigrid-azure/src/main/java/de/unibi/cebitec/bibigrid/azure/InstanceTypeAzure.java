@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.azure;
 
-import de.unibi.cebitec.bibigrid.core.model.InstanceSpecification;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 
@@ -16,15 +15,14 @@ import java.util.Map;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 class InstanceTypeAzure extends InstanceType {
-    private static final Map<String, InstanceSpecification> typeSpecMap = new HashMap<>();
+    private static final Map<String, InstanceTypeAzure> typeSpecMap = new HashMap<>();
 
     private static void addType(String id, int cores) {
         // TODO: decide ephemeral size
-        typeSpecMap.put(id, new InstanceSpecification(cores, 0, false, false, true, true));
+        typeSpecMap.put(id, new InstanceTypeAzure(id, cores, 0, false, false, true, false));
     }
 
     static {
-
         // B-series
         addType("Standard_B1s", 1);
         addType("Standard_B1ms", 1);
@@ -67,12 +65,21 @@ class InstanceTypeAzure extends InstanceType {
         // TODO
     }
 
-    InstanceTypeAzure(String type) throws InstanceTypeNotFoundException {
-        try {
-            value = type;
-            spec = typeSpecMap.get(type);
-        } catch (Exception e) {
-            throw new InstanceTypeNotFoundException("Invalid instance type " + type);
+    private InstanceTypeAzure(String type, int cores, int ephemerals, boolean swap, boolean pvm, boolean hvm,
+                              boolean clusterInstance) {
+        value = type;
+        instanceCores = cores;
+        this.ephemerals = ephemerals;
+        this.clusterInstance = clusterInstance;
+        this.pvm = pvm;
+        this.hvm = hvm;
+        this.swap = swap;
+    }
+
+    static InstanceTypeAzure getByType(String type) throws InstanceTypeNotFoundException {
+        if (typeSpecMap.containsKey(type)) {
+            return typeSpecMap.get(type);
         }
+        throw new InstanceTypeNotFoundException("Invalid instance type " + type);
     }
 }

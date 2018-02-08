@@ -3,8 +3,10 @@ package de.unibi.cebitec.bibigrid.aws;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
+import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
@@ -71,8 +73,8 @@ public class CreateClusterAWS extends CreateCluster {
 
     private void buildMasterDeviceMappings() {
         // preparing block device mappings for master
-        Map<String, String> masterSnapshotToMountPointMap = config.getMasterMounts();
-        int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
+        List<Configuration.MountPoint> masterSnapshotToMountPointMap = config.getMasterMounts();
+        int ephemerals = config.getMasterInstance().getProviderType().getEphemerals();
         DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
@@ -99,7 +101,7 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     private void buildMasterPlacementGroup() {
-        if (config.getMasterInstanceType().getSpec().isClusterInstance()) {
+        if (config.getMasterInstance().getProviderType().isClusterInstance()) {
             if (config.isUseSpotInstances()) {
                 spotInstancePlacement = new SpotPlacement(config.getAvailabilityZone());
                 spotInstancePlacement.setGroupName(environment.getPlacementGroup());
@@ -137,8 +139,8 @@ public class CreateClusterAWS extends CreateCluster {
 
     private void buildClientsDeviceMappings() {
         //now defining Slave Volumes
-        Map<String, String> snapShotToSlaveMounts = config.getSlaveMounts();
-        int ephemerals = config.getSlaveInstanceType().getSpec().getEphemerals();
+        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
+        int ephemerals = 0;// TODO: config.getSlaveInstanceType().getEphemerals();
         slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
         slaveBlockDeviceMappings = new ArrayList<>();
         // configure volumes first
@@ -162,10 +164,10 @@ public class CreateClusterAWS extends CreateCluster {
                     .withSpotPrice(Double.toString(config.getBidPriceMaster()));
 
             LaunchSpecification masterLaunchSpecification = new LaunchSpecification()
-                    .withInstanceType(InstanceType.fromValue(config.getMasterInstanceType().getValue()))
+                    .withInstanceType(InstanceType.fromValue(config.getMasterInstance().getProviderType().getValue()))
                     .withPlacement(spotInstancePlacement)
                     .withKeyName(config.getKeypair())
-                    .withImageId(config.getMasterImage())
+                    .withImageId(config.getMasterInstance().getImage())
                     .withUserData(base64MasterUserData)
                     .withBlockDeviceMappings(masterDeviceMappings)
                     .withNetworkInterfaces(masterNetworkInterface);
@@ -188,11 +190,11 @@ public class CreateClusterAWS extends CreateCluster {
             masterInstance = waitForInstances(waitForSpotInstances(spotInstanceRequestIds)).get(0);
         } else {
             RunInstancesRequest masterReq = new RunInstancesRequest()
-                    .withInstanceType(InstanceType.fromValue(config.getMasterInstanceType().getValue()))
+                    .withInstanceType(InstanceType.fromValue(config.getMasterInstance().getProviderType().getValue()))
                     .withMinCount(1).withMaxCount(1)
                     .withPlacement(instancePlacement)
                     .withKeyName(config.getKeypair())
-                    .withImageId(config.getMasterImage())
+                    .withImageId(config.getMasterInstance().getImage())
                     .withUserData(base64MasterUserData)
                     .withBlockDeviceMappings(masterDeviceMappings)
                     .withNetworkInterfaces(masterNetworkInterface);
@@ -235,7 +237,8 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     @Override
-    protected List<InstanceAWS> launchClusterSlaveInstances() {
+    protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchClusterSlaveInstances(
+            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration) {
         // run slave instances and supply userdata
         List<Instance> slaveInstances;
         Tag slaveNameTag = new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId);
@@ -243,15 +246,15 @@ public class CreateClusterAWS extends CreateCluster {
         if (config.isUseSpotInstances()) {
             RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest()
                     .withType(SpotInstanceType.OneTime)
-                    .withInstanceCount(config.getSlaveInstanceCount())
+                    .withInstanceCount(instanceConfiguration.getCount())
                     .withLaunchGroup("lg_" + clusterId)
                     .withSpotPrice(Double.toString(config.getBidPrice()));
 
             LaunchSpecification slaveLaunchSpecification = new LaunchSpecification()
-                    .withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
+                    .withInstanceType(InstanceType.fromValue(instanceConfiguration.getProviderType().getValue()))
                     .withPlacement(spotInstancePlacement)
                     .withKeyName(config.getKeypair())
-                    .withImageId(config.getSlaveImage())
+                    .withImageId(instanceConfiguration.getImage())
                     .withUserData(base64SlaveUserData)
                     .withBlockDeviceMappings(slaveBlockDeviceMappings)
                     .withNetworkInterfaces(slaveNetworkInterface);
@@ -293,12 +296,12 @@ public class CreateClusterAWS extends CreateCluster {
             slaveInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
         } else {
             RunInstancesRequest slaveReq = new RunInstancesRequest()
-                    .withInstanceType(InstanceType.fromValue(config.getSlaveInstanceType().getValue()))
-                    .withMinCount(config.getSlaveInstanceCount())
-                    .withMaxCount(config.getSlaveInstanceCount())
+                    .withInstanceType(InstanceType.fromValue(instanceConfiguration.getProviderType().getValue()))
+                    .withMinCount(instanceConfiguration.getCount())
+                    .withMaxCount(instanceConfiguration.getCount())
                     .withPlacement(instancePlacement)
                     .withKeyName(config.getKeypair())
-                    .withImageId(config.getSlaveImage())
+                    .withImageId(instanceConfiguration.getImage())
                     .withUserData(base64SlaveUserData)
                     .withBlockDeviceMappings(slaveBlockDeviceMappings)
                     .withNetworkInterfaces(slaveNetworkInterface);
@@ -420,12 +423,12 @@ public class CreateClusterAWS extends CreateCluster {
 
     private List<BlockDeviceMapping> createBlockDeviceMappings(DeviceMapper deviceMapper) {
         List<BlockDeviceMapping> mappings = new ArrayList<>();
-        Map<String, String> snapshotToMountPointMap = deviceMapper.getSnapshotIdToMountPoint();
-        for (Map.Entry<String, String> snapshotIdMountPoint : snapshotToMountPointMap.entrySet()) {
+        List<Configuration.MountPoint> snapshotToMountPointMap = deviceMapper.getSnapshotIdToMountPoint();
+        for (Configuration.MountPoint mountPoint : snapshotToMountPointMap) {
             try {
                 BlockDeviceMapping blockDeviceMapping = new BlockDeviceMapping();
-                blockDeviceMapping.setEbs(new EbsBlockDevice().withSnapshotId(DeviceMapper.stripSnapshotId(snapshotIdMountPoint.getKey())));
-                blockDeviceMapping.setDeviceName(deviceMapper.getDeviceNameForSnapshotId(snapshotIdMountPoint.getKey()));
+                blockDeviceMapping.setEbs(new EbsBlockDevice().withSnapshotId(DeviceMapper.stripSnapshotId(mountPoint.getSource())));
+                blockDeviceMapping.setDeviceName(deviceMapper.getDeviceNameForSnapshotId(mountPoint.getSource()));
                 mappings.add(blockDeviceMapping);
             } catch (AmazonServiceException ex) {
                 LOG.debug("{}", ex.getMessage());

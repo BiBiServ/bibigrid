@@ -13,7 +13,6 @@ import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -176,12 +175,8 @@ public class StartUp {
     }
 
     private static String parseProviderMode(CommandLine commandLine, DefaultPropertiesFile defaultPropertiesFile) {
-        final String modeParameter = "mode";
-        Properties defaults = defaultPropertiesFile.getDefaultProperties();
         try {
-            if (commandLine.hasOption(modeParameter) || defaults.containsKey(modeParameter)) {
-                return commandLine.getOptionValue(modeParameter, defaults.getProperty(modeParameter)).trim();
-            }
+            return commandLine.getOptionValue("mode", defaultPropertiesFile.getPropertiesMode()).trim();
         } catch (IllegalArgumentException iae) {
             LOG.error("No suitable mode found. Exit");
         }

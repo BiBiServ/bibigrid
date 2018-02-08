@@ -1,16 +1,15 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
 
+import java.nio.file.FileSystems;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -21,12 +20,12 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
     CommandLineValidatorGoogleCloud(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
                                     final IntentMode intentMode, final ProviderModule providerModule) {
         super(cl, defaultPropertiesFile, intentMode, providerModule);
-        googleCloudConfig = (ConfigurationGoogleCloud) cfg;
+        googleCloudConfig = (ConfigurationGoogleCloud) config;
     }
 
     @Override
-    protected Configuration createProviderConfiguration() {
-        return new ConfigurationGoogleCloud();
+    protected Class<ConfigurationGoogleCloud> getProviderConfigurationClass() {
+        return ConfigurationGoogleCloud.class;
     }
 
     @Override
@@ -51,11 +50,9 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
                         RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),
                         RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
                         RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString(),
-                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
                         RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
                         RuleBuilder.RuleNames.REGION_S.toString(),
                         RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
-                        RuleBuilder.RuleNames.NFS_SHARES_S.toString(),
                         RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
                         RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString(),
                         RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString(),
@@ -72,44 +69,67 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
     }
 
     @Override
-    protected boolean validateProviderParameters(List<String> req, Properties defaults) {
-        final String shortParamProject = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString();
-        final String longParamProject = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_L.toString();
-        if (cl.hasOption(shortParamProject) || defaults.containsKey(longParamProject)) {
-            googleCloudConfig.setGoogleProjectId(parseParameterOrDefault(defaults, shortParamProject, longParamProject));
-        } else {
-            LOG.error("No suitable entry for Google-ProjectId (" + shortParamProject + ") found! Exit");
-            return false;
-        }
+    protected boolean validateProviderParameters() {
+        return parseGoogleProjectIdParameter() &&
+                parseGoogleImageProjectIdParameter() &&
+                parseGoogleCredentialsFileParameter();
+    }
 
-        final String shortParamImageProject = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString();
-        final String longParamImageProject = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_L.toString();
-        if (req.contains(shortParamImageProject)) {
-            if (cl.hasOption(shortParamImageProject) || defaults.containsKey(longParamImageProject)) {
-                googleCloudConfig.setGoogleImageProjectId(
-                        parseParameterOrDefault(defaults, shortParamImageProject, longParamImageProject));
-            } else {
-                LOG.error("No suitable entry for Google-Image-ProjectId (" + shortParamImageProject + ") found! Exit");
+    private boolean parseGoogleProjectIdParameter() {
+        final String shortParam = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                googleCloudConfig.setGoogleProjectId(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(googleCloudConfig.getGoogleProjectId())) {
+                LOG.error("-" + shortParam + " option is required!");
                 return false;
             }
         }
+        return true;
+    }
 
-        final String shortParamCredentials = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString();
-        final String longParamCredentials = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_L.toString();
-        if (cl.hasOption(shortParamCredentials) || defaults.containsKey(longParamCredentials)) {
-            googleCloudConfig.setGoogleCredentialsFile(
-                    parseParameterOrDefault(defaults, shortParamCredentials, longParamCredentials));
-        } else {
-            LOG.error("No suitable entry for Google-Credentials-File (" + shortParamCredentials + ") found! Exit");
-            return false;
+    private boolean parseGoogleImageProjectIdParameter() {
+        final String shortParam = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                googleCloudConfig.setGoogleImageProjectId(value);
+            }
         }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(googleCloudConfig.getGoogleImageProjectId())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            }
+        }
+        return true;
+    }
 
-        final String spotShortParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString();
-        final String spotLongParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_L.toString();
-        if (cl.hasOption(spotShortParam) || defaults.containsKey(spotLongParam)) {
-            String value = parseParameterOrDefault(defaults, spotShortParam, spotLongParam);
-            if (value.equalsIgnoreCase(KEYWORD_YES)) {
-                cfg.setUseSpotInstances(true);
+    private boolean parseGoogleCredentialsFileParameter() {
+        final String shortParam = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                googleCloudConfig.setGoogleCredentialsFile(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(googleCloudConfig.getGoogleCredentialsFile())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            } else if (!FileSystems.getDefault().getPath(googleCloudConfig.getGoogleCredentialsFile()).toFile().exists()) {
+                LOG.error("Google credentials file '{}' does not exist!", googleCloudConfig.getGoogleCredentialsFile());
+                return false;
             }
         }
         return true;
