@@ -81,24 +81,6 @@ public final class ShellScriptCreator {
         userData.append("SSHCONFIG\n");
     }
 
-    private static void appendEarlyExecuteScript(StringBuilder userData, Path earlyShellScriptFile) {
-        if (earlyShellScriptFile == null) {
-            return;
-        }
-        try {
-            String base64 = new String(Base64.encodeBase64(Files.readAllBytes(earlyShellScriptFile)));
-            if (base64.length() > 10000) {
-                LOG.info("Early shell script file too large (base64 encoded size exceeds 10000 chars)");
-            } else {
-                userData.append("echo ").append(base64);
-                userData.append(" | base64 --decode | bash - 2>&1 > /var/log/earlyshellscript.log\n");
-                userData.append("log \"earlyshellscript executed\"\n");
-            }
-        } catch (IOException e) {
-            LOG.info("Early shell script could not be read.");
-        }
-    }
-
     public static String getMasterAnsibleExecutionScript() {
         StringBuilder script = new StringBuilder();
         // apt-get update
@@ -109,13 +91,11 @@ public final class ShellScriptCreator {
         // Install ansible from pypi using pip
         script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n" );
         // Install python2 on slaves instances
-        script.append("ansible slaves -i ~/playbook/ansible_hosts --become -m raw -a \"apt-get udpate && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
+        script.append("ansible slaves -i ~/playbook/ansible_hosts --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
         // Execute ansible playbook
         script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts | sudo tee -a /var/log/ansible-playbook.log\n");
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
-        script.append("");
-        script.append("");
         return script.toString();
     }
 }
