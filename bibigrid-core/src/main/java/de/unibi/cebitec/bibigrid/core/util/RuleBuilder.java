@@ -141,6 +141,8 @@ public class RuleBuilder {
                 "Path to google compute engine service account credentials file"));
         groupReference.add(createStringRule(RuleNames.AZURE_CREDENTIALS_FILE_S, RuleNames.AZURE_CREDENTIALS_FILE_L,
                 "Path to microsoft azure credentials file"));
+
+        groupReference.add(createBooleanRule(RuleNames.CLOUD9_S,RuleNames.CLOUD9_L,"Enable Cloud9 IDE"));
     }
 
     private Tparam createBasicRule(RuleNames shortFlag, RuleNames longFlag, Tprimitive type, String shortDescription) {
@@ -269,6 +271,8 @@ public class RuleBuilder {
         SSH_USER_L("ssh-user"),
         DEBUG_REQUESTS_S("dr"),
         DEBUG_REQUESTS_L("debug-requests"),
+        CLOUD9_S("c9"),
+        CLOUD9_L("cloud9"),
         // Amazon AWS
         AWS_CREDENTIALS_FILE_S("a"),
         AWS_CREDENTIALS_FILE_L("aws-credentials-file"),

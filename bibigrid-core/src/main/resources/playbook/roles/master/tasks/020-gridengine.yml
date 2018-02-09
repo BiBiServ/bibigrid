@@ -57,30 +57,30 @@
 
 #sudo -u sgeadmin qconf -am ubuntu
 
-- name: Check if default_user is already in manager list
-  shell: 'qconf -sm | grep {{ default_user }}'
+- name: Check if ssh_user is already in manager list
+  shell: 'qconf -sm | grep {{ ssh_user }}'
   environment:
     SGE_ROOT: /var/lib/gridengine
   register: manager_list
   ignore_errors: yes
 
-- name: Add default_user to gridengine manager list
-  shell: 'qconf -am {{ default_user }}'
+- name: Add ssh_user to gridengine manager list
+  shell: 'qconf -am {{ ssh_user }}'
   environment:
     SGE_ROOT: /var/lib/gridengine
   when: manager_list.rc != 0
 
 #qconf -au ubuntu users
 
-- name: Check if default_user is already in users list
-  shell: 'qconf -su  users | grep entries | grep {{ default_user }}'
+- name: Check if ssh_user is already in users list
+  shell: 'qconf -su  users | grep entries | grep {{ ssh_user }}'
   environment:
     SGE_ROOT: /var/lib/gridengine
   register: user_list
   ignore_errors: yes
 
-- name: Add default_user to gridengine users list
-  shell: 'qconf -au {{ default_user }} users'
+- name: Add ssh_user to gridengine users list
+  shell: 'qconf -au {{ ssh_user }} users'
   environment:
     SGE_ROOT: /var/lib/gridengine
   when: user_list.rc != 0
@@ -176,7 +176,7 @@
 
 - name: update defaults user environment (.bashrc)
   lineinfile:
-    path: /home/{{ default_user }}/.bashrc
+    path: /home/{{ ssh_user }}/.bashrc
     state: present
     regexp: '^export SGE_ROOT=/var/lib/gridengine$'
     line: 'export SGE_ROOT=/var/lib/gridengine'
@@ -219,7 +219,7 @@
 
 
 - name: add all slaves as exec host
-  shell: "/etc/bibigrid/gridengine/add_execcat .sh $(nslookup {{ item.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.') {{ item.cores }}"
+  shell: "/etc/bibigrid/gridengine/add_exec.sh $(nslookup {{ item.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.') {{ item.cores }}"
   environment:
     SGE_ROOT: /var/lib/gridengine
   with_items: "{{ slaves }}"

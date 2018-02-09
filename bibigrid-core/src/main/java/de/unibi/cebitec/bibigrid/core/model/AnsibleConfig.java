@@ -56,6 +56,7 @@ public final class AnsibleConfig {
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
         addBooleanOption(map, "enable_mesos", config.isMesos());
+        addBooleanOption(map, "enable_cloud9", config.isCloud9());
         return yaml.dumpAsMap(map);
     }
 

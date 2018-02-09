@@ -11,11 +11,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class Configuration {
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
-    /*
-    private String shellScriptFile;
-    private String earlyMasterShellScriptFile;
-    private String earlySlaveShellScriptFile;
-    */
+
     private String mode = "aws";
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
@@ -45,6 +41,7 @@ public abstract class Configuration {
     private String vpc;
     private String subnet;
     private String[] clusterIds;
+    private boolean cloud9 = false;
 
     public int getSlaveInstanceCount() {
         if (slaveInstances == null) {
@@ -201,31 +198,6 @@ public abstract class Configuration {
         }
     }
 
-    /*
-    public Path getShellScriptFile() {
-        return shellScriptFile;
-    }
-
-    public void setShellScriptFile(Path shellScriptFile) {
-        this.shellScriptFile = shellScriptFile;
-    }
-
-    public Path getEarlyMasterShellScriptFile() {
-        return earlyMasterShellScriptFile;
-    }
-
-    public void setEarlyMasterShellScriptFile(Path shellEarlyScriptFile) {
-        this.earlyMasterShellScriptFile = shellEarlyScriptFile;
-    }
-
-    public Path getEarlySlaveShellScriptFile() {
-        return earlySlaveShellScriptFile;
-    }
-
-    public void setEarlySlaveShellScriptFile(Path shellEarlyScriptFile) {
-        this.earlySlaveShellScriptFile = shellEarlyScriptFile;
-    }
-    */
 
     public List<MountPoint> getMasterMounts() {
         return masterMounts;
@@ -392,6 +364,14 @@ public abstract class Configuration {
         if (useSpotInstances) {
             LOG.info(V, "Use spot request for all");
         }
+    }
+
+    public boolean isCloud9() {
+        return cloud9;
+    }
+
+    public void setCloud9(boolean cloud9) {
+        this.cloud9 = cloud9;
     }
 
     @SuppressWarnings("WeakerAccess")
