@@ -43,8 +43,6 @@ public final class ShellScriptCreator {
         appendDisableAptDailyService(userData);
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData, keypair);
-        userData.append("log \"run early executescript\"\n");
-        appendEarlyExecuteScript(userData, config.getEarlyMasterShellScriptFile());
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
         if (log) {

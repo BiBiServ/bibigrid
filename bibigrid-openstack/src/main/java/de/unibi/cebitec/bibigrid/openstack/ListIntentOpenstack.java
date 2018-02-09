@@ -43,7 +43,7 @@ public class ListIntentOpenstack extends ListIntent {
             // check if instance is a BiBiGrid instance and extract clusterId from it
             String name = server.getName();
             Map<String, String> metadata = server.getMetadata();
-            if (name != null && (name.startsWith("bibigrid-master-") || name.startsWith("bibigrid-slave-"))) {
+            if (name != null && (name.startsWith("bibigrid-master") || name.startsWith("bibigrid-slave"))) {
                 String[] t = name.split("-");
                 cluster = getOrCreateCluster(t[t.length - 1]);
                 // get user from metadata map 
