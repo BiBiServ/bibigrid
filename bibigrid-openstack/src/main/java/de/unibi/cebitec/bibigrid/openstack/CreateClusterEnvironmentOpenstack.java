@@ -37,9 +37,9 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
-    public static final String ROUTER_PREFIX = "router-";
-    public static final String NETWORK_PREFIX = "net-";
-    public static final String SUBNET_PREFIX = "subnet-";
+    public static final String ROUTER_PREFIX = "bibigrid-router-";
+    public static final String NETWORK_PREFIX = "bibigrid-net-";
+    public static final String SUBNET_PREFIX = "bibigrid-subnet-";
     private static final String NETWORK_CIDR = "192.168.0.0/16";
 
     private CreateClusterOpenstack cluster;
