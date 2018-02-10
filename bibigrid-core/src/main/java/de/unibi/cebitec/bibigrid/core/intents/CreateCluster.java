@@ -216,7 +216,7 @@ public abstract class CreateCluster implements Intent {
     private void configureMaster(final Instance masterInstance, final List<? extends Instance> slaveInstances,
                                  final String subnetCidr) {
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config);
-        AnsibleConfig ansibleConfig = new AnsibleConfig(config);
+        AnsibleConfig ansibleConfig = new AnsibleConfig(config,providerModule.getBlockDeviceBase());
         ansibleConfig.setSubnetCidr(subnetCidr);
         ansibleConfig.setMasterIpHostname(masterInstance.getPrivateIp(), masterInstance.getHostname());
         for (Instance slaveInstance : slaveInstances) {
@@ -241,6 +241,7 @@ public abstract class CreateCluster implements Intent {
                     // Start connection attempt
                     sshSession.connect();
                     LOG.info("Connected to master!");
+
                     configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig) &&
                             installAndExecuteAnsible(sshSession);
                     sshSession.disconnect();
@@ -324,17 +325,12 @@ public abstract class CreateCluster implements Intent {
                 LOG.info(V, "SSH: {}", lineOut);
             }
             if (lineError != null && !configured) {
-                if (lineError.contains("sudo: unable to resolve host")) {
-                    LOG.warn(V, "SSH: {}", lineError);
-                } else {
-                    LOG.error("SSH: {}", lineError);
-                }
+                LOG.error("SSH: {}", lineError);
             }
             if (channel.isClosed() && configured) {
                 LOG.info(V, "SSH: exit-status: {}", channel.getExitStatus());
                 configured = true;
             }
-            sleep(2);
         }
         channel.disconnect();
         return configured;

@@ -6,11 +6,17 @@ master:
   ip: "192.168.33.10"
   hostname: "master"
   cores: 2
+  disks:
+    - src: /dev/sdb
+      dst: /vol/spool
 
 slaves:
   - ip: "192.168.33.11"
     hostname: "client1"
     cores: 2
+    disks:
+        - src: /dev/sdb
+          dst: /vol/scratch
 
 
 CIDR: "192.168.33.0/24"

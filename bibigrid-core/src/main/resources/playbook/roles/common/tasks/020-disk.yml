@@ -1,0 +1,21 @@
+- name: Generate directory structure available on all hosts
+  file:
+      path: /etc/bibigrid
+      state: directory
+            owner: root
+            group: root
+            mode: 0755
+  file:
+      path: /vol/
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+
+  file:
+      path: /vol/spool/
+      state: directory
+      owner: root
+      group: root
+      mode: 0777
+

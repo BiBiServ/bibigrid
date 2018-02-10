@@ -1,7 +1,7 @@
 - name: Install cloud9 dependencies
   apt:
     name: "{{ item }}"
-    state: "latest"
+    state: "present"
   with_items:
     - build-essential
     - python

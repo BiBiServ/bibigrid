@@ -14,14 +14,16 @@ import java.util.*;
  */
 public final class AnsibleConfig {
     private final Configuration config;
+    private final String blockdevicebase;
     private String subnetCidr;
     private String masterIp;
     private String masterHostname;
     private final List<String> slaveIps;
     private final List<String> slaveHostnames;
 
-    public AnsibleConfig(Configuration config) {
+    public AnsibleConfig(Configuration config, String blockdevicebase) {
         this.config = config;
+        this.blockdevicebase = blockdevicebase;
         slaveIps = new ArrayList<>();
         slaveHostnames = new ArrayList<>();
     }
@@ -69,6 +71,7 @@ public final class AnsibleConfig {
         masterMap.put("ip", masterIp);
         masterMap.put("hostname", masterHostname);
         masterMap.put("cores", config.getMasterInstance().getProviderType().getInstanceCores());
+        masterMap.put("ephemerals", getEphemeralDevices(config.getMasterInstance().getProviderType().getEphemerals()));
         return masterMap;
     }
 
@@ -80,9 +83,18 @@ public final class AnsibleConfig {
             slaveMap.put("ip", slaveIps.get(i));
             slaveMap.put("hostname", slaveHostnames.get(i));
             slaveMap.put("cores", slaveInstanceConfigurations.get(i).getProviderType().getInstanceCores());
+            slaveMap.put("ephemerals", getEphemeralDevices(slaveInstanceConfigurations.get(i).getProviderType().getEphemerals()));
             slavesMap.add(slaveMap);
         }
         return slavesMap;
+    }
+
+    private List<String> getEphemeralDevices(int count){
+        List<String> ephemerals = new ArrayList<>();
+        for (int c = 98; c < 98+count; c++) {
+            ephemerals.add(blockdevicebase+(char)c);
+        }
+        return ephemerals;
     }
 
     private List<Map<String, String>> getNfsSharesMap() {

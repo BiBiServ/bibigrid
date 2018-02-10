@@ -1,4 +1,6 @@
-- import_tasks: 005-disk.yml
+- import_task: 001-monitor.yml
+- import_task: 005-disk.yml
+
 - import_tasks: 010-nfs.yml
   when:
     - enable_nfs == 'yes'

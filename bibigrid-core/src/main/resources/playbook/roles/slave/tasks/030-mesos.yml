@@ -1,18 +1,41 @@
-- name: Add Mesosphere project key
-  apt_key:
-    id: E56151BF
-    keyserver: keyserver.ubuntu.com
-    state: present
-
-- name: Add Mesosphere repositories
-  apt_repository:
-    repo: "deb-src http://repos.mesosphere.io/ubuntu {{ ansible_lsb.codename }} main"
-    state: present
-
 - name: Install mesos packages
   apt:
     name: "mesos"
-    update_cache: "yes"
     state: present  # not using latest to avoid time consuming checks for prepared images
 
 # Configuration see https://www.digitalocean.com/community/tutorials/how-to-configure-a-production-ready-mesosphere-cluster-on-ubuntu-14-04
+
+- name: Configure master as mesos slave
+  copy:
+    content: zk://{{ master.ip }}:2181/mesos
+    dest: /etc/mesos/zk
+    owner: root
+    group: root
+    mode: 0644
+
+  copy:
+    content: /vol/spool/mesos
+    dest: /etc/mesos-slave/work_dir
+    owner: root
+    group: root
+    mode: 0644
+
+  copy:
+    content: mesos,docker
+    dest: /etc/mesos/zk
+    owner: root
+    group: root
+    mode: 0644
+
+  copy:
+      content: false
+      dest: /etc/mesos-slave/switch_user
+      owner: root
+      group: root
+      mode: 0644
+
+- name: Start mesos slave
+  systemd:
+      name: mesos-slave
+      state: started
+      enabled: yes

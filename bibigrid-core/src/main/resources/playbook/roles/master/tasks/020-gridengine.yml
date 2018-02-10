@@ -1,7 +1,7 @@
 - name: Install gridengine packages
   apt:
     name: "{{ item }}"
-    state: "latest"
+    state: "present"
   with_items:
     - gridengine-client # Utilities for Grid Engine queue management
     - gridengine-common # Distributed resource management - common files

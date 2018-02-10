@@ -1,0 +1,15 @@
+- name: Add Mesosphere project key
+  apt_key:
+    id: E56151BF
+    keyserver: keyserver.ubuntu.com
+    state: present
+
+- name: Add Mesosphere repositories
+  apt_repository:
+    repo: "deb-src http://repos.mesosphere.io/ubuntu {{ ansible_lsb.codename }} main"
+    state: present
+
+
+- name: Update apt cache
+  apt:
+    update_cache: 'yes'

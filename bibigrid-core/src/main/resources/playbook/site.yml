@@ -3,11 +3,11 @@
   vars_files:
       - "vars/common.yml"
   roles:
-    - role: master
+    - role: common,master
 
 - hosts: slaves
   become: yes
   vars_files:
       - "vars/common.yml"
   roles:
-  - role: slave
+  - role: common,slave

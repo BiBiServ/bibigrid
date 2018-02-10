@@ -47,6 +47,9 @@ public class AnsibleConfigTest {
                         public int getInstanceCores() {
                             return 2;
                         }
+
+                        @Override
+                        public int getEphemerals() {return 1; }
                     };
                 }
             });
@@ -56,7 +59,7 @@ public class AnsibleConfigTest {
 
     @Test
     public void testToString() {
-        AnsibleConfig config = new AnsibleConfig(new TestConfiguration());
+        AnsibleConfig config = new AnsibleConfig(new TestConfiguration(),"/dev/vd");
         config.setMasterIpHostname("192.168.33.10", "master");
         config.addSlaveIpHostname("192.168.33.11", "client1");
         config.setSubnetCidr("192.168.33.0/24");
