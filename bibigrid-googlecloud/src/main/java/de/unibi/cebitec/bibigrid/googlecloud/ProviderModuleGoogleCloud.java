@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.googlecloud;
 
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.MachineType;
+import com.google.api.services.compute.model.MachineTypesScopedList;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
@@ -68,8 +69,17 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
         String zone = config.getAvailabilityZone();
         HashMap<String, InstanceType> instanceTypes = new HashMap<>();
         try {
-            for (MachineType f : compute.machineTypes().list(projectId, zone).execute().getItems()) {
-                instanceTypes.put(f.getName(), new InstanceTypeGoogleCloud(f));
+            if (zone == null) {
+                for (MachineTypesScopedList scopedList :
+                        compute.machineTypes().aggregatedList(projectId).execute().getItems().values()) {
+                    for (MachineType f : scopedList.getMachineTypes()) {
+                        instanceTypes.put(f.getName(), new InstanceTypeGoogleCloud(f));
+                    }
+                }
+            } else {
+                for (MachineType f : compute.machineTypes().list(projectId, zone).execute().getItems()) {
+                    instanceTypes.put(f.getName(), new InstanceTypeGoogleCloud(f));
+                }
             }
         } catch (Exception ignored) {
         }

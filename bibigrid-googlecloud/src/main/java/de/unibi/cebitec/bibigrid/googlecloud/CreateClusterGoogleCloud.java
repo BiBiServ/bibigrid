@@ -29,8 +29,6 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     private Metadata.Items slaveStartupScript;
     private NetworkInterface masterNetworkInterface;
     private CreateClusterEnvironmentGoogleCloud environment;
-    private String bibigridIdTag;
-    private String userTag;
 
     CreateClusterGoogleCloud(final ConfigurationGoogleCloud config, final ProviderModule providerModule) {
         super(config, providerModule);
@@ -40,9 +38,6 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     @Override
     public CreateClusterEnvironmentGoogleCloud createClusterEnvironment() throws ConfigurationException {
         compute = GoogleCloudUtils.getComputeService(config);
-        bibigridIdTag = GoogleCloudUtils.buildTag("bibigrid-id", clusterId);
-        userTag = GoogleCloudUtils.buildTag("user", config.getUser());
-        // username = "user" + GoogleCloudUtils.TAG_SEPARATOR + config.getUser();
         return environment = new CreateClusterEnvironmentGoogleCloud(this);
     }
 
@@ -85,14 +80,17 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     }
 
     @Override
-    protected InstanceGoogleCloud launchClusterMasterInstance() {
+    protected InstanceGoogleCloud launchClusterMasterInstance(String masterNameTag) {
         LOG.info("Requesting master instance...");
-        String masterInstanceName = PREFIX + "master-" + clusterId;
-        String nameTag = GoogleCloudUtils.buildTag("name", masterInstanceName);
-        Instance masterInstance = GoogleCloudUtils.getInstanceBuilder(compute, config, masterInstanceName,
+        final Map<String, String> labels = new HashMap<>();
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, masterNameTag);
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID, clusterId);
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER, config.getUser());
+        // Create instance
+        Instance masterInstance = GoogleCloudUtils.getInstanceBuilder(compute, config, masterNameTag,
                 config.getMasterInstance().getProviderType().getValue())
                 .setNetworkInterfaces(Collections.singletonList(masterNetworkInterface))
-                .setTags(buildTags(bibigridIdTag, userTag, nameTag))
+                .setLabels(labels)
                 .setMetadata(buildMetadata(masterStartupScript));
         GoogleCloudUtils.attachDisks(compute, masterInstance, config.getMasterInstance().getImage(), config,
                 config.getMasterMounts(), config.getGoogleImageProjectId());
@@ -115,20 +113,20 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         return new InstanceGoogleCloud(masterInstance);
     }
 
-    private Tags buildTags(String... tags) {
-        return new Tags().setItems(Arrays.asList(tags));
-    }
-
     private Metadata buildMetadata(Metadata.Items... items) {
         return new Metadata().setItems(Arrays.asList(items));
     }
 
     @Override
     protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchClusterSlaveInstances(
-            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration) {
+            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
         final int instanceCount = instanceConfiguration.getCount();
         final String zone = config.getAvailabilityZone();
-        String slaveInstanceNameTag = GoogleCloudUtils.buildTag("name", PREFIX + "slave-" + clusterId);
+        final Map<String, String> labels = new HashMap<>();
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, slaveNameTag);
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID, clusterId);
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER, config.getUser());
+        // Create instances
         Instance[] slaveInstanceBuilders = new Instance[instanceCount];
         Operation[] slaveInstanceOperations = new Operation[instanceCount];
         for (int i = 0; i < instanceCount; i++) {
@@ -136,7 +134,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
             Instance slaveBuilder = GoogleCloudUtils.getInstanceBuilder(compute, config, slaveInstanceId,
                     instanceConfiguration.getProviderType().getValue())
                     .setNetworkInterfaces(Collections.singletonList(buildExternalNetworkInterface()))
-                    .setTags(buildTags(bibigridIdTag, userTag, slaveInstanceNameTag))
+                    .setLabels(labels)
                     .setMetadata(buildMetadata(slaveStartupScript));
             GoogleCloudUtils.attachDisks(compute, slaveBuilder, instanceConfiguration.getImage(), config,
                     config.getSlaveMounts(), config.getGoogleImageProjectId());

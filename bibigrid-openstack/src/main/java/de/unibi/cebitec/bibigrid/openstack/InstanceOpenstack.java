@@ -1,8 +1,14 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.model.Instance;
+import org.openstack4j.model.compute.Addresses;
+import org.openstack4j.model.compute.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -10,27 +16,23 @@ import org.slf4j.LoggerFactory;
 public final class InstanceOpenstack extends Instance {
     private static final Logger LOG = LoggerFactory.getLogger(InstanceOpenstack.class);
 
+    private Server server;
     private boolean active = false;
     private boolean error = false;
-    private String id;
     private String ip;
     private String publicIp;
-    private String hostname;
     private String neutronHostname;
 
-    InstanceOpenstack() {
+    InstanceOpenstack(Server server) {
+        this.server = server;
     }
 
-    InstanceOpenstack(String id) {
-        this.id = id;
+    public void setServer(Server server) {
+        this.server = server;
     }
 
     String getId() {
-        return id;
-    }
-
-    void setId(String id) {
-        this.id = id;
+        return server.getId();
     }
 
     @Override
@@ -53,11 +55,7 @@ public final class InstanceOpenstack extends Instance {
 
     @Override
     public String getHostname() {
-        return hostname;
-    }
-
-    void setHostname(String hostname) {
-        this.hostname = hostname;
+        return server.getName();
     }
 
     String getNeutronHostname() {
@@ -91,5 +89,30 @@ public final class InstanceOpenstack extends Instance {
 
     void setError(boolean error) {
         this.error = error;
+    }
+
+    @Override
+    public String getName() {
+        return server.getName();
+    }
+
+    @Override
+    public String getTag(String key) {
+        return server.getMetadata().getOrDefault(key, null);
+    }
+
+    @Override
+    public ZonedDateTime getCreationTimestamp() {
+        ZonedDateTime creationDateTime = ZonedDateTime.ofInstant(server.getCreated().toInstant(),
+                ZoneId.of("Z").normalized());
+        return creationDateTime.withZoneSameInstant(ZoneOffset.systemDefault().normalized());
+    }
+
+    public String getKeyName() {
+        return server.getKeyName();
+    }
+
+    public Addresses getAddresses() {
+        return server.getAddresses();
     }
 }

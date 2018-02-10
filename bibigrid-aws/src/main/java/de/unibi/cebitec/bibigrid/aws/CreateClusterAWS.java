@@ -56,8 +56,8 @@ public class CreateClusterAWS extends CreateCluster {
     public CreateClusterEnvironmentAWS createClusterEnvironment() throws ConfigurationException {
         // create client and unique cluster-id
         ec2 = IntentUtils.getClient(config);
-        bibigridId = new Tag().withKey("bibigrid-id").withValue(clusterId);
-        username = new Tag().withKey("user").withValue(config.getUser());
+        bibigridId = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID).withValue(clusterId);
+        username = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER).withValue(config.getUser());
 
         return environment = new CreateClusterEnvironmentAWS(this);
     }
@@ -152,10 +152,10 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     @Override
-    protected InstanceAWS launchClusterMasterInstance() {
+    protected InstanceAWS launchClusterMasterInstance(String masterName) {
         LOG.info("Requesting master instance...");
         Instance masterInstance;
-        Tag masterNameTag = new Tag().withKey("Name").withValue(PREFIX + "master-" + clusterId);
+        Tag masterNameTag = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME).withValue(masterName);
         if (config.isUseSpotInstances()) {
             RequestSpotInstancesRequest masterReq = new RequestSpotInstancesRequest()
                     .withType(SpotInstanceType.OneTime)
@@ -238,10 +238,10 @@ public class CreateClusterAWS extends CreateCluster {
 
     @Override
     protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchClusterSlaveInstances(
-            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration) {
+            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveName) {
         // run slave instances and supply userdata
         List<Instance> slaveInstances;
-        Tag slaveNameTag = new Tag().withKey("Name").withValue(PREFIX + "slave-" + clusterId);
+        Tag slaveNameTag = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME).withValue(slaveName);
         String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false);
         if (config.isUseSpotInstances()) {
             RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest()

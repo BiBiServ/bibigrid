@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,7 +25,6 @@ import java.util.regex.Pattern;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 final class GoogleCloudUtils {
-    static final String TAG_SEPARATOR = "--";
     private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudUtils.class);
     private static long diskCounter = 1;
     private static final Pattern INSTANCE_LINK_PATTERN =
@@ -48,15 +46,6 @@ final class GoogleCloudUtils {
             LOG.error("{}", e);
         }
         return null;
-    }
-
-    static String buildTag(String key, String value) {
-        String tag = key + TAG_SEPARATOR + value.toLowerCase(Locale.US);
-        tag = tag.replaceAll("[^a-z0-9-]", "-");
-        if (tag.length() > 63) {
-            tag = tag.substring(0, 63);
-        }
-        return tag;
     }
 
     /**

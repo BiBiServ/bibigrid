@@ -61,7 +61,7 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     @Override
     public CreateClusterEnvironmentOpenstack createClusterEnvironment() throws ConfigurationException {
-        metadata.put("user", config.getUser());
+        metadata.put(Instance.TAG_USER, config.getUser());
         LOG.info("Openstack connection established ...");
         return environment = new CreateClusterEnvironmentOpenstack(this);
     }
@@ -153,9 +153,9 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
     @Override
-    protected InstanceOpenstack launchClusterMasterInstance() {
+    protected InstanceOpenstack launchClusterMasterInstance(String masterNameTag) {
         ServerCreate sc = Builders.server()
-                .name("bibigrid-master-" + clusterId)
+                .name(masterNameTag)
                 .flavor(getFlavorByName(config.getMasterInstance().getProviderType().getValue()).getId())
                 .image(config.getMasterInstance().getImage())
                 .keypairName(config.getKeypair())
@@ -182,11 +182,9 @@ public class CreateClusterOpenstack extends CreateCluster {
 
         // Network configuration
         LOG.info("Master (ID: {}) started", server.getId());
-        InstanceOpenstack master = new InstanceOpenstack();
-        master.setId(server.getId());
+        InstanceOpenstack master = new InstanceOpenstack(server);
         master.setPrivateIp(waitForAddress(server.getId(), environment.getNetwork().getName()).getAddr());
 
-        master.setHostname("bibigrid-master-" + clusterId);
         master.updateNeutronHostname();
 
         // get and assign floating ip to master
@@ -276,8 +274,8 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
     @Override
-    protected List<Instance> launchClusterSlaveInstances(int batchIndex,
-                                                         Configuration.SlaveInstanceConfiguration instanceConfiguration) {
+    protected List<Instance> launchClusterSlaveInstances(
+            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
         Map<String, InstanceOpenstack> slaves = new HashMap<>();
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             ServerCreate sc = Builders.server()
@@ -292,8 +290,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();
             Server tmp = os.compute().servers().boot(sc);
-            InstanceOpenstack tmp_instance = new InstanceOpenstack(tmp.getId());
-            tmp_instance.setHostname(buildSlaveInstanceName(batchIndex, i));
+            InstanceOpenstack tmp_instance = new InstanceOpenstack(tmp);
             slaves.put(tmp.getId(), tmp_instance);
             LOG.info(V, "Instance request for {}  ", sc.getName());
         }
@@ -471,18 +468,16 @@ public class CreateClusterOpenstack extends CreateCluster {
      */
     private void checkForServerAndUpdateInstance(String id, InstanceOpenstack instance) {
         Server si = os.compute().servers().get(id);
+        instance.setServer(si);
         // check for status available
         if (si.getStatus() != null) {
             switch (si.getStatus()) {
                 case ACTIVE:
                     instance.setActive(true);
-                    instance.setId(si.getId());
-                    instance.setHostname(si.getName());
                     break;
                 case ERROR:
                     // check and print error anything goes wrong,
                     instance.setError(true);
-                    instance.setHostname(si.getName());
                     Fault fault = si.getFault();
                     if (fault == null) {
                         LOG.error("Launch {} failed without message!", si.getName());
