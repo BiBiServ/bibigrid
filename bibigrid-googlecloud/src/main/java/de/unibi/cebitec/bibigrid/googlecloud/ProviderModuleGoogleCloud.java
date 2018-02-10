@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
+import com.google.api.services.compute.Compute;
+import com.google.api.services.compute.model.MachineType;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
@@ -9,15 +11,16 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
+
+import java.util.HashMap;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 @SuppressWarnings("unused")
-public class ProviderModuleGoogleCloud implements ProviderModule {
+public class ProviderModuleGoogleCloud extends ProviderModule {
     @Override
     public String getName() {
         return "googlecloud";
@@ -51,12 +54,25 @@ public class ProviderModuleGoogleCloud implements ProviderModule {
     }
 
     @Override
-    public InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
-        return InstanceTypeGoogleCloud.getByType(type);
+    public String getBlockDeviceBase() {
+        return "/dev/sd";
     }
 
     @Override
-    public String getBlockDeviceBase() {
-        return "/dev/sd";
+    public HashMap<String, InstanceType> getInstanceTypeMap(Configuration config) {
+        Compute compute = GoogleCloudUtils.getComputeService((ConfigurationGoogleCloud) config);
+        if (compute == null) {
+            return null;
+        }
+        String projectId = ((ConfigurationGoogleCloud) config).getGoogleProjectId();
+        String zone = config.getAvailabilityZone();
+        HashMap<String, InstanceType> instanceTypes = new HashMap<>();
+        try {
+            for (MachineType f : compute.machineTypes().list(projectId, zone).execute().getItems()) {
+                instanceTypes.put(f.getName(), new InstanceTypeGoogleCloud(f));
+            }
+        } catch (Exception ignored) {
+        }
+        return instanceTypes;
     }
 }

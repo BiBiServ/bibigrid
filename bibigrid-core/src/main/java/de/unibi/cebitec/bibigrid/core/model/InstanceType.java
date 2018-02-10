@@ -5,19 +5,21 @@ package de.unibi.cebitec.bibigrid.core.model;
  */
 public abstract class InstanceType {
     protected String value;
-    protected int instanceCores;
+    protected int cpuCores;
     protected int ephemerals;
     protected boolean swap;
     protected boolean clusterInstance;
     protected boolean pvm;
     protected boolean hvm;
+    protected int maxRam;
+    protected long maxDiskSpace;
 
     public String getValue() {
         return value;
     }
 
-    public int getInstanceCores() {
-        return instanceCores;
+    public int getCpuCores() {
+        return cpuCores;
     }
 
     public int getEphemerals() {
@@ -38,6 +40,14 @@ public abstract class InstanceType {
 
     public boolean isHvm() {
         return hvm;
+    }
+
+    public int getMaxRam() {
+        return maxRam;
+    }
+
+    public long getMaxDiskSpace() {
+        return maxDiskSpace;
     }
 
     @Override

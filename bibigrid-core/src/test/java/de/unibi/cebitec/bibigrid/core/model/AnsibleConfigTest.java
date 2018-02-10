@@ -22,7 +22,7 @@ public class AnsibleConfigTest {
                         }
 
                         @Override
-                        public int getInstanceCores() {
+                        public int getCpuCores() {
                             return 2;
                         }
                     };
@@ -44,7 +44,7 @@ public class AnsibleConfigTest {
                         }
 
                         @Override
-                        public int getInstanceCores() {
+                        public int getCpuCores() {
                             return 2;
                         }
                     };
