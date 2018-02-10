@@ -1,16 +1,16 @@
-- import_task: 001-monitor.yml
-- import_task: 005-disk.yml
+- include: 001-monitor.yml
+- include: 005-disk.yml
 
-- import_tasks: 010-nfs.yml
+- include: 010-nfs.yml
   when:
     - enable_nfs == 'yes'
-- import_tasks: 020-gridengine.yml
+- include: 020-gridengine.yml
   when:
     - enable_gridengine == 'yes'
-- import_tasks: 030-mesos.yml
+- include: 030-mesos.yml
   when:
     - enable_mesos == 'yes'
 
-- import_tasks: 999-cloud9.yml
+- include: 999-cloud9.yml
   when:
     - enable_cloud9 == 'yes'
