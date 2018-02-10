@@ -9,41 +9,61 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundExcep
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
 
+import java.util.Collection;
+import java.util.Map;
+
 /**
- * Provider module interface for accessing the implementation details for a specific cloud provider.
+ * Provider module for accessing the implementation details for a specific cloud provider.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public interface ProviderModule {
+public abstract class ProviderModule {
+    private Map<String, InstanceType> instanceTypes;
+
     /**
      * The name of the provider used to identify this module in the command line.
      *
      * @return The name of the provider.
      */
-    String getName();
+    public abstract String getName();
 
     /**
      * Get the command line validator implementation for the specified provider, that can handle
      * provider specific parameters.
      */
-    CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
-                                                 final DefaultPropertiesFile defaultPropertiesFile,
-                                                 final IntentMode intentMode);
+    public abstract CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
+                                                                 final DefaultPropertiesFile defaultPropertiesFile,
+                                                                 final IntentMode intentMode);
 
-    ListIntent getListIntent(Configuration config);
+    public abstract ListIntent getListIntent(Configuration config);
 
-    TerminateIntent getTerminateIntent(Configuration config);
+    public abstract TerminateIntent getTerminateIntent(Configuration config);
 
-    CreateCluster getCreateIntent(Configuration config);
+    public abstract CreateCluster getCreateIntent(Configuration config);
 
-    ValidateIntent getValidateIntent(Configuration config);
+    public abstract ValidateIntent getValidateIntent(Configuration config);
 
-    InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException;
+    public final InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
+        getInstanceTypes(config);
+        if (instanceTypes == null || !instanceTypes.containsKey(type)) {
+            throw new InstanceTypeNotFoundException("Invalid instance type " + type);
+        }
+        return instanceTypes.get(type);
+    }
 
     /**
      * Returns the block device base path for the specific provider implementation.
      *
      * @return Block device base path for ex. "/dev/xvd" in AWS.
      */
-    String getBlockDeviceBase();
+    public abstract String getBlockDeviceBase();
+
+    public final Collection<InstanceType> getInstanceTypes(Configuration config) {
+        if (instanceTypes == null) {
+            instanceTypes = getInstanceTypeMap(config);
+        }
+        return instanceTypes.values();
+    }
+
+    protected abstract Map<String, InstanceType> getInstanceTypeMap(Configuration config);
 }

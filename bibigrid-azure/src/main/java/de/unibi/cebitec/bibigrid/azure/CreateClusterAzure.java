@@ -12,6 +12,10 @@ import de.unibi.cebitec.bibigrid.core.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -60,12 +64,11 @@ public class CreateClusterAzure extends CreateCluster {
     }
 
     @Override
-    protected InstanceAzure launchClusterMasterInstance() {
+    protected InstanceAzure launchClusterMasterInstance(String masterNameTag) {
         LOG.info("Requesting master instance...");
-        String masterInstanceName = PREFIX + "master-" + clusterId;
         //compute.publicIPAddresses().define("").withRegion("").withExistingResourceGroup("").withStaticIP().
         VirtualMachine masterInstance = compute.virtualMachines()
-                .define(masterInstanceName)
+                .define(masterNameTag)
                 .withRegion(config.getRegion())
                 .withExistingResourceGroup(environment.getResourceGroup())
                 .withExistingPrimaryNetwork(environment.getVpc())
@@ -79,10 +82,10 @@ public class CreateClusterAzure extends CreateCluster {
                 .withCustomData(masterStartupScript)
                 .withNewDataDisk(50)
                 .withSize(config.getMasterInstance().getProviderType().getValue())
-                .withTag("bibigrid-id", clusterId)
-                .withTag("user", config.getUser())
-                .withTag("name", masterInstanceName)
-                .withTag("creation", "" + new Date().getTime())
+                .withTag(Instance.TAG_BIBIGRID_ID, clusterId)
+                .withTag(Instance.TAG_USER, config.getUser())
+                .withTag(Instance.TAG_NAME, masterNameTag)
+                .withTag(InstanceAzure.TAG_CREATION, getCurrentTime())
                 .create();
         // TODO .attachDisks(config.getMasterMounts())
         // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())
@@ -94,12 +97,15 @@ public class CreateClusterAzure extends CreateCluster {
         return new InstanceAzure(masterInstance);
     }
 
+    private String getCurrentTime() {
+        return ZonedDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    }
+
     @Override
-    protected List<Instance> launchClusterSlaveInstances(int batchIndex,
-                                                         Configuration.SlaveInstanceConfiguration instanceConfiguration) {
+    protected List<Instance> launchClusterSlaveInstances(
+            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
         List<VirtualMachine> slaveInstances = new ArrayList<>();
         String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false);
-        String slaveInstanceNameTag = PREFIX + "slave-" + clusterId;
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             VirtualMachine slaveInstance = compute.virtualMachines()
                     .define(buildSlaveInstanceName(batchIndex, i))
@@ -115,10 +121,10 @@ public class CreateClusterAzure extends CreateCluster {
                     .withCustomData(base64SlaveUserData)
                     .withNewDataDisk(50)
                     .withSize(instanceConfiguration.getProviderType().getValue())
-                    .withTag("bibigrid-id", clusterId)
-                    .withTag("user", config.getUser())
-                    .withTag("name", slaveInstanceNameTag)
-                    .withTag("creation", "" + new Date().getTime())
+                    .withTag(Instance.TAG_BIBIGRID_ID, clusterId)
+                    .withTag(Instance.TAG_USER, config.getUser())
+                    .withTag(Instance.TAG_NAME, slaveNameTag)
+                    .withTag(InstanceAzure.TAG_CREATION, getCurrentTime())
                     .create();
             // TODO .attachDisks(config.getSlaveMounts())
             // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())

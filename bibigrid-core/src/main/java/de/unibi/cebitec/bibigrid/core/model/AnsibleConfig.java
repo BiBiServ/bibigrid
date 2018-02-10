@@ -70,7 +70,7 @@ public final class AnsibleConfig {
         Map<String, Object> masterMap = new LinkedHashMap<>();
         masterMap.put("ip", masterIp);
         masterMap.put("hostname", masterHostname);
-        masterMap.put("cores", config.getMasterInstance().getProviderType().getInstanceCores());
+        masterMap.put("cores", config.getMasterInstance().getProviderType().getCpuCores());
         masterMap.put("ephemerals", getEphemeralDevices(config.getMasterInstance().getProviderType().getEphemerals()));
         return masterMap;
     }
@@ -82,7 +82,7 @@ public final class AnsibleConfig {
             Map<String, Object> slaveMap = new LinkedHashMap<>();
             slaveMap.put("ip", slaveIps.get(i));
             slaveMap.put("hostname", slaveHostnames.get(i));
-            slaveMap.put("cores", slaveInstanceConfigurations.get(i).getProviderType().getInstanceCores());
+            slaveMap.put("cores", slaveInstanceConfigurations.get(i).getProviderType().getCpuCores());
             slaveMap.put("ephemerals", getEphemeralDevices(slaveInstanceConfigurations.get(i).getProviderType().getEphemerals()));
             slavesMap.add(slaveMap);
         }

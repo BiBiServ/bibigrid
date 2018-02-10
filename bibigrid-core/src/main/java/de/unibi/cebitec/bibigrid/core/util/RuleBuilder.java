@@ -16,6 +16,9 @@ public class RuleBuilder {
         groupReference.add(createBasicRule(RuleNames.DEBUG_REQUESTS_S, RuleNames.DEBUG_REQUESTS_L, null,
                 "Enable HTTP request and response logging."));
 
+        groupReference.add(createBasicRule(RuleNames.HELP_LIST_INSTANCE_TYPES_S, RuleNames.HELP_LIST_INSTANCE_TYPES_L,
+                null, "Help: list instance types"));
+
         // Master instance rules
         groupReference.add(createStringRule(RuleNames.MASTER_INSTANCE_TYPE_S, RuleNames.MASTER_INSTANCE_TYPE_L,
                 "see INSTANCE-TYPES below"));
@@ -233,6 +236,8 @@ public class RuleBuilder {
         EXT_NFS_SHARES_L("ext-nfs-shares"),
         VERBOSE_S("v"),
         VERBOSE_L("verbose"),
+        HELP_LIST_INSTANCE_TYPES_S("lit"),
+        HELP_LIST_INSTANCE_TYPES_L("list-instance-types"),
         CONFIG_S("o"),
         CONFIG_L("config"),
         USE_MASTER_AS_COMPUTE_S("b"),

@@ -9,15 +9,19 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
+import org.openstack4j.api.OSClient;
+import org.openstack4j.model.compute.Flavor;
+
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 @SuppressWarnings("unused")
-public class ProviderModuleOpenstack implements ProviderModule {
+public class ProviderModuleOpenstack extends ProviderModule {
     @Override
     public String getName() {
         return "openstack";
@@ -51,12 +55,17 @@ public class ProviderModuleOpenstack implements ProviderModule {
     }
 
     @Override
-    public InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
-        return new InstanceTypeOpenstack((ConfigurationOpenstack) config, type);
+    public String getBlockDeviceBase() {
+        return "/dev/vd";
     }
 
     @Override
-    public String getBlockDeviceBase() {
-        return "/dev/vd";
+    public Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
+        OSClient os = OpenStackUtils.buildOSClient((ConfigurationOpenstack) config);
+        Map<String, InstanceType> instanceTypes = new HashMap<>();
+        for (Flavor f : os.compute().flavors().list()) {
+            instanceTypes.put(f.getName(), new InstanceTypeOpenstack(f));
+        }
+        return instanceTypes;
     }
 }

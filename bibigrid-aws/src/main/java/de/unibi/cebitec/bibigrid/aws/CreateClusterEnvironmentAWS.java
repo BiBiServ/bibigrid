@@ -77,7 +77,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     public CreateClusterEnvironmentAWS createSecurityGroup() {
         CreateTagsRequest tagRequest = new CreateTagsRequest();
         tagRequest.withResources(subnet.getSubnetId())
-                .withTags(cluster.getBibigridId(), new Tag("Name", SUBNET_PREFIX + cluster.getClusterId()));
+                .withTags(cluster.getBibigridId(), new Tag(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, SUBNET_PREFIX + cluster.getClusterId()));
         cluster.getEc2().createTags(tagRequest);
         // master IP
         masterIp = SubNets.getFirstIP(subnet.getCidrBlock());
@@ -110,7 +110,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
 
         tagRequest = new CreateTagsRequest();
         tagRequest.withResources(securityGroup)
-                .withTags(cluster.getBibigridId(), new Tag("Name", SECURITY_GROUP_PREFIX + cluster.getClusterId()));
+                .withTags(cluster.getBibigridId(), new Tag(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, SECURITY_GROUP_PREFIX + cluster.getClusterId()));
         cluster.getEc2().createTags(tagRequest);
         cluster.getEc2().authorizeSecurityGroupIngress(ruleChangerReq);
         return this;

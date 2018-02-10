@@ -1,15 +1,16 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 
 import java.util.*;
 
+import de.unibi.cebitec.bibigrid.core.model.Instance;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Address;
 import org.openstack4j.model.compute.SecGroupExtension;
-import org.openstack4j.model.compute.Server;
 import org.openstack4j.model.network.Network;
 import org.openstack4j.model.network.Router;
 import org.openstack4j.model.network.Subnet;
@@ -32,45 +33,10 @@ public class ListIntentOpenstack extends ListIntent {
 
     @Override
     protected void searchClusterIfNecessary() {
-        if (clusterMap != null) {
-            return;
-        }
-        clusterMap = new HashMap<>();
         // String keypairName = conf.getKeypair();
         Cluster cluster;
         // Instances
-        for (Server server : os.compute().servers().list()) {
-            // check if instance is a BiBiGrid instance and extract clusterId from it
-            String name = server.getName();
-            Map<String, String> metadata = server.getMetadata();
-            if (name != null && (name.startsWith("bibigrid-master") || name.startsWith("bibigrid-slave"))) {
-                String[] t = name.split("-");
-                cluster = getOrCreateCluster(t[t.length - 1]);
-                // get user from metadata map 
-                if (cluster.getUser() == null) {
-                    cluster.setUser(metadata.get("user"));
-                }
-                // master / slave
-                if (name.contains("master")) {
-                    cluster.setMasterInstance(server.getId());
-                    cluster.setStarted(dateFormatter.format(server.getCreated()));
-                    cluster.setKeyName(server.getKeyName());
-                    Map<String, List<? extends Address>> addressMap = server.getAddresses().getAddresses();
-                    // map should contain only one  network
-                    if (addressMap.keySet().size() == 1) {
-                        for (Address address : addressMap.values().iterator().next()) {
-                            if (address.getType().equals("floating")) {
-                                cluster.setPublicIp(address.getAddr());
-                            }
-                        }
-                    } else {
-                        LOG.warn("No or more than one network associated with instance {}", server.getId());
-                    }
-                } else if (name.contains("slave")) {
-                    cluster.addSlaveInstance(server.getId());
-                }
-            }
-        }
+        os.compute().servers().list().forEach(x -> checkInstance(new InstanceOpenstack(x)));
         // Security Group
         for (SecGroupExtension sg : os.compute().securityGroups().list()) {
             String name = sg.getName();
@@ -92,7 +58,7 @@ public class ListIntentOpenstack extends ListIntent {
         // Subnet
         for (Subnet subnet : os.networking().subnet().list()) {
             String name = subnet.getName();
-            if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.SUBNET_PREFIX)) {
+            if (name != null && name.startsWith(CreateClusterEnvironment.SUBNET_PREFIX)) {
                 String[] t = name.split("-");
                 cluster = getOrCreateCluster(t[t.length - 1]);
                 cluster.setSubnet(subnet.getId());
@@ -109,15 +75,40 @@ public class ListIntentOpenstack extends ListIntent {
         }
     }
 
-    private Cluster getOrCreateCluster(String clusterId) {
-        Cluster cluster;
-        // check if entry already available
-        if (clusterMap.containsKey(clusterId)) {
-            cluster = clusterMap.get(clusterId);
-        } else {
-            cluster = new Cluster();
-            clusterMap.put(clusterId, cluster);
+    @Override
+    protected List<Instance> getInstances() {
+        return null;
+    }
+
+    private void checkInstance(InstanceOpenstack instance) {
+        // check if instance is a BiBiGrid instance and extract clusterId from it
+        String clusterId = getClusterIdForInstance(instance);
+        if (clusterId == null)
+            return;
+        String name = instance.getName();
+        Cluster cluster = getOrCreateCluster(clusterId);
+        // get user from metadata map
+        if (cluster.getUser() == null) {
+            cluster.setUser(instance.getTag(Instance.TAG_USER));
         }
-        return cluster;
+        // master / slave
+        if (name.startsWith(CreateCluster.MASTER_NAME_PREFIX)) {
+            cluster.setMasterInstance(instance.getId());
+            cluster.setStarted(instance.getCreationTimestamp().format(dateTimeFormatter));
+            cluster.setKeyName(instance.getKeyName());
+            Map<String, List<? extends Address>> addressMap = instance.getAddresses().getAddresses();
+            // map should contain only one network
+            if (addressMap.keySet().size() == 1) {
+                for (Address address : addressMap.values().iterator().next()) {
+                    if (address.getType().equals("floating")) {
+                        cluster.setPublicIp(address.getAddr());
+                    }
+                }
+            } else {
+                LOG.warn("No or more than one network associated with instance {}", instance.getId());
+            }
+        } else if (name.startsWith(CreateCluster.SLAVE_NAME_PREFIX)) {
+            cluster.addSlaveInstance(instance.getId());
+        }
     }
 }

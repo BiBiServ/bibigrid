@@ -28,6 +28,8 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class CreateCluster implements Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
+    public static final String MASTER_NAME_PREFIX = PREFIX + "master";
+    public static final String SLAVE_NAME_PREFIX = PREFIX + "slave";
     private static final int SSH_POLL_ATTEMPTS = 25;
 
     protected final ProviderModule providerModule;
@@ -96,7 +98,8 @@ public abstract class CreateCluster implements Intent {
      */
     public boolean launchClusterInstances() {
         try {
-            Instance master = launchClusterMasterInstance();
+            String masterNameTag = MASTER_NAME_PREFIX + "-" + clusterId;
+            Instance master = launchClusterMasterInstance(masterNameTag);
             if (master == null) {
                 return false;
             }
@@ -109,7 +112,8 @@ public abstract class CreateCluster implements Intent {
                     Configuration.SlaveInstanceConfiguration instanceConfiguration = config.getSlaveInstances().get(i);
                     LOG.info("Requesting {} slave instance(s) with same configuration...",
                             instanceConfiguration.getCount());
-                    List<Instance> slavesBatch = launchClusterSlaveInstances(i, instanceConfiguration);
+                    String slaveNameTag = SLAVE_NAME_PREFIX + "-" + clusterId;
+                    List<Instance> slavesBatch = launchClusterSlaveInstances(i, instanceConfiguration, slaveNameTag);
                     if (slavesBatch == null) {
                         return false;
                     }
@@ -138,17 +142,18 @@ public abstract class CreateCluster implements Intent {
 
     /**
      * Start the configured cluster master instance.
+     * @param masterNameTag
      */
-    protected abstract Instance launchClusterMasterInstance();
+    protected abstract Instance launchClusterMasterInstance(String masterNameTag);
 
     /**
      * Start the batch of cluster slave instances.
      */
-    protected abstract List<Instance> launchClusterSlaveInstances(int batchIndex,
-            Configuration.SlaveInstanceConfiguration instanceConfiguration);
+    protected abstract List<Instance> launchClusterSlaveInstances(
+            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag);
 
     protected String buildSlaveInstanceName(int batchIndex, int slaveIndex) {
-        return PREFIX + "slave" + (batchIndex + 1) + "-" + (slaveIndex + 1) + "-" + clusterId;
+        return SLAVE_NAME_PREFIX + (batchIndex + 1) + "-" + (slaveIndex + 1) + "-" + clusterId;
     }
 
     protected abstract String getSubnetCidr();

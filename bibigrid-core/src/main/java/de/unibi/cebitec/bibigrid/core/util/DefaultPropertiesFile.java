@@ -5,6 +5,7 @@ import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -76,6 +77,8 @@ public final class DefaultPropertiesFile {
                 return new Yaml().loadAs(new FileInputStream(propertiesFilePath.toFile()), configurationClass);
             } catch (FileNotFoundException e) {
                 LOG.error("Failed to load properties file. {}", e);
+            } catch(YAMLException e) {
+                LOG.error("Failed to parse configuration file. {}", e.getCause() != null ? e.getCause().getMessage() : e);
             }
         }
         try {

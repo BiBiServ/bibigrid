@@ -4,6 +4,8 @@ import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
@@ -13,6 +15,8 @@ import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.Formatter;
+import java.util.Locale;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -84,7 +88,7 @@ public class StartUp {
                     printVersionInfo();
                     break;
                 case HELP:
-                    printHelp(cmdLineOptions);
+                    printHelp(cl, cmdLineOptions);
                     break;
                 case CREATE:
                 case LIST:
@@ -113,9 +117,14 @@ public class StartUp {
         }
     }
 
-    private static void printHelp(Options cmdLineOptions) {
+    private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
+        // TODO: improve help modes
+        if (commandLine.hasOption("lit")) {
+            runIntent(commandLine, IntentMode.HELP);
+            return;
+        }
         HelpFormatter help = new HelpFormatter();
-        String header = ""; //TODO: infotext (auf default props hinweisen); instanzgroessen auflisten
+        String header = ""; //TODO: info text, default properties, doc url, deeper help modes?
         String footer = "";
         help.printHelp("bibigrid --create|--list|--terminate|--check [...]", header, cmdLineOptions, footer);
     }
@@ -135,6 +144,9 @@ public class StartUp {
         CommandLineValidator validator = module.getCommandLineValidator(commandLine, defaultPropertiesFile, intentMode);
         if (validator.validate(providerMode)) {
             switch (intentMode) {
+                case HELP:
+                    printInstanceTypeHelp(module, validator.getConfig());
+                    break;
                 case LIST:
                     LOG.info(module.getListIntent(validator.getConfig()).toString());
                     break;
@@ -181,5 +193,20 @@ public class StartUp {
             LOG.error("No suitable mode found. Exit");
         }
         return null;
+    }
+
+    private static void printInstanceTypeHelp(ProviderModule module, Configuration config) {
+
+        StringBuilder display = new StringBuilder();
+        Formatter formatter = new Formatter(display, Locale.US);
+        display.append("\n");
+        formatter.format("%15s | %5s | %15s | %15s | %4s | %10s%n", "name", "cores", "ram Mb", "disk size Mb", "swap",
+                "ephemerals");
+        display.append(new String(new char[79]).replace('\0', '-')).append("\n");
+        for (InstanceType type : module.getInstanceTypes(config)) {
+            formatter.format("%15s | %5s | %15s | %15s | %4s | %10s%n", type.getValue(), type.getCpuCores(),
+                    type.getMaxRam(), type.getMaxDiskSpace(), type.getSwap(), type.getEphemerals());
+        }
+        System.out.println(display.toString());
     }
 }

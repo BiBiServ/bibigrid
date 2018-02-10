@@ -9,7 +9,7 @@ import de.unibi.cebitec.bibigrid.core.util.ClusterKeyPair;
  */
 public abstract class CreateClusterEnvironment {
     public static final String SECURITY_GROUP_PREFIX = CreateCluster.PREFIX + "sg-";
-    protected static final String SUBNET_PREFIX = CreateCluster.PREFIX + "subnet-";
+    public static final String SUBNET_PREFIX = CreateCluster.PREFIX + "subnet-";
     private final ClusterKeyPair keypair;
 
     protected CreateClusterEnvironment() throws ConfigurationException {

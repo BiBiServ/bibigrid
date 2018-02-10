@@ -9,15 +9,17 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 @SuppressWarnings("unused")
-public class ProviderModuleAWS implements ProviderModule {
+public class ProviderModuleAWS extends ProviderModule {
     @Override
     public String getName() {
         return "aws";
@@ -51,12 +53,16 @@ public class ProviderModuleAWS implements ProviderModule {
     }
 
     @Override
-    public InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
-        return InstanceTypeAWS.getByType(type);
+    public String getBlockDeviceBase() {
+        return "/dev/xvd";
     }
 
     @Override
-    public String getBlockDeviceBase() {
-        return "/dev/xvd";
+    public Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
+        Map<String, InstanceType> instanceTypes = new HashMap<>();
+        for (InstanceType type : InstanceTypeAWS.getStaticInstanceTypeList()) {
+            instanceTypes.put(type.getValue(), type);
+        }
+        return instanceTypes;
     }
 }
