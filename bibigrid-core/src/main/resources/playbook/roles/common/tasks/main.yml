@@ -1,4 +1,4 @@
-- include: 010-apt.yml
-- include: 020-disk.yml
+- import_task: 010-apt.yml
+- import_task: 020-disk.yml
 
 

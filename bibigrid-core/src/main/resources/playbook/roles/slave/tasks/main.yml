@@ -1,7 +1,7 @@
-- include: 001-monitor.yml
-- include: 010-nfs.yml
+- import_task: 001-monitor.yml
+- import_task: 010-nfs.yml
   when: enable_nfs == 'yes'
-- include: 020-gridengine.yml
+- import_task: 020-gridengine.yml
   when: enable_gridengine == 'yes'
-- include: 030-mesos.yml
+- import_task: 030-mesos.yml
   when: enable_mesos == 'yes'
