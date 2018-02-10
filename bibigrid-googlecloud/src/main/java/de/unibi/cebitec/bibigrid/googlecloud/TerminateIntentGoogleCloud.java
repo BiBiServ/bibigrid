@@ -1,10 +1,9 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
+import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.Firewall;
 import com.google.api.services.compute.model.FirewallList;
-import com.google.cloud.compute.Compute;
-import com.google.cloud.compute.Instance;
-import com.google.cloud.compute.InstanceId;
+import com.google.api.services.compute.model.Operation;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
@@ -32,6 +31,9 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
 
     public boolean terminate() {
         final Compute compute = GoogleCloudUtils.getComputeService(config);
+        if (compute == null) {
+            return false;
+        }
         final Map<String, Cluster> clusters = new ListIntentGoogleCloud(config).getList();
         boolean success = true;
         for (String clusterId : config.getClusterIds()) {
@@ -58,23 +60,21 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
         if (instances.size() > 0) {
             LOG.info("Wait for {} instances to shut down. This can take a while, so please be patient!", instances.size());
             for (String i : instances) {
-                Instance instance = compute.getInstance(InstanceId.of(zone, i));
                 try {
-                    instance.delete().waitFor();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    Operation operation = compute.instances().delete(config.getGoogleProjectId(), zone, i).execute();
+                    GoogleCloudUtils.waitForOperation(compute, config, operation);
+                } catch (Exception e) {
+                    LOG.error("Failed to delete instance {}. {}", i, e);
                 }
             }
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
     private void terminateNetwork(final Compute compute, final String clusterId) {
-        com.google.api.services.compute.Compute internalCompute = GoogleCloudUtils.getInternalCompute(compute);
         List<String> firewallsToRemove = new ArrayList<>();
         try {
             // Collect all firewall rules that were created for this cluster
-            FirewallList list = internalCompute.firewalls().list(config.getGoogleProjectId()).execute();
+            FirewallList list = compute.firewalls().list(config.getGoogleProjectId()).execute();
             for (Firewall firewall : list.getItems()) {
                 if (firewall.getName().startsWith(CreateClusterEnvironment.SECURITY_GROUP_PREFIX + "rule") &&
                         firewall.getName().endsWith(clusterId)) {
@@ -83,7 +83,7 @@ public class TerminateIntentGoogleCloud implements TerminateIntent {
             }
             // Sequentially remove all the firewall rules
             for (String firewallLink : firewallsToRemove) {
-                internalCompute.firewalls().delete(config.getGoogleProjectId(), firewallLink).execute();
+                compute.firewalls().delete(config.getGoogleProjectId(), firewallLink).execute();
             }
         } catch (IOException e) {
             e.printStackTrace();

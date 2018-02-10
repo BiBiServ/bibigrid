@@ -1,12 +1,16 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
-import com.google.api.gax.paging.Page;
-import com.google.cloud.compute.*;
+import com.google.api.services.compute.Compute;
+import com.google.api.services.compute.model.*;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -31,10 +35,26 @@ public class ListIntentGoogleCloud extends ListIntent {
         Compute compute = GoogleCloudUtils.getComputeService(config);
         if (compute == null)
             return;
-        Page<Instance> instancePage = config.getAvailabilityZone() != null ?
-                compute.listInstances(config.getAvailabilityZone()) :
-                compute.listInstances();
-        instancePage.iterateAll().forEach(this::checkInstance);
+        try {
+            String projectId = config.getGoogleProjectId();
+            if (config.getAvailabilityZone() != null) {
+                InstanceList instances = compute.instances().list(projectId, config.getAvailabilityZone()).execute();
+                if (instances != null && instances.getItems() != null) {
+                    instances.getItems().forEach(this::checkInstance);
+                }
+            } else {
+                InstanceAggregatedList aggregatedInstances = compute.instances().aggregatedList(projectId).execute();
+                if (aggregatedInstances != null && aggregatedInstances.getItems() != null) {
+                    for (InstancesScopedList instances : aggregatedInstances.getItems().values()) {
+                        if (instances != null && instances.getInstances() != null) {
+                            instances.getInstances().forEach(this::checkInstance);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            LOG.error("Failed to load instances. {}", e);
+        }
     }
 
     private void checkInstance(Instance instance) {
@@ -49,15 +69,17 @@ public class ListIntentGoogleCloud extends ListIntent {
         // Check whether master or slave instance
         if (name != null && name.contains("master-")) {
             if (cluster.getMasterInstance() == null) {
-                cluster.setMasterInstance(instance.getInstanceId().getInstance());
-                cluster.setStarted(dateFormatter.format(new Date(instance.getCreationTimestamp())));
+                cluster.setMasterInstance(instance.getName());
+                ZonedDateTime creationDateTime = ZonedDateTime.parse(instance.getCreationTimestamp());
+                creationDateTime = creationDateTime.withZoneSameInstant(ZoneOffset.systemDefault());
+                cluster.setStarted(creationDateTime.format(DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss")));
             } else {
                 LOG.error("Detect two master instances ({},{}) for cluster '{}' ",
-                        cluster.getMasterInstance(), instance.getInstanceId(), clusterId);
+                        cluster.getMasterInstance(), instance.getName(), clusterId);
                 System.exit(1);
             }
         } else {
-            cluster.addSlaveInstance(instance.getInstanceId().getInstance());
+            cluster.addSlaveInstance(instance.getName());
         }
         // user - should be always the same for all instances of one cluster
         if (user != null) {
@@ -72,7 +94,7 @@ public class ListIntentGoogleCloud extends ListIntent {
     }
 
     private static String getValueForName(Tags tags, String name) {
-        for (String t : tags.getValues()) {
+        for (String t : tags.getItems()) {
             String[] parts = t.split(GoogleCloudUtils.TAG_SEPARATOR);
             if (parts.length == 2 && parts[0].equalsIgnoreCase(name)) {
                 return parts[1];

@@ -1,17 +1,24 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.compute.*;
-import com.google.cloud.compute.spi.v1.HttpComputeRpc;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.compute.Compute;
+import com.google.api.services.compute.ComputeScopes;
+import com.google.api.services.compute.model.*;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utility methods for the google cloud.
@@ -22,21 +29,34 @@ final class GoogleCloudUtils {
     static final String TAG_SEPARATOR = "--";
     private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudUtils.class);
     private static long diskCounter = 1;
+    private static final Pattern INSTANCE_LINK_PATTERN =
+            Pattern.compile(".*?projects/([^/]+)/zones/([^/]+)/instances/([^/]+)");
 
     static Compute getComputeService(final ConfigurationGoogleCloud config) {
         if (config.isDebugRequests()) {
             HttpRequestLogHandler.attachToCloudHttpTransport();
         }
-        ComputeOptions.Builder optionsBuilder = ComputeOptions.newBuilder();
-        optionsBuilder.setProjectId(config.getGoogleProjectId());
         try {
-            optionsBuilder.setCredentials(GoogleCredentials.fromStream(
-                    new FileInputStream(config.getGoogleCredentialsFile())));
-        } catch (IOException e) {
+            HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+            GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(config.getGoogleCredentialsFile()));
+            if (credential.createScopedRequired()) {
+                credential = credential.createScoped(Collections.singletonList(ComputeScopes.COMPUTE));
+            }
+            return new Compute.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
+                    .setApplicationName(config.getGoogleProjectId()).build();
+        } catch (Exception e) {
             LOG.error("{}", e);
-            return null;
         }
-        return optionsBuilder.build().getService();
+        return null;
+    }
+
+    static String buildTag(String key, String value) {
+        String tag = key + TAG_SEPARATOR + value.toLowerCase(Locale.US);
+        tag = tag.replaceAll("[^a-z0-9-]", "-");
+        if (tag.length() > 63) {
+            tag = tag.substring(0, 63);
+        }
+        return tag;
     }
 
     /**
@@ -44,97 +64,155 @@ final class GoogleCloudUtils {
      * https://cloud.google.com/compute/docs/vpc/internal-dns#instance_fully_qualified_domain_names
      */
     static String getInstanceFQDN(Instance instance) {
-        return getInstanceFQDN(instance.getInstanceId().getProject(), instance.getInstanceId().getInstance());
-    }
-
-    /**
-     * Get the internal fully qualified domain name (FQDN) for an instance.
-     * https://cloud.google.com/compute/docs/vpc/internal-dns#instance_fully_qualified_domain_names
-     */
-    private static String getInstanceFQDN(String projectId, String instanceId) {
-        return instanceId + ".c." + projectId + ".internal";
+        Matcher matcher = INSTANCE_LINK_PATTERN.matcher(instance.getSelfLink());
+        return matcher.find() ? matcher.group(3) + ".c." + matcher.group(1) + ".internal" : null;
     }
 
     static String getInstancePrivateIp(Instance instance) {
         List<NetworkInterface> interfaces = instance.getNetworkInterfaces();
-        return interfaces.isEmpty() ? null : interfaces.get(0).getNetworkIp();
+        return interfaces.isEmpty() ? null : interfaces.get(0).getNetworkIP();
     }
 
     static String getInstancePublicIp(Instance instance) {
         List<NetworkInterface> interfaces = instance.getNetworkInterfaces();
         if (interfaces.isEmpty())
             return null;
-        List<NetworkInterface.AccessConfig> accessConfigs = interfaces.get(0).getAccessConfigurations();
-        return accessConfigs.isEmpty() ? null : accessConfigs.get(0).getNatIp();
+        List<AccessConfig> accessConfigs = interfaces.get(0).getAccessConfigs();
+        return accessConfigs.isEmpty() ? null : accessConfigs.get(0).getNatIP();
     }
 
-    static InstanceInfo.Builder getInstanceBuilder(String zone, String instanceId, String machineType) {
-        return InstanceInfo
-                .newBuilder(InstanceId.of(zone, instanceId), MachineTypeId.of(zone, machineType));
-    }
-
-    private static AttachedDisk createBootDisk(String imageId, String imageProjectId) {
-        // Create a simple persistent disk from the image that will be deleted automatically with the instance.
-        AttachedDisk.CreateDiskConfiguration bootDisk = AttachedDisk.CreateDiskConfiguration
-                .newBuilder(ImageId.of(imageProjectId, imageId))
-                .setAutoDelete(true)
-                .build();
-        return AttachedDisk.of(bootDisk);
-    }
-
-    private static AttachedDisk createMountDisk(Compute compute, String zone, String snapshotId, String diskId) {
-        // In order to attach a snapshot, we have to create a persistent disk with the snapshot as disk config.
-        SnapshotDiskConfiguration mountDisk = SnapshotDiskConfiguration.of(SnapshotId.of(snapshotId));
-        DiskId disk = DiskId.of(zone, diskId);
-        DiskInfo diskInfo = DiskInfo.newBuilder(disk, mountDisk).build();
-        Operation operation = compute.create(diskInfo);
+    static Instance getInstanceBuilder(Compute compute, ConfigurationGoogleCloud config, String instanceId,
+                                       String machineType) {
+        MachineType type;
         try {
-            operation.waitFor();
-        } catch (InterruptedException e) {
-            LOG.error("Creation of mount disk failed: {}", operation.getErrors());
+            type = compute.machineTypes().get(config.getGoogleProjectId(), config.getAvailabilityZone(), machineType).execute();
+        } catch (IOException e) {
+            LOG.error("Failed to find machine type. {}", e);
+            return null;
         }
-        return AttachedDisk.of(AttachedDisk.PersistentDiskConfiguration.of(disk));
+        return new Instance().setName(instanceId).setZone(config.getAvailabilityZone()).setMachineType(type.getSelfLink());
     }
 
-    static void attachDisks(Compute compute, InstanceInfo.Builder instanceBuilder, String imageId,
-                            String zone, List<Configuration.MountPoint> mounts, String clusterId,
-                            String imageProjectId) {
+    private static AttachedDisk createBootDisk(Compute compute, String imageId, String imageProjectId) {
+        Image image = getImage(compute, imageProjectId, imageId);
+        if (image == null) {
+            LOG.error("Failed to find boot disk image.");
+            return null;
+        }
+        // Create a simple persistent disk from the image that will be deleted automatically with the instance.
+        AttachedDisk disk = new AttachedDisk().setBoot(true).setType("PERSISTENT").setAutoDelete(true);
+        if (disk.getInitializeParams() == null) {
+            disk.setInitializeParams(new AttachedDiskInitializeParams());
+        }
+        disk.getInitializeParams().setSourceImage(image.getSelfLink());
+        return disk;
+    }
+
+    private static AttachedDisk createMountDisk(Compute compute, ConfigurationGoogleCloud config, String snapshotId,
+                                                String diskId) {
+        String projectId = config.getGoogleProjectId();
+        Snapshot snapshot = getSnapshot(compute, projectId, snapshotId);
+        if (snapshot == null) {
+            LOG.error("Failed to find mount disk snapshot.");
+            return null;
+        }
+        // In order to attach a snapshot, we have to create a persistent disk with the snapshot as disk config.
+        String zone = config.getAvailabilityZone();
+        Disk disk = new Disk().setSourceSnapshot(snapshot.getSelfLink()).setZone(zone).setType("SNAPSHOT").setName(diskId);
+        String diskTargetLink;
+        try {
+            Operation operation = compute.disks().insert(projectId, zone, disk).execute();
+            diskTargetLink = operation.getTargetLink();
+            LOG.info(diskTargetLink);
+            waitForOperation(compute, config, operation);
+        } catch (IOException | InterruptedException e) {
+            LOG.error("Creation of mount disk failed. {}", e);
+            return null;
+        }
+        return new AttachedDisk().setType("PERSISTENT").setSource(diskTargetLink);
+    }
+
+    static void attachDisks(Compute compute, Instance instance, String imageId, ConfigurationGoogleCloud config,
+                            List<Configuration.MountPoint> mounts, String imageProjectId) {
         List<AttachedDisk> attachedDisks = new ArrayList<>();
         // First add the boot disk
-        AttachedDisk bootDisk = GoogleCloudUtils.createBootDisk(imageId, imageProjectId);
-        attachedDisks.add(bootDisk);
+        AttachedDisk bootDisk = createBootDisk(compute, imageId, imageProjectId);
+        if (bootDisk != null) {
+            attachedDisks.add(bootDisk);
+        }
         for (Configuration.MountPoint mountPoint : mounts) {
             // For the creation of the cluster it's sufficient to add a counter as suffix.
             // The cluster ID is already the greatest difference between multiple clusters.
-            String diskId = "disk-" + clusterId + "-" + mountPoint.getSource() + diskCounter;
+            String diskId = "disk-" + config.getClusterIds()[0] + "-" + mountPoint.getSource() + diskCounter;
             diskCounter++;
-            AttachedDisk mountDisk = createMountDisk(compute, zone, mountPoint.getSource(), diskId);
-            attachedDisks.add(mountDisk);
+            AttachedDisk mountDisk = createMountDisk(compute, config, mountPoint.getSource(), diskId);
+            if (mountDisk != null) {
+                attachedDisks.add(mountDisk);
+            }
         }
-        instanceBuilder.setAttachedDisks(attachedDisks);
+        instance.setDisks(attachedDisks);
     }
 
-    static void setInstanceSchedulingOptions(InstanceInfo.Builder builder, boolean preemptible) {
+    static void setInstanceSchedulingOptions(Instance instance, boolean preemptible) {
         if (preemptible) {
-            builder.setSchedulingOptions(SchedulingOptions.preemptible());
+            instance.setScheduling(new Scheduling().setPreemptible(true));
         } else {
-            builder.setSchedulingOptions(SchedulingOptions.standard(true,
-                    SchedulingOptions.Maintenance.MIGRATE));
+            instance.setScheduling(new Scheduling().setAutomaticRestart(true).setOnHostMaintenance("MIGRATE"));
         }
     }
 
-    /**
-     * Using reflection, we can access the internal api library compute instance to make
-     * calls like firewall rules creation that are currently not available in the cloud api.
-     */
-    static com.google.api.services.compute.Compute getInternalCompute(Compute compute) {
-        HttpComputeRpc computeRpc = ((HttpComputeRpc) compute.getOptions().getRpc());
+    static void waitForOperation(Compute compute, ConfigurationGoogleCloud config, Operation operation)
+            throws InterruptedException {
+        String status = operation.getStatus();
+        String opId = operation.getName();
+        String projectId = config.getGoogleProjectId();
+        String zone = config.getAvailabilityZone();
+        while (operation != null && !status.equals("DONE")) {
+            try {
+                Thread.sleep(1000);
+                operation = compute.zoneOperations().get(projectId, zone, opId).execute();
+                if (operation != null) {
+                    status = operation.getStatus();
+                }
+            } catch (InterruptedException ignored) {
+            } catch (IOException e) {
+                throw new InterruptedException(e.getMessage());
+            }
+        }
+    }
+
+    static List<Subnetwork> listSubnetworks(Compute compute, String projectId, String region) {
         try {
-            Field f = computeRpc.getClass().getDeclaredField("compute");
-            f.setAccessible(true);
-            return (com.google.api.services.compute.Compute) f.get(computeRpc);
-        } catch (Exception e) {
-            e.printStackTrace();
+            return compute.subnetworks().list(projectId, region).execute().getItems();
+        } catch (IOException ignored) {
+        }
+        return new ArrayList<>();
+    }
+
+    static Instance reload(Compute compute, ConfigurationGoogleCloud config, Instance instance) {
+        try {
+            String projectId = config.getGoogleProjectId();
+            String zone = config.getAvailabilityZone();
+            instance = compute.instances().get(projectId, zone, instance.getName()).execute();
+        } catch (IOException ignored) {
+        }
+        return instance;
+    }
+
+    static Snapshot getSnapshot(Compute compute, String projectId, String snapshotId) {
+        try {
+            return compute.snapshots().get(projectId, snapshotId).execute();
+        } catch (IOException e) {
+            LOG.error("Failed to get snapshot {}. {}", snapshotId, e);
+        }
+        return null;
+    }
+
+    static Image getImage(Compute compute, String projectId, String imageId) {
+        try {
+            return compute.images().get(projectId, imageId).execute();
+        } catch (IOException e) {
+            LOG.error("Failed to get image {}. {}", imageId, e);
         }
         return null;
     }

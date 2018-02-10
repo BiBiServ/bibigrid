@@ -1,6 +1,6 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
-import com.google.cloud.compute.Instance;
+import com.google.api.services.compute.model.Instance;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
