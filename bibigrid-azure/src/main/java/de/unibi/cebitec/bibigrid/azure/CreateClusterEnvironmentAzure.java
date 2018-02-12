@@ -100,7 +100,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
                         .apply();
                 subnet = vpc.subnets().get(subnetName);
             } catch (Exception e) {
-                LOG.error("Failed to create subnet {}", e);
+                LOG.error("Failed to create subnet. {}", e);
             }
         }
         return this;
@@ -130,7 +130,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
             }
             securityGroup = update.apply();
         } catch (Exception e) {
-            LOG.error("Failed to create firewall rules {}", e);
+            LOG.error("Failed to create firewall rules. {}", e);
         }
         return this;
     }

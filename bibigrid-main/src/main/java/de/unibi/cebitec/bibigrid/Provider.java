@@ -58,7 +58,7 @@ public final class Provider {
     public ProviderModule getProviderModule(String providerName) {
         providerName = providerName.toLowerCase(Locale.US);
         if (!providers.containsKey(providerName)) {
-            LOG.error("Malformed meta-mode! use: [" + String.join(", ", getProviderNames()) + "] or leave it blank.");
+            LOG.error("Malformed meta-mode! use: [{}] or leave it blank.", String.join(", ", getProviderNames()));
             return null;
         }
         return providers.get(providerName);

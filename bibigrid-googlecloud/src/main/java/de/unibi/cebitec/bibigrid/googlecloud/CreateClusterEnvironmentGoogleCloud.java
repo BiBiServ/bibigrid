@@ -145,7 +145,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
                         firewall).execute();
             }
         } catch (Exception e) {
-            LOG.error("Failed to create firewall rules {}", e);
+            LOG.error("Failed to create firewall rules. {}", e);
         }
         return this;
     }

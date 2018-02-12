@@ -74,11 +74,11 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 // check if subnet exists
                 subnet = getSubnetByName(osc, cfg.getSubnet());
                 if (subnet == null) {
-                    throw new ConfigurationException("No Subnet with name '" + cfg.getSubnet() + "' found!");
+                    throw new ConfigurationException("No subnet with name '" + cfg.getSubnet() + "' found!");
                 }
                 net = getNetworkById(osc, subnet.getNetworkId());
                 if (net == null) {
-                    throw new ConfigurationException("No Network with id '" + subnet.getNetworkId() + "' found!");
+                    throw new ConfigurationException("No network with id '" + subnet.getNetworkId() + "' found!");
                 }
                 router = getRouterByNetwork(osc, net, subnet); // @ToDo
                 LOG.info("Use existing subnet (ID: {}, CIDR: {}).", subnet.getId(), subnet.getCidr());
@@ -89,18 +89,18 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 // check if net exists
                 net = getNetworkByName(osc, cfg.getNetwork());
                 if (net == null) {
-                    throw new ConfigurationException("No Net with name '" + cfg.getSubnet() + "' found!");
+                    throw new ConfigurationException("No network with name '" + cfg.getSubnet() + "' found!");
                 }
                 router = getRouterByNetwork(osc, net);
-                LOG.info("Use existing net (ID: {}) and router (ID: {}).", net.getId(), router.getId());
+                LOG.info("Use existing network (ID: {}) and router (ID: {}).", net.getId(), router.getId());
             }
             if (router == null) {
                 if (cfg.getRouter() == null) {
-                    throw new ConfigurationException("No Router found and no router name provided!");
+                    throw new ConfigurationException("No router found and no router name provided!");
                 } else {
                     router = getRouterByName(osc, cfg.getRouter());
                     if (router == null) {
-                        throw new ConfigurationException("No Router with name '" + cfg.getRouter() + "' found!");
+                        throw new ConfigurationException("No router with name '" + cfg.getRouter() + "' found!");
                     }
                     LOG.info("Use existing router (ID: {}).", router.getId());
                 }
@@ -137,12 +137,12 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                     .build());
 
             cfg.setSubnet(subnet.getName());
-            LOG.info("Subnet (ID: {}, NAME: {}, CIDR: {}) created.", subnet.getId(), subnet.getName(), subnet.getCidr());
+            LOG.info("subnet (ID: {}, NAME: {}, CIDR: {}) created.", subnet.getId(), subnet.getName(), subnet.getCidr());
 
             RouterInterface routerInterface = osc.networking().router().attachInterface(router.getId(),
                     AttachInterfaceType.SUBNET, subnet.getId());
 
-            LOG.info("Interface (ID: {}) added .", routerInterface.getId());
+            LOG.info("Interface (ID: {}) added.", routerInterface.getId());
         } catch (ClientResponseException crs) {
             LOG.error(V, crs.getMessage(), crs);
             throw new ConfigurationException(crs.getMessage(), crs);
@@ -158,16 +158,16 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
         if (securityGroup != null) {
             sge = getSecGroupExtensionByName(osc, securityGroup);
             if (sge == null) {
-                LOG.warn("Configured Security Group (name: {}) not found. Try to create a new one ... ", securityGroup);
+                LOG.warn("Configured Security group (name: {}) not found. Try to create a new one...", securityGroup);
             } else {
-                LOG.info("Use existing Security Group (name: {}).", sge.getName());
+                LOG.info("Use existing Security group (name: {}).", sge.getName());
                 return this;
             }
         }
         try {
             ComputeSecurityGroupService csgs = cluster.getClient().compute().securityGroups();
             sge = csgs.create(SECURITY_GROUP_PREFIX + cluster.getClusterId(),
-                    "Security Group for cluster: " + cluster.getClusterId());
+                    "Security group for cluster: " + cluster.getClusterId());
             // allow ssh access (TCP:22) from everywhere
             csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.TCP, 22, 22).cidr("0.0.0.0/0").build());
             // no restriction within the security group
@@ -180,7 +180,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                         (p.type.equals(Port.Protocol.UDP) ? IPProtocol.UDP : IPProtocol.ICMP);
                 csgs.createRule(getPortBuilder(sge.getId(), protocol, p.number, p.number).cidr(p.ipRange).build());
             }
-            LOG.info("SecurityGroup (name: {}) created.", sge.getName());
+            LOG.info("Security group (name: {}) created.", sge.getName());
         } catch (ClientResponseException e) {
             throw new ConfigurationException(e.getMessage(), e);
         }

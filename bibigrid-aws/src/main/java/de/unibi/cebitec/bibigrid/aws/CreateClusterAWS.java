@@ -202,7 +202,7 @@ public class CreateClusterAWS extends CreateCluster {
             RunInstancesResult runInstancesResult = ec2.runInstances(masterReq);
             String masterReservationId = runInstancesResult.getReservation().getReservationId();
             masterInstance = runInstancesResult.getReservation().getInstances().get(0);
-            LOG.info("Waiting for master instance to finish booting ...");
+            LOG.info("Waiting for master instance to finish booting...");
             // Waiting for master instance to run
             masterInstance = waitForInstances(Collections.singletonList(masterInstance.getInstanceId())).get(0);
         }
@@ -291,7 +291,7 @@ public class CreateClusterAWS extends CreateCluster {
                     }
                 }
             }
-            LOG.info("Waiting for slave instance(s) (spot request) to finish booting ...");
+            LOG.info("Waiting for slave instance(s) (spot request) to finish booting...");
             // wait for spot request (slave) finished
             slaveInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
         } else {
@@ -313,7 +313,7 @@ public class CreateClusterAWS extends CreateCluster {
             for (Instance i : runInstancesResult.getReservation().getInstances()) {
                 slaveInstanceListIds.add(i.getInstanceId());
             }
-            LOG.info("Waiting for slave instance(s) to finish booting ...");
+            LOG.info("Waiting for slave instance(s) to finish booting...");
             slaveInstances = waitForInstances(slaveInstanceListIds);
         }
         // Waiting for master instance to run

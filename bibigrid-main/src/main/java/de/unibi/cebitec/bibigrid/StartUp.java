@@ -175,7 +175,12 @@ public class StartUp {
                             cleanupIntent.terminate();
                         }
                     } catch (ConfigurationException ex) {
-                        LOG.error("Exception : {}", ex.getMessage());
+                        // print stacktrace only verbose mode, otherwise the message is fine
+                        if (VerboseOutputFilter.SHOW_VERBOSE) {
+                            LOG.error("Failed to create cluster. {} {}", ex.getMessage(), ex);
+                        } else {
+                            LOG.error("Failed to create cluster. {}", ex.getMessage());
+                        }
                     }
                     break;
                 case TERMINATE:

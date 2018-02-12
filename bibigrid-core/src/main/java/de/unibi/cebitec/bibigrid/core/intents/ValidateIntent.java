@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * Validation of the configuration file with the selected cloud provider.
@@ -161,16 +162,15 @@ public abstract class ValidateIntent implements Intent {
         }
         // snapshot ids have to be checked individually to find out which one is missing or malformed.
         for (String snapshotId : snapshotIds) {
-            try {
-                boolean snapshotFound = checkSnapshot(snapshotId);
-                allCheck = allCheck && snapshotFound;
-            } catch (Exception ex) {
-                LOG.error("Snapshot {} could not be found.", snapshotId);
+            if (checkSnapshot(snapshotId)) {
+                LOG.info(V, "Snapshot '{}' found.", snapshotId);
+            } else {
+                LOG.error("Snapshot '{}' could not be found.", snapshotId);
                 allCheck = false;
             }
         }
         return allCheck;
     }
 
-    protected abstract boolean checkSnapshot(String snapshotId) throws Exception;
+    protected abstract boolean checkSnapshot(String snapshotId);
 }

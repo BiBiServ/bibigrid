@@ -615,7 +615,7 @@ public abstract class CommandLineValidator {
                 } catch (IllegalArgumentException e) {
                     String options = String.join(", ", Arrays.stream(Configuration.FS.values())
                             .map(x -> "'" + x.toString().toLowerCase() + "'").collect(Collectors.toList()));
-                    LOG.error("Local filesystem must be one of " + options + "!");
+                    LOG.error("Local filesystem must be one of {}!", options);
                     return false;
                 }
             }

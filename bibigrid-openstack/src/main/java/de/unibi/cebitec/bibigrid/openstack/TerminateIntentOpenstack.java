@@ -12,8 +12,6 @@ import org.openstack4j.model.network.options.PortListOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 /**
  * Implements TerminateIntent for Openstack.
  *
@@ -22,35 +20,11 @@ import java.util.Map;
  */
 public class TerminateIntentOpenstack extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
-    private final ConfigurationOpenstack config;
     private final OSClient os;
 
     TerminateIntentOpenstack(ProviderModule providerModule, ConfigurationOpenstack config) {
         super(providerModule, config);
-        this.config = config;
         os = OpenStackUtils.buildOSClient(config);
-    }
-
-    @Override
-    public boolean terminate() {
-        final Map<String, Cluster> clusters = new ListIntentOpenstack(config).getList();
-        boolean success = true;
-        for (String clusterId : config.getClusterIds()) {
-            final Cluster cluster = clusters.get(clusterId);
-            if (cluster == null) {
-                LOG.warn("No cluster with id {} found.", clusterId);
-                success = false;
-                continue;
-            }
-            LOG.info("Terminating cluster with ID: {}", clusterId);
-            if (!terminateCluster(cluster)) {
-                success = false;
-                LOG.info("Cluster '{}' terminated with errors!", clusterId);
-            } else {
-                LOG.info("Cluster '{}' terminated!", clusterId);
-            }
-        }
-        return success;
     }
 
     @Override
@@ -74,12 +48,12 @@ public class TerminateIntentOpenstack extends TerminateIntent {
                     if (ar.isSuccess()) {
                         break;
                     }
-                    LOG.warn("{} Try again in a second ...", ar.getFault());
+                    LOG.warn("{} Try again in a second...", ar.getFault());
                 } catch (InterruptedException ex) {
                     // do nothing
                 }
             }
-            LOG.info("SecurityGroup ({}) deleted.", cluster.getSecurityGroup());
+            LOG.info("Security group '{}' deleted.", cluster.getSecurityGroup());
         }
         // subnet
         if (cluster.getSubnet() != null) {
@@ -106,9 +80,9 @@ public class TerminateIntentOpenstack extends TerminateIntent {
                 // delete subnet
                 ActionResponse ar = os.networking().subnet().delete(subnet.getId());
                 if (ar.isSuccess()) {
-                    LOG.info("Subnet (ID:{}) deleted!", subnet.getId());
+                    LOG.info("Subnet '{}' deleted!", subnet.getId());
                 } else {
-                    LOG.warn("Can't remove subnet (ID:{}) : {}", subnet.getId(), ar.getFault());
+                    LOG.warn("Can't remove subnet '{}'. {}", subnet.getId(), ar.getFault());
                 }
             } catch (ClientResponseException e) {
                 LOG.warn(e.getMessage());
@@ -119,18 +93,18 @@ public class TerminateIntentOpenstack extends TerminateIntent {
             // delete network
             ActionResponse ar = os.networking().network().delete(cluster.getNet());
             if (ar.isSuccess()) {
-                LOG.info("Network (ID:{}) deleted!", cluster.getNet());
+                LOG.info("Network '{}' deleted!", cluster.getNet());
             } else {
-                LOG.warn("Can't remove network (ID:{}) : {}", cluster.getNet(), ar.getFault());
+                LOG.warn("Can't remove network '{}'. {}", cluster.getNet(), ar.getFault());
             }
         }
         // router
         if (cluster.getRouter() != null) {
             ActionResponse ar = os.networking().router().delete(cluster.getRouter());
             if (ar.isSuccess()) {
-                LOG.info("Router (ID:{}) deleted!", cluster.getRouter());
+                LOG.info("Router '{}' deleted!", cluster.getRouter());
             } else {
-                LOG.warn("Can't remove router (ID:{}) : {}", cluster.getRouter(), ar.getFault());
+                LOG.warn("Can't remove router '{}'. {}", cluster.getRouter(), ar.getFault());
             }
         }
         return true;
@@ -161,7 +135,7 @@ public class TerminateIntentOpenstack extends TerminateIntent {
                 }
             }
         }
-        LOG.warn("No Port matches givens constraints ...");
+        LOG.warn("No Port matches givens constraints.");
         return null;
     }
 }

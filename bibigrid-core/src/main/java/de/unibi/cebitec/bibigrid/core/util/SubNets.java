@@ -24,7 +24,7 @@ public class SubNets {
         subnetBase = ip & networkMask;
         numberOfSubnets = Math.round((Math.pow(2, subnetSize - networkSize) - 1));
         if (networkSize >= subnetSize) {
-            throw new RuntimeException("Network size is smaller than Subnet size");
+            throw new RuntimeException("Network size is smaller than subnet size");
         }
     }
 

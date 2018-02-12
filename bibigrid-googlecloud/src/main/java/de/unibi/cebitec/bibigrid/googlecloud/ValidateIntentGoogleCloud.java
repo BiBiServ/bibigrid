@@ -6,10 +6,6 @@ import com.google.api.services.compute.model.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * Implementation of the general ValidateIntent interface for a Google based cluster.
@@ -17,7 +13,6 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class ValidateIntentGoogleCloud extends ValidateIntent {
-    private static final Logger LOG = LoggerFactory.getLogger(ValidateIntentGoogleCloud.class);
     private final ConfigurationGoogleCloud config;
     private Compute compute;
 
@@ -44,11 +39,6 @@ public class ValidateIntentGoogleCloud extends ValidateIntent {
             snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
         }
         Snapshot snapshot = GoogleCloudUtils.getSnapshot(compute, config.getGoogleProjectId(), snapshotId);
-        if (snapshot == null || !snapshot.getName().equals(snapshotId)) {
-            LOG.error("Snapshot {} could not be found.", snapshotId);
-            return false;
-        }
-        LOG.info(V, "Snapshot {} found.", snapshotId);
-        return true;
+        return snapshot != null && snapshot.getName().equals(snapshotId);
     }
 }

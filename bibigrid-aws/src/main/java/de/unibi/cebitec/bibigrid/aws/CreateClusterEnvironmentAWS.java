@@ -64,7 +64,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
                 .collect(Collectors.toList());
         SubNets subnets = new SubNets(vpc.getCidrBlock(), 24);
         String subnetCidr = subnets.nextCidr(listOfUsedCidr);
-        LOG.debug(V, "Use {} for generated SubNet.", subnetCidr);
+        LOG.debug(V, "Use {} for generated subnet.", subnetCidr);
         // create new subnet
         CreateSubnetRequest createSubnetRequest = new CreateSubnetRequest(vpc.getVpcId(), subnetCidr);
         createSubnetRequest.withAvailabilityZone(cluster.getConfig().getAvailabilityZone());

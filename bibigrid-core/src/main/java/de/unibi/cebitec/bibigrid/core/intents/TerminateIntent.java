@@ -37,11 +37,11 @@ public abstract class TerminateIntent implements Intent {
                 continue;
             }
             LOG.info("Terminating cluster with ID '{}'.", clusterId);
-            if (!terminateCluster(cluster)) {
+            if (terminateCluster(cluster)) {
+                LOG.info("Cluster '{}' terminated!", clusterId);
+            } else {
                 LOG.info("Failed to terminate cluster '{}'!", clusterId);
                 success = false;
-            } else {
-                LOG.info("Cluster '{}' terminated!", clusterId);
             }
         }
         return success;

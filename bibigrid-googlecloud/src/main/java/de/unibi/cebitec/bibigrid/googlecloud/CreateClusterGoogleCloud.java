@@ -163,7 +163,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
             do {
                 instance = GoogleCloudUtils.reload(compute, config, instance);
                 String status = instance.getStatus();
-                LOG.info(V, "Status of " + instance.getName() + " instance: " + status);
+                LOG.info(V, "Status of instance '{}': {}", instance.getName(), status);
                 if (status.equals("RUNNING")) {
                     break;
                 } else {
@@ -187,7 +187,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
             try {
                 GoogleCloudUtils.waitForOperation(compute, config, operation);
             } catch (InterruptedException e) {
-                LOG.error("Creation of instance {} failed. {}", instances[i], e);
+                LOG.error("Creation of instance '{}' failed. {}", instances[i], e);
                 break;
             }
             returnList.add(GoogleCloudUtils.reload(compute, config, instances[i]));

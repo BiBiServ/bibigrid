@@ -43,7 +43,7 @@ final class GoogleCloudUtils {
             return new Compute.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
                     .setApplicationName(config.getGoogleProjectId()).build();
         } catch (Exception e) {
-            LOG.error("{}", e);
+            LOG.error("Failed to create google compute service. {}", e);
         }
         return null;
     }

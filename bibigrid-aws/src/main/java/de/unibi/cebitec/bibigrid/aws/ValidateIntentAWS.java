@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
-import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 import java.util.List;
 
@@ -57,12 +56,7 @@ public class ValidateIntentAWS extends ValidateIntent {
         DescribeSnapshotsRequest snapshotRequest = new DescribeSnapshotsRequest().withSnapshotIds(snapshotId);
         DescribeSnapshotsResult snapshotResult = ec2.describeSnapshots(snapshotRequest);
         List<Snapshot> snapshots = snapshotResult.getSnapshots();
-        if (snapshots.size() == 0 || !snapshots.get(0).getSnapshotId().equals(snapshotId)) {
-            LOG.error("Snapshot {} could not be found.", snapshotId);
-            return false;
-        }
-        LOG.info(V, "Snapshot {} found.", snapshotId);
-        return true;
+        return snapshots.size() > 0 && snapshots.get(0).getSnapshotId().equals(snapshotId);
     }
 
     @Override
@@ -75,7 +69,7 @@ public class ValidateIntentAWS extends ValidateIntent {
                 return null;
             }
             if (images.size() > 1) {
-                LOG.warn("Multiply images found for id {}.", instanceConfiguration.getImage());
+                LOG.warn("Multiple images found for id '{}'.", instanceConfiguration.getImage());
             }
             return new InstanceImageAWS(images.get(0));
         } catch (AmazonServiceException ignored) {
