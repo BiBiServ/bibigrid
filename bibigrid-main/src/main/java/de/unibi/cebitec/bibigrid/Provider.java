@@ -5,10 +5,8 @@ import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 /**
  * Manages all provider related work like searching for and executing implementations.
@@ -34,11 +32,11 @@ public final class Provider {
         List<Class<ProviderModule>> providerClasses = Factory.getInstance().getImplementations(ProviderModule.class);
         for (Class<ProviderModule> moduleClass : providerClasses) {
             try {
-                ProviderModule module = moduleClass.newInstance();
+                ProviderModule module = moduleClass.getConstructor().newInstance();
                 providers.put(module.getName().toLowerCase(Locale.US), module);
                 LOG.info(VerboseOutputFilter.V, "Registered provider module " + module.getName());
-            } catch (IllegalAccessException | InstantiationException ex) {
-                LOG.error("Failed to load provider module " + moduleClass.getName());
+            } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+                LOG.error("Failed to load provider module '{}'. {}", moduleClass.getName(), e);
             }
         }
     }
