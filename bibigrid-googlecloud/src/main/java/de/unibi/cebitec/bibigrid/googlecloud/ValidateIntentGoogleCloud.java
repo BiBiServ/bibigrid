@@ -1,9 +1,11 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
 import com.google.api.services.compute.Compute;
+import com.google.api.services.compute.model.Image;
 import com.google.api.services.compute.model.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,8 +33,9 @@ public class ValidateIntentGoogleCloud extends ValidateIntent {
     }
 
     @Override
-    protected boolean checkImage(Configuration.InstanceConfiguration instanceConfiguration) {
-        return GoogleCloudUtils.getImage(compute, config.getGoogleImageProjectId(), instanceConfiguration.getImage()) != null;
+    protected InstanceImage getImage(Configuration.InstanceConfiguration instanceConfiguration) {
+        Image image = GoogleCloudUtils.getImage(compute, config.getGoogleImageProjectId(), instanceConfiguration.getImage());
+        return image != null ? new InstanceImageGoogleCloud(image) : null;
     }
 
     @Override
@@ -40,7 +43,7 @@ public class ValidateIntentGoogleCloud extends ValidateIntent {
         if (snapshotId.contains(":")) {
             snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
         }
-        Snapshot snapshot = GoogleCloudUtils.getSnapshot(compute, config.getGoogleImageProjectId(), snapshotId);
+        Snapshot snapshot = GoogleCloudUtils.getSnapshot(compute, config.getGoogleProjectId(), snapshotId);
         if (snapshot == null || !snapshot.getName().equals(snapshotId)) {
             LOG.error("Snapshot {} could not be found.", snapshotId);
             return false;

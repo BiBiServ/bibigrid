@@ -128,7 +128,7 @@ public abstract class Configuration {
     }
 
     public void setSlaveInstances(List<SlaveInstanceConfiguration> slaveInstances) {
-        this.slaveInstances = slaveInstances;
+        this.slaveInstances = slaveInstances != null ? slaveInstances : new ArrayList<>();
         if (slaveInstances != null && !slaveInstances.isEmpty()) {
             StringBuilder display = new StringBuilder();
             for (SlaveInstanceConfiguration instanceConfiguration : slaveInstances) {
@@ -188,7 +188,7 @@ public abstract class Configuration {
     }
 
     public void setPorts(List<Port> ports) {
-        this.ports = ports;
+        this.ports = ports != null ? ports : new ArrayList<>();
         if (ports != null && !ports.isEmpty()) {
             StringBuilder portsDisplay = new StringBuilder();
             for (Port port : ports) {
@@ -204,7 +204,7 @@ public abstract class Configuration {
     }
 
     public void setMasterMounts(List<MountPoint> masterMounts) {
-        this.masterMounts = masterMounts;
+        this.masterMounts = masterMounts != null ? masterMounts : new ArrayList<>();
     }
 
     public List<MountPoint> getSlaveMounts() {
@@ -212,7 +212,7 @@ public abstract class Configuration {
     }
 
     public void setSlaveMounts(List<MountPoint> slaveMounts) {
-        this.slaveMounts = slaveMounts;
+        this.slaveMounts = slaveMounts != null ? slaveMounts : new ArrayList<>();
     }
 
     public List<String> getNfsShares() {
@@ -220,7 +220,7 @@ public abstract class Configuration {
     }
 
     public void setNfsShares(List<String> nfsShares) {
-        this.nfsShares = nfsShares;
+        this.nfsShares = nfsShares != null ? nfsShares : new ArrayList<>();
         if (nfsShares != null && !nfsShares.isEmpty()) {
             StringBuilder nfsSharesDisplay = new StringBuilder();
             for (String share : nfsShares) {
@@ -235,7 +235,7 @@ public abstract class Configuration {
     }
 
     public void setExtNfsShares(List<MountPoint> extNfsShares) {
-        this.extNfsShares = extNfsShares;
+        this.extNfsShares = extNfsShares != null ? extNfsShares : new ArrayList<>();
     }
 
     public boolean isAlternativeConfigFile() {

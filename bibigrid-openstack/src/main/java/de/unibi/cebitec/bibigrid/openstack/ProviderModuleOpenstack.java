@@ -51,7 +51,7 @@ public class ProviderModuleOpenstack extends ProviderModule {
 
     @Override
     public ValidateIntent getValidateIntent(Configuration config) {
-        return null;
+        return new ValidateIntentOpenstack((ConfigurationOpenstack) config);
     }
 
     @Override

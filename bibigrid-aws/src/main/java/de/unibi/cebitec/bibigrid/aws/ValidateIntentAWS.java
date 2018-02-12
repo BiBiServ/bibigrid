@@ -7,6 +7,7 @@ import com.amazonaws.services.ec2.model.*;
 
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,25 +66,32 @@ public class ValidateIntentAWS extends ValidateIntent {
     }
 
     @Override
-    protected boolean checkImage(Configuration.InstanceConfiguration instanceConfiguration) {
-        InstanceType masterClusterType = config.getMasterInstance().getProviderType();
+    protected InstanceImage getImage(Configuration.InstanceConfiguration instanceConfiguration) {
         try {
             DescribeImagesRequest imageRequest = new DescribeImagesRequest().withImageIds(instanceConfiguration.getImage());
             DescribeImagesResult imageResult = ec2.describeImages(imageRequest);
-            for (Image image : imageResult.getImages()) {
-                if (image.getImageId().equals(instanceConfiguration.getImage())) {
-                    if (checkInstanceVirtualization(masterClusterType.getValue(), masterClusterType, image)) {
-                        return true;
-                    }
-                }
+            List<Image> images = imageResult.getImages();
+            if (images == null || images.size() == 0) {
+                return null;
             }
+            if (images.size() > 1) {
+                LOG.warn("Multiply images found for id {}.", instanceConfiguration.getImage());
+            }
+            return new InstanceImageAWS(images.get(0));
         } catch (AmazonServiceException ignored) {
         }
-        return false;
+        return null;
     }
 
-    private boolean checkInstanceVirtualization(String specName, InstanceType spec, Image image) {
-        if (image.getVirtualizationType().equals("hvm")) {
+    @Override
+    protected boolean checkProviderImageProperties(InstanceImage image) {
+        InstanceType masterClusterType = config.getMasterInstance().getProviderType();
+        return checkInstanceVirtualization(masterClusterType.getValue(), masterClusterType, (InstanceImageAWS) image);
+    }
+
+    private boolean checkInstanceVirtualization(String specName, InstanceType spec, InstanceImageAWS image) {
+        // Checking if both are hvm or paravirtual types
+        if (image.isHvm()) {
             // Image detected is of HVM Type
             if (spec.isHvm()) {
                 // Instance and Image is HVM type

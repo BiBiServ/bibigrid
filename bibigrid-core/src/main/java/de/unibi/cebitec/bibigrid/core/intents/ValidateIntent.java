@@ -1,12 +1,15 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 
@@ -45,6 +48,13 @@ public abstract class ValidateIntent implements Intent {
             LOG.error("Failed to check images.");
             success = false;
         }
+        LOG.info("Checking instance types...");
+        if (checkInstanceTypes()) {
+            LOG.info(I, "Instance type check has been successful.");
+        } else {
+            LOG.error("Failed to check instance types.");
+            success = false;
+        }
         LOG.info("Checking snapshots...");
         if (checkSnapshots()) {
             LOG.info(I, "Snapshot check has been successful.");
@@ -63,22 +73,63 @@ public abstract class ValidateIntent implements Intent {
     protected abstract boolean connect();
 
     private boolean checkImages() {
-        boolean foundMaster = checkImage(config.getMasterInstance());
-        if (!foundMaster) {
+        Map<Configuration.InstanceConfiguration, InstanceImage> typeImageMap = new HashMap<>();
+        InstanceImage masterImage = getImage(config.getMasterInstance());
+        if (masterImage == null) {
             LOG.error("Failed to find master image ({}).", config.getMasterInstance().getImage());
+        } else {
+            typeImageMap.put(config.getMasterInstance(), masterImage);
         }
-        boolean foundAllSlaves = true;
         for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-            if (!checkImage(instanceConfiguration)) {
-                foundAllSlaves = false;
+            InstanceImage slaveImage = getImage(instanceConfiguration);
+            if (slaveImage == null) {
                 LOG.error("Failed to find slave image ({}).", instanceConfiguration.getImage());
+            } else {
+                typeImageMap.put(instanceConfiguration, slaveImage);
             }
         }
-        if (!foundAllSlaves || !foundMaster) {
+        if (typeImageMap.size() != config.getSlaveInstances().size() + 1) {
             LOG.error("Master and Slave images could not be found.");
             return false;
         }
-        // Checking if both are hvm or paravirtual types
+        LOG.info(I, "Master and Slave images have been found.");
+        boolean success = true;
+        for (InstanceImage image : typeImageMap.values()) {
+            if (!checkProviderImageProperties(image)) {
+                success = false;
+            }
+        }
+        for (Map.Entry<Configuration.InstanceConfiguration, InstanceImage> entry : typeImageMap.entrySet()) {
+            if (!checkInstanceTypeImageCombination(entry.getKey(), entry.getValue())) {
+                success = false;
+            }
+        }
+        return success;
+    }
+
+    protected abstract InstanceImage getImage(Configuration.InstanceConfiguration instanceConfiguration);
+
+    protected boolean checkProviderImageProperties(InstanceImage image) {
+        return true;
+    }
+
+    private boolean checkInstanceTypeImageCombination(Configuration.InstanceConfiguration instanceConfiguration,
+                                                      InstanceImage image) {
+        boolean success = true;
+        if (instanceConfiguration.getProviderType().getMaxDiskSpace() < image.getMinDiskSpace()) {
+            LOG.error("The image {} needs more disk space than the instance type {} provides.",
+                    instanceConfiguration.getImage(), instanceConfiguration.getProviderType().getValue());
+            success = false;
+        }
+        if (instanceConfiguration.getProviderType().getMaxRam() < image.getMinRam()) {
+            LOG.error("The image {} needs more memory than the instance type {} provides.",
+                    instanceConfiguration.getImage(), instanceConfiguration.getProviderType().getValue());
+            success = false;
+        }
+        return success;
+    }
+
+    private boolean checkInstanceTypes() {
         boolean allSlavesClusterInstances = config.getSlaveInstances().stream().allMatch(
                 x -> x.getProviderType().isClusterInstance());
         final InstanceType masterClusterType = config.getMasterInstance().getProviderType();
@@ -92,11 +143,8 @@ public abstract class ValidateIntent implements Intent {
                 return false;
             }
         }
-        LOG.info(I, "Master and Slave images have been found.");
         return true;
     }
-
-    protected abstract boolean checkImage(Configuration.InstanceConfiguration instanceConfiguration);
 
     private boolean checkSnapshots() {
         boolean allCheck = true;

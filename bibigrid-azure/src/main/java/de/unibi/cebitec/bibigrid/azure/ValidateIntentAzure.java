@@ -1,9 +1,11 @@
 package de.unibi.cebitec.bibigrid.azure;
 
 import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.management.compute.ImageReference;
 import com.microsoft.azure.management.compute.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,8 +33,9 @@ public class ValidateIntentAzure extends ValidateIntent {
     }
 
     @Override
-    protected boolean checkImage(Configuration.InstanceConfiguration instanceConfiguration) {
-        return AzureUtils.getImage(compute, config, instanceConfiguration.getImage()) != null;
+    protected InstanceImage getImage(Configuration.InstanceConfiguration instanceConfiguration) {
+        ImageReference image = AzureUtils.getImage(compute, config, instanceConfiguration.getImage());
+        return image != null ? new InstanceImageAzure(image) : null;
     }
 
     @Override
