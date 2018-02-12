@@ -7,6 +7,7 @@ import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -64,7 +65,11 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                         RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString(),
                         RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
             case VALIDATE:
-                return null;
+                return Arrays.asList(
+                        RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString(),
+                        RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString(),
+                        RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString(),
+                        RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
         }
         return null;
     }

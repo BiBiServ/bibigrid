@@ -5,8 +5,11 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Image;
+import org.openstack4j.model.storage.block.Volume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * Implementation of the general ValidateIntent interface for an Openstack based cluster.
@@ -37,7 +40,15 @@ public class ValidateIntentOpenstack extends ValidateIntent {
 
     @Override
     protected boolean checkSnapshot(String snapshotId) throws Exception {
-        // TODO
-        return false;
+        if (snapshotId.contains(":")) {
+            snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
+        }
+        Volume snapshot = os.blockStorage().volumes().get(snapshotId);
+        if (snapshot == null || !snapshot.getId().equals(snapshotId)) {
+            LOG.error("Snapshot {} could not be found.", snapshotId);
+            return false;
+        }
+        LOG.info(V, "Snapshot {} found.", snapshotId);
+        return true;
     }
 }

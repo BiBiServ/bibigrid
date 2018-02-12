@@ -9,7 +9,7 @@ import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 class InstanceImageAWS extends InstanceImage {
     private final Image image;
 
-    public InstanceImageAWS(Image image) {
+    InstanceImageAWS(Image image) {
         this.image = image;
     }
 

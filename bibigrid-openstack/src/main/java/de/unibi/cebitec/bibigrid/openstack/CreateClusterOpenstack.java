@@ -253,7 +253,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                         }
                         default:
                             waiting = false;
-                            LOG.error("Volume not available  (Status : {})", v.getStatus());
+                            LOG.error("Volume not available (Status : {})", v.getStatus());
                     }
                 }
 
@@ -264,11 +264,11 @@ public class CreateClusterOpenstack extends CreateCluster {
                     if (va == null) {
                         LOG.error("Attaching volume {} to master failed ...", mountPoint.getSource());
                     } else {
-                        LOG.info(V, "Volume {}  attached to Master.", va.getId());
+                        LOG.info(V, "Volume {} attached to Master.", va.getId());
                     }
                 }
             }
-            LOG.info("{} Volume(s) attached to  Master.", masterDeviceMapper.getSnapshotIdToMountPoint().size());
+            LOG.info("{} Volume(s) attached to Master.", masterDeviceMapper.getSnapshotIdToMountPoint().size());
         }
         return master;
     }
