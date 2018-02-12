@@ -4,11 +4,7 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import org.apache.commons.codec.binary.Base64;
+import java.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +46,7 @@ public final class ShellScriptCreator {
         if (log) {
             LOG.info(V, "Userdata:\n{}", userData.toString());
         }
-        return base64 ? new String(Base64.encodeBase64(userData.toString().getBytes())) : userData.toString();
+        return base64 ? Base64.getEncoder().encodeToString(userData.toString().getBytes()) : userData.toString();
     }
 
 

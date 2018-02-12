@@ -4,7 +4,9 @@ import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
-import org.apache.commons.codec.binary.Base64;
+
+import java.util.Base64;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,21 +42,20 @@ public abstract class CreateCluster implements Intent {
         this.config = config;
         this.providerModule = providerModule;
         clusterId = generateClusterId();
+        LOG.debug("cluster id: {}", clusterId);
         config.setClusterIds(clusterId);
     }
 
-    private String generateClusterId() {
+    static String generateClusterId() {
         // Cluster ID is a cut down base64 encoded version of a random UUID:
         UUID clusterIdUUID = UUID.randomUUID();
         ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
         bb.putLong(clusterIdUUID.getMostSignificantBits());
         bb.putLong(clusterIdUUID.getLeastSignificantBits());
-        String clusterIdBase64 = Base64.encodeBase64URLSafeString(bb.array()).replace("-", "").replace("_", "");
+        String clusterIdBase64 = Base64.getUrlEncoder().encodeToString(bb.array()).replace("-", "").replace("_", "");
         int len = clusterIdBase64.length() >= 15 ? 15 : clusterIdBase64.length();
         // All resource ids must be lower case in google cloud!
-        String clusterId = clusterIdBase64.substring(0, len).toLowerCase(Locale.US);
-        LOG.debug("cluster id: {}", clusterId);
-        return clusterId;
+        return clusterIdBase64.substring(0, len).toLowerCase(Locale.US);
     }
 
     public String getClusterId() {
@@ -142,6 +143,7 @@ public abstract class CreateCluster implements Intent {
 
     /**
      * Start the configured cluster master instance.
+     *
      * @param masterNameTag
      */
     protected abstract Instance launchClusterMasterInstance(String masterNameTag);
@@ -221,7 +223,7 @@ public abstract class CreateCluster implements Intent {
     private void configureMaster(final Instance masterInstance, final List<? extends Instance> slaveInstances,
                                  final String subnetCidr) {
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config);
-        AnsibleConfig ansibleConfig = new AnsibleConfig(config,providerModule.getBlockDeviceBase());
+        AnsibleConfig ansibleConfig = new AnsibleConfig(config, providerModule.getBlockDeviceBase());
         ansibleConfig.setSubnetCidr(subnetCidr);
         ansibleConfig.setMasterIpHostname(masterInstance.getPrivateIp(), masterInstance.getHostname());
         for (Instance slaveInstance : slaveInstances) {
