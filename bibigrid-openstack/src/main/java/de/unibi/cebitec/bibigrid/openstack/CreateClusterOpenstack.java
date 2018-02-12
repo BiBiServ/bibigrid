@@ -135,8 +135,8 @@ public class CreateClusterOpenstack extends CreateCluster {
 
         // BlockDeviceMapping. @ToDo
         slaveMappings = new HashSet<>();
-        String[] ephemerals = {"b", "c", "d", "e"};
         /* TODO
+        String[] ephemerals = {"b", "c", "d", "e"};
         for (int i = 0; i < config.getSlaveInstanceType().getSpec().getEphemerals(); ++i) {
             BlockDeviceMappingCreate blockDeviceMappingCreate = Builders.blockDeviceMapping()
                     .deviceName("sd" + ephemerals[i])

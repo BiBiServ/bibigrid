@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -173,7 +174,7 @@ public abstract class Configuration {
     }
 
     public String[] getClusterIds() {
-        return clusterIds;
+        return Arrays.copyOf(clusterIds, clusterIds.length);
     }
 
     /**

@@ -13,6 +13,7 @@ import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Formatter;
@@ -112,7 +113,7 @@ public class StartUp {
             System.out.println(String.format("v%s (Build: %s)",
                     m.getMainAttributes().getValue("Bibigrid-version"),
                     m.getMainAttributes().getValue("Bibigrid-build-date")));
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOG.error("Version info could not be read.");
         }
     }
@@ -180,6 +181,8 @@ public class StartUp {
                 case TERMINATE:
                     module.getTerminateIntent(validator.getConfig()).terminate();
                     break;
+                default:
+                    break;
             }
         } else {
             LOG.error(ABORT_WITH_NOTHING_STARTED);
@@ -200,11 +203,11 @@ public class StartUp {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
-        formatter.format("%15s | %5s | %15s | %15s | %4s | %10s%n", "name", "cores", "ram Mb", "disk size Mb", "swap",
+        formatter.format("%25s | %5s | %15s | %15s | %4s | %10s%n", "name", "cores", "ram Mb", "disk size Mb", "swap",
                 "ephemerals");
-        display.append(new String(new char[79]).replace('\0', '-')).append("\n");
+        display.append(new String(new char[89]).replace('\0', '-')).append("\n");
         for (InstanceType type : module.getInstanceTypes(config)) {
-            formatter.format("%15s | %5s | %15s | %15s | %4s | %10s%n", type.getValue(), type.getCpuCores(),
+            formatter.format("%25s | %5s | %15s | %15s | %4s | %10s%n", type.getValue(), type.getCpuCores(),
                     type.getMaxRam(), type.getMaxDiskSpace(), type.getSwap(), type.getEphemerals());
         }
         System.out.println(display.toString());

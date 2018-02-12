@@ -69,7 +69,6 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             // 3) subnet
             OSClient osc = cluster.getClient();
             ConfigurationOpenstack cfg = (ConfigurationOpenstack) cluster.getConfig();
-            String clusterId = cluster.getClusterId();
             // if subnet is set just use it
             if (cfg.getSubnet() != null) {
                 // check if subnet exists

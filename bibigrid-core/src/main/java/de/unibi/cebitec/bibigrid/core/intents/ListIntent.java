@@ -117,10 +117,10 @@ public abstract class ListIntent implements Intent {
                 "cluster-id", "user", "launch date", "key name", "public-ip", "# inst", "group-id", "subnet-id",
                 "network-id", "router-id");
         display.append(new String(new char[115]).replace('\0', '-')).append("\n");
-        for (String id : clusterMap.keySet()) {
-            Cluster v = clusterMap.get(id);
+        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            Cluster v = entry.getValue();
             formatter.format("%15s | %10s | %19s | %20s | %15s | %7d | %11s | %11s | %11s | %11s%n",
-                    id,
+                    entry.getKey(),
                     (v.getUser() == null) ? "<NA>" : v.getUser(),
                     (v.getStarted() == null) ? "-" : v.getStarted(),
                     (v.getKeyName() == null ? "-" : v.getKeyName()),

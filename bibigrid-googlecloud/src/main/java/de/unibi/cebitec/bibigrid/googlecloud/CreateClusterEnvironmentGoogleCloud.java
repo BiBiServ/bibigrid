@@ -132,14 +132,14 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         // Create the firewall rules
         try {
             int ruleIndex = 1;
-            for (String ipRange : firewallRuleMap.keySet()) {
+            for (Map.Entry<String, List<Firewall.Allowed>> rule : firewallRuleMap.entrySet()) {
                 Firewall firewall = new Firewall()
                         .setName(SECURITY_GROUP_PREFIX + "rule" + ruleIndex + "-" + cluster.getClusterId())
                         .setNetwork(vpc.getSelfLink())
-                        .setSourceRanges(Collections.singletonList(ipRange));
+                        .setSourceRanges(Collections.singletonList(rule.getKey()));
                 ruleIndex++;
                 // TODO: possibly add cluster instance ids to targetTags, to limit the access!
-                firewall.setAllowed(firewallRuleMap.get(ipRange));
+                firewall.setAllowed(rule.getValue());
                 cluster.getCompute().firewalls().insert(
                         ((ConfigurationGoogleCloud) cluster.getConfig()).getGoogleProjectId(),
                         firewall).execute();

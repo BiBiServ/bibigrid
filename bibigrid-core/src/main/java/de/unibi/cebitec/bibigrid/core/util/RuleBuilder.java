@@ -316,10 +316,6 @@ public class RuleBuilder {
             this.value = value;
         }
 
-        public boolean equals(RuleNames other) {
-            return value.equals(other.value);
-        }
-
         public boolean equals(String other) {
             return value.equals(other);
         }

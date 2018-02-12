@@ -19,6 +19,6 @@ class InstanceTypeOpenstack extends InstanceType {
         hvm = false;
         swap = flavor.getSwap() > 0;
         maxRam = flavor.getRam();
-        maxDiskSpace = flavor.getDisk();
+        maxDiskSpace = flavor.getDisk() * 1024;
     }
 }
