@@ -41,7 +41,7 @@ public class ProviderModuleAzure extends ProviderModule {
 
     @Override
     public TerminateIntent getTerminateIntent(Configuration config) {
-        return new TerminateIntentAzure((ConfigurationAzure) config);
+        return new TerminateIntentAzure(this, (ConfigurationAzure) config);
     }
 
     @Override

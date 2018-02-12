@@ -36,7 +36,7 @@ public class ListIntentOpenstack extends ListIntent {
         // String keypairName = conf.getKeypair();
         Cluster cluster;
         // Instances
-        os.compute().servers().list().forEach(x -> checkInstance(new InstanceOpenstack(x)));
+        os.compute().servers().list().forEach(x -> this.checkInstance(new InstanceOpenstack(x)));
         // Security Group
         for (SecGroupExtension sg : os.compute().securityGroups().list()) {
             String name = sg.getName();

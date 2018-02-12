@@ -41,7 +41,7 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
 
     @Override
     public TerminateIntent getTerminateIntent(Configuration config) {
-        return new TerminateIntentGoogleCloud((ConfigurationGoogleCloud) config);
+        return new TerminateIntentGoogleCloud(this, (ConfigurationGoogleCloud) config);
     }
 
     @Override

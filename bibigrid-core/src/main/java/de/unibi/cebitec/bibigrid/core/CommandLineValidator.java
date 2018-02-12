@@ -478,57 +478,6 @@ public abstract class CommandLineValidator {
         return true;
     }
 
-    /*
-    private boolean parseExecuteScriptParameter() {
-        final String shortParam = RuleBuilder.RuleNames.EXECUTE_SCRIPT_S.toString();
-        final String longParam = RuleBuilder.RuleNames.EXECUTE_SCRIPT_L.toString();
-        String scriptFilePath = cl.hasOption(shortParam) || defaults.containsKey(longParam) ?
-                parseParameterOrDefault(defaults, shortParam, longParam) : null;
-        if (scriptFilePath != null) {
-            Path script = FileSystems.getDefault().getPath(scriptFilePath);
-            if (!script.toFile().exists()) {
-                LOG.error("The supplied shell script file '{}' does not exist!", script);
-                return false;
-            }
-            config.setShellScriptFile(script);
-            LOG.info(V, "Shell script file found! ({})", script);
-        }
-        return true;
-    }
-
-    private boolean parseEarlyExecuteScriptParameter() {
-        final String shortParam = RuleBuilder.RuleNames.EARLY_EXECUTE_SCRIPT_S.toString();
-        String earlyMasterScriptFilePath = cl.hasOption(shortParam) || defaults.containsKey(longParam) ?
-                parseParameterOrDefault(defaults, shortParam, longParam) : null;
-        if (earlyMasterScriptFilePath != null) {
-            Path script = FileSystems.getDefault().getPath(earlyMasterScriptFilePath);
-            if (!script.toFile().exists()) {
-                LOG.error("The supplied early master shell script file '{}' does not exist!", script);
-                return false;
-            }
-            config.setEarlyMasterShellScriptFile(script);
-            LOG.info(V, "Early master shell script file found! ({})", script);
-        }
-        return true;
-    }
-
-    private boolean parseEarlySlaveExecuteScriptParameter() {
-        final String shortParam = RuleBuilder.RuleNames.EARLY_SLAVE_EXECUTE_SCRIPT_S.toString();
-        String earlySlaveScriptFilePath = cl.hasOption(shortParam) || defaults.containsKey(longParam) ?
-                parseParameterOrDefault(defaults, shortParam, longParam) : null;
-        if (earlySlaveScriptFilePath != null) {
-            Path script = FileSystems.getDefault().getPath(earlySlaveScriptFilePath);
-            if (!script.toFile().exists()) {
-                LOG.error("The supplied early slave shell script file '{}' does not exist!", script);
-                return false;
-            }
-            config.setEarlySlaveShellScriptFile(script);
-            LOG.info(V, "Early slave shell script file found! ({})", script);
-        }
-        return true;
-    }
-    */
-
     private boolean parseMasterMountsParameter() {
         final String shortParam = RuleBuilder.RuleNames.MASTER_MOUNTS_S.toString();
         // Parse command line parameter
@@ -723,11 +672,6 @@ public abstract class CommandLineValidator {
         if (req == null) {
             return true;
         }
-        /* TODO: will be replaced with ansible script extension
-        if (!parseExecuteScriptParameter()) return false;
-        if (!parseEarlyExecuteScriptParameter()) return false;
-        if (!parseEarlySlaveExecuteScriptParameter()) return false;
-        */
         return validateProviderParameters() &&
                 parseTerminateParameter() &&
                 parseUserNameParameter() &&

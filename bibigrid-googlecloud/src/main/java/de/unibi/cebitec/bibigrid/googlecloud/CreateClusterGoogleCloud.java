@@ -140,6 +140,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                     config.getSlaveMounts(), config.getGoogleImageProjectId());
             GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
             try {
+                // Start the instance
                 slaveInstanceOperations[i] = compute.instances()
                         .insert(config.getGoogleProjectId(), zone, slaveBuilder).execute();
                 slaveInstanceBuilders[i] = slaveBuilder;

@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.exceptions.ClientResponseException;
 import org.openstack4j.api.networking.PortService;
@@ -19,12 +20,13 @@ import java.util.Map;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class TerminateIntentOpenstack implements TerminateIntent {
+public class TerminateIntentOpenstack extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
     private final ConfigurationOpenstack config;
     private final OSClient os;
 
-    TerminateIntentOpenstack(ConfigurationOpenstack config) {
+    TerminateIntentOpenstack(ProviderModule providerModule, ConfigurationOpenstack config) {
+        super(providerModule, config);
         this.config = config;
         os = OpenStackUtils.buildOSClient(config);
     }
@@ -51,7 +53,8 @@ public class TerminateIntentOpenstack implements TerminateIntent {
         return success;
     }
 
-    private boolean terminateCluster(Cluster cluster) {
+    @Override
+    protected boolean terminateCluster(Cluster cluster) {
         // master
         if (cluster.getMasterInstance() != null) {
             os.compute().servers().delete(cluster.getMasterInstance());

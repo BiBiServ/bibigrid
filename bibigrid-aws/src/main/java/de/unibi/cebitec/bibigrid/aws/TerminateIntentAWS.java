@@ -11,13 +11,13 @@ import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * AWS specific implementation of terminate intent.
@@ -25,34 +25,23 @@ import java.util.Map;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class TerminateIntentAWS implements TerminateIntent {
+public class TerminateIntentAWS extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentAWS.class);
     private final ConfigurationAWS config;
 
-    TerminateIntentAWS(final ConfigurationAWS config) {
+    TerminateIntentAWS(ProviderModule providerModule, ConfigurationAWS config) {
+        super(providerModule, config);
         this.config = config;
     }
 
     @Override
-    public boolean terminate() {
+    protected boolean terminateCluster(Cluster cluster) {
         final AmazonEC2 ec2 = IntentUtils.getClient(config);
-        final Map<String, Cluster> clusters = new ListIntentAWS(config).getList();
-        boolean success = true;
-        for (String clusterId : config.getClusterIds()) {
-            final Cluster cluster = clusters.get(clusterId);
-            if (cluster == null) {
-                LOG.warn("No cluster with id {} found.", clusterId);
-                success = false;
-                continue;
-            }
-            LOG.info("Terminating cluster with ID: {}", clusterId);
-            terminateInstances(ec2, cluster);
-            terminatePlacementGroup(ec2, cluster);
-            terminateSubnet(ec2, cluster);
-            terminateSecurityGroup(ec2, cluster);
-            LOG.info("Cluster '{}' terminated!", clusterId);
-        }
-        return success;
+        terminateInstances(ec2, cluster);
+        terminatePlacementGroup(ec2, cluster);
+        terminateSubnet(ec2, cluster);
+        terminateSecurityGroup(ec2, cluster);
+        return true;
     }
 
     private void terminateInstances(final AmazonEC2 ec2, final Cluster cluster) {

@@ -39,7 +39,7 @@ public class ProviderModuleAWS extends ProviderModule {
 
     @Override
     public TerminateIntent getTerminateIntent(Configuration config) {
-        return new TerminateIntentAWS(((ConfigurationAWS) config));
+        return new TerminateIntentAWS(this, (ConfigurationAWS) config);
     }
 
     @Override

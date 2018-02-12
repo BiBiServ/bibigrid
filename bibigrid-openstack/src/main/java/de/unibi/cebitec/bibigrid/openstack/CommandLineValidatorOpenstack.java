@@ -33,7 +33,6 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
         switch (intentMode) {
             case LIST:
                 return Arrays.asList(
-                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
                         RuleBuilder.RuleNames.REGION_S.toString(),
                         RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString(),
                         RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString(),

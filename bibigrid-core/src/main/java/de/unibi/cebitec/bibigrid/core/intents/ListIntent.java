@@ -26,7 +26,7 @@ public abstract class ListIntent implements Intent {
         if (clusterMap.containsKey(clusterId)) {
             cluster = clusterMap.get(clusterId);
         } else {
-            cluster = new Cluster();
+            cluster = new Cluster(clusterId);
             clusterMap.put(clusterId, cluster);
         }
         return cluster;

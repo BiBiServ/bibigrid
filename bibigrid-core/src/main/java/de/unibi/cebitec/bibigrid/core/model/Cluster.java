@@ -10,6 +10,8 @@ import java.util.List;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class Cluster {
+    private final String clusterId;
+
     private String masterInstance;
     private List<String> slaveInstances = new ArrayList<>();
 
@@ -25,6 +27,14 @@ public class Cluster {
     private String user;
 
     private String started = "unknown";
+
+    public Cluster(String clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public String getClusterId() {
+        return clusterId;
+    }
 
     public String getMasterInstance() {
         return masterInstance;

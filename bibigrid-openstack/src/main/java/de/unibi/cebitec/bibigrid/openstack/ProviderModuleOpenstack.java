@@ -41,7 +41,7 @@ public class ProviderModuleOpenstack extends ProviderModule {
 
     @Override
     public TerminateIntent getTerminateIntent(Configuration config) {
-        return new TerminateIntentOpenstack((ConfigurationOpenstack) config);
+        return new TerminateIntentOpenstack(this, (ConfigurationOpenstack) config);
     }
 
     @Override

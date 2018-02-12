@@ -2,6 +2,8 @@ package de.unibi.cebitec.bibigrid.azure;
 
 import com.microsoft.azure.management.Azure;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,31 +14,28 @@ import static de.unibi.cebitec.bibigrid.azure.CreateClusterEnvironmentAzure.RESO
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public class TerminateIntentAzure implements TerminateIntent {
+public class TerminateIntentAzure extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentAzure.class);
 
     private final ConfigurationAzure config;
 
-    TerminateIntentAzure(final ConfigurationAzure config) {
+    TerminateIntentAzure(ProviderModule providerModule, ConfigurationAzure config) {
+        super(providerModule, config);
         this.config = config;
     }
 
-    public boolean terminate() {
+    @Override
+    protected boolean terminateCluster(Cluster cluster) {
         final Azure compute = AzureUtils.getComputeService(config);
-        boolean success = true;
-        for (String clusterId : config.getClusterIds()) {
-            LOG.info("Terminating cluster with ID: {}", clusterId);
-            try {
-                // Terminating the resource group deletes all associated resources, too.
-                if (compute != null) {
-                    compute.resourceGroups().deleteByName(RESOURCE_GROUP_PREFIX + clusterId);
-                }
-            } catch (Exception e) {
-                LOG.error("Failed to delete resource group {}", e);
-                success = false;
+        try {
+            // Terminating the resource group deletes all associated resources, too.
+            if (compute != null) {
+                compute.resourceGroups().deleteByName(RESOURCE_GROUP_PREFIX + cluster.getClusterId());
             }
-            LOG.info("Cluster '{}' terminated!", clusterId);
+        } catch (Exception e) {
+            LOG.error("Failed to delete resource group. {}", e);
+            return false;
         }
-        return success;
+        return true;
     }
 }
