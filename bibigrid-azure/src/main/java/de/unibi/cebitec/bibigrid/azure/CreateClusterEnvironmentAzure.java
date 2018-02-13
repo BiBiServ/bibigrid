@@ -26,7 +26,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     static final String RESOURCE_GROUP_PREFIX = PREFIX + "rg-";
 
     private final CreateClusterAzure cluster;
-    private Network vpc;
+    private Network network;
     private Subnet subnet;
     private NetworkSecurityGroup securityGroup;
     private String masterIP;
@@ -43,22 +43,22 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     }
 
     @Override
-    public CreateClusterEnvironmentAzure createVPC() throws ConfigurationException {
-        // check for VPC
-        String vpcId = cluster.getConfig().getVpc();
-        if (vpcId == null) {
-            throw new ConfigurationException("vpc id is not defined");
+    public CreateClusterEnvironmentAzure createNetwork() throws ConfigurationException {
+        // check for network
+        String networkId = cluster.getConfig().getNetwork();
+        if (networkId == null) {
+            throw new ConfigurationException("Network id is not defined!");
         }
-        for (Network vpc : cluster.getCompute().networks().list()) {
-            if (vpc.name().equals(vpcId)) {
-                this.vpc = vpc;
+        for (Network network : cluster.getCompute().networks().list()) {
+            if (network.name().equals(networkId)) {
+                this.network = network;
                 break;
             }
         }
-        if (vpc == null) {
-            throw new ConfigurationException("No suitable vpc found ... define a valid vpc id");
+        if (network == null) {
+            throw new ConfigurationException("No suitable network found! Define a valid network id.");
         } else {
-            LOG.info(V, "Use VPC {}", vpc.name());
+            LOG.info(V, "Use Network '{}'.", network.name());
         }
         return this;
     }
@@ -67,7 +67,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     public CreateClusterEnvironmentAzure createSubnet() {
         String subnetName = cluster.getConfig().getSubnet();
         if (subnetName != null && subnetName.length() > 0) {
-            for (Subnet sn : vpc.subnets().values()) {
+            for (Subnet sn : network.subnets().values()) {
                 if (sn.name().equalsIgnoreCase(subnetName)) {
                     subnet = sn;
                     break;
@@ -82,23 +82,23 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
                     .withExistingResourceGroup(resourceGroup)
                     .create();
             // check for unused Subnet Cidr and create one
-            List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
-            for (Subnet sn : vpc.subnets().values()) {
+            List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current network
+            for (Subnet sn : network.subnets().values()) {
                 listOfUsedCidr.add(sn.addressPrefix());
             }
-            SubNets subnets = new SubNets(vpc.addressSpaces().size() > 0 ? vpc.addressSpaces().get(0) : "10.128.0.0", 24);
+            SubNets subnets = new SubNets(network.addressSpaces().size() > 0 ? network.addressSpaces().get(0) : "10.128.0.0", 24);
             subnetCidr = subnets.nextCidr(listOfUsedCidr); // TODO: not generating correct next cidr according to azure
             LOG.debug(V, "Use {} for generated subnet.", subnetCidr);
             // create new subnet
             try {
                 subnetName = SUBNET_PREFIX + cluster.getClusterId();
-                vpc = vpc.update()
+                network = network.update()
                         .defineSubnet(subnetName)
                         .withAddressPrefix(subnetCidr)
                         .withExistingNetworkSecurityGroup(securityGroup)
                         .attach()
                         .apply();
-                subnet = vpc.subnets().get(subnetName);
+                subnet = network.subnets().get(subnetName);
             } catch (Exception e) {
                 LOG.error("Failed to create subnet. {}", e);
             }
@@ -169,8 +169,8 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
         return resourceGroup;
     }
 
-    public Network getVpc() {
-        return vpc;
+    public Network getNetwork() {
+        return network;
     }
 
     public Subnet getSubnet() {

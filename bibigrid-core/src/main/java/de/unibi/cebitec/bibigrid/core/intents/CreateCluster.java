@@ -72,7 +72,7 @@ public abstract class CreateCluster implements Intent {
      * Configuration conf;
      * <ol>
      * <li>new CreateClusterAWS(conf).createClusterEnvironment()</li>
-     * <li>&#09.createVPC()</li>
+     * <li>&#09.createNetwork()</li>
      * <li>&#09.createSubnet()</li>
      * <li>&#09.createSecurityGroup()</li>
      * <li>&#09.createPlacementGroup()</li>

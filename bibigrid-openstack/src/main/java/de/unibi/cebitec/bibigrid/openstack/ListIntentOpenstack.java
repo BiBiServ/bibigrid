@@ -47,12 +47,12 @@ public class ListIntentOpenstack extends ListIntent {
             }
         }
         // Network
-        for (Network net : os.networking().network().list()) {
-            String name = net.getName();
+        for (Network network : os.networking().network().list()) {
+            String name = network.getName();
             if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.NETWORK_PREFIX)) {
                 String[] t = name.split("-");
                 cluster = getOrCreateCluster(t[t.length - 1]);
-                cluster.setNet(net.getId());
+                cluster.setNetwork(network.getId());
             }
         }
         // Subnet

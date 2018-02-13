@@ -27,8 +27,6 @@ public class RuleBuilder {
         groupReference.add(createStringRule(RuleNames.MASTER_IMAGE_S, RuleNames.MASTER_IMAGE_L,
                 "machine image id for master, if not set images defined at https://bibiserv.cebitec.uni-bielefeld.de" +
                         "/resources/bibigrid/<framework>/<region>.ami.properties are used!"));
-        groupReference.add(createStringRule(RuleNames.EARLY_EXECUTE_SCRIPT_S, RuleNames.EARLY_EXECUTE_SCRIPT_L,
-                "path to shell script to be executed on master instance startup (size limitation of 10K chars)"));
         // TODO: Regex for ex. search for =?
         groupReference.add(createStringRule(RuleNames.MASTER_MOUNTS_S, RuleNames.MASTER_MOUNTS_L,
                 "comma-separated volume/snapshot id=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) " +
@@ -44,8 +42,6 @@ public class RuleBuilder {
                 "min: 0", 1));
         groupReference.add(createStringRule(RuleNames.SLAVE_IMAGE_S, RuleNames.SLAVE_IMAGE_L,
                 "machine image id for slaves, same behaviour like master-image"));
-        groupReference.add(createStringRule(RuleNames.EARLY_SLAVE_EXECUTE_SCRIPT_S, RuleNames.EARLY_SLAVE_EXECUTE_SCRIPT_L,
-                "path to shell script to be executed on slave instance(s) startup (size limitation of 10K chars)"));
         // TODO: Regex for ex. search for =?
         groupReference.add(createStringRule(RuleNames.SLAVE_MOUNTS_S, RuleNames.SLAVE_MOUNTS_L,
                 "comma-separated snapshot id=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) " +
@@ -80,8 +76,6 @@ public class RuleBuilder {
 
         groupReference.add(createStringRule(RuleNames.SECURITY_GROUP_S, RuleNames.SECURITY_GROUP_L,
                 "security group id used by current setup"));
-        groupReference.add(createStringRule(RuleNames.EXECUTE_SCRIPT_S, RuleNames.EXECUTE_SCRIPT_L,
-                "path to shell script to be executed on master instance"));
         groupReference.add(createStringRule(RuleNames.NFS_SHARES_S, RuleNames.NFS_SHARES_L,
                 "comma-separated list of paths on master to be shared via NFS (e.g. 192.168.10.44=/export/data,192.168.10.44=/export/bla)"));
         groupReference.add(createStringRule(RuleNames.EXT_NFS_SHARES_S, RuleNames.EXT_NFS_SHARES_L,
@@ -98,14 +92,10 @@ public class RuleBuilder {
                 "Enable Spark cluster support"));
         groupReference.add(createStringRule(RuleNames.GRID_PROPERTIES_FILE_S, RuleNames.GRID_PROPERTIES_FILE_L,
                 "store essential grid properties like master & slave dns values and grid id in a Java property file"));
-        groupReference.add(createStringRule(RuleNames.VPC_S, RuleNames.VPC_L,
-                "Vpc ID used instead of default vpc"));
         groupReference.add(createStringRule(RuleNames.ROUTER_S, RuleNames.ROUTER_L,
-                "Name of router used (Openstack));, only one of --router --network or --subnet should be used. "));
-        groupReference.add(createStringRule(RuleNames.NETWORK_S, RuleNames.NETWORK_L,
-                "Name of network used (Openstack));, only one of --router --network or --subnet should be used."));
-        groupReference.add(createStringRule(RuleNames.SUBNET_S, RuleNames.SUBNET_L,
-                "Name of subnet used (Openstack));, only one of --router --network or --subnet should be used."));
+                "Name of router used (Openstack), only one of --router --network or --subnet should be used."));
+        groupReference.add(createStringRule(RuleNames.NETWORK_S, RuleNames.NETWORK_L, "Name of network used."));
+        groupReference.add(createStringRule(RuleNames.SUBNET_S, RuleNames.SUBNET_L, "Name of subnet used."));
         groupReference.add(createBooleanRule(RuleNames.PUBLIC_SLAVE_IP_S, RuleNames.PUBLIC_SLAVE_IP_L,
                 "Slave instances also get an public ip address"));
         groupReference.add(createBooleanRule(RuleNames.MESOS_S, RuleNames.MESOS_L,
@@ -145,7 +135,7 @@ public class RuleBuilder {
         groupReference.add(createStringRule(RuleNames.AZURE_CREDENTIALS_FILE_S, RuleNames.AZURE_CREDENTIALS_FILE_L,
                 "Path to microsoft azure credentials file"));
 
-        groupReference.add(createBooleanRule(RuleNames.CLOUD9_S,RuleNames.CLOUD9_L,"Enable Cloud9 IDE"));
+        groupReference.add(createBooleanRule(RuleNames.CLOUD9_S, RuleNames.CLOUD9_L, "Enable Cloud9 IDE"));
     }
 
     private Tparam createBasicRule(RuleNames shortFlag, RuleNames longFlag, Tprimitive type, String shortDescription) {
@@ -216,10 +206,6 @@ public class RuleBuilder {
         REGION_ENV("OS_REGION_NAME"),
         AVAILABILITY_ZONE_S("z"),
         AVAILABILITY_ZONE_L("availability-zone"),
-        EARLY_EXECUTE_SCRIPT_S("ex"),
-        EARLY_EXECUTE_SCRIPT_L("early-execute-script"),
-        EARLY_SLAVE_EXECUTE_SCRIPT_S("esx"),
-        EARLY_SLAVE_EXECUTE_SCRIPT_L("early-slave-execute-script"),
         PORTS_S("p"),
         PORTS_L("ports"),
         SECURITY_GROUP_S("sg"),
@@ -228,8 +214,6 @@ public class RuleBuilder {
         MASTER_MOUNTS_L("master-mounts"),
         SLAVE_MOUNTS_S("f"),
         SLAVE_MOUNTS_L("slave-mounts"),
-        EXECUTE_SCRIPT_S("x"),
-        EXECUTE_SCRIPT_L("execute-script"),
         NFS_SHARES_S("g"),
         NFS_SHARES_L("nfs-shares"),
         EXT_NFS_SHARES_S("ge"),
@@ -250,8 +234,6 @@ public class RuleBuilder {
         SPARK_L("spark"),
         GRID_PROPERTIES_FILE_S("gpf"),
         GRID_PROPERTIES_FILE_L("grid-properties-file"),
-        VPC_S("vpc"),
-        VPC_L("vpc"),
         ROUTER_S("router"),
         ROUTER_L("router"),
         NETWORK_S("network"),

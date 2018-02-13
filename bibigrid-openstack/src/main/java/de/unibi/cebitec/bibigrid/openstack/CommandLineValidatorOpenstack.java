@@ -7,7 +7,6 @@ import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -77,7 +76,6 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     protected boolean validateProviderParameters() {
         return parseCredentialParameters() &&
                 parseRouterParameter() &&
-                parseNetworkParameter() &&
                 parseSecurityGroupParameter();
     }
 
@@ -252,25 +250,6 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
         // Validate parameter if required
         if (req.contains(shortParam)) {
             if (isStringNullOrEmpty(openstackConfig.getRouter())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean parseNetworkParameter() {
-        final String shortParam = RuleBuilder.RuleNames.NETWORK_S.toString();
-        // Parse command line parameter
-        if (cl.hasOption(shortParam)) {
-            final String value = cl.getOptionValue(shortParam);
-            if (!isStringNullOrEmpty(value)) {
-                openstackConfig.setNetwork(value);
-            }
-        }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(openstackConfig.getNetwork())) {
                 LOG.error("-" + shortParam + " option is required!");
                 return false;
             }

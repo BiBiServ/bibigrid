@@ -128,7 +128,7 @@ public abstract class ListIntent implements Intent {
                     ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
                     (v.getSecurityGroup() == null ? "-" : cutStringIfNecessary(v.getSecurityGroup())),
                     (v.getSubnet() == null ? "-" : cutStringIfNecessary(v.getSubnet())),
-                    (v.getNet() == null ? "-" : cutStringIfNecessary(v.getNet())),
+                    (v.getNetwork() == null ? "-" : cutStringIfNecessary(v.getNetwork())),
                     (v.getRouter() == null ? "-" : cutStringIfNecessary(v.getRouter())));
         }
         return display.toString();

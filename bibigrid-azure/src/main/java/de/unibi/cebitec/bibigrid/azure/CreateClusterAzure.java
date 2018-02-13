@@ -71,7 +71,7 @@ public class CreateClusterAzure extends CreateCluster {
                 .define(masterNameTag)
                 .withRegion(config.getRegion())
                 .withExistingResourceGroup(environment.getResourceGroup())
-                .withExistingPrimaryNetwork(environment.getVpc())
+                .withExistingPrimaryNetwork(environment.getNetwork())
                 .withSubnet(environment.getSubnet().name())
                 .withPrimaryPrivateIPAddressDynamic()
                 .withNewPrimaryPublicIPAddress(environment.getMasterIP())
@@ -111,7 +111,7 @@ public class CreateClusterAzure extends CreateCluster {
                     .define(buildSlaveInstanceName(batchIndex, i))
                     .withRegion(config.getRegion())
                     .withExistingResourceGroup(environment.getResourceGroup())
-                    .withExistingPrimaryNetwork(environment.getVpc())
+                    .withExistingPrimaryNetwork(environment.getNetwork())
                     .withSubnet(environment.getSubnet().name())
                     .withPrimaryPrivateIPAddressDynamic()
                     .withNewPrimaryPublicIPAddress(environment.getMasterIP()) // TODO

@@ -39,7 +39,7 @@ public abstract class Configuration {
     private FS localFS = FS.XFS;
     private boolean debugRequests;
     private boolean useSpotInstances;
-    private String vpc;
+    private String network;
     private String subnet;
     private String[] clusterIds;
     private boolean cloud9 = false;
@@ -184,6 +184,10 @@ public abstract class Configuration {
         this.clusterIds = clusterIds == null ? new String[0] : clusterIds.split("/");
     }
 
+    public void setClusterIds(String[] clusterIds) {
+        this.clusterIds = clusterIds == null ? new String[0] : clusterIds;
+    }
+
     public List<Port> getPorts() {
         return ports;
     }
@@ -251,12 +255,12 @@ public abstract class Configuration {
         this.alternativeConfigPath = alternativeConfigPath.trim();
     }
 
-    public String getVpc() {
-        return vpc;
+    public String getNetwork() {
+        return network;
     }
 
-    public void setVpc(String vpc) {
-        this.vpc = vpc.trim();
+    public void setNetwork(String network) {
+        this.network = network.trim();
     }
 
     public boolean isMesos() {

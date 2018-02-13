@@ -25,7 +25,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentGoogleCloud.class);
 
     private final CreateClusterGoogleCloud cluster;
-    private Network vpc;
+    private Network network;
     private Subnetwork subnet;
     private String masterIP;
     private String subnetCidr;
@@ -36,29 +36,25 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     }
 
     @Override
-    public CreateClusterEnvironmentGoogleCloud createVPC() throws ConfigurationException {
-        // check for (default) VPC
-        String vpcId = cluster.getConfig().getVpc() == null ? "default" : cluster.getConfig().getVpc();
-        vpc = getVpcById(vpcId);
-        if (vpc == null) {
-            throw new ConfigurationException("No suitable vpc found ... define a default VPC for you account or set VPC_ID");
-        } else {
-            LOG.info(V, "Use VPC {}", vpc.getName());
-        }
-        return this;
-    }
-
-    private Network getVpcById(String vpcId) {
+    public CreateClusterEnvironmentGoogleCloud createNetwork() throws ConfigurationException {
+        // check for (default) network
+        String networkId = cluster.getConfig().getNetwork() == null ? "default" : cluster.getConfig().getNetwork();
         try {
             String projectId = ((ConfigurationGoogleCloud) cluster.getConfig()).getGoogleProjectId();
-            for (Network vpc : cluster.getCompute().networks().list(projectId).execute().getItems()) {
-                if (vpc.getName().equals(vpcId))
-                    return vpc;
+            for (Network network : cluster.getCompute().networks().list(projectId).execute().getItems()) {
+                if (network.getName().equals(networkId)) {
+                    this.network = network;
+                    break;
+                }
             }
-        } catch (IOException e) {
-            LOG.error("Failed to list networks. {}", e);
+        } catch (IOException ignored) {
         }
-        return null;
+        if (network == null) {
+            throw new ConfigurationException("No suitable network found! Define a default network for you account or a valid network id.");
+        } else {
+            LOG.info(V, "Use Network '{}'.", network.getName());
+        }
+        return this;
     }
 
     @Override
@@ -66,19 +62,19 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         ConfigurationGoogleCloud config = (ConfigurationGoogleCloud) cluster.getConfig();
         String region = config.getRegion();
         String projectId = config.getGoogleProjectId();
-        // As default we assume that the vpc is auto creating subnets. Then we can only reuse the default
+        // As default we assume that the network is auto creating subnets. Then we can only reuse the default
         // subnets and can't create new ones!
-        boolean isAutoCreate = vpc.getAutoCreateSubnetworks();
+        boolean isAutoCreate = network.getAutoCreateSubnetworks();
         if (isAutoCreate) {
-            // Reuse the first (and only) subnet for the vpc and region.
+            // Reuse the first (and only) subnet for the network and region.
             subnet = GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region).get(0);
             subnetCidr = subnet.getIpCidrRange();
             LOG.debug(V, "Use {} for reused subnet.", subnetCidr);
         } else {
             // check for unused Subnet Cidr and create one
-            List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current vpc
+            List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current network
             for (Subnetwork sn : GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region)) {
-                if (sn.getNetwork().equals(vpc.getSelfLink())) {
+                if (sn.getNetwork().equals(network.getSelfLink())) {
                     listOfUsedCidr.add(sn.getIpCidrRange());
                 }
             }
@@ -135,7 +131,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
             for (Map.Entry<String, List<Firewall.Allowed>> rule : firewallRuleMap.entrySet()) {
                 Firewall firewall = new Firewall()
                         .setName(SECURITY_GROUP_PREFIX + "rule" + ruleIndex + "-" + cluster.getClusterId())
-                        .setNetwork(vpc.getSelfLink())
+                        .setNetwork(network.getSelfLink())
                         .setSourceRanges(Collections.singletonList(rule.getKey()));
                 ruleIndex++;
                 // TODO: possibly add cluster instance ids to targetTags, to limit the access!

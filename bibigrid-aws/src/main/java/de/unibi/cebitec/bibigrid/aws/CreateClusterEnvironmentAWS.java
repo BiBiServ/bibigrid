@@ -13,7 +13,6 @@ import de.unibi.cebitec.bibigrid.core.util.SubNets;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,10 +24,9 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentAWS.class);
-    private static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
     private static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
 
-    private Vpc vpc;
+    private Vpc network;
     private Subnet subnet;
     private String placementGroup;
     private final CreateClusterAWS cluster;
@@ -41,13 +39,13 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     }
 
     @Override
-    public CreateClusterEnvironmentAWS createVPC() throws ConfigurationException {
-        // check for (default) VPC
-        vpc = cluster.getConfig().getVpc() == null ? getVPC() : getVPC(cluster.getConfig().getVpc());
-        if (vpc == null) {
-            throw new ConfigurationException("No suitable vpc found. Define a default VPC for you account or set VPC_ID");
+    public CreateClusterEnvironmentAWS createNetwork() throws ConfigurationException {
+        // check for (default) network
+        network = getNetworkOrDefault(cluster.getConfig().getNetwork());
+        if (network == null) {
+            throw new ConfigurationException("No suitable network found. Define a default VPC for you account or a valid network id.");
         } else {
-            LOG.info(V, "Use VPC {} ({})", vpc.getVpcId(), vpc.getCidrBlock());
+            LOG.info(V, "Use network '{}' ({}).", network.getVpcId(), network.getCidrBlock());
         }
         return this;
     }
@@ -57,16 +55,16 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         // check for unused Subnet CIDR and create one
         DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
         DescribeSubnetsResult describeSubnetsResult = cluster.getEc2().describeSubnets(describeSubnetsRequest);
-        // contains all subnet.cidr which are in current vpc
+        // contains all subnet.cidr which are in current network
         List<String> listOfUsedCidr = describeSubnetsResult.getSubnets().stream()
-                .filter(s -> s.getVpcId().equals(vpc.getVpcId()))
+                .filter(s -> s.getVpcId().equals(network.getVpcId()))
                 .map(Subnet::getCidrBlock)
                 .collect(Collectors.toList());
-        SubNets subnets = new SubNets(vpc.getCidrBlock(), 24);
+        SubNets subnets = new SubNets(network.getCidrBlock(), 24);
         String subnetCidr = subnets.nextCidr(listOfUsedCidr);
         LOG.debug(V, "Use {} for generated subnet.", subnetCidr);
         // create new subnet
-        CreateSubnetRequest createSubnetRequest = new CreateSubnetRequest(vpc.getVpcId(), subnetCidr);
+        CreateSubnetRequest createSubnetRequest = new CreateSubnetRequest(network.getVpcId(), subnetCidr);
         createSubnetRequest.withAvailabilityZone(cluster.getConfig().getAvailabilityZone());
         CreateSubnetResult createSubnetResult = cluster.getEc2().createSubnet(createSubnetRequest);
         subnet = createSubnetResult.getSubnet();
@@ -86,7 +84,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + cluster.getClusterId())
                 .withDescription(cluster.getClusterId())
-                .withVpcId(vpc.getVpcId());
+                .withVpcId(network.getVpcId());
         securityGroup = cluster.getEc2().createSecurityGroup(secReq).getGroupId();
 
         LOG.info(V, "security group id: {}", securityGroup);
@@ -141,22 +139,26 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     }
 
     /**
-     * Return a VPC that currently exists in selected region. Returns either the *default* vpc from all or the given
-     * vpcIds list. If only one vpcId is given it is returned whether it is default or not. Return null in the case
-     * no default or fitting VPC is found.
+     * Return a network that currently exists in selected region. Returns either the *default* network from all or
+     * the given networkId. If a networkId is given it is returned whether it is default or not. Return null in the
+     * case no default or fitting network is found.
      */
-    private Vpc getVPC(String... vpcIds) {
+    private Vpc getNetworkOrDefault(String networkId) {
         DescribeVpcsRequest describeVpcsRequest = new DescribeVpcsRequest();
-        describeVpcsRequest.setVpcIds(Arrays.asList(vpcIds));
-        DescribeVpcsResult describeVpcsResult = cluster.getEc2().describeVpcs(describeVpcsRequest);
-        List<Vpc> vpcs = describeVpcsResult.getVpcs();
-        if (vpcIds.length == 1 && vpcs.size() == 1) {
-            return vpcs.get(0);
+        List<String> networkIds = new ArrayList<>();
+        if (networkId != null) {
+            networkIds.add(networkId);
         }
-        if (!vpcs.isEmpty()) {
-            for (Vpc vpc : vpcs) {
-                if (vpc.isDefault()) {
-                    return vpc;
+        describeVpcsRequest.setVpcIds(networkIds);
+        DescribeVpcsResult describeVpcsResult = cluster.getEc2().describeVpcs(describeVpcsRequest);
+        List<Vpc> networks = describeVpcsResult.getVpcs();
+        if (networkId != null && networks.size() == 1) {
+            return networks.get(0);
+        }
+        if (!networks.isEmpty()) {
+            for (Vpc network : networks) {
+                if (network.isDefault()) {
+                    return network;
                 }
             }
         }

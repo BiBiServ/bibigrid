@@ -20,7 +20,7 @@ public final class OpenStackCredentials {
     }
 
     public void setUsername(String username) {
-        this.username = username;
+        this.username = username != null ? username.trim() : null;
     }
 
     public String getPassword() {
@@ -28,7 +28,7 @@ public final class OpenStackCredentials {
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        this.password = password != null ? password.trim() : null;
     }
 
     public String getTenantName() {
@@ -36,7 +36,7 @@ public final class OpenStackCredentials {
     }
 
     public void setTenantName(String tenantName) {
-        this.tenantName = tenantName;
+        this.tenantName = tenantName != null ? tenantName.trim() : null;
     }
 
     public String getEndpoint() {
@@ -44,7 +44,7 @@ public final class OpenStackCredentials {
     }
 
     public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
+        this.endpoint = endpoint != null ? endpoint.trim() : null;
     }
 
     public String getDomain() {
@@ -52,7 +52,7 @@ public final class OpenStackCredentials {
     }
 
     public void setDomain(String domain) {
-        this.domain = domain;
+        this.domain = domain != null ? domain.trim() : null;
     }
 
     public String getTenantDomain() {
@@ -60,6 +60,6 @@ public final class OpenStackCredentials {
     }
 
     public void setTenantDomain(String tenantDomain) {
-        this.tenantDomain = tenantDomain;
+        this.tenantDomain = tenantDomain != null ? tenantDomain.trim() : null;
     }
 }

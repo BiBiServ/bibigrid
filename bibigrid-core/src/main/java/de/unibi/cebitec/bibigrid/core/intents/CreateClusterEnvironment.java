@@ -22,12 +22,11 @@ public abstract class CreateClusterEnvironment {
     }
 
     /**
-     * Api specific implementation of creating or choosing an existing
-     * Virtual Private Cloud.
+     * Api specific implementation of creating or choosing an existing Network.
      *
      * @throws ConfigurationException
      */
-    public abstract CreateClusterEnvironment createVPC() throws ConfigurationException;
+    public abstract CreateClusterEnvironment createNetwork() throws ConfigurationException;
 
     /**
      * Api specific implementation of creating or choosing a Subnet.

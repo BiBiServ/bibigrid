@@ -96,18 +96,18 @@ public abstract class CommandLineValidator {
         return true;
     }
 
-    private boolean parseVpcParameter() {
-        final String shortParam = RuleBuilder.RuleNames.VPC_S.toString();
+    private boolean parseNetworkParameter() {
+        final String shortParam = RuleBuilder.RuleNames.NETWORK_S.toString();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
             if (!isStringNullOrEmpty(value)) {
-                config.setVpc(value);
+                config.setNetwork(value);
             }
         }
         // Validate parameter if required
         if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(config.getVpc())) {
+            if (isStringNullOrEmpty(config.getNetwork())) {
                 LOG.error("-" + shortParam + " option is required!");
                 return false;
             }
@@ -676,7 +676,7 @@ public abstract class CommandLineValidator {
                 parseTerminateParameter() &&
                 parseUserNameParameter() &&
                 parseSshUserNameParameter() &&
-                parseVpcParameter() &&
+                parseNetworkParameter() &&
                 parseSubnetParameter() &&
                 parseIdentityFileParameter() &&
                 parseKeypairParameter() &&

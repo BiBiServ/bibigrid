@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.Port;
@@ -37,17 +38,15 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
-    public static final String ROUTER_PREFIX = "bibigrid-router-";
-    public static final String NETWORK_PREFIX = "bibigrid-net-";
+    public static final String ROUTER_PREFIX = CreateCluster.PREFIX + "router-";
+    public static final String NETWORK_PREFIX = CreateCluster.PREFIX + "net-";
     private static final String NETWORK_CIDR = "192.168.0.0/16";
 
     private CreateClusterOpenstack cluster;
-
     private SecGroupExtension sge;
-
-    private Router router = null;
-    private Network net = null;
-    private Subnet subnet = null;
+    private Router router;
+    private Network network;
+    private Subnet subnet;
 
     CreateClusterEnvironmentOpenstack(CreateClusterOpenstack cluster) throws ConfigurationException {
         super();
@@ -55,8 +54,8 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     }
 
     @Override
-    public CreateClusterEnvironmentOpenstack createVPC() {
-        // complete setup is done by createSubNet
+    public CreateClusterEnvironmentOpenstack createNetwork() {
+        // complete setup is done by createSubnet
         return this;
     }
 
@@ -76,23 +75,23 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 if (subnet == null) {
                     throw new ConfigurationException("No subnet with name '" + cfg.getSubnet() + "' found!");
                 }
-                net = getNetworkById(osc, subnet.getNetworkId());
-                if (net == null) {
+                network = getNetworkById(osc, subnet.getNetworkId());
+                if (network == null) {
                     throw new ConfigurationException("No network with id '" + subnet.getNetworkId() + "' found!");
                 }
-                router = getRouterByNetwork(osc, net, subnet); // @ToDo
+                router = getRouterByNetwork(osc, network, subnet); // @ToDo
                 LOG.info("Use existing subnet (ID: {}, CIDR: {}).", subnet.getId(), subnet.getCidr());
                 return this;
             }
             // if network is set try to determine router
             if (cfg.getNetwork() != null) {
                 // check if net exists
-                net = getNetworkByName(osc, cfg.getNetwork());
-                if (net == null) {
+                network = getNetworkByName(osc, cfg.getNetwork());
+                if (network == null) {
                     throw new ConfigurationException("No network with name '" + cfg.getSubnet() + "' found!");
                 }
-                router = getRouterByNetwork(osc, net);
-                LOG.info("Use existing network (ID: {}) and router (ID: {}).", net.getId(), router.getId());
+                router = getRouterByNetwork(osc, network);
+                LOG.info("Use existing network (ID: {}) and router (ID: {}).", network.getId(), router.getId());
             }
             if (router == null) {
                 if (cfg.getRouter() == null) {
@@ -105,12 +104,12 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                     LOG.info("Use existing router (ID: {}).", router.getId());
                 }
                 // create a new network
-                net = osc.networking().network().create(Builders.network()
+                network = osc.networking().network().create(Builders.network()
                         .name(NETWORK_PREFIX + cluster.getClusterId())
                         .adminStateUp(true)
                         .build());
-                cfg.setNetwork(net.getName());
-                LOG.info("Network (ID: {}, NAME: {}) created.", net.getId(), net.getName());
+                cfg.setNetwork(network.getName());
+                LOG.info("Network (ID: {}, NAME: {}) created.", network.getId(), network.getName());
             }
             // get new free /24 subnet
             SubNets sn = new SubNets(NETWORK_CIDR, 24);
@@ -130,7 +129,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             // now we can create a new subnet
             subnet = osc.networking().subnet().create(Builders.subnet()
                     .name(SUBNET_PREFIX + cluster.getClusterId())
-                    .network(net)
+                    .network(network)
                     .ipVersion(IPVersionType.V4)
                     .enableDHCP(true)
                     .cidr(CIDR)
@@ -207,7 +206,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     }
 
     Network getNetwork() {
-        return net;
+        return network;
     }
 
     Subnet getSubnet() {
@@ -313,7 +312,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             lop = ps.list(portListOptions);
         }
         if (subnet == null && lop.size() > 1) {
-            LOG.warn("Network (ID: {}) uses more than one router, return the 1st one !", network.getId());
+            LOG.warn("Network (ID: {}) uses more than one router, return the first one!", network.getId());
         }
         for (org.openstack4j.model.network.Port port : lop) {
             if (subnet == null) {
@@ -326,14 +325,12 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 }
             }
         }
-        LOG.warn("No router matches given constraints ...");
+        LOG.warn("No router matches given constraints...");
         return null;
     }
 
     private static List<? extends org.openstack4j.model.network.Port> getPortsByRouter(OSClient osc, Router router) {
-        PortService ps = osc.networking().port();
-        PortListOptions portListOptions = PortListOptions.create();
-        portListOptions.deviceId(router.getId());
-        return ps.list(portListOptions);
+        PortListOptions portListOptions = PortListOptions.create().deviceId(router.getId());
+        return osc.networking().port().list(portListOptions);
     }
 }

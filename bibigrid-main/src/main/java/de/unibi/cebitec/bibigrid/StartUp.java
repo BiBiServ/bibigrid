@@ -162,7 +162,7 @@ public class StartUp {
                         CreateCluster cluster = module.getCreateIntent(validator.getConfig());
                         boolean success = cluster
                                 .createClusterEnvironment()
-                                .createVPC()
+                                .createNetwork()
                                 .createSubnet()
                                 .createSecurityGroup()
                                 .createPlacementGroup()

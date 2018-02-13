@@ -39,7 +39,7 @@ The parameters are listed below:
 | slave-instance-count       | n               |                      | |
 | use-spot-instance-request  | usir            |                      | |
 | ports                      | p               |                      | |
-| vpc                        | vpc             |                      | |
+| network                    | network         |                      | |
 | subnet                     | subnet          |                      | |
 | nfs                        | nfs             |                      | NFS support |
 | oge                        | oge             |                      | GridEngine support |
@@ -47,9 +47,6 @@ The parameters are listed below:
 | hdfs                       | hdfs            |                      | HDFS support |
 | mesos                      | me              |                      | Mesos support |
 | cassandra                  | db              |                      | Cassandra support |
-| execute-script             | x               |                      | (deprecated) |
-| early-execute-script       | ex              |                      | (deprecated) |
-| early-slave-execute-script | esx             |                      | (deprecated) |
 | local-fs                   | lfs             |                      | |
 | nfs-shares                 | g               |                      | |
 | ext-nfs-shares             | ge              |                      | |
@@ -69,7 +66,6 @@ The parameters are listed below:
 | openstack-tenantdomain     | ostd            |                      | |
 | security-group             | sg              |                      | |
 | router                     | router          |                      | |
-| network                    | network         |                      | |
 
 ### Google Compute specific parameters
 | Long parameter             | Short parameter | Environment variable | Description                                          |
@@ -102,7 +98,7 @@ google-credentials-file: XXXXX
 
 region: europe-west1
 
-vpc: default
+network: default
 subnet: default
 
 user: testuser

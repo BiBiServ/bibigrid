@@ -12,7 +12,6 @@ public class ConfigurationOpenstack extends Configuration {
 
     private OpenStackCredentials openstackCredentials;
     private String router;
-    private String network;
     private String securityGroup;
 
     public OpenStackCredentials getOpenstackCredentials() {
@@ -23,20 +22,12 @@ public class ConfigurationOpenstack extends Configuration {
         this.openstackCredentials = openstackCredentials;
     }
 
-    public String getNetwork() {
-        return network;
-    }
-
-    public void setNetwork(String network) {
-        this.network = network;
-    }
-
     public String getRouter() {
         return router;
     }
 
     public void setRouter(String router) {
-        this.router = router;
+        this.router = router != null ? router.trim() : null;
     }
 
     public String getSecurityGroup() {
@@ -44,6 +35,6 @@ public class ConfigurationOpenstack extends Configuration {
     }
 
     public void setSecurityGroup(String securityGroup) {
-        this.securityGroup = securityGroup;
+        this.securityGroup = securityGroup != null ? securityGroup.trim() : null;
     }
 }

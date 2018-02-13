@@ -89,13 +89,13 @@ public class TerminateIntentOpenstack extends TerminateIntent {
             }
         }
         // network
-        if (cluster.getNet() != null) {
+        if (cluster.getNetwork() != null) {
             // delete network
-            ActionResponse ar = os.networking().network().delete(cluster.getNet());
+            ActionResponse ar = os.networking().network().delete(cluster.getNetwork());
             if (ar.isSuccess()) {
-                LOG.info("Network '{}' deleted!", cluster.getNet());
+                LOG.info("Network '{}' deleted!", cluster.getNetwork());
             } else {
-                LOG.warn("Can't remove network '{}'. {}", cluster.getNet(), ar.getFault());
+                LOG.warn("Can't remove network '{}'. {}", cluster.getNetwork(), ar.getFault());
             }
         }
         // router

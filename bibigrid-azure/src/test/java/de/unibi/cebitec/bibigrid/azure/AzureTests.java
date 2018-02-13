@@ -24,26 +24,26 @@ public class AzureTests {
         System.out.println(image.publisherName());
         System.out.println(image.offer());
         */
-        Network vpc = compute.networks().list().stream().filter(x -> x.name().equalsIgnoreCase("default")).findFirst().orElse(null);
-        System.out.println(vpc.id());
-        System.out.println(vpc.name());
-        System.out.println(vpc.type());
-        System.out.println(vpc.region());
-        System.out.println(vpc.regionName());
-        List<String> l = vpc.addressSpaces();
+        Network network = compute.networks().list().stream().filter(x -> x.name().equalsIgnoreCase("default")).findFirst().orElse(null);
+        System.out.println(network.id());
+        System.out.println(network.name());
+        System.out.println(network.type());
+        System.out.println(network.region());
+        System.out.println(network.regionName());
+        List<String> l = network.addressSpaces();
         System.out.println("addressSpaces:");
         for (String s : l) {
             System.out.println("\t" + s);
         }
-        l = vpc.dnsServerIPs();
+        l = network.dnsServerIPs();
         System.out.println("dnsServerIPs:");
         for (String s : l) {
             System.out.println("\t" + s);
         }
         System.out.println("subnets:");
-        for (String s : vpc.subnets().keySet()) {
+        for (String s : network.subnets().keySet()) {
             System.out.println("\t" + s);
-            System.out.println("\t\t" + vpc.subnets().get(s).addressPrefix());
+            System.out.println("\t\t" + network.subnets().get(s).addressPrefix());
         }
     }
 }
