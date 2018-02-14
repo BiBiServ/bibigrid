@@ -296,8 +296,8 @@ public abstract class CreateCluster implements Intent {
                 channel.cd(channel.getHome());
             }
             // Each file is uploaded to it's relative path in the home folder
-            for (String filepath : resources.getFiles().keySet()) {
-                FileInputStream stream = new FileInputStream(resources.getFiles().get(filepath));
+            for (String filepath : resources.getFiles()) {
+                InputStream stream = resources.getFileStream(filepath);
                 // Upload the file stream via sftp to the home folder
                 String fullPath = channel.getHome() + "/" + filepath;
                 LOG.info(V, "SFTP: Upload file {}", fullPath);

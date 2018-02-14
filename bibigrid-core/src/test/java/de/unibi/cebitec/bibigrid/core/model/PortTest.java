@@ -13,7 +13,7 @@ public class PortTest {
 
     @Test
     public void toStringTest() throws Exception {
-        assertEquals("127.0.0.1:1234", new Port(IP, PORT).toString());
+        assertEquals("127.0.0.1:1234 (TCP)", new Port(IP, PORT).toString());
     }
 
     @Test

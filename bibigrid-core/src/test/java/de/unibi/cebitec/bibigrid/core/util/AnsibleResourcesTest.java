@@ -3,8 +3,7 @@ package de.unibi.cebitec.bibigrid.core.util;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
 
 import static org.junit.Assert.*;
 
@@ -21,9 +20,8 @@ public class AnsibleResourcesTest {
 
     @Test
     public void filesExist() throws Exception {
-        for (File file : resources.getFiles().values()) {
-            assertTrue(file.exists());
-            FileInputStream stream = new FileInputStream(file);
+        for (String filepath : resources.getFiles()) {
+            InputStream stream = resources.getFileStream(filepath);
             assertNotNull(stream);
             stream.close();
         }

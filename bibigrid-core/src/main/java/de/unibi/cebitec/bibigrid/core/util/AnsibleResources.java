@@ -1,8 +1,12 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -11,11 +15,25 @@ public final class AnsibleResources {
     private static final String ROOT_PATH = "playbook";
     public static final String HOSTS_CONFIG_FILE = ROOT_PATH + "/ansible_hosts";
     public static final String COMMONS_CONFIG_FILE = ROOT_PATH + "/vars/common.yml";
-    private final Map<String, File> files = new HashMap<>();
+    private final List<String> files = new ArrayList<>();
 
     public AnsibleResources() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        processFolder(loader, ROOT_PATH);
+        ClassLoader loader = getClass().getClassLoader();
+        // Check if the resources are in a jar file or in a classpath
+        URL resolvedRootUrl = loader.getResource(ROOT_PATH);
+        String resolvedRootPath = resolvedRootUrl != null ? resolvedRootUrl.toExternalForm() : null;
+        if (resolvedRootPath != null && resolvedRootPath.startsWith("jar:")) {
+            String jarPath = resolvedRootPath.split("!")[0].substring(4);
+            if (jarPath.startsWith("file:")) {
+                jarPath = jarPath.substring(5);
+                while (jarPath.startsWith("/") || jarPath.startsWith("\\")) {
+                    jarPath = jarPath.substring(1);
+                }
+            }
+            processJar(jarPath);
+        } else {
+            processFolder(loader, ROOT_PATH);
+        }
     }
 
     private void processFolder(ClassLoader loader, String path) {
@@ -33,18 +51,36 @@ public final class AnsibleResources {
             if (file.isDirectory()) {
                 processFolder(loader, filepath);
             } else {
-                files.put(filepath, file);
+                files.add(filepath);
             }
         }
     }
 
-    public Map<String, File> getFiles() {
+    private void processJar(String path) {
+        try {
+            JarFile jarFile = new JarFile(new File(path));
+            for (Enumeration<JarEntry> je = jarFile.entries(); je.hasMoreElements(); ) {
+                JarEntry j = je.nextElement();
+                if (!j.isDirectory() && j.getName().startsWith(ROOT_PATH + "/")) {
+                    files.add(j.getName());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<String> getFiles() {
         return files;
+    }
+
+    public InputStream getFileStream(String path) {
+        return getClass().getClassLoader().getResourceAsStream(path);
     }
 
     public List<String> getDirectories() {
         List<String> folderSet = new ArrayList<>();
-        for (String filepath : files.keySet()) {
+        for (String filepath : files) {
             String folderPath = new File(filepath).getParent().replace("\\", "/");
             String[] parts = folderPath.split("/");
             String path = "";
