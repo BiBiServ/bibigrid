@@ -230,16 +230,11 @@ public abstract class CreateCluster implements Intent {
         return false;
     }
 
-    private void configureMaster(final Instance masterInstance, final List<? extends Instance> slaveInstances,
+    private void configureMaster(final Instance masterInstance, final List<Instance> slaveInstances,
                                  final String subnetCidr) {
-        AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config);
-        AnsibleConfig ansibleConfig = new AnsibleConfig(config, providerModule.getBlockDeviceBase());
-        ansibleConfig.setSubnetCidr(subnetCidr);
-        ansibleConfig.setMasterIpHostname(masterInstance.getPrivateIp(), masterInstance.getHostname());
-        for (Instance slaveInstance : slaveInstances) {
-            ansibleConfig.addSlaveIpHostname(slaveInstance.getPrivateIp(), slaveInstance.getHostname());
-            ansibleHostsConfig.addSlaveIp(slaveInstance.getPrivateIp());
-        }
+        AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, slaveInstances);
+        AnsibleConfig ansibleConfig = new AnsibleConfig(config, providerModule.getBlockDeviceBase(), subnetCidr,
+                masterInstance, slaveInstances);
 
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
@@ -309,9 +304,10 @@ public abstract class CreateCluster implements Intent {
                 writer.write(hostsConfig.toString());
             }
             // Write the commons configuration file
-            try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
-                    AnsibleResources.COMMONS_CONFIG_FILE))) {
-                writer.write(commonConfig.toString());
+            commonConfig.writeCommonFile(channel.put(channel.getHome() + "/" + AnsibleResources.COMMONS_CONFIG_FILE));
+            String[] slaveFilenames = commonConfig.getSlaveFilenames();
+            for (int i = 0; i < slaveFilenames.length; i++) {
+                commonConfig.writeSlaveFile(i, channel.put(channel.getHome() + "/" + slaveFilenames[i]));
             }
             uploadCompleted = true;
         } catch (SftpException | IOException e) {

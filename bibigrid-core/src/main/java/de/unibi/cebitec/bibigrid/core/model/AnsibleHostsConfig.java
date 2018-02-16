@@ -15,13 +15,12 @@ public class AnsibleHostsConfig {
     private final Configuration config;
     private final List<String> slaveIps;
 
-    public AnsibleHostsConfig(Configuration config) {
+    public AnsibleHostsConfig(Configuration config, List<Instance> slaveInstances) {
         this.config = config;
         slaveIps = new ArrayList<>();
-    }
-
-    public void addSlaveIp(String slaveIp) {
-        slaveIps.add(slaveIp);
+        for (Instance instance : slaveInstances) {
+            slaveIps.add(instance.getPrivateIp());
+        }
     }
 
     @Override
