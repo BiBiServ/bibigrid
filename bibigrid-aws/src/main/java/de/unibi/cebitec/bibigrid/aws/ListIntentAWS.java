@@ -36,7 +36,7 @@ public class ListIntentAWS extends ListIntent {
         List<Reservation> reservations = describeInstancesResult.getReservations();
         List<Instance> instances = new ArrayList<>();
         for (Reservation reservation : reservations) {
-            instances.addAll(reservation.getInstances().stream().map(InstanceAWS::new).collect(Collectors.toList()));
+            instances.addAll(reservation.getInstances().stream().map(i -> new InstanceAWS(null, i)).collect(Collectors.toList()));
         }
         return instances;
     }

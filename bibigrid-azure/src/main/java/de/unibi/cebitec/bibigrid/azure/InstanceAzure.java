@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.azure;
 
 import com.microsoft.azure.management.compute.VirtualMachine;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 
 import java.time.ZoneOffset;
@@ -11,7 +12,8 @@ public class InstanceAzure extends Instance {
 
     private final VirtualMachine internalInstance;
 
-    public InstanceAzure(VirtualMachine internalInstance) {
+    public InstanceAzure(Configuration.InstanceConfiguration instanceConfiguration, VirtualMachine internalInstance) {
+        super(instanceConfiguration);
         this.internalInstance = internalInstance;
     }
 

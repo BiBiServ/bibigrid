@@ -24,6 +24,6 @@ public class ListIntentAzure extends ListIntent {
         Azure compute = AzureUtils.getComputeService(config);
         if (compute == null)
             return null;
-        return compute.virtualMachines().list().stream().map(InstanceAzure::new).collect(Collectors.toList());
+        return compute.virtualMachines().list().stream().map(i -> new InstanceAzure(null, i)).collect(Collectors.toList());
     }
 }

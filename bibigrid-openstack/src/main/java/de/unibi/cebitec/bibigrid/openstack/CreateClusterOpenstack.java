@@ -182,7 +182,7 @@ public class CreateClusterOpenstack extends CreateCluster {
 
         // Network configuration
         LOG.info("Master (ID: {}) started", server.getId());
-        InstanceOpenstack master = new InstanceOpenstack(server);
+        InstanceOpenstack master = new InstanceOpenstack(config.getMasterInstance(), server);
         master.setPrivateIp(waitForAddress(server.getId(), environment.getNetwork().getName()).getAddr());
 
         master.updateNeutronHostname();
@@ -290,7 +290,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();
             Server tmp = os.compute().servers().boot(sc);
-            InstanceOpenstack tmp_instance = new InstanceOpenstack(tmp);
+            InstanceOpenstack tmp_instance = new InstanceOpenstack(instanceConfiguration, tmp);
             slaves.put(tmp.getId(), tmp_instance);
             LOG.info(V, "Instance request for {}  ", sc.getName());
         }

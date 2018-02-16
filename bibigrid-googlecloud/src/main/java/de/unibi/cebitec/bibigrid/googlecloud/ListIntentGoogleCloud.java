@@ -37,7 +37,7 @@ public class ListIntentGoogleCloud extends ListIntent {
             if (config.getAvailabilityZone() != null) {
                 InstanceList instanceList = compute.instances().list(projectId, config.getAvailabilityZone()).execute();
                 if (instanceList != null && instanceList.getItems() != null) {
-                    return instanceList.getItems().stream().map(InstanceGoogleCloud::new).collect(Collectors.toList());
+                    return instanceList.getItems().stream().map(i -> new InstanceGoogleCloud(null, i)).collect(Collectors.toList());
                 }
             } else {
                 InstanceAggregatedList aggregatedInstances = compute.instances().aggregatedList(projectId).execute();
@@ -46,7 +46,7 @@ public class ListIntentGoogleCloud extends ListIntent {
                     for (InstancesScopedList instancesScopedList : aggregatedInstances.getItems().values()) {
                         if (instancesScopedList != null && instancesScopedList.getInstances() != null) {
                             instances.addAll(instancesScopedList.getInstances().stream()
-                                    .map(InstanceGoogleCloud::new).collect(Collectors.toList()));
+                                    .map(i -> new InstanceGoogleCloud(null, i)).collect(Collectors.toList()));
                         }
                     }
                     return instances;

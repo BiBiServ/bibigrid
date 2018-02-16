@@ -110,7 +110,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         List<Instance> instances = new ArrayList<>();
         instances.add(masterInstance);
         waitForInstancesStatusCheck(instances);
-        return new InstanceGoogleCloud(masterInstance);
+        return new InstanceGoogleCloud(config.getMasterInstance(), masterInstance);
     }
 
     private Metadata buildMetadata(Metadata.Items... items) {
@@ -153,7 +153,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         List<Instance> slaveInstances = waitForInstances(slaveInstanceBuilders, slaveInstanceOperations);
         LOG.info(I, "Slave instance(s) is now running!");
         waitForInstancesStatusCheck(slaveInstances);
-        return slaveInstances.stream().map(InstanceGoogleCloud::new).collect(Collectors.toList());
+        return slaveInstances.stream().map(i -> new InstanceGoogleCloud(instanceConfiguration, i)).collect(Collectors.toList());
     }
 
     private void waitForInstancesStatusCheck(List<Instance> instances) {

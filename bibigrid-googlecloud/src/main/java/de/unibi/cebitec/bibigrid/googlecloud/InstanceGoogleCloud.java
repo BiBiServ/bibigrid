@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
 import com.google.api.services.compute.model.Instance;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -14,7 +15,8 @@ public class InstanceGoogleCloud extends de.unibi.cebitec.bibigrid.core.model.In
     private final Instance internalInstance;
     private Map<String, String> tags;
 
-    InstanceGoogleCloud(Instance internalInstance) {
+    InstanceGoogleCloud(Configuration.InstanceConfiguration configuration, Instance internalInstance) {
+        super(configuration);
         this.internalInstance = internalInstance;
     }
 

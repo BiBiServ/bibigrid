@@ -233,7 +233,7 @@ public class CreateClusterAWS extends CreateCluster {
             sleep(10);
         } while (true);
         LOG.info(I, "Status checks successful.");
-        return new InstanceAWS(masterInstance);
+        return new InstanceAWS(config.getMasterInstance(), masterInstance);
     }
 
     @Override
@@ -324,7 +324,7 @@ public class CreateClusterAWS extends CreateCluster {
                     .withResources(si.getInstanceId())
                     .withTags(bibigridId, username, slaveNameTag));
         }
-        return slaveInstances.stream().map(InstanceAWS::new).collect(Collectors.toList());
+        return slaveInstances.stream().map(i -> new InstanceAWS(instanceConfiguration, i)).collect(Collectors.toList());
     }
 
     /**

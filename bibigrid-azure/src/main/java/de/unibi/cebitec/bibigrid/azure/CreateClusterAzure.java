@@ -94,7 +94,7 @@ public class CreateClusterAzure extends CreateCluster {
         // TODO
         LOG.info(I, "Master instance is now running!");
         waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
-        return new InstanceAzure(masterInstance);
+        return new InstanceAzure(config.getMasterInstance(), masterInstance);
     }
 
     private String getCurrentTime() {
@@ -134,7 +134,7 @@ public class CreateClusterAzure extends CreateCluster {
         // TODO
         LOG.info(I, "Slave instance(s) is now running!");
         waitForInstancesStatusCheck(slaveInstances);
-        return slaveInstances.stream().map(InstanceAzure::new).collect(Collectors.toList());
+        return slaveInstances.stream().map(i -> new InstanceAzure(instanceConfiguration, i)).collect(Collectors.toList());
     }
 
     private void waitForInstancesStatusCheck(List<VirtualMachine> instances) {

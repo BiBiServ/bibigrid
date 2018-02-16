@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import org.openstack4j.model.compute.Addresses;
 import org.openstack4j.model.compute.Server;
@@ -23,7 +24,8 @@ public final class InstanceOpenstack extends Instance {
     private String publicIp;
     private String neutronHostname;
 
-    InstanceOpenstack(Server server) {
+    InstanceOpenstack(Configuration.InstanceConfiguration instanceConfiguration, Server server) {
+        super(instanceConfiguration);
         this.server = server;
     }
 
