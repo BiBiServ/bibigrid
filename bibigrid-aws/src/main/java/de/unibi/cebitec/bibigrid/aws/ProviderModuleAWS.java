@@ -34,7 +34,7 @@ public class ProviderModuleAWS extends ProviderModule {
 
     @Override
     public ListIntent getListIntent(Configuration config) {
-        return new ListIntentAWS(((ConfigurationAWS) config));
+        return new ListIntentAWS(this, (ConfigurationAWS) config);
     }
 
     @Override
@@ -44,12 +44,12 @@ public class ProviderModuleAWS extends ProviderModule {
 
     @Override
     public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterAWS(((ConfigurationAWS) config), this);
+        return new CreateClusterAWS((ConfigurationAWS) config, this);
     }
 
     @Override
     public ValidateIntent getValidateIntent(Configuration config) {
-        return new ValidateIntentAWS(((ConfigurationAWS) config));
+        return new ValidateIntentAWS((ConfigurationAWS) config);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class ProviderModuleAWS extends ProviderModule {
     }
 
     @Override
-    public Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
+    protected Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
         Map<String, InstanceType> instanceTypes = new HashMap<>();
         for (InstanceType type : InstanceTypeAWS.getStaticInstanceTypeList()) {
             instanceTypes.put(type.getValue(), type);

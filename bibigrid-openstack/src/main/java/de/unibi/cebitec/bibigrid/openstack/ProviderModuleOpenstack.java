@@ -36,7 +36,7 @@ public class ProviderModuleOpenstack extends ProviderModule {
 
     @Override
     public ListIntent getListIntent(Configuration config) {
-        return new ListIntentOpenstack((ConfigurationOpenstack) config);
+        return new ListIntentOpenstack(this, (ConfigurationOpenstack) config);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    public Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
+    protected Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
         OSClient os = OpenStackUtils.buildOSClient((ConfigurationOpenstack) config);
         Map<String, InstanceType> instanceTypes = new HashMap<>();
         for (Flavor f : os.compute().flavors().list()) {

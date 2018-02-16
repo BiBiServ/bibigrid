@@ -2,7 +2,7 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
-import org.openstack4j.model.compute.Addresses;
+import org.openstack4j.model.compute.Address;
 import org.openstack4j.model.compute.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -27,6 +29,10 @@ public final class InstanceOpenstack extends Instance {
     InstanceOpenstack(Configuration.InstanceConfiguration instanceConfiguration, Server server) {
         super(instanceConfiguration);
         this.server = server;
+    }
+
+    Server getInternal() {
+        return server;
     }
 
     public void setServer(Server server) {
@@ -48,6 +54,20 @@ public final class InstanceOpenstack extends Instance {
 
     @Override
     public String getPublicIp() {
+        if (publicIp == null) {
+            Map<String, List<? extends Address>> addressMap = server.getAddresses().getAddresses();
+            // map should contain only one network
+            if (addressMap.keySet().size() == 1) {
+                for (Address address : addressMap.values().iterator().next()) {
+                    if (address.getType().equals("floating")) {
+                        publicIp = address.getAddr();
+                        return publicIp;
+                    }
+                }
+            } else {
+                LOG.warn("No or more than one network associated with instance '{}'.", getId());
+            }
+        }
         return publicIp;
     }
 
@@ -73,7 +93,7 @@ public final class InstanceOpenstack extends Instance {
             String[] t = ip.split("\\.");
             neutronHostname = "host-" + String.join("-", t);
         } else {
-            LOG.warn("ip must be a valid IPv4 address string.");
+            LOG.warn("Ip must be a valid IPv4 address string.");
         }
     }
 
@@ -110,11 +130,8 @@ public final class InstanceOpenstack extends Instance {
         return creationDateTime.withZoneSameInstant(ZoneOffset.systemDefault().normalized());
     }
 
+    @Override
     public String getKeyName() {
         return server.getKeyName();
-    }
-
-    public Addresses getAddresses() {
-        return server.getAddresses();
     }
 }

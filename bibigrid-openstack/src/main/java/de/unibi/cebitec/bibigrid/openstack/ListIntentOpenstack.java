@@ -1,21 +1,21 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
+import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import org.openstack4j.api.OSClient;
-import org.openstack4j.model.compute.Address;
-import org.openstack4j.model.compute.SecGroupExtension;
+import org.openstack4j.model.compute.*;
 import org.openstack4j.model.network.Network;
 import org.openstack4j.model.network.Router;
 import org.openstack4j.model.network.Subnet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implements ListIntent for Openstack.
@@ -24,19 +24,17 @@ import org.slf4j.LoggerFactory;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ListIntentOpenstack extends ListIntent {
-    private static final Logger LOG = LoggerFactory.getLogger(ListIntentOpenstack.class);
     private final OSClient os;
 
-    ListIntentOpenstack(ConfigurationOpenstack config) {
+    ListIntentOpenstack(final ProviderModule providerModule, final ConfigurationOpenstack config) {
+        super(providerModule, config);
         os = OpenStackUtils.buildOSClient(config);
     }
 
     @Override
     protected void searchClusterIfNecessary() {
-        // String keypairName = conf.getKeypair();
+        super.searchClusterIfNecessary();
         Cluster cluster;
-        // Instances
-        os.compute().servers().list().forEach(x -> this.checkInstance(new InstanceOpenstack(null, x)));
         // Security Group
         for (SecGroupExtension sg : os.compute().securityGroups().list()) {
             String name = sg.getName();
@@ -77,38 +75,25 @@ public class ListIntentOpenstack extends ListIntent {
 
     @Override
     protected List<Instance> getInstances() {
-        return null;
+        return os.compute().servers().list().stream().map(i -> new InstanceOpenstack(null, i)).collect(Collectors.toList());
     }
 
-    private void checkInstance(InstanceOpenstack instance) {
-        // check if instance is a BiBiGrid instance and extract clusterId from it
-        String clusterId = getClusterIdForInstance(instance);
-        if (clusterId == null)
-            return;
-        String name = instance.getName();
-        Cluster cluster = getOrCreateCluster(clusterId);
-        // get user from metadata map
-        if (cluster.getUser() == null) {
-            cluster.setUser(instance.getTag(Instance.TAG_USER));
-        }
-        // master / slave
-        if (name.startsWith(CreateCluster.MASTER_NAME_PREFIX)) {
-            cluster.setMasterInstance(instance.getId());
-            cluster.setStarted(instance.getCreationTimestamp().format(dateTimeFormatter));
-            cluster.setKeyName(instance.getKeyName());
-            Map<String, List<? extends Address>> addressMap = instance.getAddresses().getAddresses();
-            // map should contain only one network
-            if (addressMap.keySet().size() == 1) {
-                for (Address address : addressMap.values().iterator().next()) {
-                    if (address.getType().equals("floating")) {
-                        cluster.setPublicIp(address.getAddr());
-                    }
-                }
-            } else {
-                LOG.warn("No or more than one network associated with instance {}", instance.getId());
+    @Override
+    protected void loadInstanceConfiguration(Instance instance) {
+        Server server = ((InstanceOpenstack) instance).getInternal();
+        Configuration.InstanceConfiguration instanceConfiguration = new Configuration.InstanceConfiguration();
+        Flavor flavor = server.getFlavor();
+        if (flavor != null) {
+            instanceConfiguration.setType(flavor.getName());
+            try {
+                instanceConfiguration.setProviderType(providerModule.getInstanceType(config, flavor.getName()));
+            } catch (InstanceTypeNotFoundException ignored) {
             }
-        } else if (name.startsWith(CreateCluster.SLAVE_NAME_PREFIX)) {
-            cluster.addSlaveInstance(instance.getId());
         }
+        Image image = server.getImage();
+        if (image != null) {
+            instanceConfiguration.setImage(image.getName());
+        }
+        instance.setConfiguration(instanceConfiguration);
     }
 }

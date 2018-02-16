@@ -12,7 +12,7 @@ public abstract class Instance {
     public static final String TAG_USER = "user";
     public static final String TAG_BIBIGRID_ID = "bibigrid-id";
 
-    private final Configuration.InstanceConfiguration configuration;
+    private Configuration.InstanceConfiguration configuration;
 
     protected Instance(Configuration.InstanceConfiguration configuration) {
         this.configuration = configuration;
@@ -20,6 +20,10 @@ public abstract class Instance {
 
     public final Configuration.InstanceConfiguration getConfiguration() {
         return configuration;
+    }
+
+    public void setConfiguration(Configuration.InstanceConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     public abstract String getPublicIp();
@@ -33,4 +37,6 @@ public abstract class Instance {
     public abstract String getTag(String key);
 
     public abstract ZonedDateTime getCreationTimestamp();
+
+    public abstract String getKeyName();
 }

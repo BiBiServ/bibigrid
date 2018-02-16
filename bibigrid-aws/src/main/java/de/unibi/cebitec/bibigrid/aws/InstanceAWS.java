@@ -14,9 +14,13 @@ import java.time.ZonedDateTime;
 public final class InstanceAWS extends de.unibi.cebitec.bibigrid.core.model.Instance {
     private final Instance internalInstance;
 
-    public InstanceAWS(Configuration.InstanceConfiguration instanceConfiguration, Instance internalInstance) {
+    InstanceAWS(Configuration.InstanceConfiguration instanceConfiguration, Instance internalInstance) {
         super(instanceConfiguration);
         this.internalInstance = internalInstance;
+    }
+
+    Instance getInternal() {
+        return internalInstance;
     }
 
     @Override
@@ -54,6 +58,7 @@ public final class InstanceAWS extends de.unibi.cebitec.bibigrid.core.model.Inst
         return internalInstance.getState().getName();
     }
 
+    @Override
     public String getKeyName() {
         return internalInstance.getKeyName();
     }

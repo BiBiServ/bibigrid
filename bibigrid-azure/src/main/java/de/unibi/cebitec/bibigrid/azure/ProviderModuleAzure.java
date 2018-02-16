@@ -36,7 +36,7 @@ public class ProviderModuleAzure extends ProviderModule {
 
     @Override
     public ListIntent getListIntent(Configuration config) {
-        return new ListIntentAzure((ConfigurationAzure) config);
+        return new ListIntentAzure(this, (ConfigurationAzure) config);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ProviderModuleAzure extends ProviderModule {
     }
 
     @Override
-    public Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
+    protected Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
         Azure azure = AzureUtils.getComputeService(config);
         if (azure == null) {
             return null;

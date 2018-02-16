@@ -20,6 +20,10 @@ public class InstanceGoogleCloud extends de.unibi.cebitec.bibigrid.core.model.In
         this.internalInstance = internalInstance;
     }
 
+    Instance getInternal() {
+        return internalInstance;
+    }
+
     @Override
     public String getPublicIp() {
         return GoogleCloudUtils.getInstancePublicIp(internalInstance);
@@ -52,5 +56,10 @@ public class InstanceGoogleCloud extends de.unibi.cebitec.bibigrid.core.model.In
     public ZonedDateTime getCreationTimestamp() {
         ZonedDateTime creationDateTime = ZonedDateTime.parse(internalInstance.getCreationTimestamp());
         return creationDateTime.withZoneSameInstant(ZoneOffset.systemDefault().normalized());
+    }
+
+    @Override
+    public String getKeyName() {
+        return null;
     }
 }

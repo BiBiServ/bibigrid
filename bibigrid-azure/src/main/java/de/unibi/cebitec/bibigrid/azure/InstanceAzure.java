@@ -17,6 +17,10 @@ public class InstanceAzure extends Instance {
         this.internalInstance = internalInstance;
     }
 
+    VirtualMachine getInternal() {
+        return internalInstance;
+    }
+
     @Override
     public String getPublicIp() {
         return internalInstance.getPrimaryPublicIPAddress().ipAddress();
@@ -46,5 +50,10 @@ public class InstanceAzure extends Instance {
     public ZonedDateTime getCreationTimestamp() {
         ZonedDateTime creationDateTime = ZonedDateTime.parse(getTag(TAG_CREATION));
         return creationDateTime.withZoneSameInstant(ZoneOffset.systemDefault().normalized());
+    }
+
+    @Override
+    public String getKeyName() {
+        return null;
     }
 }

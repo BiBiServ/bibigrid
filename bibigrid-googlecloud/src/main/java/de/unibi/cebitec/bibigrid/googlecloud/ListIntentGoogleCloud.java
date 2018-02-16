@@ -5,7 +5,10 @@ import com.google.api.services.compute.model.InstanceAggregatedList;
 import com.google.api.services.compute.model.InstanceList;
 import com.google.api.services.compute.model.InstancesScopedList;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
+import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +26,8 @@ public class ListIntentGoogleCloud extends ListIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntentGoogleCloud.class);
     private final ConfigurationGoogleCloud config;
 
-    ListIntentGoogleCloud(final ConfigurationGoogleCloud config) {
+    ListIntentGoogleCloud(final ProviderModule providerModule, final ConfigurationGoogleCloud config) {
+        super(providerModule, config);
         this.config = config;
     }
 
@@ -56,5 +60,18 @@ public class ListIntentGoogleCloud extends ListIntent {
             LOG.error("Failed to load instances. {}", e);
         }
         return null;
+    }
+
+    @Override
+    protected void loadInstanceConfiguration(Instance instance) {
+        com.google.api.services.compute.model.Instance internalInstance = ((InstanceGoogleCloud) instance).getInternal();
+        Configuration.InstanceConfiguration instanceConfiguration = new Configuration.InstanceConfiguration();
+        instanceConfiguration.setType(internalInstance.getMachineType());
+        try {
+            instanceConfiguration.setProviderType(providerModule.getInstanceType(config, internalInstance.getMachineType()));
+        } catch (InstanceTypeNotFoundException ignored) {
+        }
+        // TODO: instanceConfiguration.setImage(instance.getDisks().get(0).getSource());
+        instance.setConfiguration(instanceConfiguration);
     }
 }

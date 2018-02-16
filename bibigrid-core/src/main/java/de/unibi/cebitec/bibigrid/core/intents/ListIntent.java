@@ -1,7 +1,9 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
+import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,9 +18,16 @@ import java.util.*;
  */
 public abstract class ListIntent implements Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntent.class);
-    protected static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
 
+    protected final ProviderModule providerModule;
+    protected final Configuration config;
     private Map<String, Cluster> clusterMap;
+
+    protected ListIntent(ProviderModule providerModule, Configuration config) {
+        this.providerModule = providerModule;
+        this.config = config;
+    }
 
     protected final Cluster getOrCreateCluster(String clusterId) {
         Cluster cluster;
@@ -60,11 +69,14 @@ public abstract class ListIntent implements Intent {
         if (clusterId == null)
             return;
         Cluster cluster = getOrCreateCluster(clusterId);
+        loadInstanceConfiguration(instance);
         // Check whether master or slave instance
         String name = instance.getTag(Instance.TAG_NAME);
         if (name != null && name.startsWith(CreateCluster.MASTER_NAME_PREFIX)) {
             if (cluster.getMasterInstance() == null) {
                 cluster.setMasterInstance(instance.getName());
+                cluster.setPublicIp(instance.getPublicIp());
+                cluster.setKeyName(instance.getKeyName());
                 cluster.setStarted(instance.getCreationTimestamp().format(dateTimeFormatter));
             } else {
                 LOG.error("Detected two master instances ({},{}) for cluster '{}'.", cluster.getMasterInstance(),
@@ -72,6 +84,15 @@ public abstract class ListIntent implements Intent {
             }
         } else {
             cluster.addSlaveInstance(instance.getName());
+        }
+        //keyname - should be always the same for all instances of one cluster
+        if (cluster.getKeyName() != null) {
+            if (!cluster.getKeyName().equals(instance.getKeyName())) {
+                LOG.error("Detected two different keynames ({},{}) for cluster '{}'.",
+                        cluster.getKeyName(), instance.getKeyName(), clusterId);
+            }
+        } else {
+            cluster.setKeyName(instance.getKeyName());
         }
         // user - should be always the same for all instances of one cluster
         String user = instance.getTag(Instance.TAG_USER);
@@ -84,7 +105,7 @@ public abstract class ListIntent implements Intent {
         }
     }
 
-    protected final String getClusterIdForInstance(Instance instance) {
+    private String getClusterIdForInstance(Instance instance) {
         String clusterIdTag = instance.getTag(Instance.TAG_BIBIGRID_ID);
         if (clusterIdTag != null) {
             return clusterIdTag;
@@ -97,6 +118,8 @@ public abstract class ListIntent implements Intent {
         }
         return null;
     }
+
+    protected abstract void loadInstanceConfiguration(Instance instance);
 
     /**
      * Return a String representation of found cluster objects map.

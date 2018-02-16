@@ -123,6 +123,11 @@ public class AnsibleConfigTest {
         public ZonedDateTime getCreationTimestamp() {
             return null;
         }
+
+        @Override
+        public String getKeyName() {
+            return null;
+        }
     }
 
     @Test

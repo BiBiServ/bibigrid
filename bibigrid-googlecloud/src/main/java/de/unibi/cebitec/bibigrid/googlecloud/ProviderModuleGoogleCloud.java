@@ -36,7 +36,7 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
 
     @Override
     public ListIntent getListIntent(Configuration config) {
-        return new ListIntentGoogleCloud((ConfigurationGoogleCloud) config);
+        return new ListIntentGoogleCloud(this, (ConfigurationGoogleCloud) config);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
     }
 
     @Override
-    public HashMap<String, InstanceType> getInstanceTypeMap(Configuration config) {
+    protected HashMap<String, InstanceType> getInstanceTypeMap(Configuration config) {
         Compute compute = GoogleCloudUtils.getComputeService((ConfigurationGoogleCloud) config);
         if (compute == null) {
             return null;
