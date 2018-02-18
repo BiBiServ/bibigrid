@@ -30,7 +30,7 @@ public class AnsibleHostsConfig {
         hostsConfig.append("BiBiGrid during instance initialization.\n");
         hostsConfig.append("# Depending on the used base image the ansible_user must be changed. ");
         hostsConfig.append("The local ip address of each slave must\n");
-        hostsConfig.append("# inserted in the slave section\n\n");
+        hostsConfig.append("# be inserted in the slave section\n\n");
         hostsConfig.append("[master]\n");
         hostsConfig.append("localhost ansible_connection=local\n\n");
         hostsConfig.append("[slaves]\n");

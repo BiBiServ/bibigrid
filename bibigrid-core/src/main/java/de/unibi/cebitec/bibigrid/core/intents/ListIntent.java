@@ -85,22 +85,31 @@ public abstract class ListIntent implements Intent {
         } else {
             cluster.addSlaveInstance(instance.getName());
         }
-        //keyname - should be always the same for all instances of one cluster
+        checkInstanceKeyName(instance, cluster);
+        checkInstanceUserTag(instance, cluster);
+    }
+
+    private void checkInstanceKeyName(Instance instance, Cluster cluster) {
+        //key name should be always the same for all instances of one cluster
         if (cluster.getKeyName() != null) {
             if (!cluster.getKeyName().equals(instance.getKeyName())) {
-                LOG.error("Detected two different keynames ({},{}) for cluster '{}'.",
-                        cluster.getKeyName(), instance.getKeyName(), clusterId);
+                LOG.error("Detected two different keynames ({},{}) for cluster '{}'.", cluster.getKeyName(),
+                        instance.getKeyName(), cluster.getClusterId());
             }
         } else {
             cluster.setKeyName(instance.getKeyName());
         }
-        // user - should be always the same for all instances of one cluster
+    }
+
+    private void checkInstanceUserTag(Instance instance, Cluster cluster) {
+        // user should be always the same for all instances of one cluster
         String user = instance.getTag(Instance.TAG_USER);
         if (user != null) {
             if (cluster.getUser() == null) {
                 cluster.setUser(user);
             } else if (!cluster.getUser().equals(user)) {
-                LOG.error("Detected two different users ({},{}) for cluster '{}'.", cluster.getUser(), user, clusterId);
+                LOG.error("Detected two different users ({},{}) for cluster '{}'.", cluster.getUser(), user,
+                        cluster.getClusterId());
             }
         }
     }

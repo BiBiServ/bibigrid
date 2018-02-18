@@ -103,8 +103,4 @@ public class SubNets {
     public static String longAsIPV4String(long l) {
         return ((l & 0xFF000000L) >> 24) + "." + ((l & 0xFF0000L) >> 16) + "." + ((l & 0xFF00L) >> 8) + "." + (l & 0xFFL);
     }
-
-    public static void printLongAsIPV4(long l) {
-        System.out.printf(" %d --> %s --> %s --> %s %n", l, Long.toBinaryString(l), Long.toHexString(l), longAsIPV4String(l));
-    }
 }

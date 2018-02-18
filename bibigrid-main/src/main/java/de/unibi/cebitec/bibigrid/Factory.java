@@ -17,6 +17,9 @@ import java.util.stream.Stream;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public final class Factory {
+    private static final List<String> IGNORED_JARS = Arrays.asList("rt.jar", "idea_rt.jar", "aws-java-sdk-ec2",
+            "proto-", "google-cloud-", "google-api-", "openstack4j-core", "selenium-", "google-api-client", "jackson-",
+            "guava", "jetty", "netty-", "junit-");
     private static Factory instance;
     private Map<String, List<Class<?>>> interfaceClassMap;
     private Map<String, List<Class<?>>> baseClassMap;
@@ -44,20 +47,7 @@ public final class Factory {
                     iterateFileSystem(file, allClassPaths, url.toString());
                 } else if (file.isFile() &&
                         file.getName().toLowerCase(Locale.US).endsWith(".jar") &&
-                        !file.getName().contains("rt.jar") &&
-                        !file.getName().contains("idea_rt.jar") &&
-                        !file.getName().contains("aws-java-sdk-ec2") &&
-                        !file.getName().contains("proto-") &&
-                        !file.getName().contains("google-cloud-") &&
-                        !file.getName().contains("google-api-") &&
-                        !file.getName().contains("openstack4j-core") &&
-                        !file.getName().contains("selenium-") &&
-                        !file.getName().contains("google-api-client") &&
-                        !file.getName().contains("jackson-") &&
-                        !file.getName().contains("guava") &&
-                        !file.getName().contains("jetty") &&
-                        !file.getName().contains("netty-") &&
-                        !file.getName().contains("junit-")) {
+                        IGNORED_JARS.stream().noneMatch(x -> file.getName().contains(x))) {
                     iterateJarFile(file, allClassPaths);
                 }
             } catch (URISyntaxException | IOException e) {

@@ -37,27 +37,36 @@ public class ListIntentGoogleCloud extends ListIntent {
         if (compute == null)
             return null;
         try {
-            String projectId = config.getGoogleProjectId();
-            if (config.getAvailabilityZone() != null) {
-                InstanceList instanceList = compute.instances().list(projectId, config.getAvailabilityZone()).execute();
-                if (instanceList != null && instanceList.getItems() != null) {
-                    return instanceList.getItems().stream().map(i -> new InstanceGoogleCloud(null, i)).collect(Collectors.toList());
-                }
-            } else {
-                InstanceAggregatedList aggregatedInstances = compute.instances().aggregatedList(projectId).execute();
-                if (aggregatedInstances != null && aggregatedInstances.getItems() != null) {
-                    List<Instance> instances = new ArrayList<>();
-                    for (InstancesScopedList instancesScopedList : aggregatedInstances.getItems().values()) {
-                        if (instancesScopedList != null && instancesScopedList.getInstances() != null) {
-                            instances.addAll(instancesScopedList.getInstances().stream()
-                                    .map(i -> new InstanceGoogleCloud(null, i)).collect(Collectors.toList()));
-                        }
-                    }
-                    return instances;
-                }
-            }
+            return config.getAvailabilityZone() != null ?
+                    getInstancesWithZone(compute, config.getAvailabilityZone()) :
+                    getInstancesWithoutZone(compute);
         } catch (IOException e) {
             LOG.error("Failed to load instances. {}", e);
+        }
+        return null;
+    }
+
+    private List<Instance> getInstancesWithZone(Compute compute, String zone) throws IOException {
+        String projectId = config.getGoogleProjectId();
+        InstanceList instanceList = compute.instances().list(projectId, zone).execute();
+        if (instanceList == null || instanceList.getItems() == null) {
+            return null;
+        }
+        return instanceList.getItems().stream().map(i -> new InstanceGoogleCloud(null, i)).collect(Collectors.toList());
+    }
+
+    private List<Instance> getInstancesWithoutZone(Compute compute) throws IOException {
+        String projectId = config.getGoogleProjectId();
+        InstanceAggregatedList aggregatedInstances = compute.instances().aggregatedList(projectId).execute();
+        if (aggregatedInstances != null && aggregatedInstances.getItems() != null) {
+            List<Instance> instances = new ArrayList<>();
+            for (InstancesScopedList instancesScopedList : aggregatedInstances.getItems().values()) {
+                if (instancesScopedList != null && instancesScopedList.getInstances() != null) {
+                    instances.addAll(instancesScopedList.getInstances().stream()
+                            .map(i -> new InstanceGoogleCloud(null, i)).collect(Collectors.toList()));
+                }
+            }
+            return instances;
         }
         return null;
     }

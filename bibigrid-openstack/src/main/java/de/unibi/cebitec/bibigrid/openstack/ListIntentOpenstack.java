@@ -2,7 +2,6 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.model.Cluster;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,41 +33,49 @@ public class ListIntentOpenstack extends ListIntent {
     @Override
     protected void searchClusterIfNecessary() {
         super.searchClusterIfNecessary();
-        Cluster cluster;
-        // Security Group
+        searchSecurityGroups();
+        searchNetworks();
+        searchSubnets();
+        searchRouters();
+    }
+
+    private void searchSecurityGroups() {
         for (SecGroupExtension sg : os.compute().securityGroups().list()) {
             String name = sg.getName();
             if (name != null && name.startsWith(CreateClusterEnvironment.SECURITY_GROUP_PREFIX)) {
-                String[] t = name.split("-");
-                cluster = getOrCreateCluster(t[t.length - 1]);
-                cluster.setSecurityGroup(sg.getId());
+                getOrCreateCluster(clusterIdFromName(name)).setSecurityGroup(sg.getId());
             }
         }
-        // Network
+    }
+
+    private static String clusterIdFromName(String name) {
+        String[] parts = name.split("-");
+        return parts[parts.length - 1];
+    }
+
+    private void searchNetworks() {
         for (Network network : os.networking().network().list()) {
             String name = network.getName();
             if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.NETWORK_PREFIX)) {
-                String[] t = name.split("-");
-                cluster = getOrCreateCluster(t[t.length - 1]);
-                cluster.setNetwork(network.getId());
+                getOrCreateCluster(clusterIdFromName(name)).setNetwork(network.getId());
             }
         }
-        // Subnet
+    }
+
+    private void searchSubnets() {
         for (Subnet subnet : os.networking().subnet().list()) {
             String name = subnet.getName();
             if (name != null && name.startsWith(CreateClusterEnvironment.SUBNET_PREFIX)) {
-                String[] t = name.split("-");
-                cluster = getOrCreateCluster(t[t.length - 1]);
-                cluster.setSubnet(subnet.getId());
+                getOrCreateCluster(clusterIdFromName(name)).setSubnet(subnet.getId());
             }
         }
-        // Router
+    }
+
+    private void searchRouters() {
         for (Router router : os.networking().router().list()) {
             String name = router.getName();
             if (name != null && name.startsWith(CreateClusterEnvironmentOpenstack.ROUTER_PREFIX)) {
-                String[] t = name.split("-");
-                cluster = getOrCreateCluster(t[t.length - 1]);
-                cluster.setRouter(router.getId());
+                getOrCreateCluster(clusterIdFromName(name)).setRouter(router.getId());
             }
         }
     }

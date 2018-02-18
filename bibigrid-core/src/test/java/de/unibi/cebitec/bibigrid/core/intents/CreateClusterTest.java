@@ -8,7 +8,7 @@ import org.junit.Test;
  */
 public class CreateClusterTest {
     @Test
-    public void generateClusterId() throws Exception {
+    public void generateClusterId() {
         String clusterId = CreateCluster.generateClusterId();
         System.out.println(clusterId);
         Assert.assertNotNull(clusterId);

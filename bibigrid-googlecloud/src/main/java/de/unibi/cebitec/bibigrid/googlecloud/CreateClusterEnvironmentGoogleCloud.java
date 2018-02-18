@@ -51,50 +51,68 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         }
         if (network == null) {
             throw new ConfigurationException("No suitable network found! Define a default network for you account or a valid network id.");
-        } else {
-            LOG.info(V, "Use Network '{}'.", network.getName());
         }
+        LOG.info(V, "Use Network '{}'.", network.getName());
         return this;
     }
 
     @Override
-    public CreateClusterEnvironmentGoogleCloud createSubnet() {
+    public CreateClusterEnvironmentGoogleCloud createSubnet() throws ConfigurationException {
         ConfigurationGoogleCloud config = (ConfigurationGoogleCloud) cluster.getConfig();
-        String region = config.getRegion();
-        String projectId = config.getGoogleProjectId();
         // As default we assume that the network is auto creating subnets. Then we can only reuse the default
         // subnets and can't create new ones!
-        boolean isAutoCreate = network.getAutoCreateSubnetworks();
-        if (isAutoCreate) {
-            // Reuse the first (and only) subnet for the network and region.
-            subnet = GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region).get(0);
-            subnetCidr = subnet.getIpCidrRange();
-            LOG.debug(V, "Use {} for reused subnet.", subnetCidr);
+        if (network.getAutoCreateSubnetworks()) {
+            reuseAutoCreateSubnet(config);
         } else {
-            // check for unused Subnet Cidr and create one
-            List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current network
-            for (Subnetwork sn : GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region)) {
-                if (sn.getNetwork().equals(network.getSelfLink())) {
-                    listOfUsedCidr.add(sn.getIpCidrRange());
-                }
-            }
-            SubNets subnets = new SubNets(listOfUsedCidr.size() > 0 ? listOfUsedCidr.get(0) : "10.128.0.0", 24);
-            subnetCidr = subnets.nextCidr(listOfUsedCidr);
-            LOG.debug(V, "Use {} for generated subnet.", subnetCidr);
-
-            // create new subnet
-            try {
-                Subnetwork subnetwork = new Subnetwork().setIpCidrRange(subnetCidr).setRegion(region)
-                        .setName(SUBNET_PREFIX + cluster.getClusterId());
-                Operation createSubnetOperation = cluster.getCompute().subnetworks()
-                        .insert(projectId, region, subnetwork).execute();
-                GoogleCloudUtils.waitForOperation(cluster.getCompute(), config, createSubnetOperation);
-                subnet = cluster.getCompute().subnetworks().get(projectId, region, subnetwork.getName()).execute();
-            } catch (Exception e) {
-                LOG.error("Failed to create subnet. {}", e);
-            }
+            createNewSubnet(config);
         }
         return this;
+    }
+
+    private void reuseAutoCreateSubnet(ConfigurationGoogleCloud config) throws ConfigurationException {
+        String region = config.getRegion();
+        String projectId = config.getGoogleProjectId();
+        // Reuse the first (and only) subnet for the network and region.
+        List<Subnetwork> subnets = GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region);
+        for (Subnetwork subnet : subnets) {
+            if (subnet.getNetwork().equals(network.getName())) {
+                this.subnet = subnet;
+                break;
+            }
+        }
+        if (subnet == null) {
+            throw new ConfigurationException(
+                    String.format("No suitable subnet found with region '%s' in auto creating network '%s'!",
+                            region, network.getName()));
+        }
+        subnetCidr = subnet.getIpCidrRange();
+        LOG.debug(V, "Use '{}' for reused subnet.", subnetCidr);
+    }
+
+    private void createNewSubnet(ConfigurationGoogleCloud config) {
+        String region = config.getRegion();
+        String projectId = config.getGoogleProjectId();
+        // check for unused Subnet Cidr and create one
+        List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current network
+        for (Subnetwork sn : GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region)) {
+            if (sn.getNetwork().equals(network.getSelfLink())) {
+                listOfUsedCidr.add(sn.getIpCidrRange());
+            }
+        }
+        SubNets subnets = new SubNets(listOfUsedCidr.size() > 0 ? listOfUsedCidr.get(0) : "10.128.0.0", 24);
+        subnetCidr = subnets.nextCidr(listOfUsedCidr);
+        LOG.debug(V, "Use '{}' for generated subnet.", subnetCidr);
+        // create new subnet
+        try {
+            Subnetwork subnetwork = new Subnetwork().setIpCidrRange(subnetCidr).setRegion(region)
+                    .setName(SUBNET_PREFIX + cluster.getClusterId());
+            Operation createSubnetOperation = cluster.getCompute().subnetworks()
+                    .insert(projectId, region, subnetwork).execute();
+            GoogleCloudUtils.waitForOperation(cluster.getCompute(), config, createSubnetOperation);
+            subnet = cluster.getCompute().subnetworks().get(projectId, region, subnetwork.getName()).execute();
+        } catch (Exception e) {
+            LOG.error("Failed to create subnet. {}", e);
+        }
     }
 
     @Override

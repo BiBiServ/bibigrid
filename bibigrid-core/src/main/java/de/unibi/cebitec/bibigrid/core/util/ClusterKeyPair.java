@@ -11,8 +11,8 @@ import java.io.ByteArrayOutputStream;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ClusterKeyPair {
-    private String privateKey;
-    private String publicKey;
+    private final String privateKey;
+    private final String publicKey;
 
     public ClusterKeyPair() throws JSchException {
         JSch ssh = new JSch();

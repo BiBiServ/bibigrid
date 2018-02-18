@@ -7,12 +7,12 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class ConfigurationGoogleCloud extends Configuration {
-    public ConfigurationGoogleCloud() {
-    }
-
     private String googleProjectId;
     private String googleImageProjectId;
     private String googleCredentialsFile;
+
+    public ConfigurationGoogleCloud() {
+    }
 
     public String getGoogleProjectId() {
         return googleProjectId;
