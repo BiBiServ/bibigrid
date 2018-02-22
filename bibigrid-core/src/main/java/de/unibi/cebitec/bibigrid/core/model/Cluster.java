@@ -26,7 +26,7 @@ public class Cluster {
     private String keyName;
     private String user;
 
-    private String started = "unknown";
+    private String started;
 
     public Cluster(String clusterId) {
         this.clusterId = clusterId;
