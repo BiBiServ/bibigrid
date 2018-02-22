@@ -50,7 +50,6 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     private final OSClient os;
     private CreateClusterEnvironmentOpenstack environment;
-    private final Map<String, String> metadata = new HashMap<>();
     private DeviceMapper masterDeviceMapper, slaveDeviceMapper;
     private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
 
@@ -61,7 +60,6 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     @Override
     public CreateClusterEnvironmentOpenstack createClusterEnvironment() throws ConfigurationException {
-        metadata.put(Instance.TAG_USER, config.getUser());
         LOG.info("Openstack connection established ...");
         return environment = new CreateClusterEnvironmentOpenstack(this);
     }
@@ -154,6 +152,10 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     @Override
     protected InstanceOpenstack launchClusterMasterInstance(String masterNameTag) {
+        final Map<String, String> metadata = new HashMap<>();
+        metadata.put(Instance.TAG_NAME, masterNameTag);
+        metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
+        metadata.put(Instance.TAG_USER, config.getUser());
         ServerCreate sc = Builders.server()
                 .name(masterNameTag)
                 .flavor(getFlavorByName(config.getMasterInstance().getProviderType().getValue()).getId())
@@ -276,6 +278,10 @@ public class CreateClusterOpenstack extends CreateCluster {
     @Override
     protected List<Instance> launchClusterSlaveInstances(
             int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
+        final Map<String, String> metadata = new HashMap<>();
+        metadata.put(Instance.TAG_NAME, slaveNameTag);
+        metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
+        metadata.put(Instance.TAG_USER, config.getUser());
         Map<String, InstanceOpenstack> slaves = new HashMap<>();
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             ServerCreate sc = Builders.server()
@@ -286,6 +292,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .addSecurityGroup(environment.getSecGroupExtension().getId())
                     .availabilityZone(config.getAvailabilityZone())
                     .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false))
+                    .addMetadata(metadata)
                     .configDrive(CONFIG_DRIVE != 0)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();

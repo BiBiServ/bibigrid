@@ -61,7 +61,7 @@ public final class InstanceOpenstack extends Instance {
                 for (Address address : addressMap.values().iterator().next()) {
                     if (address.getType().equals("floating")) {
                         publicIp = address.getAddr();
-                        return publicIp;
+                        break;
                     }
                 }
             } else {

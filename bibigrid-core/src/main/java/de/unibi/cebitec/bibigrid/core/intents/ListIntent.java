@@ -72,6 +72,9 @@ public abstract class ListIntent implements Intent {
         loadInstanceConfiguration(instance);
         // Check whether master or slave instance
         String name = instance.getTag(Instance.TAG_NAME);
+        if (name == null) {
+            name = instance.getName();
+        }
         if (name != null && name.startsWith(CreateCluster.MASTER_NAME_PREFIX)) {
             if (cluster.getMasterInstance() == null) {
                 cluster.setMasterInstance(instance.getName());
