@@ -52,6 +52,8 @@ public class StartUp {
                         false, "help"))
                 .addOption(new Option(IntentMode.CREATE.getShortParam(), IntentMode.CREATE.getLongParam(),
                         false, "create cluster"))
+                .addOption(new Option(IntentMode.PREPARE.getShortParam(), IntentMode.PREPARE.getLongParam(),
+                        false, "prepare cluster images"))
                 .addOption(new Option(IntentMode.LIST.getShortParam(), IntentMode.LIST.getLongParam(),
                         false, "list running clusters"))
                 .addOption(new Option(IntentMode.VALIDATE.getShortParam(), IntentMode.VALIDATE.getLongParam(),
@@ -92,6 +94,7 @@ public class StartUp {
                     printHelp(cl, cmdLineOptions);
                     break;
                 case CREATE:
+                case PREPARE:
                 case LIST:
                 case TERMINATE:
                 case VALIDATE:
@@ -183,6 +186,8 @@ public class StartUp {
                         }
                     }
                     break;
+                case PREPARE:
+                    throw new RuntimeException("Not implemented"); // TODO
                 case TERMINATE:
                     module.getTerminateIntent(validator.getConfig()).terminate();
                     break;

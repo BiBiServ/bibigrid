@@ -11,8 +11,10 @@ import org.apache.commons.cli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * AWS specific implementation for the {@link CommandLineValidator}.
@@ -35,47 +37,38 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
 
     @Override
     protected List<String> getRequiredOptions() {
+        List<String> options = new ArrayList<>();
         switch (intentMode) {
+            default:
+                return null;
             case LIST:
-                return Arrays.asList(
-                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
-                        RuleBuilder.RuleNames.REGION_S.toString(),
-                        RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
+                options.add(RuleBuilder.RuleNames.REGION_S.toString());
+                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                break;
             case TERMINATE:
-                return Arrays.asList(
-                        "t",
-                        RuleBuilder.RuleNames.REGION_S.toString(),
-                        RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                options.add(IntentMode.TERMINATE.getShortParam());
+                options.add(RuleBuilder.RuleNames.REGION_S.toString());
+                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                break;
+            case PREPARE:
             case CREATE:
-                return Arrays.asList(
-                        RuleBuilder.RuleNames.SSH_USER_S.toString(),
-                        RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString(),
-                        RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString(),
-                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
-                        RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
-                        RuleBuilder.RuleNames.REGION_S.toString(),
-                        RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
-                        RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
-                        RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
+                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString());
             case VALIDATE:
-                return Arrays.asList(
-                        RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString(),
-                        RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString(),
-                        RuleBuilder.RuleNames.USER_S.toString(),
-                        RuleBuilder.RuleNames.KEYPAIR_S.toString(),
-                        RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
-                        RuleBuilder.RuleNames.REGION_S.toString(),
-                        RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
-                        RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
-                        RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString());
+                options.add(RuleBuilder.RuleNames.MASTER_IMAGE_S.toString());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString());
+                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString());
+                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
+                options.add(RuleBuilder.RuleNames.IDENTITY_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.REGION_S.toString());
+                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
+                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                break;
         }
-        return null;
+        return options;
     }
 
     @Override
@@ -123,17 +116,15 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
     }
 
     private boolean parseSpotInstanceParameters() {
-        /* TODO
         final String spotShortParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString();
-        if (cl.hasOption(spotShortParam) || defaults.containsKey(spotLongParam)) {
-            String value = parseParameterOrDefault(defaults, spotShortParam, spotLongParam);
-            if (value.equalsIgnoreCase(KEYWORD_YES)) {
+        if (cl.hasOption(spotShortParam)) {
+            final String value = cl.getOptionValue(spotShortParam);
+            if (value.equalsIgnoreCase("yes")) { // TODO: keyword
                 config.setUseSpotInstances(true);
                 String bidPriceShortParam = RuleBuilder.RuleNames.BID_PRICE_S.toString();
-                if (cl.hasOption(bidPriceShortParam) || defaults.containsKey(bidPriceLongParam)) {
+                if (cl.hasOption(bidPriceShortParam)) {
                     try {
-                        awsConfig.setBidPrice(Double.parseDouble(
-                                parseParameterOrDefault(defaults, bidPriceShortParam, bidPriceLongParam)));
+                        awsConfig.setBidPrice(Double.parseDouble(cl.getOptionValue(bidPriceShortParam)));
                         if (awsConfig.getBidPrice() <= 0.0) {
                             throw new NumberFormatException();
                         }
@@ -146,10 +137,9 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                     return false;
                 }
                 String bidPriceMasterShortParam = RuleBuilder.RuleNames.BID_PRICE_MASTER_S.toString();
-                if (cl.hasOption(bidPriceMasterShortParam) || defaults.containsKey(bidPriceMasterLongParam)) {
+                if (cl.hasOption(bidPriceMasterShortParam)) {
                     try {
-                        awsConfig.setBidPriceMaster(Double.parseDouble(
-                                parseParameterOrDefault(defaults, bidPriceMasterShortParam, bidPriceMasterLongParam)));
+                        awsConfig.setBidPriceMaster(Double.parseDouble(cl.getOptionValue(bidPriceMasterShortParam)));
                         if (awsConfig.getBidPriceMaster() <= 0.0) {
                             throw new NumberFormatException();
                         }
@@ -161,7 +151,7 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                     LOG.info(V, "Bidprice master is not set, use general bidprice instead!");
                 }
                 LOG.info(V, "Use spot request for all");
-            } else if (value.equalsIgnoreCase(KEYWORD_NO)) {
+            } else if (value.equalsIgnoreCase("no")) { // TODO: keyword
                 LOG.info(V, "SpotInstance usage disabled.");
                 this.config.setMesos(false);
             } else {
@@ -169,7 +159,6 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                 return false;
             }
         }
-        */
         return true;
     }
 }

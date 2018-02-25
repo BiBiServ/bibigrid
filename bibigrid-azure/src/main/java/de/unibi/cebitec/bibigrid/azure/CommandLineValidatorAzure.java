@@ -8,7 +8,7 @@ import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
 
 import java.nio.file.FileSystems;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,35 +30,37 @@ public final class CommandLineValidatorAzure extends CommandLineValidator {
 
     @Override
     protected List<String> getRequiredOptions() {
+        List<String> options = new ArrayList<>();
         switch (intentMode) {
+            default:
+                return null;
             case LIST:
-                return Arrays.asList(RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString());
+                break;
             case TERMINATE:
-                return Arrays.asList(
-                        "t",
-                        RuleBuilder.RuleNames.REGION_S.toString(),
-                        RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
-                        RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString());
+                options.add(IntentMode.TERMINATE.getShortParam());
+                options.add(RuleBuilder.RuleNames.REGION_S.toString());
+                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
+                options.add(RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString());
+                break;
+            case PREPARE:
             case CREATE:
-                return Arrays.asList(
-                        RuleBuilder.RuleNames.SSH_USER_S.toString(),
-                        RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString(),
-                        RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString(),
-                        RuleBuilder.RuleNames.IDENTITY_FILE_S.toString(),
-                        RuleBuilder.RuleNames.REGION_S.toString(),
-                        RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString(),
-                        RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString(),
-                        RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
+                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString());
             case VALIDATE:
-                return Arrays.asList(
-                        RuleBuilder.RuleNames.MASTER_IMAGE_S.toString(),
-                        RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString(),
-                        RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString());
+                options.add(RuleBuilder.RuleNames.MASTER_IMAGE_S.toString());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString());
+                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString());
+                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
+                options.add(RuleBuilder.RuleNames.IDENTITY_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.REGION_S.toString());
+                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
+                options.add(RuleBuilder.RuleNames.AZURE_CREDENTIALS_FILE_S.toString());
+                break;
         }
-        return null;
+        return options;
     }
 
     @Override

@@ -5,6 +5,7 @@ public enum IntentMode {
     HELP("h", "help"),
     TERMINATE("t", "terminate"),
     CREATE("c", "create"),
+    PREPARE("p", "prepare"),
     LIST("l", "list"),
     VALIDATE("ch", "check");
 
