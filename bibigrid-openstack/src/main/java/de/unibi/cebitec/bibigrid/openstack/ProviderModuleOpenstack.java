@@ -1,10 +1,7 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
-import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
@@ -45,8 +42,13 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
+    public PrepareIntent getPrepareIntent(Configuration config) {
+        return new PrepareIntentOpenstack(this, (ConfigurationOpenstack) config);
+    }
+
+    @Override
     public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterOpenstack((ConfigurationOpenstack) config, this);
+        return new CreateClusterOpenstack(this, (ConfigurationOpenstack) config);
     }
 
     @Override

@@ -1,10 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
-import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
@@ -38,6 +35,8 @@ public abstract class ProviderModule {
     public abstract ListIntent getListIntent(Configuration config);
 
     public abstract TerminateIntent getTerminateIntent(Configuration config);
+
+    public abstract PrepareIntent getPrepareIntent(Configuration config);
 
     public abstract CreateCluster getCreateIntent(Configuration config);
 

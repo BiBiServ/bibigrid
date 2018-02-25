@@ -30,8 +30,8 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     private NetworkInterface masterNetworkInterface;
     private CreateClusterEnvironmentGoogleCloud environment;
 
-    CreateClusterGoogleCloud(final ConfigurationGoogleCloud config, final ProviderModule providerModule) {
-        super(config, providerModule);
+    CreateClusterGoogleCloud(final ProviderModule providerModule, final ConfigurationGoogleCloud config) {
+        super(providerModule, config);
         this.config = config;
     }
 

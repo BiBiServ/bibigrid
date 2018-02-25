@@ -39,9 +39,9 @@ public abstract class CreateCluster implements Intent {
     protected final Configuration config;
     protected final String clusterId;
 
-    protected CreateCluster(Configuration config, ProviderModule providerModule) {
-        this.config = config;
+    protected CreateCluster(ProviderModule providerModule, Configuration config) {
         this.providerModule = providerModule;
+        this.config = config;
         clusterId = generateClusterId();
         LOG.debug("cluster id: {}", clusterId);
         config.setClusterIds(clusterId);
@@ -99,7 +99,7 @@ public abstract class CreateCluster implements Intent {
     /**
      * Start the configured cluster now.
      */
-    public boolean launchClusterInstances() {
+    public boolean launchClusterInstances(final boolean prepare) {
         try {
             String masterNameTag = MASTER_NAME_PREFIX + "-" + clusterId;
             Instance master = launchClusterMasterInstance(masterNameTag);
@@ -128,7 +128,7 @@ public abstract class CreateCluster implements Intent {
             // just to be sure, everything is present, wait x seconds
             sleep(4);
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
-            configureMaster(master, slaves, getSubnetCidr());
+            configureMaster(master, slaves, getSubnetCidr(), prepare);
             logFinishedInfoMessage(master.getPublicIp());
             saveGridPropertiesFile(master.getPublicIp());
         } catch (Exception e) {
@@ -223,7 +223,7 @@ public abstract class CreateCluster implements Intent {
     }
 
     private void configureMaster(final Instance masterInstance, final List<Instance> slaveInstances,
-                                 final String subnetCidr) {
+                                 final String subnetCidr, final boolean prepare) {
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, slaveInstances);
         AnsibleConfig ansibleConfig = new AnsibleConfig(config, providerModule.getBlockDeviceBase(), subnetCidr,
                 masterInstance, slaveInstances);
@@ -247,7 +247,7 @@ public abstract class CreateCluster implements Intent {
                     LOG.info("Connected to master!");
 
                     configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig) &&
-                            installAndExecuteAnsible(sshSession);
+                            installAndExecuteAnsible(sshSession, prepare);
                     sshSession.disconnect();
                 }
             } catch (IOException | JSchException e) {
@@ -311,10 +311,11 @@ public abstract class CreateCluster implements Intent {
         return uploadCompleted;
     }
 
-    private boolean installAndExecuteAnsible(Session sshSession) throws JSchException, IOException {
+    private boolean installAndExecuteAnsible(final Session sshSession, final boolean prepare)
+            throws JSchException, IOException {
         LOG.info("Configure and execute Ansible.");
         boolean configured = false;
-        String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript();
+        String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare);
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
         BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
         BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));

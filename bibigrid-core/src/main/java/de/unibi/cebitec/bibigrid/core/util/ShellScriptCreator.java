@@ -5,6 +5,7 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 import java.util.Base64;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public final class ShellScriptCreator {
     private static final Logger LOG = LoggerFactory.getLogger(ShellScriptCreator.class);
 
-    public static String getUserData(Configuration config, ClusterKeyPair keypair, boolean base64, boolean log){
+    public static String getUserData(Configuration config, ClusterKeyPair keypair, boolean base64, boolean log) {
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
         // redirect output
@@ -50,16 +51,16 @@ public final class ShellScriptCreator {
     }
 
 
-    private static void appendDisableAptDailyService(StringBuilder userData){
+    private static void appendDisableAptDailyService(StringBuilder userData) {
         userData.append("systemctl stop apt-daily.service\n" +
-                        "systemctl disable apt-daily.service\n" +
-                        "systemctl stop apt-daily.timer\n" +
-                        "systemctl disable apt-daily.timer\n" +
-                        "systemctl kill --kill-who=all apt-daily.service\n" +
-                        "while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)\n" +
-                        "do\n" +
-                        "  sleep 1;\n" +
-                        "done\n");
+                "systemctl disable apt-daily.service\n" +
+                "systemctl stop apt-daily.timer\n" +
+                "systemctl disable apt-daily.timer\n" +
+                "systemctl kill --kill-who=all apt-daily.service\n" +
+                "while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)\n" +
+                "do\n" +
+                "  sleep 1;\n" +
+                "done\n");
     }
 
     private static void appendSshConfiguration(Configuration config, StringBuilder userData, ClusterKeyPair keypair) {
@@ -79,7 +80,7 @@ public final class ShellScriptCreator {
         userData.append("SSHCONFIG\n");
     }
 
-    public static String getMasterAnsibleExecutionScript() {
+    public static String getMasterAnsibleExecutionScript(final boolean prepare) {
         StringBuilder script = new StringBuilder();
         // apt-get update
         script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
@@ -87,12 +88,14 @@ public final class ShellScriptCreator {
         script.append("sudo apt-get --yes  install apt-transport-https ca-certificates ")
                 .append("software-properties-common python python-pip |sudo tee -a /var/log/ssh_exec.log\n");
         // Install ansible from pypi using pip
-        script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n" );
+        script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n");
         // Install python2 on slaves instances
         script.append("ansible slaves -i ~/playbook/ansible_hosts --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
         // Execute ansible playbook
-        script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts | sudo tee -a /var/log/ansible-playbook.log\n");
+        script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts")
+                .append(prepare ? " -t install" : "")
+                .append(" | sudo tee -a /var/log/ansible-playbook.log\n");
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
         return script.toString();
     }

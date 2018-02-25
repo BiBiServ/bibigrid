@@ -47,8 +47,8 @@ public class CreateClusterAWS extends CreateCluster {
 
     private CreateClusterEnvironmentAWS environment;
 
-    CreateClusterAWS(final ConfigurationAWS config, final ProviderModule providerModule) {
-        super(config, providerModule);
+    CreateClusterAWS(final ProviderModule providerModule, final ConfigurationAWS config) {
+        super(providerModule, config);
         this.config = config;
     }
 

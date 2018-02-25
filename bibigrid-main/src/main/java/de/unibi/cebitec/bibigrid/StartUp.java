@@ -161,33 +161,14 @@ public class StartUp {
                     }
                     break;
                 case CREATE:
-                    try {
-                        CreateCluster cluster = module.getCreateIntent(validator.getConfig());
-                        boolean success = cluster
-                                .createClusterEnvironment()
-                                .createNetwork()
-                                .createSubnet()
-                                .createSecurityGroup()
-                                .createPlacementGroup()
-                                .configureClusterMasterInstance()
-                                .configureClusterSlaveInstance()
-                                .launchClusterInstances();
-                        if (!success) {
-                            LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-                            TerminateIntent cleanupIntent = module.getTerminateIntent(validator.getConfig());
-                            cleanupIntent.terminate();
-                        }
-                    } catch (ConfigurationException ex) {
-                        // print stacktrace only verbose mode, otherwise the message is fine
-                        if (VerboseOutputFilter.SHOW_VERBOSE) {
-                            LOG.error("Failed to create cluster. {} {}", ex.getMessage(), ex);
-                        } else {
-                            LOG.error("Failed to create cluster. {}", ex.getMessage());
-                        }
-                    }
+                    runCreateIntent(module, validator, false);
                     break;
                 case PREPARE:
-                    throw new RuntimeException("Not implemented"); // TODO
+                    if (runCreateIntent(module, validator, true)) {
+                        module.getPrepareIntent(validator.getConfig()).prepare();
+                        module.getTerminateIntent(validator.getConfig()).terminate();
+                    }
+                    break;
                 case TERMINATE:
                     module.getTerminateIntent(validator.getConfig()).terminate();
                     break;
@@ -197,6 +178,36 @@ public class StartUp {
         } else {
             LOG.error(ABORT_WITH_NOTHING_STARTED);
         }
+    }
+
+    private static boolean runCreateIntent(ProviderModule module, CommandLineValidator validator, boolean prepare) {
+        try {
+            CreateCluster cluster = module.getCreateIntent(validator.getConfig());
+            boolean success = cluster
+                    .createClusterEnvironment()
+                    .createNetwork()
+                    .createSubnet()
+                    .createSecurityGroup()
+                    .createPlacementGroup()
+                    .configureClusterMasterInstance()
+                    .configureClusterSlaveInstance()
+                    .launchClusterInstances(prepare);
+            if (!success) {
+                LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
+                TerminateIntent cleanupIntent = module.getTerminateIntent(validator.getConfig());
+                cleanupIntent.terminate();
+                return false;
+            }
+        } catch (ConfigurationException ex) {
+            // print stacktrace only verbose mode, otherwise the message is fine
+            if (VerboseOutputFilter.SHOW_VERBOSE) {
+                LOG.error("Failed to create cluster. {} {}", ex.getMessage(), ex);
+            } else {
+                LOG.error("Failed to create cluster. {}", ex.getMessage());
+            }
+            return false;
+        }
+        return true;
     }
 
     private static String parseProviderMode(CommandLine commandLine, DefaultPropertiesFile defaultPropertiesFile) {

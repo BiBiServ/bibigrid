@@ -3,10 +3,7 @@ package de.unibi.cebitec.bibigrid.azure;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.VirtualMachineSize;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
-import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
@@ -45,8 +42,13 @@ public class ProviderModuleAzure extends ProviderModule {
     }
 
     @Override
+    public PrepareIntent getPrepareIntent(Configuration config) {
+        return new PrepareIntentAzure(this, (ConfigurationAzure) config);
+    }
+
+    @Override
     public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterAzure((ConfigurationAzure) config, this);
+        return new CreateClusterAzure(this, (ConfigurationAzure) config);
     }
 
     @Override

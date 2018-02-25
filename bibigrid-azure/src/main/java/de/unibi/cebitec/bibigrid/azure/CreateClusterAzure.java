@@ -33,8 +33,8 @@ public class CreateClusterAzure extends CreateCluster {
     private String masterStartupScript;
     private CreateClusterEnvironmentAzure environment;
 
-    CreateClusterAzure(final ConfigurationAzure config, final ProviderModule providerModule) {
-        super(config, providerModule);
+    CreateClusterAzure(final ProviderModule providerModule, final ConfigurationAzure config) {
+        super(providerModule, config);
     }
 
     @Override

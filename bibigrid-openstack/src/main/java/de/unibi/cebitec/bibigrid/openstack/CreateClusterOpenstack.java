@@ -53,8 +53,8 @@ public class CreateClusterOpenstack extends CreateCluster {
     private DeviceMapper masterDeviceMapper, slaveDeviceMapper;
     private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
 
-    CreateClusterOpenstack(final ConfigurationOpenstack config, final ProviderModule providerModule) {
-        super(config, providerModule);
+    CreateClusterOpenstack(final ProviderModule providerModule, final ConfigurationOpenstack config) {
+        super(providerModule, config);
         os = OpenStackUtils.buildOSClient(config);
     }
 

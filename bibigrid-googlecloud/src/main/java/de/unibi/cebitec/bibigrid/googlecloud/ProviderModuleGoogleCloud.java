@@ -4,10 +4,7 @@ import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.MachineType;
 import com.google.api.services.compute.model.MachineTypesScopedList;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
-import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
@@ -45,8 +42,13 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
     }
 
     @Override
+    public PrepareIntent getPrepareIntent(Configuration config) {
+        return new PrepareIntentGoogleCloud(this, (ConfigurationGoogleCloud) config);
+    }
+
+    @Override
     public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterGoogleCloud((ConfigurationGoogleCloud) config, this);
+        return new CreateClusterGoogleCloud(this, (ConfigurationGoogleCloud) config);
     }
 
     @Override
