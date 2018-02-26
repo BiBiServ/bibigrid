@@ -161,11 +161,13 @@ public class StartUp {
                     }
                     break;
                 case CREATE:
-                    runCreateIntent(module, validator, false);
+                    runCreateIntent(module, validator, module.getCreateIntent(validator.getConfig()), false);
                     break;
                 case PREPARE:
-                    if (runCreateIntent(module, validator, true)) {
-                        module.getPrepareIntent(validator.getConfig()).prepare();
+                    CreateCluster cluster = module.getCreateIntent(validator.getConfig());
+                    if (runCreateIntent(module, validator, cluster, true)) {
+                        module.getPrepareIntent(validator.getConfig()).prepare(cluster.getMasterInstance(),
+                                cluster.getSlaveInstances());
                         module.getTerminateIntent(validator.getConfig()).terminate();
                     }
                     break;
@@ -180,9 +182,9 @@ public class StartUp {
         }
     }
 
-    private static boolean runCreateIntent(ProviderModule module, CommandLineValidator validator, boolean prepare) {
+    private static boolean runCreateIntent(ProviderModule module, CommandLineValidator validator, CreateCluster cluster,
+                                           boolean prepare) {
         try {
-            CreateCluster cluster = module.getCreateIntent(validator.getConfig());
             boolean success = cluster
                     .createClusterEnvironment()
                     .createNetwork()

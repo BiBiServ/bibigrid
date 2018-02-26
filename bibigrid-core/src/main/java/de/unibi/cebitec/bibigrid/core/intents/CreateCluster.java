@@ -28,7 +28,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public abstract class CreateCluster implements Intent {
+public abstract class CreateCluster extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
     public static final String MASTER_NAME_PREFIX = PREFIX + "master";
@@ -38,6 +38,9 @@ public abstract class CreateCluster implements Intent {
     protected final ProviderModule providerModule;
     protected final Configuration config;
     protected final String clusterId;
+
+    private Instance masterInstance;
+    private List<Instance> slaveInstances;
 
     protected CreateCluster(ProviderModule providerModule, Configuration config) {
         this.providerModule = providerModule;
@@ -102,11 +105,11 @@ public abstract class CreateCluster implements Intent {
     public boolean launchClusterInstances(final boolean prepare) {
         try {
             String masterNameTag = MASTER_NAME_PREFIX + "-" + clusterId;
-            Instance master = launchClusterMasterInstance(masterNameTag);
-            if (master == null) {
+            masterInstance = launchClusterMasterInstance(masterNameTag);
+            if (masterInstance == null) {
                 return false;
             }
-            List<Instance> slaves = new ArrayList<>();
+            slaveInstances = new ArrayList<>();
             int totalSlaveInstanceCount = config.getSlaveInstanceCount();
             if (totalSlaveInstanceCount > 0) {
                 LOG.info("Requesting {} slave instance(s) with {} different configurations...",
@@ -120,7 +123,7 @@ public abstract class CreateCluster implements Intent {
                     if (slavesBatch == null) {
                         return false;
                     }
-                    slaves.addAll(slavesBatch);
+                    slaveInstances.addAll(slavesBatch);
                 }
             } else {
                 LOG.info("No Slave instance(s) requested!");
@@ -128,9 +131,9 @@ public abstract class CreateCluster implements Intent {
             // just to be sure, everything is present, wait x seconds
             sleep(4);
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
-            configureMaster(master, slaves, getSubnetCidr(), prepare);
-            logFinishedInfoMessage(master.getPublicIp());
-            saveGridPropertiesFile(master.getPublicIp());
+            configureMaster(masterInstance, slaveInstances, getSubnetCidr(), prepare);
+            logFinishedInfoMessage(masterInstance.getPublicIp());
+            saveGridPropertiesFile(masterInstance.getPublicIp());
         } catch (Exception e) {
             // print stacktrace only verbose mode, otherwise the message is fine
             if (VerboseOutputFilter.SHOW_VERBOSE) {
@@ -146,7 +149,7 @@ public abstract class CreateCluster implements Intent {
     /**
      * Start the configured cluster master instance.
      *
-     * @param masterNameTag
+     * @param masterNameTag The generated name tag for the master instance.
      */
     protected abstract Instance launchClusterMasterInstance(String masterNameTag);
 
@@ -342,22 +345,15 @@ public abstract class CreateCluster implements Intent {
         return configured;
     }
 
-    protected void sleep(int seconds) {
-        sleep(seconds, true);
-    }
-
-    protected void sleep(int seconds, boolean throwException) {
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException ie) {
-            if (throwException) {
-                LOG.error("Thread.sleep interrupted!");
-                ie.printStackTrace();
-            }
-        }
-    }
-
     public Configuration getConfig() {
         return config;
+    }
+
+    public Instance getMasterInstance() {
+        return masterInstance;
+    }
+
+    public List<Instance> getSlaveInstances() {
+        return slaveInstances;
     }
 }

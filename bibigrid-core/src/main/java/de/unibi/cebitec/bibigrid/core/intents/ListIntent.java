@@ -16,7 +16,7 @@ import java.util.*;
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public abstract class ListIntent implements Intent {
+public abstract class ListIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntent.class);
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
 

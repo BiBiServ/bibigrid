@@ -42,16 +42,12 @@ public class TerminateIntentOpenstack extends TerminateIntent {
         // security groups
         if (cluster.getSecurityGroup() != null) {
             while (true) {
-                try {
-                    Thread.sleep(1000);
-                    ActionResponse ar = os.compute().securityGroups().delete(cluster.getSecurityGroup());
-                    if (ar.isSuccess()) {
-                        break;
-                    }
-                    LOG.warn("{} Try again in a second...", ar.getFault());
-                } catch (InterruptedException ex) {
-                    // do nothing
+                sleep(1, false);
+                ActionResponse ar = os.compute().securityGroups().delete(cluster.getSecurityGroup());
+                if (ar.isSuccess()) {
+                    break;
                 }
+                LOG.warn("{} Try again in a second...", ar.getFault());
             }
             LOG.info("Security group '{}' deleted.", cluster.getSecurityGroup());
         }

@@ -192,7 +192,7 @@ final class GoogleCloudUtils {
         try {
             return compute.snapshots().get(projectId, snapshotId).execute();
         } catch (IOException e) {
-            LOG.error("Failed to get snapshot {}. {}", snapshotId, e);
+            LOG.error("Failed to get snapshot '{}'. {}", snapshotId, e);
         }
         return null;
     }
@@ -201,7 +201,16 @@ final class GoogleCloudUtils {
         try {
             return compute.images().get(projectId, imageId).execute();
         } catch (IOException e) {
-            LOG.error("Failed to get image {}. {}", imageId, e);
+            LOG.error("Failed to get image '{}'. {}", imageId, e);
+        }
+        return null;
+    }
+
+    static Disk getDisk(Compute compute, String projectId, String zone, String diskId) {
+        try {
+            return compute.disks().get(projectId, zone, diskId).execute();
+        } catch (IOException e) {
+            LOG.error("Failed to get disk '{}'. {}", diskId, e);
         }
         return null;
     }

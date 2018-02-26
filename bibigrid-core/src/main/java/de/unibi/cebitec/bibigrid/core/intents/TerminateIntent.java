@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public abstract class TerminateIntent implements Intent {
+public abstract class TerminateIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntent.class);
     private final Configuration config;
     private final ProviderModule providerModule;
