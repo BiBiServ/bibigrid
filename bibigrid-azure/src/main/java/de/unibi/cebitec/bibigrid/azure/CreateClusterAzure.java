@@ -5,6 +5,7 @@ import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
+import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -46,9 +47,9 @@ public class CreateClusterAzure extends CreateCluster {
     @Override
     public CreateClusterAzure configureClusterMasterInstance() {
         // preparing block device mappings for master
-        // Map<String, String> masterSnapshotToMountPointMap = config.getMasterMounts();
-        // int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
-        // DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
+        InstanceType masterSpec = config.getMasterInstance().getProviderType();
+        masterDeviceMapper = new DeviceMapper(providerModule, config.getMasterMounts(),
+                masterSpec.getEphemerals() + masterSpec.getSwap());
 
         masterStartupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true);
         return this;
@@ -56,10 +57,15 @@ public class CreateClusterAzure extends CreateCluster {
 
     @Override
     public CreateClusterAzure configureClusterSlaveInstance() {
-        //now defining Slave Volumes
-        // Map<String, String> snapShotToSlaveMounts = config.getSlaveMounts();
-        // int ephemerals = config.getSlaveInstanceType().getSpec().getEphemerals();
-        // slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
+        // now defining Slave Volumes
+        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
+        slaveDeviceMappers = new ArrayList<>();
+        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+            InstanceType slaveSpec = instanceConfiguration.getProviderType();
+            DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
+                    slaveSpec.getEphemerals() + slaveSpec.getSwap());
+            slaveDeviceMappers.add(deviceMapper);
+        }
         return this;
     }
 

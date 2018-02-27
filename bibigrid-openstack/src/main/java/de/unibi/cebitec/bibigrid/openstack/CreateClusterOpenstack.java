@@ -13,19 +13,14 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.compute.Address;
 import org.openstack4j.model.compute.Addresses;
-import org.openstack4j.model.compute.BDMDestType;
-import org.openstack4j.model.compute.BDMSourceType;
-import org.openstack4j.model.compute.BlockDeviceMappingCreate;
 import org.openstack4j.model.compute.Fault;
 import org.openstack4j.model.compute.Flavor;
 import org.openstack4j.model.compute.Server;
@@ -50,8 +45,7 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     private final OSClient os;
     private CreateClusterEnvironmentOpenstack environment;
-    private DeviceMapper masterDeviceMapper, slaveDeviceMapper;
-    private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
+    //private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
 
     CreateClusterOpenstack(final ProviderModule providerModule, final ConfigurationOpenstack config) {
         super(providerModule, config);
@@ -60,7 +54,7 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     @Override
     public CreateClusterEnvironmentOpenstack createClusterEnvironment() throws ConfigurationException {
-        LOG.info("Openstack connection established ...");
+        LOG.info("Openstack connection established...");
         return environment = new CreateClusterEnvironmentOpenstack(this);
     }
 
@@ -75,19 +69,18 @@ public class CreateClusterOpenstack extends CreateCluster {
             if (v == null) {
                 VolumeSnapshot vss = getSnapshotByNameOrId(mountPoint.getSource());
                 if (vss != null) {
-                    v = createVolumeFromSnapshot(vss, mountPoint.getSource() + "_" + clusterId);
-                    LOG.info(V, "Create volume ({}) from snapshot ({}).", v.getName(), mountPoint.getSource());
+                    v = createVolumeFromSnapshot(vss, mountPoint.getSource() + "-" + clusterId);
+                    LOG.info(V, "Create volume '{}' from snapshot '{}'.", v.getName(), mountPoint.getSource());
                 }
             }
             if (v != null) { // Volume exists or created from snapshot
-                LOG.info(V, "Add volume ({}) to MasterVolumeMountMap", v.getName());
+                LOG.info(V, "Add volume '{}' to master volume mount map.", v.getName());
                 Configuration.MountPoint idTargetMount = new Configuration.MountPoint();
                 idTargetMount.setSource(v.getId());
                 idTargetMount.setTarget(mountPoint.getTarget());
                 masterVolumeToMountPointMap.add(idTargetMount);
-
             } else {
-                LOG.warn("Volume/Snapshot with name/id {} not found!", mountPoint.getSource());
+                LOG.warn("Volume/Snapshot with name/id '{}' not found!", mountPoint.getSource());
             }
         }
 
@@ -95,7 +88,7 @@ public class CreateClusterOpenstack extends CreateCluster {
         masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap,
                 CONFIG_DRIVE + masterSpec.getEphemerals() + masterSpec.getSwap());
 
-        // BlockDeviceMapping.
+        /* TODO: this was never used?
         masterMappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
         for (int i = 0; i < masterSpec.getEphemerals(); ++i) {
@@ -108,6 +101,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .build();
             masterMappings.add(blockDeviceMappingCreate);
         }
+        */
         LOG.info("Master configured");
         return this;
     }
@@ -123,17 +117,18 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     @Override
     public CreateClusterOpenstack configureClusterSlaveInstance() {
-        // DeviceMapper Slave. @ToDo
+        // DeviceMapper Slave. TODO: check volume or snapshot like with master!
         List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
+        slaveDeviceMappers = new ArrayList<>();
+        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+            InstanceType slaveSpec = instanceConfiguration.getProviderType();
+            DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
+                    CONFIG_DRIVE + slaveSpec.getEphemerals() + slaveSpec.getSwap());
+            slaveDeviceMappers.add(deviceMapper);
+        }
 
-        // TODO: why was this always master instance spec?
-        InstanceType masterSpec = config.getMasterInstance().getProviderType();
-        slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
-                CONFIG_DRIVE + masterSpec.getEphemerals() + masterSpec.getSwap());
-
-        // BlockDeviceMapping. @ToDo
+        /* TODO: this was never used?
         slaveMappings = new HashSet<>();
-        /* TODO
         String[] ephemerals = {"b", "c", "d", "e"};
         for (int i = 0; i < config.getSlaveInstanceType().getSpec().getEphemerals(); ++i) {
             BlockDeviceMappingCreate blockDeviceMappingCreate = Builders.blockDeviceMapping()
@@ -168,9 +163,10 @@ public class CreateClusterOpenstack extends CreateCluster {
                 .configDrive(CONFIG_DRIVE != 0)
                 .networks(Arrays.asList(environment.getNetwork().getId()))
                 .build();
-        Server server = os.compute().servers().boot(sc); // boot and return immediately
+        // Boot the server async
+        Server server = os.compute().servers().boot(sc);
 
-        // check if anything goes wrong,
+        // check if anything goes wrong
         Fault fault = server.getFault();
         if (fault != null) {
             // some more debug information in verbose mode
@@ -214,16 +210,16 @@ public class CreateClusterOpenstack extends CreateCluster {
                     assigned = checkForFloatingIp(tmp, floatingIp.getFloatingIpAddress());
                     if (assigned) {
                         master.setPublicIp(floatingIp.getFloatingIpAddress());
-                        LOG.info("FloatingIP {} assigned to Master(ID: {}) ", master.getPublicIp(), master.getId());
+                        LOG.info("FloatingIP '{}' assigned to Master (ID: {}).", master.getPublicIp(), master.getId());
                     } else {
-                        LOG.warn("FloatingIP {} assignment failed ! Try another one ...", floatingIp.getFloatingIpAddress());
+                        LOG.warn("FloatingIP '{}' assignment failed! Try another one...", floatingIp.getFloatingIpAddress());
                     }
                 }
             } else {
-                LOG.warn("FloatingIP {} assignment failed with fault : {}! Try another one ...", floatingIp.getFloatingIpAddress(), ar.getFault());
+                LOG.warn("FloatingIP '{}' assignment failed with fault '{}'! Try another one...", floatingIp.getFloatingIpAddress(), ar.getFault());
             }
         }
-        LOG.info("Master (ID: {}) network configuration finished", master.getId());
+        LOG.info("Master (ID: {}) network configuration finished.", master.getId());
 
         // wait for master available
         do {
@@ -249,7 +245,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                             break;
                         case CREATING: {
                             sleep(5);
-                            LOG.info(V, "Wait for Volume ({}) available", v.getId());
+                            LOG.info(V, "Wait for Volume '{}' available.", v.getId());
                             v = os.blockStorage().volumes().get(mountPoint.getSource());
                             break;
                         }
@@ -264,9 +260,9 @@ public class CreateClusterOpenstack extends CreateCluster {
                     VolumeAttachment va = os.compute().servers().attachVolume(server.getId(), mountPoint.getSource(),
                             masterDeviceMapper.getDeviceNameForSnapshotId(mountPoint.getSource()));
                     if (va == null) {
-                        LOG.error("Attaching volume {} to master failed ...", mountPoint.getSource());
+                        LOG.error("Attaching volume '{}' to master failed.", mountPoint.getSource());
                     } else {
-                        LOG.info(V, "Volume {} attached to Master.", va.getId());
+                        LOG.info(V, "Volume '{}' attached to Master.", va.getId());
                     }
                 }
             }
@@ -299,10 +295,10 @@ public class CreateClusterOpenstack extends CreateCluster {
             Server tmp = os.compute().servers().boot(sc);
             InstanceOpenstack tmp_instance = new InstanceOpenstack(instanceConfiguration, tmp);
             slaves.put(tmp.getId(), tmp_instance);
-            LOG.info(V, "Instance request for {}  ", sc.getName());
+            LOG.info(V, "Instance request for '{}'.", sc.getName());
         }
 
-        LOG.info("Waiting for slave instances ready ...");
+        LOG.info("Waiting for slave instances ready...");
         int active = 0;
         List<String> ignoreList = new ArrayList<>();
         while (slaves.size() > active + ignoreList.size()) {
@@ -316,9 +312,9 @@ public class CreateClusterOpenstack extends CreateCluster {
                     checkForServerAndUpdateInstance(slave.getId(), slave);
                     if (slave.isActive()) {
                         active++;
-                        LOG.info("[{}/{}] Instance {} is active !", active, slaves.size(), slave.getHostname());
+                        LOG.info("[{}/{}] Instance '{}' is active!", active, slaves.size(), slave.getHostname());
                     } else if (slave.hasError()) {
-                        LOG.warn("Ignore slave instance '{}' ", slave.getHostname());
+                        LOG.warn("Ignore slave instance '{}'.", slave.getHostname());
                         ignoreList.add(slave.getHostname());
                     }
                 }
@@ -330,7 +326,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             slaves.remove(name);
         }
 
-        LOG.info(V, "Wait for slave network configuration finished ...");
+        LOG.info(V, "Wait for slave network configuration finished...");
         // wait for slave network finished ... update server instance list
         for (InstanceOpenstack slave : slaves.values()) {
             slave.setPrivateIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
@@ -487,9 +483,9 @@ public class CreateClusterOpenstack extends CreateCluster {
                     instance.setError(true);
                     Fault fault = si.getFault();
                     if (fault == null) {
-                        LOG.error("Launch {} failed without message!", si.getName());
+                        LOG.error("Launch '{}' failed without message!", si.getName());
                     } else {
-                        LOG.error("Launch {} failed with Code {} :: {}", si.getName(), fault.getCode(), fault.getMessage());
+                        LOG.error("Launch '{}' failed with Code '{}'. {}", si.getName(), fault.getCode(), fault.getMessage());
                     }
                     break;
                 default:
@@ -497,7 +493,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     break;
             }
         } else {
-            LOG.warn(V, "Status  of instance {} not available (== null)", si.getId());
+            LOG.warn(V, "Status of instance '{}' not available (== null).", si.getId());
         }
     }
 }

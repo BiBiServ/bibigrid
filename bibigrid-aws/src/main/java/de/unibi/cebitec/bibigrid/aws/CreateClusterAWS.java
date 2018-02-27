@@ -40,8 +40,7 @@ public class CreateClusterAWS extends CreateCluster {
     private InstanceNetworkInterfaceSpecification slaveNetworkInterface;
     private List<BlockDeviceMapping> masterDeviceMappings;
     private Tag bibigridId, username;
-    private DeviceMapper slaveDeviceMapper;
-    private List<BlockDeviceMapping> slaveBlockDeviceMappings;
+    private List<List<BlockDeviceMapping>> slaveBlockDeviceMappings;
 
     private final ConfigurationAWS config;
 
@@ -74,15 +73,16 @@ public class CreateClusterAWS extends CreateCluster {
     private void buildMasterDeviceMappings() {
         // preparing block device mappings for master
         List<Configuration.MountPoint> masterSnapshotToMountPointMap = config.getMasterMounts();
-        int ephemerals = config.getMasterInstance().getProviderType().getEphemerals();
-        DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
+        de.unibi.cebitec.bibigrid.core.model.InstanceType masterSpec = config.getMasterInstance().getProviderType();
+        masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap,
+                masterSpec.getEphemerals() + masterSpec.getSwap());
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
         if (!masterSnapshotToMountPointMap.isEmpty()) {
             LOG.info(V, "Defining master volumes");
             masterDeviceMappings = createBlockDeviceMappings(masterDeviceMapper);
         }
-        masterDeviceMappings.addAll(buildEphemeralList(ephemerals));
+        masterDeviceMappings.addAll(buildEphemeralList(masterSpec.getEphemerals()));
     }
 
     private List<BlockDeviceMapping> buildEphemeralList(int ephemerals) {
@@ -138,17 +138,24 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     private void buildClientsDeviceMappings() {
-        //now defining Slave Volumes
-        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
-        int ephemerals = 0;// TODO: config.getSlaveInstanceType().getEphemerals();
-        slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
+        // now defining Slave Volumes
         slaveBlockDeviceMappings = new ArrayList<>();
-        // configure volumes first
-        if (!snapShotToSlaveMounts.isEmpty()) {
-            LOG.info(V, "configure slave volumes");
-            slaveBlockDeviceMappings = createBlockDeviceMappings(slaveDeviceMapper);
+        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
+        slaveDeviceMappers = new ArrayList<>();
+        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+            de.unibi.cebitec.bibigrid.core.model.InstanceType slaveSpec = instanceConfiguration.getProviderType();
+            DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
+                    slaveSpec.getEphemerals() + slaveSpec.getSwap());
+            slaveDeviceMappers.add(deviceMapper);
+            // configure volumes first
+            List<BlockDeviceMapping> slaveBlockDeviceMapping = new ArrayList<>();
+            if (!snapShotToSlaveMounts.isEmpty()) {
+                LOG.info(V, "configure slave volumes");
+                slaveBlockDeviceMapping = createBlockDeviceMappings(deviceMapper);
+            }
+            slaveBlockDeviceMapping.addAll(buildEphemeralList(slaveSpec.getEphemerals()));
+            slaveBlockDeviceMappings.add(slaveBlockDeviceMapping);
         }
-        slaveBlockDeviceMappings.addAll(buildEphemeralList(ephemerals));
     }
 
     @Override
@@ -256,7 +263,7 @@ public class CreateClusterAWS extends CreateCluster {
                     .withKeyName(config.getKeypair())
                     .withImageId(instanceConfiguration.getImage())
                     .withUserData(base64SlaveUserData)
-                    .withBlockDeviceMappings(slaveBlockDeviceMappings)
+                    .withBlockDeviceMappings(slaveBlockDeviceMappings.get(batchIndex))
                     .withNetworkInterfaces(slaveNetworkInterface);
 
             slaveReq.setLaunchSpecification(slaveLaunchSpecification);
@@ -303,7 +310,7 @@ public class CreateClusterAWS extends CreateCluster {
                     .withKeyName(config.getKeypair())
                     .withImageId(instanceConfiguration.getImage())
                     .withUserData(base64SlaveUserData)
-                    .withBlockDeviceMappings(slaveBlockDeviceMappings)
+                    .withBlockDeviceMappings(slaveBlockDeviceMappings.get(batchIndex))
                     .withNetworkInterfaces(slaveNetworkInterface);
 
             RunInstancesResult runInstancesResult = ec2.runInstances(slaveReq);

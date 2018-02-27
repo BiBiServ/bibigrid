@@ -44,9 +44,9 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     @Override
     public CreateClusterGoogleCloud configureClusterMasterInstance() {
         // preparing block device mappings for master
-        // Map<String, String> masterSnapshotToMountPointMap = config.getMasterMounts();
-        // int ephemerals = config.getMasterInstanceType().getSpec().getEphemerals();
-        // DeviceMapper masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap, ephemerals);
+        InstanceType masterSpec = config.getMasterInstance().getProviderType();
+        masterDeviceMapper = new DeviceMapper(providerModule, config.getMasterMounts(),
+                masterSpec.getEphemerals() + masterSpec.getSwap());
 
         String startupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), false, true);
         masterStartupScript = new Metadata.Items().setKey("startup-script").setValue(startupScript);
@@ -69,10 +69,15 @@ public class CreateClusterGoogleCloud extends CreateCluster {
 
     @Override
     public CreateClusterGoogleCloud configureClusterSlaveInstance() {
-        //now defining Slave Volumes
-        // Map<String, String> snapShotToSlaveMounts = config.getSlaveMounts();
-        // int ephemerals = config.getSlaveInstanceType().getEphemerals();
-        // slaveDeviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts, ephemerals);
+        // now defining Slave Volumes
+        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
+        slaveDeviceMappers = new ArrayList<>();
+        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+            InstanceType slaveSpec = instanceConfiguration.getProviderType();
+            DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
+                    slaveSpec.getEphemerals() + slaveSpec.getSwap());
+            slaveDeviceMappers.add(deviceMapper);
+        }
 
         String startupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), false, false);
         slaveStartupScript = new Metadata.Items().setKey("startup-script").setValue(startupScript);

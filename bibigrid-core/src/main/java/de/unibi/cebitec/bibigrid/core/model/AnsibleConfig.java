@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
 import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
+import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ public final class AnsibleConfig {
     private final String subnetCidr;
     private final Instance masterInstance;
     private final List<Instance> slaveInstances;
+    private List<Configuration.MountPoint> masterMounts;
 
     public AnsibleConfig(Configuration config, String blockDeviceBase, String subnetCidr, Instance masterInstance,
                          List<Instance> slaveInstances) {
@@ -33,6 +35,19 @@ public final class AnsibleConfig {
         this.subnetCidr = subnetCidr;
         this.masterInstance = masterInstance;
         this.slaveInstances = new ArrayList<>(slaveInstances);
+    }
+
+    public void setMasterMounts(DeviceMapper masterDeviceMapper) {
+        List<Configuration.MountPoint> masterMountMap = masterDeviceMapper.getSnapshotIdToMountPoint();
+        if (masterMountMap != null && masterMountMap.size() > 0) {
+            masterMounts = new ArrayList<>();
+            for (Configuration.MountPoint mountPoint : masterMountMap) {
+                Configuration.MountPoint localMountPoint = new Configuration.MountPoint();
+                localMountPoint.setSource(masterDeviceMapper.getDeviceNameForSnapshotId(mountPoint.getSource()));
+                localMountPoint.setTarget(mountPoint.getTarget());
+                masterMounts.add(localMountPoint);
+            }
+        }
     }
 
     public String[] getSlaveFilenames() {
@@ -96,6 +111,16 @@ public final class AnsibleConfig {
         masterMap.put("hostname", masterInstance.getHostname());
         masterMap.put("cores", config.getMasterInstance().getProviderType().getCpuCores());
         masterMap.put("ephemerals", getEphemeralDevices(config.getMasterInstance().getProviderType().getEphemerals()));
+        if (masterMounts != null && masterMounts.size() > 0) {
+            List<Map<String, String>> masterMountsMap = new ArrayList<>();
+            for (Configuration.MountPoint masterMount : masterMounts) {
+                Map<String, String> mountMap = new LinkedHashMap<>();
+                mountMap.put("src", masterMount.getSource());
+                mountMap.put("dst", masterMount.getTarget());
+                masterMountsMap.add(mountMap);
+            }
+            masterMap.put("disks", masterMountsMap);
+        }
         return masterMap;
     }
 

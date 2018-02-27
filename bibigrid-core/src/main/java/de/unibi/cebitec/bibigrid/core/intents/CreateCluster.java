@@ -41,6 +41,8 @@ public abstract class CreateCluster extends Intent {
 
     private Instance masterInstance;
     private List<Instance> slaveInstances;
+    protected DeviceMapper masterDeviceMapper;
+    protected List<DeviceMapper> slaveDeviceMappers;
 
     protected CreateCluster(ProviderModule providerModule, Configuration config) {
         this.providerModule = providerModule;
@@ -230,6 +232,7 @@ public abstract class CreateCluster extends Intent {
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, slaveInstances);
         AnsibleConfig ansibleConfig = new AnsibleConfig(config, providerModule.getBlockDeviceBase(), subnetCidr,
                 masterInstance, slaveInstances);
+        ansibleConfig.setMasterMounts(masterDeviceMapper);
 
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
