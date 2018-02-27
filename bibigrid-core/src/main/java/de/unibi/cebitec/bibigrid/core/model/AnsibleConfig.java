@@ -62,12 +62,17 @@ public final class AnsibleConfig {
         map.put("CIDR", subnetCidr);
         if (config.isNfs()) {
             map.put("nfs_mounts", getNfsSharesMap());
+            map.put("ext_nfs_mounts", getExtNfsSharesMap());
         }
+        map.put("local_fs", config.getLocalFS().name());
         addBooleanOption(map, "enable_nfs", config.isNfs());
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
         addBooleanOption(map, "enable_mesos", config.isMesos());
         addBooleanOption(map, "enable_cloud9", config.isCloud9());
+        addBooleanOption(map, "enable_cassandra", config.isCassandra());
+        addBooleanOption(map, "enable_hdfs", config.isHdfs());
+        addBooleanOption(map, "enable_spark", config.isSpark());
         writeToOutputStream(stream, map);
     }
 
@@ -108,6 +113,17 @@ public final class AnsibleConfig {
             Map<String, String> shareMap = new LinkedHashMap<>();
             shareMap.put("src", nfsShare);
             shareMap.put("dst", nfsShare);
+            nfsSharesMap.add(shareMap);
+        }
+        return nfsSharesMap;
+    }
+
+    private List<Map<String, String>> getExtNfsSharesMap() {
+        List<Map<String, String>> nfsSharesMap = new ArrayList<>();
+        for (Configuration.MountPoint extNfsShare : config.getExtNfsShares()) {
+            Map<String, String> shareMap = new LinkedHashMap<>();
+            shareMap.put("src", extNfsShare.getSource());
+            shareMap.put("dst", extNfsShare.getTarget());
             nfsSharesMap.add(shareMap);
         }
         return nfsSharesMap;
