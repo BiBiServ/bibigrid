@@ -6,7 +6,6 @@ import com.microsoft.azure.management.compute.VirtualMachine;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.*;
@@ -30,33 +29,22 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  */
 public class CreateClusterAzure extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterAzure.class);
-    private Azure compute;
+    private final Azure compute;
     private String masterStartupScript;
-    private CreateClusterEnvironmentAzure environment;
 
     CreateClusterAzure(final ProviderModule providerModule, final ConfigurationAzure config) {
         super(providerModule, config);
-    }
-
-    @Override
-    public CreateClusterEnvironmentAzure createClusterEnvironment() throws ConfigurationException {
         compute = AzureUtils.getComputeService(config);
-        return environment = new CreateClusterEnvironmentAzure(this);
     }
 
     @Override
-    public CreateClusterAzure configureClusterMasterInstance() {
-        // preparing block device mappings for master
-        InstanceType masterSpec = config.getMasterInstance().getProviderType();
-        masterDeviceMapper = new DeviceMapper(providerModule, config.getMasterMounts(),
-                masterSpec.getEphemerals() + masterSpec.getSwap());
-
+    public CreateCluster configureClusterMasterInstance() {
         masterStartupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true);
-        return this;
+        return super.configureClusterMasterInstance();
     }
 
     @Override
-    public CreateClusterAzure configureClusterSlaveInstance() {
+    public CreateCluster configureClusterSlaveInstance() {
         // now defining Slave Volumes
         List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
         slaveDeviceMappers = new ArrayList<>();
@@ -70,17 +58,23 @@ public class CreateClusterAzure extends CreateCluster {
     }
 
     @Override
+    protected List<Configuration.MountPoint> resolveMountSources(List<Configuration.MountPoint> mountPoints) {
+        // TODO: possibly check if snapshot or volume like openstack
+        return mountPoints;
+    }
+
+    @Override
     protected InstanceAzure launchClusterMasterInstance(String masterNameTag) {
         LOG.info("Requesting master instance...");
         //compute.publicIPAddresses().define("").withRegion("").withExistingResourceGroup("").withStaticIP().
         VirtualMachine masterInstance = compute.virtualMachines()
                 .define(masterNameTag)
                 .withRegion(config.getRegion())
-                .withExistingResourceGroup(environment.getResourceGroup())
-                .withExistingPrimaryNetwork(environment.getNetwork())
-                .withSubnet(environment.getSubnet().name())
+                .withExistingResourceGroup(((CreateClusterEnvironmentAzure) environment).getResourceGroup())
+                .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
+                .withSubnet(environment.getSubnet().getName())
                 .withPrimaryPrivateIPAddressDynamic()
-                .withNewPrimaryPublicIPAddress(environment.getMasterIP())
+                .withNewPrimaryPublicIPAddress(((CreateClusterEnvironmentAzure) environment).getMasterIP())
                 .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config,
                         config.getMasterInstance().getImage()))
                 .withRootUsername(config.getSshUser())
@@ -116,11 +110,11 @@ public class CreateClusterAzure extends CreateCluster {
             VirtualMachine slaveInstance = compute.virtualMachines()
                     .define(buildSlaveInstanceName(batchIndex, i))
                     .withRegion(config.getRegion())
-                    .withExistingResourceGroup(environment.getResourceGroup())
-                    .withExistingPrimaryNetwork(environment.getNetwork())
-                    .withSubnet(environment.getSubnet().name())
+                    .withExistingResourceGroup(((CreateClusterEnvironmentAzure) environment).getResourceGroup())
+                    .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
+                    .withSubnet(environment.getSubnet().getName())
                     .withPrimaryPrivateIPAddressDynamic()
-                    .withNewPrimaryPublicIPAddress(environment.getMasterIP()) // TODO
+                    .withNewPrimaryPublicIPAddress(((CreateClusterEnvironmentAzure) environment).getMasterIP()) // TODO
                     .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, instanceConfiguration.getImage()))
                     .withRootUsername(config.getSshUser())
                     .withSsh("") // TODO
@@ -162,10 +156,5 @@ public class CreateClusterAzure extends CreateCluster {
 
     Azure getCompute() {
         return compute;
-    }
-
-    @Override
-    protected String getSubnetCidr() {
-        return environment.getSubnetCidr();
     }
 }

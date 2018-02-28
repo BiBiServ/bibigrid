@@ -26,28 +26,42 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentAWS.class);
     private static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
 
-    private Vpc network;
-    private Subnet subnet;
     private String placementGroup;
     private final CreateClusterAWS cluster;
     private String masterIp;
     private String securityGroup;
 
     CreateClusterEnvironmentAWS(CreateClusterAWS cluster) throws ConfigurationException {
-        super();
+        super(cluster);
         this.cluster = cluster;
     }
 
+    /**
+     * Return a network that currently exists in selected region. Returns either the *default* network from all or
+     * the given networkId. If a networkId is given it is returned whether it is default or not. Return null in the
+     * case no default or fitting network is found.
+     */
     @Override
-    public CreateClusterEnvironmentAWS createNetwork() throws ConfigurationException {
-        // check for (default) network
-        network = getNetworkOrDefault(cluster.getConfig().getNetwork());
-        if (network == null) {
-            throw new ConfigurationException("No suitable network found. Define a default VPC for you account or a valid network id.");
-        } else {
-            LOG.info(V, "Use network '{}' ({}).", network.getVpcId(), network.getCidrBlock());
+    protected NetworkAWS getNetworkOrDefault(String networkId) {
+        DescribeVpcsRequest describeVpcsRequest = new DescribeVpcsRequest();
+        List<String> networkIds = new ArrayList<>();
+        if (networkId != null) {
+            networkIds.add(networkId);
         }
-        return this;
+        describeVpcsRequest.setVpcIds(networkIds);
+        DescribeVpcsResult describeVpcsResult = cluster.getEc2().describeVpcs(describeVpcsRequest);
+        List<Vpc> networks = describeVpcsResult.getVpcs();
+        if (networkId != null && networks.size() == 1) {
+            return new NetworkAWS(networks.get(0));
+        }
+        if (!networks.isEmpty()) {
+            for (Vpc network : networks) {
+                if (network.isDefault()) {
+                    return new NetworkAWS(network);
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -57,34 +71,34 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         DescribeSubnetsResult describeSubnetsResult = cluster.getEc2().describeSubnets(describeSubnetsRequest);
         // contains all subnet.cidr which are in current network
         List<String> listOfUsedCidr = describeSubnetsResult.getSubnets().stream()
-                .filter(s -> s.getVpcId().equals(network.getVpcId()))
+                .filter(s -> s.getVpcId().equals(network.getId()))
                 .map(Subnet::getCidrBlock)
                 .collect(Collectors.toList());
-        SubNets subnets = new SubNets(network.getCidrBlock(), 24);
+        SubNets subnets = new SubNets(network.getCidr(), 24);
         String subnetCidr = subnets.nextCidr(listOfUsedCidr);
         LOG.debug(V, "Use {} for generated subnet.", subnetCidr);
         // create new subnet
-        CreateSubnetRequest createSubnetRequest = new CreateSubnetRequest(network.getVpcId(), subnetCidr);
-        createSubnetRequest.withAvailabilityZone(cluster.getConfig().getAvailabilityZone());
+        CreateSubnetRequest createSubnetRequest = new CreateSubnetRequest(network.getId(), subnetCidr);
+        createSubnetRequest.withAvailabilityZone(getConfig().getAvailabilityZone());
         CreateSubnetResult createSubnetResult = cluster.getEc2().createSubnet(createSubnetRequest);
-        subnet = createSubnetResult.getSubnet();
+        subnet = new SubnetAWS(createSubnetResult.getSubnet());
         return this;
     }
 
     @Override
     public CreateClusterEnvironmentAWS createSecurityGroup() {
         CreateTagsRequest tagRequest = new CreateTagsRequest();
-        tagRequest.withResources(subnet.getSubnetId())
+        tagRequest.withResources(subnet.getId())
                 .withTags(cluster.getBibigridId(), new Tag(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, SUBNET_PREFIX + cluster.getClusterId()));
         cluster.getEc2().createTags(tagRequest);
         // master IP
-        masterIp = SubNets.getFirstIP(subnet.getCidrBlock());
+        masterIp = SubNets.getFirstIP(subnet.getCidr());
         // create security group with full internal access / ssh from outside
         LOG.info("Creating security group...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + cluster.getClusterId())
                 .withDescription(cluster.getClusterId())
-                .withVpcId(network.getVpcId());
+                .withVpcId(network.getId());
         securityGroup = cluster.getEc2().createSecurityGroup(secReq).getGroupId();
 
         LOG.info(V, "security group id: {}", securityGroup);
@@ -95,7 +109,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         allIpPermissions.add(buildIpPermission("tcp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
         allIpPermissions.add(buildIpPermission("udp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
         allIpPermissions.add(buildIpPermission("icmp", -1, -1).withUserIdGroupPairs(secGroupSelf));
-        for (Port port : cluster.getConfig().getPorts()) {
+        for (Port port : getConfig().getPorts()) {
             LOG.info(port.toString());
             allIpPermissions.add(buildIpPermission("tcp", port.number, port.number)
                     .withIpv4Ranges(new IpRange().withCidrIp(port.ipRange)));
@@ -121,9 +135,8 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     @Override
     public CreateClusterAWS createPlacementGroup() {
         // if all instance-types fulfill the cluster specifications, create a placementGroup.
-        boolean allTypesClusterInstances =
-                cluster.getConfig().getMasterInstance().getProviderType().isClusterInstance();
-        for (Configuration.InstanceConfiguration instanceConfiguration : cluster.getConfig().getSlaveInstances()) {
+        boolean allTypesClusterInstances = getConfig().getMasterInstance().getProviderType().isClusterInstance();
+        for (Configuration.InstanceConfiguration instanceConfiguration : getConfig().getSlaveInstances()) {
             allTypesClusterInstances = allTypesClusterInstances &&
                     instanceConfiguration.getProviderType().isClusterInstance();
         }
@@ -136,37 +149,6 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
             return cluster;
         }
         return cluster;
-    }
-
-    /**
-     * Return a network that currently exists in selected region. Returns either the *default* network from all or
-     * the given networkId. If a networkId is given it is returned whether it is default or not. Return null in the
-     * case no default or fitting network is found.
-     */
-    private Vpc getNetworkOrDefault(String networkId) {
-        DescribeVpcsRequest describeVpcsRequest = new DescribeVpcsRequest();
-        List<String> networkIds = new ArrayList<>();
-        if (networkId != null) {
-            networkIds.add(networkId);
-        }
-        describeVpcsRequest.setVpcIds(networkIds);
-        DescribeVpcsResult describeVpcsResult = cluster.getEc2().describeVpcs(describeVpcsRequest);
-        List<Vpc> networks = describeVpcsResult.getVpcs();
-        if (networkId != null && networks.size() == 1) {
-            return networks.get(0);
-        }
-        if (!networks.isEmpty()) {
-            for (Vpc network : networks) {
-                if (network.isDefault()) {
-                    return network;
-                }
-            }
-        }
-        return null;
-    }
-
-    Subnet getSubnet() {
-        return subnet;
     }
 
     String getPlacementGroup() {

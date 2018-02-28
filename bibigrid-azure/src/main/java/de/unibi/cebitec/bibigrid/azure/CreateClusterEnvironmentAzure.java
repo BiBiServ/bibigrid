@@ -22,63 +22,50 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  */
 public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentAzure.class);
-    private static final String SECURITY_GROUP_PREFIX = PREFIX + "sg-";
     static final String RESOURCE_GROUP_PREFIX = PREFIX + "rg-";
 
     private final CreateClusterAzure cluster;
-    private Network network;
-    private Subnet subnet;
     private NetworkSecurityGroup securityGroup;
     private String masterIP;
-    private String subnetCidr;
     private ResourceGroup resourceGroup;
 
     CreateClusterEnvironmentAzure(final CreateClusterAzure cluster) throws ConfigurationException {
-        super();
+        super(cluster);
         this.cluster = cluster;
         resourceGroup = cluster.getCompute().resourceGroups()
                 .define(RESOURCE_GROUP_PREFIX + cluster.getClusterId())
-                .withRegion(cluster.getConfig().getRegion())
+                .withRegion(getConfig().getRegion())
                 .create();
     }
 
     @Override
-    public CreateClusterEnvironmentAzure createNetwork() throws ConfigurationException {
-        // check for network
-        String networkId = cluster.getConfig().getNetwork();
-        if (networkId == null) {
-            throw new ConfigurationException("Network id is not defined!");
-        }
-        for (Network network : cluster.getCompute().networks().list()) {
-            if (network.name().equals(networkId)) {
-                this.network = network;
-                break;
+    protected NetworkAzure getNetworkOrDefault(String networkId) {
+        if (networkId != null) {
+            for (Network network : cluster.getCompute().networks().list()) {
+                if (network.name().equals(networkId)) {
+                    return new NetworkAzure(network);
+                }
             }
         }
-        if (network == null) {
-            throw new ConfigurationException("No suitable network found! Define a valid network id.");
-        } else {
-            LOG.info(V, "Use Network '{}'.", network.name());
-        }
-        return this;
+        return null;
     }
 
     @Override
     public CreateClusterEnvironmentAzure createSubnet() {
-        String subnetName = cluster.getConfig().getSubnet();
+        Network network = ((NetworkAzure) this.network).getInternal();
+        String subnetName = getConfig().getSubnet();
         if (subnetName != null && subnetName.length() > 0) {
             for (Subnet sn : network.subnets().values()) {
                 if (sn.name().equalsIgnoreCase(subnetName)) {
-                    subnet = sn;
+                    subnet = new SubnetAzure(sn);
                     break;
                 }
             }
-            securityGroup = subnet.getNetworkSecurityGroup(); // TODO: security group can be null
-            subnetCidr = subnet.addressPrefix();
+            securityGroup = ((SubnetAzure) subnet).getInternal().getNetworkSecurityGroup(); // TODO: security group can be null
         } else {
             securityGroup = cluster.getCompute().networkSecurityGroups()
                     .define(SECURITY_GROUP_PREFIX + cluster.getClusterId())
-                    .withRegion(cluster.getConfig().getRegion())
+                    .withRegion(getConfig().getRegion())
                     .withExistingResourceGroup(resourceGroup)
                     .create();
             // check for unused Subnet Cidr and create one
@@ -86,8 +73,8 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
             for (Subnet sn : network.subnets().values()) {
                 listOfUsedCidr.add(sn.addressPrefix());
             }
-            SubNets subnets = new SubNets(network.addressSpaces().size() > 0 ? network.addressSpaces().get(0) : "10.128.0.0", 24);
-            subnetCidr = subnets.nextCidr(listOfUsedCidr); // TODO: not generating correct next cidr according to azure
+            SubNets subnets = new SubNets(this.network.getCidr() != null ? this.network.getCidr() : "10.128.0.0", 24);
+            String subnetCidr = subnets.nextCidr(listOfUsedCidr); // TODO: not generating correct next cidr according to azure
             LOG.debug(V, "Use {} for generated subnet.", subnetCidr);
             // create new subnet
             try {
@@ -98,7 +85,8 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
                         .withExistingNetworkSecurityGroup(securityGroup)
                         .attach()
                         .apply();
-                subnet = network.subnets().get(subnetName);
+                this.network = new NetworkAzure(network);
+                subnet = new SubnetAzure(network.subnets().get(subnetName));
             } catch (Exception e) {
                 LOG.error("Failed to create subnet. {}", e);
             }
@@ -112,21 +100,21 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
         LOG.info("Creating security group...");
 
         // Master IP
-        masterIP = SubNets.getFirstIP(subnet.addressPrefix());
+        masterIP = SubNets.getFirstIP(subnet.getCidr());
         LOG.debug(V, "masterIP: {}.", masterIP);
 
         // Create the firewall rules
         try {
             NetworkSecurityGroup.Update update = securityGroup.update();
             int ruleIndex = 1;
-            update = addSecurityRule(update, ruleIndex++, "0.0.0.0/0", SecurityRuleProtocol.TCP, 22, 22);
-            update = addSecurityRule(update, ruleIndex++, subnet.addressPrefix(), SecurityRuleProtocol.TCP, 0, 65535);
-            update = addSecurityRule(update, ruleIndex++, subnet.addressPrefix(), SecurityRuleProtocol.UDP, 0, 65535);
-            update = addSecurityRule(update, ruleIndex++, subnet.addressPrefix(), new SecurityRuleProtocol("icmp"), -1, -1);
-            for (Port port : cluster.getConfig().getPorts()) {
+            update = addSecurityRule(update, ruleIndex++, "0.0.0.0/0", SecurityRuleProtocol.TCP, 22);
+            update = addSecurityRule(update, ruleIndex++, subnet.getCidr(), SecurityRuleProtocol.TCP, 0, 65535);
+            update = addSecurityRule(update, ruleIndex++, subnet.getCidr(), SecurityRuleProtocol.UDP, 0, 65535);
+            update = addSecurityRule(update, ruleIndex++, subnet.getCidr(), new SecurityRuleProtocol("icmp"));
+            for (Port port : getConfig().getPorts()) {
                 LOG.info(port.toString());
-                update = addSecurityRule(update, ruleIndex++, port.ipRange, SecurityRuleProtocol.TCP, port.number, port.number);
-                update = addSecurityRule(update, ruleIndex++, port.ipRange, SecurityRuleProtocol.UDP, port.number, port.number);
+                update = addSecurityRule(update, ruleIndex++, port.ipRange, SecurityRuleProtocol.TCP, port.number);
+                update = addSecurityRule(update, ruleIndex++, port.ipRange, SecurityRuleProtocol.UDP, port.number);
             }
             securityGroup = update.apply();
         } catch (Exception e) {
@@ -135,45 +123,52 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
         return this;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private NetworkSecurityGroup.Update addSecurityRule(NetworkSecurityGroup.Update update, int nameIndex,
                                                         String address, SecurityRuleProtocol protocol, int portFrom,
                                                         int portTo) {
         String name = SECURITY_GROUP_PREFIX + "rule" + nameIndex + "-" + cluster.getClusterId();
-        NetworkSecurityRule.UpdateDefinitionStages.WithSourcePort<NetworkSecurityGroup.Update> withSourcePort =
-                update.defineRule(name).allowInbound().fromAddress(address);
-        NetworkSecurityRule.UpdateDefinitionStages.WithDestinationAddress<NetworkSecurityGroup.Update> withDestinationAddress =
-                portFrom == -1 && portTo == -1 ? withSourcePort.fromAnyPort() :
-                        portFrom == portTo ? withSourcePort.fromPort(portFrom) : withSourcePort.fromPortRange(portFrom, portTo);
-        NetworkSecurityRule.UpdateDefinitionStages.WithDestinationPort<NetworkSecurityGroup.Update> withDestinationPort =
-                withDestinationAddress.toAddress(address);
-        NetworkSecurityRule.UpdateDefinitionStages.WithProtocol<NetworkSecurityGroup.Update> withProtocol =
-                portFrom == -1 && portTo == -1 ? withDestinationPort.toAnyPort() :
-                        portFrom == portTo ? withDestinationPort.toPort(portFrom) : withDestinationPort.toPortRange(portFrom, portTo);
-        return withProtocol.withProtocol(protocol).attach();
+        return update.defineRule(name)
+                .allowInbound()
+                .fromAddress(address)
+                .fromPortRange(portFrom, portTo)
+                .toAddress(address)
+                .toPortRange(portFrom, portTo)
+                .withProtocol(protocol)
+                .attach();
     }
 
-    @Override
-    public CreateClusterAzure createPlacementGroup() {
-        return cluster;
+    private NetworkSecurityGroup.Update addSecurityRule(NetworkSecurityGroup.Update update, int nameIndex,
+                                                        String address, SecurityRuleProtocol protocol, int port) {
+        String name = SECURITY_GROUP_PREFIX + "rule" + nameIndex + "-" + cluster.getClusterId();
+        return update.defineRule(name)
+                .allowInbound()
+                .fromAddress(address)
+                .fromPort(port)
+                .toAddress(address)
+                .toPort(port)
+                .withProtocol(protocol)
+                .attach();
+    }
+
+    private NetworkSecurityGroup.Update addSecurityRule(NetworkSecurityGroup.Update update, int nameIndex,
+                                                        String address, SecurityRuleProtocol protocol) {
+        String name = SECURITY_GROUP_PREFIX + "rule" + nameIndex + "-" + cluster.getClusterId();
+        return update.defineRule(name)
+                .allowInbound()
+                .fromAddress(address)
+                .fromAnyPort()
+                .toAddress(address)
+                .toAnyPort()
+                .withProtocol(protocol)
+                .attach();
     }
 
     String getMasterIP() {
         return masterIP;
     }
 
-    String getSubnetCidr() {
-        return subnetCidr;
-    }
-
     public ResourceGroup getResourceGroup() {
         return resourceGroup;
-    }
-
-    public Network getNetwork() {
-        return network;
-    }
-
-    public Subnet getSubnet() {
-        return subnet;
     }
 }

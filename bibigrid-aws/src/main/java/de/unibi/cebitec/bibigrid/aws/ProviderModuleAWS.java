@@ -6,6 +6,7 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
 
@@ -47,6 +48,11 @@ public class ProviderModuleAWS extends ProviderModule {
     @Override
     public CreateCluster getCreateIntent(Configuration config) {
         return new CreateClusterAWS(this, (ConfigurationAWS) config);
+    }
+
+    @Override
+    public CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
+        return new CreateClusterEnvironmentAWS((CreateClusterAWS) cluster);
     }
 
     @Override

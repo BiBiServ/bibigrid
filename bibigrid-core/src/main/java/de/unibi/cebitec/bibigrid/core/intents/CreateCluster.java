@@ -38,6 +38,7 @@ public abstract class CreateCluster extends Intent {
     protected final ProviderModule providerModule;
     protected final Configuration config;
     protected final String clusterId;
+    protected CreateClusterEnvironment environment;
 
     private Instance masterInstance;
     private List<Instance> slaveInstances;
@@ -89,17 +90,31 @@ public abstract class CreateCluster extends Intent {
      *
      * @throws ConfigurationException Throws an exception if the creation of the cluster environment failed.
      */
-    public abstract CreateClusterEnvironment createClusterEnvironment() throws ConfigurationException;
+    public CreateClusterEnvironment createClusterEnvironment() throws ConfigurationException {
+        return environment = providerModule.getClusterEnvironment(this);
+    }
 
     /**
      * Configure and manage Master-instance to launch.
      */
-    public abstract CreateCluster configureClusterMasterInstance();
+    public CreateCluster configureClusterMasterInstance() {
+        List<Configuration.MountPoint> masterVolumeToMountPointMap = resolveMountSources(config.getMasterMounts());
+        InstanceType masterSpec = config.getMasterInstance().getProviderType();
+        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap,
+                masterSpec.getConfigDrive() + masterSpec.getEphemerals() + masterSpec.getSwap());
+        LOG.info("Master instance configured.");
+        return this;
+    }
 
     /**
      * Configure and manage Slave-instances to launch.
      */
     public abstract CreateCluster configureClusterSlaveInstance();
+
+    /**
+     * Resolve the mount source volumes or snapshots.
+     */
+    protected abstract List<Configuration.MountPoint> resolveMountSources(List<Configuration.MountPoint> mountPoints);
 
     /**
      * Start the configured cluster now.
@@ -133,7 +148,7 @@ public abstract class CreateCluster extends Intent {
             // just to be sure, everything is present, wait x seconds
             sleep(4);
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
-            configureMaster(masterInstance, slaveInstances, getSubnetCidr(), prepare);
+            configureMaster(masterInstance, slaveInstances, environment.getSubnet().getCidr(), prepare);
             logFinishedInfoMessage(masterInstance.getPublicIp());
             saveGridPropertiesFile(masterInstance.getPublicIp());
         } catch (Exception e) {
@@ -164,8 +179,6 @@ public abstract class CreateCluster extends Intent {
     protected String buildSlaveInstanceName(int batchIndex, int slaveIndex) {
         return SLAVE_NAME_PREFIX + (batchIndex + 1) + "-" + (slaveIndex + 1) + "-" + clusterId;
     }
-
-    protected abstract String getSubnetCidr();
 
     private void logFinishedInfoMessage(String masterPublicIp) {
         StringBuilder sb = new StringBuilder();

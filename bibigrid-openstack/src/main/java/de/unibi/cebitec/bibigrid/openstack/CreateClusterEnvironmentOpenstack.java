@@ -44,12 +44,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
 
     private CreateClusterOpenstack cluster;
     private SecGroupExtension sge;
-    private Router router;
-    private Network network;
-    private Subnet subnet;
 
     CreateClusterEnvironmentOpenstack(CreateClusterOpenstack cluster) throws ConfigurationException {
-        super();
+        super(cluster);
         this.cluster = cluster;
     }
 
@@ -60,14 +57,22 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     }
 
     @Override
+    protected NetworkOpenstack getNetworkOrDefault(String networkId) {
+        return null;
+    }
+
+    @Override
     public CreateClusterEnvironmentOpenstack createSubnet() throws ConfigurationException {
+        Router router = null;
+        Subnet subnet;
+        Network network = null;
         try {
             // User can specify three parameters to define the network connection for a BiBiGrid cluster
             // 1) router
             // 2) network
             // 3) subnet
             OSClient osc = cluster.getClient();
-            ConfigurationOpenstack cfg = (ConfigurationOpenstack) cluster.getConfig();
+            ConfigurationOpenstack cfg = (ConfigurationOpenstack) getConfig();
             // if subnet is set just use it
             if (cfg.getSubnet() != null) {
                 // check if subnet exists
@@ -81,6 +86,8 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 }
                 router = getRouterByNetwork(osc, network, subnet); // @ToDo
                 LOG.info("Use existing subnet (ID: {}, CIDR: {}).", subnet.getId(), subnet.getCidr());
+                this.subnet = new SubnetOpenstack(subnet);
+                this.network = new NetworkOpenstack(network, router);
                 return this;
             }
             // if network is set try to determine router
@@ -115,9 +122,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             SubNets sn = new SubNets(NETWORK_CIDR, 24);
             List<String> usedCIDR = new ArrayList<>();
             for (org.openstack4j.model.network.Port p : getPortsByRouter(osc, router)) {
-                Network network = getNetworkById(osc, p.getNetworkId());
-                if (network != null && network.getNeutronSubnets() != null) {
-                    for (Subnet s : network.getNeutronSubnets()) {
+                Network portNetwork = getNetworkById(osc, p.getNetworkId());
+                if (portNetwork != null && portNetwork.getNeutronSubnets() != null) {
+                    for (Subnet s : portNetwork.getNeutronSubnets()) {
                         usedCIDR.add(s.getCidr());
                     }
                 }
@@ -146,6 +153,8 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             LOG.error(V, crs.getMessage(), crs);
             throw new ConfigurationException(crs.getMessage(), crs);
         }
+        this.subnet = new SubnetOpenstack(subnet);
+        this.network = new NetworkOpenstack(network, router);
         return this;
     }
 
@@ -153,7 +162,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     public CreateClusterEnvironmentOpenstack createSecurityGroup() throws ConfigurationException {
         OSClient osc = cluster.getClient();
         // if a security group is configured then used it
-        String securityGroup = ((ConfigurationOpenstack) cluster.getConfig()).getSecurityGroup();
+        String securityGroup = ((ConfigurationOpenstack) getConfig()).getSecurityGroup();
         if (securityGroup != null) {
             sge = getSecGroupExtensionByName(osc, securityGroup);
             if (sge == null) {
@@ -173,7 +182,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.TCP, 1, 65535).groupId(sge.getId()).build());
             csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.UDP, 1, 65535).groupId(sge.getId()).build());
             // User selected Ports.
-            List<Port> ports = cluster.getConfig().getPorts();
+            List<Port> ports = getConfig().getPorts();
             for (Port p : ports) {
                 IPProtocol protocol = p.type.equals(Port.Protocol.TCP) ? IPProtocol.TCP :
                         (p.type.equals(Port.Protocol.UDP) ? IPProtocol.UDP : IPProtocol.ICMP);
@@ -190,27 +199,8 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
         return Builders.secGroupRule().parentGroupId(groupId).protocol(protocol).range(from, to);
     }
 
-    @Override
-    public CreateClusterOpenstack createPlacementGroup() {
-        // Currently not supported by OpenStack
-        //LOG.info("PlacementGroup creation not implemented yet");
-        return cluster;
-    }
-
     SecGroupExtension getSecGroupExtension() {
         return sge;
-    }
-
-    Router getRouter() {
-        return router;
-    }
-
-    Network getNetwork() {
-        return network;
-    }
-
-    Subnet getSubnet() {
-        return subnet;
     }
 
     /**

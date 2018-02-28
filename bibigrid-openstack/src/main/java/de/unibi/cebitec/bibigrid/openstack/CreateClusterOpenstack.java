@@ -5,7 +5,6 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -20,9 +19,7 @@ import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.compute.Address;
-import org.openstack4j.model.compute.Addresses;
 import org.openstack4j.model.compute.Fault;
-import org.openstack4j.model.compute.Flavor;
 import org.openstack4j.model.compute.Server;
 import org.openstack4j.model.compute.ServerCreate;
 import org.openstack4j.model.compute.VolumeAttachment;
@@ -41,55 +38,18 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterOpenstack extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterOpenstack.class);
-    private static final int CONFIG_DRIVE = 1;
 
     private final OSClient os;
-    private CreateClusterEnvironmentOpenstack environment;
-    //private Set<BlockDeviceMappingCreate> masterMappings, slaveMappings;
 
     CreateClusterOpenstack(final ProviderModule providerModule, final ConfigurationOpenstack config) {
         super(providerModule, config);
         os = OpenStackUtils.buildOSClient(config);
     }
 
+    /* TODO: this was never used?
     @Override
-    public CreateClusterEnvironmentOpenstack createClusterEnvironment() throws ConfigurationException {
-        LOG.info("Openstack connection established...");
-        return environment = new CreateClusterEnvironmentOpenstack(this);
-    }
-
-    @Override
-    public CreateClusterOpenstack configureClusterMasterInstance() {
-        // DeviceMapper init.
-        List<Configuration.MountPoint> masterVolumeToMountPointMap = new ArrayList<>();
-        for (Configuration.MountPoint mountPoint : config.getMasterMounts()) {
-            // check if master mount is a volume
-            Volume v = getVolumeByNameOrId(mountPoint.getSource());
-            // could also be a snapshot
-            if (v == null) {
-                VolumeSnapshot vss = getSnapshotByNameOrId(mountPoint.getSource());
-                if (vss != null) {
-                    v = createVolumeFromSnapshot(vss, mountPoint.getSource() + "-" + clusterId);
-                    LOG.info(V, "Create volume '{}' from snapshot '{}'.", v.getName(), mountPoint.getSource());
-                }
-            }
-            if (v != null) { // Volume exists or created from snapshot
-                LOG.info(V, "Add volume '{}' to master volume mount map.", v.getName());
-                Configuration.MountPoint idTargetMount = new Configuration.MountPoint();
-                idTargetMount.setSource(v.getId());
-                idTargetMount.setTarget(mountPoint.getTarget());
-                masterVolumeToMountPointMap.add(idTargetMount);
-            } else {
-                LOG.warn("Volume/Snapshot with name/id '{}' not found!", mountPoint.getSource());
-            }
-        }
-
-        InstanceType masterSpec = config.getMasterInstance().getProviderType();
-        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap,
-                CONFIG_DRIVE + masterSpec.getEphemerals() + masterSpec.getSwap());
-
-        /* TODO: this was never used?
-        masterMappings = new HashSet<>();
+    public CreateCluster configureClusterMasterInstance() {
+        Set<BlockDeviceMappingCreate> masterMappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
         for (int i = 0; i < masterSpec.getEphemerals(); ++i) {
             BlockDeviceMappingCreate blockDeviceMappingCreate = Builders.blockDeviceMapping()
@@ -101,34 +61,52 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .build();
             masterMappings.add(blockDeviceMappingCreate);
         }
-        */
-        LOG.info("Master configured");
-        return this;
+        return super.configureClusterMasterInstance();
     }
+    */
 
-    private Flavor getFlavorByName(String name) {
-        for (Flavor flavor : os.compute().flavors().list()) {
-            if (flavor.getName().equals(name)) {
-                return flavor;
+    @Override
+    protected List<Configuration.MountPoint> resolveMountSources(List<Configuration.MountPoint> mountPoints) {
+        List<Configuration.MountPoint> result = new ArrayList<>();
+        for (Configuration.MountPoint mountPoint : mountPoints) {
+            // check if master mount is a volume
+            Volume volume = getVolumeByNameOrId(mountPoint.getSource());
+            // could also be a snapshot
+            if (volume == null) {
+                VolumeSnapshot snapshot = getSnapshotByNameOrId(mountPoint.getSource());
+                if (snapshot != null) {
+                    volume = createVolumeFromSnapshot(snapshot, mountPoint.getSource() + "-" + clusterId);
+                    LOG.info(V, "Create volume '{}' from snapshot '{}'.", volume.getName(), mountPoint.getSource());
+                }
+            }
+            // Volume exists or created from snapshot
+            if (volume != null) {
+                LOG.info(V, "Add volume '{}' to master volume mount map.", volume.getName());
+                Configuration.MountPoint idTargetMount = new Configuration.MountPoint();
+                idTargetMount.setSource(volume.getId());
+                idTargetMount.setTarget(mountPoint.getTarget());
+                result.add(idTargetMount);
+            } else {
+                LOG.warn("Volume/Snapshot with name/id '{}' not found!", mountPoint.getSource());
             }
         }
-        return null;
+        return result;
     }
 
     @Override
     public CreateClusterOpenstack configureClusterSlaveInstance() {
-        // DeviceMapper Slave. TODO: check volume or snapshot like with master!
+        // TODO: resolveMountSources(config.getSlaveMounts())
         List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
         slaveDeviceMappers = new ArrayList<>();
         for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
             InstanceType slaveSpec = instanceConfiguration.getProviderType();
             DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
-                    CONFIG_DRIVE + slaveSpec.getEphemerals() + slaveSpec.getSwap());
+                    slaveSpec.getConfigDrive() + slaveSpec.getEphemerals() + slaveSpec.getSwap());
             slaveDeviceMappers.add(deviceMapper);
         }
 
         /* TODO: this was never used?
-        slaveMappings = new HashSet<>();
+        Set<BlockDeviceMappingCreate> slaveMappings = new HashSet<>();
         String[] ephemerals = {"b", "c", "d", "e"};
         for (int i = 0; i < config.getSlaveInstanceType().getSpec().getEphemerals(); ++i) {
             BlockDeviceMappingCreate blockDeviceMappingCreate = Builders.blockDeviceMapping()
@@ -141,7 +119,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             slaveMappings.add(blockDeviceMappingCreate);
         }
         */
-        LOG.info("Slave(s) configured");
+        LOG.info("Slave instance(s) configured.");
         return this;
     }
 
@@ -151,16 +129,17 @@ public class CreateClusterOpenstack extends CreateCluster {
         metadata.put(Instance.TAG_NAME, masterNameTag);
         metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
         metadata.put(Instance.TAG_USER, config.getUser());
+        InstanceTypeOpenstack masterSpec = (InstanceTypeOpenstack) config.getMasterInstance().getProviderType();
         ServerCreate sc = Builders.server()
                 .name(masterNameTag)
-                .flavor(getFlavorByName(config.getMasterInstance().getProviderType().getValue()).getId())
+                .flavor(masterSpec.getFlavor().getId())
                 .image(config.getMasterInstance().getImage())
                 .keypairName(config.getKeypair())
-                .addSecurityGroup(environment.getSecGroupExtension().getId())
+                .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
                 .availabilityZone(config.getAvailabilityZone())
                 .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true))
                 .addMetadata(metadata)
-                .configDrive(CONFIG_DRIVE != 0)
+                .configDrive(masterSpec.getConfigDrive() != 0)
                 .networks(Arrays.asList(environment.getNetwork().getId()))
                 .build();
         // Boot the server async
@@ -279,17 +258,18 @@ public class CreateClusterOpenstack extends CreateCluster {
         metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
         metadata.put(Instance.TAG_USER, config.getUser());
         Map<String, InstanceOpenstack> slaves = new HashMap<>();
+        InstanceTypeOpenstack slaveSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             ServerCreate sc = Builders.server()
                     .name(buildSlaveInstanceName(batchIndex, i))
-                    .flavor(getFlavorByName(instanceConfiguration.getProviderType().getValue()).getId())
+                    .flavor(slaveSpec.getFlavor().getId())
                     .image(instanceConfiguration.getImage())
                     .keypairName(config.getKeypair())
-                    .addSecurityGroup(environment.getSecGroupExtension().getId())
+                    .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
                     .availabilityZone(config.getAvailabilityZone())
                     .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false))
                     .addMetadata(metadata)
-                    .configDrive(CONFIG_DRIVE != 0)
+                    .configDrive(instanceConfiguration.getProviderType().getConfigDrive() != 0)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();
             Server tmp = os.compute().servers().boot(sc);
@@ -339,21 +319,16 @@ public class CreateClusterOpenstack extends CreateCluster {
         return new ArrayList<>(slaves.values());
     }
 
-    @Override
-    protected String getSubnetCidr() {
-        return environment.getSubnet().getCidr();
-    }
-
     private NetFloatingIP getFloatingIP(List<String> blacklist) {
         // get list of all available floating IP's, and search for free ones ...
         List<? extends NetFloatingIP> l = os.networking().floatingip().list();
-
+        NetworkOpenstack network = (NetworkOpenstack) environment.getNetwork();
         for (NetFloatingIP fip : l) {
             if (fip.getPortId() == null
                     // check if floating ip fits to router network id
-                    && fip.getFloatingNetworkId().equals(environment.getRouter().getExternalGatewayInfo().getNetworkId())
+                    && fip.getFloatingNetworkId().equals(network.getRouter().getExternalGatewayInfo().getNetworkId())
                     // check if tenant id fits routers tenant id
-                    && fip.getTenantId().equals(environment.getRouter().getTenantId())
+                    && fip.getTenantId().equals(network.getRouter().getTenantId())
                     && !blacklist.contains(fip.getFloatingIpAddress())) {
                 //found an unused floating ip and return it
                 return fip;
@@ -362,7 +337,7 @@ public class CreateClusterOpenstack extends CreateCluster {
         // try to allocate a new floating from network pool
         try {
             return os.networking().floatingip().create(Builders.netFloatingIP()
-                    .floatingNetworkId(environment.getRouter().getExternalGatewayInfo().getNetworkId())
+                    .floatingNetworkId(network.getRouter().getExternalGatewayInfo().getNetworkId())
                     .build());
 
         } catch (Exception e) {
@@ -379,7 +354,6 @@ public class CreateClusterOpenstack extends CreateCluster {
         // ################################################################
         // following block is a ugly hack to refresh the server object
         // ####################################################### -> Start
-        Addresses addresses;
         List<? extends Address> addressList;
         Map<String, List<? extends Address>> map;
         Server server;
@@ -392,8 +366,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             }
             // refresh server object - ugly
             server = os.compute().servers().get(serverId);
-            addresses = server.getAddresses();
-            map = addresses.getAddresses();
+            map = server.getAddresses().getAddresses();
             addressList = map.get(networkName);
             LOG.info(V, "addressList {}", addressList);
         } while (addressList == null || addressList.isEmpty());
@@ -457,11 +430,11 @@ public class CreateClusterOpenstack extends CreateCluster {
      *
      * @param name of newly created volume
      */
-    private Volume createVolumeFromSnapshot(VolumeSnapshot vss, String name) {
+    private Volume createVolumeFromSnapshot(VolumeSnapshot snapshot, String name) {
         return os.blockStorage().volumes().create(Builders.volume()
                 .name(name)
-                .snapshot(vss.getId())
-                .description("created from SnapShot " + vss.getId() + " by BiBiGrid")
+                .snapshot(snapshot.getId())
+                .description("created from snapshot " + snapshot.getId() + " by BiBiGrid")
                 .build());
     }
 

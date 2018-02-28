@@ -7,7 +7,6 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.*;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
@@ -28,7 +27,7 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterAWS extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterAWS.class);
-    private AmazonEC2 ec2;
+    private final AmazonEC2 ec2;
 
     // Placement groups
     private Placement instancePlacement;
@@ -44,25 +43,18 @@ public class CreateClusterAWS extends CreateCluster {
 
     private final ConfigurationAWS config;
 
-    private CreateClusterEnvironmentAWS environment;
-
     CreateClusterAWS(final ProviderModule providerModule, final ConfigurationAWS config) {
         super(providerModule, config);
         this.config = config;
-    }
-
-    @Override
-    public CreateClusterEnvironmentAWS createClusterEnvironment() throws ConfigurationException {
         // create client and unique cluster-id
         ec2 = IntentUtils.getClient(config);
         bibigridId = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID).withValue(clusterId);
         username = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER).withValue(config.getUser());
-
-        return environment = new CreateClusterEnvironmentAWS(this);
     }
 
     @Override
-    public CreateClusterAWS configureClusterMasterInstance() {
+    public CreateCluster configureClusterMasterInstance() {
+        super.configureClusterMasterInstance();
         buildMasterDeviceMappings();
         base64MasterUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true);
         buildMasterPlacementGroup();
@@ -72,17 +64,13 @@ public class CreateClusterAWS extends CreateCluster {
 
     private void buildMasterDeviceMappings() {
         // preparing block device mappings for master
-        List<Configuration.MountPoint> masterSnapshotToMountPointMap = config.getMasterMounts();
-        de.unibi.cebitec.bibigrid.core.model.InstanceType masterSpec = config.getMasterInstance().getProviderType();
-        masterDeviceMapper = new DeviceMapper(providerModule, masterSnapshotToMountPointMap,
-                masterSpec.getEphemerals() + masterSpec.getSwap());
         masterDeviceMappings = new ArrayList<>();
         // create Volumes first
-        if (!masterSnapshotToMountPointMap.isEmpty()) {
+        if (!config.getMasterMounts().isEmpty()) {
             LOG.info(V, "Defining master volumes");
             masterDeviceMappings = createBlockDeviceMappings(masterDeviceMapper);
         }
-        masterDeviceMappings.addAll(buildEphemeralList(masterSpec.getEphemerals()));
+        masterDeviceMappings.addAll(buildEphemeralList(config.getMasterInstance().getProviderType().getEphemerals()));
     }
 
     private List<BlockDeviceMapping> buildEphemeralList(int ephemerals) {
@@ -101,6 +89,7 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     private void buildMasterPlacementGroup() {
+        CreateClusterEnvironmentAWS environment = (CreateClusterEnvironmentAWS) this.environment;
         if (config.getMasterInstance().getProviderType().isClusterInstance()) {
             if (config.isUseSpotInstances()) {
                 spotInstancePlacement = new SpotPlacement(config.getAvailabilityZone());
@@ -113,12 +102,13 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     private void buildMasterNetworkInterface() {
+        CreateClusterEnvironmentAWS environment = (CreateClusterEnvironmentAWS) this.environment;
         // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
         masterNetworkInterface = new InstanceNetworkInterfaceSpecification()
                 .withPrivateIpAddress(environment.getMasterIp())
                 .withGroups(environment.getSecurityGroup())
                 .withAssociatePublicIpAddress(true)
-                .withSubnetId(environment.getSubnet().getSubnetId())
+                .withSubnetId(environment.getSubnet().getId())
                 .withDeviceIndex(0);
     }
 
@@ -131,8 +121,8 @@ public class CreateClusterAWS extends CreateCluster {
 
     private void buildClientsNetworkInterface() {
         slaveNetworkInterface = new InstanceNetworkInterfaceSpecification()
-                .withGroups(environment.getSecurityGroup())
-                .withSubnetId(environment.getSubnet().getSubnetId())
+                .withGroups(((CreateClusterEnvironmentAWS) environment).getSecurityGroup())
+                .withSubnetId(environment.getSubnet().getId())
                 .withAssociatePublicIpAddress(config.isPublicSlaveIps())
                 .withDeviceIndex(0);
     }
@@ -156,6 +146,12 @@ public class CreateClusterAWS extends CreateCluster {
             slaveBlockDeviceMapping.addAll(buildEphemeralList(slaveSpec.getEphemerals()));
             slaveBlockDeviceMappings.add(slaveBlockDeviceMapping);
         }
+    }
+
+    @Override
+    protected List<Configuration.MountPoint> resolveMountSources(List<Configuration.MountPoint> mountPoints) {
+        // TODO: possibly check if snapshot or volume like openstack
+        return mountPoints;
     }
 
     @Override
@@ -207,7 +203,7 @@ public class CreateClusterAWS extends CreateCluster {
                     .withNetworkInterfaces(masterNetworkInterface);
             // mounting ephemerals
             RunInstancesResult runInstancesResult = ec2.runInstances(masterReq);
-            String masterReservationId = runInstancesResult.getReservation().getReservationId();
+            runInstancesResult.getReservation().getReservationId();
             masterInstance = runInstancesResult.getReservation().getInstances().get(0);
             LOG.info("Waiting for master instance to finish booting...");
             // Waiting for master instance to run
@@ -314,7 +310,7 @@ public class CreateClusterAWS extends CreateCluster {
                     .withNetworkInterfaces(slaveNetworkInterface);
 
             RunInstancesResult runInstancesResult = ec2.runInstances(slaveReq);
-            String slaveReservationId = runInstancesResult.getReservation().getReservationId();
+            runInstancesResult.getReservation().getReservationId();
             // create a list of all slave instances
             List<String> slaveInstanceListIds = new ArrayList<>();
             for (Instance i : runInstancesResult.getReservation().getInstances()) {
@@ -450,10 +446,5 @@ public class CreateClusterAWS extends CreateCluster {
 
     Tag getBibigridId() {
         return bibigridId;
-    }
-
-    @Override
-    protected String getSubnetCidr() {
-        return environment.getSubnet().getCidrBlock();
     }
 }

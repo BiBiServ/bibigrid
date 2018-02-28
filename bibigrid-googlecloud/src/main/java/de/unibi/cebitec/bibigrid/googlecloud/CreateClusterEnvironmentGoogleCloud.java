@@ -25,43 +25,34 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentGoogleCloud.class);
 
     private final CreateClusterGoogleCloud cluster;
-    private Network network;
-    private Subnetwork subnet;
     private String masterIP;
-    private String subnetCidr;
 
     CreateClusterEnvironmentGoogleCloud(final CreateClusterGoogleCloud cluster) throws ConfigurationException {
-        super();
+        super(cluster);
         this.cluster = cluster;
     }
 
     @Override
-    public CreateClusterEnvironmentGoogleCloud createNetwork() throws ConfigurationException {
-        // check for (default) network
-        String networkId = cluster.getConfig().getNetwork() == null ? "default" : cluster.getConfig().getNetwork();
+    protected NetworkGoogleCloud getNetworkOrDefault(String networkId) {
         try {
-            String projectId = ((ConfigurationGoogleCloud) cluster.getConfig()).getGoogleProjectId();
+            networkId = networkId == null ? "default" : networkId;
+            String projectId = ((ConfigurationGoogleCloud) getConfig()).getGoogleProjectId();
             for (Network network : cluster.getCompute().networks().list(projectId).execute().getItems()) {
                 if (network.getName().equals(networkId)) {
-                    this.network = network;
-                    break;
+                    return new NetworkGoogleCloud(network);
                 }
             }
         } catch (IOException ignored) {
         }
-        if (network == null) {
-            throw new ConfigurationException("No suitable network found! Define a default network for you account or a valid network id.");
-        }
-        LOG.info(V, "Use Network '{}'.", network.getName());
-        return this;
+        return null;
     }
 
     @Override
     public CreateClusterEnvironmentGoogleCloud createSubnet() throws ConfigurationException {
-        ConfigurationGoogleCloud config = (ConfigurationGoogleCloud) cluster.getConfig();
+        ConfigurationGoogleCloud config = (ConfigurationGoogleCloud) getConfig();
         // As default we assume that the network is auto creating subnets. Then we can only reuse the default
         // subnets and can't create new ones!
-        if (network.getAutoCreateSubnetworks()) {
+        if (((NetworkGoogleCloud) network).isAutoCreate()) {
             reuseAutoCreateSubnet(config);
         } else {
             createNewSubnet(config);
@@ -76,7 +67,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         List<Subnetwork> subnets = GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region);
         for (Subnetwork subnet : subnets) {
             if (subnet.getNetwork().equals(network.getName())) {
-                this.subnet = subnet;
+                this.subnet = new SubnetGoogleCloud(subnet);
                 break;
             }
         }
@@ -85,8 +76,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
                     String.format("No suitable subnet found with region '%s' in auto creating network '%s'!",
                             region, network.getName()));
         }
-        subnetCidr = subnet.getIpCidrRange();
-        LOG.debug(V, "Use '{}' for reused subnet.", subnetCidr);
+        LOG.debug(V, "Use '{}' for reused subnet.", subnet.getCidr());
     }
 
     private void createNewSubnet(ConfigurationGoogleCloud config) {
@@ -95,12 +85,12 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         // check for unused Subnet Cidr and create one
         List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current network
         for (Subnetwork sn : GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region)) {
-            if (sn.getNetwork().equals(network.getSelfLink())) {
+            if (sn.getNetwork().equals(network.getId())) {
                 listOfUsedCidr.add(sn.getIpCidrRange());
             }
         }
         SubNets subnets = new SubNets(listOfUsedCidr.size() > 0 ? listOfUsedCidr.get(0) : "10.128.0.0", 24);
-        subnetCidr = subnets.nextCidr(listOfUsedCidr);
+        String subnetCidr = subnets.nextCidr(listOfUsedCidr);
         LOG.debug(V, "Use '{}' for generated subnet.", subnetCidr);
         // create new subnet
         try {
@@ -109,7 +99,8 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
             Operation createSubnetOperation = cluster.getCompute().subnetworks()
                     .insert(projectId, region, subnetwork).execute();
             GoogleCloudUtils.waitForOperation(cluster.getCompute(), config, createSubnetOperation);
-            subnet = cluster.getCompute().subnetworks().get(projectId, region, subnetwork.getName()).execute();
+            Subnetwork subnet = cluster.getCompute().subnetworks().get(projectId, region, subnetwork.getName()).execute();
+            this.subnet = new SubnetGoogleCloud(subnet);
         } catch (Exception e) {
             LOG.error("Failed to create subnet. {}", e);
         }
@@ -121,7 +112,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         LOG.info("Creating security group...");
 
         // Master IP
-        masterIP = SubNets.getFirstIP(subnet.getIpCidrRange());
+        masterIP = SubNets.getFirstIP(subnet.getCidr());
         LOG.debug(V, "masterIP: {}.", masterIP);
 
         // Collect all firewall rules grouped by the source ip range because the number of rules
@@ -129,11 +120,11 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         Map<String, List<Firewall.Allowed>> firewallRuleMap = new HashMap<>();
         firewallRuleMap.put("0.0.0.0/0", new ArrayList<>());
         firewallRuleMap.get("0.0.0.0/0").add(buildFirewallRule("tcp", "22"));
-        firewallRuleMap.put(subnet.getIpCidrRange(), new ArrayList<>());
-        firewallRuleMap.get(subnet.getIpCidrRange()).add(buildFirewallRule("tcp", "0-65535"));
-        firewallRuleMap.get(subnet.getIpCidrRange()).add(buildFirewallRule("udp", "0-65535"));
-        firewallRuleMap.get(subnet.getIpCidrRange()).add(buildFirewallRule("icmp"));
-        for (Port port : cluster.getConfig().getPorts()) {
+        firewallRuleMap.put(subnet.getCidr(), new ArrayList<>());
+        firewallRuleMap.get(subnet.getCidr()).add(buildFirewallRule("tcp", "0-65535"));
+        firewallRuleMap.get(subnet.getCidr()).add(buildFirewallRule("udp", "0-65535"));
+        firewallRuleMap.get(subnet.getCidr()).add(buildFirewallRule("icmp"));
+        for (Port port : getConfig().getPorts()) {
             LOG.info(port.toString());
             if (!firewallRuleMap.containsKey(port.ipRange)) {
                 firewallRuleMap.put(port.ipRange, new ArrayList<>());
@@ -149,14 +140,14 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
             for (Map.Entry<String, List<Firewall.Allowed>> rule : firewallRuleMap.entrySet()) {
                 Firewall firewall = new Firewall()
                         .setName(SECURITY_GROUP_PREFIX + "rule" + ruleIndex + "-" + cluster.getClusterId())
-                        .setNetwork(network.getSelfLink())
+                        .setNetwork(network.getId())
                         .setSourceRanges(Collections.singletonList(rule.getKey()));
                 ruleIndex++;
                 // TODO: possibly add cluster instance ids to targetTags, to limit the access!
                 firewall.setAllowed(rule.getValue());
-                cluster.getCompute().firewalls().insert(
-                        ((ConfigurationGoogleCloud) cluster.getConfig()).getGoogleProjectId(),
-                        firewall).execute();
+                cluster.getCompute().firewalls()
+                        .insert(((ConfigurationGoogleCloud) getConfig()).getGoogleProjectId(), firewall)
+                        .execute();
             }
         } catch (Exception e) {
             LOG.error("Failed to create firewall rules. {}", e);
@@ -172,20 +163,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         return rule;
     }
 
-    @Override
-    public CreateClusterGoogleCloud createPlacementGroup() {
-        return cluster;
-    }
-
-    Subnetwork getSubnet() {
-        return subnet;
-    }
-
     String getMasterIP() {
         return masterIP;
-    }
-
-    String getSubnetCidr() {
-        return subnetCidr;
     }
 }

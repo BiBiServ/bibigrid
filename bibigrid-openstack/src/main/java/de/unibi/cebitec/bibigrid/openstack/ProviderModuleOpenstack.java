@@ -6,6 +6,7 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
 import org.openstack4j.api.OSClient;
@@ -49,6 +50,11 @@ public class ProviderModuleOpenstack extends ProviderModule {
     @Override
     public CreateCluster getCreateIntent(Configuration config) {
         return new CreateClusterOpenstack(this, (ConfigurationOpenstack) config);
+    }
+
+    @Override
+    public CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
+        return new CreateClusterEnvironmentOpenstack((CreateClusterOpenstack) cluster);
     }
 
     @Override

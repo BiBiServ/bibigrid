@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.core.model;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
@@ -39,6 +40,8 @@ public abstract class ProviderModule {
     public abstract PrepareIntent getPrepareIntent(Configuration config);
 
     public abstract CreateCluster getCreateIntent(Configuration config);
+
+    public abstract CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException;
 
     public abstract ValidateIntent getValidateIntent(Configuration config);
 

@@ -4,7 +4,6 @@ import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.*;
 import com.google.api.services.compute.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.*;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.util.*;
 import org.slf4j.Logger;
@@ -24,46 +23,34 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public class CreateClusterGoogleCloud extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterGoogleCloud.class);
     private final ConfigurationGoogleCloud config;
-    private Compute compute;
-    private Metadata.Items masterStartupScript;
-    private Metadata.Items slaveStartupScript;
+    private final Compute compute;
+    private Metadata.Items instanceStartupScript;
     private NetworkInterface masterNetworkInterface;
-    private CreateClusterEnvironmentGoogleCloud environment;
 
     CreateClusterGoogleCloud(final ProviderModule providerModule, final ConfigurationGoogleCloud config) {
         super(providerModule, config);
         this.config = config;
-    }
-
-    @Override
-    public CreateClusterEnvironmentGoogleCloud createClusterEnvironment() throws ConfigurationException {
         compute = GoogleCloudUtils.getComputeService(config);
-        return environment = new CreateClusterEnvironmentGoogleCloud(this);
     }
 
     @Override
-    public CreateClusterGoogleCloud configureClusterMasterInstance() {
-        // preparing block device mappings for master
-        InstanceType masterSpec = config.getMasterInstance().getProviderType();
-        masterDeviceMapper = new DeviceMapper(providerModule, config.getMasterMounts(),
-                masterSpec.getEphemerals() + masterSpec.getSwap());
-
+    public CreateCluster configureClusterMasterInstance() {
         String startupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), false, true);
-        masterStartupScript = new Metadata.Items().setKey("startup-script").setValue(startupScript);
+        instanceStartupScript = new Metadata.Items().setKey("startup-script").setValue(startupScript);
         buildMasterNetworkInterface();
-        return this;
+        return super.configureClusterMasterInstance();
     }
 
     private void buildMasterNetworkInterface() {
         // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
         masterNetworkInterface = buildExternalNetworkInterface();
-        masterNetworkInterface.setNetworkIP(environment.getMasterIP());
+        masterNetworkInterface.setNetworkIP(((CreateClusterEnvironmentGoogleCloud) environment).getMasterIP());
     }
 
     private NetworkInterface buildExternalNetworkInterface() {
         AccessConfig accessConfig = new AccessConfig().setType("ONE_TO_ONE_NAT").setName("External NAT");
-        return new NetworkInterface().setNetwork(environment.getSubnet().getNetwork())
-                .setSubnetwork(environment.getSubnet().getSelfLink())
+        return new NetworkInterface().setNetwork(((SubnetGoogleCloud) environment.getSubnet()).getInternal().getNetwork())
+                .setSubnetwork(environment.getSubnet().getId())
                 .setAccessConfigs(Collections.singletonList(accessConfig));
     }
 
@@ -78,10 +65,13 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                     slaveSpec.getEphemerals() + slaveSpec.getSwap());
             slaveDeviceMappers.add(deviceMapper);
         }
-
-        String startupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), false, false);
-        slaveStartupScript = new Metadata.Items().setKey("startup-script").setValue(startupScript);
         return this;
+    }
+
+    @Override
+    protected List<Configuration.MountPoint> resolveMountSources(List<Configuration.MountPoint> mountPoints) {
+        // TODO: possibly check if snapshot or volume like openstack
+        return mountPoints;
     }
 
     @Override
@@ -96,7 +86,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                 config.getMasterInstance().getProviderType().getValue())
                 .setNetworkInterfaces(Collections.singletonList(masterNetworkInterface))
                 .setLabels(labels)
-                .setMetadata(buildMetadata(masterStartupScript));
+                .setMetadata(buildMetadata(instanceStartupScript));
         GoogleCloudUtils.attachDisks(compute, masterInstance, config.getMasterInstance().getImage(), config,
                 config.getMasterMounts(), config.getGoogleImageProjectId());
         GoogleCloudUtils.setInstanceSchedulingOptions(masterInstance, config.isUseSpotInstances());
@@ -140,7 +130,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                     instanceConfiguration.getProviderType().getValue())
                     .setNetworkInterfaces(Collections.singletonList(buildExternalNetworkInterface()))
                     .setLabels(labels)
-                    .setMetadata(buildMetadata(slaveStartupScript));
+                    .setMetadata(buildMetadata(instanceStartupScript));
             GoogleCloudUtils.attachDisks(compute, slaveBuilder, instanceConfiguration.getImage(), config,
                     config.getSlaveMounts(), config.getGoogleImageProjectId());
             GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
@@ -202,10 +192,5 @@ public class CreateClusterGoogleCloud extends CreateCluster {
 
     Compute getCompute() {
         return compute;
-    }
-
-    @Override
-    protected String getSubnetCidr() {
-        return environment.getSubnetCidr();
     }
 }

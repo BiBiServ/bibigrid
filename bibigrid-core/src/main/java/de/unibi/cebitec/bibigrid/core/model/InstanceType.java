@@ -8,6 +8,7 @@ public abstract class InstanceType {
     protected int cpuCores;
     protected int ephemerals;
     protected boolean swap;
+    protected boolean configDrive;
     protected boolean clusterInstance;
     protected boolean pvm;
     protected boolean hvm;
@@ -28,6 +29,14 @@ public abstract class InstanceType {
 
     public int getSwap() {
         return swap ? 1 : 0;
+    }
+
+    /**
+     * The configuration drive is used to store instance-specific metadata and is present to the instance
+     * as a disk partition.
+     */
+    public int getConfigDrive() {
+        return configDrive ? 1 : 0;
     }
 
     public boolean isClusterInstance() {
