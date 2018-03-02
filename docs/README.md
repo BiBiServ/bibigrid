@@ -34,7 +34,6 @@ The parameters are listed below:
 | use-master-as-compute      | b               |                      | |
 | slave-instance-type        | s               |                      | |
 | slave-image                | S               |                      | |
-| slave-mounts               | f               |                      | |
 | max-slave-ephemerals       | mse             |                      | |
 | slave-instance-count       | n               |                      | |
 | use-spot-instance-request  | usir            |                      | |

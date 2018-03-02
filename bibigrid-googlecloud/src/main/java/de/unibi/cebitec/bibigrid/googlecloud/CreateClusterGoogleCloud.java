@@ -49,23 +49,10 @@ public class CreateClusterGoogleCloud extends CreateCluster {
 
     private NetworkInterface buildExternalNetworkInterface() {
         AccessConfig accessConfig = new AccessConfig().setType("ONE_TO_ONE_NAT").setName("External NAT");
-        return new NetworkInterface().setNetwork(((SubnetGoogleCloud) environment.getSubnet()).getInternal().getNetwork())
+        return new NetworkInterface()
+                .setNetwork(((SubnetGoogleCloud) environment.getSubnet()).getInternal().getNetwork())
                 .setSubnetwork(environment.getSubnet().getId())
                 .setAccessConfigs(Collections.singletonList(accessConfig));
-    }
-
-    @Override
-    public CreateClusterGoogleCloud configureClusterSlaveInstance() {
-        // now defining Slave Volumes
-        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
-        slaveDeviceMappers = new ArrayList<>();
-        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-            InstanceType slaveSpec = instanceConfiguration.getProviderType();
-            DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
-                    slaveSpec.getEphemerals() + slaveSpec.getSwap());
-            slaveDeviceMappers.add(deviceMapper);
-        }
-        return this;
     }
 
     @Override
@@ -131,8 +118,8 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                     .setNetworkInterfaces(Collections.singletonList(buildExternalNetworkInterface()))
                     .setLabels(labels)
                     .setMetadata(buildMetadata(instanceStartupScript));
-            GoogleCloudUtils.attachDisks(compute, slaveBuilder, instanceConfiguration.getImage(), config,
-                    config.getSlaveMounts(), config.getGoogleImageProjectId());
+            GoogleCloudUtils.attachDisks(compute, slaveBuilder, instanceConfiguration.getImage(), config, null,
+                    config.getGoogleImageProjectId());
             GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
             try {
                 // Start the instance

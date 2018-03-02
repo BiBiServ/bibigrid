@@ -5,7 +5,6 @@ import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.*;
@@ -44,20 +43,6 @@ public class CreateClusterAzure extends CreateCluster {
     }
 
     @Override
-    public CreateCluster configureClusterSlaveInstance() {
-        // now defining Slave Volumes
-        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
-        slaveDeviceMappers = new ArrayList<>();
-        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-            InstanceType slaveSpec = instanceConfiguration.getProviderType();
-            DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
-                    slaveSpec.getEphemerals() + slaveSpec.getSwap());
-            slaveDeviceMappers.add(deviceMapper);
-        }
-        return this;
-    }
-
-    @Override
     protected List<Configuration.MountPoint> resolveMountSources(List<Configuration.MountPoint> mountPoints) {
         // TODO: possibly check if snapshot or volume like openstack
         return mountPoints;
@@ -73,8 +58,8 @@ public class CreateClusterAzure extends CreateCluster {
                 .withExistingResourceGroup(((CreateClusterEnvironmentAzure) environment).getResourceGroup())
                 .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
                 .withSubnet(environment.getSubnet().getName())
-                .withPrimaryPrivateIPAddressDynamic()
-                .withNewPrimaryPublicIPAddress(((CreateClusterEnvironmentAzure) environment).getMasterIP())
+                .withPrimaryPrivateIPAddressStatic(((CreateClusterEnvironmentAzure) environment).getMasterIP())
+                .withNewPrimaryPublicIPAddress(masterNameTag)
                 .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config,
                         config.getMasterInstance().getImage()))
                 .withRootUsername(config.getSshUser())
@@ -114,7 +99,7 @@ public class CreateClusterAzure extends CreateCluster {
                     .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
                     .withSubnet(environment.getSubnet().getName())
                     .withPrimaryPrivateIPAddressDynamic()
-                    .withNewPrimaryPublicIPAddress(((CreateClusterEnvironmentAzure) environment).getMasterIP()) // TODO
+                    .withoutPrimaryPublicIPAddress()
                     .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, instanceConfiguration.getImage()))
                     .withRootUsername(config.getSshUser())
                     .withSsh("") // TODO
@@ -126,7 +111,6 @@ public class CreateClusterAzure extends CreateCluster {
                     .withTag(Instance.TAG_NAME, slaveNameTag)
                     .withTag(InstanceAzure.TAG_CREATION, getCurrentTime())
                     .create();
-            // TODO .attachDisks(config.getSlaveMounts())
             // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())
             slaveInstances.add(slaveInstance);
         }

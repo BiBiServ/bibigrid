@@ -34,7 +34,6 @@ public abstract class Configuration {
     private boolean nfs = true;
     private List<String> nfsShares = new ArrayList<>();
     private List<MountPoint> masterMounts = new ArrayList<>();
-    private List<MountPoint> slaveMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
     private boolean debugRequests;
@@ -210,14 +209,6 @@ public abstract class Configuration {
 
     public void setMasterMounts(List<MountPoint> masterMounts) {
         this.masterMounts = masterMounts != null ? masterMounts : new ArrayList<>();
-    }
-
-    public List<MountPoint> getSlaveMounts() {
-        return slaveMounts;
-    }
-
-    public void setSlaveMounts(List<MountPoint> slaveMounts) {
-        this.slaveMounts = slaveMounts != null ? slaveMounts : new ArrayList<>();
     }
 
     public List<String> getNfsShares() {

@@ -528,28 +528,6 @@ public abstract class CommandLineValidator {
         return mountPoints;
     }
 
-    private boolean parseSlaveMountsParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SLAVE_MOUNTS_S.toString();
-        // Parse command line parameter
-        if (cl.hasOption(shortParam)) {
-            final String value = cl.getOptionValue(shortParam);
-            if (!isStringNullOrEmpty(value)) {
-                List<Configuration.MountPoint> mountPoints = parseMountCsv(value, "Slave");
-                if (mountPoints != null) {
-                    config.setSlaveMounts(mountPoints);
-                }
-            }
-        }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (config.getSlaveMounts() == null) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
-    }
-
     private boolean parseMasterNfsSharesParameter() {
         final String shortParam = RuleBuilder.RuleNames.NFS_SHARES_S.toString();
         // Parse command line parameter
@@ -690,7 +668,6 @@ public abstract class CommandLineValidator {
                 parseSlaveImageParameter() &&
                 parsePortsParameter() &&
                 parseMasterMountsParameter() &&
-                parseSlaveMountsParameter() &&
                 parseMasterNfsSharesParameter() &&
                 parseExternalNfsSharesParameter() &&
                 parseUseSpotInstanceRequestParameter() &&

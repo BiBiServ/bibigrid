@@ -155,11 +155,6 @@ public abstract class ValidateIntent extends Intent {
                 snapshotIds.add(mount.getSource());
             }
         }
-        if (config.getSlaveMounts() != null) {
-            for (Configuration.MountPoint mount : config.getSlaveMounts()) {
-                snapshotIds.add(mount.getSource());
-            }
-        }
         // snapshot ids have to be checked individually to find out which one is missing or malformed.
         for (String snapshotId : snapshotIds) {
             if (checkSnapshot(snapshotId)) {

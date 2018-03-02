@@ -130,21 +130,9 @@ public class CreateClusterAWS extends CreateCluster {
     private void buildClientsDeviceMappings() {
         // now defining Slave Volumes
         slaveBlockDeviceMappings = new ArrayList<>();
-        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
-        slaveDeviceMappers = new ArrayList<>();
         for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
             de.unibi.cebitec.bibigrid.core.model.InstanceType slaveSpec = instanceConfiguration.getProviderType();
-            DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
-                    slaveSpec.getEphemerals() + slaveSpec.getSwap());
-            slaveDeviceMappers.add(deviceMapper);
-            // configure volumes first
-            List<BlockDeviceMapping> slaveBlockDeviceMapping = new ArrayList<>();
-            if (!snapShotToSlaveMounts.isEmpty()) {
-                LOG.info(V, "configure slave volumes");
-                slaveBlockDeviceMapping = createBlockDeviceMappings(deviceMapper);
-            }
-            slaveBlockDeviceMapping.addAll(buildEphemeralList(slaveSpec.getEphemerals()));
-            slaveBlockDeviceMappings.add(slaveBlockDeviceMapping);
+            slaveBlockDeviceMappings.add(buildEphemeralList(slaveSpec.getEphemerals()));
         }
     }
 

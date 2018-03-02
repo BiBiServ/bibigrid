@@ -43,7 +43,6 @@ public abstract class CreateCluster extends Intent {
     private Instance masterInstance;
     private List<Instance> slaveInstances;
     protected DeviceMapper masterDeviceMapper;
-    protected List<DeviceMapper> slaveDeviceMappers;
 
     protected CreateCluster(ProviderModule providerModule, Configuration config) {
         this.providerModule = providerModule;
@@ -109,7 +108,10 @@ public abstract class CreateCluster extends Intent {
     /**
      * Configure and manage Slave-instances to launch.
      */
-    public abstract CreateCluster configureClusterSlaveInstance();
+    public CreateCluster configureClusterSlaveInstance() {
+        LOG.info("Slave instance(s) configured.");
+        return this;
+    }
 
     /**
      * Resolve the mount source volumes or snapshots.

@@ -113,6 +113,9 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
 
         // Master IP
         masterIP = SubNets.getFirstIP(subnet.getCidr());
+        // TODO: increase master ip until free
+        // String projectId = ((ConfigurationGoogleCloud) getConfig()).getGoogleProjectId();
+        // cluster.getCompute().addresses().list(projectId, getConfig().getRegion()).execute().getItems().get(0).
         LOG.debug(V, "masterIP: {}.", masterIP);
 
         // Collect all firewall rules grouped by the source ip range because the number of rules

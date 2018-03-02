@@ -42,10 +42,6 @@ public class RuleBuilder {
                 "min: 0", 1));
         groupReference.add(createStringRule(RuleNames.SLAVE_IMAGE_S, RuleNames.SLAVE_IMAGE_L,
                 "machine image id for slaves, same behaviour like master-image"));
-        // TODO: Regex for ex. search for =?
-        groupReference.add(createStringRule(RuleNames.SLAVE_MOUNTS_S, RuleNames.SLAVE_MOUNTS_L,
-                "comma-separated snapshot id=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) " +
-                        "mounted to all slaves individually"));
 
         // Other rules
         groupReference.add(createBooleanRule(RuleNames.USE_SPOT_INSTANCE_REQUEST_S, RuleNames.USE_SPOT_INSTANCE_REQUEST_L,
@@ -212,8 +208,6 @@ public class RuleBuilder {
         SECURITY_GROUP_L("security-group"),
         MASTER_MOUNTS_S("d"),
         MASTER_MOUNTS_L("master-mounts"),
-        SLAVE_MOUNTS_S("f"),
-        SLAVE_MOUNTS_L("slave-mounts"),
         NFS_SHARES_S("g"),
         NFS_SHARES_L("nfs-shares"),
         EXT_NFS_SHARES_S("ge"),

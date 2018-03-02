@@ -69,7 +69,7 @@ public class TerminateIntentAWS extends TerminateIntent {
                     break;
                 }
                 // wait until instances are shut down
-                IntentUtils.sleep(5);
+                sleep(5);
             } while (true);
             // log.info("Instance(s) ({}) terminated.",join(",", instances));
         }

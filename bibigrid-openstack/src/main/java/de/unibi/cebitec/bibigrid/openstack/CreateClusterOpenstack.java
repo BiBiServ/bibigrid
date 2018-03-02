@@ -3,7 +3,6 @@ package de.unibi.cebitec.bibigrid.openstack;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.InstanceType;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
@@ -24,6 +23,7 @@ import org.openstack4j.model.compute.Server;
 import org.openstack4j.model.compute.ServerCreate;
 import org.openstack4j.model.compute.VolumeAttachment;
 import org.openstack4j.model.network.NetFloatingIP;
+import org.openstack4j.model.network.Router;
 import org.openstack4j.model.storage.block.Volume;
 import org.openstack4j.model.storage.block.Volume.Status;
 import org.openstack4j.model.storage.block.VolumeSnapshot;
@@ -45,25 +45,6 @@ public class CreateClusterOpenstack extends CreateCluster {
         super(providerModule, config);
         os = OpenStackUtils.buildOSClient(config);
     }
-
-    /* TODO: this was never used?
-    @Override
-    public CreateCluster configureClusterMasterInstance() {
-        Set<BlockDeviceMappingCreate> masterMappings = new HashSet<>();
-        String[] ephemerals = {"b", "c", "d", "e"};
-        for (int i = 0; i < masterSpec.getEphemerals(); ++i) {
-            BlockDeviceMappingCreate blockDeviceMappingCreate = Builders.blockDeviceMapping()
-                    .deviceName("sd" + ephemerals[i])
-                    .deleteOnTermination(true)
-                    .sourceType(BDMSourceType.BLANK)
-                    .destinationType(BDMDestType.LOCAL)
-                    .bootIndex(-1)
-                    .build();
-            masterMappings.add(blockDeviceMappingCreate);
-        }
-        return super.configureClusterMasterInstance();
-    }
-    */
 
     @Override
     protected List<Configuration.MountPoint> resolveMountSources(List<Configuration.MountPoint> mountPoints) {
@@ -91,36 +72,6 @@ public class CreateClusterOpenstack extends CreateCluster {
             }
         }
         return result;
-    }
-
-    @Override
-    public CreateClusterOpenstack configureClusterSlaveInstance() {
-        // TODO: resolveMountSources(config.getSlaveMounts())
-        List<Configuration.MountPoint> snapShotToSlaveMounts = config.getSlaveMounts();
-        slaveDeviceMappers = new ArrayList<>();
-        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-            InstanceType slaveSpec = instanceConfiguration.getProviderType();
-            DeviceMapper deviceMapper = new DeviceMapper(providerModule, snapShotToSlaveMounts,
-                    slaveSpec.getConfigDrive() + slaveSpec.getEphemerals() + slaveSpec.getSwap());
-            slaveDeviceMappers.add(deviceMapper);
-        }
-
-        /* TODO: this was never used?
-        Set<BlockDeviceMappingCreate> slaveMappings = new HashSet<>();
-        String[] ephemerals = {"b", "c", "d", "e"};
-        for (int i = 0; i < config.getSlaveInstanceType().getSpec().getEphemerals(); ++i) {
-            BlockDeviceMappingCreate blockDeviceMappingCreate = Builders.blockDeviceMapping()
-                    .deviceName("sd" + ephemerals[i])
-                    .deleteOnTermination(true)
-                    .sourceType(BDMSourceType.BLANK)
-                    .destinationType(BDMDestType.LOCAL)
-                    .bootIndex(-1)
-                    .build();
-            slaveMappings.add(blockDeviceMappingCreate);
-        }
-        */
-        LOG.info("Slave instance(s) configured.");
-        return this;
     }
 
     @Override
@@ -160,19 +111,18 @@ public class CreateClusterOpenstack extends CreateCluster {
         // Network configuration
         LOG.info("Master (ID: {}) started", server.getId());
         InstanceOpenstack master = new InstanceOpenstack(config.getMasterInstance(), server);
-        master.setPrivateIp(waitForAddress(server.getId(), environment.getNetwork().getName()).getAddr());
+        master.setPrivateIp(waitForAddress(master.getId(), environment.getNetwork().getName()).getAddr());
 
         master.updateNeutronHostname();
 
         // get and assign floating ip to master
         ActionResponse ar = null;
         boolean assigned = false;
-
         List<String> blacklist = new ArrayList<>();
         while (ar == null || !assigned) {
             // get next free floatingIP
             NetFloatingIP floatingIp = getFloatingIP(blacklist);
-            // if null  there is no free floating ip available
+            // if null there is no free floating ip available
             if (floatingIp == null) {
                 LOG.error("No unused FloatingIP available! Abort!");
                 return null;
@@ -184,7 +134,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             // in case of success try  update master object
             if (ar.isSuccess()) {
                 sleep(1, false);
-                Server tmp = os.compute().servers().get(server.getId());
+                Server tmp = os.compute().servers().get(master.getId());
                 if (tmp != null) {
                     assigned = checkForFloatingIp(tmp, floatingIp.getFloatingIpAddress());
                     if (assigned) {
@@ -202,7 +152,7 @@ public class CreateClusterOpenstack extends CreateCluster {
 
         // wait for master available
         do {
-            checkForServerAndUpdateInstance(server.getId(), master);
+            checkForServerAndUpdateInstance(master.getId(), master);
             if (!master.isActive()) { // if not yet active wait ....
                 sleep(2);
             } else if (master.hasError()) {
@@ -321,25 +271,24 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     private NetFloatingIP getFloatingIP(List<String> blacklist) {
         // get list of all available floating IP's, and search for free ones ...
-        List<? extends NetFloatingIP> l = os.networking().floatingip().list();
-        NetworkOpenstack network = (NetworkOpenstack) environment.getNetwork();
-        for (NetFloatingIP fip : l) {
-            if (fip.getPortId() == null
+        List<? extends NetFloatingIP> floatingIps = os.networking().floatingip().list();
+        Router router = ((NetworkOpenstack) environment.getNetwork()).getRouter();
+        for (NetFloatingIP floatingIp : floatingIps) {
+            if (floatingIp.getPortId() == null
                     // check if floating ip fits to router network id
-                    && fip.getFloatingNetworkId().equals(network.getRouter().getExternalGatewayInfo().getNetworkId())
+                    && floatingIp.getFloatingNetworkId().equals(router.getExternalGatewayInfo().getNetworkId())
                     // check if tenant id fits routers tenant id
-                    && fip.getTenantId().equals(network.getRouter().getTenantId())
-                    && !blacklist.contains(fip.getFloatingIpAddress())) {
+                    && floatingIp.getTenantId().equals(router.getTenantId())
+                    && !blacklist.contains(floatingIp.getFloatingIpAddress())) {
                 //found an unused floating ip and return it
-                return fip;
+                return floatingIp;
             }
         }
         // try to allocate a new floating from network pool
         try {
             return os.networking().floatingip().create(Builders.netFloatingIP()
-                    .floatingNetworkId(network.getRouter().getExternalGatewayInfo().getNetworkId())
+                    .floatingNetworkId(router.getExternalGatewayInfo().getNetworkId())
                     .build());
-
         } catch (Exception e) {
             LOG.error(e.getMessage());
         }
@@ -350,27 +299,20 @@ public class CreateClusterOpenstack extends CreateCluster {
         return os;
     }
 
+    /**
+     * Wait until the server has a private ip address.
+     * This blocks and polls the server object every second.
+     */
     private Address waitForAddress(String serverId, String networkName) {
-        // ################################################################
-        // following block is a ugly hack to refresh the server object
-        // ####################################################### -> Start
         List<? extends Address> addressList;
-        Map<String, List<? extends Address>> map;
         Server server;
         do {
-            try {
-                // wait a second
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                // do nothing
-            }
+            sleep(1, false);
             // refresh server object - ugly
             server = os.compute().servers().get(serverId);
-            map = server.getAddresses().getAddresses();
-            addressList = map.get(networkName);
+            addressList = server.getAddresses().getAddresses().get(networkName);
             LOG.info(V, "addressList {}", addressList);
         } while (addressList == null || addressList.isEmpty());
-        // <- End ##########################################################
         return addressList.get(0);
     }
 
