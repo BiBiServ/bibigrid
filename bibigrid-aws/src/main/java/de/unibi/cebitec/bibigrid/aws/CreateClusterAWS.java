@@ -102,11 +102,9 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     private void buildMasterNetworkInterface() {
-        CreateClusterEnvironmentAWS environment = (CreateClusterEnvironmentAWS) this.environment;
-        // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
+        // create NetworkInterfaceSpecification for master with public ip
         masterNetworkInterface = new InstanceNetworkInterfaceSpecification()
-                .withPrivateIpAddress(environment.getMasterIp())
-                .withGroups(environment.getSecurityGroup())
+                .withGroups(((CreateClusterEnvironmentAWS) environment).getSecurityGroup())
                 .withAssociatePublicIpAddress(true)
                 .withSubnetId(environment.getSubnet().getId())
                 .withDeviceIndex(0);

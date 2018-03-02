@@ -78,17 +78,6 @@ public class SubNets {
     }
 
     /**
-     * Return first usable IP address from CIDR block.
-     *
-     * @return IPV4 String in form XX.XX.XX.XX
-     */
-    public static String getFirstIP(String cidr) {
-        long[] tmp = parseCidr(cidr);
-        // long numberOfIps = Math.round((Math.pow(2, 32 - tmp[2]) - 1));
-        return longAsIPV4String(tmp[0] + 5);
-    }
-
-    /**
      * Return a networkMask on base of given network size.
      */
     public static long createMask(long networkSize) {

@@ -28,7 +28,6 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
 
     private String placementGroup;
     private final CreateClusterAWS cluster;
-    private String masterIp;
     private String securityGroup;
 
     CreateClusterEnvironmentAWS(CreateClusterAWS cluster) throws ConfigurationException {
@@ -91,8 +90,6 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         tagRequest.withResources(subnet.getId())
                 .withTags(cluster.getBibigridId(), new Tag(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, SUBNET_PREFIX + cluster.getClusterId()));
         cluster.getEc2().createTags(tagRequest);
-        // master IP
-        masterIp = SubNets.getFirstIP(subnet.getCidr());
         // create security group with full internal access / ssh from outside
         LOG.info("Creating security group...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
@@ -153,10 +150,6 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
 
     String getPlacementGroup() {
         return placementGroup;
-    }
-
-    String getMasterIp() {
-        return masterIp;
     }
 
     String getSecurityGroup() {

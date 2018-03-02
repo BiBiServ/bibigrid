@@ -26,7 +26,6 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
 
     private final CreateClusterAzure cluster;
     private NetworkSecurityGroup securityGroup;
-    private String masterIP;
     private ResourceGroup resourceGroup;
 
     CreateClusterEnvironmentAzure(final CreateClusterAzure cluster) throws ConfigurationException {
@@ -98,11 +97,6 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     public CreateClusterEnvironmentAzure createSecurityGroup() {
         // create security group with full internal access / ssh from outside
         LOG.info("Creating security group...");
-
-        // Master IP
-        masterIP = SubNets.getFirstIP(subnet.getCidr());
-        LOG.debug(V, "masterIP: {}.", masterIP);
-
         // Create the firewall rules
         try {
             NetworkSecurityGroup.Update update = securityGroup.update();
@@ -164,11 +158,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
                 .attach();
     }
 
-    String getMasterIP() {
-        return masterIP;
-    }
-
-    public ResourceGroup getResourceGroup() {
+    ResourceGroup getResourceGroup() {
         return resourceGroup;
     }
 }

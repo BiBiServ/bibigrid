@@ -25,7 +25,6 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentGoogleCloud.class);
 
     private final CreateClusterGoogleCloud cluster;
-    private String masterIP;
 
     CreateClusterEnvironmentGoogleCloud(final CreateClusterGoogleCloud cluster) throws ConfigurationException {
         super(cluster);
@@ -110,14 +109,6 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     public CreateClusterEnvironmentGoogleCloud createSecurityGroup() {
         // create security group with full internal access / ssh from outside
         LOG.info("Creating security group...");
-
-        // Master IP
-        masterIP = SubNets.getFirstIP(subnet.getCidr());
-        // TODO: increase master ip until free
-        // String projectId = ((ConfigurationGoogleCloud) getConfig()).getGoogleProjectId();
-        // cluster.getCompute().addresses().list(projectId, getConfig().getRegion()).execute().getItems().get(0).
-        LOG.debug(V, "masterIP: {}.", masterIP);
-
         // Collect all firewall rules grouped by the source ip range because the number of rules
         // is limited and therefore should be combined!
         Map<String, List<Firewall.Allowed>> firewallRuleMap = new HashMap<>();
@@ -164,9 +155,5 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
             rule.setPorts(Arrays.asList(ports));
         }
         return rule;
-    }
-
-    String getMasterIP() {
-        return masterIP;
     }
 }

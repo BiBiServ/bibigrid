@@ -58,7 +58,7 @@ public class CreateClusterAzure extends CreateCluster {
                 .withExistingResourceGroup(((CreateClusterEnvironmentAzure) environment).getResourceGroup())
                 .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
                 .withSubnet(environment.getSubnet().getName())
-                .withPrimaryPrivateIPAddressStatic(((CreateClusterEnvironmentAzure) environment).getMasterIP())
+                .withPrimaryPrivateIPAddressDynamic()
                 .withNewPrimaryPublicIPAddress(masterNameTag)
                 .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config,
                         config.getMasterInstance().getImage()))

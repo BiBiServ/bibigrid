@@ -37,14 +37,8 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     public CreateCluster configureClusterMasterInstance() {
         String startupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), false, true);
         instanceStartupScript = new Metadata.Items().setKey("startup-script").setValue(startupScript);
-        buildMasterNetworkInterface();
-        return super.configureClusterMasterInstance();
-    }
-
-    private void buildMasterNetworkInterface() {
-        // create NetworkInterfaceSpecification for MASTER instance with FIXED internal IP and public ip
         masterNetworkInterface = buildExternalNetworkInterface();
-        masterNetworkInterface.setNetworkIP(((CreateClusterEnvironmentGoogleCloud) environment).getMasterIP());
+        return super.configureClusterMasterInstance();
     }
 
     private NetworkInterface buildExternalNetworkInterface() {
