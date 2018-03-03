@@ -150,9 +150,11 @@ public abstract class CreateCluster extends Intent {
             // just to be sure, everything is present, wait x seconds
             sleep(4);
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
+            final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
+                    masterInstance.getPrivateIp();
             configureMaster(masterInstance, slaveInstances, environment.getSubnet().getCidr(), prepare);
-            logFinishedInfoMessage(masterInstance.getPublicIp());
-            saveGridPropertiesFile(masterInstance.getPublicIp());
+            logFinishedInfoMessage(masterIp);
+            saveGridPropertiesFile(masterIp);
         } catch (Exception e) {
             // print stacktrace only verbose mode, otherwise the message is fine
             if (VerboseOutputFilter.SHOW_VERBOSE) {
@@ -249,19 +251,21 @@ public abstract class CreateCluster extends Intent {
                 masterInstance, slaveInstances);
         ansibleConfig.setMasterMounts(masterDeviceMapper);
 
+        final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
+                masterInstance.getPrivateIp();
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
         LOG.info("Now configuring...");
         boolean configured = false;
-        boolean sshPortIsReady = pollSshPortIsAvailable(masterInstance.getPublicIp());
+        boolean sshPortIsReady = pollSshPortIsAvailable(masterIp);
         if (sshPortIsReady) {
             try {
                 ssh.addIdentity(config.getIdentityFile());
                 LOG.info("Trying to connect to master...");
                 sleep(4);
                 // Create new Session to avoid packet corruption.
-                Session sshSession = SshFactory.createNewSshSession(ssh, masterInstance.getPublicIp(),
-                        config.getSshUser(), FileSystems.getDefault().getPath(config.getIdentityFile()));
+                Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
+                        FileSystems.getDefault().getPath(config.getIdentityFile()));
                 if (sshSession != null) {
                     // Start connection attempt
                     sshSession.connect();

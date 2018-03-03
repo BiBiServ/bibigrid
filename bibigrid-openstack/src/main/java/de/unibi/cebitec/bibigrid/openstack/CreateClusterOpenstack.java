@@ -114,39 +114,9 @@ public class CreateClusterOpenstack extends CreateCluster {
         master.setPrivateIp(waitForAddress(master.getId(), environment.getNetwork().getName()).getAddr());
 
         master.updateNeutronHostname();
-
         // get and assign floating ip to master
-        ActionResponse ar = null;
-        boolean assigned = false;
-        List<String> blacklist = new ArrayList<>();
-        while (ar == null || !assigned) {
-            // get next free floatingIP
-            NetFloatingIP floatingIp = getFloatingIP(blacklist);
-            // if null there is no free floating ip available
-            if (floatingIp == null) {
-                LOG.error("No unused FloatingIP available! Abort!");
-                return null;
-            }
-            // put ip on blacklist
-            blacklist.add(floatingIp.getFloatingIpAddress());
-            // try to assign floating ip to server
-            ar = os.compute().floatingIps().addFloatingIP(server, floatingIp.getFloatingIpAddress());
-            // in case of success try  update master object
-            if (ar.isSuccess()) {
-                sleep(1, false);
-                Server tmp = os.compute().servers().get(master.getId());
-                if (tmp != null) {
-                    assigned = checkForFloatingIp(tmp, floatingIp.getFloatingIpAddress());
-                    if (assigned) {
-                        master.setPublicIp(floatingIp.getFloatingIpAddress());
-                        LOG.info("FloatingIP '{}' assigned to Master (ID: {}).", master.getPublicIp(), master.getId());
-                    } else {
-                        LOG.warn("FloatingIP '{}' assignment failed! Try another one...", floatingIp.getFloatingIpAddress());
-                    }
-                }
-            } else {
-                LOG.warn("FloatingIP '{}' assignment failed with fault '{}'! Try another one...", floatingIp.getFloatingIpAddress(), ar.getFault());
-            }
+        if (!assignPublicIpToMaster(master)) {
+            return null;
         }
         LOG.info("Master (ID: {}) network configuration finished.", master.getId());
 
@@ -198,6 +168,46 @@ public class CreateClusterOpenstack extends CreateCluster {
             LOG.info("{} Volume(s) attached to Master.", masterDeviceMapper.getSnapshotIdToMountPoint().size());
         }
         return master;
+    }
+
+    private boolean assignPublicIpToMaster(InstanceOpenstack master) {
+        // If we don't use a public ip for the master instance, just return.
+        if (!config.isUseMasterWithPublicIp()) {
+            return true;
+        }
+        ActionResponse ar = null;
+        boolean assigned = false;
+        List<String> blacklist = new ArrayList<>();
+        while (ar == null || !assigned) {
+            // get next free floatingIP
+            NetFloatingIP floatingIp = getFloatingIP(blacklist);
+            // if null there is no free floating ip available
+            if (floatingIp == null) {
+                LOG.error("No unused FloatingIP available! Abort!");
+                return false;
+            }
+            // put ip on blacklist
+            blacklist.add(floatingIp.getFloatingIpAddress());
+            // try to assign floating ip to server
+            ar = os.compute().floatingIps().addFloatingIP(master.getInternal(), floatingIp.getFloatingIpAddress());
+            // in case of success try  update master object
+            if (ar.isSuccess()) {
+                sleep(1, false);
+                Server tmp = os.compute().servers().get(master.getId());
+                if (tmp != null) {
+                    assigned = checkForFloatingIp(tmp, floatingIp.getFloatingIpAddress());
+                    if (assigned) {
+                        master.setPublicIp(floatingIp.getFloatingIpAddress());
+                        LOG.info("FloatingIP '{}' assigned to Master (ID: {}).", master.getPublicIp(), master.getId());
+                    } else {
+                        LOG.warn("FloatingIP '{}' assignment failed! Try another one...", floatingIp.getFloatingIpAddress());
+                    }
+                }
+            } else {
+                LOG.warn("FloatingIP '{}' assignment failed with fault '{}'! Try another one...", floatingIp.getFloatingIpAddress(), ar.getFault());
+            }
+        }
+        return true;
     }
 
     @Override

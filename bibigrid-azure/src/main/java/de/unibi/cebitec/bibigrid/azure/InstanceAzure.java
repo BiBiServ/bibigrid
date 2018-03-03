@@ -8,11 +8,11 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 public class InstanceAzure extends Instance {
-    public static final String TAG_CREATION = "creation";
+    static final String TAG_CREATION = "creation";
 
     private final VirtualMachine internalInstance;
 
-    public InstanceAzure(Configuration.InstanceConfiguration instanceConfiguration, VirtualMachine internalInstance) {
+    InstanceAzure(Configuration.InstanceConfiguration instanceConfiguration, VirtualMachine internalInstance) {
         super(instanceConfiguration);
         this.internalInstance = internalInstance;
     }
@@ -23,7 +23,9 @@ public class InstanceAzure extends Instance {
 
     @Override
     public String getPublicIp() {
-        return internalInstance.getPrimaryPublicIPAddress().ipAddress();
+        return internalInstance.getPrimaryPublicIPAddress() != null ?
+                internalInstance.getPrimaryPublicIPAddress().ipAddress() :
+                null;
     }
 
     @Override

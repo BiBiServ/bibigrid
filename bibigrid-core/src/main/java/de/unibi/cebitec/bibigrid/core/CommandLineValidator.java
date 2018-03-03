@@ -50,6 +50,14 @@ public abstract class CommandLineValidator {
      */
     protected abstract Class<? extends Configuration> getProviderConfigurationClass();
 
+    protected Boolean parseBooleanParameter(RuleBuilder.RuleNames ruleName) {
+        if (cl.hasOption(ruleName.toString())) {
+            final String value = cl.getOptionValue(ruleName.toString());
+            return isStringNullOrEmpty(value) || value.equalsIgnoreCase("yes");
+        }
+        return null;
+    }
+
     private boolean parseTerminateParameter() {
         // terminate (cluster-id)
         if (req.contains("t")) {
@@ -135,23 +143,29 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSoftwareParameters() {
-        if (cl.hasOption(RuleBuilder.RuleNames.MESOS_S.toString())) {
-            config.setMesos(true);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.MESOS_S);
+        if (parseResult != null) {
+            config.setMesos(parseResult);
         }
-        if (cl.hasOption(RuleBuilder.RuleNames.OPEN_GRID_ENGINE_S.toString())) {
-            config.setOge(true);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.OPEN_GRID_ENGINE_S);
+        if (parseResult != null) {
+            config.setOge(parseResult);
         }
-        if (cl.hasOption(RuleBuilder.RuleNames.NFS_S.toString())) {
-            config.setNfs(true);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.NFS_S);
+        if (parseResult != null) {
+            config.setNfs(parseResult);
         }
-        if (cl.hasOption(RuleBuilder.RuleNames.CASSANDRA_S.toString())) {
-            config.setCassandra(true);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.CASSANDRA_S);
+        if (parseResult != null) {
+            config.setCassandra(parseResult);
         }
-        if (cl.hasOption(RuleBuilder.RuleNames.SPARK_S.toString())) {
-            config.setSpark(true);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.SPARK_S);
+        if (parseResult != null) {
+            config.setSpark(parseResult);
         }
-        if (cl.hasOption(RuleBuilder.RuleNames.HDFS_S.toString())) {
-            config.setHdfs(true);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.HDFS_S);
+        if (parseResult != null) {
+            config.setHdfs(parseResult);
         }
         return true;
     }
@@ -295,8 +309,17 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseMasterAsComputeParameter() {
-        if (cl.hasOption(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString())) {
-            config.setUseMasterAsCompute(true);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S);
+        if (parseResult != null) {
+            config.setUseMasterAsCompute(parseResult);
+        }
+        return true;
+    }
+
+    private boolean parseMasterWithPublicIpParameter() {
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_MASTER_WITH_PUBLIC_IP_S);
+        if (parseResult != null) {
+            config.setUseMasterWithPublicIp(parseResult);
         }
         return true;
     }
@@ -576,8 +599,9 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseUseSpotInstanceRequestParameter() {
-        if (cl.hasOption(RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString())) {
-            config.setUseSpotInstances(true);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S);
+        if (parseResult != null) {
+            config.setUseSpotInstances(parseResult);
         }
         return true;
     }
@@ -636,8 +660,9 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseDebugRequestsParameter() {
-        if (cl.hasOption(RuleBuilder.RuleNames.DEBUG_REQUESTS_S.toString())) {
-            config.setDebugRequests(true);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.DEBUG_REQUESTS_S);
+        if (parseResult != null) {
+            config.setDebugRequests(parseResult);
         }
         return true;
     }
@@ -665,6 +690,7 @@ public abstract class CommandLineValidator {
                 parseSlaveInstanceTypeParameter() &&
                 parseSlaveInstanceCountParameter() &&
                 parseMasterAsComputeParameter() &&
+                parseMasterWithPublicIpParameter() &&
                 parseSlaveImageParameter() &&
                 parsePortsParameter() &&
                 parseMasterMountsParameter() &&

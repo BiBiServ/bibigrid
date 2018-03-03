@@ -103,8 +103,8 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         UserIdGroupPair secGroupSelf = new UserIdGroupPair().withGroupId(securityGroup);
         List<IpPermission> allIpPermissions = new ArrayList<>();
         allIpPermissions.add(buildIpPermission("tcp", 22, 22).withIpv4Ranges(new IpRange().withCidrIp("0.0.0.0/0")));
-        allIpPermissions.add(buildIpPermission("tcp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
-        allIpPermissions.add(buildIpPermission("udp", 0, 65535).withUserIdGroupPairs(secGroupSelf));
+        allIpPermissions.add(buildIpPermission("tcp", 1, 65535).withUserIdGroupPairs(secGroupSelf));
+        allIpPermissions.add(buildIpPermission("udp", 1, 65535).withUserIdGroupPairs(secGroupSelf));
         allIpPermissions.add(buildIpPermission("icmp", -1, -1).withUserIdGroupPairs(secGroupSelf));
         for (Port port : getConfig().getPorts()) {
             LOG.info(port.toString());

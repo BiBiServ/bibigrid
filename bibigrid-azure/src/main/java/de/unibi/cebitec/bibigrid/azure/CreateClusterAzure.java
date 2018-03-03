@@ -52,14 +52,13 @@ public class CreateClusterAzure extends CreateCluster {
     protected InstanceAzure launchClusterMasterInstance(String masterNameTag) {
         LOG.info("Requesting master instance...");
         //compute.publicIPAddresses().define("").withRegion("").withExistingResourceGroup("").withStaticIP().
-        VirtualMachine masterInstance = compute.virtualMachines()
+        VirtualMachine masterInstance = setMasterPublicIpMode(compute.virtualMachines()
                 .define(masterNameTag)
                 .withRegion(config.getRegion())
                 .withExistingResourceGroup(((CreateClusterEnvironmentAzure) environment).getResourceGroup())
                 .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
                 .withSubnet(environment.getSubnet().getName())
-                .withPrimaryPrivateIPAddressDynamic()
-                .withNewPrimaryPublicIPAddress(masterNameTag)
+                .withPrimaryPrivateIPAddressDynamic(), masterNameTag)
                 .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config,
                         config.getMasterInstance().getImage()))
                 .withRootUsername(config.getSshUser())
@@ -80,6 +79,12 @@ public class CreateClusterAzure extends CreateCluster {
         LOG.info(I, "Master instance is now running!");
         waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
         return new InstanceAzure(config.getMasterInstance(), masterInstance);
+    }
+
+    private VirtualMachine.DefinitionStages.WithOS setMasterPublicIpMode(
+            VirtualMachine.DefinitionStages.WithPublicIPAddress builder, String masterNameTag) {
+        return config.isUseMasterWithPublicIp() ? builder.withNewPrimaryPublicIPAddress(masterNameTag) :
+                builder.withoutPrimaryPublicIPAddress();
     }
 
     private String getCurrentTime() {

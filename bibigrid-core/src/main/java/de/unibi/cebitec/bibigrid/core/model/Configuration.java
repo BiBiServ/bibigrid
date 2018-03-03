@@ -24,6 +24,7 @@ public abstract class Configuration {
     private String availabilityZone;
     private List<Port> ports = new ArrayList<>();
     private boolean useMasterAsCompute;
+    private boolean useMasterWithPublicIp = true;
     private InstanceConfiguration masterInstance = new InstanceConfiguration();
     private List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
     private boolean cassandra;
@@ -80,6 +81,14 @@ public abstract class Configuration {
 
     public void setUseMasterAsCompute(boolean useMasterAsCompute) {
         this.useMasterAsCompute = useMasterAsCompute;
+    }
+
+    public boolean isUseMasterWithPublicIp() {
+        return useMasterWithPublicIp;
+    }
+
+    public void setUseMasterWithPublicIp(boolean useMasterWithPublicIp) {
+        this.useMasterWithPublicIp = useMasterWithPublicIp;
     }
 
     public String getKeypair() {

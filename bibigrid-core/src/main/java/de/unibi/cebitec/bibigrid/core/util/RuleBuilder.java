@@ -80,6 +80,8 @@ public class RuleBuilder {
                 "path to alternative config file"));
         groupReference.add(createBooleanRule(RuleNames.USE_MASTER_AS_COMPUTE_S, RuleNames.USE_MASTER_AS_COMPUTE_L,
                 "yes or no if master is supposed to be used as a compute instance"));
+        groupReference.add(createBooleanRule(RuleNames.USE_MASTER_WITH_PUBLIC_IP_S, RuleNames.USE_MASTER_WITH_PUBLIC_IP_L,
+                "yes or no if master is supposed to be used with a public ip address"));
         groupReference.add(createBooleanRule(RuleNames.HDFS_S, RuleNames.HDFS_L,
                 "Enable HDFS support"));
         groupReference.add(createBooleanRule(RuleNames.CASSANDRA_S, RuleNames.CASSANDRA_L,
@@ -220,6 +222,8 @@ public class RuleBuilder {
         CONFIG_L("config"),
         USE_MASTER_AS_COMPUTE_S("b"),
         USE_MASTER_AS_COMPUTE_L("use-master-as-compute"),
+        USE_MASTER_WITH_PUBLIC_IP_S("pub"),
+        USE_MASTER_WITH_PUBLIC_IP_L("use-master-with-public-ip"),
         HDFS_S("hdfs"),
         HDFS_L("hdfs"),
         CASSANDRA_S("db"),

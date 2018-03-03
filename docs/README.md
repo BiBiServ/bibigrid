@@ -32,6 +32,7 @@ The parameters are listed below:
 | master-mounts              | d               |                      | |
 | max-master-ephemerals      | mme             |                      | |
 | use-master-as-compute      | b               |                      | |
+| use-master-with-public-ip  | pub             |                      | |
 | slave-instance-type        | s               |                      | |
 | slave-image                | S               |                      | |
 | max-slave-ephemerals       | mse             |                      | |

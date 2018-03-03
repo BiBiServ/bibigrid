@@ -109,8 +109,9 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
     }
 
     private boolean parsePublicSlaveIpParameter() {
-        if (cl.hasOption(RuleBuilder.RuleNames.PUBLIC_SLAVE_IP_S.toString())) {
-            awsConfig.setPublicSlaveIps(true);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.PUBLIC_SLAVE_IP_S);
+        if (parseResult != null) {
+            awsConfig.setPublicSlaveIps(parseResult);
         }
         return true;
     }
