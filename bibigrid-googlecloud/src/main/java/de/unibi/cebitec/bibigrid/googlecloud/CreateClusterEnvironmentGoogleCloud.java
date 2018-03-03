@@ -65,7 +65,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         // Reuse the first (and only) subnet for the network and region.
         List<Subnetwork> subnets = GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region);
         for (Subnetwork subnet : subnets) {
-            if (subnet.getNetwork().equals(network.getName())) {
+            if (subnet.getNetwork().equals(network.getId())) {
                 this.subnet = new SubnetGoogleCloud(subnet);
                 break;
             }
@@ -83,9 +83,9 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         String projectId = config.getGoogleProjectId();
         // check for unused Subnet Cidr and create one
         List<String> listOfUsedCidr = new ArrayList<>(); // contains all subnet.cidr which are in current network
-        for (Subnetwork sn : GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region)) {
-            if (sn.getNetwork().equals(network.getId())) {
-                listOfUsedCidr.add(sn.getIpCidrRange());
+        for (Subnetwork subnet : GoogleCloudUtils.listSubnetworks(cluster.getCompute(), projectId, region)) {
+            if (subnet.getNetwork().equals(network.getId())) {
+                listOfUsedCidr.add(subnet.getIpCidrRange());
             }
         }
         SubNets subnets = new SubNets(listOfUsedCidr.size() > 0 ? listOfUsedCidr.get(0) : "10.128.0.0", 24);
