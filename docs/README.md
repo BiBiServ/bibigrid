@@ -16,76 +16,10 @@ In order to upload and execute commands a valid ssh-keypair needs to be setup, t
 ## Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
 You can either provide the necessary parameters via the command line, by using a configuration file in yaml format or in some cases by using environment variables.
-The parameters are listed below:
 
-| Long parameter             | Short parameter | Environment variable | Description                                          |
-|----------------------------|-----------------|----------------------|------------------------------------------------------|
-| meta-mode                  | mode            |                      | Provider mode [aws, googlecloud, openstack, (azure)] | 
-| region                     | e               | OS_REGION_NAME       | |
-| availability-zone          | z               |                      | |
-| user                       | u               |                      | User name (just for VM tagging) |
-| ssh-user                   | su              |                      | SSH user name |
-| keypair                    | k               |                      | Keypair name for authentication (aws and openstack only) |
-| identity-file              | i               |                      | SSH private key file |
-| master-instance-type       | m               |                      | |
-| master-image               | M               |                      | |
-| master-mounts              | d               |                      | |
-| max-master-ephemerals      | mme             |                      | |
-| use-master-as-compute      | b               |                      | |
-| use-master-with-public-ip  | pub             |                      | |
-| slave-instance-type        | s               |                      | |
-| slave-image                | S               |                      | |
-| max-slave-ephemerals       | mse             |                      | |
-| slave-instance-count       | n               |                      | |
-| use-spot-instance-request  | usir            |                      | |
-| ports                      | p               |                      | |
-| network                    | network         |                      | |
-| subnet                     | subnet          |                      | |
-| nfs                        | nfs             |                      | NFS support |
-| oge                        | oge             |                      | GridEngine support |
-| spark                      | spark           |                      | Spark support |
-| hdfs                       | hdfs            |                      | HDFS support |
-| mesos                      | me              |                      | Mesos support |
-| cassandra                  | db              |                      | Cassandra support |
-| local-fs                   | lfs             |                      | |
-| nfs-shares                 | g               |                      | |
-| ext-nfs-shares             | ge              |                      | |
-| debug-requests             | dr              |                      | Log HTTP requests (currently openstack and googlecloud) |
-| verbose                    | v               |                      | Increase the logging level to verbose |
-| config                     | o               |                      | YAML configuration file |
-| grid-properties-file       | gpf             |                      | |
+A complete list of parameters can be found [here](COMMAND_LINE.md).
 
-### Openstack specific parameters
-| Long parameter             | Short parameter | Environment variable | Description                                          |
-|----------------------------|-----------------|----------------------|------------------------------------------------------|
-| openstack-username         | osu             | OS_USERNAME          | |
-| openstack-tenantname       | ost             | OS_PROJECT_NAME      | |
-| openstack-password         | osp             | OS_PASSWORD          | |
-| openstack-endpoint         | ose             | OS_AUTH_URL          | |
-| openstack-domain           | osd             | OS_USER_DOMAIN_NAME  | |
-| openstack-tenantdomain     | ostd            |                      | |
-| security-group             | sg              |                      | |
-| router                     | router          |                      | |
-
-### Google Compute specific parameters
-| Long parameter             | Short parameter | Environment variable | Description                                          |
-|----------------------------|-----------------|----------------------|------------------------------------------------------|
-| google-projectid           | gpid            |                      | |
-| google-image-projectid     | gipid           |                      | |
-| google-credentials-file    | gcf             |                      | |
-
-### Amazon AWS specific parameters
-| Long parameter             | Short parameter | Environment variable | Description                                          |
-|----------------------------|-----------------|----------------------|------------------------------------------------------|
-| aws-credentials-file       | a               |                      | |
-| public-slave-ip            | psi             |                      | |
-| bidprice                   | bp              |                      | |
-| bidprice-master            | bpm             |                      | |
-
-### Azure specific parameters
-| Long parameter             | Short parameter | Environment variable | Description                                          |
-|----------------------------|-----------------|----------------------|------------------------------------------------------|
-| azure-credentials-file     | acf             |                      | |
+A complete schema for a configuration file can be found [here](CONFIGURATION_SCHEMA.md).
 
 ### Writing and using a configuration file
 The configuration file is a plain text file in YAML format. A short example would be:
