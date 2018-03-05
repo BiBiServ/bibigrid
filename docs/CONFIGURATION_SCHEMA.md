@@ -1,7 +1,7 @@
 # Configuration File Schema
 
 ```
-mode: string
+mode: enum [aws, googlecloud, openstack, azure]
 
 user: string
 sshUser: string
