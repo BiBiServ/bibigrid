@@ -27,8 +27,9 @@ The configuration file is a plain text file in YAML format. A short example woul
 ```
 #use google cloud compute
 mode: googlecloud
-google-projectid: XXXXX
-google-credentials-file: XXXXX
+googleProjectId: XXXXX
+googleImageProjectId: ubuntu-os-cloud
+googleCredentialsFile: ~/google-credentials.json
 
 region: europe-west1
 
@@ -59,15 +60,15 @@ This file can now be used with the "-o" command line parameter and the path to t
 
 ## Validating the cluster configuration
 Before starting the cluster directly after writing the configuration file, several components can be validated beforehand.
+This prevents the majority of possible errors or typos, resulting in incomplete cluster setups.
 
 ```
 > bibigrid -ch -o ~/config.yml
 ```
 
-STUB
-
 ## Starting the cluster
-STUB
+Once the configuration is validated, the creation of the cluster can be started. Depending on the parameters
+this may take some time.
 
 ```
 > bibigrid -c -o ~/config.yml
@@ -75,10 +76,19 @@ STUB
 
 ## Cluster maintenance
 ### List running clusters
-STUB
+Once a cluster is created, it can be listed with the following command. All clusters found
+with the selected provider will be listed, including some detail information.
 
 ```
 > bibigrid -l -o ~/config.yml
+```
+
+Example output:
+
+```
+     cluster-id |       user |         launch date |             key name |       public-ip |  # inst |    group-id |   subnet-id |  network-id
+-----------------------------------------------------------------------------------------------------------------------------------------------
+fkiseokf34ekfeo |   testuser |   20/02/18 09:25:10 |          cluster-key |    XXX.XX.XX.XX |       3 | a45b6a63-.. |           - |           -
 ```
 
 ### Terminate the cluster

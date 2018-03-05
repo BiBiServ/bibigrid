@@ -9,7 +9,7 @@ and OpenStack ([Openstack4j](http://openstack4j.com)). BiBiGrid offers an easy c
 BiBiGrid uses [Ansible](https://www.ansible.com) to configure standard Ubuntu 16.04 LTS cloud images. Depending on your configuration BiBiGrid can set up
 an HCP cluster for grid computing ([Open Grid Engine](http://gridscheduler.sourceforge.net), [Mesos](https://mesos.apache.org)), distributed databases ([Casandra](https://cassandra.apache.org)) , a shared filesystem (on local discs and attached volumes), a cloud IDE for writing, running and debugging ([Cloud9](https://github.com/c9/core)) and many more.
 
-During resource instantiation BiBiGrid configures the network, local and network volumes , (network) file systems and also the software for an immediately usage of the started cluster. 
+During resource instantiation BiBiGrid configures the network, local and network volumes, (network) file systems and also the software for an immediately usage of the started cluster. 
 
 When using preinstalled images a full configured and ready to use cluster is available within a few minutes.
 
