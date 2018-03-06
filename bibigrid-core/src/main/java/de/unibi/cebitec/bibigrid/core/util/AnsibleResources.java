@@ -59,7 +59,7 @@ public final class AnsibleResources {
             JarFile jarFile = new JarFile(new File(path));
             for (Enumeration<JarEntry> je = jarFile.entries(); je.hasMoreElements(); ) {
                 JarEntry j = je.nextElement();
-                if (!j.isDirectory() && j.getName().startsWith(ROOT_PATH + "/")) {
+                if (!j.isDirectory() && j.getName().startsWith(ROOT_PATH)) {
                     files.add(j.getName());
                 }
             }
