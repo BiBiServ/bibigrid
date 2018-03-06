@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -40,7 +39,7 @@ public final class Factory {
     private void loadAllClasses() {
         Set<String> allClassPaths = new HashSet<>();
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        extractUrls(classLoader).forEach((URL url) -> {
+        extractUrls().forEach((URL url) -> {
             try {
                 File file = new File(url.toURI());
                 if (file.isDirectory()) {
@@ -59,10 +58,7 @@ public final class Factory {
         }
     }
 
-    private Stream<URL> extractUrls(ClassLoader classLoader) {
-        if (classLoader instanceof URLClassLoader) {
-            return Stream.of(((URLClassLoader) classLoader).getURLs());
-        }
+    private Stream<URL> extractUrls() {
         return Stream.of(ManagementFactory.getRuntimeMXBean().getClassPath().split(File.pathSeparator)).map(this::toURL);
     }
 
