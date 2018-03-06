@@ -9,6 +9,8 @@ import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
+import de.unibi.cebitec.bibigrid.core.model.Network;
+import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,5 +108,19 @@ public class ValidateIntentAWS extends ValidateIntent {
             }
         }
         return true;
+    }
+
+    @Override
+    protected Network getNetwork(String networkName) {
+        DescribeVpcsRequest request = new DescribeVpcsRequest().withVpcIds(networkName);
+        DescribeVpcsResult result = ec2.describeVpcs(request);
+        return result != null && result.getVpcs().size() > 0 ? new NetworkAWS(result.getVpcs().get(0)) : null;
+    }
+
+    @Override
+    protected Subnet getSubnet(String subnetName) {
+        DescribeSubnetsRequest request = new DescribeSubnetsRequest().withSubnetIds(subnetName);
+        DescribeSubnetsResult result = ec2.describeSubnets(request);
+        return result != null && result.getSubnets().size() > 0 ? new SubnetAWS(result.getSubnets().get(0)) : null;
     }
 }
