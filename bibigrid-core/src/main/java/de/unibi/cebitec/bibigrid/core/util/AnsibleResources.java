@@ -26,7 +26,7 @@ public final class AnsibleResources {
         if (resolvedRootPath != null && resolvedRootPath.startsWith("jar:")) {
             String jarPath = resolvedRootPath.split("!")[0].substring(4);
             if (jarPath.startsWith("file:")) {
-                jarPath = new File(jarPath).getAbsolutePath();
+                jarPath = new File(jarPath.substring(5)).getAbsolutePath();
             }
             processJar(jarPath);
         } else {
