@@ -10,8 +10,6 @@
 
 - name: Update act_qmaster
   shell: "echo $(nslookup {{ master.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.' | xargs) > /var/lib/gridengine/default/common/act_qmaster"
-  args:
-    creates: /var/lib/gridengine/default/common/act_qmaster
   register: act_qmaster
 
 - name: Update permissions
