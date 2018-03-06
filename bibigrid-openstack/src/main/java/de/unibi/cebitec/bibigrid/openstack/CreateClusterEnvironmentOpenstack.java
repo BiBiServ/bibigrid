@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
     public static final String ROUTER_PREFIX = CreateCluster.PREFIX + "router-";
-    public static final String NETWORK_PREFIX = CreateCluster.PREFIX + "net-";
     private static final String NETWORK_CIDR = "192.168.0.0/16";
 
     private CreateClusterOpenstack cluster;

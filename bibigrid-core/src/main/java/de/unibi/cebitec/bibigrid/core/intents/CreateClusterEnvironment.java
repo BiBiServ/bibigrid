@@ -17,6 +17,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironment.class);
     public static final String SECURITY_GROUP_PREFIX = CreateCluster.PREFIX + "sg-";
+    public static final String NETWORK_PREFIX = CreateCluster.PREFIX + "net-";
     public static final String SUBNET_PREFIX = CreateCluster.PREFIX + "subnet-";
     protected final CreateCluster cluster;
     private final ClusterKeyPair keypair;
