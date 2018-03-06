@@ -1,8 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
-import de.unibi.cebitec.bibigrid.core.model.InstanceType;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +20,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  * <li>Check connection can be established</li>
  * <li>Check images are available</li>
  * <li>Check snapshots are available</li>
+ * <li>Check network and subnet are available</li>
  * </ol>
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
@@ -61,6 +60,13 @@ public abstract class ValidateIntent extends Intent {
             LOG.info(I, "Snapshot check has been successful.");
         } else {
             LOG.error("One or more snapshots could not be found.");
+            success = false;
+        }
+        LOG.info("Checking network...");
+        if (checkNetwork()) {
+            LOG.info(I, "Network check has been successful.");
+        } else {
+            LOG.error("Failed to check network.");
             success = false;
         }
         if (success) {
@@ -168,4 +174,29 @@ public abstract class ValidateIntent extends Intent {
     }
 
     protected abstract boolean checkSnapshot(String snapshotId);
+
+    private boolean checkNetwork() {
+        boolean result = true;
+        if (config.getNetwork() != null && config.getNetwork().length() > 0) {
+            if (getNetwork(config.getNetwork()) != null) {
+                LOG.info(V, "Network '{}' found.", config.getNetwork());
+            } else {
+                LOG.error("Network '{}' could not be found.", config.getNetwork());
+                result = false;
+            }
+        }
+        if (config.getSubnet() != null && config.getSubnet().length() > 0) {
+            if (getSubnet(config.getSubnet()) != null) {
+                LOG.info(V, "Subnet '{}' found.", config.getSubnet());
+            } else {
+                LOG.error("Subnet '{}' could not be found.", config.getSubnet());
+                result = false;
+            }
+        }
+        return result;
+    }
+
+    protected abstract Network getNetwork(String networkName);
+
+    protected abstract Subnet getSubnet(String subnetName);
 }

@@ -34,7 +34,7 @@ public class DeviceMapperTest {
     private ProviderModule[] providerModules;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         String[] modes = Provider.getInstance().getProviderNames();
         providerModules = new ProviderModule[modes.length];
         for (int i = 0; i < modes.length; i++) {
@@ -43,7 +43,7 @@ public class DeviceMapperTest {
     }
 
     @Test
-    public void getSnapshotIdToMountPoint() throws Exception {
+    public void getSnapshotIdToMountPoint() {
         for (ProviderModule providerModule : providerModules) {
             DeviceMapper mapper = new DeviceMapper(providerModule, SNAPSHOT_ID_TO_MOUNT_POINT, 0);
             assertEquals(SNAPSHOT_ID_TO_MOUNT_POINT, mapper.getSnapshotIdToMountPoint());
@@ -51,7 +51,7 @@ public class DeviceMapperTest {
     }
 
     @Test
-    public void getDeviceNameForSnapshotId() throws Exception {
+    public void getDeviceNameForSnapshotId() {
         for (ProviderModule providerModule : providerModules) {
             DeviceMapper mapper = new DeviceMapper(providerModule, SNAPSHOT_ID_TO_MOUNT_POINT, 0);
             assertEquals("/dev/sdb", mapper.getDeviceNameForSnapshotId(SNAPSHOT_ID1));
@@ -61,7 +61,7 @@ public class DeviceMapperTest {
     }
 
     @Test
-    public void getDeviceNameForSnapshotIdWithUsedDevices() throws Exception {
+    public void getDeviceNameForSnapshotIdWithUsedDevices() {
         for (ProviderModule providerModule : providerModules) {
             DeviceMapper mapper = new DeviceMapper(providerModule, SNAPSHOT_ID_TO_MOUNT_POINT, 5);
             assertEquals("/dev/sdg", mapper.getDeviceNameForSnapshotId(SNAPSHOT_ID1));
@@ -71,45 +71,57 @@ public class DeviceMapperTest {
     }
 
     @Test
-    public void getRealDeviceNameForMountPoint() throws Exception {
-        ProviderModule awsProvider = Provider.getInstance().getProviderModule(MODE_AWS);
-        DeviceMapper mapper = new DeviceMapper(awsProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 0);
-        assertEquals("/dev/xvdb", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
-        assertEquals("/dev/xvdc", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
-        assertEquals("/dev/xvdd", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
-        ProviderModule openstackProvider = Provider.getInstance().getProviderModule(MODE_OPENSTACK);
-        mapper = new DeviceMapper(openstackProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 0);
-        assertEquals("/dev/vdb", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
-        assertEquals("/dev/vdc", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
-        assertEquals("/dev/vdd", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
-        ProviderModule googleCloudProvider = Provider.getInstance().getProviderModule(MODE_GOOGLECLOUD);
-        mapper = new DeviceMapper(googleCloudProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 0);
-        assertEquals("/dev/sdb", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
-        assertEquals("/dev/sdc", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
-        assertEquals("/dev/sdd", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
+    public void getRealDeviceNameForMountPoint() {
+        if (Provider.getInstance().hasProvider(MODE_AWS)) {
+            ProviderModule awsProvider = Provider.getInstance().getProviderModule(MODE_AWS);
+            DeviceMapper mapper = new DeviceMapper(awsProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 0);
+            assertEquals("/dev/xvdb", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
+            assertEquals("/dev/xvdc", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
+            assertEquals("/dev/xvdd", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
+        }
+        if (Provider.getInstance().hasProvider(MODE_OPENSTACK)) {
+            ProviderModule openstackProvider = Provider.getInstance().getProviderModule(MODE_OPENSTACK);
+            DeviceMapper mapper = new DeviceMapper(openstackProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 0);
+            assertEquals("/dev/vdb", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
+            assertEquals("/dev/vdc", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
+            assertEquals("/dev/vdd", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
+        }
+        if (Provider.getInstance().hasProvider(MODE_GOOGLECLOUD)) {
+            ProviderModule googleCloudProvider = Provider.getInstance().getProviderModule(MODE_GOOGLECLOUD);
+            DeviceMapper mapper = new DeviceMapper(googleCloudProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 0);
+            assertEquals("/dev/sdb", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
+            assertEquals("/dev/sdc", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
+            assertEquals("/dev/sdd", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
+        }
     }
 
     @Test
-    public void getRealDeviceNameForMountPointWithUsedDevices() throws Exception {
-        ProviderModule awsProvider = Provider.getInstance().getProviderModule(MODE_AWS);
-        DeviceMapper mapper = new DeviceMapper(awsProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 4);
-        assertEquals("/dev/xvdf", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
-        assertEquals("/dev/xvdg", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
-        assertEquals("/dev/xvdh", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
-        ProviderModule openstackProvider = Provider.getInstance().getProviderModule(MODE_OPENSTACK);
-        mapper = new DeviceMapper(openstackProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 4);
-        assertEquals("/dev/vdf", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
-        assertEquals("/dev/vdg", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
-        assertEquals("/dev/vdh", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
-        ProviderModule googleCloudProvider = Provider.getInstance().getProviderModule(MODE_GOOGLECLOUD);
-        mapper = new DeviceMapper(googleCloudProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 4);
-        assertEquals("/dev/sdf", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
-        assertEquals("/dev/sdg", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
-        assertEquals("/dev/sdh", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
+    public void getRealDeviceNameForMountPointWithUsedDevices() {
+        if (Provider.getInstance().hasProvider(MODE_AWS)) {
+            ProviderModule awsProvider = Provider.getInstance().getProviderModule(MODE_AWS);
+            DeviceMapper mapper = new DeviceMapper(awsProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 4);
+            assertEquals("/dev/xvdf", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
+            assertEquals("/dev/xvdg", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
+            assertEquals("/dev/xvdh", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
+        }
+        if (Provider.getInstance().hasProvider(MODE_OPENSTACK)) {
+            ProviderModule openstackProvider = Provider.getInstance().getProviderModule(MODE_OPENSTACK);
+            DeviceMapper mapper = new DeviceMapper(openstackProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 4);
+            assertEquals("/dev/vdf", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
+            assertEquals("/dev/vdg", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
+            assertEquals("/dev/vdh", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
+        }
+        if (Provider.getInstance().hasProvider(MODE_GOOGLECLOUD)) {
+            ProviderModule googleCloudProvider = Provider.getInstance().getProviderModule(MODE_GOOGLECLOUD);
+            DeviceMapper mapper = new DeviceMapper(googleCloudProvider, SNAPSHOT_ID_TO_MOUNT_POINT, 4);
+            assertEquals("/dev/sdf", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT1));
+            assertEquals("/dev/sdg", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT2));
+            assertEquals("/dev/sdh", mapper.getRealDeviceNameForMountPoint(MOUNT_POINT3));
+        }
     }
 
     @Test
-    public void stripSnapshotId() throws Exception {
+    public void stripSnapshotId() {
         assertEquals("snap-0a12b34c", DeviceMapper.stripSnapshotId("snap-0a12b34c"));
         assertEquals("snap-0a12b34c", DeviceMapper.stripSnapshotId("snap-0a12b34c:1"));
         assertEquals("", DeviceMapper.stripSnapshotId(""));
@@ -117,12 +129,18 @@ public class DeviceMapperTest {
     }
 
     @Test
-    public void getBlockDeviceBase() throws Exception {
-        ProviderModule awsProvider = Provider.getInstance().getProviderModule(MODE_AWS);
-        assertEquals("/dev/xvd", DeviceMapper.getBlockDeviceBase(awsProvider));
-        ProviderModule googleCloudProvider = Provider.getInstance().getProviderModule(MODE_GOOGLECLOUD);
-        assertEquals("/dev/sd", DeviceMapper.getBlockDeviceBase(googleCloudProvider));
-        ProviderModule openstackProvider = Provider.getInstance().getProviderModule(MODE_OPENSTACK);
-        assertEquals("/dev/vd", DeviceMapper.getBlockDeviceBase(openstackProvider));
+    public void getBlockDeviceBase() {
+        if (Provider.getInstance().hasProvider(MODE_AWS)) {
+            ProviderModule awsProvider = Provider.getInstance().getProviderModule(MODE_AWS);
+            assertEquals("/dev/xvd", DeviceMapper.getBlockDeviceBase(awsProvider));
+        }
+        if (Provider.getInstance().hasProvider(MODE_GOOGLECLOUD)) {
+            ProviderModule googleCloudProvider = Provider.getInstance().getProviderModule(MODE_GOOGLECLOUD);
+            assertEquals("/dev/sd", DeviceMapper.getBlockDeviceBase(googleCloudProvider));
+        }
+        if (Provider.getInstance().hasProvider(MODE_OPENSTACK)) {
+            ProviderModule openstackProvider = Provider.getInstance().getProviderModule(MODE_OPENSTACK);
+            assertEquals("/dev/vd", DeviceMapper.getBlockDeviceBase(openstackProvider));
+        }
     }
 }

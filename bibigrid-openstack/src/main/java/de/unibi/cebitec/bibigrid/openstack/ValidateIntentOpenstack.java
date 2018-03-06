@@ -3,6 +3,8 @@ package de.unibi.cebitec.bibigrid.openstack;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
+import de.unibi.cebitec.bibigrid.core.model.Network;
+import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.storage.block.Volume;
@@ -40,5 +42,25 @@ public class ValidateIntentOpenstack extends ValidateIntent {
         }
         Volume snapshot = os.blockStorage().volumes().get(snapshotId);
         return snapshot != null && snapshot.getId().equals(snapshotId);
+    }
+
+    @Override
+    protected Network getNetwork(String networkName) {
+        for (org.openstack4j.model.network.Network network : os.networking().network().list()) {
+            if (network.getName().equals(networkName)) {
+                return new NetworkOpenstack(network, null);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    protected Subnet getSubnet(String subnetName) {
+        for (org.openstack4j.model.network.Subnet subnet : os.networking().subnet().list()) {
+            if (subnet.getName().equals(subnetName)) {
+                return new SubnetOpenstack(subnet);
+            }
+        }
+        return null;
     }
 }

@@ -6,6 +6,10 @@ import com.google.api.services.compute.model.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
+import de.unibi.cebitec.bibigrid.core.model.Network;
+import de.unibi.cebitec.bibigrid.core.model.Subnet;
+
+import java.io.IOException;
 
 /**
  * Implementation of the general ValidateIntent interface for a Google based cluster.
@@ -40,5 +44,24 @@ public class ValidateIntentGoogleCloud extends ValidateIntent {
         }
         Snapshot snapshot = GoogleCloudUtils.getSnapshot(compute, config.getGoogleProjectId(), snapshotId);
         return snapshot != null && snapshot.getName().equals(snapshotId);
+    }
+
+    @Override
+    protected Network getNetwork(String networkName) {
+        try {
+            return new NetworkGoogleCloud(compute.networks().get(config.getGoogleProjectId(), networkName).execute());
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    protected Subnet getSubnet(String subnetName) {
+        try {
+            return new SubnetGoogleCloud(compute.subnetworks().get(config.getGoogleProjectId(), config.getRegion(),
+                    subnetName).execute());
+        } catch (IOException ignored) {
+        }
+        return null;
     }
 }
