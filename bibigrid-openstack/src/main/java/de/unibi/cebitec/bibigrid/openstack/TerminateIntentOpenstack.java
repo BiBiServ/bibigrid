@@ -35,6 +35,7 @@ public class TerminateIntentOpenstack extends TerminateIntent {
             ActionResponse response = os.compute().servers().delete(cluster.getMasterInstance().getId());
             if (!response.isSuccess()) {
                 LOG.error("Failed to delete instance '{}'. {}", cluster.getMasterInstance().getName(), response.getFault());
+                return false;
             }
         }
         // slaves
@@ -43,6 +44,7 @@ public class TerminateIntentOpenstack extends TerminateIntent {
                 ActionResponse response = os.compute().servers().delete(slave.getId());
                 if (!response.isSuccess()) {
                     LOG.error("Failed to delete instance '{}'. {}", slave.getName(), response.getFault());
+                    return false;
                 }
             }
         }

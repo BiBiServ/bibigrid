@@ -31,7 +31,7 @@ public final class AnsibleResources {
                     jarPath = jarPath.substring(1);
                 }
             }
-            processJar(jarPath);
+            processJar(File.separator+jarPath);
         } else {
             processFolder(loader, ROOT_PATH);
         }
