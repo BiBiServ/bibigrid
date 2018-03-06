@@ -20,6 +20,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  * <li>Check connection can be established</li>
  * <li>Check images are available</li>
  * <li>Check snapshots are available</li>
+ * <li>Check network and subnet are available</li>
  * </ol>
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
