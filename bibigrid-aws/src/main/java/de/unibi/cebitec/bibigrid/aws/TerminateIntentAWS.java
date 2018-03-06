@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,18 +46,23 @@ public class TerminateIntentAWS extends TerminateIntent {
     }
 
     private void terminateInstances(final AmazonEC2 ec2, final Cluster cluster) {
-        List<String> instances = cluster.getSlaveInstances();
+        List<String> instanceIds = new ArrayList<>();
         if (cluster.getMasterInstance() != null) {
-            instances.add(cluster.getMasterInstance());
+            instanceIds.add(cluster.getMasterInstance().getId());
         }
-        if (instances.size() > 0) {
+        if (cluster.getSlaveInstances() != null) {
+            for (de.unibi.cebitec.bibigrid.core.model.Instance instance : cluster.getSlaveInstances()) {
+                instanceIds.add(instance.getId());
+            }
+        }
+        if (instanceIds.size() > 0) {
             TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
-            terminateInstanceRequest.setInstanceIds(instances);
+            terminateInstanceRequest.setInstanceIds(instanceIds);
             ec2.terminateInstances(terminateInstanceRequest);
             LOG.info("Wait for instances to shut down. This can take a while, so please be patient!");
             do {
                 DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
-                describeInstancesRequest.setInstanceIds(instances);
+                describeInstancesRequest.setInstanceIds(instanceIds);
                 DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesRequest);
                 boolean allTerminated = true;
                 for (Reservation reservation : describeInstancesResult.getReservations()) {

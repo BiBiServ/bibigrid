@@ -12,8 +12,8 @@ import java.util.List;
 public class Cluster {
     private final String clusterId;
 
-    private String masterInstance;
-    private List<String> slaveInstances = new ArrayList<>();
+    private Instance masterInstance;
+    private List<Instance> slaveInstances = new ArrayList<>();
 
     private String network;
     private String subnet;
@@ -35,11 +35,11 @@ public class Cluster {
         return clusterId;
     }
 
-    public String getMasterInstance() {
+    public Instance getMasterInstance() {
         return masterInstance;
     }
 
-    public void setMasterInstance(String masterInstance) {
+    public void setMasterInstance(Instance masterInstance) {
         this.masterInstance = masterInstance;
     }
 
@@ -67,16 +67,16 @@ public class Cluster {
         this.securityGroup = securityGroup;
     }
 
-    public List<String> getSlaveInstances() {
+    public List<Instance> getSlaveInstances() {
         return slaveInstances;
     }
 
-    public void setSlaveInstances(List<String> slaveInstances) {
+    public void setSlaveInstances(List<Instance> slaveInstances) {
         this.slaveInstances = slaveInstances;
     }
 
-    public void addSlaveInstance(String id) {
-        slaveInstances.add(id);
+    public void addSlaveInstance(Instance instance) {
+        slaveInstances.add(instance);
     }
 
     public String getKeyName() {

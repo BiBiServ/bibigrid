@@ -40,6 +40,11 @@ public class InstanceGoogleCloud extends de.unibi.cebitec.bibigrid.core.model.In
     }
 
     @Override
+    public String getId() {
+        return internalInstance.getId().toString();
+    }
+
+    @Override
     public String getName() {
         return internalInstance.getName();
     }

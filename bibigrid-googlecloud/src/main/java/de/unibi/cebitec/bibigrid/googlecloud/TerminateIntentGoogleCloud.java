@@ -7,6 +7,7 @@ import com.google.api.services.compute.model.Operation;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,16 +40,16 @@ public class TerminateIntentGoogleCloud extends TerminateIntent {
 
     private boolean terminateInstances(final Compute compute, final Cluster cluster) {
         final String zone = config.getAvailabilityZone();
-        List<String> instances = cluster.getSlaveInstances();
+        List<Instance> instances = cluster.getSlaveInstances();
         if (cluster.getMasterInstance() != null) {
             instances.add(cluster.getMasterInstance());
         }
         boolean success = true;
         if (instances.size() > 0) {
             LOG.info("Wait for {} instances to shut down. This can take a while, so please be patient!", instances.size());
-            for (String i : instances) {
+            for (Instance i : instances) {
                 try {
-                    Operation operation = compute.instances().delete(config.getGoogleProjectId(), zone, i).execute();
+                    Operation operation = compute.instances().delete(config.getGoogleProjectId(), zone, i.getName()).execute();
                     GoogleCloudUtils.waitForOperation(compute, config, operation);
                 } catch (Exception e) {
                     LOG.error("Failed to delete instance '{}'. {}", i, e);

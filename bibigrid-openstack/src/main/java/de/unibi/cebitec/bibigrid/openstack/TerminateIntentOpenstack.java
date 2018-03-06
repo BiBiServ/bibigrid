@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.exceptions.ClientResponseException;
@@ -31,12 +32,18 @@ public class TerminateIntentOpenstack extends TerminateIntent {
     protected boolean terminateCluster(Cluster cluster) {
         // master
         if (cluster.getMasterInstance() != null) {
-            os.compute().servers().delete(cluster.getMasterInstance());
+            ActionResponse response = os.compute().servers().delete(cluster.getMasterInstance().getId());
+            if (!response.isSuccess()) {
+                LOG.error("Failed to delete instance '{}'. {}", cluster.getMasterInstance().getName(), response.getFault());
+            }
         }
         // slaves
-        for (String slave : cluster.getSlaveInstances()) {
+        for (Instance slave : cluster.getSlaveInstances()) {
             if (slave != null) {
-                os.compute().servers().delete(slave);
+                ActionResponse response = os.compute().servers().delete(slave.getId());
+                if (!response.isSuccess()) {
+                    LOG.error("Failed to delete instance '{}'. {}", slave.getName(), response.getFault());
+                }
             }
         }
         // security groups

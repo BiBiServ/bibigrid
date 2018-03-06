@@ -101,16 +101,16 @@ public abstract class ListIntent extends Intent {
         }
         if (name != null && name.startsWith(CreateCluster.MASTER_NAME_PREFIX)) {
             if (cluster.getMasterInstance() == null) {
-                cluster.setMasterInstance(instance.getName());
+                cluster.setMasterInstance(instance);
                 cluster.setPublicIp(instance.getPublicIp());
                 cluster.setKeyName(instance.getKeyName());
                 cluster.setStarted(instance.getCreationTimestamp().format(dateTimeFormatter));
             } else {
-                LOG.error("Detected two master instances ({},{}) for cluster '{}'.", cluster.getMasterInstance(),
+                LOG.error("Detected two master instances ({},{}) for cluster '{}'.", cluster.getMasterInstance().getName(),
                         instance.getName(), clusterId);
             }
         } else {
-            cluster.addSlaveInstance(instance.getName());
+            cluster.addSlaveInstance(instance);
         }
         checkInstanceKeyName(instance, cluster);
         checkInstanceUserTag(instance, cluster);

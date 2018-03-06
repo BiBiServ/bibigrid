@@ -40,6 +40,11 @@ public final class InstanceAWS extends de.unibi.cebitec.bibigrid.core.model.Inst
     }
 
     @Override
+    public String getId() {
+        return internalInstance.getInstanceId();
+    }
+
+    @Override
     public String getName() {
         return internalInstance.getInstanceId();
     }

@@ -39,7 +39,8 @@ public final class InstanceOpenstack extends Instance {
         this.server = server;
     }
 
-    String getId() {
+    @Override
+    public String getId() {
         return server.getId();
     }
 

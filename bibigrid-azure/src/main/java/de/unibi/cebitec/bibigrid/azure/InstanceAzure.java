@@ -39,6 +39,11 @@ public class InstanceAzure extends Instance {
     }
 
     @Override
+    public String getId() {
+        return internalInstance.id();
+    }
+
+    @Override
     public String getName() {
         return internalInstance.computerName();
     }

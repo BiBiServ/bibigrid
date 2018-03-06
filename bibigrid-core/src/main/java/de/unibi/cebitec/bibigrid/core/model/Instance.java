@@ -32,6 +32,8 @@ public abstract class Instance {
 
     public abstract String getHostname();
 
+    public abstract String getId();
+
     public abstract String getName();
 
     public abstract String getTag(String key);
