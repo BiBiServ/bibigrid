@@ -12,7 +12,7 @@
 
 - name: Create mount points
   file:
-    path: "{{ item.src }}"
+    path: "{{ item.dst }}"
     state: directory
     owner: root
     group: root
@@ -25,7 +25,7 @@
     path: "{{ item.dst }}"
     src: "{{ master.ip }}:{{ item.src }}"
     fstype: nfs4
-    state: present
+    state: mounted
   with_items:
     - "{{ nfs_mounts }}"
 

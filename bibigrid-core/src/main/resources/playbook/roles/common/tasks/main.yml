@@ -1,4 +1,5 @@
-- import_task: 010-apt.yml
-- import_task: 020-disk.yml
+- import_tasks: 010-apt.yml
+- import_tasks: 020-disk.yml
+- import_tasks: 030-docker.yml
 
 

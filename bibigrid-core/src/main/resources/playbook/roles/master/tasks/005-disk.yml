@@ -1,7 +1,9 @@
 # we have to make sure that the disk is NOT mounted by cloud-init beforehand
 - name: mount disk
   mount:
-    path: {{ items.dst }}
-    src: {{ item.src }}
-    state: present
-   with_items: {{ master.disks }}
+    path: /vol
+    src: "{{ master.ephemerals[0] }}"
+    fstype: ext4
+    state: mounted
+  when: 
+    - master.ephemerals

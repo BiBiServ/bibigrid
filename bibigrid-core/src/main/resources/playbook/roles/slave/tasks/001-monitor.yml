@@ -10,3 +10,11 @@
     owner: root
     group: root
     mode: 0644
+  register: gmonf_conf
+
+- name: Restart Ganglia 
+  systemd:
+    name: ganglia-monitor
+    state: restarted
+    enabled: yes
+  when: gmonf_conf | changed

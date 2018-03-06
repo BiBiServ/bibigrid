@@ -30,7 +30,7 @@
     group: root
     mode: 0644
   copy:
-    content: {{ master.ip }}
+    content: "{{ master.ip }}"
     dest: /etc/mesos-master/ip
     owner: root
     group: root
@@ -71,16 +71,16 @@
       mode: 0644
 
     copy:
-        content: false
-        dest: /etc/mesos-slave/switch_user
-        owner: root
-        group: root
-        mode: 0644
+      content: false
+      dest: /etc/mesos-slave/switch_user
+      owner: root
+      group: root
+      mode: 0644
 
   - name: Start mesos slave
-      systemd:
-          name: mesos-slave
-          state: started
-          enabled: yes
+    systemd:
+      name: mesos-slave
+      state: started
+      enabled: yes
 
   when: use_master_as_compute == 'yes'

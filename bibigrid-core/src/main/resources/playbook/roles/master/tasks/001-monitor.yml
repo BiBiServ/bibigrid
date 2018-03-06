@@ -4,15 +4,14 @@
     name: "apache2"
     state: present  # not using latest package to avoid time consuming checks for prepared images
 
-
 - name: Install Ganglia
   apt:
-    name: {{ item }}
+    name: "{{ item }}"
     state: present
-    with_items:
-      - ganglia-monitor
-      - ganglia-webfrontend
-      - gmetad
+  with_items:
+    - ganglia-monitor
+    - ganglia-webfrontend
+    - gmetad
 
 - name: Configure Ganglia
   copy:
@@ -21,15 +20,16 @@
     owner: root
     group: root
     mode: 0644
+  
 
-  copy:
+- copy:
     src: ganglia/gmetad.conf
     dest: /etc/ganglia/gmetad.conf
     owner: root
     group: root
     mode: 0644
 
-  template:
+- template:
     src: ganglia/gmond.conf.j2
     dest: /etc/ganglia/gmond.conf
     owner: root
@@ -38,15 +38,22 @@
 
 - name: (Re-)start Ganglia
   systemd:
-      name: ganglia
-      state: started
-      enabled: yes
-
+    name: ganglia-monitor
+    state: restarted
+    enabled: yes
+    
+- name: Enable Ganglia sites
+  shell: "/usr/sbin/a2ensite ganglia"
+  args:
+    creates: /etc/apache2/sites-enabled/ganglia.conf
+  register: ganglia_site_enabled
+    
 - name: (Re-)start Apache
   systemd:
     name: apache2
     state: started
     enabled: yes
+  when: ganglia_site_enabled
 
 
 
