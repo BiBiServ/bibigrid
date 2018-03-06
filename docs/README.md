@@ -17,9 +17,9 @@ In order to upload and execute commands a valid ssh-keypair needs to be setup, t
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
 You can either provide the necessary parameters via the command line, by using a configuration file in yaml format or in some cases by using environment variables.
 
-A complete list of parameters can be found [here](COMMAND_LINE.md).
+A complete list of **command line parameters** can be found [here](COMMAND_LINE.md).
 
-A complete schema for a configuration file can be found [here](CONFIGURATION_SCHEMA.md).
+A complete schema for a **configuration file** can be found [here](CONFIGURATION_SCHEMA.md).
 
 ### Writing and using a configuration file
 The configuration file is a plain text file in YAML format. A short example would be:

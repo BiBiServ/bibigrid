@@ -13,7 +13,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class Configuration {
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 
-    private String mode = "aws";
+    private String mode;
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
     private String keypair;
@@ -42,7 +42,7 @@ public abstract class Configuration {
     private String network;
     private String subnet;
     private String[] clusterIds;
-    private boolean cloud9 = false;
+    private boolean cloud9;
 
     public int getSlaveInstanceCount() {
         if (slaveInstances == null) {

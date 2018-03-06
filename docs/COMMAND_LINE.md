@@ -1,5 +1,11 @@
 # Command Line Arguments
+Most configuration parameters can be provided to BiBiGrid using the command line.
+However this becomes messy fast and parameters like the password shouldn't be provided
+in plain text via the command line anyways. An alternative is a [configuration file](CONFIGURATION_SCHEMA.md).
 
+If you decide to use some or all command line parameters, a complete list is provided below:
+
+## Shared parameters
 | Long parameter             | Short parameter | Environment variable | Values | Description                                          |
 |----------------------------|-----------------|----------------------|--------|------------------------------------------------------|
 | meta-mode                  | mode            |                      | [aws, googlecloud, openstack, (azure)] | Provider mode | 
@@ -29,15 +35,15 @@
 | hdfs                       | hdfs            |                      | [yes, no] | HDFS support |
 | mesos                      | me              |                      | [yes, no] | Mesos support |
 | cassandra                  | db              |                      | [yes, no] | Cassandra support |
-| local-fs                   | lfs             |                      | | |
+| local-fs                   | lfs             |                      | [EXT2, EXT3, EXT4, XFS] | |
 | nfs-shares                 | g               |                      | | |
 | ext-nfs-shares             | ge              |                      | | |
 | debug-requests             | dr              |                      | [yes, no] | Log HTTP requests (currently openstack and googlecloud) |
-| verbose                    | v               |                      | | Increase the logging level to verbose |
+| verbose                    | v               |                      | - | Increase the logging level to verbose |
 | config                     | o               |                      | | YAML configuration file |
 | grid-properties-file       | gpf             |                      | | |
 
-### Openstack specific parameters
+## Openstack specific parameters
 | Long parameter             | Short parameter | Environment variable | Values | Description                                          |
 |----------------------------|-----------------|----------------------|--------|------------------------------------------------------|
 | openstack-username         | osu             | OS_USERNAME          | | |
@@ -49,14 +55,14 @@
 | security-group             | sg              |                      | | |
 | router                     | router          |                      | | |
 
-### Google Compute specific parameters
+## Google Compute specific parameters
 | Long parameter             | Short parameter | Environment variable | Values | Description                                          |
 |----------------------------|-----------------|----------------------|--------|------------------------------------------------------|
 | google-projectid           | gpid            |                      | | The compute engine project ID |
 | google-image-projectid     | gipid           |                      | | The compute engine project ID hosting the images to be used |
 | google-credentials-file    | gcf             |                      | | Path to the service account credentials file |
 
-### Amazon AWS specific parameters
+## Amazon AWS specific parameters
 | Long parameter             | Short parameter | Environment variable | Values | Description                                          |
 |----------------------------|-----------------|----------------------|--------|------------------------------------------------------|
 | aws-credentials-file       | a               |                      | | |
@@ -64,7 +70,7 @@
 | bidprice                   | bp              |                      | | |
 | bidprice-master            | bpm             |                      | | |
 
-### Azure specific parameters
+## Azure specific parameters
 | Long parameter             | Short parameter | Environment variable | Values | Description                                          |
 |----------------------------|-----------------|----------------------|--------|------------------------------------------------------|
 | azure-credentials-file     | acf             |                      | | Path to the credentials file |

@@ -1,6 +1,12 @@
 # Configuration File Schema
+The configuration file is written in YAML format. In contrast to the command line
+parameters, a configuration file is easier to maintain and in some cases provides
+more detailed configuration possibilities.
 
+## Shared schema
 ```
+# Comment
+
 mode: enum [aws, googlecloud, openstack, azure]
 
 user: string
@@ -60,14 +66,17 @@ masterMounts:
   - ...
 
 localFS: enum [EXT2, EXT3, EXT4, XFS]
+```
 
-
-# Google
+## Google Compute specific schema
+```
 googleCredentialsFile: string
 googleProjectId: string
 googleImageProjectId: string
+```
 
-# Openstack
+## Openstack specific schema
+```
 router: string
 securityGroup: string
 openstackCredentials:
@@ -77,13 +86,17 @@ openstackCredentials:
   endpoint: string
   domain: string
   tenantDomain: string
+```
 
-# AWS
+## AWS specific schema
+```
 awsCredentialsFile: string
 bidPrice: double
 bidPriceMaster: double
 publicSlaveIps: boolean [yes, no]
+```
 
-# Azure
+## Azure specific schema
+```
 azureCredentialsFile: string
 ```

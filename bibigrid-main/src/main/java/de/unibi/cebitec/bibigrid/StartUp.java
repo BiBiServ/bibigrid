@@ -16,10 +16,12 @@ import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 import de.unibi.techfak.bibiserv.cms.Tparam;
 import de.unibi.techfak.bibiserv.cms.TparamGroup;
@@ -43,21 +45,21 @@ public class StartUp {
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
         Option terminate = new Option(IntentMode.TERMINATE.getShortParam(), IntentMode.TERMINATE.getLongParam(),
-                true, "terminate running cluster");
+                true, "Terminate running cluster");
         terminate.setArgName("cluster-id");
         intentOptions
                 .addOption(new Option(IntentMode.VERSION.getShortParam(), IntentMode.VERSION.getLongParam(),
-                        false, "version"))
+                        false, "Version"))
                 .addOption(new Option(IntentMode.HELP.getShortParam(), IntentMode.HELP.getLongParam(),
-                        false, "help"))
+                        false, "Help"))
                 .addOption(new Option(IntentMode.CREATE.getShortParam(), IntentMode.CREATE.getLongParam(),
-                        false, "create cluster"))
+                        false, "Create cluster"))
                 .addOption(new Option(IntentMode.PREPARE.getShortParam(), IntentMode.PREPARE.getLongParam(),
-                        false, "prepare cluster images"))
+                        false, "Prepare cluster images for faster setup"))
                 .addOption(new Option(IntentMode.LIST.getShortParam(), IntentMode.LIST.getLongParam(),
-                        false, "list running clusters"))
+                        false, "List running clusters"))
                 .addOption(new Option(IntentMode.VALIDATE.getShortParam(), IntentMode.VALIDATE.getLongParam(),
-                        false, "check config file"))
+                        false, "Validate the configuration file"))
                 .addOption(terminate);
         return intentOptions;
     }
@@ -128,9 +130,11 @@ public class StartUp {
             return;
         }
         HelpFormatter help = new HelpFormatter();
-        String header = ""; //TODO: info text, default properties, doc url, deeper help modes?
+        String header = "\nDocumentation at https://github.com/BiBiServ/bibigrid/docs\n\n";
+        header += "Loaded provider modules: " + String.join(", ", Provider.getInstance().getProviderNames()) + "\n\n";
         String footer = "";
-        help.printHelp("bibigrid --create|--list|--terminate|--check [...]", header, cmdLineOptions, footer);
+        String modes = Arrays.stream(IntentMode.values()).map(m -> "--" + m.getLongParam()).collect(Collectors.joining("|"));
+        help.printHelp("bibigrid " + modes + " [...]", header, cmdLineOptions, footer);
     }
 
     private static void runIntent(CommandLine commandLine, IntentMode intentMode) {

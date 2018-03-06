@@ -14,103 +14,89 @@ public class RuleBuilder {
         // Global program rules
         groupReference.add(createBasicRule(RuleNames.VERBOSE_S, RuleNames.VERBOSE_L, null, "more console output"));
         groupReference.add(createBasicRule(RuleNames.DEBUG_REQUESTS_S, RuleNames.DEBUG_REQUESTS_L, null,
-                "Enable HTTP request and response logging."));
+                "Enable HTTP request and response logging"));
 
         groupReference.add(createBasicRule(RuleNames.HELP_LIST_INSTANCE_TYPES_S, RuleNames.HELP_LIST_INSTANCE_TYPES_L,
                 null, "Help: list instance types"));
 
         // Master instance rules
         groupReference.add(createStringRule(RuleNames.MASTER_INSTANCE_TYPE_S, RuleNames.MASTER_INSTANCE_TYPE_L,
-                "see INSTANCE-TYPES below"));
+                "Master instance type to be used. Execute \"-h -lit\" for a complete list"));
         groupReference.add(createIntRule(RuleNames.MAX_MASTER_EPHEMERALS_S, RuleNames.MAX_MASTER_EPHEMERALS_L,
-                "limits the maximum number of used ephemerals for master spool volume (raid 0)", 1));
+                "Limits the maximum number of used ephemerals for master spool volume (raid 0)", 1));
         groupReference.add(createStringRule(RuleNames.MASTER_IMAGE_S, RuleNames.MASTER_IMAGE_L,
-                "machine image id for master, if not set images defined at https://bibiserv.cebitec.uni-bielefeld.de" +
+                "Machine image id for master, if not set images defined at https://bibiserv.cebitec.uni-bielefeld.de" +
                         "/resources/bibigrid/<framework>/<region>.ami.properties are used!"));
         // TODO: Regex for ex. search for =?
         groupReference.add(createStringRule(RuleNames.MASTER_MOUNTS_S, RuleNames.MASTER_MOUNTS_L,
-                "comma-separated volume/snapshot id=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) " +
+                "Comma-separated volume/snapshot id=mountpoint list (e.g. snap-12234abcd=/mnt/mydir1,snap-5667889ab=/mnt/mydir2) " +
                         "mounted to master. (Optional: Partition selection with ':', e.g. snap-12234abcd:1=/mnt/mydir1)"));
+        groupReference.add(createBooleanRule(RuleNames.USE_MASTER_AS_COMPUTE_S, RuleNames.USE_MASTER_AS_COMPUTE_L,
+                "yes or no if master is supposed to be used as a compute instance"));
+        groupReference.add(createBooleanRule(RuleNames.USE_MASTER_WITH_PUBLIC_IP_S, RuleNames.USE_MASTER_WITH_PUBLIC_IP_L,
+                "yes or no if master is supposed to be used with a public ip address"));
 
         // Slave instance rules
         groupReference.add(createStringRule(RuleNames.SLAVE_INSTANCE_TYPE_S, RuleNames.SLAVE_INSTANCE_TYPE_L,
-                "see INSTANCE-TYPES below"));
+                "Slave instance type to be used. Execute \"-h -lit\" for a complete list"));
         groupReference.add(createIntRule(RuleNames.MAX_SLAVE_EPHEMERALS_S, RuleNames.MAX_SLAVE_EPHEMERALS_L,
-                "limits the maximum number of used ephemerals for slave spool volume (raid 0)", 1));
+                "Limits the maximum number of used ephemerals for slave spool volume (raid 0)", 1));
         // TODO: "min: 0" but min.setValue(1) ?
         groupReference.add(createIntRule(RuleNames.SLAVE_INSTANCE_COUNT_S, RuleNames.SLAVE_INSTANCE_COUNT_L,
                 "min: 0", 1));
         groupReference.add(createStringRule(RuleNames.SLAVE_IMAGE_S, RuleNames.SLAVE_IMAGE_L,
-                "machine image id for slaves, same behaviour like master-image"));
+                "Machine image id for slaves, same behaviour like master-image"));
 
         // Other rules
         groupReference.add(createBooleanRule(RuleNames.USE_SPOT_INSTANCE_REQUEST_S, RuleNames.USE_SPOT_INSTANCE_REQUEST_L,
-                "Yes or No if spot instances should be used (Type t instance types are unsupported)."));
+                "[yes, no] if spot instances should be used"));
         groupReference.add(createBasicRule(RuleNames.BID_PRICE_S, RuleNames.BID_PRICE_L,
                 Tprimitive.FLOAT, "bid price for spot instances"));
 
         groupReference.add(createIntRule(RuleNames.BID_PRICE_MASTER_S, RuleNames.BID_PRICE_MASTER_L,
-                "bid price for the master spot instance, if not set general 'bidprice' is used.", 1));
+                "Bid price for the master spot instance, if not set general 'bidprice' is used.", 1));
 
         groupReference.add(createStringRule(RuleNames.KEYPAIR_S, RuleNames.KEYPAIR_L,
-                "name of the keypair in aws console"));
+                "Name of the keypair stored in the cloud provider console"));
         groupReference.add(createStringRule(RuleNames.IDENTITY_FILE_S, RuleNames.IDENTITY_FILE_L,
-                "absolute path to private ssh key file"));
+                "Absolute path to private ssh key file"));
         groupReference.add(createStringRule(RuleNames.REGION_S, RuleNames.REGION_L,
-                "region of instance"));
+                "Region in which the cluster is created"));
         groupReference.add(createStringRule(RuleNames.AVAILABILITY_ZONE_S, RuleNames.AVAILABILITY_ZONE_L,
-                "e.g. availability-zone=eu-west-1a")); // Eigene short description
+                "Specific zone in the provided region (e.g. AWS: eu-west-1a, Google: europe-west1-b)"));
         groupReference.add(createStringRule(RuleNames.AWS_CREDENTIALS_FILE_S, RuleNames.AWS_CREDENTIALS_FILE_L,
-                "containing access-key-id & secret-key, default: ~/.bibigrid.properties"));
+                "Containing access-key-id & secret-key, default: ~/.bibigrid.properties"));
 
         Tparam port = createIntRule(RuleNames.PORTS_S, RuleNames.PORTS_L,
-                "comma-separated list of additional ports (tcp & udp) to be opened for all nodes (e.g. 80,443,8080). " +
-                        "Ignored if 'security-group' is set!");
+                "Comma-separated list of additional ports (tcp & udp) to be opened for all nodes (e.g. 80,443,8080). " +
+                        "(Ignored if 'security-group' is set for Openstack!)");
         // Regex für Ports. TODO: Range Test ex. 0-255 useful?
         port.setRegexp("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})(?:/(\\d{1,2}))*");
         groupReference.add(port);
 
         groupReference.add(createStringRule(RuleNames.SECURITY_GROUP_S, RuleNames.SECURITY_GROUP_L,
-                "security group id used by current setup"));
+                "Security group id used by current setup"));
         groupReference.add(createStringRule(RuleNames.NFS_SHARES_S, RuleNames.NFS_SHARES_L,
-                "comma-separated list of paths on master to be shared via NFS (e.g. 192.168.10.44=/export/data,192.168.10.44=/export/bla)"));
+                "Comma-separated list of paths on master to be shared via NFS (e.g. 192.168.10.44=/export/data,192.168.10.44=/export/bla)"));
         groupReference.add(createStringRule(RuleNames.EXT_NFS_SHARES_S, RuleNames.EXT_NFS_SHARES_L,
-                "comma-separated nfsserver=path list (e.g.")); // TODO: e.g.?
-        groupReference.add(createStringRule(RuleNames.CONFIG_S, RuleNames.CONFIG_L,
-                "path to alternative config file"));
-        groupReference.add(createBooleanRule(RuleNames.USE_MASTER_AS_COMPUTE_S, RuleNames.USE_MASTER_AS_COMPUTE_L,
-                "yes or no if master is supposed to be used as a compute instance"));
-        groupReference.add(createBooleanRule(RuleNames.USE_MASTER_WITH_PUBLIC_IP_S, RuleNames.USE_MASTER_WITH_PUBLIC_IP_L,
-                "yes or no if master is supposed to be used with a public ip address"));
-        groupReference.add(createBooleanRule(RuleNames.HDFS_S, RuleNames.HDFS_L,
-                "Enable HDFS support"));
-        groupReference.add(createBooleanRule(RuleNames.CASSANDRA_S, RuleNames.CASSANDRA_L,
-                "Enable Cassandra database support"));
-        groupReference.add(createBooleanRule(RuleNames.SPARK_S, RuleNames.SPARK_L,
-                "Enable Spark cluster support"));
+                "Comma-separated nfsserver=path list (e.g.")); // TODO: e.g.?
+        groupReference.add(createStringRule(RuleNames.CONFIG_S, RuleNames.CONFIG_L, "Path to alternative config file"));
         groupReference.add(createStringRule(RuleNames.GRID_PROPERTIES_FILE_S, RuleNames.GRID_PROPERTIES_FILE_L,
-                "store essential grid properties like master & slave dns values and grid id in a Java property file"));
-        groupReference.add(createStringRule(RuleNames.ROUTER_S, RuleNames.ROUTER_L,
-                "Name of router used (Openstack), only one of --router --network or --subnet should be used."));
-        groupReference.add(createStringRule(RuleNames.NETWORK_S, RuleNames.NETWORK_L, "Name of network used."));
-        groupReference.add(createStringRule(RuleNames.SUBNET_S, RuleNames.SUBNET_L, "Name of subnet used."));
+                "Store essential grid properties like master & slave dns values and grid id in a Java property file"));
+        groupReference.add(createStringRule(RuleNames.ROUTER_S, RuleNames.ROUTER_L, "Name of router used (Openstack)"));
+        groupReference.add(createStringRule(RuleNames.NETWORK_S, RuleNames.NETWORK_L, "Name of network used"));
+        groupReference.add(createStringRule(RuleNames.SUBNET_S, RuleNames.SUBNET_L, "Name of subnet used"));
         groupReference.add(createBooleanRule(RuleNames.PUBLIC_SLAVE_IP_S, RuleNames.PUBLIC_SLAVE_IP_L,
                 "Slave instances also get an public ip address"));
-        groupReference.add(createBooleanRule(RuleNames.MESOS_S, RuleNames.MESOS_L,
-                "Yes or no if Mesos framework should be configured/started. Default is No"));
         groupReference.add(createStringRule(RuleNames.META_MODE_S, RuleNames.META_MODE_L,
-                "Allows you to use a different cloud provider e.g openstack with meta=openstack. Default AWS is used!"));
-        groupReference.add(createBooleanRule(RuleNames.OPEN_GRID_ENGINE_S, RuleNames.OPEN_GRID_ENGINE_L,
-                "Yes or no if OpenGridEngine should be configured/started. Default is Yes!"));
-        groupReference.add(createBooleanRule(RuleNames.NFS_S, RuleNames.NFS_L,
-                "Yes or no if NFS should be configured/started. Default is Yes!"));
+                "Allows you to use a different cloud provider. Available providers are listed above"));
         // TODO: Durch Regex verschiedene Fälle überprüfen? Enum
         groupReference.add(createStringRule(RuleNames.LOCAL_FS_S, RuleNames.LOCAL_FS_L,
-                "File system used for internal (empheral)); diskspace. One of 'ext2', 'ext3', 'ext4' or 'xfs'. Default is 'xfs'."));
+                "File system used for internal (empheral) diskspace. One of 'ext2', 'ext3', 'ext4' or 'xfs'. Default is 'xfs'."));
         groupReference.add(createStringRule(RuleNames.USER_S, RuleNames.USER_L,
-                "User name (mandatory));"));
+                "User name (for VM tagging)"));
         groupReference.add(createStringRule(RuleNames.SSH_USER_S, RuleNames.SSH_USER_L,
-                "SSH user name (mandatory));"));
+                "SSH user name for master instance configuration"));
         groupReference.add(createStringRule(RuleNames.OPENSTACK_USERNAME_S, RuleNames.OPENSTACK_USERNAME_L,
                 "The given Openstack Username"));
         groupReference.add(createStringRule(RuleNames.OPENSTACK_TENANT_NAME_S, RuleNames.OPENSTACK_TENANT_NAME_L,
@@ -118,7 +104,7 @@ public class RuleBuilder {
         groupReference.add(createStringRule(RuleNames.OPENSTACK_PASSWORD_S, RuleNames.OPENSTACK_PASSWORD_L,
                 "The given Openstack User-Password"));
         groupReference.add(createStringRule(RuleNames.OPENSTACK_ENDPOINT_S, RuleNames.OPENSTACK_ENDPOINT_L,
-                "The given Openstack Endpoint e.g. (http://xxx.xxx.xxx.xxx:5000/v2.0/));")); //Regex?
+                "The given Openstack Endpoint (e.g. https://xxx.xxx.xxx.xxx:5000/v3/)")); //Regex?
         groupReference.add(createStringRule(RuleNames.OPENSTACK_DOMAIN_S, RuleNames.OPENSTACK_DOMAIN_L,
                 "The given Openstack Domain"));
         groupReference.add(createStringRule(RuleNames.OPENSTACK_TENANT_DOMAIN_S, RuleNames.OPENSTACK_TENANT_DOMAIN_L,
@@ -133,7 +119,21 @@ public class RuleBuilder {
         groupReference.add(createStringRule(RuleNames.AZURE_CREDENTIALS_FILE_S, RuleNames.AZURE_CREDENTIALS_FILE_L,
                 "Path to microsoft azure credentials file"));
 
-        groupReference.add(createBooleanRule(RuleNames.CLOUD9_S, RuleNames.CLOUD9_L, "Enable Cloud9 IDE"));
+        // Software rules
+        groupReference.add(createBooleanRule(RuleNames.MESOS_S, RuleNames.MESOS_L,
+                "[yes, no] if Mesos framework should be configured/started. Default is no"));
+        groupReference.add(createBooleanRule(RuleNames.OPEN_GRID_ENGINE_S, RuleNames.OPEN_GRID_ENGINE_L,
+                "[yes, no] if OpenGridEngine should be configured/started. Default is yes"));
+        groupReference.add(createBooleanRule(RuleNames.NFS_S, RuleNames.NFS_L,
+                "[yes, no] if NFS should be configured/started. Default is yes"));
+        groupReference.add(createBooleanRule(RuleNames.HDFS_S, RuleNames.HDFS_L,
+                "[yes, no] if HDFS should be configured/started. Default is no"));
+        groupReference.add(createBooleanRule(RuleNames.CASSANDRA_S, RuleNames.CASSANDRA_L,
+                "[yes, no] if Cassandra database should be configured/started. Default is no"));
+        groupReference.add(createBooleanRule(RuleNames.SPARK_S, RuleNames.SPARK_L,
+                "[yes, no] if Spark cluster support should be configured/started. Default is no"));
+        groupReference.add(createBooleanRule(RuleNames.CLOUD9_S, RuleNames.CLOUD9_L,
+                "[yes, no] if Cloud9 IDE should be configured/started. Default is no"));
     }
 
     private Tparam createBasicRule(RuleNames shortFlag, RuleNames longFlag, Tprimitive type, String shortDescription) {

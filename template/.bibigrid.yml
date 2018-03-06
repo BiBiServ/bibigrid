@@ -1,0 +1,39 @@
+#use openstack
+mode: openstack
+
+#Access
+identityFile:
+keypair:
+user: testuser
+sshUser: testuser
+region: RegionOne
+availabilityZone: nova
+
+#Network
+subnet:
+
+#BiBiGrid-Master
+masterInstance:
+  type:
+  image:
+
+#BiBiGrid-Slave
+slaveInstances:
+  - type:
+    count:
+    image:
+
+#Cluster Props
+ports:
+  - type: TCP
+    number: 80
+  - type: TCP
+    number: 443
+masterMounts:
+nfsShares:
+useMasterAsCompute: no
+nfs: yes
+oge: yes
+spark: yes
+hdfs: yes
+cloud9: yes
