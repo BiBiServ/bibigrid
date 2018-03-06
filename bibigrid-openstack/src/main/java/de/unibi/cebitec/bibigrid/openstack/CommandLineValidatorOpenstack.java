@@ -105,14 +105,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 credentials.setUsername(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(credentials.getUsername())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, credentials.getUsername());
     }
 
     private boolean parseCredentialsDomainParameter(OpenStackCredentials credentials) {
@@ -156,14 +149,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 credentials.setTenantName(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(credentials.getTenantName())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, credentials.getTenantName());
     }
 
     private boolean parseCredentialsTenantDomainParameter(OpenStackCredentials credentials) {
@@ -203,14 +189,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 credentials.setPassword(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(credentials.getPassword())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, credentials.getPassword());
     }
 
     private boolean parseCredentialsEndpointParameter(OpenStackCredentials credentials) {
@@ -227,14 +206,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 credentials.setEndpoint(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(credentials.getEndpoint())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, credentials.getEndpoint());
     }
 
     private boolean parseRouterParameter() {
@@ -246,14 +218,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 openstackConfig.setRouter(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(openstackConfig.getRouter())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, openstackConfig.getRouter());
     }
 
     private boolean parseSecurityGroupParameter() {
@@ -265,13 +230,6 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 openstackConfig.setSecurityGroup(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(openstackConfig.getSecurityGroup())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, openstackConfig.getSecurityGroup());
     }
 }

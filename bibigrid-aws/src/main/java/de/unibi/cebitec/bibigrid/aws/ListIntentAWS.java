@@ -1,17 +1,15 @@
 package de.unibi.cebitec.bibigrid.aws;
 
 import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Reservation;
+import com.amazonaws.services.ec2.model.*;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 
 /**
@@ -21,23 +19,34 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundExcep
  */
 public class ListIntentAWS extends ListIntent {
     private final ConfigurationAWS config;
+    private final AmazonEC2 ec2;
 
     ListIntentAWS(final ProviderModule providerModule, final ConfigurationAWS config) {
         super(providerModule, config);
         this.config = config;
+        ec2 = IntentUtils.getClient(config);
+    }
+
+    @Override
+    protected List<Network> getNetworks() {
+        DescribeVpcsRequest request = new DescribeVpcsRequest();
+        DescribeVpcsResult result = ec2.describeVpcs(request);
+        return result.getVpcs().stream().map(NetworkAWS::new).collect(Collectors.toList());
+    }
+
+    @Override
+    protected List<Subnet> getSubnets() {
+        DescribeSubnetsRequest request = new DescribeSubnetsRequest();
+        DescribeSubnetsResult result = ec2.describeSubnets(request);
+        return result.getSubnets().stream().map(SubnetAWS::new).collect(Collectors.toList());
     }
 
     @Override
     protected List<Instance> getInstances() {
-        AmazonEC2 ec2 = IntentUtils.getClient(config);
-        DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
-        DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesRequest);
-        List<Reservation> reservations = describeInstancesResult.getReservations();
-        List<Instance> instances = new ArrayList<>();
-        for (Reservation reservation : reservations) {
-            instances.addAll(reservation.getInstances().stream().map(i -> new InstanceAWS(null, i)).collect(Collectors.toList()));
-        }
-        return instances;
+        DescribeInstancesRequest request = new DescribeInstancesRequest();
+        DescribeInstancesResult result = ec2.describeInstances(request);
+        return result.getReservations().stream().flatMap(r -> r.getInstances().stream())
+                .map(i -> new InstanceAWS(null, i)).collect(Collectors.toList());
     }
 
     @Override

@@ -27,7 +27,11 @@ public class NetworkOpenstack extends Network {
         return null;
     }
 
-    public Router getRouter() {
+    org.openstack4j.model.network.Network getInternal() {
+        return internalNetwork;
+    }
+
+    Router getRouter() {
         return internalRouter;
     }
 }

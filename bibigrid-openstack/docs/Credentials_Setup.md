@@ -11,6 +11,7 @@ The **Key Pair Name** needs to be referenced in the configuration file or comman
 in order to create a new cluster.
 
 ![Figure 1](img/openstack-horizon-keypair.png)
+
 *Figure 1: Horizon dashboard Key Pairs*
 
 ## API credentials
@@ -20,6 +21,7 @@ Figure 2. In the same menu entry **Access & Security** as before, navigate to th
 **API Access** (1) and click **View Credentials** (2).
 
 ![Figure 2](img/openstack-horizon-credentials.png)
+
 *Figure 2: Horizon dashboard API access*
 
 For a complete list of parameters needed see the [configuration file schema](../../docs/CONFIGURATION_SCHEMA.md).

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a cluster, consisting of instances, network (router, network, subnet, placementGroup) and
- * firewall rules (security group)
+ * Represents a cluster, consisting of instances, network (network, subnet, placementGroup) and
+ * firewall rules (security group).
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
@@ -15,7 +15,6 @@ public class Cluster {
     private String masterInstance;
     private List<String> slaveInstances = new ArrayList<>();
 
-    private String router; // OpenStack
     private String network;
     private String subnet;
 
@@ -102,14 +101,6 @@ public class Cluster {
 
     public void setUser(String user) {
         this.user = user;
-    }
-
-    public String getRouter() {
-        return router;
-    }
-
-    public void setRouter(String router) {
-        this.router = router;
     }
 
     public String getNetwork() {

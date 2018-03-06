@@ -82,14 +82,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
                 googleCloudConfig.setGoogleProjectId(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(googleCloudConfig.getGoogleProjectId())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, googleCloudConfig.getGoogleProjectId());
     }
 
     private boolean parseGoogleImageProjectIdParameter() {
@@ -101,14 +94,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
                 googleCloudConfig.setGoogleImageProjectId(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(googleCloudConfig.getGoogleImageProjectId())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, googleCloudConfig.getGoogleImageProjectId());
     }
 
     private boolean parseGoogleCredentialsFileParameter() {

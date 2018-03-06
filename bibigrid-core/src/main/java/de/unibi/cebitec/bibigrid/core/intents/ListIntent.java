@@ -1,9 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import de.unibi.cebitec.bibigrid.core.model.Cluster;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +49,11 @@ public abstract class ListIntent extends Intent {
         return clusterMap;
     }
 
+    protected static String getClusterIdFromName(String name) {
+        String[] parts = name.split("-");
+        return parts[parts.length - 1];
+    }
+
     protected void searchClusterIfNecessary() {
         List<Instance> instances = getInstances();
         if (instances != null) {
@@ -59,7 +61,29 @@ public abstract class ListIntent extends Intent {
                 checkInstance(instance);
             }
         }
+        List<Network> networks = getNetworks();
+        if (networks != null) {
+            for (Network network : networks) {
+                String name = network.getName();
+                if (name != null && name.startsWith(CreateClusterEnvironment.NETWORK_PREFIX)) {
+                    getOrCreateCluster(getClusterIdFromName(name)).setNetwork(network.getId());
+                }
+            }
+        }
+        List<Subnet> subnets = getSubnets();
+        if (subnets != null) {
+            for (Subnet subnet : subnets) {
+                String name = subnet.getName();
+                if (name != null && name.startsWith(CreateClusterEnvironment.SUBNET_PREFIX)) {
+                    getOrCreateCluster(getClusterIdFromName(name)).setSubnet(subnet.getId());
+                }
+            }
+        }
     }
+
+    protected abstract List<Network> getNetworks();
+
+    protected abstract List<Subnet> getSubnets();
 
     protected abstract List<Instance> getInstances();
 
@@ -125,8 +149,7 @@ public abstract class ListIntent extends Intent {
         String name = instance.getName();
         if (name != null && (name.startsWith(CreateCluster.MASTER_NAME_PREFIX) ||
                 name.startsWith(CreateCluster.SLAVE_NAME_PREFIX))) {
-            String[] t = name.split("-");
-            return t[t.length - 1];
+            return getClusterIdFromName(name);
         }
         return null;
     }
@@ -148,13 +171,13 @@ public abstract class ListIntent extends Intent {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
-        formatter.format("%15s | %10s | %19s | %20s | %15s | %7s | %11s | %11s | %11s | %11s%n",
+        formatter.format("%15s | %10s | %19s | %20s | %15s | %7s | %11s | %11s | %11s%n",
                 "cluster-id", "user", "launch date", "key name", "public-ip", "# inst", "group-id", "subnet-id",
-                "network-id", "router-id");
-        display.append(new String(new char[157]).replace('\0', '-')).append("\n");
+                "network-id");
+        display.append(new String(new char[143]).replace('\0', '-')).append("\n");
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             Cluster v = entry.getValue();
-            formatter.format("%15s | %10s | %19s | %20s | %15s | %7d | %11s | %11s | %11s | %11s%n",
+            formatter.format("%15s | %10s | %19s | %20s | %15s | %7d | %11s | %11s | %11s%n",
                     entry.getKey(),
                     (v.getUser() == null) ? "-" : v.getUser(),
                     (v.getStarted() == null) ? "-" : v.getStarted(),
@@ -163,8 +186,7 @@ public abstract class ListIntent extends Intent {
                     ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
                     (v.getSecurityGroup() == null ? "-" : cutStringIfNecessary(v.getSecurityGroup())),
                     (v.getSubnet() == null ? "-" : cutStringIfNecessary(v.getSubnet())),
-                    (v.getNetwork() == null ? "-" : cutStringIfNecessary(v.getNetwork())),
-                    (v.getRouter() == null ? "-" : cutStringIfNecessary(v.getRouter())));
+                    (v.getNetwork() == null ? "-" : cutStringIfNecessary(v.getNetwork())));
         }
         return display.toString();
     }

@@ -5,9 +5,7 @@ import com.google.api.services.compute.model.InstanceAggregatedList;
 import com.google.api.services.compute.model.InstanceList;
 import com.google.api.services.compute.model.InstancesScopedList;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,17 +23,45 @@ import java.util.stream.Collectors;
 public class ListIntentGoogleCloud extends ListIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntentGoogleCloud.class);
     private final ConfigurationGoogleCloud config;
+    private final Compute compute;
 
     ListIntentGoogleCloud(final ProviderModule providerModule, final ConfigurationGoogleCloud config) {
         super(providerModule, config);
         this.config = config;
+        compute = GoogleCloudUtils.getComputeService(config);
+    }
+
+    @Override
+    protected List<Network> getNetworks() {
+        if (compute == null) {
+            return null;
+        }
+        try {
+            return compute.networks().list(config.getGoogleProjectId()).execute().getItems()
+                    .stream().map(NetworkGoogleCloud::new).collect(Collectors.toList());
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    protected List<Subnet> getSubnets() {
+        if (compute == null) {
+            return null;
+        }
+        try {
+            return compute.subnetworks().list(config.getGoogleProjectId(), config.getRegion()).execute().getItems()
+                    .stream().map(SubnetGoogleCloud::new).collect(Collectors.toList());
+        } catch (IOException ignored) {
+        }
+        return null;
     }
 
     @Override
     protected List<Instance> getInstances() {
-        Compute compute = GoogleCloudUtils.getComputeService(config);
-        if (compute == null)
+        if (compute == null) {
             return null;
+        }
         try {
             return config.getAvailabilityZone() != null ?
                     getInstancesWithZone(compute, config.getAvailabilityZone()) :

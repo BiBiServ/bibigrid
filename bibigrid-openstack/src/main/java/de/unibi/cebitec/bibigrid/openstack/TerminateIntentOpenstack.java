@@ -94,15 +94,6 @@ public class TerminateIntentOpenstack extends TerminateIntent {
                 LOG.warn("Can't remove network '{}'. {}", cluster.getNetwork(), ar.getFault());
             }
         }
-        // router
-        if (cluster.getRouter() != null) {
-            ActionResponse ar = os.networking().router().delete(cluster.getRouter());
-            if (ar.isSuccess()) {
-                LOG.info("Router '{}' deleted!", cluster.getRouter());
-            } else {
-                LOG.warn("Can't remove router '{}'. {}", cluster.getRouter(), ar.getFault());
-            }
-        }
         return true;
     }
 

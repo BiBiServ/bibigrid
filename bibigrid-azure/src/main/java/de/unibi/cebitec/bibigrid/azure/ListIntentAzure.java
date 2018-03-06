@@ -3,9 +3,7 @@ package de.unibi.cebitec.bibigrid.azure;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 
 import java.util.List;
@@ -17,15 +15,36 @@ import java.util.stream.Collectors;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class ListIntentAzure extends ListIntent {
+    private final Azure compute;
+
     ListIntentAzure(final ProviderModule providerModule, final ConfigurationAzure config) {
         super(providerModule, config);
+        compute = AzureUtils.getComputeService(config);
+    }
+
+    @Override
+    protected List<Network> getNetworks() {
+        if (compute == null) {
+            return null;
+        }
+        return compute.networks().list().stream().map(NetworkAzure::new).collect(Collectors.toList());
+    }
+
+    @Override
+    protected List<Subnet> getSubnets() {
+        if (compute == null) {
+            return null;
+        }
+        return compute.networks().list().stream()
+                .flatMap(network -> network.subnets().values().stream())
+                .map(SubnetAzure::new).collect(Collectors.toList());
     }
 
     @Override
     protected List<Instance> getInstances() {
-        Azure compute = AzureUtils.getComputeService(config);
-        if (compute == null)
+        if (compute == null) {
             return null;
+        }
         return compute.virtualMachines().list().stream().map(i -> new InstanceAzure(null, i)).collect(Collectors.toList());
     }
 

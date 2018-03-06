@@ -50,7 +50,7 @@ public abstract class CommandLineValidator {
      */
     protected abstract Class<? extends Configuration> getProviderConfigurationClass();
 
-    protected Boolean parseBooleanParameter(RuleBuilder.RuleNames ruleName) {
+    protected final Boolean parseBooleanParameter(RuleBuilder.RuleNames ruleName) {
         if (cl.hasOption(ruleName.toString())) {
             final String value = cl.getOptionValue(ruleName.toString());
             return isStringNullOrEmpty(value) || value.equalsIgnoreCase("yes");
@@ -58,10 +58,18 @@ public abstract class CommandLineValidator {
         return null;
     }
 
+    protected final boolean checkRequiredParameter(String shortParam, String value) {
+        if (req.contains(shortParam) && isStringNullOrEmpty(value)) {
+            LOG.error("-" + shortParam + " option is required!");
+            return false;
+        }
+        return true;
+    }
+
     private boolean parseTerminateParameter() {
         // terminate (cluster-id)
-        if (req.contains("t")) {
-            config.setClusterIds(cl.getOptionValue("t").trim());
+        if (req.contains(IntentMode.TERMINATE.getShortParam())) {
+            config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
         }
         return true;
     }
@@ -75,14 +83,7 @@ public abstract class CommandLineValidator {
                 config.setUser(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(config.getUser())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, config.getUser());
     }
 
     private boolean parseSshUserNameParameter() {
@@ -94,14 +95,7 @@ public abstract class CommandLineValidator {
                 config.setSshUser(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(config.getSshUser())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, config.getSshUser());
     }
 
     private boolean parseNetworkParameter() {
@@ -113,14 +107,7 @@ public abstract class CommandLineValidator {
                 config.setNetwork(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(config.getNetwork())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, config.getNetwork());
     }
 
     private boolean parseSubnetParameter() {
@@ -132,14 +119,7 @@ public abstract class CommandLineValidator {
                 config.setSubnet(value);
             }
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(config.getSubnet())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, config.getSubnet());
     }
 
     private boolean parseSoftwareParameters() {
@@ -649,14 +629,7 @@ public abstract class CommandLineValidator {
             }
             LOG.info(V, "Write grid properties to '{}' after successful grid startup!", prop);
         }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(config.getGridPropertiesFile())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            }
-        }
-        return true;
+        return checkRequiredParameter(shortParam, config.getGridPropertiesFile());
     }
 
     private boolean parseDebugRequestsParameter() {

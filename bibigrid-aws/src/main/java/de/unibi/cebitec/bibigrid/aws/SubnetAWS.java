@@ -23,4 +23,8 @@ public class SubnetAWS extends Subnet {
     public String getCidr() {
         return internalSubnet.getCidrBlock();
     }
+
+    com.amazonaws.services.ec2.model.Subnet getInternal() {
+        return internalSubnet;
+    }
 }
