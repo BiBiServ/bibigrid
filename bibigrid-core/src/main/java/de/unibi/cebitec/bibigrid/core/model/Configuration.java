@@ -33,7 +33,7 @@ public abstract class Configuration {
     private boolean hdfs;
     private boolean spark;
     private boolean nfs = true;
-    private List<String> nfsShares = new ArrayList<>();
+    private List<String> nfsShares = Arrays.asList("/vol/spool");
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
@@ -225,7 +225,11 @@ public abstract class Configuration {
     }
 
     public void setNfsShares(List<String> nfsShares) {
-        this.nfsShares = nfsShares != null ? nfsShares : new ArrayList<>();
+        if (this.nfsShares != null) {
+            this.nfsShares.addAll(nfsShares);
+        } else {
+            this.nfsShares = nfsShares;
+        }
         if (nfsShares != null && !nfsShares.isEmpty()) {
             StringBuilder nfsSharesDisplay = new StringBuilder();
             for (String share : nfsShares) {
