@@ -322,9 +322,9 @@ public abstract class CreateCluster extends Intent {
             }
             // Write the commons configuration file
             commonConfig.writeCommonFile(channel.put(channel.getHome() + "/" + AnsibleResources.COMMONS_CONFIG_FILE));
-            String[] slaveFilenames = commonConfig.getSlaveFilenames();
-            for (int i = 0; i < slaveFilenames.length; i++) {
-                commonConfig.writeSlaveFile(i, channel.put(channel.getHome() + "/" + slaveFilenames[i]));
+            // Write slave instance specific configuration file
+            for (Instance slave : commonConfig.getSlaveInstances()){
+                commonConfig.writeInstanceFile(slave, channel.put(channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/" + slave.getPrivateIp() + ".yml"));
             }
             uploadCompleted = true;
         } catch (SftpException | IOException e) {

@@ -4,6 +4,8 @@ import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,9 +92,16 @@ public class AnsibleConfigTest {
     }
 
     private class TestInstance extends Instance {
-        TestInstance(Configuration.InstanceConfiguration instanceConfiguration) {
+
+        private final String local_ip;
+
+        TestInstance(Configuration.InstanceConfiguration instanceConfiguration, String local_ip) {
             super(instanceConfiguration);
+            this.local_ip = local_ip;
         }
+
+        @Override
+        public String getId() { return null; }
 
         @Override
         public String getPublicIp() {
@@ -101,16 +110,11 @@ public class AnsibleConfigTest {
 
         @Override
         public String getPrivateIp() {
-            return null;
+            return local_ip;
         }
 
         @Override
         public String getHostname() {
-            return null;
-        }
-
-        @Override
-        public String getId() {
             return null;
         }
 
@@ -138,17 +142,32 @@ public class AnsibleConfigTest {
     @Test
     public void testToString() {
         TestConfiguration testConfiguration = new TestConfiguration();
-        TestInstance masterInstance = new TestInstance(testConfiguration.getMasterInstance());
+        TestInstance masterInstance = new TestInstance(testConfiguration.getMasterInstance(), "192.168.33.5");
         List<Instance> slaveInstances = Arrays.asList(
-                new TestInstance(testConfiguration.getSlaveInstances().get(0)),
-                new TestInstance(testConfiguration.getSlaveInstances().get(1)),
-                new TestInstance(testConfiguration.getSlaveInstances().get(1)));
+                new TestInstance(testConfiguration.getSlaveInstances().get(0), "192.168.33.6"),
+                new TestInstance(testConfiguration.getSlaveInstances().get(1), "192.168.33.7"),
+                new TestInstance(testConfiguration.getSlaveInstances().get(1), "192.168.33.8"));
         AnsibleConfig config = new AnsibleConfig(testConfiguration, "/dev/vd", "192.168.33.0/24", masterInstance,
                 slaveInstances);
-        Assert.assertArrayEquals(new String[]{
-                AnsibleResources.CONFIG_ROOT_PATH + "slave-1.yml",
-                AnsibleResources.CONFIG_ROOT_PATH + "slave-2.yml",
-                AnsibleResources.CONFIG_ROOT_PATH + "slave-3.yml"
-        }, config.getSlaveFilenames());
+
+        System.out.println(":Master:");
+        // print common configuration
+        config.writeCommonFile(new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                System.out.write(b);
+            }
+        });
+        // print slave specific configuration
+        for (Instance slave : config.getSlaveInstances()) {
+            System.out.println(":Slave:");
+            config.writeInstanceFile(slave, new OutputStream() {
+                @Override
+                public void write(int b) throws IOException {
+                    System.out.write(b);
+                }
+            });
+        }
+
     }
 }

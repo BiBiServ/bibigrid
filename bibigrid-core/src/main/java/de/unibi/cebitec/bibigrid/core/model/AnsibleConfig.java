@@ -50,30 +50,51 @@ public final class AnsibleConfig {
         }
     }
 
-    public String[] getSlaveFilenames() {
-        String[] filenames = new String[slaveInstances.size()];
-        for (int i = 0; i < slaveInstances.size(); i++) {
-            filenames[i] = AnsibleResources.CONFIG_ROOT_PATH + "slave-" + (i + 1) + ".yml";
-        }
-        return filenames;
+
+    /**
+     * @return Return a list of slave instances
+     */
+    public List<Instance> getSlaveInstances(){
+        /* @ToDo: UglyCode (jkrueger)
+           Having a getter for slave instances seems to be an ugly solution ... however I haven't a better idea for now
+         */
+        return slaveInstances;
     }
 
-    public void writeSlaveFile(int i, OutputStream stream) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        Instance slaveInstance = slaveInstances.get(i);
-        map.put("ip", slaveInstance.getPrivateIp());
-        map.put("hostname", slaveInstance.getHostname());
-        map.put("cores", slaveInstance.getConfiguration().getProviderType().getCpuCores());
-        map.put("ephemerals", getEphemeralDevices(slaveInstance.getConfiguration().getProviderType().getEphemerals()));
-        writeToOutputStream(stream, map);
+//    public String[] getSlaveFilenames() {
+//        String[] filenames = new String[slaveInstances.size()];
+//        for (int i = 0; i < slaveInstances.size(); i++) {
+//            filenames[i] = AnsibleResources.CONFIG_ROOT_PATH + "slave-" + (i + 1) + ".yml";
+//        }
+//        return filenames;
+//    }
+
+    /**
+     * Write specified instance to stream (in YAML format)
+     *
+     * @param instance
+     * @param stream
+     */
+    public void writeInstanceFile(Instance instance, OutputStream stream) {
+        writeToOutputStream(stream,getInstanceMap(instance,true));
     }
+
+//    public void writeSlaveFile(int i, OutputStream stream) {
+//        Map<String, Object> map = new LinkedHashMap<>();
+//        Instance slaveInstance = slaveInstances.get(i);
+//        map.put("ip", slaveInstance.getPrivateIp());
+//        map.put("hostname", slaveInstance.getHostname());
+//        map.put("cores", slaveInstance.getConfiguration().getProviderType().getCpuCores());
+//        map.put("ephemerals", getEphemeralDevices(slaveInstance.getConfiguration().getProviderType().getEphemerals()));
+//        writeToOutputStream(stream, map);
+//    }
 
     public void writeCommonFile(OutputStream stream) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("default_user", config.getUser());
         map.put("ssh_user", config.getSshUser());
         map.put("master", getMasterMap());
-        map.put("slaves", Arrays.asList(getSlaveFilenames()));
+        map.put("slaves", getSlavesMap());
         map.put("CIDR", subnetCidr);
         if (config.isNfs()) {
             map.put("nfs_mounts", getNfsSharesMap());
@@ -152,5 +173,24 @@ public final class AnsibleConfig {
             nfsSharesMap.add(shareMap);
         }
         return nfsSharesMap;
+    }
+
+    private Map<String, Object> getInstanceMap(Instance instance,boolean full) {
+        Map<String, Object> masterMap = new LinkedHashMap<>();
+        masterMap.put("ip", instance.getPrivateIp());
+        masterMap.put("cores", instance.getConfiguration().getProviderType().getCpuCores());
+        if (full) {
+            masterMap.put("hostname", instance.getHostname());
+            masterMap.put("ephemerals", getEphemeralDevices(instance.getConfiguration().getProviderType().getEphemerals()));
+        }
+        return masterMap;
+    }
+
+    private List<Map<String,Object>> getSlavesMap() {
+        List<Map<String,Object>> l = new ArrayList<>();
+        for (Instance slave : slaveInstances) {
+            l.add(getInstanceMap(slave, false));
+        }
+        return l;
     }
 }
