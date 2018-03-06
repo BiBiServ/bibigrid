@@ -271,7 +271,7 @@ public abstract class CreateCluster extends Intent {
                     sshSession.connect();
                     LOG.info("Connected to master!");
 
-                    configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig) &&
+                    configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig, slaveInstances) &&
                             installAndExecuteAnsible(sshSession, prepare);
                     sshSession.disconnect();
                 }
@@ -286,8 +286,8 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
-    private boolean uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig, AnsibleConfig commonConfig)
-            throws JSchException {
+    private boolean uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
+                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException {
         boolean uploadCompleted;
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Upload Ansible playbook to master instance.");
@@ -323,8 +323,9 @@ public abstract class CreateCluster extends Intent {
             // Write the commons configuration file
             commonConfig.writeCommonFile(channel.put(channel.getHome() + "/" + AnsibleResources.COMMONS_CONFIG_FILE));
             // Write slave instance specific configuration file
-            for (Instance slave : commonConfig.getSlaveInstances()){
-                commonConfig.writeInstanceFile(slave, channel.put(channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/" + slave.getPrivateIp() + ".yml"));
+            for (Instance slave : slaveInstances) {
+                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/" + slave.getPrivateIp() + ".yml";
+                commonConfig.writeInstanceFile(slave, channel.put(filename));
             }
             uploadCompleted = true;
         } catch (SftpException | IOException e) {

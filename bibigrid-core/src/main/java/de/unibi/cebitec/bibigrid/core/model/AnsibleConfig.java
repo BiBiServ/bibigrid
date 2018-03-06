@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
-import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
 import org.yaml.snakeyaml.Yaml;
 
@@ -50,44 +49,12 @@ public final class AnsibleConfig {
         }
     }
 
-
-    /**
-     * @return Return a list of slave instances
-     */
-    public List<Instance> getSlaveInstances(){
-        /* @ToDo: UglyCode (jkrueger)
-           Having a getter for slave instances seems to be an ugly solution ... however I haven't a better idea for now
-         */
-        return slaveInstances;
-    }
-
-//    public String[] getSlaveFilenames() {
-//        String[] filenames = new String[slaveInstances.size()];
-//        for (int i = 0; i < slaveInstances.size(); i++) {
-//            filenames[i] = AnsibleResources.CONFIG_ROOT_PATH + "slave-" + (i + 1) + ".yml";
-//        }
-//        return filenames;
-//    }
-
     /**
      * Write specified instance to stream (in YAML format)
-     *
-     * @param instance
-     * @param stream
      */
     public void writeInstanceFile(Instance instance, OutputStream stream) {
-        writeToOutputStream(stream,getInstanceMap(instance,true));
+        writeToOutputStream(stream, getInstanceMap(instance, true));
     }
-
-//    public void writeSlaveFile(int i, OutputStream stream) {
-//        Map<String, Object> map = new LinkedHashMap<>();
-//        Instance slaveInstance = slaveInstances.get(i);
-//        map.put("ip", slaveInstance.getPrivateIp());
-//        map.put("hostname", slaveInstance.getHostname());
-//        map.put("cores", slaveInstance.getConfiguration().getProviderType().getCpuCores());
-//        map.put("ephemerals", getEphemeralDevices(slaveInstance.getConfiguration().getProviderType().getEphemerals()));
-//        writeToOutputStream(stream, map);
-//    }
 
     public void writeCommonFile(OutputStream stream) {
         Map<String, Object> map = new LinkedHashMap<>();
@@ -175,7 +142,7 @@ public final class AnsibleConfig {
         return nfsSharesMap;
     }
 
-    private Map<String, Object> getInstanceMap(Instance instance,boolean full) {
+    private Map<String, Object> getInstanceMap(Instance instance, boolean full) {
         Map<String, Object> masterMap = new LinkedHashMap<>();
         masterMap.put("ip", instance.getPrivateIp());
         masterMap.put("cores", instance.getConfiguration().getProviderType().getCpuCores());
@@ -186,8 +153,8 @@ public final class AnsibleConfig {
         return masterMap;
     }
 
-    private List<Map<String,Object>> getSlavesMap() {
-        List<Map<String,Object>> l = new ArrayList<>();
+    private List<Map<String, Object>> getSlavesMap() {
+        List<Map<String, Object>> l = new ArrayList<>();
         for (Instance slave : slaveInstances) {
             l.add(getInstanceMap(slave, false));
         }

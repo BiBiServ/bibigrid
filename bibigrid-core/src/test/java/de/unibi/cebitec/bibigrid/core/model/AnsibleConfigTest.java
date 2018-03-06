@@ -1,10 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
-import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
-import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -92,16 +89,17 @@ public class AnsibleConfigTest {
     }
 
     private class TestInstance extends Instance {
+        private final String privateIp;
 
-        private final String local_ip;
-
-        TestInstance(Configuration.InstanceConfiguration instanceConfiguration, String local_ip) {
+        TestInstance(Configuration.InstanceConfiguration instanceConfiguration, String privateIp) {
             super(instanceConfiguration);
-            this.local_ip = local_ip;
+            this.privateIp = privateIp;
         }
 
         @Override
-        public String getId() { return null; }
+        public String getId() {
+            return null;
+        }
 
         @Override
         public String getPublicIp() {
@@ -110,7 +108,7 @@ public class AnsibleConfigTest {
 
         @Override
         public String getPrivateIp() {
-            return local_ip;
+            return privateIp;
         }
 
         @Override
@@ -154,20 +152,19 @@ public class AnsibleConfigTest {
         // print common configuration
         config.writeCommonFile(new OutputStream() {
             @Override
-            public void write(int b) throws IOException {
+            public void write(int b) {
                 System.out.write(b);
             }
         });
         // print slave specific configuration
-        for (Instance slave : config.getSlaveInstances()) {
+        for (Instance slave : slaveInstances) {
             System.out.println(":Slave:");
             config.writeInstanceFile(slave, new OutputStream() {
                 @Override
-                public void write(int b) throws IOException {
+                public void write(int b) {
                     System.out.write(b);
                 }
             });
         }
-
     }
 }
