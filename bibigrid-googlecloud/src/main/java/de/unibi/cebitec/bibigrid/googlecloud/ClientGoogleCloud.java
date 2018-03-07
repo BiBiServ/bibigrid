@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -53,6 +55,16 @@ class ClientGoogleCloud extends Client {
     }
 
     @Override
+    public List<Network> getNetworks() {
+        try {
+            return internalClient.networks().list(config.getGoogleProjectId()).execute().getItems()
+                    .stream().map(NetworkGoogleCloud::new).collect(Collectors.toList());
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    @Override
     public Network getNetworkByName(String networkName) {
         try {
             return new NetworkGoogleCloud(internalClient.networks().get(config.getGoogleProjectId(),
@@ -71,6 +83,16 @@ class ClientGoogleCloud extends Client {
                     return new NetworkGoogleCloud(network);
                 }
             }
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    public List<Subnet> getSubnets() {
+        try {
+            return internalClient.subnetworks().list(config.getGoogleProjectId(), config.getRegion()).execute().getItems()
+                    .stream().map(SubnetGoogleCloud::new).collect(Collectors.toList());
         } catch (IOException ignored) {
         }
         return null;

@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.aws;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 

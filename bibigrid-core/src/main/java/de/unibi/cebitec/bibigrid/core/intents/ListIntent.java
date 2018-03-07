@@ -63,7 +63,7 @@ public abstract class ListIntent extends Intent {
                 checkInstance(instance);
             }
         }
-        List<Network> networks = getNetworks();
+        List<Network> networks = client.getNetworks();
         if (networks != null) {
             for (Network network : networks) {
                 String name = network.getName();
@@ -72,7 +72,7 @@ public abstract class ListIntent extends Intent {
                 }
             }
         }
-        List<Subnet> subnets = getSubnets();
+        List<Subnet> subnets = client.getSubnets();
         if (subnets != null) {
             for (Subnet subnet : subnets) {
                 String name = subnet.getName();
@@ -82,10 +82,6 @@ public abstract class ListIntent extends Intent {
             }
         }
     }
-
-    protected abstract List<Network> getNetworks();
-
-    protected abstract List<Subnet> getSubnets();
 
     protected abstract List<Instance> getInstances();
 

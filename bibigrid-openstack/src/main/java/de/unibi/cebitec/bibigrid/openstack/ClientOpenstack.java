@@ -12,6 +12,9 @@ import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
@@ -56,6 +59,13 @@ class ClientOpenstack extends Client {
     }
 
     @Override
+    public List<Network> getNetworks() {
+        // TODO: get router
+        return internalClient.networking().network().list()
+                .stream().map(n -> new NetworkOpenstack(n, null)).collect(Collectors.toList());
+    }
+
+    @Override
     public Network getNetworkByName(String networkName) {
         for (org.openstack4j.model.network.Network network : internalClient.networking().network().list()) {
             if (network.getName().equals(networkName)) {
@@ -71,6 +81,12 @@ class ClientOpenstack extends Client {
         org.openstack4j.model.network.Network network = internalClient.networking().network().get(networkId);
         // TODO: get router
         return network != null ? new NetworkOpenstack(network, null) : null;
+    }
+
+    @Override
+    public List<Subnet> getSubnets() {
+        return internalClient.networking().subnet().list()
+                .stream().map(SubnetOpenstack::new).collect(Collectors.toList());
     }
 
     @Override

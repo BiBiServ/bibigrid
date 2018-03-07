@@ -9,7 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -35,6 +37,11 @@ class ClientAzure extends Client {
     }
 
     @Override
+    public List<Network> getNetworks() {
+        return internalClient.networks().list().stream().map(NetworkAzure::new).collect(Collectors.toList());
+    }
+
+    @Override
     public Network getNetworkByName(String networkName) {
         for (com.microsoft.azure.management.network.Network network : internalClient.networks().list()) {
             if (network.name().equals(networkName)) {
@@ -48,6 +55,13 @@ class ClientAzure extends Client {
     public Network getNetworkById(String networkId) {
         com.microsoft.azure.management.network.Network network = internalClient.networks().getById(networkId);
         return network != null ? new NetworkAzure(network) : null;
+    }
+
+    @Override
+    public List<Subnet> getSubnets() {
+        return internalClient.networks().list().stream()
+                .flatMap(network -> network.subnets().values().stream())
+                .map(SubnetAzure::new).collect(Collectors.toList());
     }
 
     @Override

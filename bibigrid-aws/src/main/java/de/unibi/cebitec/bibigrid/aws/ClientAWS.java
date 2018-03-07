@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -42,6 +43,13 @@ class ClientAWS extends Client {
     }
 
     @Override
+    public List<Network> getNetworks() {
+        DescribeVpcsRequest request = new DescribeVpcsRequest();
+        DescribeVpcsResult result = internalClient.describeVpcs(request);
+        return result.getVpcs().stream().map(NetworkAWS::new).collect(Collectors.toList());
+    }
+
+    @Override
     public Network getNetworkByName(String networkName) {
         return getNetworkById(networkName);
     }
@@ -51,6 +59,13 @@ class ClientAWS extends Client {
         DescribeVpcsRequest request = new DescribeVpcsRequest().withVpcIds(networkId);
         DescribeVpcsResult result = internalClient.describeVpcs(request);
         return result != null && result.getVpcs().size() > 0 ? new NetworkAWS(result.getVpcs().get(0)) : null;
+    }
+
+    @Override
+    public List<Subnet> getSubnets() {
+        DescribeSubnetsRequest request = new DescribeSubnetsRequest();
+        DescribeSubnetsResult result = internalClient.describeSubnets(request);
+        return result.getSubnets().stream().map(SubnetAWS::new).collect(Collectors.toList());
     }
 
     @Override

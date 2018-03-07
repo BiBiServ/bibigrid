@@ -32,32 +32,6 @@ public class ListIntentGoogleCloud extends ListIntent {
     }
 
     @Override
-    protected List<Network> getNetworks() {
-        if (compute == null) {
-            return null;
-        }
-        try {
-            return compute.networks().list(config.getGoogleProjectId()).execute().getItems()
-                    .stream().map(NetworkGoogleCloud::new).collect(Collectors.toList());
-        } catch (IOException ignored) {
-        }
-        return null;
-    }
-
-    @Override
-    protected List<Subnet> getSubnets() {
-        if (compute == null) {
-            return null;
-        }
-        try {
-            return compute.subnetworks().list(config.getGoogleProjectId(), config.getRegion()).execute().getItems()
-                    .stream().map(SubnetGoogleCloud::new).collect(Collectors.toList());
-        } catch (IOException ignored) {
-        }
-        return null;
-    }
-
-    @Override
     protected List<Instance> getInstances() {
         if (compute == null) {
             return null;

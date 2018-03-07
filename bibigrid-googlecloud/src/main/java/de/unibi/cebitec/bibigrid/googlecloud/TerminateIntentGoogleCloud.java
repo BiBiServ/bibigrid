@@ -34,9 +34,7 @@ public class TerminateIntentGoogleCloud extends TerminateIntent {
     @Override
     protected boolean terminateCluster(Cluster cluster) {
         final Compute compute = ((ClientGoogleCloud) client).getInternal();
-        boolean success = terminateInstances(compute, cluster);
-        success = success && terminateNetwork(compute, cluster);
-        return success;
+        return terminateInstances(compute, cluster) && terminateNetwork(compute, cluster);
     }
 
     private boolean terminateInstances(final Compute compute, final Cluster cluster) {

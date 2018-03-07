@@ -49,16 +49,6 @@ public class ListIntentOpenstack extends ListIntent {
     }
 
     @Override
-    protected List<de.unibi.cebitec.bibigrid.core.model.Network> getNetworks() {
-        return os.networking().network().list().stream().map(n -> new NetworkOpenstack(n, null)).collect(Collectors.toList());
-    }
-
-    @Override
-    protected List<de.unibi.cebitec.bibigrid.core.model.Subnet> getSubnets() {
-        return os.networking().subnet().list().stream().map(SubnetOpenstack::new).collect(Collectors.toList());
-    }
-
-    @Override
     protected void loadInstanceConfiguration(Instance instance) {
         Server server = ((InstanceOpenstack) instance).getInternal();
         Configuration.InstanceConfiguration instanceConfiguration = new Configuration.InstanceConfiguration();
