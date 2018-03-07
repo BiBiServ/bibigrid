@@ -7,10 +7,10 @@ import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 class InstanceImageAzure extends InstanceImage {
-    private final ImageReference image;
+    private final ImageReference internalImage;
 
-    InstanceImageAzure(ImageReference image) {
-        this.image = image;
+    InstanceImageAzure(ImageReference internalImage) {
+        this.internalImage = internalImage;
     }
 
     @Override
@@ -23,5 +23,9 @@ class InstanceImageAzure extends InstanceImage {
     public int getMinRam() {
         // TODO
         return 0;
+    }
+
+    public ImageReference getInternal() {
+        return internalImage;
     }
 }

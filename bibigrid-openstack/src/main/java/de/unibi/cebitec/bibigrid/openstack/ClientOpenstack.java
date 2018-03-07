@@ -1,11 +1,13 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import de.unibi.cebitec.bibigrid.core.model.Network;
 import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.Identifier;
+import org.openstack4j.model.compute.Image;
 import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,5 +87,21 @@ class ClientOpenstack extends Client {
     public Subnet getSubnetById(String subnetId) {
         org.openstack4j.model.network.Subnet subnet = internalClient.networking().subnet().get(subnetId);
         return subnet != null ? new SubnetOpenstack(subnet) : null;
+    }
+
+    @Override
+    public InstanceImage getImageByName(String imageName) {
+        for (Image image : internalClient.compute().images().list()) {
+            if (image.getName().equals(imageName)) {
+                return new InstanceImageOpenstack(image);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public InstanceImage getImageById(String imageId) {
+        Image image = internalClient.compute().images().get(imageId);
+        return image != null ? new InstanceImageOpenstack(image) : null;
     }
 }

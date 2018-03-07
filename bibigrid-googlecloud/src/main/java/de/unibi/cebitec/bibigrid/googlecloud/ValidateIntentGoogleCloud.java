@@ -1,7 +1,5 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
-import com.google.api.services.compute.Compute;
-import com.google.api.services.compute.model.Image;
 import com.google.api.services.compute.model.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.*;
@@ -13,23 +11,10 @@ import de.unibi.cebitec.bibigrid.core.model.*;
  */
 public class ValidateIntentGoogleCloud extends ValidateIntent {
     private final ConfigurationGoogleCloud config;
-    private Compute compute;
 
     ValidateIntentGoogleCloud(Client client, final ConfigurationGoogleCloud config) {
         super(client, config);
         this.config = config;
-        compute = ((ClientGoogleCloud) client).getInternal();
-    }
-
-    @Override
-    protected boolean connect() {
-        return true;
-    }
-
-    @Override
-    protected InstanceImage getImage(Configuration.InstanceConfiguration instanceConfiguration) {
-        Image image = GoogleCloudUtils.getImage(compute, config.getGoogleImageProjectId(), instanceConfiguration.getImage());
-        return image != null ? new InstanceImageGoogleCloud(image) : null;
     }
 
     @Override
@@ -37,7 +22,8 @@ public class ValidateIntentGoogleCloud extends ValidateIntent {
         if (snapshotId.contains(":")) {
             snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
         }
-        Snapshot snapshot = GoogleCloudUtils.getSnapshot(compute, config.getGoogleProjectId(), snapshotId);
+        Snapshot snapshot = GoogleCloudUtils.getSnapshot(((ClientGoogleCloud) client).getInternal(),
+                config.getGoogleProjectId(), snapshotId);
         return snapshot != null && snapshot.getName().equals(snapshotId);
     }
 }

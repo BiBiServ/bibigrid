@@ -53,6 +53,7 @@ public class CreateClusterAzure extends CreateCluster {
     protected InstanceAzure launchClusterMasterInstance(String masterNameTag) {
         LOG.info("Requesting master instance...");
         //compute.publicIPAddresses().define("").withRegion("").withExistingResourceGroup("").withStaticIP().
+        InstanceImageAzure image = (InstanceImageAzure) client.getImageById(config.getMasterInstance().getImage());
         VirtualMachine masterInstance = setMasterPublicIpMode(compute.virtualMachines()
                 .define(masterNameTag)
                 .withRegion(config.getRegion())
@@ -60,7 +61,7 @@ public class CreateClusterAzure extends CreateCluster {
                 .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
                 .withSubnet(environment.getSubnet().getName())
                 .withPrimaryPrivateIPAddressDynamic(), masterNameTag)
-                .withSpecificLinuxImageVersion(((ClientAzure) client).getImage(config, config.getMasterInstance().getImage()))
+                .withSpecificLinuxImageVersion(image.getInternal())
                 .withRootUsername(config.getSshUser())
                 .withSsh("") // TODO
                 .withCustomData(masterStartupScript)
@@ -96,6 +97,7 @@ public class CreateClusterAzure extends CreateCluster {
             int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
         List<VirtualMachine> slaveInstances = new ArrayList<>();
         String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false);
+        InstanceImageAzure image = (InstanceImageAzure) client.getImageById(instanceConfiguration.getImage());
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             VirtualMachine slaveInstance = compute.virtualMachines()
                     .define(buildSlaveInstanceName(batchIndex, i))
@@ -105,7 +107,7 @@ public class CreateClusterAzure extends CreateCluster {
                     .withSubnet(environment.getSubnet().getName())
                     .withPrimaryPrivateIPAddressDynamic()
                     .withoutPrimaryPublicIPAddress()
-                    .withSpecificLinuxImageVersion(((ClientAzure) client).getImage(config, instanceConfiguration.getImage()))
+                    .withSpecificLinuxImageVersion(image.getInternal())
                     .withRootUsername(config.getSshUser())
                     .withSsh("") // TODO
                     .withCustomData(base64SlaveUserData)

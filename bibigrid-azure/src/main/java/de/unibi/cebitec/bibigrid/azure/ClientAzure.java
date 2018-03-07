@@ -2,10 +2,7 @@ package de.unibi.cebitec.bibigrid.azure;
 
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.ImageReference;
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.Network;
-import de.unibi.cebitec.bibigrid.core.model.Subnet;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,15 +80,23 @@ class ClientAzure extends Client {
         return null;
     }
 
+    @Override
+    public InstanceImage getImageByName(String imageName) {
+        return getImageById(imageName);
+    }
+
     /**
      * @param imageId Example: canonical/UbuntuServer/16.04-LTS/latest
      */
-    ImageReference getImage(Configuration config, String imageId) {
+    @Override
+    public InstanceImage getImageById(String imageId) {
         String[] parts = imageId.split("/");
         String provider = parts[0];
         String offer = parts[1];
         String sku = parts[2];
         String version = parts[3];
-        return internalClient.virtualMachineImages().getImage(config.getRegion(), provider, offer, sku, version).imageReference();
+        ImageReference image = internalClient.virtualMachineImages().getImage(config.getRegion(), provider, offer,
+                sku, version).imageReference();
+        return image != null ? new InstanceImageAzure(image) : null;
     }
 }

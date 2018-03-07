@@ -11,4 +11,8 @@ public abstract class Client {
     public abstract Subnet getSubnetByName(String subnetName);
 
     public abstract Subnet getSubnetById(String subnetId);
+
+    public abstract InstanceImage getImageByName(String imageName);
+
+    public abstract InstanceImage getImageById(String imageId);
 }

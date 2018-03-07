@@ -6,8 +6,10 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.ComputeScopes;
+import com.google.api.services.compute.model.Image;
 import com.google.api.services.compute.model.Subnetwork;
 import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import de.unibi.cebitec.bibigrid.core.model.Network;
 import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
@@ -91,6 +93,29 @@ class ClientGoogleCloud extends Client {
                     config.getRegion()).execute().getItems()) {
                 if (subnet.getId().toString().equalsIgnoreCase(subnetId)) {
                     return new SubnetGoogleCloud(subnet);
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    public InstanceImage getImageByName(String imageName) {
+        try {
+            Image image = internalClient.images().get(config.getGoogleImageProjectId(), imageName).execute();
+            return image != null ? new InstanceImageGoogleCloud(image) : null;
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    public InstanceImage getImageById(String imageId) {
+        try {
+            for (Image image : internalClient.images().list(config.getGoogleImageProjectId()).execute().getItems()) {
+                if (image.getId().toString().equalsIgnoreCase(imageId)) {
+                    return new InstanceImageGoogleCloud(image);
                 }
             }
         } catch (IOException ignored) {

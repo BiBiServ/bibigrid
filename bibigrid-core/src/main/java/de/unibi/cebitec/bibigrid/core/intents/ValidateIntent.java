@@ -79,18 +79,32 @@ public abstract class ValidateIntent extends Intent {
         return success;
     }
 
-    protected abstract boolean connect();
+    /**
+     * Run additional connection checks on the client. The client throws an exception if connecting failed before
+     * the intent is started.
+     */
+    protected boolean connect() {
+        return true;
+    }
 
     private boolean checkImages() {
         Map<Configuration.InstanceConfiguration, InstanceImage> typeImageMap = new HashMap<>();
-        InstanceImage masterImage = getImage(config.getMasterInstance());
+        InstanceImage masterImage = client.getImageByName(config.getMasterInstance().getImage());
+        if (masterImage == null) {
+            // If the image could not be found, try if the user provided an image id instead of the name.
+            masterImage = client.getImageById(config.getMasterInstance().getImage());
+        }
         if (masterImage == null) {
             LOG.error("Failed to find master image ({}).", config.getMasterInstance().getImage());
         } else {
             typeImageMap.put(config.getMasterInstance(), masterImage);
         }
         for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-            InstanceImage slaveImage = getImage(instanceConfiguration);
+            InstanceImage slaveImage = client.getImageByName(instanceConfiguration.getImage());
+            if (slaveImage == null) {
+                // If the image could not be found, try if the user provided an image id instead of the name.
+                slaveImage = client.getImageById(instanceConfiguration.getImage());
+            }
             if (slaveImage == null) {
                 LOG.error("Failed to find slave image ({}).", instanceConfiguration.getImage());
             } else {
@@ -115,8 +129,6 @@ public abstract class ValidateIntent extends Intent {
         }
         return success;
     }
-
-    protected abstract InstanceImage getImage(Configuration.InstanceConfiguration instanceConfiguration);
 
     protected boolean checkProviderImageProperties(InstanceImage image) {
         return true;

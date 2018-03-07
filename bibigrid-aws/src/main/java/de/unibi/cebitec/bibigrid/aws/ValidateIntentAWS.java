@@ -59,24 +59,6 @@ public class ValidateIntentAWS extends ValidateIntent {
     }
 
     @Override
-    protected InstanceImage getImage(Configuration.InstanceConfiguration instanceConfiguration) {
-        try {
-            DescribeImagesRequest imageRequest = new DescribeImagesRequest().withImageIds(instanceConfiguration.getImage());
-            DescribeImagesResult imageResult = ec2.describeImages(imageRequest);
-            List<Image> images = imageResult.getImages();
-            if (images == null || images.size() == 0) {
-                return null;
-            }
-            if (images.size() > 1) {
-                LOG.warn("Multiple images found for id '{}'.", instanceConfiguration.getImage());
-            }
-            return new InstanceImageAWS(images.get(0));
-        } catch (AmazonServiceException ignored) {
-        }
-        return null;
-    }
-
-    @Override
     protected boolean checkProviderImageProperties(InstanceImage image) {
         InstanceType masterClusterType = config.getMasterInstance().getProviderType();
         return checkInstanceVirtualization(masterClusterType.getValue(), masterClusterType, (InstanceImageAWS) image);

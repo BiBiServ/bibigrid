@@ -1,19 +1,20 @@
 package de.unibi.cebitec.bibigrid.aws;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
-import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
-import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
-import com.amazonaws.services.ec2.model.DescribeVpcsResult;
+import com.amazonaws.services.ec2.model.*;
 import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import de.unibi.cebitec.bibigrid.core.model.Network;
 import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -62,5 +63,40 @@ class ClientAWS extends Client {
         DescribeSubnetsRequest request = new DescribeSubnetsRequest().withSubnetIds(subnetId);
         DescribeSubnetsResult result = internalClient.describeSubnets(request);
         return result != null && result.getSubnets().size() > 0 ? new SubnetAWS(result.getSubnets().get(0)) : null;
+    }
+
+    @Override
+    public InstanceImage getImageByName(String imageName) {
+        try {
+            DescribeImagesRequest request = new DescribeImagesRequest();
+            DescribeImagesResult result = internalClient.describeImages(request);
+            if (result.getImages() != null) {
+                for (Image image : result.getImages()) {
+                    if (image.getName().equals(imageName)) {
+                        return new InstanceImageAWS(image);
+                    }
+                }
+            }
+        } catch (AmazonServiceException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    public InstanceImage getImageById(String imageId) {
+        try {
+            DescribeImagesRequest request = new DescribeImagesRequest().withImageIds(imageId);
+            DescribeImagesResult result = internalClient.describeImages(request);
+            List<Image> images = result.getImages();
+            if (images == null || images.size() == 0) {
+                return null;
+            }
+            if (images.size() > 1) {
+                LOG.warn("Multiple images found for id '{}'.", imageId);
+            }
+            return new InstanceImageAWS(images.get(0));
+        } catch (AmazonServiceException ignored) {
+        }
+        return null;
     }
 }
