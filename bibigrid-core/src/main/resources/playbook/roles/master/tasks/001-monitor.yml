@@ -51,7 +51,7 @@
 - name: (Re-)start Apache
   systemd:
     name: apache2
-    state: started
+    state: restarted
     enabled: yes
   when: ganglia_site_enabled
 

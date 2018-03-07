@@ -7,6 +7,7 @@
     - ca-certificates 
     - curl 
     - software-properties-common
+    - swift
 
 
 # - name: Add Mesosphere project key
