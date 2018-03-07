@@ -6,10 +6,8 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.InstanceType;
-import de.unibi.cebitec.bibigrid.core.model.Network;
 import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,16 +22,16 @@ import java.util.List;
 public class ValidateIntentAWS extends ValidateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntentAWS.class);
     private final ConfigurationAWS config;
-    private AmazonEC2 ec2;
+    private final AmazonEC2 ec2;
 
-    ValidateIntentAWS(final ConfigurationAWS config) {
-        super(config);
+    ValidateIntentAWS(Client client, final ConfigurationAWS config) {
+        super(client, config);
         this.config = config;
+        ec2 = ((ClientAWS) client).getInternal();
     }
 
     @Override
     protected boolean connect() {
-        ec2 = IntentUtils.getClient(config);
         try {
             DryRunSupportedRequest<CreateTagsRequest> tryKeys = () -> new CreateTagsRequest().getDryRunRequest();
             DryRunResult dryRunResult = ec2.dryRun(tryKeys);

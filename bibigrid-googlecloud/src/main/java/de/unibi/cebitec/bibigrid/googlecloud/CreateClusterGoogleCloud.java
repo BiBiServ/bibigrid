@@ -27,10 +27,10 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     private Metadata.Items instanceStartupScript;
     private NetworkInterface masterNetworkInterface;
 
-    CreateClusterGoogleCloud(final ProviderModule providerModule, final ConfigurationGoogleCloud config) {
-        super(providerModule, config);
+    CreateClusterGoogleCloud(final ProviderModule providerModule, Client client, final ConfigurationGoogleCloud config) {
+        super(providerModule, client, config);
         this.config = config;
-        compute = GoogleCloudUtils.getComputeService(config);
+        compute = ((ClientGoogleCloud) client).getInternal();
     }
 
     @Override

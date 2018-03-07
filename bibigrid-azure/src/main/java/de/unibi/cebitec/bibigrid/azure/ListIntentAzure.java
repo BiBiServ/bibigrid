@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 public class ListIntentAzure extends ListIntent {
     private final Azure compute;
 
-    ListIntentAzure(final ProviderModule providerModule, final ConfigurationAzure config) {
-        super(providerModule, config);
-        compute = AzureUtils.getComputeService(config);
+    ListIntentAzure(final ProviderModule providerModule, Client client, final ConfigurationAzure config) {
+        super(providerModule, client, config);
+        compute = ((ClientAzure) client).getInternal();
     }
 
     @Override
@@ -54,7 +54,7 @@ public class ListIntentAzure extends ListIntent {
         Configuration.InstanceConfiguration instanceConfiguration = new Configuration.InstanceConfiguration();
         instanceConfiguration.setType(internalInstance.size().toString());
         try {
-            instanceConfiguration.setProviderType(providerModule.getInstanceType(config, internalInstance.size().toString()));
+            instanceConfiguration.setProviderType(providerModule.getInstanceType(client, config, internalInstance.size().toString()));
         } catch (InstanceTypeNotFoundException ignored) {
         }
         // TODO: instanceConfiguration.setImage(...);

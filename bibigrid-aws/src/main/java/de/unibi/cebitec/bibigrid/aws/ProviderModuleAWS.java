@@ -2,10 +2,8 @@ package de.unibi.cebitec.bibigrid.aws;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceType;
-import de.unibi.cebitec.bibigrid.core.model.IntentMode;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
@@ -31,33 +29,38 @@ public class ProviderModuleAWS extends ProviderModule {
     }
 
     @Override
-    public ListIntent getListIntent(Configuration config) {
-        return new ListIntentAWS(this, (ConfigurationAWS) config);
+    public Client getClient(Configuration config) throws ClientConnectionFailedException {
+        return new ClientAWS((ConfigurationAWS) config);
     }
 
     @Override
-    public TerminateIntent getTerminateIntent(Configuration config) {
-        return new TerminateIntentAWS(this, (ConfigurationAWS) config);
+    public ListIntent getListIntent(Client client, Configuration config) {
+        return new ListIntentAWS(this, client, (ConfigurationAWS) config);
     }
 
     @Override
-    public PrepareIntent getPrepareIntent(Configuration config) {
-        return new PrepareIntentAWS(this, (ConfigurationAWS) config);
+    public TerminateIntent getTerminateIntent(Client client, Configuration config) {
+        return new TerminateIntentAWS(this, client, (ConfigurationAWS) config);
     }
 
     @Override
-    public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterAWS(this, (ConfigurationAWS) config);
+    public PrepareIntent getPrepareIntent(Client client, Configuration config) {
+        return new PrepareIntentAWS(this, client, (ConfigurationAWS) config);
     }
 
     @Override
-    public CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
-        return new CreateClusterEnvironmentAWS((CreateClusterAWS) cluster);
+    public CreateCluster getCreateIntent(Client client, Configuration config) {
+        return new CreateClusterAWS(this, client, (ConfigurationAWS) config);
     }
 
     @Override
-    public ValidateIntent getValidateIntent(Configuration config) {
-        return new ValidateIntentAWS((ConfigurationAWS) config);
+    public CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
+        return new CreateClusterEnvironmentAWS(client, (CreateClusterAWS) cluster);
+    }
+
+    @Override
+    public ValidateIntent getValidateIntent(Client client, Configuration config) {
+        return new ValidateIntentAWS(client, (ConfigurationAWS) config);
     }
 
     @Override
@@ -66,7 +69,7 @@ public class ProviderModuleAWS extends ProviderModule {
     }
 
     @Override
-    protected Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
+    protected Map<String, InstanceType> getInstanceTypeMap(Client client, Configuration config) {
         Map<String, InstanceType> instanceTypes = new HashMap<>();
         for (InstanceType type : InstanceTypeAWS.getStaticInstanceTypeList()) {
             instanceTypes.put(type.getValue(), type);

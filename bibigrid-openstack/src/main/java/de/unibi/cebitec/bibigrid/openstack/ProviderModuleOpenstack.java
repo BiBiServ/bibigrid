@@ -2,10 +2,8 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceType;
-import de.unibi.cebitec.bibigrid.core.model.IntentMode;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
@@ -33,33 +31,38 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    public ListIntent getListIntent(Configuration config) {
-        return new ListIntentOpenstack(this, (ConfigurationOpenstack) config);
+    public Client getClient(Configuration config) throws ClientConnectionFailedException {
+        return new ClientOpenstack((ConfigurationOpenstack) config);
     }
 
     @Override
-    public TerminateIntent getTerminateIntent(Configuration config) {
-        return new TerminateIntentOpenstack(this, (ConfigurationOpenstack) config);
+    public ListIntent getListIntent(Client client, Configuration config) {
+        return new ListIntentOpenstack(this, client, (ConfigurationOpenstack) config);
     }
 
     @Override
-    public PrepareIntent getPrepareIntent(Configuration config) {
-        return new PrepareIntentOpenstack(this, (ConfigurationOpenstack) config);
+    public TerminateIntent getTerminateIntent(Client client, Configuration config) {
+        return new TerminateIntentOpenstack(this, client, (ConfigurationOpenstack) config);
     }
 
     @Override
-    public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterOpenstack(this, (ConfigurationOpenstack) config);
+    public PrepareIntent getPrepareIntent(Client client, Configuration config) {
+        return new PrepareIntentOpenstack(this, client, (ConfigurationOpenstack) config);
     }
 
     @Override
-    public CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
-        return new CreateClusterEnvironmentOpenstack((CreateClusterOpenstack) cluster);
+    public CreateCluster getCreateIntent(Client client, Configuration config) {
+        return new CreateClusterOpenstack(this, client, (ConfigurationOpenstack) config);
     }
 
     @Override
-    public ValidateIntent getValidateIntent(Configuration config) {
-        return new ValidateIntentOpenstack((ConfigurationOpenstack) config);
+    public CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
+        return new CreateClusterEnvironmentOpenstack(client, (CreateClusterOpenstack) cluster);
+    }
+
+    @Override
+    public ValidateIntent getValidateIntent(Client client, Configuration config) {
+        return new ValidateIntentOpenstack(client, (ConfigurationOpenstack) config);
     }
 
     @Override
@@ -68,8 +71,8 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    protected Map<String, InstanceType> getInstanceTypeMap(Configuration config) {
-        OSClient os = OpenStackUtils.buildOSClient((ConfigurationOpenstack) config);
+    protected Map<String, InstanceType> getInstanceTypeMap(Client client, Configuration config) {
+        OSClient os = ((ClientOpenstack) client).getInternal();
         Map<String, InstanceType> instanceTypes = new HashMap<>();
         for (Flavor f : os.compute().flavors().list()) {
             instanceTypes.put(f.getName(), new InstanceTypeOpenstack(f));

@@ -5,10 +5,8 @@ import com.google.api.services.compute.model.MachineType;
 import com.google.api.services.compute.model.MachineTypesScopedList;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceType;
-import de.unibi.cebitec.bibigrid.core.model.IntentMode;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import org.apache.commons.cli.CommandLine;
@@ -33,33 +31,38 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
     }
 
     @Override
-    public ListIntent getListIntent(Configuration config) {
-        return new ListIntentGoogleCloud(this, (ConfigurationGoogleCloud) config);
+    public Client getClient(Configuration config) throws ClientConnectionFailedException {
+        return new ClientGoogleCloud((ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public TerminateIntent getTerminateIntent(Configuration config) {
-        return new TerminateIntentGoogleCloud(this, (ConfigurationGoogleCloud) config);
+    public ListIntent getListIntent(Client client, Configuration config) {
+        return new ListIntentGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public PrepareIntent getPrepareIntent(Configuration config) {
-        return new PrepareIntentGoogleCloud(this, (ConfigurationGoogleCloud) config);
+    public TerminateIntent getTerminateIntent(Client client, Configuration config) {
+        return new TerminateIntentGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterGoogleCloud(this, (ConfigurationGoogleCloud) config);
+    public PrepareIntent getPrepareIntent(Client client, Configuration config) {
+        return new PrepareIntentGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
-        return new CreateClusterEnvironmentGoogleCloud((CreateClusterGoogleCloud) cluster);
+    public CreateCluster getCreateIntent(Client client, Configuration config) {
+        return new CreateClusterGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public ValidateIntent getValidateIntent(Configuration config) {
-        return new ValidateIntentGoogleCloud((ConfigurationGoogleCloud) config);
+    public CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
+        return new CreateClusterEnvironmentGoogleCloud(client, (CreateClusterGoogleCloud) cluster);
+    }
+
+    @Override
+    public ValidateIntent getValidateIntent(Client client, Configuration config) {
+        return new ValidateIntentGoogleCloud(client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
@@ -68,11 +71,8 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
     }
 
     @Override
-    protected HashMap<String, InstanceType> getInstanceTypeMap(Configuration config) {
-        Compute compute = GoogleCloudUtils.getComputeService((ConfigurationGoogleCloud) config);
-        if (compute == null) {
-            return null;
-        }
+    protected HashMap<String, InstanceType> getInstanceTypeMap(Client client, Configuration config) {
+        Compute compute = ((ClientGoogleCloud) client).getInternal();
         String projectId = ((ConfigurationGoogleCloud) config).getGoogleProjectId();
         String zone = config.getAvailabilityZone();
         HashMap<String, InstanceType> instanceTypes = new HashMap<>();

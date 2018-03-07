@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import com.jcraft.jsch.JSchException;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Network;
 import de.unibi.cebitec.bibigrid.core.model.Subnet;
@@ -19,12 +20,15 @@ public abstract class CreateClusterEnvironment {
     public static final String SECURITY_GROUP_PREFIX = CreateCluster.PREFIX + "sg-";
     public static final String NETWORK_PREFIX = CreateCluster.PREFIX + "net-";
     public static final String SUBNET_PREFIX = CreateCluster.PREFIX + "subnet-";
+
+    protected final Client client;
     protected final CreateCluster cluster;
     private final ClusterKeyPair keypair;
     protected Subnet subnet;
     protected Network network;
 
-    protected CreateClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
+    protected CreateClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
+        this.client = client;
         this.cluster = cluster;
         try {
             // create KeyPair for cluster communication

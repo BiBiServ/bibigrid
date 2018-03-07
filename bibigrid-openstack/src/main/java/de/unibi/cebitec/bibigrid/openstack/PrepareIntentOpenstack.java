@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.PrepareIntent;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.openstack4j.api.OSClient;
@@ -30,9 +31,9 @@ class PrepareIntentOpenstack extends PrepareIntent {
 
     private final OSClient os;
 
-    PrepareIntentOpenstack(ProviderModule providerModule, ConfigurationOpenstack config) {
-        super(providerModule, config);
-        os = OpenStackUtils.buildOSClient(config);
+    PrepareIntentOpenstack(ProviderModule providerModule, Client client, ConfigurationOpenstack config) {
+        super(providerModule, client, config);
+        os = ((ClientOpenstack) client).getInternal();
     }
 
     @Override

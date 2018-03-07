@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.Identifier;
 import org.openstack4j.openstack.OSFactory;
@@ -7,20 +9,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Helper class for OpenStack Intents
- *
- * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
+ * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-final class OpenStackUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(OpenStackUtils.class);
+class ClientOpenstack extends Client {
+    private static final Logger LOG = LoggerFactory.getLogger(ClientOpenstack.class);
 
-    static OSClient buildOSClient(ConfigurationOpenstack config) {
-        OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
-        OSClient client = config.getOpenstackCredentials().getDomain() != null ?
-                buildOSClientV3(config) :
-                buildOSClientV2(config);
-        LOG.info("Openstack connection established.");
-        return client;
+    private final OSClient internalClient;
+
+    ClientOpenstack(ConfigurationOpenstack config) throws ClientConnectionFailedException {
+        try {
+            OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
+            internalClient = config.getOpenstackCredentials().getDomain() != null ?
+                    buildOSClientV3(config) :
+                    buildOSClientV2(config);
+            LOG.info("Openstack connection established.");
+        } catch (Exception e) {
+            throw new ClientConnectionFailedException("Failed to connect openstack client.", e);
+        }
     }
 
     private static OSClient buildOSClientV2(ConfigurationOpenstack config) {
@@ -40,5 +45,9 @@ final class OpenStackUtils {
                 //.scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getDomain()))
                 .scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getTenantDomain()))
                 .authenticate();
+    }
+
+    OSClient getInternal() {
+        return internalClient;
     }
 }

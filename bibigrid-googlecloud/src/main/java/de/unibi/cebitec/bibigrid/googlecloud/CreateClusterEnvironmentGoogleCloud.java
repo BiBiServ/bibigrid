@@ -4,6 +4,7 @@ import com.google.api.services.compute.model.Firewall;
 import com.google.api.services.compute.model.Network;
 import com.google.api.services.compute.model.Operation;
 import com.google.api.services.compute.model.Subnetwork;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.model.Port;
@@ -26,8 +27,8 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
 
     private final CreateClusterGoogleCloud cluster;
 
-    CreateClusterEnvironmentGoogleCloud(final CreateClusterGoogleCloud cluster) throws ConfigurationException {
-        super(cluster);
+    CreateClusterEnvironmentGoogleCloud(Client client, final CreateClusterGoogleCloud cluster) throws ConfigurationException {
+        super(client, cluster);
         this.cluster = cluster;
     }
 

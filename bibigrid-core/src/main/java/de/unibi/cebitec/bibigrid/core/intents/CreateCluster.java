@@ -36,6 +36,7 @@ public abstract class CreateCluster extends Intent {
     private static final int SSH_POLL_ATTEMPTS = 25;
 
     protected final ProviderModule providerModule;
+    protected final Client client;
     protected final Configuration config;
     protected final String clusterId;
     protected CreateClusterEnvironment environment;
@@ -44,8 +45,9 @@ public abstract class CreateCluster extends Intent {
     private List<Instance> slaveInstances;
     protected DeviceMapper masterDeviceMapper;
 
-    protected CreateCluster(ProviderModule providerModule, Configuration config) {
+    protected CreateCluster(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
+        this.client = client;
         this.config = config;
         clusterId = generateClusterId();
         LOG.debug("cluster id: {}", clusterId);
@@ -90,7 +92,7 @@ public abstract class CreateCluster extends Intent {
      * @throws ConfigurationException Throws an exception if the creation of the cluster environment failed.
      */
     public CreateClusterEnvironment createClusterEnvironment() throws ConfigurationException {
-        return environment = providerModule.getClusterEnvironment(this);
+        return environment = providerModule.getClusterEnvironment(client, this);
     }
 
     /**

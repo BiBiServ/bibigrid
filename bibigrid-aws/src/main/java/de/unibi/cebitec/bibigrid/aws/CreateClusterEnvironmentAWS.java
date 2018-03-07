@@ -1,6 +1,8 @@
 package de.unibi.cebitec.bibigrid.aws;
 
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
@@ -26,13 +28,15 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentAWS.class);
     private static final String PLACEMENT_GROUP_PREFIX = PREFIX + "pg-";
 
-    private String placementGroup;
     private final CreateClusterAWS cluster;
+    private final AmazonEC2 ec2;
+    private String placementGroup;
     private String securityGroup;
 
-    CreateClusterEnvironmentAWS(CreateClusterAWS cluster) throws ConfigurationException {
-        super(cluster);
+    CreateClusterEnvironmentAWS(Client client, CreateClusterAWS cluster) throws ConfigurationException {
+        super(client, cluster);
         this.cluster = cluster;
+        ec2 = ((ClientAWS) client).getInternal();
     }
 
     /**
@@ -48,7 +52,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
             networkIds.add(networkId);
         }
         describeVpcsRequest.setVpcIds(networkIds);
-        DescribeVpcsResult describeVpcsResult = cluster.getEc2().describeVpcs(describeVpcsRequest);
+        DescribeVpcsResult describeVpcsResult = ec2.describeVpcs(describeVpcsRequest);
         List<Vpc> networks = describeVpcsResult.getVpcs();
         if (networkId != null && networks.size() == 1) {
             return new NetworkAWS(networks.get(0));
@@ -67,7 +71,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     public CreateClusterEnvironmentAWS createSubnet() {
         // check for unused Subnet CIDR and create one
         DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
-        DescribeSubnetsResult describeSubnetsResult = cluster.getEc2().describeSubnets(describeSubnetsRequest);
+        DescribeSubnetsResult describeSubnetsResult = ec2.describeSubnets(describeSubnetsRequest);
         // contains all subnet.cidr which are in current network
         List<String> listOfUsedCidr = describeSubnetsResult.getSubnets().stream()
                 .filter(s -> s.getVpcId().equals(network.getId()))
@@ -79,7 +83,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         // create new subnet
         CreateSubnetRequest createSubnetRequest = new CreateSubnetRequest(network.getId(), subnetCidr);
         createSubnetRequest.withAvailabilityZone(getConfig().getAvailabilityZone());
-        CreateSubnetResult createSubnetResult = cluster.getEc2().createSubnet(createSubnetRequest);
+        CreateSubnetResult createSubnetResult = ec2.createSubnet(createSubnetRequest);
         subnet = new SubnetAWS(createSubnetResult.getSubnet());
         return this;
     }
@@ -89,14 +93,14 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         CreateTagsRequest tagRequest = new CreateTagsRequest();
         tagRequest.withResources(subnet.getId())
                 .withTags(cluster.getBibigridId(), new Tag(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, SUBNET_PREFIX + cluster.getClusterId()));
-        cluster.getEc2().createTags(tagRequest);
+        ec2.createTags(tagRequest);
         // create security group with full internal access / ssh from outside
         LOG.info("Creating security group...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + cluster.getClusterId())
                 .withDescription(cluster.getClusterId())
                 .withVpcId(network.getId());
-        securityGroup = cluster.getEc2().createSecurityGroup(secReq).getGroupId();
+        securityGroup = ec2.createSecurityGroup(secReq).getGroupId();
 
         LOG.info(V, "security group id: {}", securityGroup);
 
@@ -120,8 +124,8 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         tagRequest = new CreateTagsRequest();
         tagRequest.withResources(securityGroup)
                 .withTags(cluster.getBibigridId(), new Tag(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, SECURITY_GROUP_PREFIX + cluster.getClusterId()));
-        cluster.getEc2().createTags(tagRequest);
-        cluster.getEc2().authorizeSecurityGroupIngress(ruleChangerReq);
+        ec2.createTags(tagRequest);
+        ec2.authorizeSecurityGroupIngress(ruleChangerReq);
         return this;
     }
 
@@ -140,7 +144,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         if (allTypesClusterInstances) {
             placementGroup = (PLACEMENT_GROUP_PREFIX + cluster.getClusterId());
             LOG.info("Creating placement group...");
-            cluster.getEc2().createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
+            ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
         } else {
             LOG.info(V, "Placement Group not available for selected Instances-types...");
             return cluster;

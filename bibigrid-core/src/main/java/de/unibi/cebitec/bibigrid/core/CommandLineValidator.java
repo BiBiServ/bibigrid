@@ -252,13 +252,6 @@ public abstract class CommandLineValidator {
                 return false;
             }
         }
-        try {
-            InstanceType masterType = providerModule.getInstanceType(config, config.getMasterInstance().getType());
-            config.getMasterInstance().setProviderType(masterType);
-        } catch (InstanceTypeNotFoundException e) {
-            LOG.error("Invalid master instance type specified!", e);
-            return false;
-        }
         return true;
     }
 
@@ -328,15 +321,6 @@ public abstract class CommandLineValidator {
                     return false;
                 }
             }
-        }
-        try {
-            for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-                InstanceType slaveType = providerModule.getInstanceType(config, instanceConfiguration.getType());
-                instanceConfiguration.setProviderType(slaveType);
-            }
-        } catch (InstanceTypeNotFoundException e) {
-            LOG.error("Invalid slave instance type specified!", e);
-            return false;
         }
         /* TODO: better use check like in validate intent
         if (slaveType.getSpec().isClusterInstance() || config.getMasterInstanceType().getSpec().isClusterInstance()) {
@@ -679,6 +663,26 @@ public abstract class CommandLineValidator {
     protected abstract List<String> getRequiredOptions();
 
     protected abstract boolean validateProviderParameters();
+
+    public boolean validateProviderTypes(Client client) {
+        try {
+            InstanceType masterType = providerModule.getInstanceType(client, config, config.getMasterInstance().getType());
+            config.getMasterInstance().setProviderType(masterType);
+        } catch (InstanceTypeNotFoundException e) {
+            LOG.error("Invalid master instance type specified!", e);
+            return false;
+        }
+        try {
+            for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+                InstanceType slaveType = providerModule.getInstanceType(client, config, instanceConfiguration.getType());
+                instanceConfiguration.setProviderType(slaveType);
+            }
+        } catch (InstanceTypeNotFoundException e) {
+            LOG.error("Invalid slave instance type specified!", e);
+            return false;
+        }
+        return true;
+    }
 
     protected static boolean isStringNullOrEmpty(final String s) {
         return s == null || s.trim().isEmpty();

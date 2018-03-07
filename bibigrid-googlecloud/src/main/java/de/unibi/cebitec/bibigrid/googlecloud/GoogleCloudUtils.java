@@ -1,20 +1,13 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.compute.Compute;
-import com.google.api.services.compute.ComputeScopes;
 import com.google.api.services.compute.model.*;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,24 +22,6 @@ final class GoogleCloudUtils {
     private static long diskCounter = 1;
     private static final Pattern INSTANCE_LINK_PATTERN =
             Pattern.compile(".*?projects/([^/]+)/zones/([^/]+)/instances/([^/]+)");
-
-    static Compute getComputeService(final ConfigurationGoogleCloud config) {
-        if (config.isDebugRequests()) {
-            HttpRequestLogHandler.attachToCloudHttpTransport();
-        }
-        try {
-            HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(config.getGoogleCredentialsFile()));
-            if (credential.createScopedRequired()) {
-                credential = credential.createScoped(Collections.singletonList(ComputeScopes.COMPUTE));
-            }
-            return new Compute.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
-                    .setApplicationName(config.getGoogleProjectId()).build();
-        } catch (Exception e) {
-            LOG.error("Failed to create google compute service. {}", e);
-        }
-        return null;
-    }
 
     /**
      * Get the internal fully qualified domain name (FQDN) for an instance.

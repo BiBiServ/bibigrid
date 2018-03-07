@@ -10,6 +10,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
@@ -30,14 +31,14 @@ public class TerminateIntentAWS extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentAWS.class);
     private final ConfigurationAWS config;
 
-    TerminateIntentAWS(ProviderModule providerModule, ConfigurationAWS config) {
-        super(providerModule, config);
+    TerminateIntentAWS(ProviderModule providerModule, Client client, ConfigurationAWS config) {
+        super(providerModule, client, config);
         this.config = config;
     }
 
     @Override
     protected boolean terminateCluster(Cluster cluster) {
-        final AmazonEC2 ec2 = IntentUtils.getClient(config);
+        final AmazonEC2 ec2 = ((ClientAWS) client).getInternal();
         terminateInstances(ec2, cluster);
         terminatePlacementGroup(ec2, cluster);
         terminateSubnet(ec2, cluster);

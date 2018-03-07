@@ -21,10 +21,10 @@ public class ListIntentAWS extends ListIntent {
     private final ConfigurationAWS config;
     private final AmazonEC2 ec2;
 
-    ListIntentAWS(final ProviderModule providerModule, final ConfigurationAWS config) {
-        super(providerModule, config);
+    ListIntentAWS(final ProviderModule providerModule, Client client, final ConfigurationAWS config) {
+        super(providerModule, client, config);
         this.config = config;
-        ec2 = IntentUtils.getClient(config);
+        ec2 = ((ClientAWS) client).getInternal();
     }
 
     @Override
@@ -64,7 +64,7 @@ public class ListIntentAWS extends ListIntent {
         Configuration.InstanceConfiguration instanceConfiguration = new Configuration.InstanceConfiguration();
         instanceConfiguration.setType(internalInstance.getInstanceType());
         try {
-            instanceConfiguration.setProviderType(providerModule.getInstanceType(config, internalInstance.getInstanceType()));
+            instanceConfiguration.setProviderType(providerModule.getInstanceType(client, config, internalInstance.getInstanceType()));
         } catch (InstanceTypeNotFoundException ignored) {
         }
         instanceConfiguration.setImage(internalInstance.getImageId());

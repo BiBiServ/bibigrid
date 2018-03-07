@@ -5,6 +5,7 @@ import com.google.api.services.compute.model.AttachedDisk;
 import com.google.api.services.compute.model.Image;
 import com.google.api.services.compute.model.Operation;
 import de.unibi.cebitec.bibigrid.core.intents.PrepareIntent;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
@@ -25,10 +26,10 @@ class PrepareIntentGoogleCloud extends PrepareIntent {
     private final ConfigurationGoogleCloud config;
     private final Compute compute;
 
-    PrepareIntentGoogleCloud(ProviderModule providerModule, ConfigurationGoogleCloud config) {
-        super(providerModule, config);
+    PrepareIntentGoogleCloud(ProviderModule providerModule, Client client, ConfigurationGoogleCloud config) {
+        super(providerModule, client, config);
         this.config = config;
-        compute = GoogleCloudUtils.getComputeService(config);
+        compute = ((ClientGoogleCloud) client).getInternal();
     }
 
     @Override

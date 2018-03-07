@@ -4,10 +4,7 @@ import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.Image;
 import com.google.api.services.compute.model.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
-import de.unibi.cebitec.bibigrid.core.model.Network;
-import de.unibi.cebitec.bibigrid.core.model.Subnet;
+import de.unibi.cebitec.bibigrid.core.model.*;
 
 import java.io.IOException;
 
@@ -20,15 +17,15 @@ public class ValidateIntentGoogleCloud extends ValidateIntent {
     private final ConfigurationGoogleCloud config;
     private Compute compute;
 
-    ValidateIntentGoogleCloud(final ConfigurationGoogleCloud config) {
-        super(config);
+    ValidateIntentGoogleCloud(Client client, final ConfigurationGoogleCloud config) {
+        super(client, config);
         this.config = config;
+        compute = ((ClientGoogleCloud) client).getInternal();
     }
 
     @Override
     protected boolean connect() {
-        compute = GoogleCloudUtils.getComputeService(config);
-        return compute != null;
+        return true;
     }
 
     @Override

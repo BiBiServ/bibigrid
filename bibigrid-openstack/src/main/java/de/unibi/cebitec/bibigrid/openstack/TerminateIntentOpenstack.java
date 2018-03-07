@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -23,9 +24,9 @@ public class TerminateIntentOpenstack extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
     private final OSClient os;
 
-    TerminateIntentOpenstack(ProviderModule providerModule, ConfigurationOpenstack config) {
-        super(providerModule, config);
-        os = OpenStackUtils.buildOSClient(config);
+    TerminateIntentOpenstack(ProviderModule providerModule, Client client, ConfigurationOpenstack config) {
+        super(providerModule, client, config);
+        os = ((ClientOpenstack) client).getInternal();
     }
 
     @Override

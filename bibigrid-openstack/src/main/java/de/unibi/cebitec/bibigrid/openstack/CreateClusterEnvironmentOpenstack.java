@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.Port;
 import de.unibi.cebitec.bibigrid.core.util.SubNets;
@@ -44,8 +45,8 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     private CreateClusterOpenstack cluster;
     private SecGroupExtension sge;
 
-    CreateClusterEnvironmentOpenstack(CreateClusterOpenstack cluster) throws ConfigurationException {
-        super(cluster);
+    CreateClusterEnvironmentOpenstack(Client client, CreateClusterOpenstack cluster) throws ConfigurationException {
+        super(client, cluster);
         this.cluster = cluster;
     }
 

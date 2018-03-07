@@ -6,6 +6,7 @@ import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -22,9 +23,9 @@ import org.openstack4j.model.compute.*;
 public class ListIntentOpenstack extends ListIntent {
     private final OSClient os;
 
-    ListIntentOpenstack(final ProviderModule providerModule, final ConfigurationOpenstack config) {
-        super(providerModule, config);
-        os = OpenStackUtils.buildOSClient(config);
+    ListIntentOpenstack(final ProviderModule providerModule, Client client, final ConfigurationOpenstack config) {
+        super(providerModule, client, config);
+        os = ((ClientOpenstack) client).getInternal();
     }
 
     @Override
@@ -65,7 +66,7 @@ public class ListIntentOpenstack extends ListIntent {
         if (flavor != null) {
             instanceConfiguration.setType(flavor.getName());
             try {
-                instanceConfiguration.setProviderType(providerModule.getInstanceType(config, flavor.getName()));
+                instanceConfiguration.setProviderType(providerModule.getInstanceType(client, config, flavor.getName()));
             } catch (InstanceTypeNotFoundException ignored) {
             }
         }

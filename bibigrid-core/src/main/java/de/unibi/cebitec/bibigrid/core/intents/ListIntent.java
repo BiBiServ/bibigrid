@@ -18,11 +18,13 @@ public abstract class ListIntent extends Intent {
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
 
     protected final ProviderModule providerModule;
+    protected final Client client;
     protected final Configuration config;
     private Map<String, Cluster> clusterMap;
 
-    protected ListIntent(ProviderModule providerModule, Configuration config) {
+    protected ListIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
+        this.client = client;
         this.config = config;
     }
 

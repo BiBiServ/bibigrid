@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -19,7 +20,7 @@ public abstract class PrepareIntent extends Intent {
 
     protected final Configuration config;
 
-    protected PrepareIntent(ProviderModule providerModule, Configuration config) {
+    protected PrepareIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.config = config;
     }
 

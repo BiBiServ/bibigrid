@@ -1,7 +1,9 @@
 package de.unibi.cebitec.bibigrid.azure;
 
+import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.network.*;
 import com.microsoft.azure.management.resources.ResourceGroup;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Port;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
@@ -25,13 +27,15 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     static final String RESOURCE_GROUP_PREFIX = PREFIX + "rg-";
 
     private final CreateClusterAzure cluster;
+    private final Azure compute;
     private NetworkSecurityGroup securityGroup;
     private ResourceGroup resourceGroup;
 
-    CreateClusterEnvironmentAzure(final CreateClusterAzure cluster) throws ConfigurationException {
-        super(cluster);
+    CreateClusterEnvironmentAzure(Client client, final CreateClusterAzure cluster) throws ConfigurationException {
+        super(client, cluster);
         this.cluster = cluster;
-        resourceGroup = cluster.getCompute().resourceGroups()
+        compute = ((ClientAzure) client).getInternal();
+        resourceGroup = compute.resourceGroups()
                 .define(RESOURCE_GROUP_PREFIX + cluster.getClusterId())
                 .withRegion(getConfig().getRegion())
                 .create();
@@ -40,7 +44,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     @Override
     protected NetworkAzure getNetworkOrDefault(String networkId) {
         if (networkId != null) {
-            for (Network network : cluster.getCompute().networks().list()) {
+            for (Network network : compute.networks().list()) {
                 if (network.name().equals(networkId)) {
                     return new NetworkAzure(network);
                 }
@@ -62,7 +66,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
             }
             securityGroup = ((SubnetAzure) subnet).getInternal().getNetworkSecurityGroup(); // TODO: security group can be null
         } else {
-            securityGroup = cluster.getCompute().networkSecurityGroups()
+            securityGroup = compute.networkSecurityGroups()
                     .define(SECURITY_GROUP_PREFIX + cluster.getClusterId())
                     .withRegion(getConfig().getRegion())
                     .withExistingResourceGroup(resourceGroup)

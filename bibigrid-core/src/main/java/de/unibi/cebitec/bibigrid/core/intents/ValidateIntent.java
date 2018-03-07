@@ -27,9 +27,11 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  */
 public abstract class ValidateIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntent.class);
+    protected final Client client;
     private final Configuration config;
 
-    protected ValidateIntent(Configuration config) {
+    protected ValidateIntent(Client client, Configuration config) {
+        this.client = client;
         this.config = config;
     }
 

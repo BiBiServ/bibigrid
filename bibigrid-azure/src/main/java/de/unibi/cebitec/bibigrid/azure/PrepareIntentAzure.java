@@ -4,6 +4,7 @@ import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import de.unibi.cebitec.bibigrid.core.intents.PrepareIntent;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
@@ -19,9 +20,9 @@ class PrepareIntentAzure extends PrepareIntent {
 
     private final Azure compute;
 
-    PrepareIntentAzure(ProviderModule providerModule, ConfigurationAzure config) {
-        super(providerModule, config);
-        compute = AzureUtils.getComputeService(config);
+    PrepareIntentAzure(ProviderModule providerModule, Client client, ConfigurationAzure config) {
+        super(providerModule, client, config);
+        compute = ((ClientAzure) client).getInternal();
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.google.api.services.compute.model.FirewallList;
 import com.google.api.services.compute.model.Operation;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -25,14 +26,14 @@ public class TerminateIntentGoogleCloud extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentGoogleCloud.class);
     private final ConfigurationGoogleCloud config;
 
-    TerminateIntentGoogleCloud(ProviderModule providerModule, ConfigurationGoogleCloud config) {
-        super(providerModule, config);
+    TerminateIntentGoogleCloud(ProviderModule providerModule, Client client, ConfigurationGoogleCloud config) {
+        super(providerModule, client, config);
         this.config = config;
     }
 
     @Override
     protected boolean terminateCluster(Cluster cluster) {
-        final Compute compute = GoogleCloudUtils.getComputeService(config);
+        final Compute compute = ((ClientGoogleCloud) client).getInternal();
         boolean success = terminateInstances(compute, cluster);
         success = success && terminateNetwork(compute, cluster);
         return success;

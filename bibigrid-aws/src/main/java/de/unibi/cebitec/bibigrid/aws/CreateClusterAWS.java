@@ -43,11 +43,10 @@ public class CreateClusterAWS extends CreateCluster {
 
     private final ConfigurationAWS config;
 
-    CreateClusterAWS(final ProviderModule providerModule, final ConfigurationAWS config) {
-        super(providerModule, config);
+    CreateClusterAWS(final ProviderModule providerModule, Client client, final ConfigurationAWS config) {
+        super(providerModule, client, config);
         this.config = config;
-        // create client and unique cluster-id
-        ec2 = IntentUtils.getClient(config);
+        ec2 = ((ClientAWS) client).getInternal();
         bibigridId = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID).withValue(clusterId);
         username = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER).withValue(config.getUser());
     }
@@ -424,10 +423,6 @@ public class CreateClusterAWS extends CreateCluster {
             }
         }
         return mappings;
-    }
-
-    AmazonEC2 getEc2() {
-        return ec2;
     }
 
     Tag getBibigridId() {

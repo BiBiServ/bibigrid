@@ -4,10 +4,7 @@ import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.ImageReference;
 import com.microsoft.azure.management.compute.Snapshot;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
-import de.unibi.cebitec.bibigrid.core.model.Network;
-import de.unibi.cebitec.bibigrid.core.model.Subnet;
+import de.unibi.cebitec.bibigrid.core.model.*;
 
 import java.util.Map;
 
@@ -18,22 +15,22 @@ import java.util.Map;
  */
 public class ValidateIntentAzure extends ValidateIntent {
     private final ConfigurationAzure config;
-    private Azure compute;
+    private final Azure compute;
 
-    ValidateIntentAzure(final ConfigurationAzure config) {
-        super(config);
+    ValidateIntentAzure(final Client client, final ConfigurationAzure config) {
+        super(client, config);
         this.config = config;
+        compute = ((ClientAzure) client).getInternal();
     }
 
     @Override
     protected boolean connect() {
-        compute = AzureUtils.getComputeService(config);
-        return compute != null;
+        return true;
     }
 
     @Override
     protected InstanceImage getImage(Configuration.InstanceConfiguration instanceConfiguration) {
-        ImageReference image = AzureUtils.getImage(compute, config, instanceConfiguration.getImage());
+        ImageReference image = ((ClientAzure) client).getImage(config, instanceConfiguration.getImage());
         return image != null ? new InstanceImageAzure(image) : null;
     }
 

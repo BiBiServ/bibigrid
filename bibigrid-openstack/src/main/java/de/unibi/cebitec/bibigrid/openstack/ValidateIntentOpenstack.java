@@ -1,10 +1,7 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
-import de.unibi.cebitec.bibigrid.core.model.Network;
-import de.unibi.cebitec.bibigrid.core.model.Subnet;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.storage.block.Volume;
@@ -15,18 +12,16 @@ import org.openstack4j.model.storage.block.Volume;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class ValidateIntentOpenstack extends ValidateIntent {
-    private final ConfigurationOpenstack config;
     private OSClient os;
 
-    ValidateIntentOpenstack(final ConfigurationOpenstack config) {
-        super(config);
-        this.config = config;
+    ValidateIntentOpenstack(Client client, final ConfigurationOpenstack config) {
+        super(client, config);
+        os = ((ClientOpenstack) client).getInternal();
     }
 
     @Override
     protected boolean connect() {
-        os = OpenStackUtils.buildOSClient(config);
-        return os != null;
+        return true;
     }
 
     @Override

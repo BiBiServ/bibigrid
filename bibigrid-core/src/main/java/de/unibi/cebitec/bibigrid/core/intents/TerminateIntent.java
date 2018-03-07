@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -13,12 +14,14 @@ import java.util.Map;
  */
 public abstract class TerminateIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntent.class);
-    private final Configuration config;
     private final ProviderModule providerModule;
+    protected final Client client;
+    private final Configuration config;
 
-    protected TerminateIntent(ProviderModule providerModule, Configuration config) {
-        this.config = config;
+    protected TerminateIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
+        this.client = client;
+        this.config = config;
     }
 
     /**
@@ -27,7 +30,7 @@ public abstract class TerminateIntent extends Intent {
      * @return Return true in case of success, false otherwise
      */
     public boolean terminate() {
-        final Map<String, Cluster> clusters = providerModule.getListIntent(config).getList();
+        final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
         boolean success = true;
         for (String clusterId : config.getClusterIds()) {
             final Cluster cluster = clusters.get(clusterId);

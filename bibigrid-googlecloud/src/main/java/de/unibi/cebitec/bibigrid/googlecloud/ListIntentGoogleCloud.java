@@ -25,10 +25,10 @@ public class ListIntentGoogleCloud extends ListIntent {
     private final ConfigurationGoogleCloud config;
     private final Compute compute;
 
-    ListIntentGoogleCloud(final ProviderModule providerModule, final ConfigurationGoogleCloud config) {
-        super(providerModule, config);
+    ListIntentGoogleCloud(final ProviderModule providerModule, Client client, final ConfigurationGoogleCloud config) {
+        super(providerModule, client, config);
         this.config = config;
-        compute = GoogleCloudUtils.getComputeService(config);
+        compute = ((ClientGoogleCloud) client).getInternal();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class ListIntentGoogleCloud extends ListIntent {
         Configuration.InstanceConfiguration instanceConfiguration = new Configuration.InstanceConfiguration();
         instanceConfiguration.setType(internalInstance.getMachineType());
         try {
-            instanceConfiguration.setProviderType(providerModule.getInstanceType(config, internalInstance.getMachineType()));
+            instanceConfiguration.setProviderType(providerModule.getInstanceType(client, config, internalInstance.getMachineType()));
         } catch (InstanceTypeNotFoundException ignored) {
         }
         // TODO: instanceConfiguration.setImage(instance.getDisks().get(0).getSource());

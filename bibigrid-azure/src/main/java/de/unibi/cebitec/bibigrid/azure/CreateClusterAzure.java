@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.azure;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
@@ -31,9 +32,9 @@ public class CreateClusterAzure extends CreateCluster {
     private final Azure compute;
     private String masterStartupScript;
 
-    CreateClusterAzure(final ProviderModule providerModule, final ConfigurationAzure config) {
-        super(providerModule, config);
-        compute = AzureUtils.getComputeService(config);
+    CreateClusterAzure(final ProviderModule providerModule, Client client, final ConfigurationAzure config) {
+        super(providerModule, client, config);
+        compute = ((ClientAzure) client).getInternal();
     }
 
     @Override
@@ -59,8 +60,7 @@ public class CreateClusterAzure extends CreateCluster {
                 .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
                 .withSubnet(environment.getSubnet().getName())
                 .withPrimaryPrivateIPAddressDynamic(), masterNameTag)
-                .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config,
-                        config.getMasterInstance().getImage()))
+                .withSpecificLinuxImageVersion(((ClientAzure) client).getImage(config, config.getMasterInstance().getImage()))
                 .withRootUsername(config.getSshUser())
                 .withSsh("") // TODO
                 .withCustomData(masterStartupScript)
@@ -105,7 +105,7 @@ public class CreateClusterAzure extends CreateCluster {
                     .withSubnet(environment.getSubnet().getName())
                     .withPrimaryPrivateIPAddressDynamic()
                     .withoutPrimaryPublicIPAddress()
-                    .withSpecificLinuxImageVersion(AzureUtils.getImage(compute, config, instanceConfiguration.getImage()))
+                    .withSpecificLinuxImageVersion(((ClientAzure) client).getImage(config, instanceConfiguration.getImage()))
                     .withRootUsername(config.getSshUser())
                     .withSsh("") // TODO
                     .withCustomData(base64SlaveUserData)
@@ -141,9 +141,5 @@ public class CreateClusterAzure extends CreateCluster {
             } while (true);
         }
         LOG.info(I, "Status checks successful.");
-    }
-
-    Azure getCompute() {
-        return compute;
     }
 }

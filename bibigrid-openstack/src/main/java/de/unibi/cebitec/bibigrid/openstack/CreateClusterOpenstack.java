@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -41,9 +42,9 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     private final OSClient os;
 
-    CreateClusterOpenstack(final ProviderModule providerModule, final ConfigurationOpenstack config) {
-        super(providerModule, config);
-        os = OpenStackUtils.buildOSClient(config);
+    CreateClusterOpenstack(final ProviderModule providerModule, Client client, final ConfigurationOpenstack config) {
+        super(providerModule, client, config);
+        os = ((ClientOpenstack) client).getInternal();
     }
 
     @Override
@@ -232,12 +233,11 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .configDrive(instanceConfiguration.getProviderType().getConfigDrive() != 0)
                     .networks(Arrays.asList(environment.getNetwork().getId()))
                     .build();
-            Server tmp = os.compute().servers().boot(sc);
-            InstanceOpenstack tmp_instance = new InstanceOpenstack(instanceConfiguration, tmp);
-            slaves.put(tmp.getId(), tmp_instance);
+            Server server = os.compute().servers().boot(sc);
+            InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
+            slaves.put(server.getId(), instance);
             LOG.info(V, "Instance request for '{}'.", sc.getName());
         }
-
         LOG.info("Waiting for slave instances ready...");
         int active = 0;
         List<String> ignoreList = new ArrayList<>();
@@ -255,17 +255,15 @@ public class CreateClusterOpenstack extends CreateCluster {
                         LOG.info("[{}/{}] Instance '{}' is active!", active, slaves.size(), slave.getHostname());
                     } else if (slave.hasError()) {
                         LOG.warn("Ignore slave instance '{}'.", slave.getHostname());
-                        ignoreList.add(slave.getHostname());
+                        ignoreList.add(slave.getId());
                     }
                 }
             }
         }
-
         // remove ignored instances from slave map
-        for (String name : ignoreList) {
-            slaves.remove(name);
+        for (String id : ignoreList) {
+            slaves.remove(id);
         }
-
         LOG.info(V, "Wait for slave network configuration finished...");
         // wait for slave network finished ... update server instance list
         for (InstanceOpenstack slave : slaves.values()) {
@@ -395,22 +393,22 @@ public class CreateClusterOpenstack extends CreateCluster {
      * state. Returns false in the case of an error, true otherwise.
      */
     private void checkForServerAndUpdateInstance(String id, InstanceOpenstack instance) {
-        Server si = os.compute().servers().get(id);
-        instance.setServer(si);
+        Server server = os.compute().servers().get(id);
+        instance.setServer(server);
         // check for status available
-        if (si.getStatus() != null) {
-            switch (si.getStatus()) {
+        if (server.getStatus() != null) {
+            switch (server.getStatus()) {
                 case ACTIVE:
                     instance.setActive(true);
                     break;
                 case ERROR:
                     // check and print error anything goes wrong,
                     instance.setError(true);
-                    Fault fault = si.getFault();
+                    Fault fault = server.getFault();
                     if (fault == null) {
-                        LOG.error("Launch '{}' failed without message!", si.getName());
+                        LOG.error("Launch '{}' failed without message!", server.getName());
                     } else {
-                        LOG.error("Launch '{}' failed with Code '{}'. {}", si.getName(), fault.getCode(), fault.getMessage());
+                        LOG.error("Launch '{}' failed with Code '{}'. {}", server.getName(), fault.getCode(), fault.getMessage());
                     }
                     break;
                 default:
@@ -418,7 +416,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     break;
             }
         } else {
-            LOG.warn(V, "Status of instance '{}' not available (== null).", si.getId());
+            LOG.warn(V, "Status of instance '{}' not available (== null).", server.getId());
         }
     }
 }

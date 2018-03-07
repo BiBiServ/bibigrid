@@ -4,10 +4,8 @@ import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.InstanceType;
-import de.unibi.cebitec.bibigrid.core.model.IntentMode;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
@@ -151,32 +149,44 @@ public class StartUp {
         }
         CommandLineValidator validator = module.getCommandLineValidator(commandLine, defaultPropertiesFile, intentMode);
         if (validator.validate(providerMode)) {
+            Client client;
+            try {
+                client = module.getClient(validator.getConfig());
+            } catch (ClientConnectionFailedException e) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED, e);
+                return;
+            }
+            // In order to validate the native instance types, we need a client. So this step is deferred after
+            // client connection is established.
+            if (!validator.validateProviderTypes(client)) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+            }
             switch (intentMode) {
                 case HELP:
-                    printInstanceTypeHelp(module, validator.getConfig());
+                    printInstanceTypeHelp(module, client, validator.getConfig());
                     break;
                 case LIST:
-                    LOG.info(module.getListIntent(validator.getConfig()).toString());
+                    LOG.info(module.getListIntent(client, validator.getConfig()).toString());
                     break;
                 case VALIDATE:
-                    ValidateIntent intent = module.getValidateIntent(validator.getConfig());
+                    ValidateIntent intent = module.getValidateIntent(client, validator.getConfig());
                     if (intent != null) {
                         intent.validate();
                     }
                     break;
                 case CREATE:
-                    runCreateIntent(module, validator, module.getCreateIntent(validator.getConfig()), false);
+                    runCreateIntent(module, validator, client, module.getCreateIntent(client, validator.getConfig()), false);
                     break;
                 case PREPARE:
-                    CreateCluster cluster = module.getCreateIntent(validator.getConfig());
-                    if (runCreateIntent(module, validator, cluster, true)) {
-                        module.getPrepareIntent(validator.getConfig()).prepare(cluster.getMasterInstance(),
+                    CreateCluster cluster = module.getCreateIntent(client, validator.getConfig());
+                    if (runCreateIntent(module, validator, client, cluster, true)) {
+                        module.getPrepareIntent(client, validator.getConfig()).prepare(cluster.getMasterInstance(),
                                 cluster.getSlaveInstances());
-                        module.getTerminateIntent(validator.getConfig()).terminate();
+                        module.getTerminateIntent(client, validator.getConfig()).terminate();
                     }
                     break;
                 case TERMINATE:
-                    module.getTerminateIntent(validator.getConfig()).terminate();
+                    module.getTerminateIntent(client, validator.getConfig()).terminate();
                     break;
                 default:
                     break;
@@ -186,8 +196,8 @@ public class StartUp {
         }
     }
 
-    private static boolean runCreateIntent(ProviderModule module, CommandLineValidator validator, CreateCluster cluster,
-                                           boolean prepare) {
+    private static boolean runCreateIntent(ProviderModule module, CommandLineValidator validator, Client client,
+                                           CreateCluster cluster, boolean prepare) {
         try {
             boolean success = cluster
                     .createClusterEnvironment()
@@ -200,7 +210,7 @@ public class StartUp {
                     .launchClusterInstances(prepare);
             if (!success) {
                 LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-                TerminateIntent cleanupIntent = module.getTerminateIntent(validator.getConfig());
+                TerminateIntent cleanupIntent = module.getTerminateIntent(client, validator.getConfig());
                 cleanupIntent.terminate();
                 return false;
             }
@@ -225,7 +235,7 @@ public class StartUp {
         return null;
     }
 
-    private static void printInstanceTypeHelp(ProviderModule module, Configuration config) {
+    private static void printInstanceTypeHelp(ProviderModule module, Client client, Configuration config) {
 
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
@@ -233,7 +243,7 @@ public class StartUp {
         formatter.format("%25s | %5s | %15s | %15s | %4s | %10s%n", "name", "cores", "ram Mb", "disk size Mb", "swap",
                 "ephemerals");
         display.append(new String(new char[89]).replace('\0', '-')).append("\n");
-        for (InstanceType type : module.getInstanceTypes(config)) {
+        for (InstanceType type : module.getInstanceTypes(client, config)) {
             formatter.format("%25s | %5s | %15s | %15s | %4s | %10s%n", type.getValue(), type.getCpuCores(),
                     type.getMaxRam(), type.getMaxDiskSpace(), type.getSwap(), type.getEphemerals());
         }
