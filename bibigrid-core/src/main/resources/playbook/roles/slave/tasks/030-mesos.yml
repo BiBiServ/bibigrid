@@ -5,7 +5,7 @@
 
 # Configuration see https://www.digitalocean.com/community/tutorials/how-to-configure-a-production-ready-mesosphere-cluster-on-ubuntu-14-04
 
-- name: Configure master as mesos slave
+- name: Configure master as mesos slave 1/4
   copy:
     content: zk://{{ master.ip }}:2181/mesos
     dest: /etc/mesos/zk
@@ -13,6 +13,7 @@
     group: root
     mode: 0644
 
+- name: Configure master as mesos slave 2/4
   copy:
     content: /vol/spool/mesos
     dest: /etc/mesos-slave/work_dir
@@ -20,6 +21,7 @@
     group: root
     mode: 0644
 
+- name: Configure master as mesos slave 3/4
   copy:
     content: mesos,docker
     dest: /etc/mesos/zk
@@ -27,6 +29,7 @@
     group: root
     mode: 0644
 
+- name: Configure master as mesos slave 4/4
   copy:
       content: false
       dest: /etc/mesos-slave/switch_user

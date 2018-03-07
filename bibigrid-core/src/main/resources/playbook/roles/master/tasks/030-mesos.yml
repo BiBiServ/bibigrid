@@ -22,25 +22,31 @@
       group: root
       mode: 0777
 
-- name: Configure mesos master
+- name: Configure mesos master 1/4
   copy:
     content: bibigrid
     dest: /etc/mesos-master/cluster
     owner: root
     group: root
     mode: 0644
+
+- name: Configure mesos master 2/4
   copy:
     content: "{{ master.ip }}"
     dest: /etc/mesos-master/ip
     owner: root
     group: root
     mode: 0644
+
+- name: Configure mesos master 3/4
   copy:
     content: /vol/spool/mesos
     dest: /etc/mesos-master/work_dir
     owner: root
     group: root
     mode: 0644
+
+- name: Configure mesos master 4/4
   copy:
     content: zk://{{ master.ip }}:2181/mesos
     dest: /etc/mesos/zk
