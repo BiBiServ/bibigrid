@@ -1,4 +1,5 @@
 - import_tasks: 001-monitor.yml
+- import_tasks: 005-disk.yml
 - import_tasks: 010-nfs.yml
   when: enable_nfs == 'yes'
 - import_tasks: 020-gridengine.yml
