@@ -44,9 +44,6 @@ public final class ShellScriptCreator {
         userData.append("umount /mnt\n");
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
-        if (log) {
-            LOG.info(V, "Userdata:\n{}", userData.toString());
-        }
         return base64 ? Base64.getEncoder().encodeToString(userData.toString().getBytes()) : userData.toString();
     }
 

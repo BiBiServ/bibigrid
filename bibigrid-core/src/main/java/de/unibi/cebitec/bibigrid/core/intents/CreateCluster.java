@@ -339,7 +339,7 @@ public abstract class CreateCluster extends Intent {
 
     private boolean installAndExecuteAnsible(final Session sshSession, final boolean prepare)
             throws JSchException, IOException {
-        LOG.info("Configure and execute Ansible.");
+        LOG.info("Configure and execute Ansible. This take a while. Please be patient.");
         boolean configured = false;
         String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare);
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
