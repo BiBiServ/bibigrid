@@ -180,7 +180,12 @@ public abstract class ValidateIntent extends Intent {
     private boolean checkNetwork() {
         boolean result = true;
         if (config.getNetwork() != null && config.getNetwork().length() > 0) {
-            if (getNetwork(config.getNetwork()) != null) {
+            Network network = client.getNetworkByName(config.getNetwork());
+            // If the network could not be found, try if the user provided a network id instead of the name.
+            if (network == null) {
+                network = client.getNetworkById(config.getNetwork());
+            }
+            if (network != null) {
                 LOG.info(V, "Network '{}' found.", config.getNetwork());
             } else {
                 LOG.error("Network '{}' could not be found.", config.getNetwork());
@@ -188,7 +193,12 @@ public abstract class ValidateIntent extends Intent {
             }
         }
         if (config.getSubnet() != null && config.getSubnet().length() > 0) {
-            if (getSubnet(config.getSubnet()) != null) {
+            Subnet subnet = client.getSubnetByName(config.getSubnet());
+            // If the subnet could not be found, try if the user provided a subnet id instead of the name.
+            if (subnet == null) {
+                subnet = client.getSubnetById(config.getSubnet());
+            }
+            if (subnet != null) {
                 LOG.info(V, "Subnet '{}' found.", config.getSubnet());
             } else {
                 LOG.error("Subnet '{}' could not be found.", config.getSubnet());
@@ -197,8 +207,4 @@ public abstract class ValidateIntent extends Intent {
         }
         return result;
     }
-
-    protected abstract Network getNetwork(String networkName);
-
-    protected abstract Subnet getSubnet(String subnetName);
 }

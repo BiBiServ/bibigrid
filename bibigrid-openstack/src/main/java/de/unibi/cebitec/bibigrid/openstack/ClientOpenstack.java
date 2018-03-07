@@ -1,6 +1,8 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.Network;
+import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.Identifier;
@@ -49,5 +51,39 @@ class ClientOpenstack extends Client {
 
     OSClient getInternal() {
         return internalClient;
+    }
+
+    @Override
+    public Network getNetworkByName(String networkName) {
+        for (org.openstack4j.model.network.Network network : internalClient.networking().network().list()) {
+            if (network.getName().equals(networkName)) {
+                // TODO: get router
+                return new NetworkOpenstack(network, null);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Network getNetworkById(String networkId) {
+        org.openstack4j.model.network.Network network = internalClient.networking().network().get(networkId);
+        // TODO: get router
+        return network != null ? new NetworkOpenstack(network, null) : null;
+    }
+
+    @Override
+    public Subnet getSubnetByName(String subnetName) {
+        for (org.openstack4j.model.network.Subnet subnet : internalClient.networking().subnet().list()) {
+            if (subnet.getName().equals(subnetName)) {
+                return new SubnetOpenstack(subnet);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Subnet getSubnetById(String subnetId) {
+        org.openstack4j.model.network.Subnet subnet = internalClient.networking().subnet().get(subnetId);
+        return subnet != null ? new SubnetOpenstack(subnet) : null;
     }
 }
