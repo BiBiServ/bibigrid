@@ -196,10 +196,10 @@ public class CreateClusterAWS extends CreateCluster {
         }
         LOG.info(I, "Master instance is now running!");
 
-        ModifyInstanceAttributeRequest ia_req = new ModifyInstanceAttributeRequest();
-        ia_req.setInstanceId(masterInstance.getInstanceId());
-        ia_req.setSourceDestCheck(Boolean.FALSE);
-        ec2.modifyInstanceAttribute(ia_req);
+        ModifyInstanceAttributeRequest instanceAttributeRequest = new ModifyInstanceAttributeRequest();
+        instanceAttributeRequest.setInstanceId(masterInstance.getInstanceId());
+        instanceAttributeRequest.setSourceDestCheck(Boolean.FALSE);
+        ec2.modifyInstanceAttribute(instanceAttributeRequest);
         // Tagging Master with a name
         ec2.createTags(new CreateTagsRequest()
                 .withResources(masterInstance.getInstanceId())

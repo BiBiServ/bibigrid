@@ -38,7 +38,7 @@ subnet: default
 
 user: testuser
 sshUser: testuser
-identityFile: ~/cloud.ppk
+sshPrivateKeyFile: ~/cloud.ppk
 
 masterInstance:
   type: f1-micro

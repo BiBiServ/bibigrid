@@ -58,7 +58,9 @@ public class RuleBuilder {
 
         groupReference.add(createStringRule(RuleNames.KEYPAIR_S, RuleNames.KEYPAIR_L,
                 "Name of the keypair stored in the cloud provider console"));
-        groupReference.add(createStringRule(RuleNames.IDENTITY_FILE_S, RuleNames.IDENTITY_FILE_L,
+        groupReference.add(createStringRule(RuleNames.SSH_PUBLIC_KEY_FILE_S, RuleNames.SSH_PUBLIC_KEY_FILE_L,
+                "Absolute path to public ssh key file"));
+        groupReference.add(createStringRule(RuleNames.SSH_PRIVATE_KEY_FILE_S, RuleNames.SSH_PRIVATE_KEY_FILE_L,
                 "Absolute path to private ssh key file"));
         groupReference.add(createStringRule(RuleNames.REGION_S, RuleNames.REGION_L,
                 "Region in which the cluster is created"));
@@ -197,8 +199,10 @@ public class RuleBuilder {
         BID_PRICE_MASTER_L("bidprice-master"),
         KEYPAIR_S("k"),
         KEYPAIR_L("keypair"),
-        IDENTITY_FILE_S("i"),
-        IDENTITY_FILE_L("identity-file"),
+        SSH_PUBLIC_KEY_FILE_S("spu"),
+        SSH_PUBLIC_KEY_FILE_L("ssh-public-key-file"),
+        SSH_PRIVATE_KEY_FILE_S("spr"),
+        SSH_PRIVATE_KEY_FILE_L("ssh-private-key-file"),
         REGION_S("e"),
         REGION_L("region"),
         REGION_ENV("OS_REGION_NAME"),

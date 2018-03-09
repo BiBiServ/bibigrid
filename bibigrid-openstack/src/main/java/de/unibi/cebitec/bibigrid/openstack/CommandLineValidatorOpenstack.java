@@ -58,7 +58,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString());
                 options.add(RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString());
                 options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
-                options.add(RuleBuilder.RuleNames.IDENTITY_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
                 options.add(RuleBuilder.RuleNames.REGION_S.toString());
                 options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
             case VALIDATE:

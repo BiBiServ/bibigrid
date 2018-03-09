@@ -2,7 +2,7 @@
 mode: openstack
 
 #Access
-identityFile:
+sshPrivateKeyFile:
 keypair:
 user: testuser
 sshUser: testuser

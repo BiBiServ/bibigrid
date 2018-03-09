@@ -1,17 +1,25 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
+import com.google.api.services.compute.model.AccessConfig;
 import com.google.api.services.compute.model.Instance;
+import com.google.api.services.compute.model.NetworkInterface;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class InstanceGoogleCloud extends de.unibi.cebitec.bibigrid.core.model.Instance {
+    private static final Pattern INSTANCE_LINK_PATTERN =
+            Pattern.compile(".*?projects/([^/]+)/zones/([^/]+)/instances/([^/]+)");
+
     private final Instance internalInstance;
     private Map<String, String> tags;
 
@@ -26,17 +34,25 @@ public class InstanceGoogleCloud extends de.unibi.cebitec.bibigrid.core.model.In
 
     @Override
     public String getPublicIp() {
-        return GoogleCloudUtils.getInstancePublicIp(internalInstance);
+        List<NetworkInterface> interfaces = internalInstance.getNetworkInterfaces();
+        if (interfaces.isEmpty())
+            return null;
+        List<AccessConfig> accessConfigs = interfaces.get(0).getAccessConfigs();
+        return accessConfigs.isEmpty() ? null : accessConfigs.get(0).getNatIP();
     }
 
     @Override
     public String getPrivateIp() {
-        return GoogleCloudUtils.getInstancePrivateIp(internalInstance);
+        List<NetworkInterface> interfaces = internalInstance.getNetworkInterfaces();
+        return interfaces.isEmpty() ? null : interfaces.get(0).getNetworkIP();
     }
 
     @Override
     public String getHostname() {
-        return GoogleCloudUtils.getInstanceFQDN(internalInstance);
+        // Get the internal fully qualified domain name (FQDN) for an instance.
+        // https://cloud.google.com/compute/docs/vpc/internal-dns#instance_fully_qualified_domain_names
+        Matcher matcher = INSTANCE_LINK_PATTERN.matcher(internalInstance.getSelfLink());
+        return matcher.find() ? matcher.group(3) + ".c." + matcher.group(1) + ".internal" : null;
     }
 
     @Override

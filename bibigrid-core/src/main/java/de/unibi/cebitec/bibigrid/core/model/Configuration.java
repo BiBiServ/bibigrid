@@ -17,7 +17,8 @@ public abstract class Configuration {
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
     private String keypair;
-    private String identityFile;
+    private String sshPublicKeyFile;
+    private String sshPrivateKeyFile;
     private String alternativeConfigPath;
     private String gridPropertiesFile;
     private String region;
@@ -100,13 +101,22 @@ public abstract class Configuration {
         LOG.info(V, "Keypair name set. ({})", this.keypair);
     }
 
-    public String getIdentityFile() {
-        return identityFile;
+    public String getSshPublicKeyFile() {
+        return sshPublicKeyFile;
     }
 
-    public void setIdentityFile(String identityFile) {
-        this.identityFile = identityFile.trim();
-        LOG.info(V, "Identity file found! ({})", this.identityFile);
+    public void setSshPublicKeyFile(String sshPublicKeyFile) {
+        this.sshPublicKeyFile = sshPublicKeyFile.trim();
+        LOG.info(V, "SSH public key file found! ({})", this.sshPublicKeyFile);
+    }
+
+    public String getSshPrivateKeyFile() {
+        return sshPrivateKeyFile;
+    }
+
+    public void setSshPrivateKeyFile(String sshPrivateKeyFile) {
+        this.sshPrivateKeyFile = sshPrivateKeyFile.trim();
+        LOG.info(V, "SSH private key file found! ({})", this.sshPrivateKeyFile);
     }
 
     public String getRegion() {

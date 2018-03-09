@@ -192,7 +192,7 @@ public abstract class CreateCluster extends Intent {
         sb.append("export BIBIGRID_MASTER=").append(masterPublicIp).append("\n\n");
         sb.append("You can then log on the master node with:\n\n")
                 .append("ssh -i ")
-                .append(config.getIdentityFile())
+                .append(config.getSshPrivateKeyFile())
                 .append(" ").append(config.getSshUser()).append("@$BIBIGRID_MASTER\n\n");
         sb.append("The cluster id of your started cluster is : ")
                 .append(clusterId)
@@ -210,7 +210,8 @@ public abstract class CreateCluster extends Intent {
         if (config.getGridPropertiesFile() != null) {
             Properties gp = new Properties();
             gp.setProperty("BIBIGRID_MASTER", masterPublicIp);
-            gp.setProperty("IdentityFile", config.getIdentityFile());
+            gp.setProperty("SSHPublicKeyFile", config.getSshPublicKeyFile());
+            gp.setProperty("SSHPrivateKeyFile", config.getSshPrivateKeyFile());
             gp.setProperty("clusterId", clusterId);
             if (config.isAlternativeConfigFile()) {
                 gp.setProperty("AlternativeConfigFile", config.getAlternativeConfigPath());
@@ -262,12 +263,12 @@ public abstract class CreateCluster extends Intent {
         boolean sshPortIsReady = pollSshPortIsAvailable(masterIp);
         if (sshPortIsReady) {
             try {
-                ssh.addIdentity(config.getIdentityFile());
+                ssh.addIdentity(config.getSshPrivateKeyFile());
                 LOG.info("Trying to connect to master...");
                 sleep(4);
                 // Create new Session to avoid packet corruption.
                 Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
-                        FileSystems.getDefault().getPath(config.getIdentityFile()));
+                        FileSystems.getDefault().getPath(config.getSshPrivateKeyFile()));
                 if (sshSession != null) {
                     // Start connection attempt
                     sshSession.connect();

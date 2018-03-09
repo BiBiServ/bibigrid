@@ -12,7 +12,8 @@ mode: enum [aws, googlecloud, openstack, azure]
 user: string
 sshUser: string
 keypair: string
-identityFile: string
+sshPublicKeyFile: string
+sshPrivateKeyFile: string
 
 gridPropertiesFile: string
 

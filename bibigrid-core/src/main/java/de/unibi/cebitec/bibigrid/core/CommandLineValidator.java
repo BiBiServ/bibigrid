@@ -150,23 +150,46 @@ public abstract class CommandLineValidator {
         return true;
     }
 
-    private boolean parseIdentityFileParameter() {
-        final String shortParam = RuleBuilder.RuleNames.IDENTITY_FILE_S.toString();
+    private boolean parseSshPublicKeyFileParameter() {
+        final String shortParam = RuleBuilder.RuleNames.SSH_PUBLIC_KEY_FILE_S.toString();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
             if (!isStringNullOrEmpty(value)) {
-                config.setIdentityFile(FileSystems.getDefault().getPath(value.trim()).toString());
+                config.setSshPublicKeyFile(FileSystems.getDefault().getPath(value.trim()).toString());
             }
         }
         // Validate parameter if required
         if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(config.getIdentityFile())) {
+            if (isStringNullOrEmpty(config.getSshPublicKeyFile())) {
                 LOG.error("-" + shortParam + " option is required! Please specify the absolute path to your " +
-                        "identity file (private ssh key file).");
+                        "SSH public key file.");
                 return false;
-            } else if (!FileSystems.getDefault().getPath(config.getIdentityFile()).toFile().exists()) {
-                LOG.error("Identity private key file '{}' does not exist!", config.getIdentityFile());
+            } else if (!FileSystems.getDefault().getPath(config.getSshPublicKeyFile()).toFile().exists()) {
+                LOG.error("SSH public key file '{}' does not exist!", config.getSshPublicKeyFile());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parseSshPrivateKeyFileParameter() {
+        final String shortParam = RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setSshPrivateKeyFile(FileSystems.getDefault().getPath(value.trim()).toString());
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(config.getSshPrivateKeyFile())) {
+                LOG.error("-" + shortParam + " option is required! Please specify the absolute path to your " +
+                        "SSH private key file.");
+                return false;
+            } else if (!FileSystems.getDefault().getPath(config.getSshPrivateKeyFile()).toFile().exists()) {
+                LOG.error("SSH private key file '{}' does not exist!", config.getSshPrivateKeyFile());
                 return false;
             }
         }
@@ -638,7 +661,8 @@ public abstract class CommandLineValidator {
                 parseSshUserNameParameter() &&
                 parseNetworkParameter() &&
                 parseSubnetParameter() &&
-                parseIdentityFileParameter() &&
+                parseSshPublicKeyFileParameter() &&
+                parseSshPrivateKeyFileParameter() &&
                 parseKeypairParameter() &&
                 parseRegionParameter() &&
                 parseAvailabilityZoneParameter() &&

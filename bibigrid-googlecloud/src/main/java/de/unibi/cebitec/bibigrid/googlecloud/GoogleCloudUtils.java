@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Utility methods for the google cloud.
@@ -20,30 +18,6 @@ import java.util.regex.Pattern;
 final class GoogleCloudUtils {
     private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudUtils.class);
     private static long diskCounter = 1;
-    private static final Pattern INSTANCE_LINK_PATTERN =
-            Pattern.compile(".*?projects/([^/]+)/zones/([^/]+)/instances/([^/]+)");
-
-    /**
-     * Get the internal fully qualified domain name (FQDN) for an instance.
-     * https://cloud.google.com/compute/docs/vpc/internal-dns#instance_fully_qualified_domain_names
-     */
-    static String getInstanceFQDN(Instance instance) {
-        Matcher matcher = INSTANCE_LINK_PATTERN.matcher(instance.getSelfLink());
-        return matcher.find() ? matcher.group(3) + ".c." + matcher.group(1) + ".internal" : null;
-    }
-
-    static String getInstancePrivateIp(Instance instance) {
-        List<NetworkInterface> interfaces = instance.getNetworkInterfaces();
-        return interfaces.isEmpty() ? null : interfaces.get(0).getNetworkIP();
-    }
-
-    static String getInstancePublicIp(Instance instance) {
-        List<NetworkInterface> interfaces = instance.getNetworkInterfaces();
-        if (interfaces.isEmpty())
-            return null;
-        List<AccessConfig> accessConfigs = interfaces.get(0).getAccessConfigs();
-        return accessConfigs.isEmpty() ? null : accessConfigs.get(0).getNatIP();
-    }
 
     static Instance getInstanceBuilder(Compute compute, ConfigurationGoogleCloud config, String instanceId,
                                        String machineType) {
@@ -58,7 +32,13 @@ final class GoogleCloudUtils {
     }
 
     private static AttachedDisk createBootDisk(Compute compute, String imageId, String imageProjectId) {
-        Image image = getImage(compute, imageProjectId, imageId);
+        Image image;
+        try {
+            image = compute.images().get(imageProjectId, imageId).execute();
+        } catch (IOException e) {
+            LOG.error("Failed to get image '{}'. {}", imageId, e);
+            return null;
+        }
         if (image == null) {
             LOG.error("Failed to find boot disk image.");
             return null;
@@ -170,24 +150,6 @@ final class GoogleCloudUtils {
             return compute.snapshots().get(projectId, snapshotId).execute();
         } catch (IOException e) {
             LOG.error("Failed to get snapshot '{}'. {}", snapshotId, e);
-        }
-        return null;
-    }
-
-    static Image getImage(Compute compute, String projectId, String imageId) {
-        try {
-            return compute.images().get(projectId, imageId).execute();
-        } catch (IOException e) {
-            LOG.error("Failed to get image '{}'. {}", imageId, e);
-        }
-        return null;
-    }
-
-    static Disk getDisk(Compute compute, String projectId, String zone, String diskId) {
-        try {
-            return compute.disks().get(projectId, zone, diskId).execute();
-        } catch (IOException e) {
-            LOG.error("Failed to get disk '{}'. {}", diskId, e);
         }
         return null;
     }

@@ -14,7 +14,8 @@ If you decide to use some or all command line parameters, a complete list is pro
 | user                       | u               |                      | | User name (just for VM tagging) |
 | ssh-user                   | su              |                      | | SSH user name |
 | keypair                    | k               |                      | | Keypair name for authentication (aws and openstack only) |
-| identity-file              | i               |                      | | SSH private key file |
+| ssh-public-key-file        | spu             |                      | | SSH public key file |
+| ssh-private-key-file       | spr             |                      | | SSH private key file |
 | master-instance-type       | m               |                      | | |
 | master-image               | M               |                      | | |
 | master-mounts              | d               |                      | | |

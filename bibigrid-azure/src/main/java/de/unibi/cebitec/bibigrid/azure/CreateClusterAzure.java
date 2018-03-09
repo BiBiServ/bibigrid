@@ -76,9 +76,8 @@ public class CreateClusterAzure extends CreateCluster {
         // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())
         // Waiting for master instance to run
         LOG.info("Waiting for master instance to finish booting...");
-        // TODO
-        LOG.info(I, "Master instance is now running!");
         waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
+        LOG.info(I, "Master instance is now running!");
         return new InstanceAzure(config.getMasterInstance(), masterInstance);
     }
 
@@ -122,9 +121,8 @@ public class CreateClusterAzure extends CreateCluster {
             slaveInstances.add(slaveInstance);
         }
         LOG.info("Waiting for slave instance(s) to finish booting...");
-        // TODO
-        LOG.info(I, "Slave instance(s) is now running!");
         waitForInstancesStatusCheck(slaveInstances);
+        LOG.info(I, "Slave instance(s) is now running!");
         return slaveInstances.stream().map(i -> new InstanceAzure(instanceConfiguration, i)).collect(Collectors.toList());
     }
 
