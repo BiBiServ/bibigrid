@@ -42,18 +42,6 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     }
 
     @Override
-    protected NetworkAzure getNetworkOrDefault(String networkId) {
-        if (networkId != null) {
-            for (Network network : compute.networks().list()) {
-                if (network.name().equals(networkId)) {
-                    return new NetworkAzure(network);
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
     public CreateClusterEnvironmentAzure createSubnet() {
         Network network = ((NetworkAzure) this.network).getInternal();
         String subnetName = getConfig().getSubnet();

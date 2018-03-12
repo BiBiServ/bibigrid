@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
 import com.google.api.services.compute.model.Firewall;
-import com.google.api.services.compute.model.Network;
 import com.google.api.services.compute.model.Operation;
 import com.google.api.services.compute.model.Subnetwork;
 import de.unibi.cebitec.bibigrid.core.model.Client;
@@ -12,7 +11,6 @@ import de.unibi.cebitec.bibigrid.core.util.SubNets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -30,21 +28,6 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     CreateClusterEnvironmentGoogleCloud(Client client, final CreateClusterGoogleCloud cluster) throws ConfigurationException {
         super(client, cluster);
         this.cluster = cluster;
-    }
-
-    @Override
-    protected NetworkGoogleCloud getNetworkOrDefault(String networkId) {
-        try {
-            networkId = networkId == null ? "default" : networkId;
-            String projectId = ((ConfigurationGoogleCloud) getConfig()).getGoogleProjectId();
-            for (Network network : cluster.getCompute().networks().list(projectId).execute().getItems()) {
-                if (network.getName().equals(networkId)) {
-                    return new NetworkGoogleCloud(network);
-                }
-            }
-        } catch (IOException ignored) {
-        }
-        return null;
     }
 
     @Override

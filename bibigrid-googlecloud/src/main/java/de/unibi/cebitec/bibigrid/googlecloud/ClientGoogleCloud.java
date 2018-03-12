@@ -86,6 +86,11 @@ class ClientGoogleCloud extends Client {
     }
 
     @Override
+    public Network getDefaultNetwork() {
+        return getNetworkByName("default");
+    }
+
+    @Override
     public List<Subnet> getSubnets() {
         try {
             return internalClient.subnetworks().list(config.getGoogleProjectId(), config.getRegion()).execute().getItems()

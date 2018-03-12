@@ -82,6 +82,11 @@ class ClientOpenstack extends Client {
     }
 
     @Override
+    public Network getDefaultNetwork() {
+        return null;
+    }
+
+    @Override
     public List<Subnet> getSubnets() {
         return internalClient.networking().subnet().list()
                 .stream().map(SubnetOpenstack::new).collect(Collectors.toList());

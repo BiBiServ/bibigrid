@@ -63,6 +63,18 @@ class ClientAWS extends Client {
     }
 
     @Override
+    public Network getDefaultNetwork() {
+        DescribeVpcsRequest request = new DescribeVpcsRequest();
+        DescribeVpcsResult result = internalClient.describeVpcs(request);
+        for (Vpc network : result.getVpcs()) {
+            if (network.isDefault()) {
+                return new NetworkAWS(network);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public List<Subnet> getSubnets() {
         DescribeSubnetsRequest request = new DescribeSubnetsRequest();
         DescribeSubnetsResult result = internalClient.describeSubnets(request);

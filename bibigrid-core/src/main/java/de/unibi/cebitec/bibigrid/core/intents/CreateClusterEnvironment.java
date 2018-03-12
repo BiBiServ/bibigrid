@@ -44,19 +44,33 @@ public abstract class CreateClusterEnvironment {
      * @throws ConfigurationException Throws an exception if the creation of the network failed.
      */
     public CreateClusterEnvironment createNetwork() throws ConfigurationException {
-        network = getNetworkOrDefault(getConfig().getNetwork());
-        if (network == null) {
-            throw new ConfigurationException("No suitable network found! Define a valid network id or default network.");
+        String networkName = getConfig().getNetwork();
+        if (networkName != null && networkName.length() > 0) {
+            network = client.getNetworkByName(networkName);
+            // If the network could not be found, try if the user provided a network id instead of the name.
+            if (network == null) {
+                network = client.getNetworkById(networkName);
+            }
+            if (network == null) {
+                throw new ConfigurationException("No network with name or id '" + networkName + "' found!");
+            }
+        } else {
+            network = client.getDefaultNetwork();
+            if (network == null) {
+                LOG.warn("Failed to get default network. Trying to create new one...");
+                // TODO: network = client.createNetwork(NETWORK_PREFIX + cluster.getClusterId());
+                if (network == null) {
+                    throw new ConfigurationException("Failed to create network!");
+                }
+            }
         }
         if (network.getCidr() != null) {
-            LOG.info(V, "Use network '{}' with CIDR '{}'.", network.getId(), network.getCidr());
+            LOG.info(V, "Use network '{}' with name '{}' and CIDR '{}'.", network.getId(), network.getName(), network.getCidr());
         } else {
-            LOG.info(V, "Use Network '{}'.", network.getName());
+            LOG.info(V, "Use Network '{}' with name '{}'.", network.getId(), network.getName());
         }
         return this;
     }
-
-    protected abstract Network getNetworkOrDefault(String networkId);
 
     /**
      * Api specific implementation of creating or choosing a Subnet.

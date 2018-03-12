@@ -14,6 +14,8 @@ public abstract class Client {
 
     public abstract Network getNetworkById(String networkId);
 
+    public abstract Network getDefaultNetwork();
+
     public abstract List<Subnet> getSubnets();
 
     public abstract Subnet getSubnetByName(String subnetName);

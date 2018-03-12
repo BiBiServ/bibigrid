@@ -39,34 +39,6 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         ec2 = ((ClientAWS) client).getInternal();
     }
 
-    /**
-     * Return a network that currently exists in selected region. Returns either the *default* network from all or
-     * the given networkId. If a networkId is given it is returned whether it is default or not. Return null in the
-     * case no default or fitting network is found.
-     */
-    @Override
-    protected NetworkAWS getNetworkOrDefault(String networkId) {
-        DescribeVpcsRequest describeVpcsRequest = new DescribeVpcsRequest();
-        List<String> networkIds = new ArrayList<>();
-        if (networkId != null) {
-            networkIds.add(networkId);
-        }
-        describeVpcsRequest.setVpcIds(networkIds);
-        DescribeVpcsResult describeVpcsResult = ec2.describeVpcs(describeVpcsRequest);
-        List<Vpc> networks = describeVpcsResult.getVpcs();
-        if (networkId != null && networks.size() == 1) {
-            return new NetworkAWS(networks.get(0));
-        }
-        if (!networks.isEmpty()) {
-            for (Vpc network : networks) {
-                if (network.isDefault()) {
-                    return new NetworkAWS(network);
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public CreateClusterEnvironmentAWS createSubnet() {
         // check for unused Subnet CIDR and create one

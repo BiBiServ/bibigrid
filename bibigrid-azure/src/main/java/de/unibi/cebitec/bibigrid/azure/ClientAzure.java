@@ -58,6 +58,11 @@ class ClientAzure extends Client {
     }
 
     @Override
+    public Network getDefaultNetwork() {
+        return null;
+    }
+
+    @Override
     public List<Subnet> getSubnets() {
         return internalClient.networks().list().stream()
                 .flatMap(network -> network.subnets().values().stream())

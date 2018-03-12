@@ -55,11 +55,6 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     }
 
     @Override
-    protected NetworkOpenstack getNetworkOrDefault(String networkId) {
-        return null;
-    }
-
-    @Override
     public CreateClusterEnvironmentOpenstack createSubnet() throws ConfigurationException {
         Router router = null;
         Subnet subnet;
