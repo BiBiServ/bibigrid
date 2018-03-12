@@ -24,6 +24,11 @@ public class SubnetAzure extends Subnet {
         return internalSubnet.addressPrefix();
     }
 
+    @Override
+    public String getNetworkId() {
+        return internalSubnet.parent().id();
+    }
+
     public com.microsoft.azure.management.network.Subnet getInternal() {
         return internalSubnet;
     }

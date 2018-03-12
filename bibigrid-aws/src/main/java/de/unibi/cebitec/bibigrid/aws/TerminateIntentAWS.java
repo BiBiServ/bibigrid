@@ -94,7 +94,7 @@ public class TerminateIntentAWS extends TerminateIntent {
     private void terminateSubnet(final AmazonEC2 ec2, final Cluster cluster) {
         if (cluster.getSubnet() != null) {
             DeleteSubnetRequest deleteSubnetRequest = new DeleteSubnetRequest();
-            deleteSubnetRequest.setSubnetId(cluster.getSubnet());
+            deleteSubnetRequest.setSubnetId(cluster.getSubnet().getId());
             ec2.deleteSubnet(deleteSubnetRequest);
             LOG.info("Subnet terminated.");
         }

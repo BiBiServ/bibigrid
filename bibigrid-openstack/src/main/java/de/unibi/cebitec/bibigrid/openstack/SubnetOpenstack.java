@@ -24,6 +24,11 @@ public class SubnetOpenstack extends Subnet {
         return internalSubnet.getCidr();
     }
 
+    @Override
+    public String getNetworkId() {
+        return internalSubnet.getNetworkId();
+    }
+
     org.openstack4j.model.network.Subnet getInternal() {
         return internalSubnet;
     }

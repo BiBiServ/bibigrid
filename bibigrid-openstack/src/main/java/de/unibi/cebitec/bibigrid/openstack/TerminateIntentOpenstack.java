@@ -1,15 +1,14 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.Cluster;
-import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.exceptions.ClientResponseException;
 import org.openstack4j.api.networking.PortService;
 import org.openstack4j.model.common.ActionResponse;
-import org.openstack4j.model.network.*;
+import org.openstack4j.model.network.IP;
+import org.openstack4j.model.network.Port;
+import org.openstack4j.model.network.Router;
 import org.openstack4j.model.network.options.PortListOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,20 +62,20 @@ public class TerminateIntentOpenstack extends TerminateIntent {
         }
         // subnet
         if (cluster.getSubnet() != null) {
-            Subnet subnet = getSubnetById(os, cluster.getSubnet());
+            Subnet subnet = cluster.getSubnet();
             if (subnet == null) {
                 return false;
             }
-            Network net = CreateClusterEnvironmentOpenstack.getNetworkById(os, subnet.getNetworkId());
-            if (net == null) {
+            Network network = client.getNetworkById(subnet.getNetworkId());
+            if (network == null) {
                 return false;
             }
-            Router router = CreateClusterEnvironmentOpenstack.getRouterByNetwork(os, net, subnet);
+            Router router = CreateClusterEnvironmentOpenstack.getRouterByNetwork(os, network.getId(), subnet.getId());
             if (router == null) {
                 return false;
             }
             // get port which handled connects router with network/subnet
-            Port port = getPortByRouterAndNetworkAndSubnet(os, router, net, subnet);
+            Port port = getPortByRouterAndNetworkAndSubnet(os, router, network, subnet);
             if (port == null) {
                 return false;
             }
@@ -97,7 +96,7 @@ public class TerminateIntentOpenstack extends TerminateIntent {
         // network
         if (cluster.getNetwork() != null) {
             // delete network
-            ActionResponse ar = os.networking().network().delete(cluster.getNetwork());
+            ActionResponse ar = os.networking().network().delete(cluster.getNetwork().getId());
             if (ar.isSuccess()) {
                 LOG.info("Network '{}' deleted!", cluster.getNetwork());
             } else {
@@ -107,25 +106,12 @@ public class TerminateIntentOpenstack extends TerminateIntent {
         return true;
     }
 
-    /**
-     * Determine subnet by given subnet id. Returns subnet object or null in the case no suitable subnet is found.
-     */
-    private static Subnet getSubnetById(OSClient osc, String subnetId) {
-        for (Subnet subnet : osc.networking().subnet().list()) {
-            if (subnet.getId().equals(subnetId)) {
-                return subnet;
-            }
-        }
-        return null;
-    }
-
-    private static org.openstack4j.model.network.Port getPortByRouterAndNetworkAndSubnet(OSClient osc, Router router,
-                                                                                         Network net, Subnet subnet) {
+    private static Port getPortByRouterAndNetworkAndSubnet(OSClient osc, Router router, Network net, Subnet subnet) {
         PortService ps = osc.networking().port();
         PortListOptions portListOptions = PortListOptions.create();
         portListOptions.deviceId(router.getId());
         portListOptions.networkId(net.getId());
-        for (org.openstack4j.model.network.Port port : ps.list(portListOptions)) {
+        for (Port port : ps.list(portListOptions)) {
             for (IP ip : port.getFixedIps()) {
                 if (ip.getSubnetId().equals(subnet.getId())) {
                     return port;

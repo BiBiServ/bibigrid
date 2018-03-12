@@ -43,6 +43,7 @@ If you decide to use some or all command line parameters, a complete list is pro
 | verbose                    | v               |                      | - | Increase the logging level to verbose |
 | config                     | o               |                      | | YAML configuration file |
 | grid-properties-file       | gpf             |                      | | |
+| list-instance-types        | lit             |                      | | "--help -lit" lists all available instance types |
 
 ## Openstack specific parameters
 | Long parameter             | Short parameter | Environment variable | Values | Description                                          |

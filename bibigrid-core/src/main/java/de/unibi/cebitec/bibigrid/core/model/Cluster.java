@@ -15,8 +15,8 @@ public class Cluster {
     private Instance masterInstance;
     private List<Instance> slaveInstances = new ArrayList<>();
 
-    private String network;
-    private String subnet;
+    private Network network;
+    private Subnet subnet;
 
     private String placementGroup; // AWS
 
@@ -51,11 +51,11 @@ public class Cluster {
         this.placementGroup = placementGroup;
     }
 
-    public String getSubnet() {
+    public Subnet getSubnet() {
         return subnet;
     }
 
-    public void setSubnet(String subnet) {
+    public void setSubnet(Subnet subnet) {
         this.subnet = subnet;
     }
 
@@ -103,11 +103,11 @@ public class Cluster {
         this.user = user;
     }
 
-    public String getNetwork() {
+    public Network getNetwork() {
         return network;
     }
 
-    public void setNetwork(String network) {
+    public void setNetwork(Network network) {
         this.network = network;
     }
 

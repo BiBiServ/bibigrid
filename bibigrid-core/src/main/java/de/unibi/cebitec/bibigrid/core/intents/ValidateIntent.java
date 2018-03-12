@@ -28,9 +28,9 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class ValidateIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntent.class);
     protected final Client client;
-    private final Configuration config;
+    protected final Configuration config;
 
-    protected ValidateIntent(Client client, Configuration config) {
+    protected ValidateIntent(final Client client, final Configuration config) {
         this.client = client;
         this.config = config;
     }
@@ -177,7 +177,15 @@ public abstract class ValidateIntent extends Intent {
         }
         // snapshot ids have to be checked individually to find out which one is missing or malformed.
         for (String snapshotId : snapshotIds) {
-            if (checkSnapshot(snapshotId)) {
+            if (snapshotId.contains(":")) {
+                snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
+            }
+            Snapshot snapshot = client.getSnapshotByName(snapshotId);
+            // If the snapshot could not be found, try if the user provided a snapshot id instead of the name.
+            if (snapshot == null) {
+                snapshot = client.getSnapshotById(snapshotId);
+            }
+            if (snapshot != null) {
                 LOG.info(V, "Snapshot '{}' found.", snapshotId);
             } else {
                 LOG.error("Snapshot '{}' could not be found.", snapshotId);
@@ -186,8 +194,6 @@ public abstract class ValidateIntent extends Intent {
         }
         return allCheck;
     }
-
-    protected abstract boolean checkSnapshot(String snapshotId);
 
     private boolean checkNetwork() {
         boolean result = true;

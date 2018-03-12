@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
+import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.*;
@@ -45,6 +46,10 @@ public class StartUp {
         Option terminate = new Option(IntentMode.TERMINATE.getShortParam(), IntentMode.TERMINATE.getLongParam(),
                 true, "Terminate running cluster");
         terminate.setArgName("cluster-id");
+        Option list = new Option(IntentMode.LIST.getShortParam(), IntentMode.LIST.getLongParam(),
+                true, "List running clusters");
+        list.setOptionalArg(true);
+        list.setArgName("cluster-id");
         intentOptions
                 .addOption(new Option(IntentMode.VERSION.getShortParam(), IntentMode.VERSION.getLongParam(),
                         false, "Version"))
@@ -54,8 +59,7 @@ public class StartUp {
                         false, "Create cluster"))
                 .addOption(new Option(IntentMode.PREPARE.getShortParam(), IntentMode.PREPARE.getLongParam(),
                         false, "Prepare cluster images for faster setup"))
-                .addOption(new Option(IntentMode.LIST.getShortParam(), IntentMode.LIST.getLongParam(),
-                        false, "List running clusters"))
+                .addOption(list)
                 .addOption(new Option(IntentMode.VALIDATE.getShortParam(), IntentMode.VALIDATE.getLongParam(),
                         false, "Validate the configuration file"))
                 .addOption(terminate);
@@ -123,7 +127,7 @@ public class StartUp {
 
     private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
         // TODO: improve help modes
-        if (commandLine.hasOption("lit")) {
+        if (commandLine.hasOption(RuleBuilder.RuleNames.HELP_LIST_INSTANCE_TYPES_S.toString())) {
             runIntent(commandLine, IntentMode.HELP);
             return;
         }
@@ -166,7 +170,13 @@ public class StartUp {
                     printInstanceTypeHelp(module, client, validator.getConfig());
                     break;
                 case LIST:
-                    LOG.info(module.getListIntent(client, validator.getConfig()).toString());
+                    ListIntent listIntent = module.getListIntent(client, validator.getConfig());
+                    String clusterId = commandLine.getOptionValue(IntentMode.LIST.getShortParam());
+                    if (clusterId != null) {
+                        LOG.info(listIntent.toDetailString(clusterId));
+                    } else {
+                        LOG.info(listIntent.toString());
+                    }
                     break;
                 case VALIDATE:
                     ValidateIntent intent = module.getValidateIntent(client, validator.getConfig());

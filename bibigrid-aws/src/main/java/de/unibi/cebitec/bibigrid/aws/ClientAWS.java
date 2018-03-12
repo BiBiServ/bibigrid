@@ -10,6 +10,7 @@ import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
 import de.unibi.cebitec.bibigrid.core.model.Network;
 import de.unibi.cebitec.bibigrid.core.model.Subnet;
+import de.unibi.cebitec.bibigrid.core.model.Snapshot;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,5 +114,19 @@ class ClientAWS extends Client {
         } catch (AmazonServiceException ignored) {
         }
         return null;
+    }
+
+    @Override
+    public Snapshot getSnapshotByName(String snapshotName) {
+        return getSnapshotById(snapshotName);
+    }
+
+    @Override
+    public Snapshot getSnapshotById(String snapshotId) {
+        DescribeSnapshotsRequest snapshotRequest = new DescribeSnapshotsRequest().withSnapshotIds(snapshotId);
+        DescribeSnapshotsResult snapshotResult = internalClient.describeSnapshots(snapshotRequest);
+        List<com.amazonaws.services.ec2.model.Snapshot> snapshots = snapshotResult.getSnapshots();
+        return snapshots.size() > 0 && snapshots.get(0).getSnapshotId().equals(snapshotId) ?
+                new SnapshotAWS(snapshots.get(0)) : null;
     }
 }

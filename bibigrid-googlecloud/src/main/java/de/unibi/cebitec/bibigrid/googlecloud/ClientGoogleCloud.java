@@ -8,10 +8,7 @@ import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.ComputeScopes;
 import com.google.api.services.compute.model.Image;
 import com.google.api.services.compute.model.Subnetwork;
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
-import de.unibi.cebitec.bibigrid.core.model.Network;
-import de.unibi.cebitec.bibigrid.core.model.Subnet;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,6 +135,31 @@ class ClientGoogleCloud extends Client {
             for (Image image : internalClient.images().list(config.getGoogleImageProjectId()).execute().getItems()) {
                 if (image.getId().toString().equalsIgnoreCase(imageId)) {
                     return new InstanceImageGoogleCloud(image);
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    public Snapshot getSnapshotByName(String snapshotName) {
+        try {
+            com.google.api.services.compute.model.Snapshot snapshot =
+                    internalClient.snapshots().get(config.getGoogleProjectId(), snapshotName).execute();
+            return snapshot != null ? new SnapshotGoogleCloud(snapshot) : null;
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    public Snapshot getSnapshotById(String snapshotId) {
+        try {
+            for (com.google.api.services.compute.model.Snapshot snapshot :
+                    internalClient.snapshots().list(config.getGoogleProjectId()).execute().getItems()) {
+                if (snapshot.getId().toString().equalsIgnoreCase(snapshotId)) {
+                    return new SnapshotGoogleCloud(snapshot);
                 }
             }
         } catch (IOException ignored) {

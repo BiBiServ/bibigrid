@@ -113,4 +113,20 @@ class ClientAzure extends Client {
                 sku, version).imageReference();
         return image != null ? new InstanceImageAzure(image) : null;
     }
+
+    @Override
+    public Snapshot getSnapshotByName(String snapshotName) {
+        for (com.microsoft.azure.management.compute.Snapshot snapshot : internalClient.snapshots().list()) {
+            if (snapshot != null && snapshot.name().equals(snapshotName)) {
+                return new SnapshotAzure(snapshot);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Snapshot getSnapshotById(String snapshotId) {
+        com.microsoft.azure.management.compute.Snapshot snapshot = internalClient.snapshots().getById(snapshotId);
+        return snapshot != null ? new SnapshotAzure(snapshot) : null;
+    }
 }

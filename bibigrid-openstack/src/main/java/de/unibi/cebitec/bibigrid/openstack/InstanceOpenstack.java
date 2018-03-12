@@ -46,6 +46,20 @@ public final class InstanceOpenstack extends Instance {
 
     @Override
     public String getPrivateIp() {
+        if (ip == null) {
+            Map<String, List<? extends Address>> addressMap = server.getAddresses().getAddresses();
+            // map should contain only one network
+            if (addressMap.keySet().size() == 1) {
+                for (Address address : addressMap.values().iterator().next()) {
+                    if (address.getType().equals("fixed")) {
+                        ip = address.getAddr();
+                        break;
+                    }
+                }
+            } else {
+                LOG.warn("No or more than one network associated with instance '{}'.", getId());
+            }
+        }
         return ip;
     }
 

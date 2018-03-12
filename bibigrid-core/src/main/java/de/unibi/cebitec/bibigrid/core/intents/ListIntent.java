@@ -68,7 +68,7 @@ public abstract class ListIntent extends Intent {
             for (Network network : networks) {
                 String name = network.getName();
                 if (name != null && name.startsWith(CreateClusterEnvironment.NETWORK_PREFIX)) {
-                    getOrCreateCluster(getClusterIdFromName(name)).setNetwork(network.getId());
+                    getOrCreateCluster(getClusterIdFromName(name)).setNetwork(network);
                 }
             }
         }
@@ -77,7 +77,7 @@ public abstract class ListIntent extends Intent {
             for (Subnet subnet : subnets) {
                 String name = subnet.getName();
                 if (name != null && name.startsWith(CreateClusterEnvironment.SUBNET_PREFIX)) {
-                    getOrCreateCluster(getClusterIdFromName(name)).setSubnet(subnet.getId());
+                    getOrCreateCluster(getClusterIdFromName(name)).setSubnet(subnet);
                 }
             }
         }
@@ -183,10 +183,65 @@ public abstract class ListIntent extends Intent {
                     (v.getPublicIp() == null ? "-" : v.getPublicIp()),
                     ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
                     (v.getSecurityGroup() == null ? "-" : cutStringIfNecessary(v.getSecurityGroup())),
-                    (v.getSubnet() == null ? "-" : cutStringIfNecessary(v.getSubnet())),
-                    (v.getNetwork() == null ? "-" : cutStringIfNecessary(v.getNetwork())));
+                    (v.getSubnet() == null ? "-" : cutStringIfNecessary(v.getSubnet().getId())),
+                    (v.getNetwork() == null ? "-" : cutStringIfNecessary(v.getNetwork().getId())));
         }
         return display.toString();
+    }
+
+    public final String toDetailString(String clusterId) {
+        if (clusterMap == null) {
+            clusterMap = new HashMap<>();
+            searchClusterIfNecessary();
+        }
+        if (clusterMap.isEmpty()) {
+            return "No BiBiGrid cluster found!\n";
+        }
+        if (!clusterMap.containsKey(clusterId)) {
+            return "No BiBiGrid cluster with id '" + clusterId + "' found!\n";
+        }
+        Cluster cluster = clusterMap.get(clusterId);
+        StringBuilder display = new StringBuilder();
+        display.append("cluster-id: ").append(cluster.getClusterId()).append("\n");
+        display.append("user: ").append(cluster.getUser()).append("\n");
+        if (cluster.getNetwork() != null) {
+            display.append("\nnetwork:\n");
+            display.append("  id: ").append(cluster.getNetwork().getId()).append("\n");
+            display.append("  name: ").append(cluster.getNetwork().getName()).append("\n");
+            display.append("  cidr: ").append(cluster.getNetwork().getCidr()).append("\n");
+        }
+        if (cluster.getSubnet() != null) {
+            display.append("\nsubnet:\n");
+            display.append("  id: ").append(cluster.getSubnet().getId()).append("\n");
+            display.append("  name: ").append(cluster.getSubnet().getName()).append("\n");
+            display.append("  cidr: ").append(cluster.getSubnet().getCidr()).append("\n");
+        }
+        if (cluster.getMasterInstance() != null) {
+            display.append("\nmaster-instance:\n");
+            addInstanceToDetailString(display, cluster.getMasterInstance());
+        }
+        if (cluster.getSlaveInstances() != null) {
+            for (Instance slaveInstance : cluster.getSlaveInstances()) {
+                display.append("\nslave-instance:\n");
+                addInstanceToDetailString(display, slaveInstance);
+            }
+        }
+        return display.toString();
+    }
+
+    private void addInstanceToDetailString(StringBuilder display, Instance instance) {
+        display.append("  id: ").append(instance.getId()).append("\n");
+        display.append("  name: ").append(instance.getName()).append("\n");
+        display.append("  hostname: ").append(instance.getHostname()).append("\n");
+        display.append("  private-ip: ").append(instance.getPrivateIp()).append("\n");
+        display.append("  public-ip: ").append(instance.getPublicIp()).append("\n");
+        display.append("  key-name: ").append(instance.getKeyName()).append("\n");
+        Configuration.InstanceConfiguration instanceConfig = instance.getConfiguration();
+        if (instanceConfig != null) {
+            display.append("  type: ").append(instanceConfig.getType()).append("\n");
+            display.append("  image: ").append(instanceConfig.getImage()).append("\n");
+        }
+        display.append("  launch-date: ").append(instance.getCreationTimestamp().format(dateTimeFormatter)).append("\n");
     }
 
     private String cutStringIfNecessary(String s) {

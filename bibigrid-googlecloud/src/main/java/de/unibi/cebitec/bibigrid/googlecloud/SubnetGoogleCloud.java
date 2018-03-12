@@ -25,6 +25,11 @@ public class SubnetGoogleCloud extends Subnet {
     }
 
     @Override
+    public String getNetworkId() {
+        return internalSubnet.getNetwork();
+    }
+
+    @Override
     public String getName() {
         return internalSubnet.getName();
     }

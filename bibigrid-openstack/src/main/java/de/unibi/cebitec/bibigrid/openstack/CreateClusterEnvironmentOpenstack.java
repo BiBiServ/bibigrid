@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
@@ -39,7 +38,6 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterEnvironmentOpenstack.class);
-    public static final String ROUTER_PREFIX = CreateCluster.PREFIX + "router-";
     private static final String NETWORK_CIDR = "192.168.0.0/16";
 
     private CreateClusterOpenstack cluster;
@@ -84,7 +82,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 if (network == null) {
                     throw new ConfigurationException("No network with id '" + subnet.getNetworkId() + "' found!");
                 }
-                router = getRouterByNetwork(osc, network, subnet); // @ToDo
+                router = getRouterByNetwork(osc, network.getId(), subnet.getId()); // @ToDo
                 LOG.info("Use existing subnet (ID: {}, CIDR: {}).", subnet.getId(), subnet.getCidr());
                 this.subnet = new SubnetOpenstack(subnet);
                 this.network = new NetworkOpenstack(network, router);
@@ -280,16 +278,16 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
      * Determine Router by given network. If more than one Router is connected to the network -> return first.
      */
     private static Router getRouterByNetwork(OSClient osc, Network network) {
-        return getRouterByNetwork(osc, network, null);
+        return getRouterByNetwork(osc, network.getId(), null);
     }
 
     /**
      * Determine Router by given network and subnet.
      */
-    static Router getRouterByNetwork(OSClient osc, Network network, Subnet subnet) {
+    static Router getRouterByNetwork(OSClient osc, String networkId, String subnetId) {
         PortService ps = osc.networking().port();
         PortListOptions portListOptions = PortListOptions.create();
-        portListOptions.networkId(network.getId());
+        portListOptions.networkId(networkId);
         // 1st check for device_owner "network:router_interface
         portListOptions.deviceOwner("network:router_interface");
         List<? extends org.openstack4j.model.network.Port> lop = ps.list(portListOptions);
@@ -301,15 +299,15 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             portListOptions.deviceOwner("network:router_interface_distributed");
             lop = ps.list(portListOptions);
         }
-        if (subnet == null && lop.size() > 1) {
-            LOG.warn("Network (ID: {}) uses more than one router, return the first one!", network.getId());
+        if (subnetId == null && lop.size() > 1) {
+            LOG.warn("Network (ID: {}) uses more than one router, return the first one!", networkId);
         }
         for (org.openstack4j.model.network.Port port : lop) {
-            if (subnet == null) {
+            if (subnetId == null) {
                 return getRouterById(osc, port.getDeviceId()); // if no subnet is given just return first router
             } else {
                 for (IP ip : port.getFixedIps()) {
-                    if (ip.getSubnetId().equals(subnet.getId())) {
+                    if (ip.getSubnetId().equals(subnetId)) {
                         return getRouterById(osc, port.getDeviceId());
                     }
                 }

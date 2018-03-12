@@ -1,13 +1,11 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
-import de.unibi.cebitec.bibigrid.core.model.Network;
-import de.unibi.cebitec.bibigrid.core.model.Subnet;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.Identifier;
 import org.openstack4j.model.compute.Image;
+import org.openstack4j.model.storage.block.Volume;
 import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,5 +117,21 @@ class ClientOpenstack extends Client {
     public InstanceImage getImageById(String imageId) {
         Image image = internalClient.compute().images().get(imageId);
         return image != null ? new InstanceImageOpenstack(image) : null;
+    }
+
+    @Override
+    public Snapshot getSnapshotByName(String snapshotName) {
+        for (Volume snapshot : internalClient.blockStorage().volumes().list()) {
+            if (snapshot.getName().equals(snapshotName)) {
+                return new SnapshotOpenstack(snapshot);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Snapshot getSnapshotById(String snapshotId) {
+        Volume snapshot = internalClient.blockStorage().volumes().get(snapshotId);
+        return snapshot != null && snapshot.getId().equals(snapshotId) ? new SnapshotOpenstack(snapshot) : null;
     }
 }

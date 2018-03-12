@@ -24,6 +24,11 @@ public class SubnetAWS extends Subnet {
         return internalSubnet.getCidrBlock();
     }
 
+    @Override
+    public String getNetworkId() {
+        return internalSubnet.getVpcId();
+    }
+
     com.amazonaws.services.ec2.model.Subnet getInternal() {
         return internalSubnet;
     }

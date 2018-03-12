@@ -3,6 +3,8 @@ package de.unibi.cebitec.bibigrid.core.model;
 import java.util.List;
 
 /**
+ * Abstract client for common cloud provider tasks.
+ *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public abstract class Client {
@@ -21,4 +23,8 @@ public abstract class Client {
     public abstract InstanceImage getImageByName(String imageName);
 
     public abstract InstanceImage getImageById(String imageId);
+
+    public abstract Snapshot getSnapshotByName(String snapshotName);
+
+    public abstract Snapshot getSnapshotById(String snapshotId);
 }

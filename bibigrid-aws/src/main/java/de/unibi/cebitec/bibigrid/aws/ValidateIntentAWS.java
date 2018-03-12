@@ -12,8 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 
-import java.util.List;
-
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
@@ -22,7 +20,7 @@ public class ValidateIntentAWS extends ValidateIntent {
     private final ConfigurationAWS config;
     private final AmazonEC2 ec2;
 
-    ValidateIntentAWS(Client client, final ConfigurationAWS config) {
+    ValidateIntentAWS(final Client client, final ConfigurationAWS config) {
         super(client, config);
         this.config = config;
         ec2 = ((ClientAWS) client).getInternal();
@@ -44,17 +42,6 @@ public class ValidateIntentAWS extends ValidateIntent {
             return false;
         }
         return true;
-    }
-
-    @Override
-    protected boolean checkSnapshot(String snapshotId) {
-        if (snapshotId.contains(":")) {
-            snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
-        }
-        DescribeSnapshotsRequest snapshotRequest = new DescribeSnapshotsRequest().withSnapshotIds(snapshotId);
-        DescribeSnapshotsResult snapshotResult = ec2.describeSnapshots(snapshotRequest);
-        List<Snapshot> snapshots = snapshotResult.getSnapshots();
-        return snapshots.size() > 0 && snapshots.get(0).getSnapshotId().equals(snapshotId);
     }
 
     @Override
