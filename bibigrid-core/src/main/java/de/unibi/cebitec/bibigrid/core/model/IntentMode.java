@@ -7,7 +7,8 @@ public enum IntentMode {
     CREATE("c", "create"),
     PREPARE("p", "prepare"),
     LIST("l", "list"),
-    VALIDATE("ch", "check");
+    VALIDATE("ch", "check"),
+    CLOUD9("cloud9", "cloud9");
 
     private final String shortParam;
     private final String longParam;

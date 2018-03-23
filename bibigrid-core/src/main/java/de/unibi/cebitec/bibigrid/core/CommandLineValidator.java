@@ -74,6 +74,14 @@ public abstract class CommandLineValidator {
         return true;
     }
 
+    private boolean parseCloud9Parameter() {
+        // cloud9 (cluster-id)
+        if (req.contains(IntentMode.CLOUD9.getShortParam())) {
+            config.setClusterIds(cl.getOptionValue(IntentMode.CLOUD9.getShortParam()).trim());
+        }
+        return true;
+    }
+
     private boolean parseUserNameParameter() {
         final String shortParam = RuleBuilder.RuleNames.USER_S.toString();
         // Parse command line parameter
@@ -657,6 +665,7 @@ public abstract class CommandLineValidator {
         }
         return validateProviderParameters() &&
                 parseTerminateParameter() &&
+                parseCloud9Parameter() &&
                 parseUserNameParameter() &&
                 parseSshUserNameParameter() &&
                 parseNetworkParameter() &&

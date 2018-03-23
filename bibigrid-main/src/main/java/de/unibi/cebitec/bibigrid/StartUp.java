@@ -1,10 +1,7 @@
 package de.unibi.cebitec.bibigrid;
 
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
-import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
@@ -197,6 +194,9 @@ public class StartUp {
                     break;
                 case TERMINATE:
                     module.getTerminateIntent(client, validator.getConfig()).terminate();
+                    break;
+                case CLOUD9:
+                    new Cloud9Intent(validator.getConfig()).start();
                     break;
                 default:
                     break;

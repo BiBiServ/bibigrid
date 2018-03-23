@@ -67,6 +67,16 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString());
                 options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
                 break;
+            case CLOUD9:
+                options.add(IntentMode.CLOUD9.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
+                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
+                break;
         }
         return options;
     }

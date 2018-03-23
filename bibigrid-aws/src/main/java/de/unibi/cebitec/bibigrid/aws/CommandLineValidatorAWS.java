@@ -67,6 +67,13 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                 options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
                 options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
                 break;
+            case CLOUD9:
+                options.add(IntentMode.CLOUD9.getShortParam());
+                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
+                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
+                break;
         }
         return options;
     }
