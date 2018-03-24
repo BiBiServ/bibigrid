@@ -72,4 +72,13 @@ public class SshFactory {
             }
         };
     }
+
+    public static boolean isOsWindows() {
+        try {
+            String osName = System.getProperty("os.name");
+            return osName != null && osName.startsWith("Windows");
+        } catch (final SecurityException ignored) {
+            return false;
+        }
+    }
 }

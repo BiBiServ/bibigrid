@@ -186,7 +186,35 @@ public abstract class CreateCluster extends Intent {
         return SLAVE_NAME_PREFIX + (batchIndex + 1) + "-" + (slaveIndex + 1) + "-" + clusterId;
     }
 
-    private void logFinishedInfoMessage(String masterPublicIp) {
+    private void logFinishedInfoMessage(final String masterPublicIp) {
+        if (SshFactory.isOsWindows()) {
+            logFinishedInfoMessageWindows(masterPublicIp);
+        } else {
+            logFinishedInfoMessageUnix(masterPublicIp);
+        }
+    }
+
+    private void logFinishedInfoMessageWindows(final String masterPublicIp) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n Only Windows 10 has built in ssh support (currently beta). We recommend you download")
+                .append(" PuTTY from https://www.putty.org\n\n");
+        sb.append("\n You might want to set the following environment variable:\n\n");
+        sb.append("setx BIBIGRID_MASTER \"").append(masterPublicIp).append("\"\n\n");
+        sb.append("You can then log on the master node with:\n\n")
+                .append("putty ssh -i ")
+                .append(config.getSshPrivateKeyFile())
+                .append(" ").append(config.getSshUser()).append("@%BIBIGRID_MASTER%\n\n");
+        sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
+        sb.append("You can easily terminate the cluster at any time with:\n")
+                .append("./bibigrid -t ").append(clusterId).append(" ");
+        if (config.isAlternativeConfigFile()) {
+            sb.append("-o ").append(config.getAlternativeConfigPath()).append(" ");
+        }
+        sb.append("\n");
+        LOG.info(sb.toString());
+    }
+
+    private void logFinishedInfoMessageUnix(final String masterPublicIp) {
         StringBuilder sb = new StringBuilder();
         sb.append("\n You might want to set the following environment variable:\n\n");
         sb.append("export BIBIGRID_MASTER=").append(masterPublicIp).append("\n\n");
@@ -194,10 +222,8 @@ public abstract class CreateCluster extends Intent {
                 .append("ssh -i ")
                 .append(config.getSshPrivateKeyFile())
                 .append(" ").append(config.getSshUser()).append("@$BIBIGRID_MASTER\n\n");
-        sb.append("The cluster id of your started cluster is : ")
-                .append(clusterId)
-                .append("\n\n");
-        sb.append("The can easily terminate the cluster at any time with :\n")
+        sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
+        sb.append("You can easily terminate the cluster at any time with:\n")
                 .append("./bibigrid -t ").append(clusterId).append(" ");
         if (config.isAlternativeConfigFile()) {
             sb.append("-o ").append(config.getAlternativeConfigPath()).append(" ");
