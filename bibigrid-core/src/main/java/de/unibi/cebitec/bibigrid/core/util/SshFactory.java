@@ -6,14 +6,20 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 
 import java.io.Console;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Scanner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
+
 public class SshFactory {
     private static final Logger LOG = LoggerFactory.getLogger(SshFactory.class);
+    private static final int SSH_POLL_ATTEMPTS = 25;
 
     public static Session createNewSshSession(JSch ssh, String dns, String user, Path identity) {
         try {
@@ -76,9 +82,35 @@ public class SshFactory {
     public static boolean isOsWindows() {
         try {
             String osName = System.getProperty("os.name");
-            return osName != null && osName.startsWith("Windows");
+            return osName != null && osName.toLowerCase(Locale.US).startsWith("windows");
         } catch (final SecurityException ignored) {
             return false;
         }
+    }
+
+    public static boolean pollSshPortIsAvailable(String masterPublicIp) {
+        LOG.info(V, "Check if SSH port is available and ready...");
+        int attempt = SSH_POLL_ATTEMPTS;
+        while (attempt > 0) {
+            try {
+                final Socket socket = new Socket();
+                socket.connect(new InetSocketAddress(masterPublicIp, 22), 2000);
+                byte[] buffer = new byte[1024];
+                int bytesRead = socket.getInputStream().read(buffer, 0, buffer.length);
+                String sshVersion = new String(buffer, 0, bytesRead).trim();
+                socket.close();
+                LOG.info(V, "Master instance SSH port is ready with version: {}", sshVersion);
+                return true;
+            } catch (Exception ex) {
+                attempt--;
+                LOG.error(V, "Poll SSH {}", ex.getMessage());
+            }
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ignored) {
+            }
+        }
+        LOG.error("Master instance SSH port is not reachable.");
+        return false;
     }
 }

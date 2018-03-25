@@ -61,7 +61,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         final Map<String, String> labels = new HashMap<>();
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, masterNameTag);
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID, clusterId);
-        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER, config.getUser());
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER, config.getUser().replace(".", "_"));
         // Create instance
         Instance masterInstance = GoogleCloudUtils.getInstanceBuilder(compute, config, masterNameTag,
                 config.getMasterInstance().getProviderType().getValue())
@@ -101,7 +101,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         final Map<String, String> labels = new HashMap<>();
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, slaveNameTag);
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID, clusterId);
-        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER, config.getUser());
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER, config.getUser().replace(".", "_"));
         // Create instances
         Instance[] slaveInstanceBuilders = new Instance[instanceCount];
         Operation[] slaveInstanceOperations = new Operation[instanceCount];

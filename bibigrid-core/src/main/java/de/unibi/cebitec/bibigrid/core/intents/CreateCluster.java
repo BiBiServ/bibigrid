@@ -13,8 +13,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -33,7 +31,6 @@ public abstract class CreateCluster extends Intent {
     public static final String PREFIX = "bibigrid-";
     public static final String MASTER_NAME_PREFIX = PREFIX + "master";
     public static final String SLAVE_NAME_PREFIX = PREFIX + "slave";
-    private static final int SSH_POLL_ATTEMPTS = 25;
 
     protected final ProviderModule providerModule;
     protected final Client client;
@@ -198,10 +195,10 @@ public abstract class CreateCluster extends Intent {
         StringBuilder sb = new StringBuilder();
         sb.append("\n Only Windows 10 has built in ssh support (currently beta). We recommend you download")
                 .append(" PuTTY from https://www.putty.org\n\n");
-        sb.append("\n You might want to set the following environment variable:\n\n");
+        sb.append("You might want to set the following environment variable:\n\n");
         sb.append("setx BIBIGRID_MASTER \"").append(masterPublicIp).append("\"\n\n");
         sb.append("You can then log on the master node with:\n\n")
-                .append("putty ssh -i ")
+                .append("putty -i ")
                 .append(config.getSshPrivateKeyFile())
                 .append(" ").append(config.getSshUser()).append("@%BIBIGRID_MASTER%\n\n");
         sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
@@ -250,29 +247,6 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
-    private boolean pollSshPortIsAvailable(String masterPublicIp) {
-        LOG.info(V, "Check if SSH port is available and ready...");
-        int attempt = SSH_POLL_ATTEMPTS;
-        while (attempt > 0) {
-            try {
-                final Socket socket = new Socket();
-                socket.connect(new InetSocketAddress(masterPublicIp, 22), 2000);
-                byte[] buffer = new byte[1024];
-                int bytesRead = socket.getInputStream().read(buffer, 0, buffer.length);
-                String sshVersion = new String(buffer, 0, bytesRead).trim();
-                socket.close();
-                LOG.info(V, "Master instance SSH port is ready with version: {}", sshVersion);
-                return true;
-            } catch (Exception ex) {
-                attempt--;
-                LOG.error(V, "Poll SSH {}", ex.getMessage());
-            }
-            sleep(2, false);
-        }
-        LOG.error("Master instance SSH port is not reachable.");
-        return false;
-    }
-
     private void configureMaster(final Instance masterInstance, final List<Instance> slaveInstances,
                                  final String subnetCidr, final boolean prepare) {
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, slaveInstances);
@@ -286,7 +260,7 @@ public abstract class CreateCluster extends Intent {
         JSch.setLogger(new JSchLogger());
         LOG.info("Now configuring...");
         boolean configured = false;
-        boolean sshPortIsReady = pollSshPortIsAvailable(masterIp);
+        boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (sshPortIsReady) {
             try {
                 ssh.addIdentity(config.getSshPrivateKeyFile());

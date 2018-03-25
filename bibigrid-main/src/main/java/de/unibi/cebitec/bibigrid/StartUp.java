@@ -43,6 +43,9 @@ public class StartUp {
         Option terminate = new Option(IntentMode.TERMINATE.getShortParam(), IntentMode.TERMINATE.getLongParam(),
                 true, "Terminate running cluster");
         terminate.setArgName("cluster-id");
+        Option cloud9 = new Option(IntentMode.CLOUD9.getShortParam(), IntentMode.CLOUD9.getLongParam(),
+                true, "Start the cloud9 IDE");
+        cloud9.setArgName("cluster-id");
         Option list = new Option(IntentMode.LIST.getShortParam(), IntentMode.LIST.getLongParam(),
                 true, "List running clusters");
         list.setOptionalArg(true);
@@ -59,7 +62,8 @@ public class StartUp {
                 .addOption(list)
                 .addOption(new Option(IntentMode.VALIDATE.getShortParam(), IntentMode.VALIDATE.getLongParam(),
                         false, "Validate the configuration file"))
-                .addOption(terminate);
+                .addOption(terminate)
+                .addOption(cloud9);
         return intentOptions;
     }
 
@@ -99,6 +103,7 @@ public class StartUp {
                 case LIST:
                 case TERMINATE:
                 case VALIDATE:
+                case CLOUD9:
                     runIntent(cl, intentMode);
                     break;
             }
@@ -196,7 +201,7 @@ public class StartUp {
                     module.getTerminateIntent(client, validator.getConfig()).terminate();
                     break;
                 case CLOUD9:
-                    new Cloud9Intent(validator.getConfig()).start();
+                    new Cloud9Intent(module, client, validator.getConfig()).start();
                     break;
                 default:
                     break;
