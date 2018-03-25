@@ -74,6 +74,14 @@ this may take some time.
 > bibigrid -c -o ~/config.yml
 ```
 
+## Starting the cloud9 IDE
+If you activated the cloud9 feature in configuration, the IDE can be started with a simple command.
+The process will run until an input is provided or it's terminated. The IDE is available under [http://localhost:8181](http://localhost:8181)
+
+```
+> bibigrid -cloud9 [cluster-id] -o ~/config.yml
+```
+
 ## Cluster maintenance
 ### List running clusters
 Once a cluster is created, it can be listed with the following command. All clusters found
