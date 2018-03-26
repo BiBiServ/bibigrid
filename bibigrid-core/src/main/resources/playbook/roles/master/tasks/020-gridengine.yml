@@ -202,10 +202,11 @@
 # add master as exec host (if configured)
 - block :
 
-  - name: Start gridengine exec daemon
+  - name: (Re-)start gridengine exec daemon
     systemd:
       name: gridengine-exec
-      state: started
+      state: restarted
+    when: act_qmaster | changed
 
   - name: Add master as exec host
     shell: '/etc/bibigrid/gridengine/add_exec.sh {{ansible_hostname }} {{ master.cores }} && touch /etc/bibigrid/master_exec_host.added'
