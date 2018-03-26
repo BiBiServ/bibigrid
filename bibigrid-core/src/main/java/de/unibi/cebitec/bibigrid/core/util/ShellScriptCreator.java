@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 public final class ShellScriptCreator {
     private static final Logger LOG = LoggerFactory.getLogger(ShellScriptCreator.class);
 
-    public static String getUserData(Configuration config, ClusterKeyPair keypair, boolean base64, boolean log) {
+    public static String getUserData(Configuration config, ClusterKeyPair keypair, boolean base64) {
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
         // redirect output

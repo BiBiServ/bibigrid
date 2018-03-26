@@ -39,7 +39,7 @@ public class CreateClusterAzure extends CreateCluster {
 
     @Override
     public CreateCluster configureClusterMasterInstance() {
-        masterStartupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, true);
+        masterStartupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), true);
         return super.configureClusterMasterInstance();
     }
 
@@ -95,7 +95,7 @@ public class CreateClusterAzure extends CreateCluster {
     protected List<Instance> launchClusterSlaveInstances(
             int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
         List<VirtualMachine> slaveInstances = new ArrayList<>();
-        String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true, false);
+        String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true);
         InstanceImageAzure image = (InstanceImageAzure) client.getImageById(instanceConfiguration.getImage());
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             VirtualMachine slaveInstance = compute.virtualMachines()
