@@ -2,8 +2,10 @@ package de.unibi.cebitec.bibigrid.core.util;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
-import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
-
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 
 import org.slf4j.Logger;
@@ -69,6 +71,26 @@ public final class ShellScriptCreator {
         userData.append("chmod 600 ").append(userSshPath).append("id_rsa\n");
         userData.append("echo '").append(keypair.getPublicKey()).append("' >> ").append(userSshPath)
                 .append("authorized_keys\n");
+        if (config.getSshPublicKeyFile() != null) {
+            Path publicKeyFile = FileSystems.getDefault().getPath(config.getSshPublicKeyFile());
+            try {
+                String publicKey = new String(Files.readAllBytes(publicKeyFile));
+                // Check if we have a public key like putty saves them
+                if (publicKey.startsWith("----")) {
+                    String publicKeyFilename = "bibigrid-ssh-public-key-file.pub";
+                    userData.append("echo '").append(publicKey).append("' > ").append(userSshPath)
+                            .append(publicKeyFilename).append("\n");
+                    userData.append("ssh-keygen -i -f ").append(userSshPath).append(publicKeyFilename).append(" >> ")
+                            .append(userSshPath).append("authorized_keys\n");
+                    userData.append("rm ").append(userSshPath).append(publicKeyFilename).append("\n");
+                } else {
+                    userData.append("echo '").append(publicKey).append("' >> ").append(userSshPath)
+                            .append("authorized_keys\n");
+                }
+            } catch (IOException e) {
+                LOG.error("Failed to add ssh public key file '{}'. {}", config.getSshPublicKeyFile(), e);
+            }
+        }
         userData.append("cat > ").append(userSshPath).append("config << SSHCONFIG\n");
         userData.append("Host *\n");
         userData.append("\tCheckHostIP no\n");
