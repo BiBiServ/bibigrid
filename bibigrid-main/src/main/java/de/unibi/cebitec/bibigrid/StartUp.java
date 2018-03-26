@@ -129,7 +129,7 @@ public class StartUp {
 
     private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
         // TODO: improve help modes
-        if (commandLine.hasOption(RuleBuilder.RuleNames.HELP_LIST_INSTANCE_TYPES_S.toString())) {
+        if (commandLine.hasOption(RuleBuilder.RuleNames.HELP_LIST_INSTANCE_TYPES.getShortParam())) {
             runIntent(commandLine, IntentMode.HELP);
             return;
         }

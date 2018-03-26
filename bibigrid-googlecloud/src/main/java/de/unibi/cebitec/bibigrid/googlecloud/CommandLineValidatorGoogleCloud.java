@@ -35,39 +35,39 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
             default:
                 return null;
             case LIST:
-                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString());
-                options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString());
+                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam());
                 break;
             case TERMINATE:
                 options.add(IntentMode.TERMINATE.getShortParam());
-                options.add(RuleBuilder.RuleNames.REGION_S.toString());
-                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
-                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString());
-                options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString());
+                options.add(RuleBuilder.RuleNames.REGION.getShortParam());
+                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam());
+                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam());
                 break;
             case PREPARE:
             case CREATE:
-                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
-                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
+                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT.getShortParam());
             case VALIDATE:
-                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString());
-                options.add(RuleBuilder.RuleNames.MASTER_IMAGE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
-                options.add(RuleBuilder.RuleNames.REGION_S.toString());
-                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
-                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString());
-                options.add(RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString());
-                options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString());
+                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE.getShortParam());
+                options.add(RuleBuilder.RuleNames.MASTER_IMAGE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.REGION.getShortParam());
+                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam());
+                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID.getShortParam());
+                options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam());
                 break;
             case CLOUD9:
                 options.add(IntentMode.CLOUD9.getShortParam());
-                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString());
-                options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
                 break;
         }
         return options;
@@ -81,7 +81,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
     }
 
     private boolean parseGoogleProjectIdParameter() {
-        final String shortParam = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -93,7 +93,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
     }
 
     private boolean parseGoogleImageProjectIdParameter() {
-        final String shortParam = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -105,7 +105,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
     }
 
     private boolean parseGoogleCredentialsFileParameter() {
-        final String shortParam = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);

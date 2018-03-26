@@ -34,48 +34,48 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
             default:
                 return null;
             case LIST:
-                options.add(RuleBuilder.RuleNames.REGION_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
+                options.add(RuleBuilder.RuleNames.REGION.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
                 break;
             case TERMINATE:
                 options.add(IntentMode.TERMINATE.getShortParam());
-                options.add(RuleBuilder.RuleNames.REGION_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
+                options.add(RuleBuilder.RuleNames.REGION.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
                 break;
             case PREPARE:
             case CREATE:
-                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
-                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString());
-                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString());
-                options.add(RuleBuilder.RuleNames.MASTER_IMAGE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString());
-                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
-                options.add(RuleBuilder.RuleNames.REGION_S.toString());
-                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
+                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT.getShortParam());
+                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE.getShortParam());
+                options.add(RuleBuilder.RuleNames.MASTER_IMAGE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE.getShortParam());
+                options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.REGION.getShortParam());
+                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam());
             case VALIDATE:
-                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
                 break;
             case CLOUD9:
                 options.add(IntentMode.CLOUD9.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
-                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
+                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
+                options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
                 break;
         }
         return options;
@@ -102,8 +102,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseCredentialsUsernameParameter(OpenStackCredentials credentials) {
-        String shortParam = RuleBuilder.RuleNames.OPENSTACK_USERNAME_S.toString();
-        String envParam = RuleBuilder.RuleNames.OPENSTACK_USERNAME_ENV.toString();
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_USERNAME.getEnvParam();
         // Parse environment variable if not loaded from config file
         if (isStringNullOrEmpty(credentials.getUsername()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setUsername(System.getenv(envParam));
@@ -119,8 +119,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseCredentialsDomainParameter(OpenStackCredentials credentials) {
-        String shortParam = RuleBuilder.RuleNames.OPENSTACK_DOMAIN_S.toString();
-        String envParam = RuleBuilder.RuleNames.OPENSTACK_DOMAIN_ENV.toString();
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_DOMAIN.getShortParam();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_DOMAIN.getEnvParam();
         // Parse environment variable if not loaded from config file
         if (isStringNullOrEmpty(credentials.getDomain()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setDomain(System.getenv(envParam));
@@ -146,8 +146,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseCredentialsTenantNameParameter(OpenStackCredentials credentials) {
-        String shortParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_S.toString();
-        String envParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME_ENV.toString();
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getEnvParam();
         // Parse environment variable if not loaded from config file
         if (isStringNullOrEmpty(credentials.getTenantName()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setTenantName(System.getenv(envParam));
@@ -163,7 +163,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseCredentialsTenantDomainParameter(OpenStackCredentials credentials) {
-        String shortParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN_S.toString();
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_TENANT_DOMAIN.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -186,8 +186,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseCredentialsPasswordParameter(OpenStackCredentials credentials) {
-        String shortParam = RuleBuilder.RuleNames.OPENSTACK_PASSWORD_S.toString();
-        String envParam = RuleBuilder.RuleNames.OPENSTACK_PASSWORD_ENV.toString();
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getEnvParam();
         // Parse environment variable if not loaded from config file
         if (isStringNullOrEmpty(credentials.getPassword()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setPassword(System.getenv(envParam));
@@ -203,8 +203,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseCredentialsEndpointParameter(OpenStackCredentials credentials) {
-        String shortParam = RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_S.toString();
-        String envParam = RuleBuilder.RuleNames.OPENSTACK_ENDPOINT_ENV.toString();
+        String shortParam = RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam();
+        String envParam = RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getEnvParam();
         // Parse environment variable if not loaded from config file
         if (isStringNullOrEmpty(credentials.getEndpoint()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setEndpoint(System.getenv(envParam));
@@ -220,7 +220,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseRouterParameter() {
-        final String shortParam = RuleBuilder.RuleNames.ROUTER_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.ROUTER.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -232,7 +232,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseSecurityGroupParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SECURITY_GROUP_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.SECURITY_GROUP.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);

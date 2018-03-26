@@ -51,8 +51,8 @@ public abstract class CommandLineValidator {
     protected abstract Class<? extends Configuration> getProviderConfigurationClass();
 
     protected final Boolean parseBooleanParameter(RuleBuilder.RuleNames ruleName) {
-        if (cl.hasOption(ruleName.toString())) {
-            final String value = cl.getOptionValue(ruleName.toString());
+        if (cl.hasOption(ruleName.getShortParam())) {
+            final String value = cl.getOptionValue(ruleName.getShortParam());
             return isStringNullOrEmpty(value) || value.equalsIgnoreCase("yes");
         }
         return null;
@@ -83,7 +83,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseUserNameParameter() {
-        final String shortParam = RuleBuilder.RuleNames.USER_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.USER.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -95,7 +95,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSshUserNameParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SSH_USER_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.SSH_USER.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -107,7 +107,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseNetworkParameter() {
-        final String shortParam = RuleBuilder.RuleNames.NETWORK_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.NETWORK.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -119,7 +119,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSubnetParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SUBNET_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.SUBNET.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -131,27 +131,27 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSoftwareParameters() {
-        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.MESOS_S);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.MESOS);
         if (parseResult != null) {
             config.setMesos(parseResult);
         }
-        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.OPEN_GRID_ENGINE_S);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.OPEN_GRID_ENGINE);
         if (parseResult != null) {
             config.setOge(parseResult);
         }
-        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.NFS_S);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.NFS);
         if (parseResult != null) {
             config.setNfs(parseResult);
         }
-        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.CASSANDRA_S);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.CASSANDRA);
         if (parseResult != null) {
             config.setCassandra(parseResult);
         }
-        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.SPARK_S);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.SPARK);
         if (parseResult != null) {
             config.setSpark(parseResult);
         }
-        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.HDFS_S);
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.HDFS);
         if (parseResult != null) {
             config.setHdfs(parseResult);
         }
@@ -159,7 +159,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSshPublicKeyFileParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SSH_PUBLIC_KEY_FILE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.SSH_PUBLIC_KEY_FILE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -182,7 +182,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSshPrivateKeyFileParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -205,7 +205,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseKeypairParameter() {
-        final String shortParam = RuleBuilder.RuleNames.KEYPAIR_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.KEYPAIR.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -224,8 +224,8 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseRegionParameter() {
-        final String shortParam = RuleBuilder.RuleNames.REGION_S.toString();
-        final String envParam = RuleBuilder.RuleNames.REGION_ENV.toString();
+        final String shortParam = RuleBuilder.RuleNames.REGION.getShortParam();
+        final String envParam = RuleBuilder.RuleNames.REGION.getEnvParam();
         // Parse environment variable if not loaded from config file
         if (isStringNullOrEmpty(config.getRegion()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             config.setRegion(System.getenv(envParam));
@@ -248,7 +248,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseAvailabilityZoneParameter() {
-        final String shortParam = RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -268,7 +268,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseMasterInstanceTypeParameter() {
-        final String shortParam = RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -287,7 +287,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseMasterInstanceImageParameter() {
-        final String shortParam = RuleBuilder.RuleNames.MASTER_IMAGE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.MASTER_IMAGE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -313,7 +313,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseMasterAsComputeParameter() {
-        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE);
         if (parseResult != null) {
             config.setUseMasterAsCompute(parseResult);
         }
@@ -321,7 +321,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseMasterWithPublicIpParameter() {
-        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_MASTER_WITH_PUBLIC_IP_S);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_MASTER_WITH_PUBLIC_IP);
         if (parseResult != null) {
             config.setUseMasterWithPublicIp(parseResult);
         }
@@ -329,7 +329,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSlaveInstanceTypeParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -366,7 +366,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSlaveInstanceCountParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -402,7 +402,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSlaveImageParameter() {
-        final String shortParam = RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.SLAVE_IMAGE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             String value = cl.getOptionValue(shortParam);
@@ -437,7 +437,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parsePortsParameter() {
-        final String shortParam = RuleBuilder.RuleNames.PORTS_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.PORTS.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -497,7 +497,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseMasterMountsParameter() {
-        final String shortParam = RuleBuilder.RuleNames.MASTER_MOUNTS_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.MASTER_MOUNTS.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -547,7 +547,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseMasterNfsSharesParameter() {
-        final String shortParam = RuleBuilder.RuleNames.NFS_SHARES_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.NFS_SHARES.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -572,7 +572,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseExternalNfsSharesParameter() {
-        final String shortParam = RuleBuilder.RuleNames.EXT_NFS_SHARES_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.EXT_NFS_SHARES.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -594,7 +594,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseUseSpotInstanceRequestParameter() {
-        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST);
         if (parseResult != null) {
             config.setUseSpotInstances(parseResult);
         }
@@ -602,7 +602,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseEphemeralFilesystemParameter() {
-        final String shortParam = RuleBuilder.RuleNames.LOCAL_FS_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.LOCAL_FS.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -628,7 +628,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseGridPropertiesFileParameter() {
-        final String shortParam = RuleBuilder.RuleNames.GRID_PROPERTIES_FILE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.GRID_PROPERTIES_FILE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -648,7 +648,7 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseDebugRequestsParameter() {
-        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.DEBUG_REQUESTS_S);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.DEBUG_REQUESTS);
         if (parseResult != null) {
             config.setDebugRequests(parseResult);
         }

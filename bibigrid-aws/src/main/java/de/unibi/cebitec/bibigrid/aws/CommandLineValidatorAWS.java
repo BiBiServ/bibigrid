@@ -42,37 +42,37 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
             default:
                 return null;
             case LIST:
-                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
-                options.add(RuleBuilder.RuleNames.REGION_S.toString());
-                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
+                options.add(RuleBuilder.RuleNames.REGION.getShortParam());
+                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam());
                 break;
             case TERMINATE:
                 options.add(IntentMode.TERMINATE.getShortParam());
-                options.add(RuleBuilder.RuleNames.REGION_S.toString());
-                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.REGION.getShortParam());
+                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam());
                 break;
             case PREPARE:
             case CREATE:
-                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
-                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT_S.toString());
+                options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
+                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT.getShortParam());
             case VALIDATE:
-                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE_S.toString());
-                options.add(RuleBuilder.RuleNames.MASTER_IMAGE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE_S.toString());
-                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE_S.toString());
-                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
-                options.add(RuleBuilder.RuleNames.REGION_S.toString());
-                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE_S.toString());
-                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE.getShortParam());
+                options.add(RuleBuilder.RuleNames.MASTER_IMAGE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE.getShortParam());
+                options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.REGION.getShortParam());
+                options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam());
+                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam());
                 break;
             case CLOUD9:
                 options.add(IntentMode.CLOUD9.getShortParam());
-                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_USER_S.toString());
-                options.add(RuleBuilder.RuleNames.KEYPAIR_S.toString());
-                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE_S.toString());
+                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
+                options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
+                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
                 break;
         }
         return options;
@@ -86,7 +86,7 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
     }
 
     private boolean parseAwsCredentialsFileParameter() {
-        final String shortParam = RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE_S.toString();
+        final String shortParam = RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam();
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
@@ -116,7 +116,7 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
     }
 
     private boolean parsePublicSlaveIpParameter() {
-        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.PUBLIC_SLAVE_IP_S);
+        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.PUBLIC_SLAVE_IP);
         if (parseResult != null) {
             awsConfig.setPublicSlaveIps(parseResult);
         }
@@ -124,12 +124,12 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
     }
 
     private boolean parseSpotInstanceParameters() {
-        final String spotShortParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST_S.toString();
+        final String spotShortParam = RuleBuilder.RuleNames.USE_SPOT_INSTANCE_REQUEST.getShortParam();
         if (cl.hasOption(spotShortParam)) {
             final String value = cl.getOptionValue(spotShortParam);
             if (value.equalsIgnoreCase("yes")) { // TODO: keyword
                 config.setUseSpotInstances(true);
-                String bidPriceShortParam = RuleBuilder.RuleNames.BID_PRICE_S.toString();
+                String bidPriceShortParam = RuleBuilder.RuleNames.BID_PRICE.getShortParam();
                 if (cl.hasOption(bidPriceShortParam)) {
                     try {
                         awsConfig.setBidPrice(Double.parseDouble(cl.getOptionValue(bidPriceShortParam)));
@@ -144,7 +144,7 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                     LOG.error("If use-spot-instance-request is set, a bidprice must defined!");
                     return false;
                 }
-                String bidPriceMasterShortParam = RuleBuilder.RuleNames.BID_PRICE_MASTER_S.toString();
+                String bidPriceMasterShortParam = RuleBuilder.RuleNames.BID_PRICE_MASTER.getShortParam();
                 if (cl.hasOption(bidPriceMasterShortParam)) {
                     try {
                         awsConfig.setBidPriceMaster(Double.parseDouble(cl.getOptionValue(bidPriceMasterShortParam)));
