@@ -28,7 +28,7 @@
     name: nfs-kernel-server
     state: restarted
   when:
-    - nfs_exports | changed
+    - nfs_exports is changed
 
 
 

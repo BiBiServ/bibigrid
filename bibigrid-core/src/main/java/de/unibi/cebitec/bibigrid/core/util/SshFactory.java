@@ -99,7 +99,6 @@ public class SshFactory {
                 int bytesRead = socket.getInputStream().read(buffer, 0, buffer.length);
                 String sshVersion = new String(buffer, 0, bytesRead).trim();
                 socket.close();
-                LOG.info(V, "Master instance SSH port is ready with version: {}", sshVersion);
                 return true;
             } catch (Exception ex) {
                 attempt--;

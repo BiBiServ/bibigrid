@@ -23,7 +23,7 @@
   systemd:
     name: gridengine-exec
     state: restarted
-  when: act_qmaster | changed
+  when: act_qmaster is changed
 
 
 

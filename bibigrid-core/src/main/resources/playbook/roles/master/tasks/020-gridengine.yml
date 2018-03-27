@@ -35,7 +35,7 @@
   systemd:
     name: gridengine-master
     state: restarted
-  when: act_qmaster | changed
+  when: act_qmaster is changed
 
 # Make sure that master daemon is running
 - name: Start gridengine master daemon
@@ -100,7 +100,7 @@
   shell: 'qconf -Ahgrp /etc/bibigrid/gridengine/hostgroup.conf'
   environment:
     SGE_ROOT: /var/lib/gridengine
-  when: hostgroup_conf | changed
+  when: hostgroup_conf is changed
 
 #qconf -Ap ./pe.conf
 
@@ -206,7 +206,7 @@
     systemd:
       name: gridengine-exec
       state: restarted
-    when: act_qmaster | changed
+    when: act_qmaster is changed
 
   - name: Add master as exec host
     shell: '/etc/bibigrid/gridengine/add_exec.sh {{ansible_hostname }} {{ master.cores }} && touch /etc/bibigrid/master_exec_host.added'

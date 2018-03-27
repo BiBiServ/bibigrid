@@ -20,7 +20,7 @@
   systemd:
     name: docker
     state: restarted
-  when: docker_config | changed
+  when: docker_config is changed
 
 - name: Create docker group
   group:
