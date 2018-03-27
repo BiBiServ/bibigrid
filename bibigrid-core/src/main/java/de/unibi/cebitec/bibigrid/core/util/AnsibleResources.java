@@ -16,6 +16,7 @@ public final class AnsibleResources {
     public static final String HOSTS_CONFIG_FILE = ROOT_PATH + "ansible_hosts";
     public static final String CONFIG_ROOT_PATH = ROOT_PATH + "vars/";
     public static final String COMMONS_CONFIG_FILE = CONFIG_ROOT_PATH + "common.yml";
+    public static final String SITE_CONFIG_FILE = ROOT_PATH + "site.yml";
     private final List<String> files = new ArrayList<>();
 
     public AnsibleResources() {

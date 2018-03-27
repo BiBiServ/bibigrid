@@ -1,7 +1,9 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.nodes.Tag;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,9 +13,6 @@ import java.util.*;
 
 /**
  * Wrapper for the {@link Configuration} class with extra fields.
- * <p/>
- * The {@link #toString() toString} method outputs the configuration in yaml format
- * ready to use for ansible.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
@@ -49,6 +48,20 @@ public final class AnsibleConfig {
         }
     }
 
+    public void writeSiteFile(OutputStream stream) {
+        Map<String, Object> master = new LinkedHashMap<>();
+        master.put("hosts", "master");
+        master.put("become", "yes");
+        master.put("vars_files", Arrays.asList("vars/common.yml"));
+        master.put("roles", Arrays.asList("common", "master"));
+        Map<String, Object> slaves = new LinkedHashMap<>();
+        slaves.put("hosts", "slaves");
+        slaves.put("become", "yes");
+        slaves.put("vars_files", Arrays.asList("vars/common.yml", "vars/{{ ansible_default_ipv4.address }}.yml"));
+        slaves.put("roles", Arrays.asList("common", "slave"));
+        writeToOutputStream(stream, Arrays.asList(master, slaves));
+    }
+
     /**
      * Write specified instance to stream (in YAML format)
      */
@@ -79,10 +92,14 @@ public final class AnsibleConfig {
         writeToOutputStream(stream, map);
     }
 
-    private void writeToOutputStream(OutputStream stream, Map<String, Object> map) {
+    private void writeToOutputStream(OutputStream stream, Object map) {
         try {
             try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
-                writer.write(new Yaml().dumpAsMap(map));
+                if (map instanceof Map) {
+                    writer.write(new Yaml().dumpAsMap(map));
+                } else {
+                    writer.write(new Yaml().dumpAs(map, Tag.SEQ, DumperOptions.FlowStyle.BLOCK));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

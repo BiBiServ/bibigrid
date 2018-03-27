@@ -325,6 +325,7 @@ public abstract class CreateCluster extends Intent {
             }
             // Write the commons configuration file
             commonConfig.writeCommonFile(channel.put(channel.getHome() + "/" + AnsibleResources.COMMONS_CONFIG_FILE));
+            commonConfig.writeSiteFile(channel.put(channel.getHome() + "/" + AnsibleResources.SITE_CONFIG_FILE));
             // Write slave instance specific configuration file
             for (Instance slave : slaveInstances) {
                 String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/" + slave.getPrivateIp() + ".yml";
