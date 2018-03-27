@@ -3,9 +3,9 @@ package de.unibi.cebitec.bibigrid.core.util;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 
 import org.slf4j.Logger;
@@ -72,7 +72,7 @@ public final class ShellScriptCreator {
         userData.append("echo '").append(keypair.getPublicKey()).append("' >> ").append(userSshPath)
                 .append("authorized_keys\n");
         if (config.getSshPublicKeyFile() != null) {
-            Path publicKeyFile = FileSystems.getDefault().getPath(config.getSshPublicKeyFile());
+            Path publicKeyFile = Paths.get(config.getSshPublicKeyFile());
             try {
                 String publicKey = new String(Files.readAllBytes(publicKeyFile));
                 // Check if we have a public key like putty saves them

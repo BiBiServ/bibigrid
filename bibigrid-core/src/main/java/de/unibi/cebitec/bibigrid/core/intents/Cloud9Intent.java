@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.FileSystems;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -69,7 +69,7 @@ public class Cloud9Intent extends Intent {
             sleep(4);
             // Create new Session to avoid packet corruption.
             Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
-                    FileSystems.getDefault().getPath(config.getSshPrivateKeyFile()));
+                    Paths.get(config.getSshPrivateKeyFile()));
             if (sshSession != null) {
                 sshSession.setPortForwardingL(PORT, "localhost", PORT);
                 // Start connection attempt

@@ -10,9 +10,9 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -33,7 +33,7 @@ public final class DefaultPropertiesFile {
     public DefaultPropertiesFile(CommandLine commandLine) {
         if (commandLine.hasOption(PROPERTIES_FILEPATH_PARAMETER)) {
             String path = commandLine.getOptionValue(PROPERTIES_FILEPATH_PARAMETER);
-            Path newPath = FileSystems.getDefault().getPath(path);
+            Path newPath = Paths.get(path);
             if (Files.isReadable(newPath)) {
                 propertiesFilePath = newPath;
                 isAlternativeFilepath = true;
@@ -43,7 +43,7 @@ public final class DefaultPropertiesFile {
             }
         }
         if (propertiesFilePath == null) {
-            propertiesFilePath = FileSystems.getDefault().getPath(DEFAULT_DIRNAME, DEFAULT_FILENAME);
+            propertiesFilePath = Paths.get(DEFAULT_DIRNAME, DEFAULT_FILENAME);
         }
         if (Files.exists(propertiesFilePath)) {
             LOG.info(V, "Reading default options from properties file at '{}'.", propertiesFilePath);

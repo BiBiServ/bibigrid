@@ -5,6 +5,9 @@ import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 
 import org.slf4j.Logger;
@@ -12,9 +15,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystems;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -268,7 +271,7 @@ public abstract class CreateCluster extends Intent {
                 sleep(4);
                 // Create new Session to avoid packet corruption.
                 Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
-                        FileSystems.getDefault().getPath(config.getSshPrivateKeyFile()));
+                        Paths.get(config.getSshPrivateKeyFile()));
                 if (sshSession != null) {
                     // Start connection attempt
                     sshSession.connect();
@@ -300,16 +303,7 @@ public abstract class CreateCluster extends Intent {
             // Collect the Ansible files from resources for upload
             AnsibleResources resources = new AnsibleResources();
             // First the folders need to be created
-            for (String folderPath : resources.getDirectories()) {
-                String fullPath = channel.getHome() + "/" + folderPath;
-                LOG.info(V, "SFTP: Create folder {}", fullPath);
-                try {
-                    channel.cd(fullPath);
-                } catch (SftpException e) {
-                    channel.mkdir(fullPath);
-                }
-                channel.cd(channel.getHome());
-            }
+            createSftpFolders(channel, resources, resources.getFiles());
             // Each file is uploaded to it's relative path in the home folder
             for (String filepath : resources.getFiles()) {
                 InputStream stream = resources.getFileStream(filepath);
@@ -317,6 +311,14 @@ public abstract class CreateCluster extends Intent {
                 String fullPath = channel.getHome() + "/" + filepath;
                 LOG.info(V, "SFTP: Upload file {}", fullPath);
                 channel.put(stream, fullPath);
+            }
+            for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
+                uploadAnsibleRole(channel, resources, config.getMasterAnsibleRoles().get(i),
+                        commonConfig.getCustomRoleName("master", i));
+            }
+            for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
+                uploadAnsibleRole(channel, resources, config.getSlaveAnsibleRoles().get(i),
+                        commonConfig.getCustomRoleName("slaves", i));
             }
             // Write the hosts configuration file
             try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
@@ -339,6 +341,35 @@ public abstract class CreateCluster extends Intent {
             channel.disconnect();
         }
         return uploadCompleted;
+    }
+
+    private void createSftpFolders(ChannelSftp channel, AnsibleResources resources, List<String> files) throws SftpException {
+        for (String folderPath : resources.getDirectories(files)) {
+            String fullPath = channel.getHome() + "/" + folderPath;
+            LOG.info(V, "SFTP: Create folder {}", fullPath);
+            try {
+                channel.cd(fullPath);
+            } catch (SftpException e) {
+                channel.mkdir(fullPath);
+            }
+            channel.cd(channel.getHome());
+        }
+    }
+
+    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath, String roleName)
+            throws SftpException, IOException {
+        String basePath = AnsibleResources.ROLES_ROOT_PATH + "/" + roleName + "/";
+        Path rootRolePath = Paths.get(rolePath);
+        List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
+        List<String> targetFiles = files.stream().map(p -> basePath + rootRolePath.relativize(p)).collect(Collectors.toList());
+        createSftpFolders(channel, resources, targetFiles);
+        for (int i = 0; i < files.size(); i++) {
+            InputStream stream = new FileInputStream(files.get(i).toFile());
+            // Upload the file stream via sftp to the home folder
+            String fullPath = channel.getHome() + "/" + targetFiles.get(i).replace("\\", "/");
+            LOG.info(V, "SFTP: Upload file {}", fullPath);
+            channel.put(stream, fullPath);
+        }
     }
 
     private boolean installAndExecuteAnsible(final Session sshSession, final boolean prepare)

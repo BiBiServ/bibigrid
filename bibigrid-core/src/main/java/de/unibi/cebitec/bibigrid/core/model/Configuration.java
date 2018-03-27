@@ -35,6 +35,7 @@ public abstract class Configuration {
     private boolean hdfs;
     private boolean spark;
     private boolean nfs = true;
+    private boolean cloud9;
     private List<String> nfsShares = Arrays.asList("/vol/spool");
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
@@ -44,7 +45,8 @@ public abstract class Configuration {
     private String network;
     private String subnet;
     private String[] clusterIds;
-    private boolean cloud9;
+    private List<String> masterAnsibleRoles = new ArrayList<>();
+    private List<String> slaveAnsibleRoles = new ArrayList<>();
 
     public int getSlaveInstanceCount() {
         if (slaveInstances == null) {
@@ -400,6 +402,36 @@ public abstract class Configuration {
 
     public void setCredentialsFile(String credentialsFile) {
         this.credentialsFile = credentialsFile;
+    }
+
+    public List<String> getMasterAnsibleRoles() {
+        return masterAnsibleRoles;
+    }
+
+    public void setMasterAnsibleRoles(List<String> masterAnsibleRoles) {
+        this.masterAnsibleRoles = masterAnsibleRoles != null ? masterAnsibleRoles : new ArrayList<>();
+        if (masterAnsibleRoles != null && !masterAnsibleRoles.isEmpty()) {
+            StringBuilder display = new StringBuilder();
+            for (String role : masterAnsibleRoles) {
+                display.append(role).append(" ");
+            }
+            LOG.info(V, "Additional master ansible roles set: {}", display);
+        }
+    }
+
+    public List<String> getSlaveAnsibleRoles() {
+        return slaveAnsibleRoles;
+    }
+
+    public void setSlaveAnsibleRoles(List<String> slaveAnsibleRoles) {
+        this.slaveAnsibleRoles = slaveAnsibleRoles != null ? slaveAnsibleRoles : new ArrayList<>();
+        if (slaveAnsibleRoles != null && !slaveAnsibleRoles.isEmpty()) {
+            StringBuilder display = new StringBuilder();
+            for (String role : slaveAnsibleRoles) {
+                display.append(role).append(" ");
+            }
+            LOG.info(V, "Additional slave ansible roles set: {}", display);
+        }
     }
 
     @SuppressWarnings("WeakerAccess")

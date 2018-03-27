@@ -7,8 +7,8 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -166,7 +166,7 @@ public abstract class CommandLineValidator {
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
             if (!isStringNullOrEmpty(value)) {
-                config.setSshPublicKeyFile(FileSystems.getDefault().getPath(value.trim()).toString());
+                config.setSshPublicKeyFile(Paths.get(value.trim()).toString());
             }
         }
         // Validate parameter if required
@@ -175,7 +175,7 @@ public abstract class CommandLineValidator {
                 LOG.error("-" + shortParam + " option is required! Please specify the absolute path to your " +
                         "SSH public key file.");
                 return false;
-            } else if (!FileSystems.getDefault().getPath(config.getSshPublicKeyFile()).toFile().exists()) {
+            } else if (!Paths.get(config.getSshPublicKeyFile()).toFile().exists()) {
                 LOG.error("SSH public key file '{}' does not exist!", config.getSshPublicKeyFile());
                 return false;
             }
@@ -189,7 +189,7 @@ public abstract class CommandLineValidator {
         if (cl.hasOption(shortParam)) {
             final String value = cl.getOptionValue(shortParam);
             if (!isStringNullOrEmpty(value)) {
-                config.setSshPrivateKeyFile(FileSystems.getDefault().getPath(value.trim()).toString());
+                config.setSshPrivateKeyFile(Paths.get(value.trim()).toString());
             }
         }
         // Validate parameter if required
@@ -198,7 +198,7 @@ public abstract class CommandLineValidator {
                 LOG.error("-" + shortParam + " option is required! Please specify the absolute path to your " +
                         "SSH private key file.");
                 return false;
-            } else if (!FileSystems.getDefault().getPath(config.getSshPrivateKeyFile()).toFile().exists()) {
+            } else if (!Paths.get(config.getSshPrivateKeyFile()).toFile().exists()) {
                 LOG.error("SSH private key file '{}' does not exist!", config.getSshPrivateKeyFile());
                 return false;
             }
@@ -640,7 +640,7 @@ public abstract class CommandLineValidator {
         }
         // Check if file already exists and warn
         if (!isStringNullOrEmpty(config.getGridPropertiesFile())) {
-            Path prop = FileSystems.getDefault().getPath(config.getGridPropertiesFile());
+            Path prop = Paths.get(config.getGridPropertiesFile());
             if (prop.toFile().exists()) {
                 LOG.warn("Overwrite an existing properties file '{}'!", prop);
             }
@@ -663,7 +663,7 @@ public abstract class CommandLineValidator {
             if (isStringNullOrEmpty(config.getCredentialsFile())) {
                 LOG.error("-" + shortParam + " option is required!");
                 return false;
-            } else if (!FileSystems.getDefault().getPath(config.getCredentialsFile()).toFile().exists()) {
+            } else if (!Paths.get(config.getCredentialsFile()).toFile().exists()) {
                 LOG.error("Credentials file '{}' does not exist!", config.getCredentialsFile());
                 return false;
             }

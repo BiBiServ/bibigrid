@@ -85,6 +85,8 @@ public class AnsibleConfigTest {
                 }
             });
             setSlaveInstances(slaveInstances);
+            setMasterAnsibleRoles(Arrays.asList("~/ansible/testrole1", "~/ansible/testrole2"));
+            setSlaveAnsibleRoles(Arrays.asList("/etc/ansible/testrole3"));
         }
     }
 

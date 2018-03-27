@@ -43,6 +43,13 @@ slaveInstances:
     image: string
   - ...
 
+masterAnsibleRoles:
+  - string
+  - ...
+slaveAnsibleRoles:
+  - string
+  - ...
+
 cassandra: boolean [yes, no]
 mesos: boolean [yes, no]
 oge: boolean [yes, no]

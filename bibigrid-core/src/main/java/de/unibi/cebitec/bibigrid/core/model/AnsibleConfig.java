@@ -53,13 +53,35 @@ public final class AnsibleConfig {
         master.put("hosts", "master");
         master.put("become", "yes");
         master.put("vars_files", Arrays.asList("vars/common.yml"));
-        master.put("roles", Arrays.asList("common", "master"));
+        List<String> roles = new ArrayList<>();
+        roles.add("common");
+        roles.add("master");
+        for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
+            roles.add(getCustomRoleName("master", i));
+        }
+        master.put("roles", roles);
         Map<String, Object> slaves = new LinkedHashMap<>();
         slaves.put("hosts", "slaves");
         slaves.put("become", "yes");
         slaves.put("vars_files", Arrays.asList("vars/common.yml", "vars/{{ ansible_default_ipv4.address }}.yml"));
-        slaves.put("roles", Arrays.asList("common", "slave"));
+        roles = new ArrayList<>();
+        roles.add("common");
+        roles.add("slave");
+        for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
+            roles.add(getCustomRoleName("slaves", i));
+        }
+        slaves.put("roles", roles);
         writeToOutputStream(stream, Arrays.asList(master, slaves));
+    }
+
+    /**
+     * Generates a unique role name with the provided hosts type and index.
+     *
+     * @param hosts master or slaves.
+     * @param i     Index of the custom role folder.
+     */
+    public String getCustomRoleName(String hosts, int i) {
+        return hosts + "-user-role" + i;
     }
 
     /**

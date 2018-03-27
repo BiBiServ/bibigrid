@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +31,7 @@ class ClientAWS extends Client {
     ClientAWS(Configuration config) throws ClientConnectionFailedException {
         AWSCredentials credentials;
         try {
-            credentials = new PropertiesCredentials(FileSystems.getDefault().getPath(config.getCredentialsFile()).toFile());
+            credentials = new PropertiesCredentials(Paths.get(config.getCredentialsFile()).toFile());
         } catch (IOException | IllegalArgumentException e) {
             throw new ClientConnectionFailedException("AWS credentials file could not be loaded.", e);
         }

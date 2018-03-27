@@ -13,7 +13,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.nio.file.FileSystems;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,7 +87,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private boolean parseCredentialParameters() {
         if (config.getCredentialsFile() != null) {
             try {
-                File credentialsFile = FileSystems.getDefault().getPath(config.getCredentialsFile()).toFile();
+                File credentialsFile = Paths.get(config.getCredentialsFile()).toFile();
                 openstackConfig.setOpenstackCredentials(
                         new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class));
             } catch (FileNotFoundException e) {

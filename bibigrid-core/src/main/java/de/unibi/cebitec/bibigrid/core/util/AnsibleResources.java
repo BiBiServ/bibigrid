@@ -15,6 +15,7 @@ public final class AnsibleResources {
     private static final String ROOT_PATH = "playbook/";
     public static final String HOSTS_CONFIG_FILE = ROOT_PATH + "ansible_hosts";
     public static final String CONFIG_ROOT_PATH = ROOT_PATH + "vars/";
+    public static final String ROLES_ROOT_PATH = ROOT_PATH + "roles/";
     public static final String COMMONS_CONFIG_FILE = CONFIG_ROOT_PATH + "common.yml";
     public static final String SITE_CONFIG_FILE = ROOT_PATH + "site.yml";
     private final List<String> files = new ArrayList<>();
@@ -77,7 +78,7 @@ public final class AnsibleResources {
         return getClass().getClassLoader().getResourceAsStream(path);
     }
 
-    public List<String> getDirectories() {
+    public List<String> getDirectories(List<String> files) {
         List<String> folderSet = new ArrayList<>();
         for (String filepath : files) {
             String folderPath = new File(filepath).getParent().replace("\\", "/");
