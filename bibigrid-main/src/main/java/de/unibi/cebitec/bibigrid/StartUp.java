@@ -153,7 +153,13 @@ public class StartUp {
             LOG.error(ABORT_WITH_NOTHING_STARTED);
             return;
         }
-        CommandLineValidator validator = module.getCommandLineValidator(commandLine, defaultPropertiesFile, intentMode);
+        CommandLineValidator validator;
+        try {
+            validator = module.getCommandLineValidator(commandLine, defaultPropertiesFile, intentMode);
+        } catch (ConfigurationException e) {
+            LOG.error(ABORT_WITH_NOTHING_STARTED, e);
+            return;
+        }
         if (validator.validate(providerMode)) {
             Client client;
             try {

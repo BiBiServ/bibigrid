@@ -42,7 +42,7 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     private final OSClient os;
 
-    CreateClusterOpenstack(final ProviderModule providerModule, Client client, final ConfigurationOpenstack config) {
+    CreateClusterOpenstack(final ProviderModule providerModule, Client client, final Configuration config) {
         super(providerModule, client, config);
         os = ((ClientOpenstack) client).getInternal();
     }

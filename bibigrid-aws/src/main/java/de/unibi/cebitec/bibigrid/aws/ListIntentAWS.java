@@ -16,11 +16,8 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundExcep
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ListIntentAWS extends ListIntent {
-    private final ConfigurationAWS config;
-
-    ListIntentAWS(final ProviderModule providerModule, Client client, final ConfigurationAWS config) {
+    ListIntentAWS(final ProviderModule providerModule, Client client, final Configuration config) {
         super(providerModule, client, config);
-        this.config = config;
     }
 
     @Override

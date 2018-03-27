@@ -12,6 +12,7 @@ import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +30,9 @@ import java.util.List;
  */
 public class TerminateIntentAWS extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentAWS.class);
-    private final ConfigurationAWS config;
 
-    TerminateIntentAWS(ProviderModule providerModule, Client client, ConfigurationAWS config) {
+    TerminateIntentAWS(ProviderModule providerModule, Client client, Configuration config) {
         super(providerModule, client, config);
-        this.config = config;
     }
 
     @Override

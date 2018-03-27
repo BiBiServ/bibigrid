@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.googlecloud;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
@@ -17,7 +18,8 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
     private final ConfigurationGoogleCloud googleCloudConfig;
 
     CommandLineValidatorGoogleCloud(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
-                                    final IntentMode intentMode, final ProviderModule providerModule) {
+                                    final IntentMode intentMode, final ProviderModule providerModule)
+            throws ConfigurationException {
         super(cl, defaultPropertiesFile, intentMode, providerModule);
         googleCloudConfig = (ConfigurationGoogleCloud) config;
     }

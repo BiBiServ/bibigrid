@@ -26,7 +26,8 @@ public class ProviderModuleOpenstack extends ProviderModule {
     @Override
     public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
                                                         final DefaultPropertiesFile defaultPropertiesFile,
-                                                        final IntentMode intentMode) {
+                                                        final IntentMode intentMode)
+            throws ConfigurationException {
         return new CommandLineValidatorOpenstack(commandLine, defaultPropertiesFile, intentMode, this);
     }
 
@@ -37,32 +38,27 @@ public class ProviderModuleOpenstack extends ProviderModule {
 
     @Override
     public ListIntent getListIntent(Client client, Configuration config) {
-        return new ListIntentOpenstack(this, client, (ConfigurationOpenstack) config);
+        return new ListIntentOpenstack(this, client, config);
     }
 
     @Override
     public TerminateIntent getTerminateIntent(Client client, Configuration config) {
-        return new TerminateIntentOpenstack(this, client, (ConfigurationOpenstack) config);
+        return new TerminateIntentOpenstack(this, client, config);
     }
 
     @Override
     public PrepareIntent getPrepareIntent(Client client, Configuration config) {
-        return new PrepareIntentOpenstack(this, client, (ConfigurationOpenstack) config);
+        return new PrepareIntentOpenstack(this, client, config);
     }
 
     @Override
     public CreateCluster getCreateIntent(Client client, Configuration config) {
-        return new CreateClusterOpenstack(this, client, (ConfigurationOpenstack) config);
+        return new CreateClusterOpenstack(this, client, config);
     }
 
     @Override
     public CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
         return new CreateClusterEnvironmentOpenstack(client, (CreateClusterOpenstack) cluster);
-    }
-
-    @Override
-    public ValidateIntent getValidateIntent(Client client, Configuration config) {
-        return new ValidateIntentOpenstack(client, (ConfigurationOpenstack) config);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 import de.unibi.cebitec.bibigrid.core.intents.PrepareIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
@@ -20,7 +21,7 @@ class PrepareIntentAWS extends PrepareIntent {
 
     private final AmazonEC2 ec2;
 
-    PrepareIntentAWS(ProviderModule providerModule, Client client, ConfigurationAWS config) {
+    PrepareIntentAWS(ProviderModule providerModule, Client client, Configuration config) {
         super(providerModule, client, config);
         ec2 = ((ClientAWS) client).getInternal();
     }

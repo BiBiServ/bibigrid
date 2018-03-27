@@ -23,7 +23,7 @@ public class TerminateIntentOpenstack extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
     private final OSClient os;
 
-    TerminateIntentOpenstack(ProviderModule providerModule, Client client, ConfigurationOpenstack config) {
+    TerminateIntentOpenstack(ProviderModule providerModule, Client client, Configuration config) {
         super(providerModule, client, config);
         os = ((ClientOpenstack) client).getInternal();
     }

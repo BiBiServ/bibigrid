@@ -4,6 +4,7 @@ import com.microsoft.azure.management.Azure;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,7 @@ import static de.unibi.cebitec.bibigrid.azure.CreateClusterEnvironmentAzure.RESO
 public class TerminateIntentAzure extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentAzure.class);
 
-    TerminateIntentAzure(ProviderModule providerModule, Client client, ConfigurationAzure config) {
+    TerminateIntentAzure(ProviderModule providerModule, Client client, Configuration config) {
         super(providerModule, client, config);
     }
 

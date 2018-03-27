@@ -26,43 +26,39 @@ public class ProviderModuleAzure extends ProviderModule {
     @Override
     public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
                                                         final DefaultPropertiesFile defaultPropertiesFile,
-                                                        final IntentMode intentMode) {
+                                                        final IntentMode intentMode)
+            throws ConfigurationException {
         return new CommandLineValidatorAzure(commandLine, defaultPropertiesFile, intentMode, this);
     }
 
     @Override
     public Client getClient(Configuration config) throws ClientConnectionFailedException {
-        return new ClientAzure((ConfigurationAzure) config);
+        return new ClientAzure(config);
     }
 
     @Override
     public ListIntent getListIntent(Client client, Configuration config) {
-        return new ListIntentAzure(this, client, (ConfigurationAzure) config);
+        return new ListIntentAzure(this, client, config);
     }
 
     @Override
     public TerminateIntent getTerminateIntent(Client client, Configuration config) {
-        return new TerminateIntentAzure(this, client, (ConfigurationAzure) config);
+        return new TerminateIntentAzure(this, client, config);
     }
 
     @Override
     public PrepareIntent getPrepareIntent(Client client, Configuration config) {
-        return new PrepareIntentAzure(this, client, (ConfigurationAzure) config);
+        return new PrepareIntentAzure(this, client, config);
     }
 
     @Override
     public CreateCluster getCreateIntent(Client client, Configuration config) {
-        return new CreateClusterAzure(this, client, (ConfigurationAzure) config);
+        return new CreateClusterAzure(this, client, config);
     }
 
     @Override
     public CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
         return new CreateClusterEnvironmentAzure(client, (CreateClusterAzure) cluster);
-    }
-
-    @Override
-    public ValidateIntent getValidateIntent(Client client, Configuration config) {
-        return new ValidateIntentAzure(client, (ConfigurationAzure) config);
     }
 
     @Override

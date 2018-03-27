@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.azure;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
@@ -15,7 +16,8 @@ import java.util.List;
  */
 public final class CommandLineValidatorAzure extends CommandLineValidator {
     CommandLineValidatorAzure(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
-                              final IntentMode intentMode, final ProviderModule providerModule) {
+                              final IntentMode intentMode, final ProviderModule providerModule)
+            throws ConfigurationException {
         super(cl, defaultPropertiesFile, intentMode, providerModule);
     }
 

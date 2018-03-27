@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
@@ -32,7 +33,8 @@ public abstract class CommandLineValidator {
     private Configuration.SlaveInstanceConfiguration commandLineSlaveInstance;
 
     public CommandLineValidator(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
-                                final IntentMode intentMode, final ProviderModule providerModule) {
+                                final IntentMode intentMode, final ProviderModule providerModule)
+            throws ConfigurationException {
         this.cl = cl;
         this.defaultPropertiesFile = defaultPropertiesFile;
         this.intentMode = intentMode;
@@ -685,8 +687,7 @@ public abstract class CommandLineValidator {
         if (req == null) {
             return true;
         }
-        return validateProviderParameters() &&
-                parseTerminateParameter() &&
+        return parseTerminateParameter() &&
                 parseCloud9Parameter() &&
                 parseUserNameParameter() &&
                 parseSshUserNameParameter() &&
@@ -713,7 +714,8 @@ public abstract class CommandLineValidator {
                 parseSoftwareParameters() &&
                 parseGridPropertiesFileParameter() &&
                 parseCredentialsFileParameter() &&
-                parseDebugRequestsParameter();
+                parseDebugRequestsParameter() &&
+                validateProviderParameters();
     }
 
     protected abstract List<String> getRequiredOptions();

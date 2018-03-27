@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 class ClientAzure extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientAzure.class);
 
-    private final ConfigurationAzure config;
+    private final Configuration config;
     private Azure internalClient;
 
-    ClientAzure(ConfigurationAzure config) throws ClientConnectionFailedException {
+    ClientAzure(Configuration config) throws ClientConnectionFailedException {
         this.config = config;
         try {
             internalClient = Azure.authenticate(new File(config.getCredentialsFile())).withDefaultSubscription();

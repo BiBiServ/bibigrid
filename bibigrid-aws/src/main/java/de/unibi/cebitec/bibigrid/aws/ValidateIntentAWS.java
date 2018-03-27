@@ -17,12 +17,10 @@ import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
  */
 public class ValidateIntentAWS extends ValidateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntentAWS.class);
-    private final ConfigurationAWS config;
     private final AmazonEC2 ec2;
 
-    ValidateIntentAWS(final Client client, final ConfigurationAWS config) {
+    ValidateIntentAWS(final Client client, final Configuration config) {
         super(client, config);
-        this.config = config;
         ec2 = ((ClientAWS) client).getInternal();
     }
 

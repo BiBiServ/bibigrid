@@ -22,7 +22,7 @@ Here you can **create** a new service account (2) and download the service accou
 file including a generated private key. The created service accounts are listed below (3).
 Make sure to keep the service account file safe since it allows access to all resources.
 If you loose the file, the service account can't be used anymore and a new one needs to
-be created.
+be created. The path to the service account file is used with the "credentials file" parameter.
 
 ![Figure 2](img/console-google-service-account.png)
 

@@ -24,28 +24,29 @@ public class ProviderModuleAWS extends ProviderModule {
     @Override
     public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
                                                         final DefaultPropertiesFile defaultPropertiesFile,
-                                                        final IntentMode intentMode) {
+                                                        final IntentMode intentMode)
+            throws ConfigurationException {
         return new CommandLineValidatorAWS(commandLine, defaultPropertiesFile, intentMode, this);
     }
 
     @Override
     public Client getClient(Configuration config) throws ClientConnectionFailedException {
-        return new ClientAWS((ConfigurationAWS) config);
+        return new ClientAWS(config);
     }
 
     @Override
     public ListIntent getListIntent(Client client, Configuration config) {
-        return new ListIntentAWS(this, client, (ConfigurationAWS) config);
+        return new ListIntentAWS(this, client, config);
     }
 
     @Override
     public TerminateIntent getTerminateIntent(Client client, Configuration config) {
-        return new TerminateIntentAWS(this, client, (ConfigurationAWS) config);
+        return new TerminateIntentAWS(this, client, config);
     }
 
     @Override
     public PrepareIntent getPrepareIntent(Client client, Configuration config) {
-        return new PrepareIntentAWS(this, client, (ConfigurationAWS) config);
+        return new PrepareIntentAWS(this, client, config);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class ProviderModuleAWS extends ProviderModule {
 
     @Override
     public ValidateIntent getValidateIntent(Client client, Configuration config) {
-        return new ValidateIntentAWS(client, (ConfigurationAWS) config);
+        return new ValidateIntentAWS(client, config);
     }
 
     @Override

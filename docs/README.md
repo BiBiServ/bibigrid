@@ -8,6 +8,8 @@ Starting a cluster requires a valid configuration file and credentials. Followin
 For communication with the cloud provider API, credentials have to be setup.
 Additionally during cluster creation the master instance will handle software updates and installations for all cluster instances using ansible.
 In order to upload and execute commands a valid ssh-keypair needs to be setup, too.
+
+When using the ssh public key parameter in config or command line, the setup of ssh keys in the credentials setup can be skipped!
 - [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)
 - [Google compute credentials setup](../bibigrid-googlecloud/docs/Credentials_Setup.md)
 - [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md)

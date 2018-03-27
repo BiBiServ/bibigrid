@@ -23,7 +23,7 @@ import org.openstack4j.model.compute.*;
 public class ListIntentOpenstack extends ListIntent {
     private final OSClient os;
 
-    ListIntentOpenstack(final ProviderModule providerModule, Client client, final ConfigurationOpenstack config) {
+    ListIntentOpenstack(final ProviderModule providerModule, Client client, final Configuration config) {
         super(providerModule, client, config);
         os = ((ClientOpenstack) client).getInternal();
     }

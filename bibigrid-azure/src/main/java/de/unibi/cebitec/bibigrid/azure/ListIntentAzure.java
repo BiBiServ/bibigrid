@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class ListIntentAzure extends ListIntent {
-    ListIntentAzure(final ProviderModule providerModule, Client client, final ConfigurationAzure config) {
+    ListIntentAzure(final ProviderModule providerModule, Client client, final Configuration config) {
         super(providerModule, client, config);
     }
 

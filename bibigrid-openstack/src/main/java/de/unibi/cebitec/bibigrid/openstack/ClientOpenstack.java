@@ -22,33 +22,32 @@ class ClientOpenstack extends Client {
     private final OSClient internalClient;
 
     ClientOpenstack(ConfigurationOpenstack config) throws ClientConnectionFailedException {
+        OpenStackCredentials credentials = config.getOpenstackCredentials();
         try {
             OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
-            internalClient = config.getOpenstackCredentials().getDomain() != null ?
-                    buildOSClientV3(config) :
-                    buildOSClientV2(config);
+            internalClient = credentials.getDomain() != null ?
+                    buildOSClientV3(credentials) :
+                    buildOSClientV2(credentials);
             LOG.info("Openstack connection established.");
         } catch (Exception e) {
             throw new ClientConnectionFailedException("Failed to connect openstack client.", e);
         }
     }
 
-    private static OSClient buildOSClientV2(ConfigurationOpenstack config) {
-        OpenStackCredentials osc = config.getOpenstackCredentials();
+    private static OSClient buildOSClientV2(OpenStackCredentials credentials) {
         return OSFactory.builderV2()
-                .endpoint(config.getOpenstackCredentials().getEndpoint())
-                .credentials(osc.getUsername(), osc.getPassword())
-                .tenantName(osc.getTenantName())
+                .endpoint(credentials.getEndpoint())
+                .credentials(credentials.getUsername(), credentials.getPassword())
+                .tenantName(credentials.getTenantName())
                 .authenticate();
     }
 
-    private static OSClient buildOSClientV3(ConfigurationOpenstack config) {
-        OpenStackCredentials osc = config.getOpenstackCredentials();
+    private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
         return OSFactory.builderV3()
-                .endpoint(config.getOpenstackCredentials().getEndpoint())
-                .credentials(osc.getUsername(), osc.getPassword(), Identifier.byName(osc.getDomain()))
-                //.scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getDomain()))
-                .scopeToProject(Identifier.byName(osc.getTenantName()), Identifier.byName(osc.getTenantDomain()))
+                .endpoint(credentials.getEndpoint())
+                .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getDomain()))
+                //.scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getDomain()))
+                .scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getTenantDomain()))
                 .authenticate();
     }
 

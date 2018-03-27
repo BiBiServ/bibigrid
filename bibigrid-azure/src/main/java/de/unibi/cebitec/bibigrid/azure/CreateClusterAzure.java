@@ -32,7 +32,7 @@ public class CreateClusterAzure extends CreateCluster {
     private final Azure compute;
     private String masterStartupScript;
 
-    CreateClusterAzure(final ProviderModule providerModule, Client client, final ConfigurationAzure config) {
+    CreateClusterAzure(final ProviderModule providerModule, Client client, final Configuration config) {
         super(providerModule, client, config);
         compute = ((ClientAzure) client).getInternal();
     }

@@ -26,7 +26,8 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
     @Override
     public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
                                                         final DefaultPropertiesFile defaultPropertiesFile,
-                                                        final IntentMode intentMode) {
+                                                        final IntentMode intentMode)
+            throws ConfigurationException {
         return new CommandLineValidatorGoogleCloud(commandLine, defaultPropertiesFile, intentMode, this);
     }
 
@@ -58,11 +59,6 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
     @Override
     public CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
         return new CreateClusterEnvironmentGoogleCloud(client, (CreateClusterGoogleCloud) cluster);
-    }
-
-    @Override
-    public ValidateIntent getValidateIntent(Client client, Configuration config) {
-        return new ValidateIntentGoogleCloud(client, (ConfigurationGoogleCloud) config);
     }
 
     @Override

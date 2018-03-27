@@ -25,12 +25,12 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
-public abstract class ValidateIntent extends Intent {
+public class ValidateIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntent.class);
     protected final Client client;
     protected final Configuration config;
 
-    protected ValidateIntent(final Client client, final Configuration config) {
+    public ValidateIntent(final Client client, final Configuration config) {
         this.client = client;
         this.config = config;
     }

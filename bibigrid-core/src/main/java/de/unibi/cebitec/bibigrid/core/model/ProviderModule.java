@@ -30,9 +30,9 @@ public abstract class ProviderModule {
      * Get the command line validator implementation for the specified provider, that can handle
      * provider specific parameters.
      */
-    public abstract CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
-                                                                 final DefaultPropertiesFile defaultPropertiesFile,
-                                                                 final IntentMode intentMode);
+    public abstract CommandLineValidator getCommandLineValidator(
+            final CommandLine commandLine, final DefaultPropertiesFile defaultPropertiesFile, final IntentMode intentMode)
+            throws ConfigurationException;
 
     public abstract Client getClient(Configuration config) throws ClientConnectionFailedException;
 
@@ -47,7 +47,9 @@ public abstract class ProviderModule {
     public abstract CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster)
             throws ConfigurationException;
 
-    public abstract ValidateIntent getValidateIntent(Client client, Configuration config);
+    public ValidateIntent getValidateIntent(Client client, Configuration config) {
+        return new ValidateIntent(client, config);
+    }
 
     public final InstanceType getInstanceType(Client client, Configuration config, String type) throws InstanceTypeNotFoundException {
         getInstanceTypes(client, config);

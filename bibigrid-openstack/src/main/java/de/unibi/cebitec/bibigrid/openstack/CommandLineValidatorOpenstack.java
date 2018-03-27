@@ -3,10 +3,17 @@ package de.unibi.cebitec.bibigrid.openstack;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +24,8 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private final ConfigurationOpenstack openstackConfig;
 
     CommandLineValidatorOpenstack(final CommandLine cl, final DefaultPropertiesFile defaultPropertiesFile,
-                                  final IntentMode intentMode, final ProviderModule providerModule) {
+                                  final IntentMode intentMode, final ProviderModule providerModule)
+            throws ConfigurationException {
         super(cl, defaultPropertiesFile, intentMode, providerModule);
         openstackConfig = (ConfigurationOpenstack) config;
     }
@@ -30,23 +38,19 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     @Override
     protected List<String> getRequiredOptions() {
         List<String> options = new ArrayList<>();
+        options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
+        options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
+        options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
+        options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
         switch (intentMode) {
             default:
                 return null;
             case LIST:
                 options.add(RuleBuilder.RuleNames.REGION.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
                 break;
             case TERMINATE:
                 options.add(IntentMode.TERMINATE.getShortParam());
                 options.add(RuleBuilder.RuleNames.REGION.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
                 break;
             case PREPARE:
             case CREATE:
@@ -62,17 +66,9 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
                 options.add(RuleBuilder.RuleNames.REGION.getShortParam());
                 options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam());
             case VALIDATE:
-                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
                 break;
             case CLOUD9:
                 options.add(IntentMode.CLOUD9.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
-                options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
                 options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
                 options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
                 options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
@@ -89,6 +85,20 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     }
 
     private boolean parseCredentialParameters() {
+        if (config.getCredentialsFile() != null) {
+            try {
+                File credentialsFile = FileSystems.getDefault().getPath(config.getCredentialsFile()).toFile();
+                openstackConfig.setOpenstackCredentials(
+                        new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class));
+            } catch (FileNotFoundException e) {
+                LOG.error("Failed to load openstack credentials file. {}", e);
+                return false;
+            } catch (YAMLException e) {
+                LOG.error("Failed to parse openstack credentials file. {}",
+                        e.getCause() != null ? e.getCause().getMessage() : e);
+                return false;
+            }
+        }
         if (openstackConfig.getOpenstackCredentials() == null) {
             openstackConfig.setOpenstackCredentials(new OpenStackCredentials());
         }

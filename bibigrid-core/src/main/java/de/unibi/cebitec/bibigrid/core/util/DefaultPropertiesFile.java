@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,21 +72,21 @@ public final class DefaultPropertiesFile {
         return propertiesMode;
     }
 
-    public Configuration loadConfiguration(Class<? extends Configuration> configurationClass) {
+    public Configuration loadConfiguration(Class<? extends Configuration> configurationClass)
+            throws ConfigurationException {
         if (Files.exists(propertiesFilePath)) {
             try {
                 return new Yaml().loadAs(new FileInputStream(propertiesFilePath.toFile()), configurationClass);
             } catch (FileNotFoundException e) {
-                LOG.error("Failed to load properties file. {}", e);
-            } catch(YAMLException e) {
-                LOG.error("Failed to parse configuration file. {}", e.getCause() != null ? e.getCause().getMessage() : e);
+                throw new ConfigurationException("Failed to load properties file.", e);
+            } catch (YAMLException e) {
+                throw new ConfigurationException("Failed to parse configuration file.", e);
             }
         }
         try {
             return configurationClass.getConstructor().newInstance();
         } catch (Exception e) {
-            LOG.error("Failed to instantiate empty configuration. {}", e);
+            throw new ConfigurationException("Failed to instantiate empty configuration.", e);
         }
-        return null;
     }
 }

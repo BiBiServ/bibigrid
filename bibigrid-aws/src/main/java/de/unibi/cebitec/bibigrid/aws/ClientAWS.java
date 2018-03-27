@@ -8,11 +8,9 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.InstanceImage;
-import de.unibi.cebitec.bibigrid.core.model.Network;
-import de.unibi.cebitec.bibigrid.core.model.Subnet;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.Snapshot;
+import de.unibi.cebitec.bibigrid.core.model.Subnet;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +28,7 @@ class ClientAWS extends Client {
 
     private AmazonEC2 internalClient;
 
-    ClientAWS(ConfigurationAWS config) throws ClientConnectionFailedException {
+    ClientAWS(Configuration config) throws ClientConnectionFailedException {
         AWSCredentials credentials;
         try {
             credentials = new PropertiesCredentials(FileSystems.getDefault().getPath(config.getCredentialsFile()).toFile());
