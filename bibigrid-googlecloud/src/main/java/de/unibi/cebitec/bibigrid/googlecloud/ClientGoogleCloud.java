@@ -35,7 +35,7 @@ class ClientGoogleCloud extends Client {
                 HttpRequestLogHandler.attachToCloudHttpTransport();
             }
             HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(config.getGoogleCredentialsFile()));
+            GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(config.getCredentialsFile()));
             if (credential.createScopedRequired()) {
                 credential = credential.createScoped(Collections.singletonList(ComputeScopes.COMPUTE));
             }

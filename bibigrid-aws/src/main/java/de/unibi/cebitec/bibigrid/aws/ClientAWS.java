@@ -1,7 +1,9 @@
 package de.unibi.cebitec.bibigrid.aws;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -15,6 +17,8 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedExc
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,11 +31,17 @@ class ClientAWS extends Client {
     private AmazonEC2 internalClient;
 
     ClientAWS(ConfigurationAWS config) throws ClientConnectionFailedException {
+        AWSCredentials credentials;
+        try {
+            credentials = new PropertiesCredentials(FileSystems.getDefault().getPath(config.getCredentialsFile()).toFile());
+        } catch (IOException | IllegalArgumentException e) {
+            throw new ClientConnectionFailedException("AWS credentials file could not be loaded.", e);
+        }
         try {
             String endpoint = "ec2." + config.getRegion() + ".amazonaws.com";
             internalClient = AmazonEC2Client.builder()
                     .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, config.getRegion()))
-                    .withCredentials(new AWSStaticCredentialsProvider(config.getCredentials()))
+                    .withCredentials(new AWSStaticCredentialsProvider(credentials))
                     .build();
             LOG.info("AWS connection established.");
         } catch (Exception e) {

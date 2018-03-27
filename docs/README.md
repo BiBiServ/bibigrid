@@ -29,7 +29,7 @@ The configuration file is a plain text file in YAML format. A short example woul
 mode: googlecloud
 googleProjectId: XXXXX
 googleImageProjectId: ubuntu-os-cloud
-googleCredentialsFile: ~/google-credentials.json
+credentialsFile: ~/google-credentials.json
 
 region: europe-west1
 

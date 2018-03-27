@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.aws;
 
-import com.amazonaws.auth.AWSCredentials;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
 /**
@@ -11,27 +10,9 @@ public class ConfigurationAWS extends Configuration {
     public ConfigurationAWS() {
     }
 
-    private AWSCredentials credentials;
-    private String awsCredentialsFile;
     private double bidPrice;
     private double bidPriceMaster;
     private boolean publicSlaveIps;
-
-    public String getAwsCredentialsFile() {
-        return awsCredentialsFile;
-    }
-
-    public void setAwsCredentialsFile(String awsCredentialsFile) {
-        this.awsCredentialsFile = awsCredentialsFile;
-    }
-
-    public AWSCredentials getCredentials() {
-        return credentials;
-    }
-
-    public void setCredentials(AWSCredentials credentials) {
-        this.credentials = credentials;
-    }
 
     public double getBidPrice() {
         return bidPrice;

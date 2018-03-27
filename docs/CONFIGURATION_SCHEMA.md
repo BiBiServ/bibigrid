@@ -14,6 +14,7 @@ sshUser: string
 keypair: string
 sshPublicKeyFile: string
 sshPrivateKeyFile: string
+credentialsFile: string
 
 gridPropertiesFile: string
 
@@ -71,7 +72,6 @@ localFS: enum [EXT2, EXT3, EXT4, XFS]
 
 ## Google Compute specific schema
 ```
-googleCredentialsFile: string
 googleProjectId: string
 googleImageProjectId: string
 ```
@@ -91,13 +91,10 @@ openstackCredentials:
 
 ## AWS specific schema
 ```
-awsCredentialsFile: string
 bidPrice: double
 bidPriceMaster: double
 publicSlaveIps: boolean [yes, no]
 ```
 
 ## Azure specific schema
-```
-azureCredentialsFile: string
-```
+There are currently no azure specific parameters.

@@ -25,7 +25,7 @@ class ClientAzure extends Client {
     ClientAzure(ConfigurationAzure config) throws ClientConnectionFailedException {
         this.config = config;
         try {
-            internalClient = Azure.authenticate(new File(config.getAzureCredentialsFile())).withDefaultSubscription();
+            internalClient = Azure.authenticate(new File(config.getCredentialsFile())).withDefaultSubscription();
             LOG.info("Azure connection established.");
         } catch (IOException e) {
             throw new ClientConnectionFailedException("Failed to connect azure client.", e);

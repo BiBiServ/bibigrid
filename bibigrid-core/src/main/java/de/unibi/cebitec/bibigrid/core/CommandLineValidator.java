@@ -647,6 +647,28 @@ public abstract class CommandLineValidator {
         return checkRequiredParameter(shortParam, config.getGridPropertiesFile());
     }
 
+    private boolean parseCredentialsFileParameter() {
+        final String shortParam = RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setCredentialsFile(value);
+            }
+        }
+        // Validate parameter if required
+        if (req.contains(shortParam)) {
+            if (isStringNullOrEmpty(config.getCredentialsFile())) {
+                LOG.error("-" + shortParam + " option is required!");
+                return false;
+            } else if (!FileSystems.getDefault().getPath(config.getCredentialsFile()).toFile().exists()) {
+                LOG.error("Credentials file '{}' does not exist!", config.getCredentialsFile());
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean parseDebugRequestsParameter() {
         Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.DEBUG_REQUESTS);
         if (parseResult != null) {
@@ -690,6 +712,7 @@ public abstract class CommandLineValidator {
                 parseEphemeralFilesystemParameter() &&
                 parseSoftwareParameters() &&
                 parseGridPropertiesFileParameter() &&
+                parseCredentialsFileParameter() &&
                 parseDebugRequestsParameter();
     }
 

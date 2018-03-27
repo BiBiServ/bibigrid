@@ -1,7 +1,5 @@
 package de.unibi.cebitec.bibigrid.aws;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.PropertiesCredentials;
 import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -9,8 +7,6 @@ import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
 
-import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,12 +40,12 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
             case LIST:
                 options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
                 options.add(RuleBuilder.RuleNames.REGION.getShortParam());
-                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam());
                 break;
             case TERMINATE:
                 options.add(IntentMode.TERMINATE.getShortParam());
                 options.add(RuleBuilder.RuleNames.REGION.getShortParam());
-                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam());
                 break;
             case PREPARE:
             case CREATE:
@@ -65,11 +61,11 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                 options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
                 options.add(RuleBuilder.RuleNames.REGION.getShortParam());
                 options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam());
-                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam());
                 break;
             case CLOUD9:
                 options.add(IntentMode.CLOUD9.getShortParam());
-                options.add(RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam());
                 options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
                 options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
                 options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
@@ -80,39 +76,7 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
 
     @Override
     protected boolean validateProviderParameters() {
-        return parseAwsCredentialsFileParameter() &&
-                parsePublicSlaveIpParameter() &&
-                parseSpotInstanceParameters();
-    }
-
-    private boolean parseAwsCredentialsFileParameter() {
-        final String shortParam = RuleBuilder.RuleNames.AWS_CREDENTIALS_FILE.getShortParam();
-        // Parse command line parameter
-        if (cl.hasOption(shortParam)) {
-            final String value = cl.getOptionValue(shortParam);
-            if (!isStringNullOrEmpty(value)) {
-                awsConfig.setAwsCredentialsFile(value);
-            }
-        }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(awsConfig.getAwsCredentialsFile())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            } else if (!FileSystems.getDefault().getPath(awsConfig.getAwsCredentialsFile()).toFile().exists()) {
-                LOG.error("AWS credentials file '{}' does not exist!", awsConfig.getAwsCredentialsFile());
-                return false;
-            }
-        }
-        try {
-            AWSCredentials keys = new PropertiesCredentials(
-                    FileSystems.getDefault().getPath(awsConfig.getAwsCredentialsFile()).toFile());
-            awsConfig.setCredentials(keys);
-        } catch (IOException | IllegalArgumentException e) {
-            LOG.error("AWS credentials file could not be loaded: {}", e.getMessage());
-            return false;
-        }
-        return true;
+        return parsePublicSlaveIpParameter() && parseSpotInstanceParameters();
     }
 
     private boolean parsePublicSlaveIpParameter() {

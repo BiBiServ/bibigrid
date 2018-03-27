@@ -21,6 +21,7 @@ public abstract class Configuration {
     private String sshPrivateKeyFile;
     private String alternativeConfigPath;
     private String gridPropertiesFile;
+    private String credentialsFile;
     private String region;
     private String availabilityZone;
     private List<Port> ports = new ArrayList<>();
@@ -391,6 +392,14 @@ public abstract class Configuration {
 
     public void setCloud9(boolean cloud9) {
         this.cloud9 = cloud9;
+    }
+
+    public String getCredentialsFile() {
+        return credentialsFile;
+    }
+
+    public void setCredentialsFile(String credentialsFile) {
+        this.credentialsFile = credentialsFile;
     }
 
     @SuppressWarnings("WeakerAccess")

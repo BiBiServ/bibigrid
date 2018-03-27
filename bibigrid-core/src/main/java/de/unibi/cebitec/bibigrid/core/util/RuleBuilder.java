@@ -76,8 +76,8 @@ public class RuleBuilder {
         localFs.setRegexp("^((ext)[2-4]|(xfs))$");
         addStringRule(group, RuleNames.USER, "User name (for VM tagging)");
         addStringRule(group, RuleNames.SSH_USER, "SSH user name for master instance configuration");
+        addStringRule(group, RuleNames.CREDENTIALS_FILE, "Path to provider dependant credentials file");
         // AWS rules
-        addStringRule(group, RuleNames.AWS_CREDENTIALS_FILE, "Containing access-key-id & secret-key");
         addBasicRule(group, RuleNames.BID_PRICE, Tprimitive.FLOAT, "bid price for spot instances");
         addIntRule(group, RuleNames.BID_PRICE_MASTER,
                 "Bid price for the master spot instance, if not set general 'bidprice' is used.", 1);
@@ -91,9 +91,6 @@ public class RuleBuilder {
         // Google compute engine rules
         addStringRule(group, RuleNames.GOOGLE_PROJECT_ID, "Google compute engine project id");
         addStringRule(group, RuleNames.GOOGLE_IMAGE_PROJECT_ID, "Google compute engine image project id");
-        addStringRule(group, RuleNames.GOOGLE_CREDENTIALS_FILE, "Path to google compute engine service account credentials file");
-        // Microsoft Azure rules
-        addStringRule(group, RuleNames.AZURE_CREDENTIALS_FILE, "Path to microsoft azure credentials file");
         // Software rules
         addBooleanRule(group, RuleNames.MESOS, "[yes, no] if Mesos framework should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.OPEN_GRID_ENGINE, "[yes, no] if OpenGridEngine should be configured/started. Default is yes");
@@ -151,9 +148,6 @@ public class RuleBuilder {
         SLAVE_INSTANCE_COUNT("n", "slave-instance-count"),
         SLAVE_IMAGE("S", "slave-image"),
         USE_SPOT_INSTANCE_REQUEST("usir", "use-spot-instance-request"),
-        KEYPAIR("k", "keypair"),
-        SSH_PUBLIC_KEY_FILE("spu", "ssh-public-key-file"),
-        SSH_PRIVATE_KEY_FILE("spr", "ssh-private-key-file"),
         REGION("e", "region", "OS_REGION_NAME"),
         AVAILABILITY_ZONE("z", "availability-zone"),
         PORTS("p", "ports"),
@@ -161,39 +155,42 @@ public class RuleBuilder {
         MASTER_MOUNTS("d", "master-mounts"),
         NFS_SHARES("g", "nfs-shares"),
         EXT_NFS_SHARES("ge", "ext-nfs-shares"),
-        VERBOSE("v", "verbose"),
         HELP_LIST_INSTANCE_TYPES("lit", "list-instance-types"),
         CONFIG("o", "config"),
         USE_MASTER_AS_COMPUTE("b", "use-master-as-compute"),
         USE_MASTER_WITH_PUBLIC_IP("pub", "use-master-with-public-ip"),
-        HDFS("hdfs", "hdfs"),
-        CASSANDRA("db", "cassandra"),
-        SPARK("spark", "spark"),
         GRID_PROPERTIES_FILE("gpf", "grid-properties-file"),
-        ROUTER("router", "router"),
         NETWORK("network", "network"),
         SUBNET("subnet", "subnet"),
         PUBLIC_SLAVE_IP("psi", "public-slave-ip"),
-        MESOS("me", "mesos"),
         META_MODE("mode", "meta-mode"),
-        OPEN_GRID_ENGINE("oge", "oge"),
-        NFS("nfs", "nfs"),
         LOCAL_FS("lfs", "local-fs"),
+        // Auth parameters
         USER("u", "user"),
         SSH_USER("su", "ssh-user"),
+        SSH_PUBLIC_KEY_FILE("spu", "ssh-public-key-file"),
+        SSH_PRIVATE_KEY_FILE("spr", "ssh-private-key-file"),
+        KEYPAIR("k", "keypair"),
+        CREDENTIALS_FILE("cf", "credentials-file"),
+        // Logging parameters
+        VERBOSE("v", "verbose"),
         DEBUG_REQUESTS("dr", "debug-requests"),
+        // Software parameters
+        OPEN_GRID_ENGINE("oge", "oge"),
+        HDFS("hdfs", "hdfs"),
+        CASSANDRA("db", "cassandra"),
+        SPARK("spark", "spark"),
+        MESOS("me", "mesos"),
+        NFS("nfs", "nfs"),
         CLOUD9("c9", "cloud9"),
         // Amazon AWS
-        AWS_CREDENTIALS_FILE("a", "aws-credentials-file"),
         BID_PRICE("bp", "bidprice"),
         BID_PRICE_MASTER("bpm", "bidprice-master"),
-        // Microsoft Azure
-        AZURE_CREDENTIALS_FILE("acf", "azure-credentials-file"),
         // Google Cloud
         GOOGLE_PROJECT_ID("gpid", "google-projectid"),
         GOOGLE_IMAGE_PROJECT_ID("gipid", "google-image-projectid"),
-        GOOGLE_CREDENTIALS_FILE("gcf", "google-credentials-file"),
         // OpenStack
+        ROUTER("router", "router"),
         OPENSTACK_USERNAME("osu", "openstack-username", "OS_USERNAME"),
         OPENSTACK_TENANT_NAME("ost", "openstack-tenantname", "OS_PROJECT_NAME"),
         OPENSTACK_PASSWORD("osp", "openstack-password", "OS_PASSWORD"),

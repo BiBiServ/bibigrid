@@ -16,6 +16,7 @@ If you decide to use some or all command line parameters, a complete list is pro
 | keypair                    | k               |                      | | Keypair name for authentication (aws and openstack only) |
 | ssh-public-key-file        | spu             |                      | | SSH public key file |
 | ssh-private-key-file       | spr             |                      | | SSH private key file |
+| credentials-file           | cf              |                      | | Path to the credentials file |
 | master-instance-type       | m               |                      | | |
 | master-image               | M               |                      | | |
 | master-mounts              | d               |                      | | |
@@ -62,17 +63,13 @@ If you decide to use some or all command line parameters, a complete list is pro
 |----------------------------|-----------------|----------------------|--------|------------------------------------------------------|
 | google-projectid           | gpid            |                      | | The compute engine project ID |
 | google-image-projectid     | gipid           |                      | | The compute engine project ID hosting the images to be used |
-| google-credentials-file    | gcf             |                      | | Path to the service account credentials file |
 
 ## Amazon AWS specific parameters
 | Long parameter             | Short parameter | Environment variable | Values | Description                                          |
 |----------------------------|-----------------|----------------------|--------|------------------------------------------------------|
-| aws-credentials-file       | a               |                      | | |
 | public-slave-ip            | psi             |                      | [yes, no] | |
 | bidprice                   | bp              |                      | | |
 | bidprice-master            | bpm             |                      | | |
 
 ## Azure specific parameters
-| Long parameter             | Short parameter | Environment variable | Values | Description                                          |
-|----------------------------|-----------------|----------------------|--------|------------------------------------------------------|
-| azure-credentials-file     | acf             |                      | | Path to the credentials file |
+There are currently no azure specific parameters.

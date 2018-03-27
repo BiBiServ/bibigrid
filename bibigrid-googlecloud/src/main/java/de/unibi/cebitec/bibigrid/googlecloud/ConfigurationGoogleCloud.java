@@ -9,7 +9,6 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 public class ConfigurationGoogleCloud extends Configuration {
     private String googleProjectId;
     private String googleImageProjectId;
-    private String googleCredentialsFile;
 
     public ConfigurationGoogleCloud() {
     }
@@ -28,13 +27,5 @@ public class ConfigurationGoogleCloud extends Configuration {
 
     public void setGoogleImageProjectId(String googleImageProjectId) {
         this.googleImageProjectId = googleImageProjectId.trim();
-    }
-
-    public String getGoogleCredentialsFile() {
-        return googleCredentialsFile;
-    }
-
-    public void setGoogleCredentialsFile(String googleCredentialsFile) {
-        this.googleCredentialsFile = googleCredentialsFile.trim();
     }
 }

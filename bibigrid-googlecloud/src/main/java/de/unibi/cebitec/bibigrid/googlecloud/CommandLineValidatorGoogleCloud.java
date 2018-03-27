@@ -7,7 +7,6 @@ import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
 import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
 import org.apache.commons.cli.CommandLine;
 
-import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,14 +34,14 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
             default:
                 return null;
             case LIST:
-                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam());
                 options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam());
                 break;
             case TERMINATE:
                 options.add(IntentMode.TERMINATE.getShortParam());
                 options.add(RuleBuilder.RuleNames.REGION.getShortParam());
                 options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam());
-                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam());
                 options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam());
                 break;
             case PREPARE:
@@ -58,13 +57,13 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
                 options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
                 options.add(RuleBuilder.RuleNames.REGION.getShortParam());
                 options.add(RuleBuilder.RuleNames.AVAILABILITY_ZONE.getShortParam());
-                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam());
                 options.add(RuleBuilder.RuleNames.GOOGLE_IMAGE_PROJECT_ID.getShortParam());
                 options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam());
                 break;
             case CLOUD9:
                 options.add(IntentMode.CLOUD9.getShortParam());
-                options.add(RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam());
+                options.add(RuleBuilder.RuleNames.CREDENTIALS_FILE.getShortParam());
                 options.add(RuleBuilder.RuleNames.GOOGLE_PROJECT_ID.getShortParam());
                 options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
                 options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
@@ -75,9 +74,7 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
 
     @Override
     protected boolean validateProviderParameters() {
-        return parseGoogleProjectIdParameter() &&
-                parseGoogleImageProjectIdParameter() &&
-                parseGoogleCredentialsFileParameter();
+        return parseGoogleProjectIdParameter() && parseGoogleImageProjectIdParameter();
     }
 
     private boolean parseGoogleProjectIdParameter() {
@@ -102,27 +99,5 @@ public final class CommandLineValidatorGoogleCloud extends CommandLineValidator 
             }
         }
         return checkRequiredParameter(shortParam, googleCloudConfig.getGoogleImageProjectId());
-    }
-
-    private boolean parseGoogleCredentialsFileParameter() {
-        final String shortParam = RuleBuilder.RuleNames.GOOGLE_CREDENTIALS_FILE.getShortParam();
-        // Parse command line parameter
-        if (cl.hasOption(shortParam)) {
-            final String value = cl.getOptionValue(shortParam);
-            if (!isStringNullOrEmpty(value)) {
-                googleCloudConfig.setGoogleCredentialsFile(value);
-            }
-        }
-        // Validate parameter if required
-        if (req.contains(shortParam)) {
-            if (isStringNullOrEmpty(googleCloudConfig.getGoogleCredentialsFile())) {
-                LOG.error("-" + shortParam + " option is required!");
-                return false;
-            } else if (!FileSystems.getDefault().getPath(googleCloudConfig.getGoogleCredentialsFile()).toFile().exists()) {
-                LOG.error("Google credentials file '{}' does not exist!", googleCloudConfig.getGoogleCredentialsFile());
-                return false;
-            }
-        }
-        return true;
     }
 }
