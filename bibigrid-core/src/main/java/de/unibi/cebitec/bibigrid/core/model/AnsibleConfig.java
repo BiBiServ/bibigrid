@@ -93,6 +93,7 @@ public final class AnsibleConfig {
 
     public void writeCommonFile(OutputStream stream) {
         Map<String, Object> map = new LinkedHashMap<>();
+        map.put("mode", config.getMode());
         map.put("default_user", config.getUser());
         map.put("ssh_user", config.getSshUser());
         map.put("master", getMasterMap());
