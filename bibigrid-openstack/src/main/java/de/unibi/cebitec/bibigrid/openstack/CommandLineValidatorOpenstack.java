@@ -202,13 +202,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
         if (isStringNullOrEmpty(credentials.getPassword()) && !isStringNullOrEmpty(System.getenv(envParam))) {
             credentials.setPassword(System.getenv(envParam));
         }
-        // Parse command line parameter
-        if (cl.hasOption(shortParam)) {
-            final String value = cl.getOptionValue(shortParam);
-            if (!isStringNullOrEmpty(value)) {
-                credentials.setPassword(value);
-            }
-        }
+        // Don't parse the command line for the password parameter which could compromise security!
         return checkRequiredParameter(shortParam, credentials.getPassword());
     }
 

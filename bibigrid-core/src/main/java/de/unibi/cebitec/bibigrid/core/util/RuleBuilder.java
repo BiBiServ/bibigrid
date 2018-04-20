@@ -84,7 +84,6 @@ public class RuleBuilder {
         // Openstack rules
         addStringRule(group, RuleNames.OPENSTACK_USERNAME, "The given Openstack Username");
         addStringRule(group, RuleNames.OPENSTACK_TENANT_NAME, "The given Openstack Tenantname");
-        addStringRule(group, RuleNames.OPENSTACK_PASSWORD, "The given Openstack User-Password");
         addStringRule(group, RuleNames.OPENSTACK_ENDPOINT, "The given Openstack Endpoint (e.g. https://xxx.xxx.xxx.xxx:5000/v3/)");
         addStringRule(group, RuleNames.OPENSTACK_DOMAIN, "The given Openstack Domain");
         addStringRule(group, RuleNames.OPENSTACK_TENANT_DOMAIN, "The given Openstack Tenant Domain");

@@ -25,3 +25,47 @@ Figure 2. In the same menu entry **Access & Security** as before, navigate to th
 *Figure 2: Horizon dashboard API access*
 
 For a complete list of parameters needed see the [configuration file schema](../../docs/CONFIGURATION_SCHEMA.md).
+
+It is recommended to pass the credentials to bibigrid using a configuration file instead
+of the command line. In addition, the password can only be set this way and not via the
+command line for security reasons. Otherwise it would be possible to extract the password
+from the list of running processes!
+
+The simple way to provide the credentials to bibigrid is directly in the configuration file
+as seen in the [schema](../../docs/CONFIGURATION_SCHEMA.md). In addition, the credentials
+can be passed using a separate credentials file. The format is basically the same as for the
+normal configuration file, except the "openstackCredentials" group is removed.
+
+### Example for the credentials in the normal configuration file:
+
+*.bibigrid.yml*
+```
+[...]
+openstackCredentials:
+  tenantName: XXX
+  username: XXX
+  password: XXX
+  endpoint: XXX
+  domain: XXX
+  tenantDomain: XXX
+[...]
+```
+
+### Example for the credentials in a separate credentials file:
+
+*.bibigrid.yml*
+```
+[...]
+credentialsFile: credentials.yml
+[...]
+```
+
+*credentials.yml*
+```
+tenantName: XXX
+username: XXX
+password: XXX
+endpoint: XXX
+domain: XXX
+tenantDomain: XXX
+```
