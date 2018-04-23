@@ -1,11 +1,13 @@
 - name: Install cloud9 dependencies
   apt:
-    name: "{{ item }}"
+    name: "{{ item.name }}"
     state: "present"
+  when: "{{ item.when }}"
   with_items:
-    - build-essential
-    - python
-    - nodejs-legacy
+    - {name: "build-essential", when: true}
+    - {name: "python", when: true}
+    - {name: "nodejs-legacy", when: ansible_distribution != "Ubuntu" or ansible_distribution_version < 17}
+    - {name: "nodejs", when: ansible_distribution == "Ubuntu" and ansible_distribution_version > 17}
 
 - name: Clone c9/core repository
   git:
