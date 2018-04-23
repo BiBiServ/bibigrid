@@ -23,6 +23,12 @@ A complete list of **command line parameters** can be found [here](COMMAND_LINE.
 
 A complete schema for a **configuration file** can be found [here](CONFIGURATION_SCHEMA.md).
 
+Provider specific examples representing the minimal required parameters:
+* [Examples OpenStack](examples/EXAMPLES_OPENSTACK.md)
+* [Examples Google Compute](examples/EXAMPLES_GOOGLECLOUD.md)
+* [Examples AWS](examples/EXAMPLES_AWS.md)
+* [Examples Azure](examples/EXAMPLES_AZURE.md)
+
 ### Writing and using a configuration file
 The configuration file is a plain text file in YAML format. A short example would be:
 
