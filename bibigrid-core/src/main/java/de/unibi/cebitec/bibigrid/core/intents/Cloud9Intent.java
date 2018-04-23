@@ -76,7 +76,7 @@ public class Cloud9Intent extends Intent {
                 sshSession.connect();
                 LOG.info("Connected to master!");
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-                channel.setCommand("cloud9 --listen localhost -w ~/");
+                channel.setCommand("cloud9 --listen localhost -w \"" + config.getCloud9Workspace() + "\"");
                 LOG.info(V, "Connecting ssh channel...");
                 channel.connect();
                 LOG.info("You can now open the cloud9 IDE at http://localhost:{}", PORT);

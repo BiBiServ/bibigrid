@@ -12,6 +12,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class Configuration {
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
+    private static final String DEFAULT_CLOUD9_WORKSPACE = "~/";
 
     private String mode;
     private String user = System.getProperty("user.name");
@@ -47,6 +48,7 @@ public abstract class Configuration {
     private String[] clusterIds;
     private List<String> masterAnsibleRoles = new ArrayList<>();
     private List<String> slaveAnsibleRoles = new ArrayList<>();
+    private String cloud9Workspace = DEFAULT_CLOUD9_WORKSPACE;
 
     public int getSlaveInstanceCount() {
         if (slaveInstances == null) {
@@ -432,6 +434,18 @@ public abstract class Configuration {
             }
             LOG.info(V, "Additional slave ansible roles set: {}", display);
         }
+    }
+
+    public String getCloud9Workspace() {
+        return cloud9Workspace;
+    }
+
+    public void setCloud9Workspace(String cloud9Workspace) {
+        if (cloud9Workspace == null || cloud9Workspace.length() == 0) {
+            cloud9Workspace = DEFAULT_CLOUD9_WORKSPACE;
+        }
+        this.cloud9Workspace = cloud9Workspace;
+        LOG.info(V, "Cloud9 workspace set: {}", cloud9Workspace);
     }
 
     @SuppressWarnings("WeakerAccess")

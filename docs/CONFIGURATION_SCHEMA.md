@@ -58,6 +58,8 @@ spark: boolean [yes, no]
 nfs: boolean [yes, no]
 cloud9: boolean [yes, no]
 
+cloud9Workspace: string
+
 debugRequests: boolean [yes, no]
 
 nfsShares:

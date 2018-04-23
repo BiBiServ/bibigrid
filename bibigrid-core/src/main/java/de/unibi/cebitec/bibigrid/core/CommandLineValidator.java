@@ -132,6 +132,18 @@ public abstract class CommandLineValidator {
         return checkRequiredParameter(shortParam, config.getSubnet());
     }
 
+    private boolean parseCloud9WorkspaceParameter() {
+        final String shortParam = RuleBuilder.RuleNames.CLOUD9_WORKSPACE.getShortParam();
+        // Parse command line parameter
+        if (cl.hasOption(shortParam)) {
+            final String value = cl.getOptionValue(shortParam);
+            if (!isStringNullOrEmpty(value)) {
+                config.setCloud9Workspace(value);
+            }
+        }
+        return checkRequiredParameter(shortParam, config.getCloud9Workspace());
+    }
+
     private boolean parseSoftwareParameters() {
         Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.MESOS);
         if (parseResult != null) {
@@ -689,6 +701,7 @@ public abstract class CommandLineValidator {
         }
         return parseTerminateParameter() &&
                 parseCloud9Parameter() &&
+                parseCloud9WorkspaceParameter() &&
                 parseUserNameParameter() &&
                 parseSshUserNameParameter() &&
                 parseNetworkParameter() &&

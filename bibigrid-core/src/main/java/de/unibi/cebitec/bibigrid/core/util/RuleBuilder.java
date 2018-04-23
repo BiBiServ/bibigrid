@@ -77,6 +77,7 @@ public class RuleBuilder {
         addStringRule(group, RuleNames.USER, "User name (for VM tagging)");
         addStringRule(group, RuleNames.SSH_USER, "SSH user name for master instance configuration");
         addStringRule(group, RuleNames.CREDENTIALS_FILE, "Path to provider dependant credentials file");
+        addBooleanRule(group, RuleNames.CLOUD9_WORKSPACE, "Path for cloud9 to use as workspace. Default is ~/");
         // AWS rules
         addBasicRule(group, RuleNames.BID_PRICE, Tprimitive.FLOAT, "bid price for spot instances");
         addIntRule(group, RuleNames.BID_PRICE_MASTER,
@@ -164,6 +165,7 @@ public class RuleBuilder {
         PUBLIC_SLAVE_IP("psi", "public-slave-ip"),
         META_MODE("mode", "meta-mode"),
         LOCAL_FS("lfs", "local-fs"),
+        CLOUD9_WORKSPACE("c9w", "cloud9-workspace"),
         // Auth parameters
         USER("u", "user"),
         SSH_USER("su", "ssh-user"),
