@@ -1,4 +1,4 @@
-- name: Deactivate auto-update Funktion
+- name: Deactivate auto-update function
   shell: |
         systemctl stop apt-daily.service
         systemctl disable apt-daily.service
@@ -20,7 +20,69 @@
     - ca-certificates 
     - curl 
     - software-properties-common
-    - swift
+
+
+- name: Install OpenStack object store client
+  apt:
+    name: "swift"
+    state: "present"
+  when: mode == "openstack"
+
+# https://cloud.google.com/storage/docs/gsutil_install?hl=de#deb
+- name: Add Google Compute repository key
+  shell: 'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -'
+  when: mode == "googlecloud"
+
+- name: Add Google Compute repositories
+  apt_repository:
+    repo: "deb http://packages.cloud.google.com/apt cloud-sdk-{{ ansible_lsb.codename }} main"
+    state: present
+  when: mode == "googlecloud"
+
+- name: Update apt cache for Google Compute
+  apt:
+    update_cache: 'yes'
+
+- name: Install Google Compute object store client
+  apt:
+    name: "google-cloud-sdk"
+    state: "present"
+  when: mode == "googlecloud"
+
+# https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest
+- name: Add Azure repository key
+  apt_key:
+    id: 52E16F86FEE04B979B07E28DB02C46DF417A0893
+    keyserver: packages.microsoft.com
+    state: present
+  when: mode == "azure"
+
+- name: Add new Azure repository key
+  shell: 'curl -L https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -'
+  when: mode == "azure"
+
+- name: Add Azure repositories
+  apt_repository:
+    repo: "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_lsb.codename }} main"
+    state: present
+  when: mode == "azure"
+
+- name: Update apt cache for Azure
+  apt:
+    update_cache: 'yes'
+
+- name: Install Azure object store client
+  apt:
+    name: "azure-cli"
+    state: "present"
+  when: mode == "azure"
+
+# https://docs.aws.amazon.com/cli/latest/userguide/installing.html
+- name: Install AWS object store client
+  pip:
+    name: awscli
+    extra_args: --upgrade --user
+  when: mode == "aws"
 
 
 # - name: Add Mesosphere project key
