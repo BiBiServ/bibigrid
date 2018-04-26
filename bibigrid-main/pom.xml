@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>bibigrid</artifactId>
+        <groupId>de.unibi.cebitec.bibigrid</groupId>
+        <version>2.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>bibigrid-main</artifactId>
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>de.unibi.cebitec.bibigrid</groupId>
+                    <artifactId>bibigrid-openstack</artifactId>
+                    <version>2.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>de.unibi.cebitec.bibigrid</groupId>
+                    <artifactId>bibigrid-aws</artifactId>
+                    <version>2.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>de.unibi.cebitec.bibigrid</groupId>
+                    <artifactId>bibigrid-azure</artifactId>
+                    <version>2.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>de.unibi.cebitec.bibigrid</groupId>
+                    <artifactId>bibigrid-googlecloud</artifactId>
+                    <version>2.0</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>openstack</id>
+            <dependencies>
+                <dependency>
+                    <groupId>de.unibi.cebitec.bibigrid</groupId>
+                    <artifactId>bibigrid-openstack</artifactId>
+                    <version>2.0</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>aws</id>
+            <dependencies>
+                <dependency>
+                    <groupId>de.unibi.cebitec.bibigrid</groupId>
+                    <artifactId>bibigrid-aws</artifactId>
+                    <version>2.0</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>azure</id>
+            <dependencies>
+                <dependency>
+                    <groupId>de.unibi.cebitec.bibigrid</groupId>
+                    <artifactId>bibigrid-azure</artifactId>
+                    <version>2.0</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>googlecloud</id>
+            <dependencies>
+                <dependency>
+                    <groupId>de.unibi.cebitec.bibigrid</groupId>
+                    <artifactId>bibigrid-googlecloud</artifactId>
+                    <version>2.0</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
+    <dependencies>
+        <!-- General -->
+        <dependency>
+            <groupId>com.github.BiBiServ.bibiserv</groupId>
+            <artifactId>bibiservabstraction</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>de.unibi.cebitec.bibigrid</groupId>
+            <artifactId>bibigrid-core</artifactId>
+            <version>2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+            <version>1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

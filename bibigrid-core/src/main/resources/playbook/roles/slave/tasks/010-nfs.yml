@@ -1,0 +1,32 @@
+- name: Install NFS common package
+  apt:
+    name: "nfs-common"
+    state: "latest"
+
+- name: Wait for nfs-server available
+  wait_for:
+    host: "{{ master.ip }}"
+    port: 2049
+    delay: 2
+    state: started
+
+- name: Create mount points
+  file:
+    path: "{{ item.dst }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0777
+  with_items:
+      - "{{ nfs_mounts }}"
+
+- name: Mount shares
+  mount:
+    path: "{{ item.dst }}"
+    src: "{{ master.ip }}:{{ item.src }}"
+    fstype: nfs4
+    state: mounted
+  with_items:
+    - "{{ nfs_mounts }}"
+
+

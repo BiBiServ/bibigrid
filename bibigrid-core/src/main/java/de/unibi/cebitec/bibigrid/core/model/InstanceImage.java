@@ -1,0 +1,9 @@
+package de.unibi.cebitec.bibigrid.core.model;
+
+/**
+ * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ */
+public abstract class InstanceImage {
+    public abstract long getMinDiskSpace();
+    public abstract int getMinRam();
+}

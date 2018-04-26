@@ -1,0 +1,39 @@
+# Install gridengine-client on all slaves
+
+- name: Install gridengine packages
+  apt:
+    name: "{{ item }}"
+    state: "latest"
+  with_items:
+    - gridengine-client # Utilities for Grid Engine queue management
+    - gridengine-exec # Distributed resource management - Execution Server
+
+- name: Update act_qmaster
+  shell: "echo $(nslookup {{ master.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.' | xargs) > /var/lib/gridengine/default/common/act_qmaster"
+  register: act_qmaster
+
+- name: Update permissions
+  file:
+    path: /var/lib/gridengine/default/common/act_qmaster
+    owner: sgeadmin
+    group: sgeadmin
+    mode: 0644
+
+- name: (Re-)start gridengine exec daemon
+  systemd:
+    name: gridengine-exec
+    state: restarted
+  when: act_qmaster is changed
+
+
+
+
+
+
+
+
+
+
+
+
+

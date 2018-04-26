@@ -1,0 +1,36 @@
+- name: Install Docker Community Edition
+  apt:
+    name: docker-ce
+    state: present
+  tags: install
+
+- name: Configure Docker
+  copy:
+    content: |-
+             {
+                "mtu":{{ansible_default_ipv4.mtu}}
+             }
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: 0644
+  register: docker_config
+
+- name: (Re-)start docker daemon
+  systemd:
+    name: docker
+    state: restarted
+  when: docker_config is changed
+
+- name: Create docker group
+  group:
+    name: docker
+    state: present
+
+- name: Append ubuntu user to group docker
+  user:
+    name: ubuntu
+    append: yes
+    groups: docker
+
+

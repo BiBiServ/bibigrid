@@ -1,0 +1,14 @@
+$TTL 86400
+@   IN  SOA     master.bibigrid.de. root.bibigrid.de. (
+        2011071001  ;Serial
+        3600        ;Refresh
+        1800        ;Retry
+        604800      ;Expire
+        86400       ;Minimum TTL
+)
+@       IN  NS          master.bibigrid.de.
+@       IN  A           192.168.33.10
+@       IN  A           192.168.33.11
+master  IN  A           192.168.33.10
+client1 IN  A           192.168.33.11
+client2 IN  A           192.168.33.12
