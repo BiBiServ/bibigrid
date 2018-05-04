@@ -389,7 +389,12 @@ public abstract class CreateCluster extends Intent {
                 if (lineOut.contains("CONFIGURATION_FINISHED")) {
                     configured = true;
                 }
-                LOG.info(V, "SSH: {}", lineOut);
+                int indexOfLogMessage = lineOut.indexOf("\"[BIBIGRID] ");
+                if (indexOfLogMessage > 0) {
+                    LOG.info("Ansible: {}", lineOut.substring(indexOfLogMessage, lineOut.length() - 1));
+                } else {
+                    LOG.info(V, "SSH: {}", lineOut);
+                }
             }
             if (lineError != null && !configured) {
                 LOG.error("SSH: {}", lineError);
