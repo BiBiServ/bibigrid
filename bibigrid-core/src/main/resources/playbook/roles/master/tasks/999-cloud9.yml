@@ -30,4 +30,29 @@
     group: root
     mode: 0755
 
+- name: Copy cloud9 service
+  copy:
+    src: cloud9/cloud9service
+    dest: /etc/init.d/cloud9service
+    mode: 0755
+    owner: root
+    group: root
 
+- name: Create cloud9 settings folder
+  file:
+    path: /etc/cloud9
+    owner: root
+    group: root
+    state: directory
+
+- name: Add default cloud9 settings file
+  copy:
+    content: |-
+      workingDir=~/
+    dest: /etc/cloud9/settings.conf
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Register cloud9 service
+  command: systemctl daemon-reload
