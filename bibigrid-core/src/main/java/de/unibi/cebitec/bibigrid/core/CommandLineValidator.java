@@ -4,9 +4,7 @@ import de.unibi.cebitec.bibigrid.core.model.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -309,13 +307,6 @@ public abstract class CommandLineValidator {
                 config.getMasterInstance().setImage(value);
             }
         }
-        // try to load machine image id from URL
-        if (isStringNullOrEmpty(config.getMasterInstance().getImage())) {
-            Properties machineImage = loadMachineImageId();
-            if (machineImage != null) {
-                config.getMasterInstance().setImage(machineImage.getProperty("master"));
-            }
-        }
         // Validate parameter if required
         if (req.contains(shortParam)) {
             if (isStringNullOrEmpty(config.getMasterInstance().getImage())) {
@@ -420,13 +411,6 @@ public abstract class CommandLineValidator {
         // Parse command line parameter
         if (cl.hasOption(shortParam)) {
             String value = cl.getOptionValue(shortParam);
-            if (isStringNullOrEmpty(value)) {
-                // try to load machine image id from URL
-                Properties machineImage = loadMachineImageId();
-                if (machineImage != null) {
-                    value = machineImage.getProperty("slave");
-                }
-            }
             if (!isStringNullOrEmpty(value)) {
                 if (commandLineSlaveInstance == null) {
                     commandLineSlaveInstance = new Configuration.SlaveInstanceConfiguration();
@@ -765,29 +749,6 @@ public abstract class CommandLineValidator {
             throw new Exception();
         }
         return v;
-    }
-
-    private Properties loadMachineImageId() {
-        Properties machineImage = new Properties();
-        String str = "https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/" +
-                config.getMode().toLowerCase() + "/" + config.getRegion() + ".ami.properties";
-        try {
-            URL url = new URL(str);
-            machineImage.load(url.openStream());
-            if (!machineImage.containsKey("master")) {
-                throw new IOException("Key/value for master image is missing in properties file!");
-            }
-            if (!machineImage.containsKey("slave")) {
-                throw new IOException("Key/value for slave image is missing in properties file!");
-            }
-        } catch (IOException ex) {
-            LOG.warn("No machine image properties file found for " + config.getMode() + " and region '" +
-                    config.getRegion() + "' found!");
-            LOG.error(V, "Exception: {}", ex.getMessage());
-            LOG.error(V, "Try: {}", str);
-            return null;
-        }
-        return machineImage;
     }
 
     public Configuration getConfig() {
