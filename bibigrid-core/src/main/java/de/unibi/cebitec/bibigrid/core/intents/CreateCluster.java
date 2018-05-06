@@ -391,7 +391,7 @@ public abstract class CreateCluster extends Intent {
                 }
                 int indexOfLogMessage = lineOut.indexOf("\"[BIBIGRID] ");
                 if (indexOfLogMessage > 0) {
-                    LOG.info("Ansible: {}", lineOut.substring(indexOfLogMessage, lineOut.length() - 1));
+                    LOG.info("Ansible: {}", lineOut.substring(indexOfLogMessage + 12, lineOut.length() - 1));
                 } else {
                     LOG.info(V, "SSH: {}", lineOut);
                 }
