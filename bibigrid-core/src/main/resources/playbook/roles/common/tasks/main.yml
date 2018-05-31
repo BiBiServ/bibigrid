@@ -9,3 +9,7 @@
 - debug:
     msg: "[BIBIGRID] Setup Docker"
 - import_tasks: 030-docker.yml
+
+- debug:
+    msg: "[BIBIGRID] Measure cluster performance"
+- import_tasks: 999-bibigridperf.yml
