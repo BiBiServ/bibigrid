@@ -37,7 +37,7 @@ public abstract class Configuration {
     private boolean spark;
     private boolean nfs = true;
     private boolean cloud9;
-    private List<String> nfsShares = Arrays.asList("/vol/spool");
+    private List<String> nfsShares = new ArrayList<>(Arrays.asList("/vol/spool"));
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
