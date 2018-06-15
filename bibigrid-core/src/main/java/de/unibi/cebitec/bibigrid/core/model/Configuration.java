@@ -243,11 +243,11 @@ public abstract class Configuration {
         if (this.nfsShares != null) {
             this.nfsShares.addAll(nfsShares);
         } else {
-            this.nfsShares = nfsShares;
+            this.nfsShares = new ArrayList<>(nfsShares);
         }
-        if (nfsShares != null && !nfsShares.isEmpty()) {
+        if (this.nfsShares != null && !this.nfsShares.isEmpty()) {
             StringBuilder nfsSharesDisplay = new StringBuilder();
-            for (String share : nfsShares) {
+            for (String share : this.nfsShares) {
                 nfsSharesDisplay.append(share).append(" ");
             }
             LOG.info(V, "NFS shares set: {}", nfsSharesDisplay);
