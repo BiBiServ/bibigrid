@@ -150,7 +150,7 @@
   args:
     creates: /etc/bibigrid/gridengine/schedule.created
 
-#qconf -Mconf ./global
+#qconf -Mconf ./global.conf
 
 - name: Copy global.conf
   copy:

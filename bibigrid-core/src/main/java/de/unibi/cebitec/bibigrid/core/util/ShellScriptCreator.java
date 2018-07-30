@@ -111,6 +111,8 @@ public final class ShellScriptCreator {
         // Install python2 on slaves instances
         script.append("ansible slaves -i ~/playbook/ansible_hosts --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
+        // Fix line endings to ensure windows files being used correctly
+        script.append("for file in $(find ~/playbook/ -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
         // Execute ansible playbook
         script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts")
                 .append(prepare ? " -t install" : "")

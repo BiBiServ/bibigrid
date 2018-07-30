@@ -29,7 +29,3 @@
     state: restarted
   when:
     - nfs_exports is changed
-
-
-
-

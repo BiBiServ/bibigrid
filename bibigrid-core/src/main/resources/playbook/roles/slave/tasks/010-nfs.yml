@@ -28,5 +28,3 @@
     state: mounted
   with_items:
     - "{{ nfs_mounts }}"
-
-

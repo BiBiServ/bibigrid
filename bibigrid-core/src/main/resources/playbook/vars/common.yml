@@ -5,7 +5,6 @@ mode: openstack
 default_user: ubuntu
 ssh_user: ubuntu
 
-
 master:
   ip: "192.168.33.10"
   hostname: "master"
@@ -22,7 +21,6 @@ slaves:
         - src: /dev/sdb
           dst: /vol/scratch
 
-
 CIDR: "192.168.33.0/24"
 
 nfs_mounts:
@@ -31,10 +29,8 @@ nfs_mounts:
   - src: "/opt"
     dst: "/opt"
 
-
 # services
 enable_nfs: "yes"
 enable_gridengine: "yes"
 use_master_as_compute: "yes"
 enable_mesos: "no"
-
