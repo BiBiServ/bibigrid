@@ -20,8 +20,6 @@ public class RuleBuilder {
         // Master instance rules
         addStringRule(group, RuleNames.MASTER_INSTANCE_TYPE,
                 "Master instance type to be used. Execute \"-h -lit\" for a complete list");
-        addIntRule(group, RuleNames.MAX_MASTER_EPHEMERALS,
-                "Limits the maximum number of used ephemerals for master spool volume (raid 0)", 1);
         addStringRule(group, RuleNames.MASTER_IMAGE, "Machine image id for master");
         // TODO: Regex for ex. search for =?
         addStringRule(group, RuleNames.MASTER_MOUNTS,
@@ -35,8 +33,6 @@ public class RuleBuilder {
         // Slave instance rules
         addStringRule(group, RuleNames.SLAVE_INSTANCE_TYPE,
                 "Slave instance type to be used. Execute \"-h -lit\" for a complete list");
-        addIntRule(group, RuleNames.MAX_SLAVE_EPHEMERALS,
-                "Limits the maximum number of used ephemerals for slave spool volume (raid 0)", 1);
         // TODO: "min: 0" but min.setValue(1) ?
         addIntRule(group, RuleNames.SLAVE_INSTANCE_COUNT, "min: 0", 1);
         addStringRule(group, RuleNames.SLAVE_IMAGE, "Machine image id for slaves");
@@ -139,10 +135,8 @@ public class RuleBuilder {
 
     public enum RuleNames {
         MASTER_INSTANCE_TYPE("m", "master-instance-type"),
-        MAX_MASTER_EPHEMERALS("mme", "max-master-ephemerals"),
         MASTER_IMAGE("M", "master-image"),
         SLAVE_INSTANCE_TYPE("s", "slave-instance-type"),
-        MAX_SLAVE_EPHEMERALS("mse", "max-slave-ephemerals"),
         SLAVE_INSTANCE_COUNT("n", "slave-instance-count"),
         SLAVE_IMAGE("S", "slave-image"),
         USE_SPOT_INSTANCE_REQUEST("usir", "use-spot-instance-request"),
