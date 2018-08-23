@@ -26,7 +26,7 @@ class InstanceTypeOpenstack extends InstanceType {
         configDrive = true;
     }
 
-    public Flavor getFlavor() {
+    Flavor getFlavor() {
         return flavor;
     }
 }

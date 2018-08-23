@@ -15,11 +15,7 @@ master:
 
 slaves:
   - ip: "192.168.33.11"
-    hostname: "client1"
     cores: 2
-    disks:
-        - src: /dev/sdb
-          dst: /vol/scratch
 
 CIDR: "192.168.33.0/24"
 
@@ -34,3 +30,9 @@ enable_nfs: "yes"
 enable_gridengine: "yes"
 use_master_as_compute: "yes"
 enable_mesos: "no"
+enable_cloud9: "yes"
+enable_cassandra: "no"
+enable_hdfs: "no"
+enable_spark: "no"
+
+local_fs: "ext4"

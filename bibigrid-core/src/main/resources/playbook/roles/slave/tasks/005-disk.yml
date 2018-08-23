@@ -1,5 +1,5 @@
 # we have to make sure that the disk is NOT mounted by cloud-init beforehand
-- name: mount disk
+- name: mount ephemeral disk
   mount:
     path: /vol/scratch
     src: "{{ ephemerals[0] }}"

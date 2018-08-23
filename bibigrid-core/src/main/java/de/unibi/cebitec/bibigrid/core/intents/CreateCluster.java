@@ -101,8 +101,11 @@ public abstract class CreateCluster extends Intent {
     public CreateCluster configureClusterMasterInstance() {
         List<Configuration.MountPoint> masterVolumeToMountPointMap = resolveMountSources(config.getMasterMounts());
         InstanceType masterSpec = config.getMasterInstance().getProviderType();
-        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap,
-                masterSpec.getConfigDrive() + masterSpec.getEphemerals() + masterSpec.getSwap());
+        int deviceOffset = masterSpec.getEphemerals() + masterSpec.getSwap();
+        // TODO: Ubuntu 14.04 and cirrOS use /dev/vdb for the config drive, while 16.04 and 18.04 use /dev/sr0
+        // messing up the offset.
+        // deviceOffset += masterSpec.getConfigDrive();
+        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap, deviceOffset);
         LOG.info("Master instance configured.");
         return this;
     }

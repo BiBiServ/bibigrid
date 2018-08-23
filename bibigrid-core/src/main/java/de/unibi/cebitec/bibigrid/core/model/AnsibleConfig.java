@@ -41,7 +41,7 @@ public final class AnsibleConfig {
             masterMounts = new ArrayList<>();
             for (Configuration.MountPoint mountPoint : masterMountMap) {
                 Configuration.MountPoint localMountPoint = new Configuration.MountPoint();
-                localMountPoint.setSource(masterDeviceMapper.getDeviceNameForSnapshotId(mountPoint.getSource()));
+                localMountPoint.setSource(masterDeviceMapper.getRealDeviceNameForMountPoint(mountPoint.getTarget()));
                 localMountPoint.setTarget(mountPoint.getTarget());
                 masterMounts.add(localMountPoint);
             }
@@ -103,7 +103,7 @@ public final class AnsibleConfig {
             map.put("nfs_mounts", getNfsSharesMap());
             map.put("ext_nfs_mounts", getExtNfsSharesMap());
         }
-        map.put("local_fs", config.getLocalFS().name());
+        map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
