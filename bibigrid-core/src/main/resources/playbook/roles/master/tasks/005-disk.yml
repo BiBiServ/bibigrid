@@ -16,5 +16,4 @@
     state: mounted
   with_items:
       - "{{ master.disks }}"
-  when:
-    - master.disks
+  when: master.disks is defined

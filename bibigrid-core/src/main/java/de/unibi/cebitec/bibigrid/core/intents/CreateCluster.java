@@ -398,6 +398,11 @@ public abstract class CreateCluster extends Intent {
                 } else {
                     LOG.info(V, "SSH: {}", lineOut);
                 }
+                if (lineOut.contains("fatal") && lineOut.contains(" FAILED! => ")) {
+                    LOG.info("Ansible: There might be a problem with the ansible script ({}). " +
+                            "Please check '/var/log/ansible-playbook.log' on the master instance " +
+                            "after BiBiGrid finished.", lineOut);
+                }
             }
             if (lineError != null && !configured) {
                 LOG.error("SSH: {}", lineError);
