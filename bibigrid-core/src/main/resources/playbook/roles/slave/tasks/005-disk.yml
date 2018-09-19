@@ -7,3 +7,9 @@
     state: mounted
   when:
     - ephemerals
+- name: Change permission for newly mounted /vol/scratch mount point
+  file:
+    path: /vol/scratch
+    state: directory
+    owner: ubuntu
+    group: ubuntu
