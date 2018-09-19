@@ -145,7 +145,7 @@ public class StartUp {
         DefaultPropertiesFile defaultPropertiesFile = new DefaultPropertiesFile(commandLine);
         String providerMode = parseProviderMode(commandLine, defaultPropertiesFile);
         if (providerMode == null) {
-            LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
+            LOG.error(StartUp.ABORT_WITH_NOTHING_STARTED);
             return;
         }
         ProviderModule module = Provider.getInstance().getProviderModule(providerMode);
@@ -248,11 +248,21 @@ public class StartUp {
     }
 
     private static String parseProviderMode(CommandLine commandLine, DefaultPropertiesFile defaultPropertiesFile) {
-        try {
-            return commandLine.getOptionValue("mode", defaultPropertiesFile.getPropertiesMode()).trim();
-        } catch (IllegalArgumentException iae) {
-            LOG.error("No suitable mode found. Exit");
+        if (!commandLine.hasOption("mode")) {
+            String[] providerNames = Provider.getInstance().getProviderNames();
+            if (defaultPropertiesFile.getPropertiesMode() == null && providerNames.length == 1) {
+                return providerNames[0];
+            }
+            if (defaultPropertiesFile.getPropertiesMode() != null) {
+                return defaultPropertiesFile.getPropertiesMode();
+            }
+        } else {
+            try {
+                return commandLine.getOptionValue("mode", "").trim();
+            } catch (IllegalArgumentException ignored) {
+            }
         }
+        LOG.error("No suitable mode found in command line or properties file. Exit");
         return null;
     }
 

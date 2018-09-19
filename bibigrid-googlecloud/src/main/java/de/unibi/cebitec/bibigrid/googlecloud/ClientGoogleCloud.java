@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.googlecloud;
 
+import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
@@ -41,10 +42,15 @@ class ClientGoogleCloud extends Client {
             }
             internalClient = new Compute.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
                     .setApplicationName(config.getGoogleProjectId()).build();
-            LOG.info("Google compute connection established.");
         } catch (Exception e) {
             throw new ClientConnectionFailedException("Failed to connect google compute client.", e);
         }
+        try {
+            internalClient.projects().get(config.getGoogleProjectId()).execute();
+        } catch (IOException e) {
+            throw new ClientConnectionFailedException("Failed to connect google compute client.", e);
+        }
+        LOG.info("Google compute connection established.");
     }
 
     Compute getInternal() {

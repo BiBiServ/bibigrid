@@ -1,7 +1,4 @@
 # Getting Started
-
-**This is work in progress, mainly meaning that the documentation is incomplete.**
-
 Starting a cluster requires a valid configuration file and credentials. Following are the necessary steps with detailed information for each cloud provider.
 
 ## Setting up credentials

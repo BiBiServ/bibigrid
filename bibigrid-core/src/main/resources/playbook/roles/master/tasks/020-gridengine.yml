@@ -29,7 +29,6 @@
     mode: 0644
   register: act_qmaster
 
-
 # (Re-)start Master daemon (systemd)
 - name: Restart qmaster (in case of config change)
   systemd:
@@ -42,9 +41,6 @@
   systemd:
     name: gridengine-master
     state: started
-
-
-
 
 # Config Dir
 - name: Create Config Dir
@@ -154,7 +150,7 @@
   args:
     creates: /etc/bibigrid/gridengine/schedule.created
 
-#qconf -Mconf ./global
+#qconf -Mconf ./global.conf
 
 - name: Copy global.conf
   copy:
@@ -171,9 +167,7 @@
   args:
     creates: /etc/bibigrid/gridengine/global.created
 
-
 #update user environment
-
 - name: update defaults user environment (.bashrc)
   lineinfile:
     path: /home/{{ ssh_user }}/.bashrc
@@ -182,7 +176,6 @@
     line: 'export SGE_ROOT=/var/lib/gridengine'
 
 # submit host
-
 - name : add master as submit host
   shell: 'qconf -as {{ ansible_hostname }} && touch /etc/bibigrid/gridengine/submit_host.added'
   environment:
@@ -198,10 +191,8 @@
     owner: root
     group: root
 
-
 # add master as exec host (if configured)
-- block :
-
+- block:
   - name: (Re-)start gridengine exec daemon
     systemd:
       name: gridengine-exec
@@ -214,16 +205,10 @@
       SGE_ROOT: /var/lib/gridengine
     args:
       creates: /etc/bibigrid/master_exec_host.added
-
   when: use_master_as_compute == 'yes'
-
-
 
 - name: add all slaves as exec host
   shell: "/etc/bibigrid/gridengine/add_exec.sh $(nslookup {{ item.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.') {{ item.cores }}"
   environment:
     SGE_ROOT: /var/lib/gridengine
   with_items: "{{ slaves }}"
-
-
-

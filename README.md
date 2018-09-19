@@ -3,7 +3,7 @@ BiBiGrid is a tool for an easy cluster setup inside a cloud environment.
 It is written in Java and run on any OS a Java runtime is provided - any 
 Java 8 is supported. BiBiGrid and its Cmdline UI based on a general cloud 
 provider api. Currently there exists implementations for Google (Compute Engine
-using the official Google Cloud SDK), Amazon (AWS EC2 using the official AWS SDK), Microsoft (Azure using the official Azure SDK)
+using the official Google Cloud SDK), Amazon (AWS EC2 using the official AWS SDK), Microsoft (Azure using the official Azure SDK) (WIP)
 and OpenStack ([Openstack4j](http://openstack4j.com)). BiBiGrid offers an easy configuration and maintenance of a started cluster via command-line.
 
 BiBiGrid uses [Ansible](https://www.ansible.com) to configure standard Ubuntu 16.04 LTS cloud images. Depending on your configuration BiBiGrid can set up

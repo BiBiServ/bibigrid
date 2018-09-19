@@ -96,7 +96,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
             update = addSecurityRule(update, ruleIndex++, "0.0.0.0/0", SecurityRuleProtocol.TCP, 22);
             update = addSecurityRule(update, ruleIndex++, subnet.getCidr(), SecurityRuleProtocol.TCP, 1, 65535);
             update = addSecurityRule(update, ruleIndex++, subnet.getCidr(), SecurityRuleProtocol.UDP, 1, 65535);
-            update = addSecurityRule(update, ruleIndex++, subnet.getCidr(), new SecurityRuleProtocol("icmp"));
+            update = addSecurityRule(update, ruleIndex++, subnet.getCidr(), SecurityRuleProtocol.fromString("icmp"));
             for (Port port : getConfig().getPorts()) {
                 LOG.info(port.toString());
                 update = addSecurityRule(update, ruleIndex++, port.ipRange, SecurityRuleProtocol.TCP, port.number);

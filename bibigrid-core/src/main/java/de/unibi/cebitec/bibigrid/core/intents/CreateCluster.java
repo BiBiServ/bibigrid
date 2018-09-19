@@ -101,8 +101,11 @@ public abstract class CreateCluster extends Intent {
     public CreateCluster configureClusterMasterInstance() {
         List<Configuration.MountPoint> masterVolumeToMountPointMap = resolveMountSources(config.getMasterMounts());
         InstanceType masterSpec = config.getMasterInstance().getProviderType();
-        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap,
-                masterSpec.getConfigDrive() + masterSpec.getEphemerals() + masterSpec.getSwap());
+        int deviceOffset = masterSpec.getEphemerals() + masterSpec.getSwap();
+        // TODO: Ubuntu 14.04 and cirrOS use /dev/vdb for the config drive, while 16.04 and 18.04 use /dev/sr0
+        // messing up the offset.
+        // deviceOffset += masterSpec.getConfigDrive();
+        masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap, deviceOffset);
         LOG.info("Master instance configured.");
         return this;
     }
@@ -389,7 +392,17 @@ public abstract class CreateCluster extends Intent {
                 if (lineOut.contains("CONFIGURATION_FINISHED")) {
                     configured = true;
                 }
-                LOG.info(V, "SSH: {}", lineOut);
+                int indexOfLogMessage = lineOut.indexOf("\"[BIBIGRID] ");
+                if (indexOfLogMessage > 0) {
+                    LOG.info("Ansible: {}", lineOut.substring(indexOfLogMessage + 12, lineOut.length() - 1));
+                } else {
+                    LOG.info(V, "SSH: {}", lineOut);
+                }
+                if (lineOut.contains("fatal") && lineOut.contains(" FAILED! => ")) {
+                    LOG.info("Ansible: There might be a problem with the ansible script ({}). " +
+                            "Please check '/var/log/ansible-playbook.log' on the master instance " +
+                            "after BiBiGrid finished.", lineOut);
+                }
             }
             if (lineError != null && !configured) {
                 LOG.error("SSH: {}", lineError);

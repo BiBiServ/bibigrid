@@ -20,12 +20,10 @@ If you decide to use some or all command line parameters, a complete list is pro
 | master-instance-type       | m               |                      | | |
 | master-image               | M               |                      | | |
 | master-mounts              | d               |                      | | |
-| max-master-ephemerals      | mme             |                      | | |
 | use-master-as-compute      | b               |                      | [yes, no] | |
 | use-master-with-public-ip  | pub             |                      | [yes, no] | |
 | slave-instance-type        | s               |                      | | |
 | slave-image                | S               |                      | | |
-| max-slave-ephemerals       | mse             |                      | | |
 | slave-instance-count       | n               |                      | | |
 | use-spot-instance-request  | usir            |                      | [yes, no] | |
 | ports                      | p               |                      | | |

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -76,7 +77,9 @@ public class Cloud9Intent extends Intent {
                 sshSession.connect();
                 LOG.info("Connected to master!");
                 ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-                channel.setCommand("cloud9 --listen localhost -w \"" + config.getCloud9Workspace() + "\"");
+                String command = "echo \"workingDir=" + config.getCloud9Workspace() + "\" > /etc/cloud9/settings.conf\n";
+                command += "sudo service cloud9service start";
+                channel.setCommand(command);
                 LOG.info(V, "Connecting ssh channel...");
                 channel.connect();
                 LOG.info("You can now open the cloud9 IDE at http://localhost:{}", PORT);
@@ -84,7 +87,10 @@ public class Cloud9Intent extends Intent {
                 LOG.info("Press any key, to terminate this session...");
                 //noinspection ResultOfMethodCallIgnored
                 System.in.read();
-                // TODO: kill process?
+                OutputStream outputStream = channel.getOutputStream();
+                outputStream.write("sudo service cloud9service stop\n".getBytes());
+                outputStream.flush();
+                outputStream.close();
                 channel.disconnect();
                 sshSession.disconnect();
             }

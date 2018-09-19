@@ -24,16 +24,3 @@
     name: gridengine-exec
     state: restarted
   when: act_qmaster is changed
-
-
-
-
-
-
-
-
-
-
-
-
-
