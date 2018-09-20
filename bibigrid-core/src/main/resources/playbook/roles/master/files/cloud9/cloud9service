@@ -12,7 +12,7 @@
 
 NAME="cloud9"
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
-C9_WORKING_DIR=`grep workingDir= /etc/cloud9/settings.conf | cut -d'=' -f2`
+C9_WORKING_DIR=/home/ubuntu/
 
 # Include functions
 set -e
@@ -20,7 +20,7 @@ set -e
 
 start() {
   printf "Starting '$NAME'... "
-  start-stop-daemon --start --chuid "root:root" --background --make-pidfile --pidfile /var/run/$NAME.pid --chdir "/opt/c9sdk" --exec "/usr/local/bin/cloud9" -- "--listen localhost -w $C9_WORKING_DIR" || true
+  start-stop-daemon --start --chuid "ubuntu:ubuntu" --background --make-pidfile --pidfile /var/run/$NAME.pid --chdir "/opt/c9sdk" --exec "/usr/local/bin/cloud9" -- "--listen localhost -w $C9_WORKING_DIR" || true
   printf "done\n"
 }
 
