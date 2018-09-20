@@ -22,3 +22,9 @@
     group: root
     mode: 0777
 
+- name: Create link in ubuntu home
+  file:
+    src: /vol/
+    dest: /home/ubuntu/vol
+    state: link
+
