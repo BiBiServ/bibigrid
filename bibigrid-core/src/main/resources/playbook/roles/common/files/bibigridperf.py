@@ -40,8 +40,8 @@ print('Average write speed of %.2f MB/sec over %s passes' % (write_speed, passes
 read_speed = 0.0
 for i in range(0, passes):
     read_speed_text = execute_cmd(['hdparm', '-t', '/dev/vda1'])
-    read_speed_text = read_speed_text.split(' = ')[1]
-    read_speed_text = read_speed_text.split(' ')[0]
+    read_speed_text = read_speed_text.split(' =')[1]
+    read_speed_text = read_speed_text.strip().split(' ')[0]
     read_speed += float(read_speed_text)
 read_speed = read_speed / passes
 print('Average read speed of %.2f MB/sec over %s passes' % (read_speed, passes))
