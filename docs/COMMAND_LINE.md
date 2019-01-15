@@ -49,11 +49,11 @@ If you decide to use some or all command line parameters, a complete list is pro
 | Long parameter         | Short parameter | Environment variable | Values | Description                                          |
 |------------------------|-----------------|----------------------|--------|------------------------------------------------------|
 | openstack-username     | osu             | OS_USERNAME         | | |
-| openstack-tenantname   | ost             | OS_PROJECT_NAME     | | |
+| openstack-projectname   | ost             | OS_PROJECT_NAME     | | |
 | openstack-password     |                 | OS_PASSWORD         | | The password can only be provided as environment variable or config file for security reasons |
 | openstack-endpoint     | ose             | OS_AUTH_URL         | | |
 | openstack-domain       | osd             | OS_USER_DOMAIN_NAME | | |
-| openstack-tenantdomain | ostd            |                     | | |
+| openstack-projectdomain | ostd            |                     | | |
 | security-group         | sg              |                     | | |
 | router                 | router          |                     | | |
 

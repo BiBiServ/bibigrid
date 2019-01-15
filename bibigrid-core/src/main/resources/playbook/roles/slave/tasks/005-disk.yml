@@ -7,6 +7,7 @@
     state: mounted
   when:
     - ephemerals
+  tags: ["slave-mount-ephemeral"]
 
 - name: Change permissions for mountpoint
   file:
@@ -16,3 +17,4 @@
     recurse: yes
   when:
     - ephemerals
+  tags: ["slave-mountpoint-permissions"]

@@ -4,6 +4,7 @@
   apt:
     name: "mesosphere"
     state: present  # not using latest package to avoid time consuming checks for prepared images
+  task: ["master-inst-mesosphere-meta]
 
 
 # Configuration see https://www.digitalocean.com/community/tutorials/how-to-configure-a-production-ready-mesosphere-cluster-on-ubuntu-14-04
@@ -13,6 +14,7 @@
       name: zookeeper
       state: started
       enabled: yes
+  tags: ["master-zookeeper"]
 
 - name: Create mesos spooldir
   file:
@@ -21,6 +23,7 @@
       owner: root
       group: root
       mode: 0777
+  tags: ["master-create-mesos-spooldir"]
 
 - name: Configure mesos master 1/4
   copy:
@@ -29,6 +32,7 @@
     owner: root
     group: root
     mode: 0644
+  tags: ["master-config-mesos-1"]
 
 - name: Configure mesos master 2/4
   copy:
@@ -37,6 +41,7 @@
     owner: root
     group: root
     mode: 0644
+  tags: ["master-config-mesos-2"]
 
 - name: Configure mesos master 3/4
   copy:
@@ -45,6 +50,7 @@
     owner: root
     group: root
     mode: 0644
+  tags: ["master-config-mesos-3"]
 
 - name: Configure mesos master 4/4
   copy:
@@ -53,12 +59,14 @@
     owner: root
     group: root
     mode: 0644
+  tags: ["master-config-mesos-4"]
 
 - name: Start mesos master
   systemd:
         name: mesos-master
         state: started
         enabled: yes
+  tags: ["master-start-mesos"]
 
 - block:
   - name: Configure master as mesos slave 1/3
@@ -68,6 +76,7 @@
       owner: root
       group: root
       mode: 0644
+    tags: ["master-conf-master-mesos-slave-1"]
 
   - name: Configure master as mesos slave 2/3
     copy:
@@ -76,6 +85,7 @@
       owner: root
       group: root
       mode: 0644
+    tags: ["master-conf-master-mesos-slave-2"]
 
   - name: Configure master as mesos slave 3/3
     copy:
@@ -84,11 +94,13 @@
       owner: root
       group: root
       mode: 0644
+    tags: ["master-conf-master-mesos-slave-3"]
 
   - name: Start mesos slave
     systemd:
       name: mesos-slave
       state: started
       enabled: yes
+    tags: ["master-start-mesos-slave"]
 
   when: use_master_as_compute == 'yes'

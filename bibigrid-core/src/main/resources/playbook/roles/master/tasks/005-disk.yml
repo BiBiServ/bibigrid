@@ -7,6 +7,7 @@
     state: mounted
   when: 
     - master.ephemerals
+  tags: ["master-mount-ephemeral"]
 
 - name: mount disks
   mount:
@@ -17,3 +18,4 @@
   with_items:
       - "{{ master.disks }}"
   when: master.disks is defined
+  tags: ["master-mount-disks"]

@@ -2,6 +2,7 @@
   apt:
     name: "nfs-common"
     state: "latest"
+  tags: ["slave-install-nfs-common-pkg"]
 
 - name: Wait for nfs-server available
   wait_for:
@@ -9,6 +10,7 @@
     port: 2049
     delay: 2
     state: started
+  tags: ["slave-wait-nfs"]
 
 - name: Create mount points
   file:
@@ -19,6 +21,7 @@
     mode: 0777
   with_items:
       - "{{ nfs_mounts }}"
+  tags: ["slave-mount-points"]
 
 - name: Mount shares
   mount:
@@ -28,3 +31,4 @@
     state: mounted
   with_items:
     - "{{ nfs_mounts }}"
+  tags: ["slave-mount-shares"]

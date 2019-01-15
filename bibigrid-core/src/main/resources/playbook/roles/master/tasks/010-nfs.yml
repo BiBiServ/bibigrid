@@ -2,6 +2,7 @@
   apt:
     name: "nfs-kernel-server"
     state: "latest"
+  tags: ["master-install-nfs-server-pkg"]
 
 - name: Create export directories
   file:
@@ -12,6 +13,7 @@
     mode: 0777
   with_items:
       - "{{ nfs_mounts }}"
+  tags: ["master-create-exp-dirs"]
 
 - name: Configure nfs exports
   lineinfile:
@@ -22,6 +24,7 @@
   with_items:
     - "{{ nfs_mounts }}"
   register: nfs_exports
+  tags: ["master-config-nfs-exports"]
 
 - name: Restart NFS server (on config change)
   systemd:
@@ -29,3 +32,4 @@
     state: restarted
   when:
     - nfs_exports is changed
+  tags: ["master-restart-nfs"]

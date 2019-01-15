@@ -1,15 +1,19 @@
 - debug:
     msg: "[BIBIGRID] Setup common software and dependencies"
 - import_tasks: 010-apt.yml
+  tags: ["common-apt"]
 
 - debug:
     msg: "[BIBIGRID] Generate directory structure available on all hosts"
 - import_tasks: 020-disk.yml
+  tags: ["common-disk"]
 
 - debug:
     msg: "[BIBIGRID] Setup Docker"
 - import_tasks: 030-docker.yml
+  tags: ["common docker"]
 
 - debug:
     msg: "[BIBIGRID] Measure cluster performance"
 - import_tasks: 999-bibigridperf.yml
+  tags: ["common performance"]
