@@ -32,7 +32,8 @@ public abstract class Configuration {
     private List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
     private boolean cassandra;
     private boolean mesos;
-    private boolean oge = true;
+    private boolean oge;
+    private boolean slurm;
     private boolean hdfs;
     private boolean spark;
     private boolean nfs = true;
@@ -446,6 +447,14 @@ public abstract class Configuration {
         }
         this.cloud9Workspace = cloud9Workspace;
         LOG.info(V, "Cloud9 workspace set: {}", cloud9Workspace);
+    }
+
+    public boolean isSlurm() {
+        return slurm;
+    }
+
+    public void setSlurm(boolean slurm) {
+        this.slurm = slurm;
     }
 
     @SuppressWarnings("WeakerAccess")

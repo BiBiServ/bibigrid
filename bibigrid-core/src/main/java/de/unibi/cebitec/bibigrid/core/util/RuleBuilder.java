@@ -170,6 +170,7 @@ public class RuleBuilder {
         DEBUG_REQUESTS("dr", "debug-requests"),
         // Software parameters
         OPEN_GRID_ENGINE("oge", "oge"),
+        SLURM("slurm","slurm"),
         HDFS("hdfs", "hdfs"),
         CASSANDRA("db", "cassandra"),
         SPARK("spark", "spark"),

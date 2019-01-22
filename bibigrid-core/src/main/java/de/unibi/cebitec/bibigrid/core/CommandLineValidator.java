@@ -151,6 +151,10 @@ public abstract class CommandLineValidator {
         if (parseResult != null) {
             config.setOge(parseResult);
         }
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.SLURM);
+        if (parseResult != null) {
+            config.setSlurm(parseResult);
+        }
         parseResult = parseBooleanParameter(RuleBuilder.RuleNames.NFS);
         if (parseResult != null) {
             config.setNfs(parseResult);
