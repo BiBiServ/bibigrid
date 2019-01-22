@@ -1,0 +1,21 @@
+- name: Install Slurm packages
+  apt:
+    name: [slurm-wlm]
+    state: latest
+
+# (Re-)start slurmctl master daemon
+- name: (Re-)start slurmctld master
+  systemd:
+    name: slurmctld
+    enabled: True
+    state: restarted
+
+
+# (Re-)start slurmd worker daemon
+- name: (Re-)start slurmd worker daemon
+  systemd:
+    name: slurmctld
+    enabled: True
+    state: restarted
+  when:
+    - use_master_as_compute == 'yes'

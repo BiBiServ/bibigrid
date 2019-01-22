@@ -16,6 +16,7 @@ master:
 slaves:
   - ip: "192.168.33.11"
     cores: 2
+    hostname: "slave1"
 
 CIDR: "192.168.33.0/24"
 
@@ -28,6 +29,7 @@ nfs_mounts:
 # services
 enable_nfs: "yes"
 enable_gridengine: "yes"
+enable_slurm: "yes"
 use_master_as_compute: "yes"
 enable_mesos: "no"
 enable_cloud9: "yes"
