@@ -312,7 +312,7 @@ public abstract class Configuration {
 
     public void setOge(boolean oge) {
         this.oge = oge;
-        LOG.info(V, "OpenGridEngine support {}.", oge ? "enabled" : "disabled");
+        LOG.warn("GridEngine (oge) support is deprecated and will be removed in near future. Use Slurm instead.");
     }
 
     public String getMode() {
