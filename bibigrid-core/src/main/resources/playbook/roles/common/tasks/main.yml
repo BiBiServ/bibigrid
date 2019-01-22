@@ -10,13 +10,15 @@
     msg: "[BIBIGRID] Setup Docker"
 - import_tasks: 030-docker.yml
 
-- debug:
+- block:
+  - debug:
       msg: "[BIBIGRID] Munge"
-- include: 040-munge.yml
-  tags: ['slurm']
-- debug:
+  - include: 040-munge.yml
+  - debug:
       msg: "[BIBIGRID] SLURM Config"
-- include: 041-slurm.yml
+  - include: 041-slurm.yml
+  when:
+    - enable_slurm == 'yes'
   tags: ['slurm']
 
 - debug:

@@ -22,11 +22,11 @@
   when:
     - enable_gridengine == 'yes'
 
-- debug:
-    msg: "[BIBIGRID] Setup Slurm master"
-  when:
-    - enable_slurm == 'yes'
-- include: 021-slurm.yml
+- block:
+  - debug:
+      msg: "[BIBIGRID] Setup Slurm master"
+
+  - include: 021-slurm.yml
   when:
     - enable_slurm == 'yes'
 

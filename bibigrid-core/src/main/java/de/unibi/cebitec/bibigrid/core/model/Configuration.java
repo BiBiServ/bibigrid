@@ -3,9 +3,13 @@ package de.unibi.cebitec.bibigrid.core.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
@@ -34,6 +38,7 @@ public abstract class Configuration {
     private boolean mesos;
     private boolean oge;
     private boolean slurm;
+    private String mungeKey;
     private boolean hdfs;
     private boolean spark;
     private boolean nfs = true;
@@ -457,6 +462,30 @@ public abstract class Configuration {
         this.slurm = slurm;
     }
 
+    public String getMungeKey() {
+        if (mungeKey == null) {
+            // create a unique hash
+            byte[] randomarray = new byte[32];
+            Random random = new Random();
+            for (int i = 0; i < 32; i++){
+                randomarray[i] = (byte)(97 + random.nextInt(26));
+            }
+            new Random().nextBytes(randomarray);
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                mungeKey = bytesToHex(digest.digest(randomarray));
+            } catch (NoSuchAlgorithmException e){
+                LOG.warn("SHA-256 algorithm not found, proceed with unhashed munge key.");
+                mungeKey = new String(randomarray, Charset.forName("UTF-8"));
+            }
+        }
+        return mungeKey;
+    }
+
+    public void setMungeKey(String mungeKey) {
+        this.mungeKey = mungeKey;
+    }
+
     @SuppressWarnings("WeakerAccess")
     public static class InstanceConfiguration {
         public InstanceConfiguration() {
@@ -542,5 +571,20 @@ public abstract class Configuration {
 
     public enum FS {
         EXT2, EXT3, EXT4, XFS
+    }
+
+    /** private helper class that converts a byte array to an Hex String
+     *
+     * @param hash
+     * @return
+     */
+    private static String bytesToHex(byte[] hash) {
+        StringBuffer hexString = new StringBuffer();
+        for (int i = 0; i < hash.length; i++) {
+            String hex = Integer.toHexString(0xff & hash[i]);
+            if(hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 }
