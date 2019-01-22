@@ -2,6 +2,7 @@
   apt:
     name: ganglia-monitor
     state: present
+  tags: ["slave-ganglia-install"]
 
 - name: Configure Ganglia
   template:
@@ -11,6 +12,7 @@
     group: root
     mode: 0644
   register: gmonf_conf
+  tags: ["slave-ganglia-configure"]
 
 - name: Restart Ganglia 
   systemd:
@@ -18,3 +20,4 @@
     state: restarted
     enabled: yes
   when: gmonf_conf is changed
+  tags: ["slave-ganglia-restart"]

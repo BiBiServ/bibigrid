@@ -2,6 +2,7 @@
   apt:
     name: "mesos"
     state: present  # not using latest to avoid time consuming checks for prepared images
+  task: ["slave-inst-mesos"]
 
 # Configuration see https://www.digitalocean.com/community/tutorials/how-to-configure-a-production-ready-mesosphere-cluster-on-ubuntu-14-04
 
@@ -12,6 +13,7 @@
     owner: root
     group: root
     mode: 0644
+  task: ["slave-config-mesos-1"]
 
 - name: Configure master as mesos slave 2/4
   copy:
@@ -20,6 +22,7 @@
     owner: root
     group: root
     mode: 0644
+  task: ["slave-config-mesos-2"]
 
 - name: Configure master as mesos slave 3/4
   copy:
@@ -28,6 +31,7 @@
     owner: root
     group: root
     mode: 0644
+  task: ["slave-config-mesos-3"]
 
 - name: Configure master as mesos slave 4/4
   copy:
@@ -36,9 +40,11 @@
       owner: root
       group: root
       mode: 0644
+  task: ["slave-config-mesos-4"]
 
 - name: Start mesos slave
   systemd:
       name: mesos-slave
       state: started
       enabled: yes
+    task: ["slave-start-mesos"]

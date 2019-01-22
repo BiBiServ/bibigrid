@@ -20,6 +20,7 @@
     - ca-certificates 
     - curl 
     - software-properties-common
+  tags: ["common-install-packages"]
 
 
 - name: Install OpenStack object store client
@@ -27,27 +28,32 @@
     name: "swift"
     state: "present"
   when: mode == "openstack"
+  tags: ["common-install-openstack-client"]
 
 # https://cloud.google.com/storage/docs/gsutil_install?hl=de#deb
 - name: Add Google Compute repository key
   shell: 'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -'
   when: mode == "googlecloud"
+  tags: ["common-google-compute-repo-key"]
 
 - name: Add Google Compute repositories
   apt_repository:
     repo: "deb http://packages.cloud.google.com/apt cloud-sdk-{{ ansible_lsb.codename }} main"
     state: present
   when: mode == "googlecloud"
+  tags: ["common-google-compute-add-repo"]
 
 - name: Update apt cache for Google Compute
   apt:
     update_cache: 'yes'
+  tags: ["common-google-compute-apt"]
 
 - name: Install Google Compute object store client
   apt:
     name: "google-cloud-sdk"
     state: "present"
   when: mode == "googlecloud"
+  tags: ["common-google-cloud-sdk"]
 
 # https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest
 - name: Add Azure repository key
@@ -56,26 +62,31 @@
     keyserver: packages.microsoft.com
     state: present
   when: mode == "azure"
+  tags: ["common-azure-repo-key"]
 
 - name: Add new Azure repository key
   shell: 'curl -L https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -'
   when: mode == "azure"
+  tags: ["common-azure-new-repo-key"]
 
 - name: Add Azure repositories
   apt_repository:
     repo: "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_lsb.codename }} main"
     state: present
   when: mode == "azure"
+  tags: ["common-azure-add-repo"]
 
 - name: Update apt cache for Azure
   apt:
     update_cache: 'yes'
+  tags: ["common-azure-apt"]
 
 - name: Install Azure object store client
   apt:
     name: "azure-cli"
     state: "present"
   when: mode == "azure"
+  tags: ["common-azure-cli"]
 
 # https://docs.aws.amazon.com/cli/latest/userguide/installing.html
 - name: Install AWS object store client
@@ -83,6 +94,7 @@
     name: awscli
     extra_args: --upgrade --user
   when: mode == "aws"
+  tags: ["common-aws-cli"]
 
 
 # - name: Add Mesosphere project key
@@ -101,24 +113,27 @@
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
+  tags: ["common-add-docker-repo-key"]
     
     
 - name: Add Docker repository
   apt_repository:
     repo: deb https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename}} stable
     state: present
-
+  tags: ["common-add-docker-repo"]
 
 - name: Add Cassandra repository key
   apt_key:
     url: https://www.apache.org/dist/cassandra/KEYS
     state: present
+  tags: ["common-add-cassandra-repo-key"]
     
     
 - name: Add Cassandra repository
   apt_repository:
     repo: deb http://www.apache.org/dist/cassandra/debian 311x main
     state: present
+  tags: ["common-add-cassandra-repo"]
 
 
 # - name: Update apt cache

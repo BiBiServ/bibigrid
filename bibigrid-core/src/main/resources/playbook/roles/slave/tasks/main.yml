@@ -1,10 +1,12 @@
 - debug:
     msg: "[BIBIGRID] Setup Apache and Ganglia monitor"
 - include: 001-monitor.yml
+  tags: ['monitor','slave-monitor']
 
 - debug:
     msg: "[BIBIGRID] Mount disk"
 - include: 005-disk.yml
+  tags: ['disk','slave-disk"]
 
 - debug:
     msg: "[BIBIGRID] Setup NFS"
@@ -12,6 +14,7 @@
     - enable_nfs == 'yes'
 - include: 010-nfs.yml
   when: enable_nfs == 'yes'
+  tags: ['nfs','slave-nfs']
 
 - debug:
     msg: "[BIBIGRID] Setup GridEngine"
@@ -20,12 +23,13 @@
 - include: 020-gridengine.yml
   when:
     - enable_gridengine == 'yes'
+  tags: ['gridengine','slave-gridengine']
 
 - debug:
     msg: "[BIBIGRID] Setup Slurm Worker"
   when: enable_slurm == 'yes'
 - include: 021-slurm.yml
-  tags: ['slurm']
+  tags: ['slurm','slave-slurm']
   when: enable_slurm == 'yes'
 
 - debug:
@@ -34,3 +38,4 @@
     - enable_mesos == 'yes'
 - include: 030-mesos.yml
   when: enable_mesos == 'yes'
+  tags: ["mesos","slave-mesos"]

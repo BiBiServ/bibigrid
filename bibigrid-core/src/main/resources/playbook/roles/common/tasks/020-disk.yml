@@ -5,6 +5,7 @@
     owner: root
     group: root
     mode: 0755
+  task: ["common-gen-dir-structure-hosts-1"]
 
 - name: Generate directory structure available on all hosts (2/3)
   file:
@@ -13,6 +14,7 @@
     owner: root
     group: root
     mode: 0755
+  task: ["common-gen-dir-structure-hosts-2"]
 
 - name: Generate directory structure available on all hosts (3/3)
   file:
@@ -21,10 +23,12 @@
     owner: root
     group: root
     mode: 0777
+  task: ["common-gen-dir-structure-hosts-3"]
 
 - name: Create link in ubuntu home
   file:
     src: /vol/
     dest: /home/ubuntu/vol
     state: link
+  task: ["common-create-link-ubuntu"]
 

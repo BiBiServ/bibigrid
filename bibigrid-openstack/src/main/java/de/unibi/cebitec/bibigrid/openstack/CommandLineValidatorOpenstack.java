@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ * @author mfriedrichs(at)techfak.uni-bielefeld.de, t.dilger(at)uni-bielefeld.de
  */
 public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     private final ConfigurationOpenstack openstackConfig;
@@ -39,7 +39,7 @@ public final class CommandLineValidatorOpenstack extends CommandLineValidator {
     protected List<String> getRequiredOptions() {
         List<String> options = new ArrayList<>();
         options.add(RuleBuilder.RuleNames.OPENSTACK_USERNAME.getShortParam());
-        options.add(RuleBuilder.RuleNames.OPENSTACK_TENANT_NAME.getShortParam());
+        options.add(RuleBuilder.RuleNames.OPENSTACK_PROJECT_NAME.getShortParam());
         options.add(RuleBuilder.RuleNames.OPENSTACK_PASSWORD.getShortParam());
         options.add(RuleBuilder.RuleNames.OPENSTACK_ENDPOINT.getShortParam());
         switch (intentMode) {

@@ -8,12 +8,12 @@ public final class OpenStackCredentials {
     public OpenStackCredentials() {
     }
 
-    private String tenantName;
+    private String projectName;
     private String username;
     private String password;
     private String endpoint;
     private String domain;
-    private String tenantDomain;
+    private String projectDomain;
 
     public String getUsername() {
         return username;
@@ -32,11 +32,11 @@ public final class OpenStackCredentials {
     }
 
     public String getTenantName() {
-        return tenantName;
+        return projectName;
     }
 
     public void setTenantName(String tenantName) {
-        this.tenantName = tenantName != null ? tenantName.trim() : null;
+        this.projectName = tenantName != null ? tenantName.trim() : null;
     }
 
     public String getEndpoint() {
@@ -56,10 +56,26 @@ public final class OpenStackCredentials {
     }
 
     public String getTenantDomain() {
-        return tenantDomain == null ? domain : tenantDomain;
+        return projectDomain == null ? domain : projectDomain;
     }
 
     public void setTenantDomain(String tenantDomain) {
-        this.tenantDomain = tenantDomain != null ? tenantDomain.trim() : null;
+        this.projectDomain = tenantDomain != null ? tenantDomain.trim() : null;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public String getProjectDomain() {
+        return projectDomain;
+    }
+
+    public void setProjectDomain(String projectDomain) {
+        this.projectDomain = projectDomain;
     }
 }

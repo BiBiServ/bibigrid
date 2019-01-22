@@ -1,10 +1,12 @@
 - debug:
     msg: "[BIBIGRID] Setup Apache and Ganglia monitor"
 - include: 001-monitor.yml
+  tags: ["master-monitor"]
 
 - debug:
     msg: "[BIBIGRID] Mount disk"
 - include: 005-disk.yml
+  tags: ["master-mountdisk"]
 
 - debug:
     msg: "[BIBIGRID] Setup NFS"
@@ -13,6 +15,7 @@
 - include: 010-nfs.yml
   when:
     - enable_nfs == 'yes'
+  tags: ["master-nfs"]
 
 - debug:
     msg: "[BIBIGRID] Setup GridEngine"
@@ -21,6 +24,7 @@
 - include: 020-gridengine.yml
   when:
     - enable_gridengine == 'yes'
+  tags: ["master-gridengine"]
 
 - block:
   - debug:
@@ -39,6 +43,7 @@
 - include: 030-mesos.yml
   when:
     - enable_mesos == 'yes'
+  tags: ["master-mesos"]
 
 - debug:
     msg: "[BIBIGRID] Setup Cloud9"
@@ -47,3 +52,4 @@
 - include: 999-cloud9.yml
   when:
     - enable_cloud9 == 'yes'
+  tags: ["master-cloud9"]

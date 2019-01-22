@@ -187,10 +187,12 @@ public class RuleBuilder {
         ROUTER("router", "router"),
         OPENSTACK_USERNAME("osu", "openstack-username", "OS_USERNAME"),
         OPENSTACK_TENANT_NAME("ost", "openstack-tenantname", "OS_PROJECT_NAME"),
+        OPENSTACK_PROJECT_NAME("ospn", "openstack-projectname", "OS_PROJECT_NAME"),
         OPENSTACK_PASSWORD("osp", "openstack-password", "OS_PASSWORD"),
         OPENSTACK_ENDPOINT("ose", "openstack-endpoint", "OS_AUTH_URL"),
         OPENSTACK_DOMAIN("osd", "openstack-domain", "OS_USER_DOMAIN_NAME"),
-        OPENSTACK_TENANT_DOMAIN("ostd", "openstack-tenantdomain");
+        OPENSTACK_TENANT_DOMAIN("ostd", "openstack-tenantdomain"),
+        OPENSTACK_PROJECT_DOMAIN("ospd", "openstack-projectdomain");
 
         private final String shortParam;
         private final String longParam;
