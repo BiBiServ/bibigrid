@@ -21,14 +21,6 @@
     - enable_slurm == 'yes'
   tags: ['slurm']
 
-- debug:
-      msg: "[BIBIGRID] Munge"
-- include: 040-munge.yml
-  tags: ['slurm']
-- debug:
-      msg: "[BIBIGRID] SLURM Config"
-- include: 041-slurm.yml
-  tags: ['slurm']
 
 - debug:
     msg: "[BIBIGRID] Measure cluster performance"

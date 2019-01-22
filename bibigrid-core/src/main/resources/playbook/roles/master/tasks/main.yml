@@ -32,15 +32,6 @@
 
 
 - debug:
-    msg: "[BIBIGRID] Setup Slurm master"
-  when:
-    - enable_slurm == 'yes'
-- include: 021-slurm.yml
-  when:
-    - enable_slurm == 'yes'
-
-
-- debug:
     msg: "[BIBIGRID] Setup Mesos"
   when:
     - enable_mesos == 'yes'
