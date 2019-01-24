@@ -6,7 +6,7 @@
 - debug:
     msg: "[BIBIGRID] Mount disk"
 - include: 005-disk.yml
-  tags: ['disk','slave-disk"]
+  tags: ['disk','slave-disk']
 
 - debug:
     msg: "[BIBIGRID] Setup NFS"

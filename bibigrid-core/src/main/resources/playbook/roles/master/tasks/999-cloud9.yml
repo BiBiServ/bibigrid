@@ -1,37 +1,35 @@
 - name: Install cloud9 dependencies
   apt:
-    name: "{{ item }}"
+    name: ["build-essential","python"]
     state: "present"
-  with_items:
-    - build-essential
-    - python
-  tags: ["master-inst-c9-dependencies"]
 
 - name: Install cloud9 nodejs-legacy
   apt:
     name: "nodejs-legacy"
     state: "present"
   when: ansible_distribution != 'Ubuntu' or ansible_distribution_version is version('17', '<')
-  tags: ["master-inst-c9-nodejs"]
 
 - name: Install cloud9 nodejs
   apt:
     name: "nodejs"
     state: "present"
   when: ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('17', '>=')
-  tags: ["master-cloud9", "master-inst-c9-nodejs"]
+
+
 
 - name: Clone c9/core repository
   git:
     repo: git://github.com/c9/core.git
     dest: /opt/c9sdk
-  tags: ["master-cloud9", "master-clone-c9-repo"]
+  become_user: ubuntu
+
+# change/update  permissions
 
 - name: Install c9/core
   shell: |-
     cd /opt/c9sdk
     scripts/install-sdk.sh
-  tags: ["master-cloud9", "master-inst-c9-core"]
+  become_user: ubuntu
 
 - name: Create cloud9 startup script
   copy:
@@ -43,7 +41,6 @@
     owner: root
     group: root
     mode: 0755
-  tags: ["master-cloud9", "master-create-c9-startup"]
 
 - name: Copy cloud9 service
   copy:
@@ -52,7 +49,6 @@
     mode: 0755
     owner: root
     group: root
-  tags: ["master-cloud9", "master-cp-c9-service"]
 
 - name: Create cloud9 settings folder
   file:
@@ -60,7 +56,6 @@
     owner: root
     group: root
     state: directory
-  tags: ["master-cloud9", "master-create-c9-settings-folder"]
 
 - name: Add default cloud9 settings file
   copy:
@@ -70,8 +65,6 @@
     owner: root
     group: root
     mode: 0755
-  tags: ["master-cloud9", "master-add-default-c9-settings-sile"]
 
 - name: Register cloud9 service
   command: systemctl daemon-reload
-  tags: ["master-cloud9", "master-reg-c9-service"]

@@ -7,12 +7,10 @@
   with_items:
     - gridengine-client # Utilities for Grid Engine queue management
     - gridengine-exec # Distributed resource management - Execution Server
-  tags: ["slave-install-gridengine-pkg"]
 
 - name: Update act_qmaster
   shell: "echo $(nslookup {{ master.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.' | xargs) > /var/lib/gridengine/default/common/act_qmaster"
   register: act_qmaster
-  tags: ["slave-update-act-qmaster"]
 
 - name: Update permissions
   file:
@@ -20,11 +18,9 @@
     owner: sgeadmin
     group: sgeadmin
     mode: 0644
-  tags: ["slave-update-permissions"]
 
 - name: (Re-)start gridengine exec daemon
   systemd:
     name: gridengine-exec
     state: restarted
   when: act_qmaster is changed
-  tags: ["slave-restart-gridengine-exec-daemon"]
