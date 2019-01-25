@@ -1,15 +1,7 @@
 - name: Install gridengine packages
   apt:
-    name: "{{ item }}"
+    name: ["gridengine-client","gridengine-common","gridengine-drmaa-dev","gridengine-drmaa1.0","gridengine-exec","gridengine-master"]
     state: "present"
-  with_items:
-    - gridengine-client # Utilities for Grid Engine queue management
-    - gridengine-common # Distributed resource management - common files
-    - gridengine-drmaa-dev # Distributed resource management Application API library
-    - gridengine-drmaa1.0 # Distributed resource management Application API library
-    - gridengine-exec # Distributed resource management - Execution Server
-    - gridengine-master # Distributed resource management - Master Server
-
 
 #check if hostname >> /var/lib/gridengine/default/common/act_qmaster
 #- name: update act_qmaster
@@ -142,7 +134,6 @@
     mode: 0440
     owner: root
     group: root
-  tags: ["master-cp-schedule"]
 
 - name: Generate schedule config from schedule.conf
   shell: 'qconf -Msconf /etc/bibigrid/gridengine/schedule.conf && touch /etc/bibigrid/gridengine/schedule.created'
@@ -150,7 +141,6 @@
     SGE_ROOT: /var/lib/gridengine
   args:
     creates: /etc/bibigrid/gridengine/schedule.created
-  tags: ["master-gen-schedule"]
 
 #qconf -Mconf ./global.conf
 
@@ -161,7 +151,6 @@
     mode: 0440
     owner: root
     group: root
-  tags: ["master-cp-global"]
 
 - name: Generate global configuration from global.conf
   shell: 'qconf -Mconf /etc/bibigrid/gridengine/global && touch /etc/bibigrid/gridengine/global.created'
@@ -169,7 +158,6 @@
     SGE_ROOT: /var/lib/gridengine
   args:
     creates: /etc/bibigrid/gridengine/global.created
-  tags: ["master-gen-global"]
 
 #update user environment
 - name: update defaults user environment (.bashrc)
@@ -178,7 +166,6 @@
     state: present
     regexp: '^export SGE_ROOT=/var/lib/gridengine$'
     line: 'export SGE_ROOT=/var/lib/gridengine'
-  tags: ["master-update-def-env"]
 
 # submit host
 - name : add master as submit host
@@ -187,7 +174,6 @@
     SGE_ROOT: /var/lib/gridengine
   args:
     creates: /etc/bibigrid/gridengine/submit_host.added
-  tags: ["master-add-as-submit-host"]
 
 - name: Copy add_exec.sh
   copy:
@@ -196,7 +182,6 @@
     mode: 0550
     owner: root
     group: root
-  tags: ["master-copy-add_execsh"]
 
 # add master as exec host (if configured)
 - block:
@@ -205,7 +190,6 @@
       name: gridengine-exec
       state: restarted
     when: act_qmaster is changed
-    tags: ["master-restart-gridengine-exec-daemon"]
 
   - name: Add master as exec host
     shell: '/etc/bibigrid/gridengine/add_exec.sh {{ansible_hostname }} {{ master.cores }} && touch /etc/bibigrid/master_exec_host.added'
@@ -214,11 +198,9 @@
     args:
       creates: /etc/bibigrid/master_exec_host.added
   when: use_master_as_compute == 'yes'
-    tags: ["master-add-exec-host"]
 
 - name: add all slaves as exec host
   shell: "/etc/bibigrid/gridengine/add_exec.sh $(nslookup {{ item.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.') {{ item.cores }}"
   environment:
     SGE_ROOT: /var/lib/gridengine
   with_items: "{{ slaves }}"
-  tags: ["master-add-slaves-exec-host"]

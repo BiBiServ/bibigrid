@@ -15,6 +15,7 @@ import java.util.*;
  * Wrapper for the {@link Configuration} class with extra fields.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ *
  */
 public final class AnsibleConfig {
     private static final int BLOCK_DEVICE_START = 98;
@@ -96,6 +97,7 @@ public final class AnsibleConfig {
         map.put("mode", config.getMode());
         map.put("default_user", config.getUser());
         map.put("ssh_user", config.getSshUser());
+        map.put("munge_key",config.getMungeKey());
         map.put("master", getMasterMap());
         map.put("slaves", getSlavesMap());
         map.put("CIDR", subnetCidr);
@@ -106,6 +108,7 @@ public final class AnsibleConfig {
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
         addBooleanOption(map, "enable_gridengine", config.isOge());
+        addBooleanOption(map, "enable_slurm",config.isSlurm());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
         addBooleanOption(map, "enable_mesos", config.isMesos());
         addBooleanOption(map, "enable_cloud9", config.isCloud9());
@@ -196,7 +199,7 @@ public final class AnsibleConfig {
     private List<Map<String, Object>> getSlavesMap() {
         List<Map<String, Object>> l = new ArrayList<>();
         for (Instance slave : slaveInstances) {
-            l.add(getInstanceMap(slave, false));
+            l.add(getInstanceMap(slave, true));
         }
         return l;
     }

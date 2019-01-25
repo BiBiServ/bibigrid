@@ -87,7 +87,8 @@ public class RuleBuilder {
         addStringRule(group, RuleNames.GOOGLE_IMAGE_PROJECT_ID, "Google compute engine image project id");
         // Software rules
         addBooleanRule(group, RuleNames.MESOS, "[yes, no] if Mesos framework should be configured/started. Default is no");
-        addBooleanRule(group, RuleNames.OPEN_GRID_ENGINE, "[yes, no] if OpenGridEngine should be configured/started. Default is yes");
+        addBooleanRule(group, RuleNames.OPEN_GRID_ENGINE, "[yes, no] if OpenGridEngine should be configured/started. Default is no");
+        addBooleanRule(group, RuleNames.SLURM, "[yes, no] if SLURM should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.NFS, "[yes, no] if NFS should be configured/started. Default is yes");
         addBooleanRule(group, RuleNames.HDFS, "[yes, no] if HDFS should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.CASSANDRA, "[yes, no] if Cassandra database should be configured/started. Default is no");
@@ -170,6 +171,7 @@ public class RuleBuilder {
         DEBUG_REQUESTS("dr", "debug-requests"),
         // Software parameters
         OPEN_GRID_ENGINE("oge", "oge"),
+        SLURM("slurm","slurm"),
         HDFS("hdfs", "hdfs"),
         CASSANDRA("db", "cassandra"),
         SPARK("spark", "spark"),

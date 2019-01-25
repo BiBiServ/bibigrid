@@ -15,26 +15,22 @@
     group: root
     mode: 0644
   register: docker_config
-  tags: ["common-docker", "common-config-docker"]
 
 - name: (Re-)start docker daemon
   systemd:
     name: docker
     state: restarted
   when: docker_config is changed
-  tags: ["common-docker", "common-restart-docker"]
 
 - name: Create docker group
   group:
     name: docker
     state: present
-  tags: ["common-docker", "common-create-docker-group"]
 
 - name: Append ubuntu user to group docker
   user:
     name: ubuntu
     append: yes
     groups: docker
-  tags: ["common-docker", "common-append-ubuntu-usr"]
 
 

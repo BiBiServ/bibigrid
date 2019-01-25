@@ -1,45 +1,55 @@
 - debug:
     msg: "[BIBIGRID] Setup Apache and Ganglia monitor"
-- import_tasks: 001-monitor.yml
-  tags: ["master-monitor"]
+- include: 001-monitor.yml
+  tags: ["master-monitor","monitor"]
 
 - debug:
     msg: "[BIBIGRID] Mount disk"
-- import_tasks: 005-disk.yml
-  tags: ["master-mountdisk"]
+- include: 005-disk.yml
+  tags: ["master-disk","disk"]
 
 - debug:
     msg: "[BIBIGRID] Setup NFS"
   when:
     - enable_nfs == 'yes'
-- import_tasks: 010-nfs.yml
+- include: 010-nfs.yml
   when:
     - enable_nfs == 'yes'
-  tags: ["master-nfs"]
+  tags: ["master-nfs","nfs"]
 
 - debug:
     msg: "[BIBIGRID] Setup GridEngine"
   when:
     - enable_gridengine == 'yes'
-- import_tasks: 020-gridengine.yml
+- include: 020-gridengine.yml
   when:
     - enable_gridengine == 'yes'
-  tags: ["master-gridengine"]
+  tags: ["master-gridengine","gridengine"]
+
+- block:
+  - debug:
+      msg: "[BIBIGRID] Setup Slurm master"
+
+  - include: 021-slurm.yml
+  when:
+    - enable_slurm == 'yes'
+  tags: ["master-slurm","slurm"]
+
 
 - debug:
     msg: "[BIBIGRID] Setup Mesos"
   when:
     - enable_mesos == 'yes'
-- import_tasks: 030-mesos.yml
+- include: 030-mesos.yml
   when:
     - enable_mesos == 'yes'
-  tags: ["master-mesos"]
+  tags: ["master-mesos","mesos"]
 
 - debug:
     msg: "[BIBIGRID] Setup Cloud9"
   when:
     - enable_cloud9 == 'yes'
-- import_tasks: 999-cloud9.yml
+- include: 999-cloud9.yml
   when:
     - enable_cloud9 == 'yes'
-  tags: ["master-cloud9"]
+  tags: ["master-cloud9","cloud"]
