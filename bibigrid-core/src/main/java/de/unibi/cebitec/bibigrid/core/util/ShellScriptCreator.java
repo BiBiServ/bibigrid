@@ -106,6 +106,11 @@ public final class ShellScriptCreator {
         // install python2
         script.append("sudo apt-get --yes  install apt-transport-https ca-certificates ")
                 .append("software-properties-common python python-pip |sudo tee -a /var/log/ssh_exec.log\n");
+        // Update pip to latest version
+        script.append("sudo pip install --upgrade pip | sudo tee -a /var/log/ssh_exec.log\n");
+
+        // Install setuptools from pypi using pip
+        script.append("sudo pip install setuptools | sudo tee -a /var/log/ssh_exec.log\n");
         // Install ansible from pypi using pip
         script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n");
         // Install python2 on slaves instances
