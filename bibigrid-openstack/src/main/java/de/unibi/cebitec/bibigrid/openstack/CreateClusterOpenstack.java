@@ -17,12 +17,10 @@ import java.util.Map;
 
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
+import org.openstack4j.api.compute.ServerGroupService;
 import org.openstack4j.model.common.ActionResponse;
-import org.openstack4j.model.compute.Address;
-import org.openstack4j.model.compute.Fault;
-import org.openstack4j.model.compute.Server;
-import org.openstack4j.model.compute.ServerCreate;
-import org.openstack4j.model.compute.VolumeAttachment;
+import org.openstack4j.model.compute.*;
+import org.openstack4j.model.compute.builder.ServerCreateBuilder;
 import org.openstack4j.model.network.NetFloatingIP;
 import org.openstack4j.model.network.Router;
 import org.openstack4j.model.storage.block.Volume;
@@ -82,7 +80,7 @@ public class CreateClusterOpenstack extends CreateCluster {
         metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
         metadata.put(Instance.TAG_USER, config.getUser());
         InstanceTypeOpenstack masterSpec = (InstanceTypeOpenstack) config.getMasterInstance().getProviderType();
-        ServerCreate sc = Builders.server()
+        ServerCreateBuilder scb = Builders.server()
                 .name(masterNameTag)
                 .flavor(masterSpec.getFlavor().getId())
                 .image(config.getMasterInstance().getImage())
@@ -92,8 +90,12 @@ public class CreateClusterOpenstack extends CreateCluster {
                 .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true))
                 .addMetadata(metadata)
                 .configDrive(masterSpec.getConfigDrive() != 0)
-                .networks(Arrays.asList(environment.getNetwork().getId()))
-                .build();
+                .networks(Arrays.asList(environment.getNetwork().getId()));
+        if (config.getServerGroup() != null) {
+            scb.addSchedulerHint("group", config.getServerGroup());
+        }
+
+        ServerCreate sc = scb.build();
         // Boot the server async
         Server server = os.compute().servers().boot(sc);
 
@@ -221,7 +223,7 @@ public class CreateClusterOpenstack extends CreateCluster {
         Map<String, InstanceOpenstack> slaves = new HashMap<>();
         InstanceTypeOpenstack slaveSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
-            ServerCreate sc = Builders.server()
+            ServerCreateBuilder scb = Builders.server()
                     .name(buildSlaveInstanceName(batchIndex, i))
                     .flavor(slaveSpec.getFlavor().getId())
                     .image(instanceConfiguration.getImage())
@@ -231,8 +233,11 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .userData(ShellScriptCreator.getUserData(config, environment.getKeypair(), true))
                     .addMetadata(metadata)
                     .configDrive(instanceConfiguration.getProviderType().getConfigDrive() != 0)
-                    .networks(Arrays.asList(environment.getNetwork().getId()))
-                    .build();
+                    .networks(Arrays.asList(environment.getNetwork().getId()));
+            if (config.getServerGroup() != null) {
+                scb.addSchedulerHint("group", config.getServerGroup());
+            }
+            ServerCreate sc  = scb.build();
             Server server = os.compute().servers().boot(sc);
             InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
             slaves.put(server.getId(), instance);
@@ -419,4 +424,23 @@ public class CreateClusterOpenstack extends CreateCluster {
             LOG.warn(V, "Status of instance '{}' not available (== null).", server.getId());
         }
     }
+
+
+//    /**
+//     * Search for  server group by name or by id and return the id or null if server group not found.
+//     *
+//     * @param v - name or id of server group
+//     *
+//     * @return id of the found server group
+//     */
+//    private String getServerGroupByNameOrId(String v){
+//        ServerGroupService sgs = os.compute().serverGroups();
+//        List<? extends ServerGroup> sgl = sgs.list();
+//        for (ServerGroup sg : sgl) {
+//            if (sg.getId() == v || sg.getName() == v) {
+//                return sg.getId();
+//            }
+//        }
+//        return null;
+//    }
 }

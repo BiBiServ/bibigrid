@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  * </ol>
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ValidateIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntent.class);
@@ -45,37 +47,40 @@ public class ValidateIntent extends Intent {
         }
         LOG.info("Checking images...");
         if (checkImages()) {
-            LOG.info(I, "Image check has been successful.");
+            LOG.info(V, "Image check has been successful.");
         } else {
             LOG.error("Failed to check images.");
             success = false;
         }
         LOG.info("Checking instance types...");
         if (checkInstanceTypes()) {
-            LOG.info(I, "Instance type check has been successful.");
+            LOG.info(V, "Instance type check has been successful.");
         } else {
             LOG.error("Failed to check instance types.");
             success = false;
         }
-        LOG.info("Checking snapshots...");
+        LOG.info("Checking snapshots/volumes...");
         if (checkSnapshots()) {
-            LOG.info(I, "Snapshot check has been successful.");
+            LOG.info(V, "Snapshot/Volume check has been successful.");
         } else {
-            LOG.error("One or more snapshots could not be found.");
+            LOG.error("One or more snapshots/volumes could not be found.");
             success = false;
         }
         LOG.info("Checking network...");
         if (checkNetwork()) {
-            LOG.info(I, "Network check has been successful.");
+            LOG.info(V, "Network check has been successful.");
         } else {
             LOG.error("Failed to check network.");
             success = false;
         }
-        if (success) {
-            LOG.info(I, "You can now start your cluster.");
+        LOG.info("Checking servergroup...");
+        if (checkServerGroup()) {
+            LOG.info(V,"Server group has been successful.");
         } else {
-            LOG.error("There were one or more errors. Please adjust your configuration.");
+            LOG.error("Failed to check server group.");
+            success = false;
         }
+
         return success;
     }
 
@@ -89,33 +94,33 @@ public class ValidateIntent extends Intent {
 
     private boolean checkImages() {
         Map<Configuration.InstanceConfiguration, InstanceImage> typeImageMap = new HashMap<>();
-        InstanceImage masterImage = client.getImageByName(config.getMasterInstance().getImage());
-        if (masterImage == null) {
-            // If the image could not be found, try if the user provided an image id instead of the name.
-            masterImage = client.getImageById(config.getMasterInstance().getImage());
-        }
-        if (masterImage == null) {
-            LOG.error("Failed to find master image ({}).", config.getMasterInstance().getImage());
-        } else {
-            typeImageMap.put(config.getMasterInstance(), masterImage);
-        }
-        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-            InstanceImage slaveImage = client.getImageByName(instanceConfiguration.getImage());
-            if (slaveImage == null) {
-                // If the image could not be found, try if the user provided an image id instead of the name.
-                slaveImage = client.getImageById(instanceConfiguration.getImage());
-            }
-            if (slaveImage == null) {
-                LOG.error("Failed to find slave image ({}).", instanceConfiguration.getImage());
+        try {
+            InstanceImage masterImage = client.getImageByIdOrName(config.getMasterInstance().getImage());
+            if (masterImage == null) {
+                LOG.error("Failed to find master image ({}).", config.getMasterInstance().getImage());
             } else {
-                typeImageMap.put(instanceConfiguration, slaveImage);
+                typeImageMap.put(config.getMasterInstance(), masterImage);
             }
+        } catch (NotYetSupportedException e) {
+            LOG.error(e.getMessage());
+        }
+        try {
+            for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
+                InstanceImage slaveImage = client.getImageByIdOrName(instanceConfiguration.getImage());
+                if (slaveImage == null) {
+                    LOG.error("Failed to find slave image ({}).", instanceConfiguration.getImage());
+                } else {
+                    typeImageMap.put(instanceConfiguration, slaveImage);
+                }
+            }
+        } catch (NotYetSupportedException e) {
+            LOG.error(e.getMessage());
         }
         if (typeImageMap.size() != config.getSlaveInstances().size() + 1) {
             LOG.error("Master and Slave images could not be found.");
             return false;
         }
-        LOG.info(I, "Master and Slave images have been found.");
+        LOG.info(V, "Master and Slave images have been found.");
         boolean success = true;
         for (InstanceImage image : typeImageMap.values()) {
             if (!checkProviderImageProperties(image)) {
@@ -180,15 +185,16 @@ public class ValidateIntent extends Intent {
             if (snapshotId.contains(":")) {
                 snapshotId = snapshotId.substring(0, snapshotId.indexOf(":"));
             }
-            Snapshot snapshot = client.getSnapshotByName(snapshotId);
-            // If the snapshot could not be found, try if the user provided a snapshot id instead of the name.
-            if (snapshot == null) {
-                snapshot = client.getSnapshotById(snapshotId);
-            }
-            if (snapshot != null) {
-                LOG.info(V, "Snapshot '{}' found.", snapshotId);
-            } else {
-                LOG.error("Snapshot '{}' could not be found.", snapshotId);
+            try {
+                Snapshot snapshot = client.getSnapshotByIdOrName(snapshotId);
+                if (snapshot == null) {
+                    LOG.error("Snapshot/Volume '{}' could not be found.", snapshotId);
+                    allCheck = false;
+                } else {
+                    LOG.info(V, "Snapshot/Volume '{}' found.", snapshotId);
+                }
+            } catch (NotYetSupportedException e) {
+                LOG.error(e.getMessage());
                 allCheck = false;
             }
         }
@@ -198,29 +204,53 @@ public class ValidateIntent extends Intent {
     private boolean checkNetwork() {
         boolean result = true;
         if (config.getNetwork() != null && config.getNetwork().length() > 0) {
-            Network network = client.getNetworkByName(config.getNetwork());
-            // If the network could not be found, try if the user provided a network id instead of the name.
-            if (network == null) {
-                network = client.getNetworkById(config.getNetwork());
-            }
-            if (network != null) {
-                LOG.info(V, "Network '{}' found.", config.getNetwork());
-            } else {
-                LOG.error("Network '{}' could not be found.", config.getNetwork());
+            try {
+                Network network = client.getNetworkByIdOrName(config.getNetwork());
+                // If the network could not be found, try if the user provided a network id instead of the name.
+                if (network == null) {
+                    LOG.error("Network '{}' could not be found.", config.getNetwork());
+                    result = false;
+                } else {
+                    LOG.info(V, "Network '{}' found.", config.getNetwork());
+                    config.setNetwork(network.getId());
+                }
+            } catch (NotYetSupportedException e) {
+                LOG.error(e.getMessage());
                 result = false;
             }
         }
         if (config.getSubnet() != null && config.getSubnet().length() > 0) {
-            Subnet subnet = client.getSubnetByName(config.getSubnet());
-            // If the subnet could not be found, try if the user provided a subnet id instead of the name.
-            if (subnet == null) {
-                subnet = client.getSubnetById(config.getSubnet());
-            }
-            if (subnet != null) {
-                LOG.info(V, "Subnet '{}' found.", config.getSubnet());
-            } else {
-                LOG.error("Subnet '{}' could not be found.", config.getSubnet());
+            try {
+                Subnet subnet = client.getSubnetByIdOrName(config.getSubnet());
+                if (subnet == null) {
+                    LOG.error("Subnet '{}' could not be found.", config.getSubnet());
+                    result = false;
+                } else {
+                    LOG.info(V, "Subnet '{}' found.", config.getSubnet());
+                    config.setSubnet(subnet.getId());  // use id
+                }
+            } catch (NotYetSupportedException e){
+                LOG.error(e.getMessage());
                 result = false;
+            }
+        }
+        return result;
+    }
+
+    private boolean checkServerGroup() {
+        boolean result = true;
+        if (config.getServerGroup() != null && !config.getServerGroup().isEmpty()) {
+            try {
+                ServerGroup serverGroup = client.getServerGroupByIdOrName(config.getServerGroup());
+                if (serverGroup == null) {
+                    LOG.error("ServerGroup '{}' could not be found.", config.getServerGroup());
+                    result = false;
+                } else {
+                    LOG.info(V, "ServerGroup '{}' found.", config.getServerGroup());
+                    config.setServerGroup(serverGroup.getId()); // use id
+                }
+            } catch (NotYetSupportedException e){
+                LOG.warn(e.getMessage());
             }
         }
         return result;

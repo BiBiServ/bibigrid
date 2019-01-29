@@ -25,6 +25,8 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
+
 /**
  * Startup/Main class of BiBiGrid.
  *
@@ -187,13 +189,18 @@ public class StartUp {
                     }
                     break;
                 case VALIDATE:
-                    ValidateIntent intent = module.getValidateIntent(client, validator.getConfig());
-                    if (intent != null) {
-                        intent.validate();
+                    if (module.getValidateIntent(client, validator.getConfig()).validate()) {
+                       LOG.info(I, "You can now start your cluster.");
+                    } else {
+                       LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case CREATE:
-                    runCreateIntent(module, validator, client, module.getCreateIntent(client, validator.getConfig()), false);
+                    if (module.getValidateIntent(client, validator.getConfig()).validate()) {
+                        runCreateIntent(module, validator, client, module.getCreateIntent(client, validator.getConfig()), false);
+                    } else {
+                        LOG.error("There were one or more errors. Please adjust your configuration.");
+                    }
                     break;
                 case PREPARE:
                     CreateCluster cluster = module.getCreateIntent(client, validator.getConfig());

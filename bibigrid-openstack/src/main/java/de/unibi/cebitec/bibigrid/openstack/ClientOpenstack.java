@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.openstack;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.openstack4j.api.OSClient;
+import org.openstack4j.api.compute.ServerGroupService;
 import org.openstack4j.model.common.Identifier;
 import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.storage.block.Volume;
@@ -14,7 +15,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * Implementation of abstract class Client.
+ *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ * @author jkrueger(at)cebitec.uni-bielefeld.de
  */
 class ClientOpenstack extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOpenstack.class);
@@ -57,7 +61,6 @@ class ClientOpenstack extends Client {
 
     @Override
     public List<Network> getNetworks() {
-        // TODO: get router
         return internalClient.networking().network().list()
                 .stream().map(n -> new NetworkOpenstack(n, null)).collect(Collectors.toList());
     }
@@ -66,7 +69,6 @@ class ClientOpenstack extends Client {
     public Network getNetworkByName(String networkName) {
         for (org.openstack4j.model.network.Network network : internalClient.networking().network().list()) {
             if (network.getName().equals(networkName)) {
-                // TODO: get router
                 return new NetworkOpenstack(network, null);
             }
         }
@@ -76,8 +78,17 @@ class ClientOpenstack extends Client {
     @Override
     public Network getNetworkById(String networkId) {
         org.openstack4j.model.network.Network network = internalClient.networking().network().get(networkId);
-        // TODO: get router
         return network != null ? new NetworkOpenstack(network, null) : null;
+    }
+
+    @Override
+    public Network getNetworkByIdOrName(String net) {
+        for (org.openstack4j.model.network.Network network : internalClient.networking().network().list()) {
+            if (network.getId().equals(net) || network.getName().equals(net)) {
+                return new NetworkOpenstack(network, null);
+            }
+        }
+        return null;
     }
 
     @Override
@@ -92,9 +103,15 @@ class ClientOpenstack extends Client {
     }
 
     @Override
-    public Subnet getSubnetByName(String subnetName) {
+    public Subnet getSubnetByName(String subnetName) {return getSubnetByIdOrName(subnetName); }
+
+    @Override
+    public Subnet getSubnetById(String subnetId) { return getSubnetByIdOrName(subnetId); }
+
+    @Override
+    public Subnet getSubnetByIdOrName(String snet) {
         for (org.openstack4j.model.network.Subnet subnet : internalClient.networking().subnet().list()) {
-            if (subnet.getName().equals(subnetName)) {
+            if (subnet.getName().equals(snet) || subnet.getId().equals(snet)) {
                 return new SubnetOpenstack(subnet);
             }
         }
@@ -102,15 +119,15 @@ class ClientOpenstack extends Client {
     }
 
     @Override
-    public Subnet getSubnetById(String subnetId) {
-        org.openstack4j.model.network.Subnet subnet = internalClient.networking().subnet().get(subnetId);
-        return subnet != null ? new SubnetOpenstack(subnet) : null;
-    }
+    public InstanceImage getImageByName(String imageName) {return  getImageByIdOrName(imageName); }
 
     @Override
-    public InstanceImage getImageByName(String imageName) {
+    public InstanceImage getImageById(String imageId) { return getImageByIdOrName(imageId);}
+
+    @Override
+    public InstanceImage getImageByIdOrName(String img) {
         for (Image image : internalClient.compute().images().list()) {
-            if (image.getName().equals(imageName)) {
+            if (image.getName().equals(img) || image.getId().equals(img)) {
                 return new InstanceImageOpenstack(image);
             }
         }
@@ -118,15 +135,15 @@ class ClientOpenstack extends Client {
     }
 
     @Override
-    public InstanceImage getImageById(String imageId) {
-        Image image = internalClient.compute().images().get(imageId);
-        return image != null ? new InstanceImageOpenstack(image) : null;
-    }
+    public Snapshot getSnapshotByName(String snapshotName) { return getSnapshotByIdOrName(snapshotName);}
 
     @Override
-    public Snapshot getSnapshotByName(String snapshotName) {
+    public Snapshot getSnapshotById(String snapshotId) { return getSnapshotByIdOrName(snapshotId);}
+
+    @Override
+    public Snapshot getSnapshotByIdOrName(String s) {
         for (Volume snapshot : internalClient.blockStorage().volumes().list()) {
-            if (snapshot.getName().equals(snapshotName)) {
+            if (snapshot.getId().equals(s) || snapshot.getName().equals(s)) {
                 return new SnapshotOpenstack(snapshot);
             }
         }
@@ -134,8 +151,14 @@ class ClientOpenstack extends Client {
     }
 
     @Override
-    public Snapshot getSnapshotById(String snapshotId) {
-        Volume snapshot = internalClient.blockStorage().volumes().get(snapshotId);
-        return snapshot != null && snapshot.getId().equals(snapshotId) ? new SnapshotOpenstack(snapshot) : null;
+    public ServerGroup getServerGroupByIdOrName(String serverGroup) {
+        ServerGroupService sgs = internalClient.compute().serverGroups();
+        List<? extends org.openstack4j.model.compute.ServerGroup> sgl = sgs.list();
+        for (org.openstack4j.model.compute.ServerGroup sg : sgl) {
+            if (sg.getId().equals(serverGroup)  || sg.getName().equals(serverGroup)) {
+                return new ServerGroupOpenstack(sg);
+            }
+        }
+        return null;
     }
 }
