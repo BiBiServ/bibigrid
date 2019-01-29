@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,6 +72,14 @@ public class ValidateIntent extends Intent {
             LOG.error("Failed to check network.");
             success = false;
         }
+        LOG.info("Checking servergroup...");
+        if (checkServerGroup()) {
+            LOG.info(I,"Server group has been successful.");
+        } else {
+            LOG.error("Failed to check server group.");
+            success = false;
+        }
+
         if (success) {
             LOG.info(I, "You can now start your cluster.");
         } else {
@@ -221,6 +230,24 @@ public class ValidateIntent extends Intent {
             } else {
                 LOG.error("Subnet '{}' could not be found.", config.getSubnet());
                 result = false;
+            }
+        }
+        return result;
+    }
+
+    private boolean checkServerGroup() {
+        boolean result = true;
+        if (config.getServerGroup() != null && !config.getServerGroup().isEmpty()) {
+            try {
+                ServerGroup serverGroup = client.getServerGroupByIdOrName(config.getServerGroup());
+                if (serverGroup == null) {
+                    LOG.error(" ServerGroup '{}' could not be found.", config.getServerGroup());
+                    result = false;
+                } else {
+                    LOG.info(V, "ServerGroup '{}' found.", config.getServerGroup());
+                }
+            } catch (NotYetSupportedException e){
+                LOG.warn(e.getMessage());
             }
         }
         return result;

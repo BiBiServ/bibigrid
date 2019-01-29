@@ -29,6 +29,7 @@ public abstract class Configuration {
     private String credentialsFile;
     private String region;
     private String availabilityZone;
+    private String serverGroup;
     private List<Port> ports = new ArrayList<>();
     private boolean useMasterAsCompute;
     private boolean useMasterWithPublicIp = true;
@@ -202,9 +203,19 @@ public abstract class Configuration {
         LOG.info(V, "Availability zone set. ({})", this.availabilityZone);
     }
 
+    public String getServerGroup() {
+        return serverGroup;
+    }
+
+    public void setServerGroup(String serverGroup) {
+        this.serverGroup = serverGroup.trim();
+        LOG.info(V, "Server group set. ({})", this.serverGroup);
+    }
+
     public String[] getClusterIds() {
         return Arrays.copyOf(clusterIds, clusterIds.length);
     }
+
 
     /**
      * Set the cluster Id(s) either as a single cluster "id" or as multiple "id1/id2/id3".

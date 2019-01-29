@@ -28,7 +28,7 @@ public class RuleBuilder {
         addBooleanRule(group, RuleNames.USE_MASTER_AS_COMPUTE,
                 "[yes, no] if master should to be used as a compute instance");
         addBooleanRule(group, RuleNames.USE_MASTER_WITH_PUBLIC_IP,
-                "[yes, no] if master should be used with a public ip address");
+                "[yes, no] if master should be used with a public ip address (ignored for AWS, Google) ");
 
         // Slave instance rules
         addStringRule(group, RuleNames.SLAVE_INSTANCE_TYPE,
@@ -45,8 +45,9 @@ public class RuleBuilder {
         addStringRule(group, RuleNames.SSH_PRIVATE_KEY_FILE, "Absolute path to private ssh key file");
         addStringRule(group, RuleNames.REGION, "Region in which the cluster is created");
         addStringRule(group, RuleNames.AVAILABILITY_ZONE,
-                "Specific zone in the provided region (e.g. AWS: eu-west-1a, Google: europe-west1-b)");
+                "Specific zone in the provided region (e.g. AWS: eu-west-1a, Google: europe-west1-b, Openstack: nova)");
 
+        addStringRule(group, RuleNames.SERVER_GROUP,"Server group (supported by Openstack)");
         Tparam port = addIntRule(group, RuleNames.PORTS, "Comma-separated list of additional ports (tcp & udp) to be " +
                 "opened for all nodes (e.g. 80,443,8080). (Ignored if 'security-group' is set for Openstack!)");
         // Regex für Ports. TODO: Range Test ex. 0-255 useful?
@@ -143,6 +144,7 @@ public class RuleBuilder {
         USE_SPOT_INSTANCE_REQUEST("usir", "use-spot-instance-request"),
         REGION("e", "region", "OS_REGION_NAME"),
         AVAILABILITY_ZONE("z", "availability-zone"),
+        SERVER_GROUP("servergroup","server-group"),
         PORTS("p", "ports"),
         SECURITY_GROUP("sg", "security-group"),
         MASTER_MOUNTS("d", "master-mounts"),

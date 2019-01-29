@@ -11,6 +11,7 @@ import com.google.api.services.compute.model.Image;
 import com.google.api.services.compute.model.Subnetwork;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * Implementation of abstract client for Google
+ *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ * @author jkrueger(at)cebitec.uni-bielefeld.de
  */
 class ClientGoogleCloud extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientGoogleCloud.class);
@@ -68,27 +72,25 @@ class ClientGoogleCloud extends Client {
     }
 
     @Override
-    public Network getNetworkByName(String networkName) {
-        try {
-            return new NetworkGoogleCloud(internalClient.networks().get(config.getGoogleProjectId(),
-                    networkName).execute());
-        } catch (IOException ignored) {
-        }
-        return null;
-    }
+    public Network getNetworkByName(String networkName) { return getNetworkByIdOrName(networkName);}
 
     @Override
-    public Network getNetworkById(String networkId) {
+    public Network getNetworkById(String networkId) { return getNetworkByIdOrName(networkId);}
+
+    @Override
+    public Network getNetworkByIdOrName(String net)  {
         try {
             for (com.google.api.services.compute.model.Network network :
                     internalClient.networks().list(config.getGoogleProjectId()).execute().getItems()) {
-                if (network.getId().toString().equalsIgnoreCase(networkId)) {
+                if (network.getId().toString().equalsIgnoreCase(net) ||
+                    network.getName().equals(net)) {
                     return new NetworkGoogleCloud(network);
                 }
             }
         } catch (IOException ignored) {
         }
         return null;
+
     }
 
     @Override
@@ -107,21 +109,18 @@ class ClientGoogleCloud extends Client {
     }
 
     @Override
-    public Subnet getSubnetByName(String subnetName) {
-        try {
-            return new SubnetGoogleCloud(internalClient.subnetworks().get(config.getGoogleProjectId(),
-                    config.getRegion(), subnetName).execute());
-        } catch (IOException ignored) {
-        }
-        return null;
-    }
+    public Subnet getSubnetByName(String subnetName) { return getSubnetByIdOrName(subnetName);}
 
     @Override
-    public Subnet getSubnetById(String subnetId) {
+    public Subnet getSubnetById(String subnetId) { return getSubnetByIdOrName(subnetId); }
+
+    @Override
+    public Subnet getSubnetByIdOrName(String sub)  {
         try {
             for (Subnetwork subnet : internalClient.subnetworks().list(config.getGoogleProjectId(),
                     config.getRegion()).execute().getItems()) {
-                if (subnet.getId().toString().equalsIgnoreCase(subnetId)) {
+                if (subnet.getId().toString().equalsIgnoreCase(sub) ||
+                    subnet.getName().equals(sub)) {
                     return new SubnetGoogleCloud(subnet);
                 }
             }
@@ -131,20 +130,17 @@ class ClientGoogleCloud extends Client {
     }
 
     @Override
-    public InstanceImage getImageByName(String imageName) {
-        try {
-            Image image = internalClient.images().get(config.getGoogleImageProjectId(), imageName).execute();
-            return image != null ? new InstanceImageGoogleCloud(image) : null;
-        } catch (IOException ignored) {
-        }
-        return null;
-    }
+    public InstanceImage getImageByName(String imageName) { return getImageByIdOrName(imageName);}
 
     @Override
-    public InstanceImage getImageById(String imageId) {
+    public InstanceImage getImageById(String imageId) { return getImageByIdOrName(imageId); }
+
+    @Override
+    public InstanceImage getImageByIdOrName(String img) {
         try {
             for (Image image : internalClient.images().list(config.getGoogleImageProjectId()).execute().getItems()) {
-                if (image.getId().toString().equalsIgnoreCase(imageId)) {
+                if (image.getId().toString().equalsIgnoreCase(img) ||
+                    image.getName().equals(img)) {
                     return new InstanceImageGoogleCloud(image);
                 }
             }
@@ -154,27 +150,28 @@ class ClientGoogleCloud extends Client {
     }
 
     @Override
-    public Snapshot getSnapshotByName(String snapshotName) {
-        try {
-            com.google.api.services.compute.model.Snapshot snapshot =
-                    internalClient.snapshots().get(config.getGoogleProjectId(), snapshotName).execute();
-            return snapshot != null ? new SnapshotGoogleCloud(snapshot) : null;
-        } catch (IOException ignored) {
-        }
-        return null;
-    }
+    public Snapshot getSnapshotByName(String snapshotName) { return getSnapshotByIdOrName(snapshotName);}
 
     @Override
-    public Snapshot getSnapshotById(String snapshotId) {
+    public Snapshot getSnapshotById(String snapshotId) { return getSnapshotByIdOrName(snapshotId); }
+
+    @Override
+    public Snapshot getSnapshotByIdOrName(String snap){
         try {
             for (com.google.api.services.compute.model.Snapshot snapshot :
                     internalClient.snapshots().list(config.getGoogleProjectId()).execute().getItems()) {
-                if (snapshot.getId().toString().equalsIgnoreCase(snapshotId)) {
+                if (snapshot.getId().toString().equalsIgnoreCase(snap) ||
+                    snapshot.getName().equals(snap)) {
                     return new SnapshotGoogleCloud(snapshot);
                 }
             }
         } catch (IOException ignored) {
         }
         return null;
+    }
+
+    @Override
+    public ServerGroup getServerGroupByIdOrName(String serverGroup) throws NotYetSupportedException {
+        throw new NotYetSupportedException("Server groups are currently not supported by BiBigrid Google.");
     }
 }
