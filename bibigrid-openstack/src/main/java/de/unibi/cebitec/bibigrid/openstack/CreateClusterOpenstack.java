@@ -426,21 +426,21 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
 
-    /**
-     * Search for  server group by name or by id and return the id or null if server group not found.
-     *
-     * @param v - name or id of server group
-     *
-     * @return id of the found server group
-     */
-    private String getServerGroupByNameOrId(String v){
-        ServerGroupService sgs = os.compute().serverGroups();
-        List<? extends ServerGroup> sgl = sgs.list();
-        for (ServerGroup sg : sgl) {
-            if (sg.getId() == v || sg.getName() == v) {
-                return sg.getId();
-            }
-        }
-        return null;
-    }
+//    /**
+//     * Search for  server group by name or by id and return the id or null if server group not found.
+//     *
+//     * @param v - name or id of server group
+//     *
+//     * @return id of the found server group
+//     */
+//    private String getServerGroupByNameOrId(String v){
+//        ServerGroupService sgs = os.compute().serverGroups();
+//        List<? extends ServerGroup> sgl = sgs.list();
+//        for (ServerGroup sg : sgl) {
+//            if (sg.getId() == v || sg.getName() == v) {
+//                return sg.getId();
+//            }
+//        }
+//        return null;
+//    }
 }

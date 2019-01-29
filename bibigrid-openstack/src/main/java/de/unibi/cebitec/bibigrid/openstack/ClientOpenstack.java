@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.openstack;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.openstack4j.api.OSClient;
+import org.openstack4j.api.compute.ServerGroupService;
 import org.openstack4j.model.common.Identifier;
 import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.storage.block.Volume;
@@ -149,9 +150,15 @@ class ClientOpenstack extends Client {
         return null;
     }
 
-
     @Override
     public ServerGroup getServerGroupByIdOrName(String serverGroup) {
+        ServerGroupService sgs = internalClient.compute().serverGroups();
+        List<? extends org.openstack4j.model.compute.ServerGroup> sgl = sgs.list();
+        for (org.openstack4j.model.compute.ServerGroup sg : sgl) {
+            if (sg.getId().equals(serverGroup)  || sg.getName().equals(serverGroup)) {
+                return new ServerGroupOpenstack(sg);
+            }
+        }
         return null;
     }
 }
