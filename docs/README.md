@@ -1,6 +1,6 @@
 # Getting Started
 Starting a cluster requires a valid configuration file and credentials. Following are the necessary steps with 
-detailed information for each cloud provider. For an up-to-date user tutorial take a look at the [de.NBI Wiki](https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/).
+detailed information for each cloud provider. For an up-to-date user Setup-Tutorial take a look at the [de.NBI Wiki](https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/).
 
 ## Setting up credentials
 For communication with the cloud provider API, credentials have to be setup.
