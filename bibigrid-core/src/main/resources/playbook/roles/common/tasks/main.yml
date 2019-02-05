@@ -1,3 +1,19 @@
+- block:
+    - debug:
+        msg: "[BIBIGRID] Setup Ganglia monitor"
+    - include: 001-ganglia.yml
+  tags: ['ganglia','common-ganglia']
+  when:
+   - enable_ganglia == 'yes'
+
+- block:
+    - debug:
+        msg: "[BIBIGRID] Setup Zabbix Agent"
+    - include: 002-zabbix.yml
+  tags: ["zabbix","common-zabbix"]
+  when:
+    - enable_zabbix == 'yes'
+
 - debug:
     msg: "[BIBIGRID] Setup common software and dependencies"
 - import_tasks: 010-apt.yml

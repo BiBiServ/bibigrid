@@ -44,6 +44,9 @@ public abstract class Configuration {
     private boolean spark;
     private boolean nfs = true;
     private boolean cloud9;
+    private boolean ganglia = true;
+    private boolean zabbix = true;
+    private Zabbix zabbix_conf = new Zabbix();
     private List<String> nfsShares = new ArrayList<>(Arrays.asList("/vol/spool"));
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
@@ -323,7 +326,10 @@ public abstract class Configuration {
 
     public void setOge(boolean oge) {
         this.oge = oge;
-        LOG.warn("GridEngine (oge) support is deprecated and will be removed in near future. Use Slurm instead.");
+        if (oge) {
+            LOG.warn("GridEngine (oge) support is deprecated and is only supported using Ubuntu 16.04. " +
+                    "The Support will be removed in near future. Use Slurm instead.");
+        }
     }
 
     public String getMode() {
@@ -497,6 +503,34 @@ public abstract class Configuration {
         this.mungeKey = mungeKey;
     }
 
+    public boolean isGanglia() {
+        return ganglia;
+    }
+
+    public void setGanglia(boolean ganglia) {
+        this.ganglia = ganglia;
+        if (ganglia) {
+            LOG.warn("Ganglia (oge) support is deprecated and is only supported using Ubuntu 16.04. " +
+                     "The Support will be removed in near future. Use Zabbix instead.");
+        }
+    }
+
+    public boolean isZabbix() {
+        return zabbix;
+    }
+
+    public void setZabbix(boolean zabbix) {
+        this.zabbix = zabbix;
+    }
+
+    public Zabbix getZabbix_conf() {
+        return zabbix_conf;
+    }
+
+    public void setZabbix_conf(Zabbix zabbix_conf) {
+        this.zabbix_conf = zabbix_conf;
+    }
+
     @SuppressWarnings("WeakerAccess")
     public static class InstanceConfiguration {
         public InstanceConfiguration() {
@@ -582,6 +616,110 @@ public abstract class Configuration {
 
     public enum FS {
         EXT2, EXT3, EXT4, XFS
+    }
+
+
+
+    @SuppressWarnings("WeakerAccess")
+    public static class Zabbix {
+        public Zabbix () {
+        }
+
+        private Docker docker = new Docker();
+        private String db_root_password = "geheimesPassword";
+        private String db_zabbix_password = "geheimesPassword";
+        private String login_user = "Admin";
+        private String login_password = "zabbix";
+        private String metadata = "grid";
+
+        public Docker getDocker() {
+            return docker;
+        }
+
+        public void setDocker(Docker docker) {
+            this.docker = docker;
+        }
+
+        public String getDb_root_password() {
+            return db_root_password;
+        }
+
+        public void setDb_root_password(String db_root_password) {
+            this.db_root_password = db_root_password;
+        }
+
+        public String getDb_zabbix_password() {
+            return db_zabbix_password;
+        }
+
+        public void setDb_zabbix_password(String db_zabbix_password) {
+            this.db_zabbix_password = db_zabbix_password;
+        }
+
+        public String getLogin_user() {
+            return login_user;
+        }
+
+        public void setLogin_user(String login_user) {
+            this.login_user = login_user;
+        }
+
+        public String getLogin_password() {
+            return login_password;
+        }
+
+        public void setLogin_password(String login_password) {
+            this.login_password = login_password;
+        }
+
+        public String getMetadata() {
+            return metadata;
+        }
+
+        public void setMetadata(String metadata) {
+            this.metadata = metadata;
+        }
+
+        public class Docker {
+            public Docker (){
+            }
+            private String subnet = "172.28.0.0/28";
+            private String zdb = "172.28.0.2";
+            private String zserver = "172.28.0.3";
+            private String zweb = "172.28.0.4";
+
+            public String getSubnet() {
+                return subnet;
+            }
+
+            public void setSubnet(String subnet) {
+                this.subnet = subnet;
+            }
+
+            public String getZdb() {
+                return zdb;
+            }
+
+            public void setZdb(String zdb) {
+                this.zdb = zdb;
+            }
+
+            public String getZserver() {
+                return zserver;
+            }
+
+            public void setZserver(String zserver) {
+                this.zserver = zserver;
+            }
+
+            public String getZweb() {
+                return zweb;
+            }
+
+            public void setZweb(String zweb) {
+                this.zweb = zweb;
+            }
+        }
     }
 
     /** private helper class that converts a byte array to an Hex String
