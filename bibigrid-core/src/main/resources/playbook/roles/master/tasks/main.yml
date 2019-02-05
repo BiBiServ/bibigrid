@@ -1,7 +1,18 @@
-- debug:
-    msg: "[BIBIGRID] Setup Apache and Ganglia monitor"
-- include: 001-monitor.yml
-  tags: ["master-monitor","monitor"]
+- block:
+  - debug:
+      msg: "[BIBIGRID] Setup Ganglia monitor"
+  - include: 001-ganglia.yml
+  tags: ["master-ganglia","ganglia"]
+  when:
+    - enable_ganglia == 'yes'
+
+- block:
+    - debug:
+        msg: "[BIBIGRID] Setup Zabbix Server"
+    - include: 002-zabbix.yml
+  tags: ["master-zabbix","zabbix"]
+  when:
+    - enable_zabbix == 'yes'
 
 - debug:
     msg: "[BIBIGRID] Mount disk"
@@ -42,4 +53,4 @@
 - include: 999-cloud9.yml
   when:
     - enable_cloud9 == 'yes'
-  tags: ["master-cloud9","cloud"]
+  tags: ["master-cloud9","cloud9"]

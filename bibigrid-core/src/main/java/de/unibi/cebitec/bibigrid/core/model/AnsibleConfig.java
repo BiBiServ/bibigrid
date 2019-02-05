@@ -117,6 +117,9 @@ public final class AnsibleConfig {
         addBooleanOption(map, "enable_hdfs", config.isHdfs());
         addBooleanOption(map, "enable_spark", config.isSpark());
          */
+        addBooleanOption(map,"enable_ganglia",config.isGanglia());
+        addBooleanOption(map, "enable_zabbix", config.isZabbix());
+        map.put("zabbix",getZabbixConfigurationMap());
         writeToOutputStream(stream, map);
     }
 
@@ -204,5 +207,22 @@ public final class AnsibleConfig {
             l.add(getInstanceMap(slave, true));
         }
         return l;
+    }
+
+    private Map<String,Object> getZabbixConfigurationMap() {
+        Map<String, Object> zabbixConf = new LinkedHashMap<>();
+        Map<String, Object> zabbixDockerConf = new LinkedHashMap<>();
+        //Docker config
+        zabbixDockerConf.put("subnet",config.getZabbix_conf().getDocker().getSubnet());
+        zabbixDockerConf.put("zdb",config.getZabbix_conf().getDocker().getZdb());
+        zabbixDockerConf.put("zserver",config.getZabbix_conf().getDocker().getZserver());
+        zabbixDockerConf.put("zweb",config.getZabbix_conf().getDocker().getZweb());
+        zabbixConf.put("docker",zabbixDockerConf);
+        zabbixConf.put("db_root_password", config.getZabbix_conf().getDb_root_password());
+        zabbixConf.put("db_zabbix_password",config.getZabbix_conf().getDb_zabbix_password());
+        zabbixConf.put("login_user",config.getZabbix_conf().getLogin_user());
+        zabbixConf.put("login_password",config.getZabbix_conf().getLogin_password());
+        zabbixConf.put("metadata",config.getZabbix_conf().getMetadata());
+        return zabbixConf;
     }
 }

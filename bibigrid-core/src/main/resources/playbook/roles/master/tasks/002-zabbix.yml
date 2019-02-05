@@ -1,0 +1,67 @@
+
+- name: Create zabbix working folder
+  file:
+    path: /opt/zabbix
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+
+- name: Create zabbix mysql data folder
+  file:
+    path: /opt/zabbix/db-data
+    state: directory
+    owner: root
+    group: root
+
+- name: Copy zabbix docker compose file.
+  template:
+    src: zabbix/docker-compose.yml.j2
+    dest: /opt/zabbix/docker-compose.yml
+    owner: ubuntu
+    group: ubuntu
+
+- name: Copy zabbix-server configuration.
+  template:
+    src: zabbix/zabbix_server.conf.j2
+    dest: /opt/zabbix/zabbix_server.conf
+    owner: ubuntu
+    group: ubuntu
+
+- name: Start zabbix using docker-compose.
+  docker_service:
+    project_src: /opt/zabbix/
+
+- name: Install zabbix-api via PIP
+  pip:
+    name: zabbix-api
+
+
+#- name: Add master node as zabbix hosts
+#  local_action:
+#    module:
+
+- name: Add all worker nodes as zabbix hosts
+  local_action:
+    module: zabbix_host
+    server_url:  "http://{{ master.ip }}"
+    login_user: "{{ zabbix.login_user }}"
+    login_password: "{{ zabbix.login_password }}"
+    host_name: "{{ item.hostname }}"
+    visible_name : "{{ item.hostname }}"
+    description : add by ansible
+    status: enabled
+    state: present
+    host_groups:
+      - 'Linux servers'
+    link_templates:
+      - 'Template OS Linux'
+    interfaces:
+      - type: 1 #agent
+        main: 1 # default
+        ip: "{{ item.ip }}"
+        useip: 1 # connect using host IP address
+        dns: "{{ master.hostname }}"
+        port: 10050
+
+  with_items:
+    - "{{ slaves }}"
