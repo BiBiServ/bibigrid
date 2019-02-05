@@ -1,5 +1,6 @@
 # Getting Started
-Starting a cluster requires a valid configuration file and credentials. Following are the necessary steps with detailed information for each cloud provider.
+Starting a cluster requires a valid configuration file and credentials. Following are the necessary steps with 
+detailed information for each cloud provider. For an up-to-date user tutorial take a look at the [de.NBI Wiki](https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/).
 
 ## Setting up credentials
 For communication with the cloud provider API, credentials have to be setup.
@@ -7,10 +8,14 @@ Additionally during cluster creation the master instance will handle software up
 In order to upload and execute commands a valid ssh-keypair needs to be setup, too.
 
 When using the ssh public key parameter in config or command line, the setup of ssh keys in the credentials setup can be skipped!
-- [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)
-- [Google compute credentials setup](../bibigrid-googlecloud/docs/Credentials_Setup.md)
-- [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md)
-- [Microsoft Azure credentials setup](../bibigrid-azure/docs/Credentials_Setup.md)
+* [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)
+
+
+* [Google Compute credentials setup](../bibigrid-googlecloud/docs/Credentials_Setup.md)
+* [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md)
+* [Microsoft Azure credentials setup](../bibigrid-azure/docs/Credentials_Setup.md)
+
+*Google Compute, AWS and Azure will currently not be supported.*
 
 ## Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
@@ -20,11 +25,28 @@ A complete list of **command line parameters** can be found [here](COMMAND_LINE.
 
 A complete schema for a **configuration file** can be found [here](CONFIGURATION_SCHEMA.md).
 
+**Configuration File Schema**  
+The configuration file is written in YAML format. In contrast to the command line
+parameters, a configuration file is easier to maintain and in some cases provides
+more detailed configuration possibilities.
+
+A complete schema for a specific **configuration file** can be found on:
+* [OpenStack Configuration File](config/CONFIG_OPENSTACK.md)
+
+
+* [Google Compute Configuration File](config/CONFIG_GOOGLE_COMPUTE.md)
+* [Amazon AWS Configuration File](config/CONFIG_AWS.md)
+* [Azure Configuration File](config/CONFIG_AZURE.md)
+
 Provider specific examples representing the minimal required parameters:
-* [Examples OpenStack](examples/EXAMPLES_OPENSTACK.md)
-* [Examples Google Compute](examples/EXAMPLES_GOOGLECLOUD.md)
-* [Examples AWS](examples/EXAMPLES_AWS.md)
-* [Examples Azure](examples/EXAMPLES_AZURE.md)
+* [OpenStack Examples](examples/EXAMPLES_OPENSTACK.md)
+
+
+* [Google Compute Examples](examples/EXAMPLES_GOOGLECLOUD.md)
+* [AWS Examples](examples/EXAMPLES_AWS.md)
+* [Azure Examples](examples/EXAMPLES_AZURE.md)
+
+*Google Compute, AWS and Azure will currently not be supported.*
 
 ### Writing and using a configuration file
 The configuration file is a plain text file in YAML format. A short example would be:
@@ -70,6 +92,7 @@ This prevents the majority of possible errors or typos, resulting in incomplete 
 ```
 > bibigrid -ch -o ~/config.yml
 ```
+The command will be executed by default with the setup
 
 ## Starting the cluster
 Once the configuration is validated, the creation of the cluster can be started. Depending on the parameters
