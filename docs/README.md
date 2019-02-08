@@ -11,11 +11,9 @@ When using the ssh public key parameter in config or command line, the setup of 
 * [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)
 
 
-* [Google Compute credentials setup](../bibigrid-googlecloud/docs/Credentials_Setup.md)
-* [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md)
-* [Microsoft Azure credentials setup](../bibigrid-azure/docs/Credentials_Setup.md)
-
-*Google Compute, AWS and Azure will currently not be supported.*
+* [Google Compute credentials setup](../bibigrid-googlecloud/docs/Credentials_Setup.md) *
+* [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md) *
+* [Microsoft Azure credentials setup](../bibigrid-azure/docs/Credentials_Setup.md) *
 
 ## Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
@@ -34,19 +32,19 @@ A complete schema for a specific **configuration file** can be found on:
 * [OpenStack Configuration File](config/CONFIG_OPENSTACK.md)
 
 
-* [Google Compute Configuration File](config/CONFIG_GOOGLE_COMPUTE.md)
-* [Amazon AWS Configuration File](config/CONFIG_AWS.md)
-* [Azure Configuration File](config/CONFIG_AZURE.md)
+* [Google Compute Configuration File](config/CONFIG_GOOGLE_COMPUTE.md) *
+* [Amazon AWS Configuration File](config/CONFIG_AWS.md) *
+* [Azure Configuration File](config/CONFIG_AZURE.md) *
 
 Provider specific examples representing the minimal required parameters:
 * [OpenStack Examples](examples/EXAMPLES_OPENSTACK.md)
 
 
-* [Google Compute Examples](examples/EXAMPLES_GOOGLECLOUD.md)
-* [AWS Examples](examples/EXAMPLES_AWS.md)
-* [Azure Examples](examples/EXAMPLES_AZURE.md)
-
-*Google Compute, AWS and Azure will currently not be supported.*
+* [Google Compute Examples](examples/EXAMPLES_GOOGLECLOUD.md) *
+* [AWS Examples](examples/EXAMPLES_AWS.md) *
+* [Azure Examples](examples/EXAMPLES_AZURE.md) *
+  
+**Google Compute, AWS and Azure will currently not be tested.*
 
 ### Writing and using a configuration file
 The configuration file is a plain text file in YAML format. A short example would be:
