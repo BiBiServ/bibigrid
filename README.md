@@ -14,7 +14,8 @@ an HCP cluster for grid computing ([Open Grid Engine](http://gridscheduler.sourc
 a shared filesystem (on local discs and attached volumes), a cloud IDE for writing, running and debugging 
 ([Cloud9](https://github.com/c9/core)) and many more.
 
-During resource instantiation BiBiGrid configures the network, local and network volumes, (network) file systems and also the software for an immediately usage of the started cluster. 
+During resource instantiation BiBiGrid configures the network, local and network volumes, (network) file systems and 
+also the software for an immediately usage of the started cluster. 
 
 When using preinstalled images a full configured and ready to use cluster is available within a few minutes.
 

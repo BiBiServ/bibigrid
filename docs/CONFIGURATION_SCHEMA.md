@@ -50,11 +50,7 @@ slaveAnsibleRoles:
   - string
   - ...
 
-cassandra: boolean [yes, no]
-mesos: boolean [yes, no]
 oge: boolean [yes, no]
-hdfs: boolean [yes, no]
-spark: boolean [yes, no]
 nfs: boolean [yes, no]
 cloud9: boolean [yes, no]
 

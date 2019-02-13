@@ -87,10 +87,10 @@ securityGroup: string
 
 **credentials.yml**
 ```
-  tenantName: string
-  username: string
-  password: string
-  endpoint: string
-  domain: string
-  tenantDomain: string
+projectName: string
+username: string
+password: string
+endpoint: string
+domain: string
+projectDomain: string
 ```
