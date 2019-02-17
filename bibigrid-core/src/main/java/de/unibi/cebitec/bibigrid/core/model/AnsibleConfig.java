@@ -110,11 +110,13 @@ public final class AnsibleConfig {
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "enable_slurm",config.isSlurm());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
-        addBooleanOption(map, "enable_mesos", config.isMesos());
         addBooleanOption(map, "enable_cloud9", config.isCloud9());
+        /* not provided, 02/19
+        addBooleanOption(map, "enable_mesos", config.isMesos());
         addBooleanOption(map, "enable_cassandra", config.isCassandra());
         addBooleanOption(map, "enable_hdfs", config.isHdfs());
         addBooleanOption(map, "enable_spark", config.isSpark());
+         */
         writeToOutputStream(stream, map);
     }
 

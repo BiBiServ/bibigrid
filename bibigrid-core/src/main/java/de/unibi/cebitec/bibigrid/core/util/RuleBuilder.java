@@ -87,13 +87,15 @@ public class RuleBuilder {
         addStringRule(group, RuleNames.GOOGLE_PROJECT_ID, "Google compute engine project id");
         addStringRule(group, RuleNames.GOOGLE_IMAGE_PROJECT_ID, "Google compute engine image project id");
         // Software rules
-        addBooleanRule(group, RuleNames.MESOS, "[yes, no] if Mesos framework should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.OPEN_GRID_ENGINE, "[yes, no] if OpenGridEngine should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.SLURM, "[yes, no] if SLURM should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.NFS, "[yes, no] if NFS should be configured/started. Default is yes");
+        /* no longer provided, 02/19
+        addBooleanRule(group, RuleNames.MESOS, "[yes, no] if Mesos framework should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.HDFS, "[yes, no] if HDFS should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.CASSANDRA, "[yes, no] if Cassandra database should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.SPARK, "[yes, no] if Spark cluster support should be configured/started. Default is no");
+        */
         addBooleanRule(group, RuleNames.CLOUD9, "[yes, no] if Cloud9 IDE should be configured/started. Default is no");
     }
 
@@ -161,6 +163,7 @@ public class RuleBuilder {
         META_MODE("mode", "meta-mode"),
         LOCAL_FS("lfs", "local-fs"),
         CLOUD9_WORKSPACE("c9w", "cloud9-workspace"),
+        CLOUD9("c9", "cloud9"),
         // Auth parameters
         USER("u", "user"),
         SSH_USER("su", "ssh-user"),
@@ -174,12 +177,13 @@ public class RuleBuilder {
         // Software parameters
         OPEN_GRID_ENGINE("oge", "oge"),
         SLURM("slurm","slurm"),
+        /* not longer provided, 02/19
         HDFS("hdfs", "hdfs"),
         CASSANDRA("db", "cassandra"),
         SPARK("spark", "spark"),
         MESOS("me", "mesos"),
+        */
         NFS("nfs", "nfs"),
-        CLOUD9("c9", "cloud9"),
         // Amazon AWS
         BID_PRICE("bp", "bidprice"),
         BID_PRICE_MASTER("bpm", "bidprice-master"),

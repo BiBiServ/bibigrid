@@ -3,7 +3,7 @@ The configuration file is written in YAML format. In contrast to the command lin
 parameters, a configuration file is easier to maintain and in some cases provides
 more detailed configuration possibilities.
 
-## Shared schema
+**Shared schema**
 ```
 # Comment
 
@@ -50,11 +50,7 @@ slaveAnsibleRoles:
   - string
   - ...
 
-cassandra: boolean [yes, no]
-mesos: boolean [yes, no]
 oge: boolean [yes, no]
-hdfs: boolean [yes, no]
-spark: boolean [yes, no]
 nfs: boolean [yes, no]
 cloud9: boolean [yes, no]
 
@@ -79,13 +75,14 @@ masterMounts:
 localFS: enum [EXT2, EXT3, EXT4, XFS]
 ```
 
-## Google Compute specific schema
+**Google Compute specific schema**
 ```
 googleProjectId: string
 googleImageProjectId: string
 ```
 
-## Openstack specific schema
+**Openstack specific schema**
+
 ```
 router: string
 securityGroup: string
@@ -98,12 +95,18 @@ openstackCredentials:
   tenantDomain: string
 ```
 
-## AWS specific schema
+**AWS specific schema**
 ```
 bidPrice: double
 bidPriceMaster: double
 publicSlaveIps: boolean [yes, no]
 ```
 
-## Azure specific schema
+**Azure specific schema**
+
 There are currently no azure specific parameters.
+
+
+
+
+
