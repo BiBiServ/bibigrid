@@ -10,14 +10,14 @@ The parameters you might have to add outside the config YAML are explained in th
 | Long parameter | Short parameter | Values           | Description                        |
 |----------------|-----------------|------------------|------------------------------------|
 | config         | o               | path/to/config   | YAML configuration file            |
+| verbose        | v               | -                | Increases logging level to verbose |
 | version        | V               | -                | Check version                      |
-| help          | h               | -                | Display help message               |
+| help           | h               | -                | Display help message               |
 | check          | ch              | -                | Validate cluster setup             |
 | create         | c               | -                | create cluster environment         |
 | prepare        | p               | -                | prepares cluster setup             |
-| terminate      | t               | -                | terminate cluster                  |
 | list           | l               | -                | Lists all started clusters         |
-| verbose        | v               | -                | Increases logging level to verbose |
+| terminate      | t               | cluster-id       | terminate cluster                  |
 | cloud9         | c9              | cluster-id       | Starts with Cloud9 IDE             |
 
 ### Configuration parameters
