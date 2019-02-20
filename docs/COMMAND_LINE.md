@@ -9,16 +9,16 @@ The parameters you might have to add outside the config YAML are explained in th
 
 | Long parameter | Short parameter | Values           | Description                        |
 |----------------|-----------------|------------------|------------------------------------|
-| config         | o               | path/to/config   | YAML configuration file            |
-| version        | V               | -                | Check version                      |
-| help          | h               | -                | Display help message               |
-| check          | ch              | -                | Validate cluster setup             |
+| check          | ch              | -                | validate cluster setup             |
+| cloud9         | c9              | cluster-id       | establish a secured connection to running grid running cloud9 |
 | create         | c               | -                | create cluster environment         |
+| config         | o               | path/to/config   | YAML configuration file            |
+| help           | h               | -                | Display help message               |
+| list           | l               | -                | lists all started clusters         |
 | prepare        | p               | -                | prepares cluster setup             |
-| terminate      | t               | -                | terminate cluster                  |
-| list           | l               | -                | Lists all started clusters         |
-| verbose        | v               | -                | Increases logging level to verbose |
-| cloud9         | c9              | cluster-id       | Starts with Cloud9 IDE             |
+| terminate      | t               | cluster-id       | terminate cluster                  |
+| verbose        | v               | -                | increases logging level during setup |
+| version        | V               | -                | Check version                      |
 
 ### Configuration parameters
 If you decide to use some or all command line parameters for the configuration, a complete list is provided below:  
