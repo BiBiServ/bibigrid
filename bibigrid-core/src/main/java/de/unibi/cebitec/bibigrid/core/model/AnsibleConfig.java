@@ -119,6 +119,23 @@ public final class AnsibleConfig {
          */
         addBooleanOption(map,"enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
+//        // apache configuration
+//        map.put("apache_listen_port","8080");
+//        // mysql configuration
+//        map.put("mysql_root_home","/root");
+//        map.put("mysql_root_username","root");
+//        map.put("mysql_root_password","geheimesPasswort");
+//        // Zabbix
+//        map.put("zabbix_version","4.0");
+//        map.put("zabbix_server_name","BiBiGrid");
+//        map.put("zabbix_server_database","mysql");
+//        map.put("zabbix_server_database_long","mysql");
+//
+//        zabbix_server_dbhost: localhost
+//        zabbix_agent_server: 192.168.20.10
+//        zabbix_agent_serveractive: 192.168.20.10
+
+
         map.put("zabbix",getZabbixConfigurationMap());
         writeToOutputStream(stream, map);
     }
