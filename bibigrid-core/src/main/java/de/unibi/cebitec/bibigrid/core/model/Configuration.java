@@ -44,8 +44,8 @@ public abstract class Configuration {
     private boolean spark;
     private boolean nfs = true;
     private boolean cloud9;
-    private boolean ganglia = true;
-    private boolean zabbix = true;
+    private boolean ganglia;
+    private boolean zabbix;
     private Zabbix zabbix_conf = new Zabbix();
     private List<String> nfsShares = new ArrayList<>(Arrays.asList("/vol/spool"));
     private List<MountPoint> masterMounts = new ArrayList<>();
