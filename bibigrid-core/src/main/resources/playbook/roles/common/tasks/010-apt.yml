@@ -77,18 +77,6 @@
     extra_args: --upgrade --user
   when: mode == "aws"
 
-# - name: Add Mesosphere project key
-#   apt_key:
-#     id: E56151BF
-#     keyserver: keyserver.ubuntu.com
-#     state: present
-
-# - name: Add Mesosphere repositories
-#   apt_repository:
-#     repo: "deb-src http://repos.mesosphere.io/ubuntu {{ ansible_lsb.codename }} main"
-#     state: present
-
-
 - name: Add Docker repository key
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
@@ -99,17 +87,6 @@
     repo: deb https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename}} stable
     state: present
 
-- name: Add Cassandra repository key
-  apt_key:
-    url: https://www.apache.org/dist/cassandra/KEYS
-    state: present
-    
-- name: Add Cassandra repository
-  apt_repository:
-    repo: deb http://www.apache.org/dist/cassandra/debian 311x main
-    state: present
-
-
-# - name: Update apt cache
-#   apt:
-#     update_cache: 'yes'
+ - name: Update apt cache
+   apt:
+     update_cache: 'yes'
