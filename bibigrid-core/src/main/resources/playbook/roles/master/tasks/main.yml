@@ -35,16 +35,6 @@
     - enable_slurm == 'yes'
   tags: ["master-slurm","slurm"]
 
-
-- debug:
-    msg: "[BIBIGRID] Setup Mesos"
-  when:
-    - enable_mesos == 'yes'
-- include: 030-mesos.yml
-  when:
-    - enable_mesos == 'yes'
-  tags: ["master-mesos","mesos"]
-
 - debug:
     msg: "[BIBIGRID] Setup Cloud9"
   when:
