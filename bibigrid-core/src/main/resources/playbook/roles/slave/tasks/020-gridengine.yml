@@ -2,11 +2,8 @@
 
 - name: Install gridengine packages
   apt:
-    name: "{{ item }}"
+    name: ["gridengine-client","gridengine-exec"]
     state: "latest"
-  with_items:
-    - gridengine-client # Utilities for Grid Engine queue management
-    - gridengine-exec # Distributed resource management - Execution Server
 
 - name: Update act_qmaster
   shell: "echo $(nslookup {{ master.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.' | xargs) > /var/lib/gridengine/default/common/act_qmaster"
