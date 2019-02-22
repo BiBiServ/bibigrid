@@ -81,7 +81,7 @@ This file can now be used with the "-o" command line parameter and the path to t
 To keep the cluster setup process simpler you can set an alias for the BiBiGrid JAR file installed before. 
 The Unix command should look like the following (depending on JAR filename):
 ```
-> alias bibigrid="java -jar bibigrid-openstack-2.0.jar"
+> alias bibigrid="java -jar /path/to/bibigrid-openstack-x.y.z.jar"
 ```
 
 Instead of the java command there will be used the 'bibigrid' command just created instead.
