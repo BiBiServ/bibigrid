@@ -88,5 +88,5 @@
     state: present
 
 - name: Update apt cache
- apt:
-   update_cache: 'yes'
+  apt:
+    update_cache: 'yes'
