@@ -87,6 +87,6 @@
     repo: deb https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename}} stable
     state: present
 
- - name: Update apt cache
-   apt:
-     update_cache: 'yes'
+- name: Update apt cache
+ apt:
+   update_cache: 'yes'
