@@ -31,10 +31,6 @@ enable_nfs: "yes"
 enable_gridengine: "yes"
 enable_slurm: "yes"
 use_master_as_compute: "yes"
-enable_mesos: "no"
-enable_cloud9: "yes"
-enable_cassandra: "no"
-enable_hdfs: "no"
-enable_spark: "no"
 
-local_fs: "ext4"
+enable_cloud9: "yes"
+
