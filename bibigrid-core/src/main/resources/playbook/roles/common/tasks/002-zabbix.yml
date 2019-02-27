@@ -1,32 +1,3 @@
-- block:
-  - name: Download Zabbix 4.0 deb repo.
-    apt:
-      deb: "http://repo.zabbix.com/zabbix/4.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_4.0-2+{{ ansible_distribution_release }}_all.deb"
-      state: present
-
-  - name: Install Zabbix-Agent
-    apt:
-      update_cache: yes
-      name: zabbix-agent
-      state: latest
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
-
-
-
-- name: Zabbix-Agent configuration
-  template:
-    src: zabbix/zabbix_agentd.conf.j2
-    dest: /etc/zabbix/zabbix_agentd.conf
-    owner: root
-    group: root
-    mode: 0444
-  register: zabbix_agent
-
-
-- name: Restart agent on configuration change
-  systemd:
-    name: zabbix-agent
-    enabled: True
-    state: restarted
-  when:
-    - zabbix_agent is changed
+- name: Install Zabbix agent
+  include_role:
+    name: dj-wasabi.zabbix-agent

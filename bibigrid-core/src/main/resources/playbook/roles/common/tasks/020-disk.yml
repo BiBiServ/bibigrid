@@ -16,8 +16,6 @@
 - file:
     path: /vol/spool/
     state: directory
-    owner: root
-    group: ubuntu
     mode: 0777
 
 - file:

@@ -1,51 +1,28 @@
+#- name: Install Apache
+#  include_role:
+#    name: geerlingguy.apache
 
-- name: Create zabbix working folder
-  file:
-    path: /opt/zabbix
-    state: directory
-    owner: ubuntu
-    group: ubuntu
+- name: Install MySQL
+  include_role:
+    name: geerlingguy.mysql
 
-- name: Create zabbix mysql data folder
-  file:
-    path: /opt/zabbix/db-data
-    state: directory
-    owner: root
-    group: root
+- name: Install Zabbix-Server
+  include_role:
+    name: dj-wasabi.zabbix-server
 
-- name: Copy zabbix docker compose file.
-  template:
-    src: zabbix/docker-compose.yml.j2
-    dest: /opt/zabbix/docker-compose.yml
-    owner: ubuntu
-    group: ubuntu
-
-- name: Copy zabbix-server configuration.
-  template:
-    src: zabbix/zabbix_server.conf.j2
-    dest: /opt/zabbix/zabbix_server.conf
-    owner: ubuntu
-    group: ubuntu
-
-- name: Start zabbix using docker-compose.
-  docker_service:
-    project_src: /opt/zabbix/
+- name: Install Zabbix-Web
+  include_role:
+    name: dj-wasabi.zabbix-web
 
 - name: Install zabbix-api via PIP
   pip:
     name: zabbix-api
 
-
-#- name: Add master node as zabbix hosts
-#  local_action:
-#    module:
-
 - name: Add all worker nodes as zabbix hosts
-  local_action:
-    module: zabbix_host
+  zabbix_host:
     server_url:  "http://{{ master.ip }}"
-    login_user: "{{ zabbix.login_user }}"
-    login_password: "{{ zabbix.login_password }}"
+    login_user: Admin
+    login_password: zabbix
     host_name: "{{ item.hostname }}"
     visible_name : "{{ item.hostname }}"
     description : add by ansible
@@ -62,6 +39,5 @@
         useip: 1 # connect using host IP address
         dns: "{{ master.hostname }}"
         port: 10050
-
   with_items:
     - "{{ slaves }}"

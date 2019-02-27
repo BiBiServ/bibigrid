@@ -121,6 +121,10 @@ public final class ShellScriptCreator {
 
         // Fix line endings to ensure windows files being used correctly
         script.append("for file in $(find ~/playbook/ -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
+
+        // Run ansible-galaxy to install ansible-galaxy playbooks
+        script.append("ansible-galaxy install -r ~/playbook/requirements.yml\n");
+
         // Execute ansible playbook
         script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts")
                 .append(prepare ? " -t install" : "")

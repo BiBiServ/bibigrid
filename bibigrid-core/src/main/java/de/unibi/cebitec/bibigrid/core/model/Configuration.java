@@ -35,18 +35,13 @@ public abstract class Configuration {
     private boolean useMasterWithPublicIp = true;
     private InstanceConfiguration masterInstance = new InstanceConfiguration();
     private List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
-    private boolean cassandra;
-    private boolean mesos;
     private boolean oge;
     private boolean slurm;
     private String mungeKey;
-    private boolean hdfs;
-    private boolean spark;
     private boolean nfs = true;
     private boolean cloud9;
     private boolean ganglia;
     private boolean zabbix;
-    private Zabbix zabbix_conf = new Zabbix();
     private List<String> nfsShares = new ArrayList<>(Arrays.asList("/vol/spool"));
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
@@ -56,8 +51,8 @@ public abstract class Configuration {
     private String network;
     private String subnet;
     private String[] clusterIds;
-    private List<String> masterAnsibleRoles = new ArrayList<>();
-    private List<String> slaveAnsibleRoles = new ArrayList<>();
+    // private List<String> masterAnsibleRoles = new ArrayList<>();
+    // private List<String> slaveAnsibleRoles = new ArrayList<>();
     private String cloud9Workspace = DEFAULT_CLOUD9_WORKSPACE;
 
     public int getSlaveInstanceCount() {
@@ -77,18 +72,6 @@ public abstract class Configuration {
 
     public String getGridPropertiesFile() {
         return gridPropertiesFile;
-    }
-
-    public boolean isCassandra() {
-        return cassandra;
-    }
-
-    public void setCassandra(boolean cassandra) {
-        this.cassandra = cassandra;
-        LOG.info(V, "Cassandra support {}.", cassandra ? "enabled" : "disabled");
-        if (cassandra) {
-            nfs = true;
-        }
     }
 
     public boolean isUseMasterAsCompute() {
@@ -302,14 +285,7 @@ public abstract class Configuration {
         this.network = network.trim();
     }
 
-    public boolean isMesos() {
-        return mesos;
-    }
 
-    public void setMesos(boolean mesos) {
-        this.mesos = mesos;
-        LOG.info(V, "Mesos support {}.", mesos ? "enabled" : "disabled");
-    }
 
     public boolean isNfs() {
         return nfs;
@@ -364,18 +340,6 @@ public abstract class Configuration {
         this.localFS = localFS;
     }
 
-    public boolean isHdfs() {
-        return hdfs;
-    }
-
-    public void setHdfs(boolean hdfs) {
-        this.hdfs = hdfs;
-        LOG.info(V, "HDFS support {}.", hdfs ? "enabled" : "disabled");
-        if (hdfs) {
-            nfs = true;
-        }
-    }
-
     public String getSubnet() {
         return subnet;
     }
@@ -391,15 +355,6 @@ public abstract class Configuration {
     public void setDebugRequests(boolean debugRequests) {
         this.debugRequests = debugRequests;
         LOG.info(V, "Debug requests {}.", debugRequests ? "enabled" : "disabled");
-    }
-
-    public boolean isSpark() {
-        return spark;
-    }
-
-    public void setSpark(boolean spark) {
-        this.spark = spark;
-        LOG.info(V, "Spark support {}.", spark ? "enabled" : "disabled");
     }
 
     public boolean isUseSpotInstances() {
@@ -429,35 +384,35 @@ public abstract class Configuration {
         this.credentialsFile = credentialsFile;
     }
 
-    public List<String> getMasterAnsibleRoles() {
-        return masterAnsibleRoles;
-    }
-
-    public void setMasterAnsibleRoles(List<String> masterAnsibleRoles) {
-        this.masterAnsibleRoles = masterAnsibleRoles != null ? masterAnsibleRoles : new ArrayList<>();
-        if (masterAnsibleRoles != null && !masterAnsibleRoles.isEmpty()) {
-            StringBuilder display = new StringBuilder();
-            for (String role : masterAnsibleRoles) {
-                display.append(role).append(" ");
-            }
-            LOG.info(V, "Additional master ansible roles set: {}", display);
-        }
-    }
-
-    public List<String> getSlaveAnsibleRoles() {
-        return slaveAnsibleRoles;
-    }
-
-    public void setSlaveAnsibleRoles(List<String> slaveAnsibleRoles) {
-        this.slaveAnsibleRoles = slaveAnsibleRoles != null ? slaveAnsibleRoles : new ArrayList<>();
-        if (slaveAnsibleRoles != null && !slaveAnsibleRoles.isEmpty()) {
-            StringBuilder display = new StringBuilder();
-            for (String role : slaveAnsibleRoles) {
-                display.append(role).append(" ");
-            }
-            LOG.info(V, "Additional slave ansible roles set: {}", display);
-        }
-    }
+//    public List<String> getMasterAnsibleRoles() {
+//        return masterAnsibleRoles;
+//    }
+//
+//    public void setMasterAnsibleRoles(List<String> masterAnsibleRoles) {
+//        this.masterAnsibleRoles = masterAnsibleRoles != null ? masterAnsibleRoles : new ArrayList<>();
+//        if (masterAnsibleRoles != null && !masterAnsibleRoles.isEmpty()) {
+//            StringBuilder display = new StringBuilder();
+//            for (String role : masterAnsibleRoles) {
+//                display.append(role).append(" ");
+//            }
+//            LOG.info(V, "Additional master ansible roles set: {}", display);
+//        }
+//    }
+//
+//    public List<String> getSlaveAnsibleRoles() {
+//        return slaveAnsibleRoles;
+//    }
+//
+//    public void setSlaveAnsibleRoles(List<String> slaveAnsibleRoles) {
+//        this.slaveAnsibleRoles = slaveAnsibleRoles != null ? slaveAnsibleRoles : new ArrayList<>();
+//        if (slaveAnsibleRoles != null && !slaveAnsibleRoles.isEmpty()) {
+//            StringBuilder display = new StringBuilder();
+//            for (String role : slaveAnsibleRoles) {
+//                display.append(role).append(" ");
+//            }
+//            LOG.info(V, "Additional slave ansible roles set: {}", display);
+//        }
+//    }
 
     public String getCloud9Workspace() {
         return cloud9Workspace;
@@ -521,14 +476,6 @@ public abstract class Configuration {
 
     public void setZabbix(boolean zabbix) {
         this.zabbix = zabbix;
-    }
-
-    public Zabbix getZabbix_conf() {
-        return zabbix_conf;
-    }
-
-    public void setZabbix_conf(Zabbix zabbix_conf) {
-        this.zabbix_conf = zabbix_conf;
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -618,109 +565,6 @@ public abstract class Configuration {
         EXT2, EXT3, EXT4, XFS
     }
 
-
-
-    @SuppressWarnings("WeakerAccess")
-    public static class Zabbix {
-        public Zabbix () {
-        }
-
-        private Docker docker = new Docker();
-        private String db_root_password = "geheimesPassword";
-        private String db_zabbix_password = "geheimesPassword";
-        private String login_user = "Admin";
-        private String login_password = "zabbix";
-        private String metadata = "grid";
-
-        public Docker getDocker() {
-            return docker;
-        }
-
-        public void setDocker(Docker docker) {
-            this.docker = docker;
-        }
-
-        public String getDb_root_password() {
-            return db_root_password;
-        }
-
-        public void setDb_root_password(String db_root_password) {
-            this.db_root_password = db_root_password;
-        }
-
-        public String getDb_zabbix_password() {
-            return db_zabbix_password;
-        }
-
-        public void setDb_zabbix_password(String db_zabbix_password) {
-            this.db_zabbix_password = db_zabbix_password;
-        }
-
-        public String getLogin_user() {
-            return login_user;
-        }
-
-        public void setLogin_user(String login_user) {
-            this.login_user = login_user;
-        }
-
-        public String getLogin_password() {
-            return login_password;
-        }
-
-        public void setLogin_password(String login_password) {
-            this.login_password = login_password;
-        }
-
-        public String getMetadata() {
-            return metadata;
-        }
-
-        public void setMetadata(String metadata) {
-            this.metadata = metadata;
-        }
-
-        public class Docker {
-            public Docker (){
-            }
-            private String subnet = "172.28.0.0/28";
-            private String zdb = "172.28.0.2";
-            private String zserver = "172.28.0.3";
-            private String zweb = "172.28.0.4";
-
-            public String getSubnet() {
-                return subnet;
-            }
-
-            public void setSubnet(String subnet) {
-                this.subnet = subnet;
-            }
-
-            public String getZdb() {
-                return zdb;
-            }
-
-            public void setZdb(String zdb) {
-                this.zdb = zdb;
-            }
-
-            public String getZserver() {
-                return zserver;
-            }
-
-            public void setZserver(String zserver) {
-                this.zserver = zserver;
-            }
-
-            public String getZweb() {
-                return zweb;
-            }
-
-            public void setZweb(String zweb) {
-                this.zweb = zweb;
-            }
-        }
-    }
 
     /** private helper class that converts a byte array to an Hex String
      *
