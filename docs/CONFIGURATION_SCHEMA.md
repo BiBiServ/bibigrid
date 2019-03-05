@@ -5,10 +5,10 @@ more detailed configuration possibilities.
 
 **Shared schema**
 ```
-# Comment
+# Cloud Usage
+mode: enum                      [aws, googlecloud, openstack, azure]
 
-mode: enum [aws, googlecloud, openstack, azure]
-
+# Access
 user: string
 sshUser: string
 keypair: string
@@ -21,47 +21,64 @@ gridPropertiesFile: string
 region: string
 availabilityZone: string
 
+# Network
 network: string
 subnet: string
 ports:
-  - type: enum [TCP, UDP, ICMP]
-    number: integer [1 - 65535]
+  - type: enum                  [TCP, UDP, ICMP]
+    number: integer             [1 - 65535]
     ipRange: string
   - ...
 
-useMasterAsCompute: boolean [yes, no]
-useMasterWithPublicIp: boolean [yes, no]
-useSpotInstances: boolean [yes, no]
-
+# Master
 masterInstance:
-  type: string
-  image: string
+  type: string                  [flavor, e.g. de.NBI.default ]
+  image: string                 [image id]
+  
+useMasterAsCompute: boolean     [yes, "no"]
+useMasterWithPublicIp: boolean  [yes, "no"]
 
+# [List of] Slave[s]
 slaveInstances:
-  - type: string
-    count: integer
-    image: string
+  - type: string                [flavor, e.g. de.NBI.default ]
+    count: integer              [number of instances]
+    image: string               [image id]
   - ...
 
-masterAnsibleRoles:
+masterAnsibleRoles:   # ???
   - string
   - ...
-slaveAnsibleRoles:
+slaveAnsibleRoles:    # ???
   - string
   - ...
 
-oge: boolean [yes, no]
-nfs: boolean [yes, no]
-cloud9: boolean [yes, no]
+# Services
 
-cloud9Workspace: string
+# HPC cluster software
+slurm: boolean                  [yes, "no"]
+oge: boolean                    [yes, "no"] # deprecated - supported for Ubuntu 16.04
 
-debugRequests: boolean [yes, no]
+# monitoring
+zabbix: boolean                 [yes, "no"]
+zabbixConf:
+    db: string                  ["zabbix"]
+    db_user: string             ["zabbix"]
+    db_password: string         ["zabbix"]
+    timezone: string            ["Europe/Berlin"]
+    servername:                 ["bibigrid"]
+    admin_password:             ["bibigrid"] # should be changed
+    
+ganglia: boolean                [yes, "no"] # deprecated - supported for Ubuntu 16.04 only
 
+# web ide
+cloud9: boolean                 [yes, "no"]
+cloud9Workspace: string         ["~"]
+
+# Network FS
+nfs: boolean                    [yes, "no"]
 nfsShares:
   - string
   - ...
-
 extNfsShares:
   - source: string
     target: string
@@ -72,7 +89,12 @@ masterMounts:
     target: string
   - ...
 
-localFS: enum [EXT2, EXT3, EXT4, XFS]
+localFS: enum                   [EXT2, EXT3, "EXT4", XFS]
+
+#Misc
+debugRequests: boolean          [yes, "no"]
+
+
 ```
 
 **Google Compute specific schema**
@@ -100,6 +122,7 @@ openstackCredentials:
 bidPrice: double
 bidPriceMaster: double
 publicSlaveIps: boolean [yes, no]
+useSpotInstances: boolean [yes, no]
 ```
 
 **Azure specific schema**
