@@ -28,7 +28,7 @@ public class RuleBuilder {
         addBooleanRule(group, RuleNames.USE_MASTER_AS_COMPUTE,
                 "[yes, no] if master should to be used as a compute instance");
         addBooleanRule(group, RuleNames.USE_MASTER_WITH_PUBLIC_IP,
-                "[yes, no] if master should be used with a public ip address");
+                "[yes, no] if master should be used with a public ip address (ignored for AWS, Google) ");
 
         // Slave instance rules
         addStringRule(group, RuleNames.SLAVE_INSTANCE_TYPE,
@@ -45,8 +45,9 @@ public class RuleBuilder {
         addStringRule(group, RuleNames.SSH_PRIVATE_KEY_FILE, "Absolute path to private ssh key file");
         addStringRule(group, RuleNames.REGION, "Region in which the cluster is created");
         addStringRule(group, RuleNames.AVAILABILITY_ZONE,
-                "Specific zone in the provided region (e.g. AWS: eu-west-1a, Google: europe-west1-b)");
+                "Specific zone in the provided region (e.g. AWS: eu-west-1a, Google: europe-west1-b, Openstack: nova)");
 
+        addStringRule(group, RuleNames.SERVER_GROUP,"Server group (supported by Openstack)");
         Tparam port = addIntRule(group, RuleNames.PORTS, "Comma-separated list of additional ports (tcp & udp) to be " +
                 "opened for all nodes (e.g. 80,443,8080). (Ignored if 'security-group' is set for Openstack!)");
         // Regex für Ports. TODO: Range Test ex. 0-255 useful?
@@ -86,12 +87,15 @@ public class RuleBuilder {
         addStringRule(group, RuleNames.GOOGLE_PROJECT_ID, "Google compute engine project id");
         addStringRule(group, RuleNames.GOOGLE_IMAGE_PROJECT_ID, "Google compute engine image project id");
         // Software rules
-        addBooleanRule(group, RuleNames.MESOS, "[yes, no] if Mesos framework should be configured/started. Default is no");
-        addBooleanRule(group, RuleNames.OPEN_GRID_ENGINE, "[yes, no] if OpenGridEngine should be configured/started. Default is yes");
+        addBooleanRule(group, RuleNames.OPEN_GRID_ENGINE, "[yes, no] if OpenGridEngine should be configured/started. Default is no");
+        addBooleanRule(group, RuleNames.SLURM, "[yes, no] if SLURM should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.NFS, "[yes, no] if NFS should be configured/started. Default is yes");
+        /* no longer provided, 02/19
+        addBooleanRule(group, RuleNames.MESOS, "[yes, no] if Mesos framework should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.HDFS, "[yes, no] if HDFS should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.CASSANDRA, "[yes, no] if Cassandra database should be configured/started. Default is no");
         addBooleanRule(group, RuleNames.SPARK, "[yes, no] if Spark cluster support should be configured/started. Default is no");
+        */
         addBooleanRule(group, RuleNames.CLOUD9, "[yes, no] if Cloud9 IDE should be configured/started. Default is no");
     }
 
@@ -142,6 +146,7 @@ public class RuleBuilder {
         USE_SPOT_INSTANCE_REQUEST("usir", "use-spot-instance-request"),
         REGION("e", "region", "OS_REGION_NAME"),
         AVAILABILITY_ZONE("z", "availability-zone"),
+        SERVER_GROUP("servergroup","server-group"),
         PORTS("p", "ports"),
         SECURITY_GROUP("sg", "security-group"),
         MASTER_MOUNTS("d", "master-mounts"),
@@ -158,6 +163,7 @@ public class RuleBuilder {
         META_MODE("mode", "meta-mode"),
         LOCAL_FS("lfs", "local-fs"),
         CLOUD9_WORKSPACE("c9w", "cloud9-workspace"),
+        CLOUD9("c9", "cloud9"),
         // Auth parameters
         USER("u", "user"),
         SSH_USER("su", "ssh-user"),
@@ -170,12 +176,14 @@ public class RuleBuilder {
         DEBUG_REQUESTS("dr", "debug-requests"),
         // Software parameters
         OPEN_GRID_ENGINE("oge", "oge"),
+        SLURM("slurm","slurm"),
+        /* not longer provided, 02/19
         HDFS("hdfs", "hdfs"),
         CASSANDRA("db", "cassandra"),
         SPARK("spark", "spark"),
         MESOS("me", "mesos"),
+        */
         NFS("nfs", "nfs"),
-        CLOUD9("c9", "cloud9"),
         // Amazon AWS
         BID_PRICE("bp", "bidprice"),
         BID_PRICE_MASTER("bpm", "bidprice-master"),
@@ -186,10 +194,12 @@ public class RuleBuilder {
         ROUTER("router", "router"),
         OPENSTACK_USERNAME("osu", "openstack-username", "OS_USERNAME"),
         OPENSTACK_TENANT_NAME("ost", "openstack-tenantname", "OS_PROJECT_NAME"),
+        OPENSTACK_PROJECT_NAME("ospn", "openstack-projectname", "OS_PROJECT_NAME"),
         OPENSTACK_PASSWORD("osp", "openstack-password", "OS_PASSWORD"),
         OPENSTACK_ENDPOINT("ose", "openstack-endpoint", "OS_AUTH_URL"),
         OPENSTACK_DOMAIN("osd", "openstack-domain", "OS_USER_DOMAIN_NAME"),
-        OPENSTACK_TENANT_DOMAIN("ostd", "openstack-tenantdomain");
+        OPENSTACK_TENANT_DOMAIN("ostd", "openstack-tenantdomain"),
+        OPENSTACK_PROJECT_DOMAIN("ospd", "openstack-projectdomain");
 
         private final String shortParam;
         private final String longParam;

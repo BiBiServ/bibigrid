@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+
+#qsub for SGE->SLURM -- Matt Maurano
+
+import sys
+if sys.version_info[0] < 3:
+    print("Package requires Python 3")
+    sys.exit(1)
+
+
+import os
+import re
+import subprocess
+import argparse
+
+version="1.2"
+
+
+def quote_argument(argument):
+    return '%s' % (
+        argument
+        .replace('\\', '\\\\')
+#       .replace('"', '\\"')
+        .replace('$', '\\$')
+        .replace('`', '\\`')
+)
+
+
+parser = argparse.ArgumentParser(prog = "qsub", description = "", allow_abbrev=False)
+
+sge_group = parser.add_argument_group(title="SGE options")
+sge_group.add_argument("cmd", type = str, default=None, nargs="?", help = "")
+sge_group.add_argument("-hold_jid", action = "store", type = str, help = " [%(default)s]")
+sge_group.add_argument("-pe", action = "store", type = str, nargs=2, help= " [%(default)s]")
+sge_group.add_argument("-j", action = "store", type = str, choices=['y', 'yes', 'n', 'no'], help = "[%(default)s]")
+sge_group.add_argument("-b", action = "store", type = str, choices=['y', 'yes', 'n', 'no'], help = "ignored [%(default)s]")
+sge_group.add_argument("-r", action = "store", type = str, choices=['y', 'yes', 'n', 'no'], help = "[%(default)s]")
+sge_group.add_argument("-w", action = "store", type = str, choices=['e', 'w', 'n', 'v'], help = "ignored [%(default)s]")
+sge_group.add_argument("-o", action = "store", type = str, help = "[%(default)s]")
+#sge_group.add_argument("-e", action = "store", type = str, help = "[%(default)s]")
+sge_group.add_argument("-t", action = "store", type = str, help = "[%(default)s]")
+sge_group.add_argument("-tc", action = "store", type = int, help = "[%(default)s]")
+sge_group.add_argument("-p", action = "store", type = int, help = "[%(default)s]")
+sge_group.add_argument("-q", action = "store", type = str, help = "[%(default)s] queue name")
+sge_group.add_argument("-m", action = "store", type = str, choices=['a', 'b', 'e', 'n'], help = "[%(default)s] email type, s not supported")
+sge_group.add_argument("-M", action = "store", type = str, help = "[%(default)s] email address")
+sge_group.add_argument("-S", action = "store", type = str, help = "[%(default)s]")
+sge_group.add_argument("-N", action = "store", type = str, help = "[%(default)s]")
+sge_group.add_argument("-V", action = "store_true", default = False, help = " [%(default)s]")
+sge_group.add_argument("-cwd", action = "store_true", default = False, help = "no effect for now [%(default)s]")
+sge_group.add_argument("-now", action = "store_true", default = False, help = "[%(default)s]")
+sge_group.add_argument("-terse", action = "store_true", default = False, help = "[%(default)s]")
+
+slurm_group = parser.add_argument_group(title="SLURM passthrough options")
+slurm_group.add_argument("--mem-per-cpu", action = "store", type = str, help = "[%(default)s]")
+slurm_group.add_argument("--mem", action = "store", type = str, help = "[%(default)s]")
+slurm_group.add_argument("--share", action = "store_true", default = False, help = "[%(default)s]")
+slurm_group.add_argument("--oversubscribe", action = "store_true", default = False, help = "[%(default)s]")
+slurm_group.add_argument("--qos", action = "store", type = str, help = "[%(default)s]")
+qsub_group = parser.add_argument_group(title="qsub SGE->SLURM options")
+qsub_group.add_argument("--verbose", action='store_true', default=False, help = "Verbose mode")
+qsub_group.add_argument('--version', action='version', version='%(prog)s ' + version)
+
+#argparse does not set an exit code upon this error
+#https://stackoverflow.com/questions/5943249/python-argparse-and-controlling-overriding-the-exit-status-code
+try:
+    args = parser.parse_args()
+except argparse.ArgumentError as exc:
+    print(exc.message, '\n', exc.argument)
+    sys.exit(2)
+
+
+if args.verbose:
+    print("[qsub -> SLURM] " + ' '.join([str(cur) for cur in sys.argv]), file=sys.stderr)
+print("[qsub -> SLURM]", args, file=sys.stderr)
+sys.stderr.flush()
+
+
+###Generate sbatch command
+theCmd = "sbatch"
+
+
+###translate SGE options
+if args.V:
+    theCmd += " --export=ALL"
+
+
+if args.terse:
+    theCmd += " --parsable"
+
+
+if args.now:
+    theCmd += " --immediate"
+
+
+name = None
+if args.N is not None:
+    name = args.N
+else:
+    if args.cmd is None:
+        name = "STDIN"
+    else:
+        if os.path.isfile(args.cmd):
+            name = os.path.basename(args.cmd)
+        else:
+            name = args.cmd
+theCmd += " -J \"" + name + "\""
+
+
+#stdout
+if args.o is not None:
+    stdoutFilename = args.o
+    #SGE allows passing a directory whereupon we use the job name as the filename
+    if os.path.isdir(args.o):
+        if re.search("\/$", args.o) is None:
+            stdoutFilename += "/"
+        stdoutFilename += name
+else:
+    stdoutFilename = name
+theCmd += " -o \"" + stdoutFilename + ".o%A"
+if args.t is not None:
+    theCmd += ".%a"
+theCmd += "\""
+
+
+#stderr
+if args.j != "y" and args.j != "yes":
+    theCmd += " -e \"" + stdoutFilename + ".e%A"
+    if args.t is not None:
+        theCmd += ".%a"
+    theCmd += "\""
+
+
+if args.r == "y" or args.r == "yes":
+    theCmd += " --requeue"
+elif args.r == "n" or args.r == "no":
+    theCmd += " --no-requeue"
+
+
+if args.t is not None:
+    theCmd += " --array=" + args.t
+    if args.tc is not None:
+        theCmd += "%" + str(args.tc)
+
+
+if args.M is not None or args.m is not None:
+    if args.M is not None and args.m is not None:
+        theCmd += " --mail-user=" + args.M
+        if args.m == 'a':
+            theCmd += " --mail-type=FAIL"
+        elif args.m == 'b':
+            theCmd += " --mail-type=BEGIN"
+        elif args.m == 'e':
+            theCmd += " --mail-type=END"
+        elif args.m == 'n':
+            theCmd += " --mail-type=NONE"
+        else:
+            raise Exception("Don't know how to handle -m " + args.m)
+    else:
+        raise Exception("Don't know how to handle -m/-M as specified")
+
+
+if args.p is not None:
+    theCmd += " --nice=" + str(-1 * args.p)
+
+
+if args.q is not None:
+    theCmd += " --partition=" + args.q
+
+
+def sjobname2id(jobname):
+    jobids = subprocess.check_output("squeue -o '%F %j' | awk '$2==\""  + jobname + "\" {print $1}' | sort | uniq", shell=True).decode().rstrip()
+    return(",".join([str(int(x)) for x in jobids.split('\n')]))
+
+if args.hold_jid is not None:
+    #SLURM only takes ids, so look up any names
+    hold_jid_list = [x.strip() for x in args.hold_jid.split(',')]
+    #drop empty element in case of trailing ","
+    hold_jid_list = [x for x in hold_jid_list if x]
+    for i in range(len(hold_jid_list)):
+        job = hold_jid_list[i]
+        #"" in case of trailing ","
+        if not job.isdigit():
+            #better error checking? right now bad name gives ValueError on conv to int.
+            #BUGBUG can't handle a name corresponding to multiple IDs
+            hold_jid_list[i] = sjobname2id(job)
+            if args.verbose:
+                print("Converted job name " + job + " to id " + hold_jid_list[i], file=sys.stderr)
+
+    #NB use afterok even though SGE only blocks dependencies upon a 100 return code
+    theCmd += " --depend=afterok:" + ",".join(hold_jid_list)
+
+
+if args.pe is not None:
+    if args.pe[0] != "threads":
+        raise Exception("Can't handle pe " + args.pe[0])
+
+    if not args.pe[1].isdigit():
+        raise Exception(args.pe[1] + "is not an int -- SLURM can't handle ranges")
+
+    theCmd += " --cpus-per-task=" + args.pe[1]
+
+
+##SLURM pass-through options
+if args.mem_per_cpu is not None:
+    theCmd += " --mem-per-cpu=" + args.mem_per_cpu
+
+
+if args.mem is not None:
+    theCmd += " --mem=" + args.mem
+
+
+if args.share is not False:
+    theCmd += " --share"
+
+
+#Newer versions of SLURM changed the name of --share
+if args.oversubscribe is not False:
+    theCmd += " --oversubscribe"
+
+
+if args.qos is not None:
+    theCmd += " --qos=" + args.qos
+
+
+###Do job script
+theCmd += " <<EOF\n#!/bin/bash\n"
+theCmd += quote_argument("""\n#For SGE compatibility
+export TMPDIR=/tmp/slurm.tmp.${SLURM_JOB_NAME}.${SLURM_JOB_ID}
+if [[ ! -z ${SLURM_ARRAY_TASK_ID} ]]; then
+export TMPDIR=${TMPDIR}.${SLURM_ARRAY_TASK_ID}
+fi
+mkdir -p $TMPDIR
+
+export JOB_ID=${SLURM_JOB_ID}
+
+if [[ -z ${SLURM_CPUS_PER_TASK} ]]; then
+export NSLOTS=1
+else
+export NSLOTS=${SLURM_CPUS_PER_TASK}
+fi
+
+if [[ -z ${SLURM_ARRAY_TASK_ID} ]]; then
+export SGE_TASK_ID="undefined"
+else
+export SGE_TASK_ID=${SLURM_ARRAY_TASK_ID}
+fi\n\n""")
+
+#Breaks when run in batch cluster job
+#use_stdin = not sys.stdin.isatty()
+use_stdin = args.cmd is None
+if use_stdin:
+    if args.cmd is not None:
+        raise Exception("Appear to have command on both command line and stdin (" + sys.stdin.name + ")")
+    try:
+        with sys.stdin as source:
+            for line in source:
+                theCmd += quote_argument(line) + "\n"
+    except:
+        pass
+    finally:
+        sys.stdin.close()
+else:
+    if args.cmd is None:
+        raise Exception
+    if args.S=="/bin/bash" and re.search(" ", args.cmd) is None and os.path.isfile(args.cmd):
+        theCmd += "/bin/bash " + args.cmd + "\n"
+    elif args.S == "/bin/bash":
+        theCmd += quote_argument(args.cmd) + "\n"
+    elif args.S == None: # No explicite shell set, use default shell
+        theCmd += quote_argument(args.cmd) + "\n"
+    else:
+        theCmd += args.S + " " + quote_argument(args.cmd) + "\n"
+
+theCmd += "\n"
+theCmd += "#Retain exit status of last command to pass on after cleaning up\n"
+theCmd += "EXITCODE=\$?\n"
+theCmd += "\n"
+theCmd += "rm -rf \$TMPDIR\n\n"
+theCmd += "exit \${EXITCODE}\n"
+theCmd += "\n"
+theCmd += "EOF\n"
+
+if args.verbose:
+    print("[qsub -> SLURM] " + theCmd, file=sys.stderr)
+
+subprocess.check_call(theCmd, shell=True)

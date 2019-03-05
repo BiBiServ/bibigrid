@@ -69,11 +69,11 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             // if subnet is set just use it
             if (cfg.getSubnet() != null) {
                 // check if subnet exists
-                subnet = getSubnetByName(osc, cfg.getSubnet());
+                subnet = getSubnetByIdOrName(osc, cfg.getSubnet());
                 if (subnet == null) {
-                    throw new ConfigurationException("No subnet with name '" + cfg.getSubnet() + "' found!");
+                    throw new ConfigurationException("No subnet with id '" + cfg.getSubnet() + "' found!");
                 }
-                network = getNetworkById(osc, subnet.getNetworkId());
+                network = getNetworkByIdOrName(osc, subnet.getNetworkId());
                 if (network == null) {
                     throw new ConfigurationException("No network with id '" + subnet.getNetworkId() + "' found!");
                 }
@@ -86,7 +86,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             // if network is set try to determine router
             if (cfg.getNetwork() != null) {
                 // check if net exists
-                network = getNetworkByName(osc, cfg.getNetwork());
+                network = getNetworkByIdOrName(osc, cfg.getNetwork());
                 if (network == null) {
                     throw new ConfigurationException("No network with name '" + cfg.getSubnet() + "' found!");
                 }
@@ -97,7 +97,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 if (cfg.getRouter() == null) {
                     throw new ConfigurationException("No router found and no router name provided!");
                 } else {
-                    router = getRouterByName(osc, cfg.getRouter());
+                    router = getRouterByIdOrName(osc, cfg.getRouter());
                     if (router == null) {
                         throw new ConfigurationException("No router with name '" + cfg.getRouter() + "' found!");
                     }
@@ -115,7 +115,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             SubNets sn = new SubNets(NETWORK_CIDR, 24);
             List<String> usedCIDR = new ArrayList<>();
             for (org.openstack4j.model.network.Port p : getPortsByRouter(osc, router)) {
-                Network portNetwork = getNetworkById(osc, p.getNetworkId());
+                Network portNetwork = getNetworkByIdOrName(osc, p.getNetworkId());
                 if (portNetwork != null && portNetwork.getNeutronSubnets() != null) {
                     for (Subnet s : portNetwork.getNeutronSubnets()) {
                         usedCIDR.add(s.getCidr());
@@ -212,45 +212,22 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     /**
      * Determine router by given router name. Returns router object or null in the case that no suitable router is found.
      */
-    private static Router getRouterByName(OSClient osc, String routerName) {
+    private static Router getRouterByIdOrName(OSClient osc, String r) {
         for (Router router : osc.networking().router().list()) {
-            if (router.getName().equals(routerName)) {
+            if (router.getName().equals(r) || router.getId().equals(r)) {
                 return router;
             }
         }
         return null;
     }
 
-    /**
-     * Determine router by given router id. Returns router object or null in the case that no suitable router is found.
-     */
-    private static Router getRouterById(OSClient osc, String routerId) {
-        for (Router router : osc.networking().router().list()) {
-            if (router.getId().equals(routerId)) {
-                return router;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Determine network by given network name. Returns Network object or null if no network with given name is found.
-     */
-    private static Network getNetworkByName(OSClient osc, String networkName) {
-        for (Network net : osc.networking().network().list()) {
-            if (net.getName().equals(networkName)) {
-                return net;
-            }
-        }
-        return null;
-    }
 
     /**
      * Determine network by given network id. Returns Network object or null if no network with given id is found.
      */
-    static Network getNetworkById(OSClient osc, String networkId) {
+    static Network getNetworkByIdOrName(OSClient osc, String n) {
         for (Network net : osc.networking().network().list()) {
-            if (net.getId().equals(networkId)) {
+            if (net.getId().equals(n) || net.getName().equals(n)) {
                 return net;
             }
         }
@@ -260,9 +237,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     /**
      * Determine subnet by given subnet name. Returns subnet object or null in the case no suitable subnet is found.
      */
-    private static Subnet getSubnetByName(OSClient osc, String subnetName) {
+    private static Subnet getSubnetByIdOrName(OSClient osc, String s) {
         for (Subnet subnet : osc.networking().subnet().list()) {
-            if (subnet.getName().equals(subnetName)) {
+            if (subnet.getName().equals(s) || subnet.getId().equals(s)) {
                 return subnet;
             }
         }
@@ -299,11 +276,11 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
         }
         for (org.openstack4j.model.network.Port port : lop) {
             if (subnetId == null) {
-                return getRouterById(osc, port.getDeviceId()); // if no subnet is given just return first router
+                return getRouterByIdOrName(osc, port.getDeviceId()); // if no subnet is given just return first router
             } else {
                 for (IP ip : port.getFixedIps()) {
                     if (ip.getSubnetId().equals(subnetId)) {
-                        return getRouterById(osc, port.getDeviceId());
+                        return getRouterByIdOrName(osc, port.getDeviceId());
                     }
                 }
             }

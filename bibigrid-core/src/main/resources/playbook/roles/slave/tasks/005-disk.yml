@@ -8,10 +8,11 @@
   when:
     - ephemerals
 
-- name: Change permission for newly mounted /vol/scratch mount point
+- name: Change permissions for mountpoint
   file:
     path: /vol/scratch
-    state: directory
     mode: 0777
+    state: directory
+    recurse: yes
   when:
     - ephemerals

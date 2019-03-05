@@ -1,15 +1,7 @@
 - name: Install gridengine packages
   apt:
-    name: "{{ item }}"
+    name: ["gridengine-client","gridengine-common","gridengine-drmaa-dev","gridengine-drmaa1.0","gridengine-exec","gridengine-master"]
     state: "present"
-  with_items:
-    - gridengine-client # Utilities for Grid Engine queue management
-    - gridengine-common # Distributed resource management - common files
-    - gridengine-drmaa-dev # Distributed resource management Application API library
-    - gridengine-drmaa1.0 # Distributed resource management Application API library
-    - gridengine-exec # Distributed resource management - Execution Server
-    - gridengine-master # Distributed resource management - Master Server
-
 
 #check if hostname >> /var/lib/gridengine/default/common/act_qmaster
 #- name: update act_qmaster

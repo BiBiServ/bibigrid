@@ -143,17 +143,23 @@ public abstract class CommandLineValidator {
     }
 
     private boolean parseSoftwareParameters() {
-        Boolean parseResult = parseBooleanParameter(RuleBuilder.RuleNames.MESOS);
-        if (parseResult != null) {
-            config.setMesos(parseResult);
-        }
+        Boolean parseResult;
         parseResult = parseBooleanParameter(RuleBuilder.RuleNames.OPEN_GRID_ENGINE);
         if (parseResult != null) {
             config.setOge(parseResult);
         }
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.SLURM);
+        if (parseResult != null) {
+            config.setSlurm(parseResult);
+        }
         parseResult = parseBooleanParameter(RuleBuilder.RuleNames.NFS);
         if (parseResult != null) {
             config.setNfs(parseResult);
+        }
+        /* not supported, 02/19
+        parseResult = parseBooleanParameter(RuleBuilder.RuleNames.MESOS);
+        if (parseResult != null) {
+            config.setMesos(parseResult);
         }
         parseResult = parseBooleanParameter(RuleBuilder.RuleNames.CASSANDRA);
         if (parseResult != null) {
@@ -167,6 +173,7 @@ public abstract class CommandLineValidator {
         if (parseResult != null) {
             config.setHdfs(parseResult);
         }
+        */
         return true;
     }
 

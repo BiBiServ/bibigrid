@@ -1,24 +1,35 @@
-- name: Generate directory structure available on all hosts (1/3)
+- name: Generate directory structure available on all hosts
   file:
     path: /etc/bibigrid
     state: directory
     owner: root
-    group: root
-    mode: 0755
+    group: ubuntu
+    mode: 0775
 
-- name: Generate directory structure available on all hosts (2/3)
-  file:
+- file:
     path: /vol/
     state: directory
     owner: root
-    group: root
-    mode: 0755
+    group: ubuntu
+    mode: 0775
 
-- name: Generate directory structure available on all hosts (3/3)
-  file:
+- file:
     path: /vol/spool/
     state: directory
     owner: root
-    group: root
+    group: ubuntu
     mode: 0777
+
+- file:
+    path: /opt
+    state: directory
+    owner: root
+    group: ubuntu
+    mode: 0775
+
+- name: Create link in ubuntu home
+  file:
+    src: /vol/
+    dest: /home/ubuntu/vol
+    state: link
 

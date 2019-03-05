@@ -18,3 +18,4 @@
     state: restarted
     enabled: yes
   when: gmonf_conf is changed
+

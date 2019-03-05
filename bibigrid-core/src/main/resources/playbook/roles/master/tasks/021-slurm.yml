@@ -1,0 +1,37 @@
+- name: Install Slurm packages
+  apt:
+    name: [slurm-wlm]
+    state: latest
+
+# (Re-)start slurmctl master daemon
+- name: (Re-)start slurmctld master
+  systemd:
+    name: slurmctld
+    enabled: True
+    state: restarted
+
+
+# (Re-)start slurmd worker daemon
+- name: (Re-)start slurmd worker daemon
+  systemd:
+    name: slurmctld
+    enabled: True
+    state: restarted
+  when:
+    - use_master_as_compute == 'yes'
+
+# copy
+- name: Copy GridEngine compatible layer
+  copy:
+    src: slurm/qsub
+    dest: /usr/local/bin/qsub
+    mode: 0755
+    owner: root
+    group: root
+
+- copy:
+    src: slurm/gridengine-rc
+    dest: /home/ubuntu/.gridengine-rc
+    mode: 0600
+    owner: ubuntu
+    group: ubuntu

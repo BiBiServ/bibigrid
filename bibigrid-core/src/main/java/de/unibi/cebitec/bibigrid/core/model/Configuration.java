@@ -3,9 +3,13 @@ package de.unibi.cebitec.bibigrid.core.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
@@ -25,6 +29,7 @@ public abstract class Configuration {
     private String credentialsFile;
     private String region;
     private String availabilityZone;
+    private String serverGroup;
     private List<Port> ports = new ArrayList<>();
     private boolean useMasterAsCompute;
     private boolean useMasterWithPublicIp = true;
@@ -32,7 +37,9 @@ public abstract class Configuration {
     private List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
     private boolean cassandra;
     private boolean mesos;
-    private boolean oge = true;
+    private boolean oge;
+    private boolean slurm;
+    private String mungeKey;
     private boolean hdfs;
     private boolean spark;
     private boolean nfs = true;
@@ -196,9 +203,19 @@ public abstract class Configuration {
         LOG.info(V, "Availability zone set. ({})", this.availabilityZone);
     }
 
+    public String getServerGroup() {
+        return serverGroup;
+    }
+
+    public void setServerGroup(String serverGroup) {
+        this.serverGroup = serverGroup.trim();
+        LOG.info(V, "Server group set. ({})", this.serverGroup);
+    }
+
     public String[] getClusterIds() {
         return Arrays.copyOf(clusterIds, clusterIds.length);
     }
+
 
     /**
      * Set the cluster Id(s) either as a single cluster "id" or as multiple "id1/id2/id3".
@@ -306,7 +323,7 @@ public abstract class Configuration {
 
     public void setOge(boolean oge) {
         this.oge = oge;
-        LOG.info(V, "OpenGridEngine support {}.", oge ? "enabled" : "disabled");
+        LOG.warn("GridEngine (oge) support is deprecated and will be removed in near future. Use Slurm instead.");
     }
 
     public String getMode() {
@@ -448,6 +465,38 @@ public abstract class Configuration {
         LOG.info(V, "Cloud9 workspace set: {}", cloud9Workspace);
     }
 
+    public boolean isSlurm() {
+        return slurm;
+    }
+
+    public void setSlurm(boolean slurm) {
+        this.slurm = slurm;
+    }
+
+    public String getMungeKey() {
+        if (mungeKey == null) {
+            // create a unique hash
+            byte[] randomarray = new byte[32];
+            Random random = new Random();
+            for (int i = 0; i < 32; i++){
+                randomarray[i] = (byte)(97 + random.nextInt(26));
+            }
+            new Random().nextBytes(randomarray);
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                mungeKey = bytesToHex(digest.digest(randomarray));
+            } catch (NoSuchAlgorithmException e){
+                LOG.warn("SHA-256 algorithm not found, proceed with unhashed munge key.");
+                mungeKey = new String(randomarray, Charset.forName("UTF-8"));
+            }
+        }
+        return mungeKey;
+    }
+
+    public void setMungeKey(String mungeKey) {
+        this.mungeKey = mungeKey;
+    }
+
     @SuppressWarnings("WeakerAccess")
     public static class InstanceConfiguration {
         public InstanceConfiguration() {
@@ -533,5 +582,20 @@ public abstract class Configuration {
 
     public enum FS {
         EXT2, EXT3, EXT4, XFS
+    }
+
+    /** private helper class that converts a byte array to an Hex String
+     *
+     * @param hash
+     * @return
+     */
+    private static String bytesToHex(byte[] hash) {
+        StringBuffer hexString = new StringBuffer();
+        for (int i = 0; i < hash.length; i++) {
+            String hex = Integer.toHexString(0xff & hash[i]);
+            if(hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 }

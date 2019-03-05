@@ -12,7 +12,7 @@ to validate the configuration to be used.
 ```
 # Direcly in cofiguration file or using the credentialsFile parameter
 openstackCredentials:
-    tenantName: string
+    projectName: string
     username: string
     password: string
     endpoint: string
@@ -40,7 +40,7 @@ slaveInstances:
 ```
 # Direcly in cofiguration file or using the credentialsFile parameter
 openstackCredentials:
-    tenantName: string
+    projectName: string
     username: string
     password: string
     endpoint: string
@@ -58,7 +58,7 @@ bibigrid -t [cluster-id] [...]
 ```
 # Direcly in cofiguration file or using the credentialsFile parameter
 openstackCredentials:
-    tenantName: string
+    projectName: string
     username: string
     password: string
     endpoint: string
@@ -76,7 +76,7 @@ bibigrid -cloud9 [cluster-id] [...]
 ```
 # Direcly in cofiguration file or using the credentialsFile parameter
 openstackCredentials:
-    tenantName: string
+    projectName: string
     username: string
     password: string
     endpoint: string

@@ -1,10 +1,7 @@
 - name: Install cloud9 dependencies
   apt:
-    name: "{{ item }}"
+    name: ["build-essential","python"]
     state: "present"
-  with_items:
-    - build-essential
-    - python
 
 - name: Install cloud9 nodejs-legacy
   apt:
@@ -18,15 +15,21 @@
     state: "present"
   when: ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('17', '>=')
 
+
+
 - name: Clone c9/core repository
   git:
     repo: git://github.com/c9/core.git
     dest: /opt/c9sdk
+  become_user: ubuntu
+
+# change/update  permissions
 
 - name: Install c9/core
   shell: |-
     cd /opt/c9sdk
     scripts/install-sdk.sh
+  become_user: ubuntu
 
 - name: Create cloud9 startup script
   copy:

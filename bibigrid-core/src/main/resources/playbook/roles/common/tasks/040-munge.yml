@@ -1,0 +1,19 @@
+- name: Install munge
+  apt:
+    name: [munge]
+    state: "present"
+
+- name: Create new secret
+  copy:
+    content: '{{ munge_key }}'
+    dest: /etc/munge/munge.key
+    owner: munge
+    group: munge
+    mode: 0600
+  register: munge_key
+
+- name: Restart Munge (on key change)
+  systemd:
+    name: munge
+    state: restarted
+  when: munge_key is changed

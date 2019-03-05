@@ -1,15 +1,30 @@
 - debug:
     msg: "[BIBIGRID] Setup common software and dependencies"
 - import_tasks: 010-apt.yml
+  tags: ["apt","common-apt"]
 
 - debug:
     msg: "[BIBIGRID] Generate directory structure available on all hosts"
 - import_tasks: 020-disk.yml
+  tags: ["disk","common-disk"]
 
 - debug:
     msg: "[BIBIGRID] Setup Docker"
 - import_tasks: 030-docker.yml
+  tags: ["docker","common-docker"]
+
+- block:
+  - debug:
+      msg: "[BIBIGRID] Munge"
+  - include: 040-munge.yml
+  - debug:
+      msg: "[BIBIGRID] SLURM Config"
+  - include: 041-slurm.yml
+  when:
+    - enable_slurm == 'yes'
+  tags: ['slurm',"common-slurm"]
 
 - debug:
     msg: "[BIBIGRID] Measure cluster performance"
 - import_tasks: 999-bibigridperf.yml
+  tags: ["performance"]

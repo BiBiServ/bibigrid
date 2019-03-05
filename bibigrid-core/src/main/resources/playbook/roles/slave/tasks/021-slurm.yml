@@ -1,0 +1,12 @@
+- name: Install SLURM worker packages
+  apt:
+    name: [slurmd]
+    state: latest
+    update_cache: 'yes'
+
+# (Re-)start slurmd worker daemon
+- name: (Re-)start slurmd worker daemon
+  systemd:
+    name: slurmd
+    enabled: True
+    state: restarted
