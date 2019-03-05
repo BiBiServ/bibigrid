@@ -1,9 +1,4 @@
 - debug:
-    msg: "[BIBIGRID] Setup Apache and Ganglia monitor"
-- include: 001-monitor.yml
-  tags: ['monitor','slave-monitor']
-
-- debug:
     msg: "[BIBIGRID] Mount disk"
 - include: 005-disk.yml
   tags: ['disk','slave-disk']

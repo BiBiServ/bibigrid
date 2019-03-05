@@ -312,14 +312,15 @@ public abstract class CreateCluster extends Intent {
                 LOG.info(V, "SFTP: Upload file {}", fullPath);
                 channel.put(stream, fullPath);
             }
-            for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
-                uploadAnsibleRole(channel, resources, config.getMasterAnsibleRoles().get(i),
-                        commonConfig.getCustomRoleName("master", i));
-            }
-            for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
-                uploadAnsibleRole(channel, resources, config.getSlaveAnsibleRoles().get(i),
-                        commonConfig.getCustomRoleName("slaves", i));
-            }
+            // @ToDo JK :: Support custom roles
+//            for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
+//                uploadAnsibleRole(channel, resources, config.getMasterAnsibleRoles().get(i),
+//                        commonConfig.getCustomRoleName("master", i));
+//            }
+//            for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
+//                uploadAnsibleRole(channel, resources, config.getSlaveAnsibleRoles().get(i),
+//                        commonConfig.getCustomRoleName("slaves", i));
+//            }
             // Write the hosts configuration file
             try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
                     AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
@@ -327,7 +328,9 @@ public abstract class CreateCluster extends Intent {
             }
             // Write the commons configuration file
             commonConfig.writeCommonFile(channel.put(channel.getHome() + "/" + AnsibleResources.COMMONS_CONFIG_FILE));
-            commonConfig.writeSiteFile(channel.put(channel.getHome() + "/" + AnsibleResources.SITE_CONFIG_FILE));
+
+            // @ToDo JK :: Support custom site file
+            // commonConfig.writeSiteFile(channel.put(channel.getHome() + "/" + AnsibleResources.SITE_CONFIG_FILE));
             // Write slave instance specific configuration file
             for (Instance slave : slaveInstances) {
                 String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/" + slave.getPrivateIp() + ".yml";
