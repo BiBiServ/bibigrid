@@ -85,8 +85,8 @@ public class AnsibleConfigTest {
                 }
             });
             setSlaveInstances(slaveInstances);
-            setMasterAnsibleRoles(Arrays.asList("~/ansible/testrole1", "~/ansible/testrole2"));
-            setSlaveAnsibleRoles(Arrays.asList("/etc/ansible/testrole3"));
+            //setMasterAnsibleRoles(Arrays.asList("~/ansible/testrole1", "~/ansible/testrole2"));
+            //setSlaveAnsibleRoles(Arrays.asList("/etc/ansible/testrole3"));
         }
     }
 
@@ -150,14 +150,6 @@ public class AnsibleConfigTest {
         AnsibleConfig config = new AnsibleConfig(testConfiguration, "/dev/vd", "192.168.33.0/24", masterInstance,
                 slaveInstances);
 
-        System.out.println(":Site:");
-        // print site configuration
-        config.writeSiteFile(new OutputStream() {
-            @Override
-            public void write(int b) {
-                System.out.write(b);
-            }
-        });
         System.out.println(":Master:");
         // print common configuration
         config.writeCommonFile(new OutputStream() {
