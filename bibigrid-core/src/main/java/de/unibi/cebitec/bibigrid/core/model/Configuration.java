@@ -35,15 +35,14 @@ public abstract class Configuration {
     private boolean useMasterWithPublicIp = true;
     private InstanceConfiguration masterInstance = new InstanceConfiguration();
     private List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
-    private boolean cassandra;
-    private boolean mesos;
     private boolean oge;
     private boolean slurm;
     private String mungeKey;
-    private boolean hdfs;
-    private boolean spark;
     private boolean nfs = true;
     private boolean cloud9;
+    private boolean ganglia;
+    private boolean zabbix;
+    private ZabbixConf zabbixConf = new ZabbixConf();
     private List<String> nfsShares = new ArrayList<>(Arrays.asList("/vol/spool"));
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
@@ -53,8 +52,8 @@ public abstract class Configuration {
     private String network;
     private String subnet;
     private String[] clusterIds;
-    private List<String> masterAnsibleRoles = new ArrayList<>();
-    private List<String> slaveAnsibleRoles = new ArrayList<>();
+    // private List<String> masterAnsibleRoles = new ArrayList<>();
+    // private List<String> slaveAnsibleRoles = new ArrayList<>();
     private String cloud9Workspace = DEFAULT_CLOUD9_WORKSPACE;
 
     public int getSlaveInstanceCount() {
@@ -74,18 +73,6 @@ public abstract class Configuration {
 
     public String getGridPropertiesFile() {
         return gridPropertiesFile;
-    }
-
-    public boolean isCassandra() {
-        return cassandra;
-    }
-
-    public void setCassandra(boolean cassandra) {
-        this.cassandra = cassandra;
-        LOG.info(V, "Cassandra support {}.", cassandra ? "enabled" : "disabled");
-        if (cassandra) {
-            nfs = true;
-        }
     }
 
     public boolean isUseMasterAsCompute() {
@@ -299,14 +286,7 @@ public abstract class Configuration {
         this.network = network.trim();
     }
 
-    public boolean isMesos() {
-        return mesos;
-    }
 
-    public void setMesos(boolean mesos) {
-        this.mesos = mesos;
-        LOG.info(V, "Mesos support {}.", mesos ? "enabled" : "disabled");
-    }
 
     public boolean isNfs() {
         return nfs;
@@ -323,7 +303,10 @@ public abstract class Configuration {
 
     public void setOge(boolean oge) {
         this.oge = oge;
-        LOG.warn("GridEngine (oge) support is deprecated and will be removed in near future. Use Slurm instead.");
+        if (oge) {
+            LOG.warn("GridEngine (oge) support is deprecated and is only supported using Ubuntu 16.04. " +
+                    "The Support will be removed in near future. Use Slurm instead.");
+        }
     }
 
     public String getMode() {
@@ -358,18 +341,6 @@ public abstract class Configuration {
         this.localFS = localFS;
     }
 
-    public boolean isHdfs() {
-        return hdfs;
-    }
-
-    public void setHdfs(boolean hdfs) {
-        this.hdfs = hdfs;
-        LOG.info(V, "HDFS support {}.", hdfs ? "enabled" : "disabled");
-        if (hdfs) {
-            nfs = true;
-        }
-    }
-
     public String getSubnet() {
         return subnet;
     }
@@ -385,15 +356,6 @@ public abstract class Configuration {
     public void setDebugRequests(boolean debugRequests) {
         this.debugRequests = debugRequests;
         LOG.info(V, "Debug requests {}.", debugRequests ? "enabled" : "disabled");
-    }
-
-    public boolean isSpark() {
-        return spark;
-    }
-
-    public void setSpark(boolean spark) {
-        this.spark = spark;
-        LOG.info(V, "Spark support {}.", spark ? "enabled" : "disabled");
     }
 
     public boolean isUseSpotInstances() {
@@ -423,35 +385,35 @@ public abstract class Configuration {
         this.credentialsFile = credentialsFile;
     }
 
-    public List<String> getMasterAnsibleRoles() {
-        return masterAnsibleRoles;
-    }
-
-    public void setMasterAnsibleRoles(List<String> masterAnsibleRoles) {
-        this.masterAnsibleRoles = masterAnsibleRoles != null ? masterAnsibleRoles : new ArrayList<>();
-        if (masterAnsibleRoles != null && !masterAnsibleRoles.isEmpty()) {
-            StringBuilder display = new StringBuilder();
-            for (String role : masterAnsibleRoles) {
-                display.append(role).append(" ");
-            }
-            LOG.info(V, "Additional master ansible roles set: {}", display);
-        }
-    }
-
-    public List<String> getSlaveAnsibleRoles() {
-        return slaveAnsibleRoles;
-    }
-
-    public void setSlaveAnsibleRoles(List<String> slaveAnsibleRoles) {
-        this.slaveAnsibleRoles = slaveAnsibleRoles != null ? slaveAnsibleRoles : new ArrayList<>();
-        if (slaveAnsibleRoles != null && !slaveAnsibleRoles.isEmpty()) {
-            StringBuilder display = new StringBuilder();
-            for (String role : slaveAnsibleRoles) {
-                display.append(role).append(" ");
-            }
-            LOG.info(V, "Additional slave ansible roles set: {}", display);
-        }
-    }
+//    public List<String> getMasterAnsibleRoles() {
+//        return masterAnsibleRoles;
+//    }
+//
+//    public void setMasterAnsibleRoles(List<String> masterAnsibleRoles) {
+//        this.masterAnsibleRoles = masterAnsibleRoles != null ? masterAnsibleRoles : new ArrayList<>();
+//        if (masterAnsibleRoles != null && !masterAnsibleRoles.isEmpty()) {
+//            StringBuilder display = new StringBuilder();
+//            for (String role : masterAnsibleRoles) {
+//                display.append(role).append(" ");
+//            }
+//            LOG.info(V, "Additional master ansible roles set: {}", display);
+//        }
+//    }
+//
+//    public List<String> getSlaveAnsibleRoles() {
+//        return slaveAnsibleRoles;
+//    }
+//
+//    public void setSlaveAnsibleRoles(List<String> slaveAnsibleRoles) {
+//        this.slaveAnsibleRoles = slaveAnsibleRoles != null ? slaveAnsibleRoles : new ArrayList<>();
+//        if (slaveAnsibleRoles != null && !slaveAnsibleRoles.isEmpty()) {
+//            StringBuilder display = new StringBuilder();
+//            for (String role : slaveAnsibleRoles) {
+//                display.append(role).append(" ");
+//            }
+//            LOG.info(V, "Additional slave ansible roles set: {}", display);
+//        }
+//    }
 
     public String getCloud9Workspace() {
         return cloud9Workspace;
@@ -495,6 +457,90 @@ public abstract class Configuration {
 
     public void setMungeKey(String mungeKey) {
         this.mungeKey = mungeKey;
+    }
+
+    public boolean isGanglia() {
+        return ganglia;
+    }
+
+    public void setGanglia(boolean ganglia) {
+        this.ganglia = ganglia;
+        if (ganglia) {
+            LOG.warn("Ganglia (oge) support is deprecated and is only supported using Ubuntu 16.04. " +
+                     "The Support will be removed in near future. Use Zabbix instead.");
+        }
+    }
+
+    public boolean isZabbix() {
+        return zabbix;
+    }
+
+    public void setZabbix(boolean zabbix) {
+        this.zabbix = zabbix;
+    }
+
+    public ZabbixConf getZabbixConf() { return zabbixConf;}
+
+    public void setZabbixConf(ZabbixConf zabbixConf) { this.zabbixConf =  zabbixConf;}
+
+    public static class ZabbixConf {
+        public ZabbixConf(){
+        }
+
+        private String db = "zabbix";
+        private String db_user = "zabbix";
+        private String db_password = "zabbix";
+        private String timezone = "Europe/Berlin";
+        private String server_name = "bibigrid";
+        private String admin_password = "bibigrid";
+
+        public String getDb() {
+            return db;
+        }
+
+        public void setDb(String db) {
+            this.db = db;
+        }
+
+        public String getDb_user() {
+            return db_user;
+        }
+
+        public void setDb_user(String db_user) {
+            this.db_user = db_user;
+        }
+
+        public String getDb_password() {
+            return db_password;
+        }
+
+        public void setDb_password(String db_password) {
+            this.db_password = db_password;
+        }
+
+        public String getTimezone() {
+            return timezone;
+        }
+
+        public void setTimezone(String timezone) {
+            this.timezone = timezone;
+        }
+
+        public String getServer_name() {
+            return server_name;
+        }
+
+        public void setServer_name(String server_name) {
+            this.server_name = server_name;
+        }
+
+        public String getAdmin_password() {
+            return admin_password;
+        }
+
+        public void setAdmin_password(String admin_password) {
+            this.admin_password = admin_password;
+        }
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -583,6 +629,7 @@ public abstract class Configuration {
     public enum FS {
         EXT2, EXT3, EXT4, XFS
     }
+
 
     /** private helper class that converts a byte array to an Hex String
      *

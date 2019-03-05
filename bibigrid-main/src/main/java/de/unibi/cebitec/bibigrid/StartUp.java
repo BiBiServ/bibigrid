@@ -77,7 +77,11 @@ public class StartUp {
             Tparam tp = (Tparam) ob;
             boolean hasArg;
             hasArg = tp.getType() != null;
-            ruleOptions.addOption(new Option(tp.getId(), tp.getOption(), hasArg, tp.getShortDescription().get(0).getValue()));
+            try {
+                ruleOptions.addOption(new Option(tp.getId(), tp.getOption(), hasArg, tp.getShortDescription().get(0).getValue()));
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException(String.format("Exception while adding Option '%s' (%s) -> %s",tp.getId(),tp.getShortDescription().get(0).getValue(),e.getMessage() ));
+            }
         }
         return ruleOptions;
     }

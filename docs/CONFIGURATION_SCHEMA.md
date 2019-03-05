@@ -4,70 +4,81 @@ parameters, a configuration file is easier to maintain and in some cases provide
 more detailed configuration possibilities.
 
 **Shared schema**
-
 ```
 # Cloud Usage
-mode: enum [aws, googlecloud, openstack, azure]     # Provider mode
+mode: enum                      [aws, googlecloud, openstack, azure]
 
 # Access
-user: string                                        # User name (just for VM tagging)
-sshUser: string                                     # SSH user name
-keypair: string                                     # Keypair name for authentication (aws and openstack only)
-sshPublicKeyFile: string                            # SSH public key file (e.g.: .ssh/id_rsa.pub)
-sshPrivateKeyFile: string                           # SSH private key file (e.g.: .ssh/id_rsa)
-credentialsFile: string                             # credentials file (e.g. */.bibigrid.credentials.yml)
+user: string
+sshUser: string
+keypair: string
+sshPublicKeyFile: string
+sshPrivateKeyFile: string
+credentialsFile: string
 
-region: string                                      # Specific region
-availabilityZone: string                            # e.g. default, maintenance, ...
+gridPropertiesFile: string
 
-gridPropertiesFile: string                          # 
+region: string
+availabilityZone: string
 
 # Network
-network: string                                     # name / id of network (e.g. 0a217b61-4c67-...)
-subnet: string                                      # name / id of subnet
+network: string
+subnet: string
 ports:
-  - type: enum [TCP, UDP, ICMP]                     # Transmission Protocol, TCP recommended
-    number: integer [1 - 65535]                     # Port number, (e.g. TCP-Port 80 - HTTP)
+  - type: enum                  [TCP, UDP, ICMP]
+    number: integer             [1 - 65535]
     ipRange: string
   - ...
 
-# Master 
+# Master
 masterInstance:
-  type: string                                      # Instance Flavor, self-assigned (e.g. m1.small)
-  image: string                                     # Image ID (e.g. 802e0abe-ac6c-...) or Image name
-
-# Slaves
-slaveInstances:
-  - type: string                                    # Instance Flavor, self-assigned (e.g. m1.small)
-    image: string                                   # Image ID (e.g. 802e0abe-ac6c-...) or Image name
-    count: integer                                  # Number of Slave Instances
-  - ...
+  type: string                  [flavor, e.g. de.NBI.default ]
+  image: string                 [image id]
   
+useMasterAsCompute: boolean     [yes, "no"]
+useMasterWithPublicIp: boolean  [yes, "no"]
+
+# [List of] Slave[s]
+slaveInstances:
+  - type: string                [flavor, e.g. de.NBI.default ]
+    count: integer              [number of instances]
+    image: string               [image id]
+  - ...
+
+masterAnsibleRoles:   # ???
+  - string
+  - ...
+slaveAnsibleRoles:    # ???
+  - string
+  - ...
+
 # Services
-useMasterAsCompute: boolean [yes, no]               # 
-useMasterWithPublicIp: boolean [yes, no]            # Usage of public IP. Default is No
-useSpotInstances: boolean [yes, no]                 # Only usable with Google Compute and AWS, offered unused Instances
 
-masterAnsibleRoles:
-  - string
-  - ...
-slaveAnsibleRoles:
-  - string
-  - ...
+# HPC cluster software
+slurm: boolean                  [yes, "no"]
+oge: boolean                    [yes, "no"] # deprecated - supported for Ubuntu 16.04
 
-oge: boolean [yes, no]
-nfs: boolean [yes, no]
-cloud9: boolean [yes, no]
+# monitoring
+zabbix: boolean                 [yes, "no"]
+zabbixConf:
+    db: string                  ["zabbix"]
+    db_user: string             ["zabbix"]
+    db_password: string         ["zabbix"]
+    timezone: string            ["Europe/Berlin"]
+    servername:                 ["bibigrid"]
+    admin_password:             ["bibigrid"] # should be changed
+    
+ganglia: boolean                [yes, "no"] # deprecated - supported for Ubuntu 16.04 only
 
-cloud9Workspace: string
+# web ide
+cloud9: boolean                 [yes, "no"]
+cloud9Workspace: string         ["~"]
 
-debugRequests: boolean [yes, no]
-
-# FileSystem
+# Network FS
+nfs: boolean                    [yes, "no"]
 nfsShares:
   - string
   - ...
-
 extNfsShares:
   - source: string
     target: string
@@ -78,7 +89,18 @@ masterMounts:
     target: string
   - ...
 
-localFS: enum [EXT2, EXT3, EXT4, XFS]
+localFS: enum                   [EXT2, EXT3, "EXT4", XFS]
+
+#Misc
+debugRequests: boolean          [yes, "no"]
+
+
+```
+
+**Google Compute specific schema**
+```
+googleProjectId: string
+googleImageProjectId: string
 ```
 
 **Openstack specific schema**
@@ -95,19 +117,19 @@ openstackCredentials:
   tenantDomain: string
 ```
 
-**Google Compute specific schema**
-```
-googleProjectId: string
-googleImageProjectId: string
-```
-
 **AWS specific schema**
 ```
 bidPrice: double
 bidPriceMaster: double
 publicSlaveIps: boolean [yes, no]
+useSpotInstances: boolean [yes, no]
 ```
 
 **Azure specific schema**
 
 There are currently no azure specific parameters.
+
+
+
+
+

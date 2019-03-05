@@ -49,31 +49,31 @@ public final class AnsibleConfig {
         }
     }
 
-    public void writeSiteFile(OutputStream stream) {
-        Map<String, Object> master = new LinkedHashMap<>();
-        master.put("hosts", "master");
-        master.put("become", "yes");
-        master.put("vars_files", Arrays.asList("vars/common.yml"));
-        List<String> roles = new ArrayList<>();
-        roles.add("common");
-        roles.add("master");
-        for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
-            roles.add(getCustomRoleName("master", i));
-        }
-        master.put("roles", roles);
-        Map<String, Object> slaves = new LinkedHashMap<>();
-        slaves.put("hosts", "slaves");
-        slaves.put("become", "yes");
-        slaves.put("vars_files", Arrays.asList("vars/common.yml", "vars/{{ ansible_default_ipv4.address }}.yml"));
-        roles = new ArrayList<>();
-        roles.add("common");
-        roles.add("slave");
-        for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
-            roles.add(getCustomRoleName("slaves", i));
-        }
-        slaves.put("roles", roles);
-        writeToOutputStream(stream, Arrays.asList(master, slaves));
-    }
+//    public void writeSiteFile(OutputStream stream) {
+//        Map<String, Object> master = new LinkedHashMap<>();
+//        master.put("hosts", "master");
+//        master.put("become", "yes");
+//        master.put("vars_files", Arrays.asList("vars/common.yml"));
+//        List<String> roles = new ArrayList<>();
+//        roles.add("common");
+//        roles.add("master");
+////        for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
+////            roles.add(getCustomRoleName("master", i));
+////        }
+//        master.put("roles", roles);
+//        Map<String, Object> slaves = new LinkedHashMap<>();
+//        slaves.put("hosts", "slaves");
+//        slaves.put("become", "yes");
+//        slaves.put("vars_files", Arrays.asList("vars/common.yml", "vars/{{ ansible_default_ipv4.address }}.yml"));
+//        roles = new ArrayList<>();
+//        roles.add("common");
+//        roles.add("slave");
+////        for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
+////            roles.add(getCustomRoleName("slaves", i));
+////        }
+//        slaves.put("roles", roles);
+//        writeToOutputStream(stream, Arrays.asList(master, slaves));
+//    }
 
     /**
      * Generates a unique role name with the provided hosts type and index.
@@ -111,12 +111,11 @@ public final class AnsibleConfig {
         addBooleanOption(map, "enable_slurm",config.isSlurm());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
         addBooleanOption(map, "enable_cloud9", config.isCloud9());
-        /* not provided, 02/19
-        addBooleanOption(map, "enable_mesos", config.isMesos());
-        addBooleanOption(map, "enable_cassandra", config.isCassandra());
-        addBooleanOption(map, "enable_hdfs", config.isHdfs());
-        addBooleanOption(map, "enable_spark", config.isSpark());
-         */
+        addBooleanOption(map,"enable_ganglia",config.isGanglia());
+        addBooleanOption(map, "enable_zabbix", config.isZabbix());
+
+        map.put("zabbix", getZabbixConf());
+
         writeToOutputStream(stream, map);
     }
 
@@ -155,6 +154,18 @@ public final class AnsibleConfig {
             masterMap.put("disks", masterMountsMap);
         }
         return masterMap;
+    }
+
+    private Map<String, Object> getZabbixConf() {
+        Configuration.ZabbixConf zc = config.getZabbixConf();
+        Map<String, Object> zabbixConf = new LinkedHashMap<>();
+        zabbixConf.put("db",zc.getDb());
+        zabbixConf.put("db_user",zc.getDb_user());
+        zabbixConf.put("db_password",zc.getDb_password());
+        zabbixConf.put("timezone",zc.getTimezone());
+        zabbixConf.put("server_name",zc.getServer_name());
+        zabbixConf.put("admin_password",zc.getAdmin_password());
+        return zabbixConf;
     }
 
     private List<String> getEphemeralDevices(int count) {
@@ -205,4 +216,5 @@ public final class AnsibleConfig {
         }
         return l;
     }
+
 }

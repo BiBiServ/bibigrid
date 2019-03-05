@@ -1,7 +1,36 @@
-- debug:
-    msg: "[BIBIGRID] Setup common software and dependencies"
-- import_tasks: 010-apt.yml
-  tags: ["apt","common-apt"]
+- block:
+  - debug:
+      msg: "[BIBIGRID] Setup common software and dependencies"
+  - include: 001-apt.yml
+  tags: ["pkg","common-pkg"]
+  when: "ansible_distribution_file_variety == 'Debian'"
+
+- block:
+  - debug:
+      msg: "[BIBIGRID] Setup common software and dependencies"
+  - include: 001-yum.yml
+  tags: ["pkg","common-pkg"]
+  when: "ansible_distribution_file_variety == 'RedHat'"
+
+
+- block:
+    - debug:
+        msg: "[BIBIGRID] Setup Ganglia monitor"
+    - include: 010-ganglia.yml
+  tags: ['ganglia','common-ganglia']
+  when:
+   - enable_ganglia == 'yes'
+   - ansible_distribution_release == 'xenial'
+
+- block:
+    - debug:
+        msg: "[BIBIGRID] Setup Zabbix Agent"
+    - include: 011-zabbix.yml
+  tags: ["zabbix","common-zabbix"]
+  when:
+    - enable_zabbix == 'yes'
+
+
 
 - debug:
     msg: "[BIBIGRID] Generate directory structure available on all hosts"
