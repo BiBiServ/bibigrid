@@ -5,6 +5,7 @@
   tags: ["master-ganglia","ganglia"]
   when:
     - enable_ganglia == 'yes'
+    - ansible_distribution_release == 'xenial'
 
 - block:
     - debug:

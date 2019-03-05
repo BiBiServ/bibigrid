@@ -114,6 +114,8 @@ public final class AnsibleConfig {
         addBooleanOption(map,"enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
 
+        map.put("zabbix", getZabbixConf());
+
         writeToOutputStream(stream, map);
     }
 
@@ -152,6 +154,18 @@ public final class AnsibleConfig {
             masterMap.put("disks", masterMountsMap);
         }
         return masterMap;
+    }
+
+    private Map<String, Object> getZabbixConf() {
+        Configuration.ZabbixConf zc = config.getZabbixConf();
+        Map<String, Object> zabbixConf = new LinkedHashMap<>();
+        zabbixConf.put("db",zc.getDb());
+        zabbixConf.put("db_user",zc.getDb_user());
+        zabbixConf.put("db_password",zc.getDb_password());
+        zabbixConf.put("timezone",zc.getTimezone());
+        zabbixConf.put("server_name",zc.getServer_name());
+        zabbixConf.put("admin_password",zc.getAdmin_password());
+        return zabbixConf;
     }
 
     private List<String> getEphemeralDevices(int count) {

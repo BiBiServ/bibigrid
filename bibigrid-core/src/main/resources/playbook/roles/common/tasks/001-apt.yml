@@ -87,6 +87,11 @@
     repo: deb https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename}} stable
     state: present
 
+- name: Add zabbix repositories
+  apt:
+    deb: 'https://repo.zabbix.com/zabbix/4.0/{{ ansible_distribution | lower }}/pool/main/z/zabbix-release/zabbix-release_4.0-2+{{ ansible_distribution_release }}_all.deb'
+    state: present
+
 - name: Update apt cache
   apt:
     update_cache: 'yes'

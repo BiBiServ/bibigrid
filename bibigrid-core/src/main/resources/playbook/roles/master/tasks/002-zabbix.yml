@@ -1,28 +1,137 @@
-#- name: Install Apache
-#  include_role:
-#    name: geerlingguy.apache
+# -------------------
+# -- Zabbix Server --
+# -------------------
 
-- name: Install MySQL
-  include_role:
-    name: geerlingguy.mysql
+- name: Debian based OS
+  block:
+    - name: Install database server
+      apt:
+        name: mariadb-server
+        state: latest
 
-- name: Install Zabbix-Server
-  include_role:
-    name: dj-wasabi.zabbix-server
+    - name: Install zabbix server
+      apt:
+        name: zabbix-server-mysql
+        state: latest
+        update_cache: yes
 
-- name: Install Zabbix-Web
-  include_role:
-    name: dj-wasabi.zabbix-web
+  when: "ansible_distribution_file_variety == 'Debian' "
 
-- name: Install zabbix-api via PIP
+- name: REHL based OS
+  block:
+    - name: Install database server
+      dnf:
+        name: mariadb
+        state: latest
+
+    - name: Install zabbix server
+      dnf:
+        name: zabbix-server-mysql
+        state: latest
+  when: "ansible_distribution_file_variety == 'RedHat' "
+
+- name: Install python modul 'PyMySQL'
   pip:
-    name: zabbix-api
+    name: PyMySQL
+
+- name: Create zabbix database
+  mysql_db:
+    name: "{{ zabbix.db }}"
+    encoding: 'utf8'
+    state: present
+    login_user: root
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Create zabbix database user
+  mysql_user:
+    name: "{{ zabbix.db_user }}"
+    password: "{{ zabbix.db_password}}"
+    priv: '{{ zabbix.db }}.*:ALL'
+    login_user: root
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Check if zabbix schema exists
+  shell: "echo describe users | mysql --user={{ zabbix.db_user}} --password={{ zabbix.db_password }} zabbix"
+  ignore_errors: True
+  register: zabbix_schema_exists
+
+- name: Import initial db schema
+  shell: "zcat /usr/share/doc/zabbix-server-mysql/create.sql.gz | mysql --user={{ zabbix.db_user}} --password={{ zabbix.db_password }} zabbix"
+  when: zabbix_schema_exists.rc == 1
+
+
+- name: Update Admin password
+  shell: "echo \"update users set passwd=md5('{{ zabbix.admin_password }}') where alias='Admin'\" | mysql --user={{ zabbix.db_user}} --password={{ zabbix.db_password }} zabbix"
+
+- name: Adjust zabbix server configuration
+  template:
+    src: zabbix/zabbix_server.conf.j2
+    dest: /etc/zabbix/zabbix_server.conf
+
+- name: Restart zabbix-server
+  systemd:
+    name: zabbix-server
+    state: restarted
+    enabled: yes
+
+# -------------------------
+# -- Zabbix Web Frontend --
+# -------------------------
+
+- name: Debian based OS
+  block:
+    - name: Install apache web server
+      apt:
+        name: apache2
+        state: latest
+
+    - name: Install zabbix web frontend
+      apt:
+        name: zabbix-frontend-php
+        state: latest
+  when: "ansible_distribution_file_variety == 'Debian'"
+
+
+- name: REHL based OS
+  block:
+    - name: Install apache web server
+      dnf:
+        name: apache2
+        state: latest
+
+    - name: Install zabbix web frontend
+      dnf:
+        name: zabbix-frontend-php
+        state: latest
+  when: "ansible_distribution_file_variety == 'RedHat'"
+
+
+
+- name: Adjust zabbix web frontend configuration
+  block:
+    - template:
+        src: zabbix/apache.conf.j2
+        dest: /etc/zabbix/apache.conf
+    - template:
+        src: zabbix/zabbix.conf.php.j2
+        dest: /etc/zabbix/web/zabbix.conf.php
+
+
+- name: Restart apache web server
+  systemd:
+    name: apache2
+    state: restarted
+    enabled: yes
+
+# --------------------------------------
+# -- Add worker nodes as zabbix hosts --
+# --------------------------------------
 
 - name: Add all worker nodes as zabbix hosts
   zabbix_host:
-    server_url:  "http://{{ master.ip }}"
+    server_url:  "http://{{ master.ip }}/zabbix/"
     login_user: Admin
-    login_password: zabbix
+    login_password: "{{ zabbix.admin_password }}"
     host_name: "{{ item.hostname }}"
     visible_name : "{{ item.hostname }}"
     description : add by ansible

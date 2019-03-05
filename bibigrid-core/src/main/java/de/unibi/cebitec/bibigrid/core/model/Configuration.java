@@ -42,6 +42,7 @@ public abstract class Configuration {
     private boolean cloud9;
     private boolean ganglia;
     private boolean zabbix;
+    private ZabbixConf zabbixConf = new ZabbixConf();
     private List<String> nfsShares = new ArrayList<>(Arrays.asList("/vol/spool"));
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
@@ -476,6 +477,70 @@ public abstract class Configuration {
 
     public void setZabbix(boolean zabbix) {
         this.zabbix = zabbix;
+    }
+
+    public ZabbixConf getZabbixConf() { return zabbixConf;}
+
+    public void setZabbixConf(ZabbixConf zabbixConf) { this.zabbixConf =  zabbixConf;}
+
+    public static class ZabbixConf {
+        public ZabbixConf(){
+        }
+
+        private String db = "zabbix";
+        private String db_user = "zabbix";
+        private String db_password = "zabbix";
+        private String timezone = "Europe/Berlin";
+        private String server_name = "bibigrid";
+        private String admin_password = "bibigrid";
+
+        public String getDb() {
+            return db;
+        }
+
+        public void setDb(String db) {
+            this.db = db;
+        }
+
+        public String getDb_user() {
+            return db_user;
+        }
+
+        public void setDb_user(String db_user) {
+            this.db_user = db_user;
+        }
+
+        public String getDb_password() {
+            return db_password;
+        }
+
+        public void setDb_password(String db_password) {
+            this.db_password = db_password;
+        }
+
+        public String getTimezone() {
+            return timezone;
+        }
+
+        public void setTimezone(String timezone) {
+            this.timezone = timezone;
+        }
+
+        public String getServer_name() {
+            return server_name;
+        }
+
+        public void setServer_name(String server_name) {
+            this.server_name = server_name;
+        }
+
+        public String getAdmin_password() {
+            return admin_password;
+        }
+
+        public void setAdmin_password(String admin_password) {
+            this.admin_password = admin_password;
+        }
     }
 
     @SuppressWarnings("WeakerAccess")

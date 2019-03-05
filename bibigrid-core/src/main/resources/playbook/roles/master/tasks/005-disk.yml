@@ -5,7 +5,7 @@
     src: "{{ master.ephemerals[0] }}"
     fstype: ext4
     state: mounted
-  when: master.ephemerals is defined
+  when: master.ephemerals[0] is defined
 
 - name: mount disks
   mount:

@@ -1,3 +1,0 @@
-- name: Install Zabbix agent
-  include_role:
-    name: dj-wasabi.zabbix-agent
