@@ -22,4 +22,14 @@ class InstanceImageOpenstack extends InstanceImage {
     public int getMinRam() {
         return image.getMinRam();
     }
+
+    @Override
+    public String getId() {
+        return image.getId();
+    }
+
+    @Override
+    public String getName() {
+        return image.getName();
+    }
 }

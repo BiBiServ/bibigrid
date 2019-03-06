@@ -25,6 +25,16 @@ class InstanceImageAWS extends InstanceImage {
         return 0;
     }
 
+    @Override
+    public String getId() {
+        return image.getImageId();
+    }
+
+    @Override
+    public String getName() {
+        return image.getName();
+    }
+
     public boolean isHvm() {
         return "hvm".equals(image.getVirtualizationType());
     }
