@@ -6,4 +6,6 @@ package de.unibi.cebitec.bibigrid.core.model;
 public abstract class InstanceImage {
     public abstract long getMinDiskSpace();
     public abstract int getMinRam();
+    public abstract String getId();
+    public abstract String getName();
 }
