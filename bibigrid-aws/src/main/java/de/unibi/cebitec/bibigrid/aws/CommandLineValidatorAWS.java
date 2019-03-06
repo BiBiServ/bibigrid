@@ -127,7 +127,6 @@ public final class CommandLineValidatorAWS extends CommandLineValidator {
                 LOG.info(V, "Use spot request for all");
             } else if (value.equalsIgnoreCase("no")) { // TODO: keyword
                 LOG.info(V, "SpotInstance usage disabled.");
-                this.config.setMesos(false);
             } else {
                 LOG.error("SpotInstanceRequest value not recognized. Please use yes/no.");
                 return false;

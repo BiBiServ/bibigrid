@@ -25,6 +25,16 @@ class InstanceImageAzure extends InstanceImage {
         return 0;
     }
 
+    @Override
+    public String getId() {
+        return internalImage.id();
+    }
+
+    @Override
+    public String getName() {
+        return "unsupported";
+    }
+
     public ImageReference getInternal() {
         return internalImage;
     }
