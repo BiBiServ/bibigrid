@@ -1,8 +1,11 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import ch.qos.logback.classic.pattern.ClassNameOnlyAbbreviator;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -48,13 +51,47 @@ public abstract class Configuration {
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
     private boolean debugRequests;
-    private boolean useSpotInstances;
+
     private String network;
     private String subnet;
     private String[] clusterIds;
     // private List<String> masterAnsibleRoles = new ArrayList<>();
     // private List<String> slaveAnsibleRoles = new ArrayList<>();
     private String cloud9Workspace = DEFAULT_CLOUD9_WORKSPACE;
+
+
+    public void load() throws  ConfigurationException {
+
+    }
+
+    /**
+     * Validate the configuration, throws an Exception in the case of an misconfiguration,
+     * should be overwritten by derived implementations.
+     *
+     * @throws ConfigurationException
+     */
+    public void validate() throws ConfigurationException {
+
+
+
+
+
+//            private String keypair;
+//    private String sshPublicKeyFile;
+//    private String sshPrivateKeyFile;
+//    private String alternativeConfigPath;
+//    private String gridPropertiesFile;
+//    private String credentialsFile;
+//    private String region;
+//    private String availabilityZone;
+//    private String serverGroup;
+//
+
+
+    }
+
+
+
 
     public int getSlaveInstanceCount() {
         if (slaveInstances == null) {
@@ -358,16 +395,7 @@ public abstract class Configuration {
         LOG.info(V, "Debug requests {}.", debugRequests ? "enabled" : "disabled");
     }
 
-    public boolean isUseSpotInstances() {
-        return useSpotInstances;
-    }
 
-    public void setUseSpotInstances(boolean useSpotInstances) {
-        this.useSpotInstances = useSpotInstances;
-        if (useSpotInstances) {
-            LOG.info(V, "Use spot request for all");
-        }
-    }
 
     public boolean isCloud9() {
         return cloud9;

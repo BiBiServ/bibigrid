@@ -1,12 +1,11 @@
 package de.unibi.cebitec.bibigrid;
 
-import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
+import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
-import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
-import de.unibi.cebitec.bibigrid.core.util.RuleBuilder;
+import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
 import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 
 import java.io.IOException;
@@ -19,8 +18,6 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
-import de.unibi.techfak.bibiserv.cms.Tparam;
-import de.unibi.techfak.bibiserv.cms.TparamGroup;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,27 +66,32 @@ public class StartUp {
         return intentOptions;
     }
 
-    private static Options getRulesToOptions() {
-        RuleBuilder ruleBuild = new RuleBuilder();
-        TparamGroup ruleSet = ruleBuild.getRules();
-        Options ruleOptions = new Options();
-        for (Object ob : ruleSet.getParamrefOrParamGroupref()) {
-            Tparam tp = (Tparam) ob;
-            boolean hasArg;
-            hasArg = tp.getType() != null;
-            try {
-                ruleOptions.addOption(new Option(tp.getId(), tp.getOption(), hasArg, tp.getShortDescription().get(0).getValue()));
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException(String.format("Exception while adding Option '%s' (%s) -> %s",tp.getId(),tp.getShortDescription().get(0).getValue(),e.getMessage() ));
-            }
-        }
-        return ruleOptions;
-    }
+//    private static Options getRulesToOptions() {
+//        RuleBuilder ruleBuild = new RuleBuilder();
+//        TparamGroup ruleSet = ruleBuild.getRules();
+//        Options ruleOptions = new Options();
+//        for (Object ob : ruleSet.getParamrefOrParamGroupref()) {
+//            Tparam tp = (Tparam) ob;
+//            boolean hasArg;
+//            hasArg = tp.getType() != null;
+//            try {
+//                ruleOptions.addOption(new Option(tp.getId(), tp.getOption(), hasArg, tp.getShortDescription().get(0).getValue()));
+//            } catch (IllegalArgumentException e) {
+//                throw new RuntimeException(String.format("Exception while adding Option '%s' (%s) -> %s",tp.getId(),tp.getShortDescription().get(0).getValue(),e.getMessage() ));
+//            }
+//        }
+//        return ruleOptions;
+//    }
 
     public static void main(String[] args) {
         CommandLineParser cli = new DefaultParser();
         OptionGroup intentOptions = getCMDLineOptionGroup();
-        Options cmdLineOptions = getRulesToOptions();
+        Options cmdLineOptions = new Options();
+        cmdLineOptions.addOption(new Option("h","help",false,"get some online help"));
+        cmdLineOptions.addOption(new Option("v","verbose", false,"more verbose output"));
+        cmdLineOptions.addOption(new Option("o","config",true,"path to json configuration file"));
+
+//        Options cmdLineOptions = getRulesToOptions();
         cmdLineOptions.addOptionGroup(intentOptions);
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
@@ -135,7 +137,7 @@ public class StartUp {
 
     private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
         // TODO: improve help modes
-        if (commandLine.hasOption(RuleBuilder.RuleNames.HELP_LIST_INSTANCE_TYPES.getShortParam())) {
+        if (commandLine.hasOption("h")) {
             runIntent(commandLine, IntentMode.HELP);
             return;
         }
@@ -148,8 +150,8 @@ public class StartUp {
     }
 
     private static void runIntent(CommandLine commandLine, IntentMode intentMode) {
-        DefaultPropertiesFile defaultPropertiesFile = new DefaultPropertiesFile(commandLine);
-        String providerMode = parseProviderMode(commandLine, defaultPropertiesFile);
+        ConfigurationFile configurationFile = new ConfigurationFile(commandLine);
+        String providerMode = parseProviderMode(commandLine, configurationFile);
         if (providerMode == null) {
             LOG.error(StartUp.ABORT_WITH_NOTHING_STARTED);
             return;
@@ -159,9 +161,9 @@ public class StartUp {
             LOG.error(ABORT_WITH_NOTHING_STARTED);
             return;
         }
-        CommandLineValidator validator;
+        Validator validator;
         try {
-            validator = module.getCommandLineValidator(commandLine, defaultPropertiesFile, intentMode);
+            validator = module.getCommandLineValidator(commandLine, configurationFile, intentMode);
         } catch (ConfigurationException e) {
             LOG.error(ABORT_WITH_NOTHING_STARTED, e);
             return;
@@ -221,6 +223,7 @@ public class StartUp {
                     new Cloud9Intent(module, client, validator.getConfig()).start();
                     break;
                 default:
+                    LOG.warn("unknown intent mode");
                     break;
             }
         } else {
@@ -228,7 +231,7 @@ public class StartUp {
         }
     }
 
-    private static boolean runCreateIntent(ProviderModule module, CommandLineValidator validator, Client client,
+    private static boolean runCreateIntent(ProviderModule module, Validator validator, Client client,
                                            CreateCluster cluster, boolean prepare) {
         try {
             boolean success = cluster
@@ -258,14 +261,14 @@ public class StartUp {
         return true;
     }
 
-    private static String parseProviderMode(CommandLine commandLine, DefaultPropertiesFile defaultPropertiesFile) {
+    private static String parseProviderMode(CommandLine commandLine, ConfigurationFile configurationFile) {
         if (!commandLine.hasOption("mode")) {
             String[] providerNames = Provider.getInstance().getProviderNames();
-            if (defaultPropertiesFile.getPropertiesMode() == null && providerNames.length == 1) {
+            if (configurationFile.getPropertiesMode() == null && providerNames.length == 1) {
                 return providerNames[0];
             }
-            if (defaultPropertiesFile.getPropertiesMode() != null) {
-                return defaultPropertiesFile.getPropertiesMode();
+            if (configurationFile.getPropertiesMode() != null) {
+                return configurationFile.getPropertiesMode();
             }
         } else {
             try {
