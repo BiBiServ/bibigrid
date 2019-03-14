@@ -1,11 +1,11 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
-import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
+import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
-import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
+import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
 import org.apache.commons.cli.CommandLine;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Flavor;
@@ -24,11 +24,11 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
-                                                        final DefaultPropertiesFile defaultPropertiesFile,
-                                                        final IntentMode intentMode)
+    public Validator getCommandLineValidator(final CommandLine commandLine,
+                                             final ConfigurationFile configurationFile,
+                                             final IntentMode intentMode)
             throws ConfigurationException {
-        return new CommandLineValidatorOpenstack(commandLine, defaultPropertiesFile, intentMode, this);
+        return new ValidatorOpenstack(commandLine, configurationFile, intentMode, this);
     }
 
     @Override
