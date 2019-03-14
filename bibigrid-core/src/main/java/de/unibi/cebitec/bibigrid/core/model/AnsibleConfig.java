@@ -142,6 +142,7 @@ public final class AnsibleConfig {
         masterMap.put("ip", masterInstance.getPrivateIp());
         masterMap.put("hostname", masterInstance.getHostname());
         masterMap.put("cores", config.getMasterInstance().getProviderType().getCpuCores());
+        masterMap.put("memory", config.getMasterInstance().getProviderType().getMaxRam());
         masterMap.put("ephemerals", getEphemeralDevices(config.getMasterInstance().getProviderType().getEphemerals()));
         if (masterMounts != null && masterMounts.size() > 0) {
             List<Map<String, String>> masterMountsMap = new ArrayList<>();
@@ -199,14 +200,15 @@ public final class AnsibleConfig {
     }
 
     private Map<String, Object> getInstanceMap(Instance instance, boolean full) {
-        Map<String, Object> masterMap = new LinkedHashMap<>();
-        masterMap.put("ip", instance.getPrivateIp());
-        masterMap.put("cores", instance.getConfiguration().getProviderType().getCpuCores());
+        Map<String, Object> instanceMap = new LinkedHashMap<>();
+        instanceMap.put("ip", instance.getPrivateIp());
+        instanceMap.put("cores", instance.getConfiguration().getProviderType().getCpuCores());
+        instanceMap.put("memory", instance.getConfiguration().getProviderType().getMaxRam());
         if (full) {
-            masterMap.put("hostname", instance.getHostname());
-            masterMap.put("ephemerals", getEphemeralDevices(instance.getConfiguration().getProviderType().getEphemerals()));
+            instanceMap.put("hostname", instance.getHostname());
+            instanceMap.put("ephemerals", getEphemeralDevices(instance.getConfiguration().getProviderType().getEphemerals()));
         }
-        return masterMap;
+        return instanceMap;
     }
 
     private List<Map<String, Object>> getSlavesMap() {
