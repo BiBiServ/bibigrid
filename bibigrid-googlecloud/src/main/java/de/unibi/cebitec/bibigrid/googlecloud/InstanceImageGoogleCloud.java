@@ -23,4 +23,14 @@ class InstanceImageGoogleCloud extends InstanceImage {
         // TODO
         return 0;
     }
+
+    @Override
+    public String getId() {
+        return image.getSourceImageId();
+    }
+
+    @Override
+    public String getName() {
+        return image.getSourceImage();
+    }
 }

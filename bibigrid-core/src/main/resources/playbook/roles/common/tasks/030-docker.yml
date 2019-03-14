@@ -33,4 +33,6 @@
     append: yes
     groups: docker
 
-
+- name: Install docker-api via PIP
+  pip:
+    name: ['docker','docker-compose']

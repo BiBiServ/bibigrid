@@ -6,16 +6,8 @@
 
 - name: Install Ganglia
   apt:
-    name: ["ganglia-monitor","ganglia-webfrontend","gmetad"]
+    name: ["ganglia-webfrontend","gmetad"]
     state: present
-
-- name: Configure Ganglia
-  copy:
-    src: ganglia/ganglia.conf
-    dest: /etc/apache2/sites-available/ganglia.conf
-    owner: root
-    group: root
-    mode: 0644
 
 - copy:
     src: ganglia/gmetad.conf
@@ -24,18 +16,19 @@
     group: root
     mode: 0644
 
-- template:
-    src: ganglia/gmond.conf.j2
-    dest: /etc/ganglia/gmond.conf
+- name: (Re-)start gmetad
+  systemd:
+    name: gmetad
+    state: restarted
+    enabled: yes
+
+- name: Configure Ganglia
+  copy:
+    src: ganglia/ganglia.conf
+    dest: /etc/apache2/sites-available/ganglia.conf
     owner: root
     group: root
     mode: 0644
-
-- name: (Re-)start Ganglia
-  systemd:
-    name: ganglia-monitor
-    state: restarted
-    enabled: yes
     
 - name: Enable Ganglia sites
   shell: "/usr/sbin/a2ensite ganglia"

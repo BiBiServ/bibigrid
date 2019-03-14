@@ -1,0 +1,26 @@
+- name: Install zabbix python-api
+  pip:
+    name: zabbix-api
+
+- name: Install zabbix agent
+  apt:
+    name: zabbix-agent
+    state: latest
+  when: "ansible_distribution_file_variety == 'Debian'"
+
+- name: Install zabbix agent
+  dnf:
+    name: zabbix-agent
+    state: latest
+  when: "ansible_distribution_file_variety == 'RedHat'"
+
+- name: Adjust zabbix agent configuration
+  template:
+    src: zabbix/zabbix_agentd.conf.j2
+    dest: /etc/zabbix/zabbix_agentd.conf
+
+- name: Restart zabbix-agent
+  systemd:
+    name: zabbix-agent
+    state: restarted
+    enabled: yes

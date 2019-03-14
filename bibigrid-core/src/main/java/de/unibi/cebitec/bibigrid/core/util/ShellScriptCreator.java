@@ -109,6 +109,9 @@ public final class ShellScriptCreator {
         // Update pip to latest version
         script.append("sudo pip install --upgrade pip | sudo tee -a /var/log/ssh_exec.log\n");
 
+        // Upgrade OpenSSL to fix ssl version problems on Ubuntu 16.04
+        script.append("sudo python -m easy_install --upgrade pyOpenSSL\n");
+
         // Install setuptools from pypi using pip
         script.append("sudo pip install setuptools | sudo tee -a /var/log/ssh_exec.log\n");
         // Install ansible from pypi using pip
@@ -118,6 +121,10 @@ public final class ShellScriptCreator {
 
         // Fix line endings to ensure windows files being used correctly
         script.append("for file in $(find ~/playbook/ -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
+
+        // Run ansible-galaxy to install ansible-galaxy playbooks
+        //script.append("ansible-galaxy install -r ~/playbook/requirements.yml\n");
+
         // Execute ansible playbook
         script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts")
                 .append(prepare ? " -t install" : "")

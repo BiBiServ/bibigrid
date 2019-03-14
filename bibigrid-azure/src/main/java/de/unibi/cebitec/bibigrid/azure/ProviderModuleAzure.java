@@ -2,12 +2,12 @@ package de.unibi.cebitec.bibigrid.azure;
 
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.VirtualMachineSize;
-import de.unibi.cebitec.bibigrid.core.CommandLineValidator;
+import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
-import de.unibi.cebitec.bibigrid.core.util.DefaultPropertiesFile;
+import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
 import org.apache.commons.cli.CommandLine;
 
 import java.util.HashMap;
@@ -24,11 +24,11 @@ public class ProviderModuleAzure extends ProviderModule {
     }
 
     @Override
-    public CommandLineValidator getCommandLineValidator(final CommandLine commandLine,
-                                                        final DefaultPropertiesFile defaultPropertiesFile,
-                                                        final IntentMode intentMode)
+    public Validator getCommandLineValidator(final CommandLine commandLine,
+                                             final ConfigurationFile configurationFile,
+                                             final IntentMode intentMode)
             throws ConfigurationException {
-        return new CommandLineValidatorAzure(commandLine, defaultPropertiesFile, intentMode, this);
+        return new ValidatorAzure(commandLine, configurationFile, intentMode, this);
     }
 
     @Override
