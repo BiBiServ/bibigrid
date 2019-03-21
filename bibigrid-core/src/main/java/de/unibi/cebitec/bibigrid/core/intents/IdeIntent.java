@@ -72,22 +72,11 @@ public class IdeIntent extends Intent {
                 // Start connection attempt
                 sshSession.connect();
                 LOG.info("Connected to master!");
-//                ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-//                String command = "echo \"workingDir=" + config.getCloud9Workspace() + "\" > /etc/cloud9/settings.conf\n";
-//                command += "sudo service cloud9service start";
-//                channel.setCommand(command);
-//                LOG.info(V, "Connecting ssh channel...");
-//                channel.connect();
-                LOG.info("You can now open the cloud9 IDE at http://localhost:{}", PORT);
+                LOG.info("You can now open the Web IDE at http://localhost:{}", PORT);
                 openBrowser();
                 LOG.info("Press any key, to close this session...");
                 //noinspection ResultOfMethodCallIgnored
                 System.in.read();
-//                OutputStream outputStream = channel.getOutputStream();
-//                outputStream.write("sudo service cloud9service stop\n".getBytes());
-//                outputStream.flush();
-//                outputStream.close();
-//                channel.disconnect();
                 sshSession.disconnect();
             }
         } catch (JSchException e) {

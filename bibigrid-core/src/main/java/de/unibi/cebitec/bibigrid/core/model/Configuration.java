@@ -72,18 +72,6 @@ public abstract class Configuration {
      */
     public void validate() throws ConfigurationException {
 
-
-//            private String keypair;
-//    private String sshPublicKeyFile;
-//    private String sshPrivateKeyFile;
-//    private String alternativeConfigPath;
-//    private String gridPropertiesFile;
-//    private String credentialsFile;
-//    private String region;
-//    private String availabilityZone;
-//    private String serverGroup;
-//
-
     }
 
     public int getSlaveInstanceCount() {
@@ -238,7 +226,7 @@ public abstract class Configuration {
      * Set the cluster Id(s) either as a single cluster "id" or as multiple "id1/id2/id3".
      */
     public void setClusterIds(String clusterIds) {
-        this.clusterIds = clusterIds == null ? new String[0] : clusterIds.split("/");
+        this.clusterIds = clusterIds == null ? new String[0] : clusterIds.split("[/,]");
     }
 
     public void setClusterIds(String[] clusterIds) {
@@ -396,6 +384,7 @@ public abstract class Configuration {
 
     public void setCloud9(boolean cloud9) throws ConfigurationException {
         if (cloud9&&theia) {
+            LOG.error("Only one IDE (either Theia or Cloud9) can be set.");
             throw new ConfigurationException("Only one IDE (either Theia or Cloud9) can be set.");
         }
         this.cloud9 = cloud9;
@@ -407,6 +396,7 @@ public abstract class Configuration {
 
     public void setTheia(boolean theia) throws ConfigurationException {
         if (cloud9&&theia) {
+            LOG.error("Only one IDE (either Theia or Cloud9) can be set.");
             throw new ConfigurationException("Only one IDE (either Theia or Cloud9) can be set.");
         }
         this.theia = theia;

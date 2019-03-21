@@ -30,7 +30,6 @@
   args:
     creates: "{{ nvm_install_dir }}/nvm.sh"
     warn: false
-    executable: bash -o pipefail
 
 - name: Install node 8 and yarn
   shell: |
@@ -47,7 +46,7 @@
 
 - name: Copy IDE configuration to IDE build dir
   copy:
-    src: package.json
+    src: theia/package.json
     dest: "{{ theia_ide_install_dir }}/package.json"
     mode: 0644
 
@@ -62,13 +61,13 @@
 
 - name: Generate IDE start skript to /usr/local/bin
   template:
-    src: theia-ide.sh.j2
+    src: theia/theia-ide.sh.j2
     dest: "{{ theia_ide_install_dir }}/theia-ide.sh"
     mode: 0755
 
 - name: Generate systemd service
   template:
-    src: theia-ide.service.j2
+    src: theia/theia-ide.service.j2
     dest: /etc/systemd/system/theia-ide.service
     mode: 0644
 
