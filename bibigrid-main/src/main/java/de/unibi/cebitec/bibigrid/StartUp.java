@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * Startup/Main class of BiBiGrid.
@@ -165,7 +166,7 @@ public class StartUp {
         try {
             validator = module.getCommandLineValidator(commandLine, configurationFile, intentMode);
         } catch (ConfigurationException e) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED, e);
+            LOG.error(ABORT_WITH_NOTHING_STARTED, e.getMessage());
             return;
         }
         if (validator.validate(providerMode)) {
@@ -173,7 +174,7 @@ public class StartUp {
             try {
                 client = module.getClient(validator.getConfig());
             } catch (ClientConnectionFailedException e) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED, e);
+                LOG.error(ABORT_WITH_NOTHING_STARTED, e.getMessage());
                 return;
             }
             // In order to validate the native instance types, we need a client. So this step is deferred after

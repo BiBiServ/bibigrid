@@ -84,10 +84,10 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         allIpPermissions.add(buildIpPermission("icmp", -1, -1).withUserIdGroupPairs(secGroupSelf));
         for (Port port : getConfig().getPorts()) {
             LOG.info(port.toString());
-            allIpPermissions.add(buildIpPermission("tcp", port.number, port.number)
-                    .withIpv4Ranges(new IpRange().withCidrIp(port.ipRange)));
-            allIpPermissions.add(buildIpPermission("udp", port.number, port.number)
-                    .withIpv4Ranges(new IpRange().withCidrIp(port.ipRange)));
+            allIpPermissions.add(buildIpPermission("tcp", port.getNumber(), port.getNumber())
+                    .withIpv4Ranges(new IpRange().withCidrIp(port.getIpRange())));
+            allIpPermissions.add(buildIpPermission("udp", port.getNumber(), port.getNumber())
+                    .withIpv4Ranges(new IpRange().withCidrIp(port.getIpRange())));
         }
 
         AuthorizeSecurityGroupIngressRequest ruleChangerReq = new AuthorizeSecurityGroupIngressRequest();

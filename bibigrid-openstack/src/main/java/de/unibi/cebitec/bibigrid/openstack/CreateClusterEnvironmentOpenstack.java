@@ -177,9 +177,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             // User selected Ports.
             List<Port> ports = getConfig().getPorts();
             for (Port p : ports) {
-                IPProtocol protocol = p.type.equals(Port.Protocol.TCP) ? IPProtocol.TCP :
-                        (p.type.equals(Port.Protocol.UDP) ? IPProtocol.UDP : IPProtocol.ICMP);
-                csgs.createRule(getPortBuilder(sge.getId(), protocol, p.number, p.number).cidr(p.ipRange).build());
+                IPProtocol protocol = p.getType().equals(Port.Protocol.TCP) ? IPProtocol.TCP :
+                        (p.getType().equals(Port.Protocol.UDP) ? IPProtocol.UDP : IPProtocol.ICMP);
+                csgs.createRule(getPortBuilder(sge.getId(), protocol, p.getNumber(), p.getNumber()).cidr(p.getIpRange()).build());
             }
             LOG.info("Security group (name: {}) created.", sge.getName());
         } catch (ClientResponseException e) {
