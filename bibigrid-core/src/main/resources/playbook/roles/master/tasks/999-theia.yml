@@ -1,0 +1,79 @@
+- name: Install packages
+  apt:
+    name: ["python", "make", "g++", "curl", "git"]
+  when: ansible_distribution_file_variety == 'Debian'
+
+- name: install packages
+  yum:
+    name: ["python", "curl", "git", "make", "gcc", "gcc-c++"]
+  when: ansible_distribution_file_variety == 'RedHat'
+
+- name: Create NVM install dir
+  file:
+    path: "{{ nvm_install_dir }}"
+    state: directory
+    mode: 0755
+
+- name: Set fact 'theia_ide_user' when not defined
+  set_fact:
+    theia_ide_user: "{{ ansible_env.SUDO_USER }}"
+  when: theia_ide_user is not defined
+
+- name: Set fact 'theia_ide_workspace' when not defined
+  set_fact:
+    theia_ide_workspace: "{{ ansible_env.PWD }}"
+  when: theia_ide_workspace is not defined
+
+- name: Install nvm
+  shell: |
+    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | NVM_DIR={{ nvm_install_dir }} /bin/bash
+  args:
+    creates: "{{ nvm_install_dir }}/nvm.sh"
+    warn: false
+    executable: bash -o pipefail
+
+- name: Install node 8 and yarn
+  shell: |
+        source {{ nvm_install_dir }}/nvm.sh
+        nvm install 8
+        npm install -g yarn
+  args:
+    executable: bash
+
+- name: Create IDE build dir
+  file:
+    path: "{{ theia_ide_install_dir }}"
+    state: directory
+
+- name: Copy IDE configuration to IDE build dir
+  copy:
+    src: package.json
+    dest: "{{ theia_ide_install_dir }}/package.json"
+    mode: 0644
+
+- name: build ide
+  shell: |
+        source {{ nvm_install_dir }}/nvm.sh
+        yarn
+        yarn theia build
+  args:
+    chdir: "{{ theia_ide_install_dir }}"
+    executable: bash
+
+- name: Generate IDE start skript to /usr/local/bin
+  template:
+    src: theia-ide.sh.j2
+    dest: "{{ theia_ide_install_dir }}/theia-ide.sh"
+    mode: 0755
+
+- name: Generate systemd service
+  template:
+    src: theia-ide.service.j2
+    dest: /etc/systemd/system/theia-ide.service
+    mode: 0644
+
+- name: Enable and Start service
+  systemd:
+    name: theia-ide.service
+    enabled: true
+    state: started

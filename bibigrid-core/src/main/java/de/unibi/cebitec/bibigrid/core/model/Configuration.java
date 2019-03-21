@@ -1,11 +1,9 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
-import ch.qos.logback.classic.pattern.ClassNameOnlyAbbreviator;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -19,7 +17,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class Configuration {
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
-    private static final String DEFAULT_CLOUD9_WORKSPACE = "~/";
+    private static final String DEFAULT_WORKSPACE = "~/";
 
     private String mode;
     private String user = System.getProperty("user.name");
@@ -43,6 +41,7 @@ public abstract class Configuration {
     private String mungeKey;
     private boolean nfs = true;
     private boolean cloud9;
+    private boolean theia;
     private boolean ganglia;
     private boolean zabbix;
     private ZabbixConf zabbixConf = new ZabbixConf();
@@ -57,7 +56,8 @@ public abstract class Configuration {
     private String[] clusterIds;
     // private List<String> masterAnsibleRoles = new ArrayList<>();
     // private List<String> slaveAnsibleRoles = new ArrayList<>();
-    private String cloud9Workspace = DEFAULT_CLOUD9_WORKSPACE;
+//    private String cloud9Workspace = DEFAULT_WORKSPACE;  deprecated
+    private String workspace = DEFAULT_WORKSPACE;
 
 
     public void load() throws  ConfigurationException {
@@ -73,9 +73,6 @@ public abstract class Configuration {
     public void validate() throws ConfigurationException {
 
 
-
-
-
 //            private String keypair;
 //    private String sshPublicKeyFile;
 //    private String sshPrivateKeyFile;
@@ -87,11 +84,7 @@ public abstract class Configuration {
 //    private String serverGroup;
 //
 
-
     }
-
-
-
 
     public int getSlaveInstanceCount() {
         if (slaveInstances == null) {
@@ -401,8 +394,22 @@ public abstract class Configuration {
         return cloud9;
     }
 
-    public void setCloud9(boolean cloud9) {
+    public void setCloud9(boolean cloud9) throws ConfigurationException {
+        if (cloud9&&theia) {
+            throw new ConfigurationException("Only one IDE (either Theia or Cloud9) can be set.");
+        }
         this.cloud9 = cloud9;
+    }
+
+    public boolean isTheia() {
+        return theia;
+    }
+
+    public void setTheia(boolean theia) throws ConfigurationException {
+        if (cloud9&&theia) {
+            throw new ConfigurationException("Only one IDE (either Theia or Cloud9) can be set.");
+        }
+        this.theia = theia;
     }
 
     public String getCredentialsFile() {
@@ -444,15 +451,24 @@ public abstract class Configuration {
 //    }
 
     public String getCloud9Workspace() {
-        return cloud9Workspace;
+        return getWorkspace();
     }
 
     public void setCloud9Workspace(String cloud9Workspace) {
-        if (cloud9Workspace == null || cloud9Workspace.length() == 0) {
-            cloud9Workspace = DEFAULT_CLOUD9_WORKSPACE;
+        LOG.warn("Option cloud9Workspace is deprecated. Use workspace instead.");
+        setWorkspace(cloud9Workspace);
+    }
+
+    public String getWorkspace() {
+        return workspace;
+    }
+
+    public void setWorkspace(String workspace) {
+        if (workspace == null || workspace.length() == 0) {
+            workspace = DEFAULT_WORKSPACE;
         }
-        this.cloud9Workspace = cloud9Workspace;
-        LOG.info(V, "Cloud9 workspace set: {}", cloud9Workspace);
+        this.workspace = workspace;
+        LOG.info(V, "Workspace set: {}", workspace);
     }
 
     public boolean isSlurm() {

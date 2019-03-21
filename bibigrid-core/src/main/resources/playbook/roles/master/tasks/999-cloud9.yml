@@ -68,3 +68,9 @@
 
 - name: Register cloud9 service
   command: systemctl daemon-reload
+
+- name: Enable and Start service
+  systemd:
+    name: cloud9service.service
+    enabled: true
+    state: started
