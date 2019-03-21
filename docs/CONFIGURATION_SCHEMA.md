@@ -4,104 +4,105 @@ parameters, a configuration file is easier to maintain and in some cases provide
 more detailed configuration possibilities.
 
 **Shared schema**
+
 ```
 # Cloud Usage
-mode: enum                      [aws, googlecloud, openstack, azure]
+mode: enum [openstack, aws, googlecloud, azure]     # Provider mode
 
 # Access
-user: string
-sshUser: string
-keypair: string
-sshPublicKeyFile: string
-sshPrivateKeyFile: string
-credentialsFile: string
+user: string                                        # User name (just for VM tagging)
+sshUser: string                                     # SSH user name, default is "ubuntu"
+keypair: string                                     # Keypair name for authentication (aws and openstack only)
+sshPublicKeyFile: string                            # SSH public key file (e.g.: .ssh/id_rsa.pub)
+sshPrivateKeyFile: string                           # SSH private key file (e.g.: .ssh/id_rsa)
+credentialsFile: string                             # credentials file (e.g.: */.bibigrid.credentials.yml)
 
-gridPropertiesFile: string
-
-region: string
-availabilityZone: string
+region: string                                      # Specific region
+availabilityZone: string                            # e.g.: default, maintenance, ...
 
 # Network
-network: string
-subnet: string
+network: string                                     # name / id of network (e.g.: 0a217b61-4c67-...)
+subnet: string                                      # name / id of subnet
 ports:
-  - type: enum                  [TCP, UDP, ICMP]
-    number: integer             [1 - 65535]
-    ipRange: string
+  - type: enum [TCP, UDP, ICMP]                     # Transmission Protocol, Default is TCP (recommended)
+    number: integer [1 - 65535]                     # Port number, (e.g. TCP-Port 80 - HTTP)
+    ipRange: string                                 # CIDR mask to restrict access, (e.g.: 129.60.50.0/24)
   - ...
 
-# Master
+# Master 
 masterInstance:
-  type: string                  [flavor, e.g. de.NBI.default ]
-  image: string                 [image id]
-  
-useMasterAsCompute: boolean     [yes, "no"]
-useMasterWithPublicIp: boolean  [yes, "no"]
+  type: string                                      # Instance Flavor, self-assigned (e.g.: m1.small)
+  image: string                                     # Image ID (e.g.: 802e0abe-ac6c-...) or Image name
 
-# [List of] Slave[s]
+# Slaves
 slaveInstances:
-  - type: string                [flavor, e.g. de.NBI.default ]
-    count: integer              [number of instances]
-    image: string               [image id]
+  - type: string                                    # Instance Flavor, self-assigned (e.g.: m1.small)
+    image: string                                   # Image ID (e.g.: 802e0abe-ac6c-...) or Image name
+    count: integer                                  # Number of Slave Instances
   - ...
-
-masterAnsibleRoles:   # ???
-  - string
-  - ...
-slaveAnsibleRoles:    # ???
-  - string
-  - ...
-
+  
 # Services
+useMasterAsCompute: boolean [yes, no]               # Use master as compute instance, Default is no
+useMasterWithPublicIp: boolean [yes, no]            # Usage of public IP. Default is yes
+useSpotInstances: boolean [yes, no]                 # Only usable with Google Compute and AWS, offered unused Instances
 
-# HPC cluster software
-slurm: boolean                  [yes, "no"]
-oge: boolean                    [yes, "no"] # deprecated - supported for Ubuntu 16.04
+masterAnsibleRoles:                                 # Ansible roles to run on master
+  - string                                          # Path to role, e.g.:
+  - ...
+slaveAnsibleRoles:                                  # Ansible roles to run on slaves
+  - string                                          # Path to role, e.g.:
+  - ...
 
-# monitoring
-zabbix: boolean                 [yes, "no"]
+# HPC Cluster Software
+slurm: boolean [yes, no]                            # Enable / Disable SLURM Workload Manager. Default is no
+oge: boolean [yes, no]                              # deprecated - supported for Ubuntu 16.04 only. Default is no
+
+# Monitoring
+zabbix: boolean [yes, "no"]                         # Use zabbix monitoring tool. Default is no
 zabbixConf:
-    db: string                  ["zabbix"]
-    db_user: string             ["zabbix"]
-    db_password: string         ["zabbix"]
-    timezone: string            ["Europe/Berlin"]
-    servername:                 ["bibigrid"]
-    admin_password:             ["bibigrid"] # should be changed
+    db: string                                      # Database name. Default is "zabbix"
+    db_user: string                                 # User name for Database. Default is "zabbix"
+    db_password: string                             # Password of user. Default is "zabbix"
+    timezone: string                                # Default is "Europe/Berlin"
+    servername: string                              # Name of Server. Default is "bibigrid"
+    admin_password: string                          # Admin password. Default is "bibigrid". Change hardly recommended!
+
+ganglia: boolean [yes, "no"]                        # deprecated - supported for Ubuntu 16.04 only. Default is no
     
-ganglia: boolean                [yes, "no"] # deprecated - supported for Ubuntu 16.04 only
-
-# web ide
-cloud9: boolean                 [yes, "no"]
-cloud9Workspace: string         ["~"]
-
-# Network FS
-nfs: boolean                    [yes, "no"]
-nfsShares:
-  - string
-  - ...
-extNfsShares:
-  - source: string
-    target: string
+# Network FileSystem
+nfs: boolean ["yes", no]                            # Enable / Disable Network File System, Default is yes
+nfsShares:                                          # Shared File Systems
+  - string                                          # Path to File System, e.g.: "/vol/spool" as Default Shared File System
   - ...
 
+extNfsShares:                                       # Uses external Shared File Systems
+  - source: string                                  # IP address of external File System
+    target: string                                  # Path to File System, e.g.: /path/to/filesystem
+  - ...
+
+masterMounts:                                       # Mount volumes to master node, e.g.: 
+  - source: string                                  # ec200b48-1b13-4124-... - Volume id
+    target: string                                  # /vol/xxx - Volume path (example volume 'xxx' in /vol/ directory)
+  - ...
+
+localFS: enum [EXT2, EXT3, EXT4, XFS]               # Local FileSystem. Default is XFS
+
+# Web IDE Usage
+cloud9: boolean [yes, "no"]                         # Enable / Disable Cloud9 Web IDE, Default is no
+cloud9Workspace: string                             # Configure cloud9 workspace path, Default is "~/"
+
+# Misc
+debugRequests: boolean [yes, no]                    # Provides debug information. Default is no
+```
+
+"- ..." means, that there can be offered more than one item, for example:
+```
 masterMounts:
   - source: string
     target: string
   - ...
-
-localFS: enum                   [EXT2, EXT3, "EXT4", XFS]
-
-#Misc
-debugRequests: boolean          [yes, "no"]
-
-
 ```
-
-**Google Compute specific schema**
-```
-googleProjectId: string
-googleImageProjectId: string
-```
+One could enter more source and target values to provide more volumes to be mounted.
 
 **Openstack specific schema**
 
@@ -117,6 +118,12 @@ openstackCredentials:
   tenantDomain: string
 ```
 
+**Google Compute specific schema**
+```
+googleProjectId: string
+googleImageProjectId: string
+```
+
 **AWS specific schema**
 ```
 bidPrice: double
@@ -128,8 +135,3 @@ useSpotInstances: boolean [yes, no]
 **Azure specific schema**
 
 There are currently no azure specific parameters.
-
-
-
-
-
