@@ -104,12 +104,12 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         firewallRuleMap.get(subnet.getCidr()).add(buildFirewallRule("icmp"));
         for (Port port : getConfig().getPorts()) {
             LOG.info(port.toString());
-            if (!firewallRuleMap.containsKey(port.ipRange)) {
-                firewallRuleMap.put(port.ipRange, new ArrayList<>());
+            if (!firewallRuleMap.containsKey(port.getIpRange())) {
+                firewallRuleMap.put(port.getIpRange(), new ArrayList<>());
             }
-            List<String> portList = Collections.singletonList(String.valueOf(port.number));
-            firewallRuleMap.get(port.ipRange).add(buildFirewallRule("tcp").setPorts(portList));
-            firewallRuleMap.get(port.ipRange).add(buildFirewallRule("udp").setPorts(portList));
+            List<String> portList = Collections.singletonList(String.valueOf(port.getNumber()));
+            firewallRuleMap.get(port.getIpRange()).add(buildFirewallRule("tcp").setPorts(portList));
+            firewallRuleMap.get(port.getIpRange()).add(buildFirewallRule("udp").setPorts(portList));
         }
 
         // Create the firewall rules
