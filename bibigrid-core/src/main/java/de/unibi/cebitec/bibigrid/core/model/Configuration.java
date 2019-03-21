@@ -59,21 +59,6 @@ public abstract class Configuration {
 //    private String cloud9Workspace = DEFAULT_WORKSPACE;  deprecated
     private String workspace = DEFAULT_WORKSPACE;
 
-
-    public void load() throws  ConfigurationException {
-
-    }
-
-    /**
-     * Validate the configuration, throws an Exception in the case of an misconfiguration,
-     * should be overwritten by derived implementations.
-     *
-     * @throws ConfigurationException
-     */
-    public void validate() throws ConfigurationException {
-
-    }
-
     public int getSlaveInstanceCount() {
         if (slaveInstances == null) {
             return 0;
