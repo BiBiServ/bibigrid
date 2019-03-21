@@ -26,7 +26,7 @@ subnet: string                                      # name / id of subnet
 ports:
   - type: enum [TCP, UDP, ICMP]                     # Transmission Protocol, Default is TCP (recommended)
     number: integer [1 - 65535]                     # Port number, (e.g. TCP-Port 80 - HTTP)
-    ipRange: string                                 # CIDR mask to restrict access, (e.g.: 129.60.50.0/24)
+    ipRange: string                                 # "current" or CIDR mask to restrict access, (e.g.: 129.60.50.0/24)
   - ...
 
 # Master 

@@ -4,7 +4,7 @@ package de.unibi.cebitec.bibigrid.core.model.exceptions;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ConfigurationException extends Exception {
-    public ConfigurationException(){
+    public ConfigurationException(Exception e){
         super();
     }
     
