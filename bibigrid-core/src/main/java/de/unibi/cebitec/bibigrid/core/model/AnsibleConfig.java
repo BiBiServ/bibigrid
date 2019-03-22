@@ -105,6 +105,9 @@ public final class AnsibleConfig {
             map.put("nfs_mounts", getNfsSharesMap());
             map.put("ext_nfs_mounts", getExtNfsSharesMap());
         }
+        if (config.isIDE()) {
+            map.put("ide_workspace", config.getWorkspace());
+        }
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
         addBooleanOption(map, "enable_gridengine", config.isOge());
@@ -114,7 +117,6 @@ public final class AnsibleConfig {
         addBooleanOption(map, "enable_cloud9", config.isCloud9());
         addBooleanOption(map,"enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
-
         map.put("zabbix", getZabbixConf());
 
         writeToOutputStream(stream, map);

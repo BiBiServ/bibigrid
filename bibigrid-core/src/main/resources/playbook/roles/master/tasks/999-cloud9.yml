@@ -60,7 +60,7 @@
 - name: Add default cloud9 settings file
   copy:
     content: |-
-      workingDir=~/
+      workingDir="{{ ide_workspace }}"
     dest: /etc/cloud9/settings.conf
     owner: root
     group: root

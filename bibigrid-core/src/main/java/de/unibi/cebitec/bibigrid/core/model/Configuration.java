@@ -56,7 +56,7 @@ public abstract class Configuration {
     private String[] clusterIds;
     // private List<String> masterAnsibleRoles = new ArrayList<>();
     // private List<String> slaveAnsibleRoles = new ArrayList<>();
-//    private String cloud9Workspace = DEFAULT_WORKSPACE;  deprecated
+    // private String cloud9Workspace = DEFAULT_WORKSPACE;  deprecated
     private String workspace = DEFAULT_WORKSPACE;
 
     public int getSlaveInstanceCount() {
@@ -361,7 +361,7 @@ public abstract class Configuration {
         LOG.info(V, "Debug requests {}.", debugRequests ? "enabled" : "disabled");
     }
 
-
+    public boolean isIDE() { return cloud9 || theia; }
 
     public boolean isCloud9() {
         return cloud9;
@@ -373,6 +373,7 @@ public abstract class Configuration {
             throw new ConfigurationException("Only one IDE (either Theia or Cloud9) can be set.");
         }
         this.cloud9 = cloud9;
+        LOG.info(V, "Cloud9 support {}.", cloud9 ? "enabled" : "disabled");
     }
 
     public boolean isTheia() {
@@ -385,6 +386,7 @@ public abstract class Configuration {
             throw new ConfigurationException("Only one IDE (either Theia or Cloud9) can be set.");
         }
         this.theia = theia;
+        LOG.info(V, "Theia support {}.", theia ? "enabled" : "disabled");
     }
 
     public String getCredentialsFile() {

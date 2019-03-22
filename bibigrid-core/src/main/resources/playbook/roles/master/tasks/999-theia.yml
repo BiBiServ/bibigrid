@@ -24,6 +24,11 @@
     theia_ide_workspace: "{{ ansible_env.PWD }}"
   when: theia_ide_workspace is not defined
 
+- name: Set fact 'theia_ide_workspace' when defined
+  set_fact:
+    theia_ide_workspace: "{{ ide_workspace }}"
+  when: theia_ide_workspace is defined
+
 - name: Install nvm
   shell: |
     curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | NVM_DIR={{ nvm_install_dir }} /bin/bash
