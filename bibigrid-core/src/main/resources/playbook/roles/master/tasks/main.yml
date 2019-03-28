@@ -55,3 +55,12 @@
   when:
     - enable_cloud9 == 'yes'
   tags: ["master-cloud9","cloud9"]
+
+- debug:
+    msg: "[BIBIGRID] Setup Theia"
+  when:
+    - enable_theia == 'yes'
+- include: 999-theia.yml
+  when:
+    - enable_theia == 'yes'
+  tags: ["master-theia","theia"]
