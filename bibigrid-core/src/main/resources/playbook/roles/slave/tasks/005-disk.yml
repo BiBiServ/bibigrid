@@ -1,5 +1,5 @@
 # we have to make sure that the disk is NOT mounted by cloud-init beforehand
-- name: mount ephemeral disk
+- name: mount disk
   mount:
     path: /vol/scratch
     src: "{{ ephemerals[0] }}"
@@ -7,12 +7,11 @@
     state: mounted
   when:
     - ephemerals
-
-- name: Change permissions for mountpoint
+    
+- name: Change permission for newly mounted /vol/scratch mount point
   file:
     path: /vol/scratch
-    mode: 0777
     state: directory
-    recurse: yes
+    mode: 0777
   when:
     - ephemerals

@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * Startup/Main class of BiBiGrid.
@@ -45,6 +46,9 @@ public class StartUp {
         Option cloud9 = new Option(IntentMode.CLOUD9.getShortParam(), IntentMode.CLOUD9.getLongParam(),
                 true, "Start the cloud9 IDE");
         cloud9.setArgName("cluster-id");
+        Option ide = new Option(IntentMode.IDE.getShortParam(), IntentMode.IDE.getLongParam(),
+                true, "Start a Web IDE");
+        ide.setArgName("cluster-id");
         Option list = new Option(IntentMode.LIST.getShortParam(), IntentMode.LIST.getLongParam(),
                 true, "List running clusters");
         list.setOptionalArg(true);
@@ -62,26 +66,10 @@ public class StartUp {
                 .addOption(new Option(IntentMode.VALIDATE.getShortParam(), IntentMode.VALIDATE.getLongParam(),
                         false, "Validate the configuration file"))
                 .addOption(terminate)
-                .addOption(cloud9);
+                .addOption(cloud9)
+                .addOption(ide);
         return intentOptions;
     }
-
-//    private static Options getRulesToOptions() {
-//        RuleBuilder ruleBuild = new RuleBuilder();
-//        TparamGroup ruleSet = ruleBuild.getRules();
-//        Options ruleOptions = new Options();
-//        for (Object ob : ruleSet.getParamrefOrParamGroupref()) {
-//            Tparam tp = (Tparam) ob;
-//            boolean hasArg;
-//            hasArg = tp.getType() != null;
-//            try {
-//                ruleOptions.addOption(new Option(tp.getId(), tp.getOption(), hasArg, tp.getShortDescription().get(0).getValue()));
-//            } catch (IllegalArgumentException e) {
-//                throw new RuntimeException(String.format("Exception while adding Option '%s' (%s) -> %s",tp.getId(),tp.getShortDescription().get(0).getValue(),e.getMessage() ));
-//            }
-//        }
-//        return ruleOptions;
-//    }
 
     public static void main(String[] args) {
         CommandLineParser cli = new DefaultParser();
@@ -111,6 +99,7 @@ public class StartUp {
                 case LIST:
                 case TERMINATE:
                 case VALIDATE:
+                case IDE:
                 case CLOUD9:
                     runIntent(cl, intentMode);
                     break;
@@ -165,7 +154,7 @@ public class StartUp {
         try {
             validator = module.getCommandLineValidator(commandLine, configurationFile, intentMode);
         } catch (ConfigurationException e) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED, e);
+            LOG.error(ABORT_WITH_NOTHING_STARTED, e.getMessage());
             return;
         }
         if (validator.validate(providerMode)) {
@@ -173,7 +162,7 @@ public class StartUp {
             try {
                 client = module.getClient(validator.getConfig());
             } catch (ClientConnectionFailedException e) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED, e);
+                LOG.error(ABORT_WITH_NOTHING_STARTED, e.getMessage());
                 return;
             }
             // In order to validate the native instance types, we need a client. So this step is deferred after
@@ -220,7 +209,9 @@ public class StartUp {
                     module.getTerminateIntent(client, validator.getConfig()).terminate();
                     break;
                 case CLOUD9:
-                    new Cloud9Intent(module, client, validator.getConfig()).start();
+                    LOG.warn("Arg --cloud9 is deprecated. Use --ide instead.");
+                case IDE:
+                    new IdeIntent(module, client, validator.getConfig()).start();
                     break;
                 default:
                     LOG.warn("unknown intent mode");
