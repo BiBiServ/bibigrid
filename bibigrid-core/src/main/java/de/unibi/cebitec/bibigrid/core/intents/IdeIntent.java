@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -15,27 +14,24 @@ import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Map;
-
-import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * Intent for starting and tunneling the cloud9 installation on a cluster.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public class Cloud9Intent extends Intent {
-    private static final Logger LOG = LoggerFactory.getLogger(Cloud9Intent.class);
+public class IdeIntent extends Intent {
+    private static final Logger LOG = LoggerFactory.getLogger(IdeIntent.class);
     private static final int PORT = 8181;
 
     private final ProviderModule providerModule;
     private final Client client;
     private final Configuration config;
 
-    public Cloud9Intent(ProviderModule providerModule, Client client, Configuration config) {
+    public IdeIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
@@ -58,10 +54,10 @@ public class Cloud9Intent extends Intent {
             LOG.error("Failed to poll master ssh port.");
             return;
         }
-        startCloud9(masterIp);
+        startPortForwarding(masterIp);
     }
 
-    private void startCloud9(final String masterIp) {
+    private void startPortForwarding(final String masterIp) {
         JSch ssh = new JSch();
         JSch.setLogger(new JSchLogger());
         try {
@@ -76,22 +72,11 @@ public class Cloud9Intent extends Intent {
                 // Start connection attempt
                 sshSession.connect();
                 LOG.info("Connected to master!");
-                ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-                String command = "echo \"workingDir=" + config.getCloud9Workspace() + "\" > /etc/cloud9/settings.conf\n";
-                command += "sudo service cloud9service start";
-                channel.setCommand(command);
-                LOG.info(V, "Connecting ssh channel...");
-                channel.connect();
-                LOG.info("You can now open the cloud9 IDE at http://localhost:{}", PORT);
+                LOG.info("You can now open the Web IDE at http://localhost:{}", PORT);
                 openBrowser();
-                LOG.info("Press any key, to terminate this session...");
+                LOG.info("Press any key, to close this session...");
                 //noinspection ResultOfMethodCallIgnored
                 System.in.read();
-                OutputStream outputStream = channel.getOutputStream();
-                outputStream.write("sudo service cloud9service stop\n".getBytes());
-                outputStream.flush();
-                outputStream.close();
-                channel.disconnect();
                 sshSession.disconnect();
             }
         } catch (JSchException e) {

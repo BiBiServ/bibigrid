@@ -58,10 +58,14 @@ public abstract class Validator {
         return true;
     }
 
-    private boolean parseCloud9Parameter() {
+    private boolean parseIdeParameter() {
         // cloud9 (cluster-id)
         if (req.contains(IntentMode.CLOUD9.getShortParam())) {
             config.setClusterIds(cl.getOptionValue(IntentMode.CLOUD9.getShortParam()).trim());
+
+        }
+        if (req.contains(IntentMode.IDE.getShortParam())) {
+            config.setClusterIds(cl.getOptionValue(IntentMode.IDE.getShortParam()).trim());
 
         }
         return true;
@@ -78,7 +82,7 @@ public abstract class Validator {
             LOG.info("No requirements defined ...");
             return true;
         }
-        return parseTerminateParameter() && parseCloud9Parameter() && validateProviderParameters();
+        return parseTerminateParameter() && parseIdeParameter() && validateProviderParameters();
     }
 
     protected abstract List<String> getRequiredOptions();

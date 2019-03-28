@@ -18,9 +18,9 @@ public class PortTest {
 
     @Test
     public void protocolTest() throws Exception {
-        assertEquals(Port.Protocol.TCP, new Port(IP, PORT).type);
-        assertEquals(Port.Protocol.TCP, new Port(IP, PORT, Port.Protocol.TCP).type);
-        assertEquals(Port.Protocol.UDP, new Port(IP, PORT, Port.Protocol.UDP).type);
-        assertEquals(Port.Protocol.ICMP, new Port(IP, PORT, Port.Protocol.ICMP).type);
+        assertEquals(Port.Protocol.TCP, new Port(IP, PORT).getType());
+        assertEquals(Port.Protocol.TCP, new Port(IP, PORT, Port.Protocol.TCP).getType());
+        assertEquals(Port.Protocol.UDP, new Port(IP, PORT, Port.Protocol.UDP).getType());
+        assertEquals(Port.Protocol.ICMP, new Port(IP, PORT, Port.Protocol.ICMP).getType());
     }
 }
