@@ -103,12 +103,13 @@ this may take some time.
 > bibigrid -c -v -o ~/config.yml
 ```
 
-## Starting the cloud9 IDE
+## Starting the IDE
+At first you need to have activated the theia or cloud9 feature in configuration. Both IDEs are 
 If you activated the cloud9 feature in configuration, the IDE can be started with a simple command.
 The process will run until an input is provided or it's terminated. The IDE is available under [http://localhost:8181](http://localhost:8181)
 
 ```
-> bibigrid -cloud9 [cluster-id] -v -o ~/config.yml
+> bibigrid --ide [cluster-id] -v -o ~/config.yml
 ```
 
 ## Cluster maintenance
