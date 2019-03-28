@@ -84,7 +84,9 @@ The Unix command should look like the following (depending on JAR filename):
 > alias bibigrid="java -jar /path/to/bibigrid-openstack-x.y.z.jar"
 ```
 
-Instead of the java command there will be used the 'bibigrid' command just created instead.
+Instead of the java command there will be used the 'bibigrid' command just created instead. 
+Since the alias only applies in the current terminal session, it is recommended to add it to the 
+'.bashrc' file in the home directory.
 
 ## Validating the cluster configuration
 Before starting the cluster directly after writing the configuration file, several components can be validated beforehand.
@@ -103,14 +105,17 @@ this may take some time.
 > bibigrid -c -v -o ~/config.yml
 ```
 
-## Starting the IDE
-At first you need to have activated the theia or cloud9 feature in configuration. Both IDEs are 
-If you activated the cloud9 feature in configuration, the IDE can be started with a simple command.
-The process will run until an input is provided or it's terminated. The IDE is available under [http://localhost:8181](http://localhost:8181)
+## Starting the Web IDE
+At first you need to have activated the 'theia' or 'cloud9' feature in the configuration file.
+Although both IDEs are supported, Theia IDE is recommended. Cloud9 support is deprecated and 
+will not be further developed in future.
+The IDE can be started with a simple command:
 
 ```
 > bibigrid --ide [cluster-id] -v -o ~/config.yml
 ```
+The process will run until an input is provided or it's terminated. 
+The IDE is available under [http://localhost:8181](http://localhost:8181) and will be started automatically.
 
 ## Cluster maintenance
 ### List running clusters
