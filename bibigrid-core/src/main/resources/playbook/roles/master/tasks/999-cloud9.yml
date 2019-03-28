@@ -42,35 +42,19 @@
     group: root
     mode: 0755
 
-- name: Copy cloud9 service
-  copy:
-    src: cloud9/cloud9service
-    dest: /etc/init.d/cloud9service
+- name: Generate cloud9 service
+  template:
+    src: cloud9/cloud9.service.j2
+    dest: /etc/init.d/cloud9
     mode: 0755
     owner: root
     group: root
-
-- name: Create cloud9 settings folder
-  file:
-    path: /etc/cloud9
-    owner: root
-    group: root
-    state: directory
-
-- name: Add default cloud9 settings file
-  copy:
-    content: |-
-      workingDir="{{ ide_workspace }}"
-    dest: /etc/cloud9/settings.conf
-    owner: root
-    group: root
-    mode: 0755
 
 - name: Register cloud9 service
   command: systemctl daemon-reload
 
 - name: Enable and Start service
   systemd:
-    name: cloud9service.service
+    name: cloud9.service
     enabled: true
     state: started
