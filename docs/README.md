@@ -123,7 +123,7 @@ zabbixConf:
     db_user: string               # User name for Database. Default is "zabbix"
     db_password: string           # Password of user. Default is "zabbix"
     timezone: string              # Default is "Europe/Berlin"
-    servername: string            # Name of Server. Default is "bibigrid"
+    server_name: string           # Name of Server. Default is "bibigrid"
     admin_password: string        # Change to an unique and secure password
 ```
 If you don't want to change the default values you can leave out the terms and only change the `admin_password`. 
@@ -131,6 +131,7 @@ After starting the cluster you can visit the Zabbix Web Frontend by opening in a
 ```
 http://ip.of.your.master/zabbix
 ```
+The 'Username' to enter is `admin`, the following 'Password' is the previously specified admin password.
 
 ## Cluster maintenance
 ### List running clusters
