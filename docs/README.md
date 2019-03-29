@@ -81,15 +81,16 @@ This file can now be used with the "-o" command line parameter and the path to t
 To keep the cluster setup process simpler you can set an alias for the BiBiGrid JAR file installed before. 
 The Unix command should look like the following (depending on JAR filename):
 ```
-> alias bibigrid="java -jar /path/to/bibigrid-openstack-x.y.z.jar"
+> alias bibigrid="java -jar /path/to/bibigrid-*.jar"
 ```
 
-Instead of the java command there will be used the 'bibigrid' command just created instead.
+Instead of the java command there will be used the 'bibigrid' command just created. 
+Since the alias only applies in the current terminal session, it is recommended to add it to the 
+'.bashrc' file in the home directory.
 
 ## Validating the cluster configuration
 Before starting the cluster directly after writing the configuration file, several components can be validated beforehand.
 This prevents the majority of possible errors or typos, resulting in incomplete cluster setups.
-
 ```
 > bibigrid -ch -v -o ~/config.yml
 ```
@@ -98,18 +99,39 @@ The command will be executed by default when creating a new cluster.
 ## Starting the cluster
 Once the configuration is validated, the creation of the cluster can be started. Depending on the parameters
 this may take some time.
-
 ```
 > bibigrid -c -v -o ~/config.yml
 ```
 
-## Starting the cloud9 IDE
-If you activated the cloud9 feature in configuration, the IDE can be started with a simple command.
-The process will run until an input is provided or it's terminated. The IDE is available under [http://localhost:8181](http://localhost:8181)
+## Starting the Web IDE
+At first you need to have activated the 'theia' or 'cloud9' feature in the configuration file.
+Although both IDEs are supported, Theia IDE is recommended. Cloud9 support is deprecated and 
+will not be further integrated in future.
+The IDE can be started with a simple command:
+```
+> bibigrid --ide [cluster-id] -v -o ~/config.yml
+```
+The process will run until an input is provided or it's terminated. 
+The IDE is available under [http://localhost:8181](http://localhost:8181) and will be started automatically.
 
+## Monitoring via Zabbix Web Frontend
+If you want to monitor a cluster, you can integrate the zabbix support into your configuration file:
 ```
-> bibigrid -cloud9 [cluster-id] -v -o ~/config.yml
+zabbix: yes
+zabbixConf:
+    db: string                    # Database name. Default is "zabbix"
+    db_user: string               # User name for Database. Default is "zabbix"
+    db_password: string           # Password of user. Default is "zabbix"
+    timezone: string              # Default is "Europe/Berlin"
+    server_name: string           # Name of Server. Default is "bibigrid"
+    admin_password: string        # Change to an unique and secure password
 ```
+If you don't want to change the default values you can leave out the terms and only change the `admin_password`. 
+After starting the cluster you can visit the Zabbix Web Frontend by opening in a browser:
+```
+http://ip.of.your.master/zabbix
+```
+The 'Username' to enter is `admin`, the following 'Password' is the previously specified admin password.
 
 ## Cluster maintenance
 ### List running clusters
