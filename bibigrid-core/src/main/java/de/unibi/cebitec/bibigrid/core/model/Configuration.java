@@ -4,13 +4,14 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
@@ -50,6 +51,7 @@ public abstract class Configuration {
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
     private boolean debugRequests;
+    private Properties ogeConf = OgeConf.initOgeConfProperties();
 
     private String network;
     private String subnet;
@@ -206,7 +208,6 @@ public abstract class Configuration {
         return Arrays.copyOf(clusterIds, clusterIds.length);
     }
 
-
     /**
      * Set the cluster Id(s) either as a single cluster "id" or as multiple "id1/id2/id3".
      */
@@ -232,7 +233,6 @@ public abstract class Configuration {
             LOG.info(V, "Additional open ports set: {}", portsDisplay);
         }
     }
-
 
     public List<MountPoint> getMasterMounts() {
         return masterMounts;
@@ -288,8 +288,6 @@ public abstract class Configuration {
     public void setNetwork(String network) {
         this.network = network.trim();
     }
-
-
 
     public boolean isNfs() {
         return nfs;
@@ -651,19 +649,65 @@ public abstract class Configuration {
         EXT2, EXT3, EXT4, XFS
     }
 
-
     /** private helper class that converts a byte array to an Hex String
      *
      * @param hash
      * @return
      */
     private static String bytesToHex(byte[] hash) {
-        StringBuffer hexString = new StringBuffer();
-        for (int i = 0; i < hash.length; i++) {
-            String hex = Integer.toHexString(0xff & hash[i]);
-            if(hex.length() == 1) hexString.append('0');
+        StringBuilder hexString = new StringBuilder();
+        for (byte tmp : hash) {
+            String hex = Integer.toHexString(0xff & tmp);
+            if (hex.length() == 1) hexString.append('0');
             hexString.append(hex);
         }
         return hexString.toString();
+    }
+
+    public Properties getOgeConf() {
+        return ogeConf;
+    }
+
+    /**
+     * Saves given values to global.conf file.
+     * @param ogeConf Properties
+     */
+    public void setOgeConf(Properties ogeConf) {
+        try {
+            LOG.info("values set");
+            URL resource = Configuration.class.getResource(OgeConf.GLOBAL_OGE_CONF);
+            FileOutputStream out = new FileOutputStream(new File(resource.getFile()));
+            ogeConf.store(out, "#global:");
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.ogeConf = ogeConf;
+    }
+
+    /**
+     * Provides support for Gridengine global configuration.
+     */
+    public static class OgeConf extends Properties {
+        public static final String GRIDENGINE_FILES = "/playbook/roles/master/files/gridengine/";
+        public static final String DEFAULT_OGE_CONF = GRIDENGINE_FILES + "default.conf";
+        public static final String GLOBAL_OGE_CONF = GRIDENGINE_FILES + "global.conf";
+
+        public OgeConf(Properties defaultProperties) {
+            super(defaultProperties);
+        }
+
+        private static OgeConf initOgeConfProperties() {
+            try {
+                // Create and load default properties
+                Properties defaultProperties = new Properties();
+                defaultProperties.load(Configuration.class.getResourceAsStream(DEFAULT_OGE_CONF));
+                // create global properties with default
+                return new OgeConf(defaultProperties);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
     }
 }
