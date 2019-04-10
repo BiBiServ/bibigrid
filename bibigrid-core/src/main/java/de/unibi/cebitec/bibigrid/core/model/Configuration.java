@@ -4,10 +4,7 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -669,20 +666,13 @@ public abstract class Configuration {
     }
 
     /**
-     * Saves given values to global.conf file.
+     * Saves given values to ogeConf Properties.
      * @param ogeConf Properties
      */
     public void setOgeConf(Properties ogeConf) {
-        try {
-            LOG.info("values set");
-            URL resource = Configuration.class.getResource(OgeConf.GLOBAL_OGE_CONF);
-            FileOutputStream out = new FileOutputStream(new File(resource.getFile()));
-            ogeConf.store(out, "#global:");
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (String key : ogeConf.stringPropertyNames()) {
+            this.ogeConf.setProperty(key, ogeConf.getProperty(key));
         }
-        this.ogeConf = ogeConf;
     }
 
     /**
@@ -690,7 +680,6 @@ public abstract class Configuration {
      */
     public static class OgeConf extends Properties {
         public static final String GRIDENGINE_FILES = "/playbook/roles/master/files/gridengine/";
-        public static final String DEFAULT_OGE_CONF = GRIDENGINE_FILES + "default.conf";
         public static final String GLOBAL_OGE_CONF = GRIDENGINE_FILES + "global.conf";
 
         public OgeConf(Properties defaultProperties) {
@@ -701,7 +690,7 @@ public abstract class Configuration {
             try {
                 // Create and load default properties
                 Properties defaultProperties = new Properties();
-                defaultProperties.load(Configuration.class.getResourceAsStream(DEFAULT_OGE_CONF));
+                defaultProperties.load(Configuration.class.getResourceAsStream(GLOBAL_OGE_CONF));
                 // create global properties with default
                 return new OgeConf(defaultProperties);
             } catch (IOException e) {
