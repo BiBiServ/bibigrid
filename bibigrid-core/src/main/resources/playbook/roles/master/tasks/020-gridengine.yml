@@ -144,9 +144,9 @@
 
 #qconf -Mconf ./global.conf
 
-- name: Copy global.conf
-  copy:
-    src: gridengine/global.conf
+- name: Template global.conf
+  template:
+    src: gridengine/global.conf.j2
     dest: /etc/bibigrid/gridengine/global
     mode: 0440
     owner: root
