@@ -2,7 +2,7 @@
 Starting a cluster requires a valid configuration file and credentials. Following are the necessary steps with 
 detailed information for each cloud provider. For an up-to-date user Setup-Tutorial for the BiBiGrid take a look at the [de.NBI Wiki](https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/).
 
-## Setting up credentials
+### Setting up credentials
 For communication with the cloud provider API, credentials have to be setup.
 Additionally during cluster creation the master instance will handle software updates and installations for all cluster instances using ansible.
 In order to upload and execute commands a valid ssh-keypair needs to be setup, too.
@@ -13,7 +13,7 @@ When using the ssh public key parameter in config or command line, the setup of 
 * [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md) *
 * [Microsoft Azure credentials setup](../bibigrid-azure/docs/Credentials_Setup.md) *
 
-## Writing the configuration file
+### Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
 You can either provide the necessary parameters via the command line, by using a configuration file in yaml format or in some cases by using environment variables.
 
@@ -40,7 +40,7 @@ Provider specific examples representing the minimal required parameters:
   
 **Google Compute, AWS and Azure will currently not be tested.*
 
-### Writing and using a configuration file
+#### Writing and using a configuration file
 The configuration file is a plain text file in YAML format. A short example would be:
 
 ```
@@ -77,39 +77,75 @@ ports:
 
 This file can now be used with the "-o" command line parameter and the path to the configuration file.
 
-## Creating a bibigrid alias
+### Creating a bibigrid alias
 To keep the cluster setup process simpler you can set an alias for the BiBiGrid JAR file installed before. 
 The Unix command should look like the following (depending on JAR filename):
 ```
-> alias bibigrid="java -jar /path/to/bibigrid-openstack-x.y.z.jar"
+> alias bibigrid="java -jar /path/to/bibigrid-*.jar"
 ```
 
-Instead of the java command there will be used the 'bibigrid' command just created instead.
+Instead of the java command there will be used the 'bibigrid' command just created. 
+Since the alias only applies in the current terminal session, it is recommended to add it to the 
+'.bashrc' file in the home directory.
 
-## Validating the cluster configuration
+### Validating the cluster configuration
 Before starting the cluster directly after writing the configuration file, several components can be validated beforehand.
 This prevents the majority of possible errors or typos, resulting in incomplete cluster setups.
-
 ```
 > bibigrid -ch -v -o ~/config.yml
 ```
 The command will be executed by default when creating a new cluster.
 
-## Starting the cluster
+### Starting the cluster
 Once the configuration is validated, the creation of the cluster can be started. Depending on the parameters
 this may take some time.
-
 ```
 > bibigrid -c -v -o ~/config.yml
 ```
 
-## Starting the cloud9 IDE
-If you activated the cloud9 feature in configuration, the IDE can be started with a simple command.
-The process will run until an input is provided or it's terminated. The IDE is available under [http://localhost:8181](http://localhost:8181)
+### Starting the Web IDE
+At first you need to have activated the 'theia' or 'cloud9' feature in the configuration file.
+Although both IDEs are supported, Theia IDE is recommended. Cloud9 support is deprecated and 
+will not be further integrated in future.
+The IDE can be started with a simple command:
+```
+> bibigrid --ide [cluster-id] -v -o ~/config.yml
+```
+The process will run until an input is provided or it's terminated. 
+The IDE is available under [http://localhost:8181](http://localhost:8181) and will be started automatically.
 
+### Monitoring via Zabbix Web Frontend
+If you want to monitor a cluster, you can integrate the zabbix support into your configuration file:
 ```
-> bibigrid -cloud9 [cluster-id] -v -o ~/config.yml
+zabbix: yes
+zabbixConf:
+    db: string                    # Database name. Default is "zabbix"
+    db_user: string               # User name for Database. Default is "zabbix"
+    db_password: string           # Password of user. Default is "zabbix"
+    timezone: string              # Default is "Europe/Berlin"
+    server_name: string           # Name of Server. Default is "bibigrid"
+    admin_password: string        # Change to an unique and secure password
 ```
+If you don't want to change the default values you can leave out the terms and only change the `admin_password`. 
+After starting the cluster you can visit the Zabbix Web Frontend by opening in a browser:
+```
+http://ip.of.your.master/zabbix
+```
+The 'Username' to enter is `admin`, the following 'Password' is the previously specified admin password.
+
+### GridEngine Configuration
+If you decide to enable GridEngine (deprecated, supported for Ubuntu 16.04 only - you may use SLURM instead)
+you have to use the `oge` configuration parameter. 
+See the [sge_conf(5) man page](http://gridscheduler.sourceforge.net/htmlman/htmlman5/sge_conf.html) to get 
+an overview as well as a description of the possible parameters.  
+
+As an example you can set the max number of dynamic event clients (jobs submitted via qsub sync):
+```
+ogeConf:
+    qmaster_params: MAX_DYN_EC=1000
+```
+The given value(s) will be overwritten in or added to the default configuration. 
+Check `qconf -sconf global` on master to proof the configuration.
 
 ## Cluster maintenance
 ### List running clusters

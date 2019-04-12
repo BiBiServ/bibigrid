@@ -118,6 +118,7 @@ public final class AnsibleConfig {
         addBooleanOption(map,"enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
         map.put("zabbix", getZabbixConf());
+        map.put("oge", getOgeConf());
 
         writeToOutputStream(stream, map);
     }
@@ -170,6 +171,15 @@ public final class AnsibleConfig {
         zabbixConf.put("server_name",zc.getServer_name());
         zabbixConf.put("admin_password",zc.getAdmin_password());
         return zabbixConf;
+    }
+
+    private Map<String, String> getOgeConf() {
+        Map<String, String> ogeConf = new HashMap<>();
+        Properties oc = config.getOgeConf();
+        for (final String name : oc.stringPropertyNames()) {
+            ogeConf.put(name, oc.getProperty(name));
+        }
+        return ogeConf;
     }
 
     private List<String> getEphemeralDevices(int count) {

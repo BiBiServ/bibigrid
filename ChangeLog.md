@@ -1,3 +1,14 @@
+Version 2.0.3 <- 2.0.2 (03/28/2019)
+
+Features
+- IDE: Evaluated and added Theia as alternative to Cloud9 (#107, #120) 
+- Limit port access to restricted number of hosts via ipRange in Config #108
+
+Fixes
+- Update documentation with commented configuration file #98
+- Removed config parameters from Command Line Documentation #98
+
+
 Version 2.0.2 <- 2.0.1 (03/14/2019)
 
 Features

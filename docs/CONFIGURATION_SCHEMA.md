@@ -66,7 +66,6 @@ zabbixConf:
     timezone: string                                # Default is "Europe/Berlin"
     servername: string                              # Name of Server. Default is "bibigrid"
     admin_password: string                          # Admin password. Default is "bibigrid". Change hardly recommended!
-
 ganglia: boolean [yes, "no"]                        # deprecated - supported for Ubuntu 16.04 only. Default is no
     
 # Network FileSystem
@@ -88,8 +87,9 @@ masterMounts:                                       # Mount volumes to master no
 localFS: enum [EXT2, EXT3, EXT4, XFS]               # Local FileSystem. Default is XFS
 
 # Web IDE Usage
-cloud9: boolean [yes, "no"]                         # Enable / Disable Cloud9 Web IDE, Default is no
-cloud9Workspace: string                             # Configure cloud9 workspace path, Default is "~/"
+theia: boolean [yes, "no"]                          # Enable / Disable Theia Web IDE, Default is no
+cloud9: boolean [yes, "no"]                         # deprecated - Enable / Disable Cloud9 Web IDE, Default is no
+workspace: string                                   # Configure IDE workspace path, Default is "~/"
 
 # Misc
 debugRequests: boolean [yes, no]                    # Provides debug information. Default is no
