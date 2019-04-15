@@ -104,18 +104,17 @@ masterMounts:
 ```
 One could enter more source and target values to provide more volumes to be mounted.
 
-**Openstack specific schema**
-
+**OpenStack specific schema**
 ```
-router: string
-securityGroup: string
+router: string                                      # Logical component, forwards data packets between networks
+securityGroup: string                               # Like a virtual firewall in network  
 openstackCredentials:
-  tenantName: string
-  username: string
-  password: string
-  endpoint: string
-  domain: string
-  tenantDomain: string
+  tenantName: string                                # OpenStack project name
+  username: string                                  # Name of user
+  password: string                                  # Password set by user
+  endpoint: string                                  # API endpoint
+  domain: string                                    # Name of ID of user domain
+  tenantDomain: string                              # OpenStack user project domain
 ```
 
 **Google Compute specific schema**
