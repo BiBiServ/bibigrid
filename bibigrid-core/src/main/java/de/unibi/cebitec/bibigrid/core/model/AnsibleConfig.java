@@ -119,6 +119,7 @@ public final class AnsibleConfig {
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
         map.put("zabbix", getZabbixConf());
         map.put("oge", getOgeConf());
+        map.put("ansible_roles", getAnsibleRoles());
 
         writeToOutputStream(stream, map);
     }
@@ -180,6 +181,26 @@ public final class AnsibleConfig {
             ogeConf.put(name, oc.getProperty(name));
         }
         return ogeConf;
+    }
+
+    /**
+     * Puts parameter values of every given role into Map list.
+     * @return list of roles with single parameters
+     */
+    private List<Map<String, Object>> getAnsibleRoles() {
+        List<Configuration.AnsibleRoleConf> roles = config.getAnsibleRoles();
+        List<Map<String, Object>> ansibleRoles = new ArrayList<>();
+        for (Configuration.AnsibleRoleConf role : roles){
+            Map<String, Object> roleConf = new LinkedHashMap<>();
+            roleConf.put("role", role.getRole());
+            roleConf.put("file", role.getFile());
+            roleConf.put("url", role.getUrl());
+            roleConf.put("git", role.getGit());
+            roleConf.put("scope", role.getScope());
+            roleConf.put("vars", role.getVars());
+            ansibleRoles.add(roleConf);
+        }
+        return ansibleRoles;
     }
 
     private List<String> getEphemeralDevices(int count) {

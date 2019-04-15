@@ -49,6 +49,7 @@ public abstract class Configuration {
     private FS localFS = FS.XFS;
     private boolean debugRequests;
     private Properties ogeConf = OgeConf.initOgeConfProperties();
+    private List<AnsibleRoleConf> ansibleRoles = new ArrayList<>();
 
     private String network;
     private String subnet;
@@ -697,6 +698,74 @@ public abstract class Configuration {
                 e.printStackTrace();
                 return null;
             }
+        }
+    }
+
+    public List<AnsibleRoleConf> getAnsibleRoles() {
+        return ansibleRoles;
+    }
+
+    public void setAnsibleRoles(List<AnsibleRoleConf> ansibleRoles) {
+        this.ansibleRoles = ansibleRoles;
+    }
+
+    /**
+     * Provides support for (local) Ansible roles and playbooks.
+     */
+    public static class AnsibleRoleConf {
+        private String role;
+        private String file;
+        private String url;
+        private String git;
+        private String scope;
+        private Map<String, String> vars = new HashMap<>();
+
+        public String getRole() {
+            return role;
+        }
+
+        public void setRole(String role) {
+            this.role = role;
+        }
+
+        public String getFile() {
+            return file;
+        }
+
+        public void setFile(String file) {
+            this.file = file;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getGit() {
+            return git;
+        }
+
+        public void setGit(String git) {
+            this.git = git;
+        }
+
+        public String getScope() {
+            return scope;
+        }
+
+        public void setScope(String scope) {
+            this.scope = scope;
+        }
+
+        public Map<String, String> getVars() {
+            return vars;
+        }
+
+        public void setVars(Map<String, String> vars) {
+            this.vars = vars;
         }
     }
 }
