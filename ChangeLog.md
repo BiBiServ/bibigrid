@@ -1,28 +1,33 @@
-Version 2.0.3 <- 2.0.2 (03/28/2019)
 
-Features
+## Version 2.0.4 <- 2.0.3 (04/12/2019)
+
+### Features
+- GridEngine: supports user specific configuration of gridengine master
+
+## Version 2.0.3 <- 2.0.2 (03/28/2019)
+
+## Features
 - IDE: Evaluated and added Theia as alternative to Cloud9 (#107, #120) 
 - Limit port access to restricted number of hosts via ipRange in Config #108
 
-Fixes
+## Fixes
+
 - Update documentation with commented configuration file #98
 - Removed config parameters from Command Line Documentation #98
 
+## Version 2.0.2 <- 2.0.1 (03/14/2019)
 
-Version 2.0.2 <- 2.0.1 (03/14/2019)
-
-Features
+### Features
 - Monitoring: Replace Ganglia with Zabbix (#90) 
 
-Fixes
+### Fixes
 - Ubuntu 16.04 Ganglia fails after master reboot (#112) 
 - Update or remove support for Apache Mesos (#92) 
 - Code cleanup #109 
 - (Openstack) Using image "names" instead of "ids" causes a runtime exception #106 
 - Add available memory to slurm config #105
 
-
-Version 2.0.1 <- 2.0 (02/22/2019)
+## Version 2.0.1 <- 2.0 (02/22/2019)
 
 - Remove native support for cassandra and mesos (#92,#93)
 - support server groups (#89)
