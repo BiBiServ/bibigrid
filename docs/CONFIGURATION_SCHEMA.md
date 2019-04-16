@@ -46,13 +46,6 @@ useMasterAsCompute: boolean [yes, no]               # Use master as compute inst
 useMasterWithPublicIp: boolean [yes, no]            # Usage of public IP. Default is yes
 useSpotInstances: boolean [yes, no]                 # Only usable with Google Compute and AWS, offered unused Instances
 
-masterAnsibleRoles:                                 # Ansible roles to run on master
-  - string                                          # Path to role, e.g.:
-  - ...
-slaveAnsibleRoles:                                  # Ansible roles to run on slaves
-  - string                                          # Path to role, e.g.:
-  - ...
-
 # HPC Cluster Software
 slurm: boolean [yes, no]                            # Enable / Disable SLURM Workload Manager. Default is no
 oge: boolean [yes, no]                              # deprecated - supported for Ubuntu 16.04 only. Default is no
@@ -108,6 +101,7 @@ One could enter more source and target values to provide more volumes to be moun
 ```
 router: string                                      # Logical component, forwards data packets between networks
 securityGroup: string                               # Like a virtual firewall in network  
+serverGroup: string                                 # provides a mechanism to group servers according to certain policy
 openstackCredentials:
   tenantName: string                                # OpenStack project name
   username: string                                  # Name of user
@@ -119,16 +113,16 @@ openstackCredentials:
 
 **Google Compute specific schema**
 ```
-googleProjectId: string
-googleImageProjectId: string
+googleProjectId: string                             # ID of Google Compute Engine Project
+googleImageProjectId: string                        # ID of Image Project 
 ```
 
 **AWS specific schema**
 ```
-bidPrice: double
+bidPrice: double                                    # Bid Price in USD ($) for each Amazon EC2 instance when launched as Spot Instances
 bidPriceMaster: double
-publicSlaveIps: boolean [yes, no]
-useSpotInstances: boolean [yes, no]
+publicSlaveIps: boolean [yes, no]                   # Every slave gets public IP
+useSpotInstances: boolean [yes, no]                 # Usage of unused EC2 capacity in AWS cloud at discount price
 ```
 
 **Azure specific schema**
