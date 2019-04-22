@@ -42,6 +42,12 @@
 - Update documentation (#127,#131)
 - Fix a bug concerning multiple slaves types (#130)
 
+## Version 2.0.5 < 2.0.4 (04/22/2019)
+
+### Fixes
+- Update documentation (#127,#131)
+- Fix a bug concerning multiple slaves types (#130)
+
 ## Version 2.0.4 <- 2.0.3 (04/12/2019)
 
 ### Features
