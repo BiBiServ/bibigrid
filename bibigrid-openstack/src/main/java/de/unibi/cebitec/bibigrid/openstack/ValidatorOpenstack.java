@@ -66,7 +66,6 @@ public final class ValidatorOpenstack extends Validator {
     @Override
     protected boolean validateProviderParameters() {
         return loadAndparseCredentialParameters();
-
     }
 
     private boolean loadAndparseCredentialParameters() {
