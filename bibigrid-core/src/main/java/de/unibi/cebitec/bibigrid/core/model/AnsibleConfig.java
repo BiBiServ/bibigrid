@@ -192,12 +192,12 @@ public final class AnsibleConfig {
         List<Map<String, Object>> ansibleRoles = new ArrayList<>();
         for (Configuration.AnsibleRoleConf role : roles){
             Map<String, Object> roleConf = new LinkedHashMap<>();
-            roleConf.put("role", role.getRole());
-            roleConf.put("file", role.getFile());
-            roleConf.put("url", role.getUrl());
-            roleConf.put("git", role.getGit());
-            roleConf.put("scope", role.getScope());
-            roleConf.put("vars", role.getVars());
+            if (role.getRole() != null) roleConf.put("role", role.getRole());
+            if (role.getFile() != null) roleConf.put("file", role.getFile());
+            if (role.getUrl() != null) roleConf.put("url", role.getUrl());
+            if (role.getGit() != null) roleConf.put("git", role.getGit());
+            if (role.getScope() != null) roleConf.put("scope", role.getScope());
+            if (role.getVars() != null) roleConf.put("vars", role.getVars());
             ansibleRoles.add(roleConf);
         }
         return ansibleRoles;
