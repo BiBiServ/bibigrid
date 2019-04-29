@@ -711,21 +711,28 @@ public abstract class Configuration {
 
     /**
      * Provides support for (local) Ansible roles and playbooks.
+     *
+     * String name  : name of (ansible-galaxy) role or playbook
+     * String file  : (optional) file of role
+     * String url   : (optional) url of role
+     * String git   : (optional) git repository of role
+     * String scope : host (master / slave / all)
+     * Map vars     : (optional) additional key - value pairs of role
      */
     public static class AnsibleRoleConf {
-        private String role;
+        private String name;
         private String file;
         private String url;
         private String git;
         private String scope;
         private Map<String, String> vars = new HashMap<>();
 
-        public String getRole() {
-            return role;
+        public String getName() {
+            return name;
         }
 
-        public void setRole(String role) {
-            this.role = role;
+        public void setRole(String name) {
+            this.name = name;
         }
 
         public String getFile() {
