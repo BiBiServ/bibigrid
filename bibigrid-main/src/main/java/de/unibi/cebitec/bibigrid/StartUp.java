@@ -154,7 +154,8 @@ public class StartUp {
         try {
             validator = module.getCommandLineValidator(commandLine, configurationFile, intentMode);
         } catch (ConfigurationException e) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED, e.getMessage());
+            LOG.error(e.getMessage());
+            LOG.error(ABORT_WITH_NOTHING_STARTED);
             return;
         }
         if (validator.validate(providerMode)) {
@@ -162,7 +163,8 @@ public class StartUp {
             try {
                 client = module.getClient(validator.getConfig());
             } catch (ClientConnectionFailedException e) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED, e.getMessage());
+                LOG.error(e.getMessage());
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
             // In order to validate the native instance types, we need a client. So this step is deferred after

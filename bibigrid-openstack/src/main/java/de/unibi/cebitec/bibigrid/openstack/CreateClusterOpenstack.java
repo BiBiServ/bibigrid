@@ -237,7 +237,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                             .name(buildSlaveInstanceName(batchIndex, i))
                             .flavor(slaveSpec.getFlavor().getId())
                             //.image(instanceConfiguration.getImage())
-                            .image((client.getImageByIdOrName(config.getSlaveInstances().get(i).getImage())).getId())
+                            .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
                             .keypairName(config.getKeypair())
                             .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
                             .availabilityZone(config.getAvailabilityZone())

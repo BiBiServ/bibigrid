@@ -74,9 +74,6 @@ public final class ConfigurationFile {
 
     public Configuration loadConfiguration(Class<? extends Configuration> configurationClass)
             throws ConfigurationException {
-
-
-
         if (Files.exists(propertiesFilePath)) {
             try {
                 return new Yaml().loadAs(new FileInputStream(propertiesFilePath.toFile()), configurationClass);
