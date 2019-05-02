@@ -49,7 +49,8 @@ public abstract class Configuration {
     private FS localFS = FS.XFS;
     private boolean debugRequests;
     private Properties ogeConf = OgeConf.initOgeConfProperties();
-    private List<AnsibleRoleConf> ansibleRoles = new ArrayList<>();
+    private List<AnsibleRoleConf> ansibleGalaxyRoles = new ArrayList<>();
+    private List<AnsibleRoleLocalConf> ansibleRoles = new ArrayList<>();
 
     private String network;
     private String subnet;
@@ -701,11 +702,19 @@ public abstract class Configuration {
         }
     }
 
-    public List<AnsibleRoleConf> getAnsibleRoles() {
+    public List<AnsibleRoleConf> getAnsibleGalaxyRoles() {
+        return ansibleGalaxyRoles;
+    }
+
+    public void setAnsibleGalaxyRoles(List<AnsibleRoleConf> ansibleGalaxyRoles) {
+        this.ansibleGalaxyRoles = ansibleGalaxyRoles;
+    }
+
+    public List<AnsibleRoleLocalConf> getAnsibleRoles() {
         return ansibleRoles;
     }
 
-    public void setAnsibleRoles(List<AnsibleRoleConf> ansibleRoles) {
+    public void setAnsibleRoles(List<AnsibleRoleLocalConf> ansibleRoles) {
         this.ansibleRoles = ansibleRoles;
     }
 
@@ -713,17 +722,11 @@ public abstract class Configuration {
      * Provides support for (local) Ansible roles and playbooks.
      *
      * String name  : name of (ansible-galaxy) role or playbook
-     * String file  : (optional) file of role
-     * String url   : (optional) url of role
-     * String git   : (optional) git repository of role
      * String scope : host (master / slave / all)
      * Map vars     : (optional) additional key - value pairs of role
      */
     public static class AnsibleRoleConf {
         private String name;
-        private String file;
-        private String url;
-        private String git;
         private String scope;
         private Map<String, String> vars = new HashMap<>();
 
@@ -734,6 +737,35 @@ public abstract class Configuration {
         public void setName(String name) {
             this.name = name;
         }
+
+        public String getScope() {
+            return scope;
+        }
+
+        public void setScope(String scope) {
+            this.scope = scope;
+        }
+
+        public Map<String, String> getVars() {
+            return vars;
+        }
+
+        public void setVars(Map<String, String> vars) {
+            this.vars = vars;
+        }
+    }
+
+    /**
+     * Provides support for local Ansible roles and playbooks.
+     *
+     * String file  : (optional) file of role
+     * String url   : (optional) url of role
+     * String git   : (optional) git repository of role
+     */
+    public static class AnsibleRoleLocalConf extends AnsibleRoleConf {
+        private String file;
+        private String url;
+        private String git;
 
         public String getFile() {
             return file;
@@ -757,22 +789,6 @@ public abstract class Configuration {
 
         public void setGit(String git) {
             this.git = git;
-        }
-
-        public String getScope() {
-            return scope;
-        }
-
-        public void setScope(String scope) {
-            this.scope = scope;
-        }
-
-        public Map<String, String> getVars() {
-            return vars;
-        }
-
-        public void setVars(Map<String, String> vars) {
-            this.vars = vars;
         }
     }
 }

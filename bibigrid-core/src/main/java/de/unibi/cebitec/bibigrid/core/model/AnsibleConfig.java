@@ -123,6 +123,7 @@ public final class AnsibleConfig {
         if (config.isOge()) {
             map.put("oge", getOgeConf());
         }
+        map.put("ansible_galaxy_roles", getAnsibleGalaxyRoles());
         map.put("ansible_roles", getAnsibleRoles());
 
         writeToOutputStream(stream, map);
@@ -188,19 +189,36 @@ public final class AnsibleConfig {
     }
 
     /**
+     * Puts parameter values of every given ansible-galaxy role into Map list.
+     * @return list of roles with single parameters
+     */
+    private List<Map<String, Object>> getAnsibleGalaxyRoles() {
+        List<Configuration.AnsibleRoleConf> roles = config.getAnsibleGalaxyRoles();
+        List<Map<String, Object>> ansibleGalaxyRoles = new ArrayList<>();
+        for (Configuration.AnsibleRoleConf role : roles) {
+            Map<String, Object> roleConf = new LinkedHashMap<>();
+            roleConf.put("name", role.getName());
+            roleConf.put("scope", role.getScope());
+            if (role.getVars() != null) roleConf.put("vars", role.getVars());
+            ansibleGalaxyRoles.add(roleConf);
+        }
+        return ansibleGalaxyRoles;
+    }
+
+    /**
      * Puts parameter values of every given role into Map list.
      * @return list of roles with single parameters
      */
     private List<Map<String, Object>> getAnsibleRoles() {
-        List<Configuration.AnsibleRoleConf> roles = config.getAnsibleRoles();
+        List<Configuration.AnsibleRoleLocalConf> roles = config.getAnsibleRoles();
         List<Map<String, Object>> ansibleRoles = new ArrayList<>();
-        for (Configuration.AnsibleRoleConf role : roles){
+        for (Configuration.AnsibleRoleLocalConf role : roles) {
             Map<String, Object> roleConf = new LinkedHashMap<>();
-            if (role.getName() != null) roleConf.put("name", role.getName());
+            roleConf.put("name", role.getName());
             if (role.getFile() != null) roleConf.put("file", role.getFile());
             if (role.getUrl() != null) roleConf.put("url", role.getUrl());
             if (role.getGit() != null) roleConf.put("git", role.getGit());
-            if (role.getScope() != null) roleConf.put("scope", role.getScope());
+            roleConf.put("scope", role.getScope());
             if (role.getVars() != null) roleConf.put("vars", role.getVars());
             ansibleRoles.add(roleConf);
         }
