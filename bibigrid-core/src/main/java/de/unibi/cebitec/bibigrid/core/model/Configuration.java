@@ -55,8 +55,6 @@ public abstract class Configuration {
     private String network;
     private String subnet;
     private String[] clusterIds;
-    // private List<String> masterAnsibleRoles = new ArrayList<>();
-    // private List<String> slaveAnsibleRoles = new ArrayList<>();
     // private String cloud9Workspace = DEFAULT_WORKSPACE;  deprecated
     private String workspace = DEFAULT_WORKSPACE;
 
@@ -710,8 +708,34 @@ public abstract class Configuration {
         this.ansibleGalaxyRoles = ansibleGalaxyRoles;
     }
 
-    public List<AnsibleRoleLocalConf> getAnsibleRoles() {
-        return ansibleRoles;
+    /**
+     * Splits Ansible roles into master / slave / all.
+     * @return array of Lists of Ansible roles
+     */
+    public List<List<AnsibleRoleLocalConf>> getAnsibleRoles() {
+        List<AnsibleRoleLocalConf> masterAnsibleRoles = new ArrayList<>();
+        List<AnsibleRoleLocalConf> slaveAnsibleRoles = new ArrayList<>();
+        List<AnsibleRoleLocalConf> globalAnsibleRoles = new ArrayList<>();
+        for (AnsibleRoleLocalConf role : ansibleRoles) {
+            if (role.getFile() == null && role.getGit() == null && role.getUrl() == null) {
+                LOG.warn("At least one of 'file', 'url' or 'git' has to be specified.");
+            }
+            switch (role.getHosts()) {
+                case "master":
+                    masterAnsibleRoles.add(role);
+                    break;
+                case "slave":
+                    slaveAnsibleRoles.add(role);
+                    break;
+                case "all":
+                    globalAnsibleRoles.add(role);
+                    break;
+                default:
+                    LOG.warn("Ansible roles have 'scope' to be defined either as 'master', 'slave' or 'all'.");
+            }
+        }
+        // TODO Possible source of error
+        return Arrays.asList(masterAnsibleRoles, slaveAnsibleRoles, globalAnsibleRoles);
     }
 
     public void setAnsibleRoles(List<AnsibleRoleLocalConf> ansibleRoles) {
@@ -722,12 +746,12 @@ public abstract class Configuration {
      * Provides support for (local) Ansible roles and playbooks.
      *
      * String name  : name of (ansible-galaxy) role or playbook
-     * String scope : host (master / slave / all)
+     * String hosts : host (master / slave / all)
      * Map vars     : (optional) additional key - value pairs of role
      */
     public static class AnsibleRoleConf {
         private String name;
-        private String scope;
+        private String hosts;
         private Map<String, String> vars = new HashMap<>();
 
         public String getName() {
@@ -738,12 +762,12 @@ public abstract class Configuration {
             this.name = name;
         }
 
-        public String getScope() {
-            return scope;
+        public String getHosts() {
+            return hosts;
         }
 
         public void setScope(String scope) {
-            this.scope = scope;
+            this.hosts = hosts;
         }
 
         public Map<String, String> getVars() {
@@ -761,6 +785,7 @@ public abstract class Configuration {
      * String file  : (optional) file of role
      * String url   : (optional) url of role
      * String git   : (optional) git repository of role
+     * Either file / url / git
      */
     public static class AnsibleRoleLocalConf extends AnsibleRoleConf {
         private String file;

@@ -99,6 +99,11 @@ public final class ShellScriptCreator {
         userData.append("SSHCONFIG\n");
     }
 
+    /**
+     * Builds script to configure ansible and execute ansible commands to install (galaxy) roles / playbooks.
+     * @param prepare true, if still preparation necessary
+     * @return script String to execute in CreateCluster
+     */
     public static String getMasterAnsibleExecutionScript(final boolean prepare) {
         StringBuilder script = new StringBuilder();
         // apt-get update
@@ -123,7 +128,7 @@ public final class ShellScriptCreator {
         script.append("for file in $(find ~/playbook/ -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
 
         // Run ansible-galaxy to install ansible-galaxy playbooks
-        //script.append("ansible-galaxy install -r ~/playbook/requirements.yml\n");
+        script.append("ansible-galaxy install -r ~/playbook/roles/requirements.yml\n");
 
         // Execute ansible playbook
         script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts")

@@ -312,13 +312,41 @@ public abstract class CreateCluster extends Intent {
                 LOG.info(V, "SFTP: Upload file {}", fullPath);
                 channel.put(stream, fullPath);
             }
-            // @ToDo JK :: Support custom roles
-//            for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
-//                uploadAnsibleRole(channel, resources, config.getMasterAnsibleRoles().get(i),
-//                        commonConfig.getCustomRoleName("master", i));
+
+            // @ToDo Support custom roles
+            List<Configuration.AnsibleRoleLocalConf> masterAnsibleRoles = config.getAnsibleRoles().get(0);
+            List<Configuration.AnsibleRoleLocalConf> slaveAnsibleRoles = config.getAnsibleRoles().get(1);
+            List<Configuration.AnsibleRoleLocalConf> allAnsibleRoles = config.getAnsibleRoles().get(2);
+            masterAnsibleRoles.addAll(allAnsibleRoles);
+            slaveAnsibleRoles.addAll(allAnsibleRoles);
+            // upload master roles
+            for (Configuration.AnsibleRoleLocalConf masterRole : masterAnsibleRoles) {
+                this.uploadAnsibleRole(channel, resources, masterRole.getFile(),
+                        commonConfig.getCustomRoleName("master", masterRole.getName()));
+            }
+            for (Configuration.AnsibleRoleLocalConf slavesRole : slaveAnsibleRoles) {
+                this.uploadAnsibleRole(channel, resources, slavesRole.getFile(),
+                        commonConfig.getCustomRoleName("master", slavesRole.getName()));
+            }
+//            for (int i = 0; i < masterAnsibleRoles.size() + allAnsibleRoles.size(); i++) {
+//                String filePath;
+//                if (i < masterAnsibleRoles.size()) {
+//                    filePath = masterAnsibleRoles.get(i).getFile();
+//                } else {
+//                    filePath = allAnsibleRoles.get(i).getFile();
+//                }
+//                this.uploadAnsibleRole(channel, resources, filePath,
+//                        commonConfig.getCustomRoleName("master", masterAnsibleRoles.get(i).getName()));
 //            }
-//            for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
-//                uploadAnsibleRole(channel, resources, config.getSlaveAnsibleRoles().get(i),
+//            // upload slaves roles
+//            for (int i = 0; i < slaveAnsibleRoles.size() + allAnsibleRoles.size(); i++) {
+//                String filePath;
+//                if (i < slaveAnsibleRoles.size()) {
+//                    filePath = slaveAnsibleRoles.get(i).getFile();
+//                } else {
+//                    filePath = allAnsibleRoles.get(i).getFile();
+//                }
+//                this.uploadAnsibleRole(channel, resources, filePath,
 //                        commonConfig.getCustomRoleName("slaves", i));
 //            }
             // Write the hosts configuration file
@@ -359,11 +387,23 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
+    /**
+     * Uploads single ansible role to remote instance.
+     *
+     * @param channel client side of sftp server channel
+     * @param resources ansible configuration
+     * @param rolePath path/to/role
+     * @param roleName name of role
+     * @throws SftpException possible SFTP failure
+     * @throws IOException possible File failure
+     */
     private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath, String roleName)
             throws SftpException, IOException {
         String basePath = AnsibleResources.ROLES_ROOT_PATH + "/" + roleName + "/";
         Path rootRolePath = Paths.get(rolePath);
+        // Walks through valid files in rootRolePath and collects Stream to path list
         List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
+        // create a list of files in role
         List<String> targetFiles = files.stream().map(p -> basePath + rootRolePath.relativize(p)).collect(Collectors.toList());
         createSftpFolders(channel, resources, targetFiles);
         for (int i = 0; i < files.size(); i++) {

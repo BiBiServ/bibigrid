@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import de.unibi.cebitec.bibigrid.core.model.Configuration.AnsibleRoleLocalConf;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -80,9 +81,20 @@ public final class AnsibleConfig {
      *
      * @param hosts master or slaves.
      * @param i     Index of the custom role folder.
+     * @return custom role name
      */
     public String getCustomRoleName(String hosts, int i) {
         return hosts + "-user-role" + i;
+    }
+
+    /**
+     * Generates a unique role name with the provided hosts type and name of role.
+     * @param hosts master or slaves
+     * @param roleName name of role
+     * @return custom role name
+     */
+    public String getCustomRoleName(String hosts, String roleName) {
+        return hosts + "-user-role-" + roleName;
     }
 
     /**
@@ -198,8 +210,8 @@ public final class AnsibleConfig {
         for (Configuration.AnsibleRoleConf role : roles) {
             Map<String, Object> roleConf = new LinkedHashMap<>();
             roleConf.put("name", role.getName());
-            roleConf.put("scope", role.getScope());
-            if (role.getVars() != null) roleConf.put("vars", role.getVars());
+            roleConf.put("hosts", role.getHosts());
+            if (role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
             ansibleGalaxyRoles.add(roleConf);
         }
         return ansibleGalaxyRoles;
@@ -210,17 +222,19 @@ public final class AnsibleConfig {
      * @return list of roles with single parameters
      */
     private List<Map<String, Object>> getAnsibleRoles() {
-        List<Configuration.AnsibleRoleLocalConf> roles = config.getAnsibleRoles();
+        List<List<AnsibleRoleLocalConf>> roles = config.getAnsibleRoles();
         List<Map<String, Object>> ansibleRoles = new ArrayList<>();
-        for (Configuration.AnsibleRoleLocalConf role : roles) {
-            Map<String, Object> roleConf = new LinkedHashMap<>();
-            roleConf.put("name", role.getName());
-            if (role.getFile() != null) roleConf.put("file", role.getFile());
-            if (role.getUrl() != null) roleConf.put("url", role.getUrl());
-            if (role.getGit() != null) roleConf.put("git", role.getGit());
-            roleConf.put("scope", role.getScope());
-            if (role.getVars() != null) roleConf.put("vars", role.getVars());
-            ansibleRoles.add(roleConf);
+        for (List<AnsibleRoleLocalConf> roleList : roles) {
+            for (AnsibleRoleLocalConf role : roleList) {
+                Map<String, Object> roleConf = new LinkedHashMap<>();
+                roleConf.put("name", role.getName());
+                if (role.getFile() != null) roleConf.put("file", role.getFile());
+                if (role.getUrl() != null) roleConf.put("url", role.getUrl());
+                if (role.getGit() != null) roleConf.put("git", role.getGit());
+                roleConf.put("hosts", role.getHosts());
+                if (!role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+                ansibleRoles.add(roleConf);
+            }
         }
         return ansibleRoles;
     }
