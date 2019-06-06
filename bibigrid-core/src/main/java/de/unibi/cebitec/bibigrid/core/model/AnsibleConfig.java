@@ -1,6 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
-import de.unibi.cebitec.bibigrid.core.model.Configuration.AnsibleRoleLocalConf;
+import de.unibi.cebitec.bibigrid.core.model.Configuration.AnsibleRoles;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -50,31 +50,61 @@ public final class AnsibleConfig {
         }
     }
 
-//    public void writeSiteFile(OutputStream stream) {
-//        Map<String, Object> master = new LinkedHashMap<>();
-//        master.put("hosts", "master");
-//        master.put("become", "yes");
-//        master.put("vars_files", Arrays.asList("vars/common.yml"));
-//        List<String> roles = new ArrayList<>();
-//        roles.add("common");
-//        roles.add("master");
-////        for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
-////            roles.add(getCustomRoleName("master", i));
-////        }
-//        master.put("roles", roles);
-//        Map<String, Object> slaves = new LinkedHashMap<>();
-//        slaves.put("hosts", "slaves");
-//        slaves.put("become", "yes");
-//        slaves.put("vars_files", Arrays.asList("vars/common.yml", "vars/{{ ansible_default_ipv4.address }}.yml"));
-//        roles = new ArrayList<>();
-//        roles.add("common");
-//        roles.add("slave");
-////        for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
-////            roles.add(getCustomRoleName("slaves", i));
-////        }
-//        slaves.put("roles", roles);
-//        writeToOutputStream(stream, Arrays.asList(master, slaves));
-//    }
+    /**
+     * Generates site.yml automatically including custom ansible roles.
+     *
+     * @param stream write file to remote
+     * @param customMasterRoles master ansible roles
+     * @param customSlaveRoles slave ansible roles
+     */
+    public void writeSiteFile(OutputStream stream, List<String> customMasterRoles, List<String> customSlaveRoles) {
+        String COMMON_PATH = "vars/common.yml";
+        // master configuration
+        Map<String, Object> master = new LinkedHashMap<>();
+        master.put("hosts", "master");
+        master.put("become", "yes");
+        master.put("vars_files", Collections.singletonList(COMMON_PATH));
+        List<String> roles = new ArrayList<>();
+        roles.add("common");
+        roles.add("master");
+        roles.addAll(customMasterRoles);
+        master.put("roles", roles);
+        // slave configuration
+        Map<String, Object> slaves = new LinkedHashMap<>();
+        slaves.put("hosts", "slaves");
+        slaves.put("become", "yes");
+        slaves.put("vars_files", Arrays.asList(COMMON_PATH, "vars/{{ ansible_default_ipv4.address }}.yml"));
+        roles = new ArrayList<>();
+        roles.add("common");
+        roles.add("slave");
+        roles.addAll(customSlaveRoles);
+        slaves.put("roles", roles);
+        writeToOutputStream(stream, Arrays.asList(master, slaves));
+    }
+
+    /**
+     * Generates roles/requirements.yml automatically including ansible-galaxy and git roles.
+     *
+     * @param stream write file to remote
+     */
+    public void writeRequirementsFile(OutputStream stream) {
+        List<Map<String, Object>> galaxy = new ArrayList<>();
+        List<Map<String, Object>> git = new ArrayList<>();
+        for (Configuration.AnsibleGalaxyRoles galaxyRole : config.getAnsibleGalaxyRoles()) {
+            Map<String, Object> role = new LinkedHashMap<>();
+            role.put("name", galaxyRole.getName());
+            if (galaxyRole.getGalaxy() != null) {
+                role.put("src", galaxyRole.getGalaxy());
+                galaxy.add(role);
+            } else if (galaxyRole.getGit() != null) {
+                role.put("src", galaxyRole.getGit());
+                git.add(role);
+            }
+        }
+
+        writeToOutputStream(stream, galaxy);
+        writeToOutputStream(stream, git);
+    }
 
     /**
      * Generates a unique role name with the provided hosts type and index.
@@ -89,11 +119,12 @@ public final class AnsibleConfig {
 
     /**
      * Generates a unique role name with the provided hosts type and name of role.
-     * @param hosts master or slaves
+     *
+     * @param hosts master, slaves or all
      * @param roleName name of role
      * @return custom role name
      */
-    public String getCustomRoleName(String hosts, String roleName) {
+    public static String getCustomRoleName(String hosts, String roleName) {
         return hosts + "-user-role-" + roleName;
     }
 
@@ -104,6 +135,10 @@ public final class AnsibleConfig {
         writeToOutputStream(stream, getInstanceMap(instance, true));
     }
 
+    /**
+     * Generates common.yml to write into ~/playbook/vars/.
+     * @param stream Write file to remote
+     */
     public void writeCommonFile(OutputStream stream) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("mode", config.getMode());
@@ -135,8 +170,12 @@ public final class AnsibleConfig {
         if (config.isOge()) {
             map.put("oge", getOgeConf());
         }
-        map.put("ansible_galaxy_roles", getAnsibleGalaxyRoles());
-        map.put("ansible_roles", getAnsibleRoles());
+        if (config.hasCustomAnsibleRoles()) {
+            map.put("ansible_roles", getAnsibleRoles());
+        }
+        if (config.hasCustomAnsibleGalaxyRoles()) {
+            map.put("ansible_galaxy_roles", getAnsibleGalaxyRoles());
+        }
 
         writeToOutputStream(stream, map);
     }
@@ -205,13 +244,15 @@ public final class AnsibleConfig {
      * @return list of roles with single parameters
      */
     private List<Map<String, Object>> getAnsibleGalaxyRoles() {
-        List<Configuration.AnsibleRoleConf> roles = config.getAnsibleGalaxyRoles();
+        List<Configuration.AnsibleGalaxyRoles> roles = config.getAnsibleGalaxyRoles();
         List<Map<String, Object>> ansibleGalaxyRoles = new ArrayList<>();
-        for (Configuration.AnsibleRoleConf role : roles) {
+        for (Configuration.AnsibleGalaxyRoles role : roles) {
             Map<String, Object> roleConf = new LinkedHashMap<>();
             roleConf.put("name", role.getName());
             roleConf.put("hosts", role.getHosts());
-            if (role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            if (role.getGalaxy() != null) roleConf.put("galaxy", role.getGalaxy());
+            if (role.getGit() != null) roleConf.put("git", role.getGit());
+            if (!role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
             ansibleGalaxyRoles.add(roleConf);
         }
         return ansibleGalaxyRoles;
@@ -222,19 +263,16 @@ public final class AnsibleConfig {
      * @return list of roles with single parameters
      */
     private List<Map<String, Object>> getAnsibleRoles() {
-        List<List<AnsibleRoleLocalConf>> roles = config.getAnsibleRoles();
+        List<AnsibleRoles> roles = config.getAnsibleRoles();
         List<Map<String, Object>> ansibleRoles = new ArrayList<>();
-        for (List<AnsibleRoleLocalConf> roleList : roles) {
-            for (AnsibleRoleLocalConf role : roleList) {
-                Map<String, Object> roleConf = new LinkedHashMap<>();
-                roleConf.put("name", role.getName());
-                if (role.getFile() != null) roleConf.put("file", role.getFile());
-                if (role.getUrl() != null) roleConf.put("url", role.getUrl());
-                if (role.getGit() != null) roleConf.put("git", role.getGit());
-                roleConf.put("hosts", role.getHosts());
-                if (!role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
-                ansibleRoles.add(roleConf);
-            }
+        for (AnsibleRoles role : roles) {
+            Map<String, Object> roleConf = new LinkedHashMap<>();
+            roleConf.put("name", role.getName());
+            if (role.getFile() != null) roleConf.put("file", role.getFile());
+            if (role.getUrl() != null) roleConf.put("url", role.getUrl());
+            roleConf.put("hosts", role.getHosts());
+            if (!role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            ansibleRoles.add(roleConf);
         }
         return ansibleRoles;
     }
@@ -288,5 +326,4 @@ public final class AnsibleConfig {
         }
         return l;
     }
-
 }

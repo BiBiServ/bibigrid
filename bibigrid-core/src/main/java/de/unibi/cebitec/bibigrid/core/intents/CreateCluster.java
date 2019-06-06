@@ -292,6 +292,16 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
+    /**
+     * Uploads ansible roles to master instance.
+     *
+     * @param sshSession ssh connection to master
+     * @param hostsConfig Configuration and list of slave IPs
+     * @param commonConfig common Configuration
+     * @param slaveInstances list of slave instances
+     * @return true, if upload completed successfully
+     * @throws JSchException possible SSH connection error
+     */
     private boolean uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
                                           AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException {
         boolean uploadCompleted;
@@ -314,54 +324,77 @@ public abstract class CreateCluster extends Intent {
             }
 
             // @ToDo Support custom roles
-            List<Configuration.AnsibleRoleLocalConf> masterAnsibleRoles = config.getAnsibleRoles().get(0);
-            List<Configuration.AnsibleRoleLocalConf> slaveAnsibleRoles = config.getAnsibleRoles().get(1);
-            List<Configuration.AnsibleRoleLocalConf> allAnsibleRoles = config.getAnsibleRoles().get(2);
-            masterAnsibleRoles.addAll(allAnsibleRoles);
-            slaveAnsibleRoles.addAll(allAnsibleRoles);
+            List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
             // upload master roles
-            for (Configuration.AnsibleRoleLocalConf masterRole : masterAnsibleRoles) {
-                this.uploadAnsibleRole(channel, resources, masterRole.getFile(),
-                        commonConfig.getCustomRoleName("master", masterRole.getName()));
+            List<String> customMasterRoles = new ArrayList<>();
+            List<String> customSlaveRoles = new ArrayList<>();
+            for (Configuration.AnsibleRoles role : ansibleRoles) {
+                String roleName;
+                switch (role.getHosts()) {
+                    case "master":
+                        roleName = AnsibleConfig.getCustomRoleName("master", role.getName());
+                        // TODO masterRole.getFile() valid Path?
+                        String localFilePath = role.getFile();
+                        this.uploadAnsibleRole(channel, resources, localFilePath, roleName);
+                        customMasterRoles.add(roleName);
+                        break;
+                    case "slaves":
+                        roleName = AnsibleConfig.getCustomRoleName("slaves", role.getName());
+                        this.uploadAnsibleRole(channel, resources, role.getFile(), roleName);
+                        customSlaveRoles.add(roleName);
+                        break;
+                    case "all":
+                        roleName = AnsibleConfig.getCustomRoleName("all", role.getName());
+                        this.uploadAnsibleRole(channel, resources, role.getFile(), roleName);
+                        customMasterRoles.add(roleName);
+                        customSlaveRoles.add(roleName);
+                }
+
             }
-            for (Configuration.AnsibleRoleLocalConf slavesRole : slaveAnsibleRoles) {
-                this.uploadAnsibleRole(channel, resources, slavesRole.getFile(),
-                        commonConfig.getCustomRoleName("master", slavesRole.getName()));
+
+
+            // Add galaxy and git roles to custom roles to add in site file
+            List<Configuration.AnsibleGalaxyRoles> ansibleGalaxyRoles = config.getAnsibleGalaxyRoles();
+            for (Configuration.AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
+                String roleName;
+                switch (role.getHosts()) {
+                    case "master":
+                        roleName = AnsibleConfig.getCustomRoleName("master", role.getName());
+                        customMasterRoles.add(roleName);
+                        break;
+                    case "slaves":
+                        roleName = AnsibleConfig.getCustomRoleName("slaves", role.getName());
+                        customSlaveRoles.add(roleName);
+                        break;
+                    case "all":
+                        roleName = AnsibleConfig.getCustomRoleName("all", role.getName());
+                        customMasterRoles.add(roleName);
+                        customSlaveRoles.add(roleName);
+                }
             }
-//            for (int i = 0; i < masterAnsibleRoles.size() + allAnsibleRoles.size(); i++) {
-//                String filePath;
-//                if (i < masterAnsibleRoles.size()) {
-//                    filePath = masterAnsibleRoles.get(i).getFile();
-//                } else {
-//                    filePath = allAnsibleRoles.get(i).getFile();
-//                }
-//                this.uploadAnsibleRole(channel, resources, filePath,
-//                        commonConfig.getCustomRoleName("master", masterAnsibleRoles.get(i).getName()));
-//            }
-//            // upload slaves roles
-//            for (int i = 0; i < slaveAnsibleRoles.size() + allAnsibleRoles.size(); i++) {
-//                String filePath;
-//                if (i < slaveAnsibleRoles.size()) {
-//                    filePath = slaveAnsibleRoles.get(i).getFile();
-//                } else {
-//                    filePath = allAnsibleRoles.get(i).getFile();
-//                }
-//                this.uploadAnsibleRole(channel, resources, filePath,
-//                        commonConfig.getCustomRoleName("slaves", i));
-//            }
+
             // Write the hosts configuration file
             try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
                     AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
                 writer.write(hostsConfig.toString());
             }
             // Write the commons configuration file
-            commonConfig.writeCommonFile(channel.put(channel.getHome() + "/" + AnsibleResources.COMMONS_CONFIG_FILE));
+            commonConfig.writeCommonFile(channel.put(channel.getHome() + "/"
+                    + AnsibleResources.COMMONS_CONFIG_FILE));
 
-            // @ToDo JK :: Support custom site file
-            // commonConfig.writeSiteFile(channel.put(channel.getHome() + "/" + AnsibleResources.SITE_CONFIG_FILE));
+            // Write custom site file
+            commonConfig.writeSiteFile(channel.put(channel.getHome() + "/"
+                            + AnsibleResources.SITE_CONFIG_FILE),
+                     customMasterRoles, customSlaveRoles);
+
+             // Write requirements file for ansible-galaxy support
+            commonConfig.writeRequirementsFile(channel.put(channel.getHome() + "/"
+                    + AnsibleResources.REQUIREMENTS_CONFIG_FILE));
+
             // Write slave instance specific configuration file
             for (Instance slave : slaveInstances) {
-                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/" + slave.getPrivateIp() + ".yml";
+                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/"
+                        + slave.getPrivateIp() + ".yml";
                 commonConfig.writeInstanceFile(slave, channel.put(filename));
             }
             uploadCompleted = true;
@@ -392,13 +425,14 @@ public abstract class CreateCluster extends Intent {
      *
      * @param channel client side of sftp server channel
      * @param resources ansible configuration
-     * @param rolePath path/to/role
+     * @param rolePath path/to/role on local machine
      * @param roleName name of role
      * @throws SftpException possible SFTP failure
      * @throws IOException possible File failure
      */
     private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath, String roleName)
             throws SftpException, IOException {
+        // playbook/roles/ROLE_NAME.yml
         String basePath = AnsibleResources.ROLES_ROOT_PATH + "/" + roleName + "/";
         Path rootRolePath = Paths.get(rolePath);
         // Walks through valid files in rootRolePath and collects Stream to path list
@@ -415,8 +449,17 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
+    /**
+     * Installs and executes ansible roles on remote.
+     *
+     * @param sshSession transfer via ssh session
+     * @param prepare true, if still preparation necessary
+     * @return true, if configuration finished
+     * @throws JSchException ssh openChannel exception
+     * @throws IOException BufferedReader exceptions
+     */
     private boolean installAndExecuteAnsible(final Session sshSession, final boolean prepare)
-            throws JSchException, IOException {
+            throws IOException, JSchException {
         LOG.info("Configure and execute Ansible. This take a while. Please be patient.");
         boolean configured = false;
         String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare);

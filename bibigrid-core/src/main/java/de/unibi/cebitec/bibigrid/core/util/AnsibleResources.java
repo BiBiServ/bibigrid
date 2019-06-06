@@ -12,12 +12,13 @@ import java.util.jar.JarFile;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public final class AnsibleResources {
-    private static final String ROOT_PATH = "playbook/";
+    public static final String ROOT_PATH = "playbook/";
     public static final String HOSTS_CONFIG_FILE = ROOT_PATH + "ansible_hosts";
     public static final String CONFIG_ROOT_PATH = ROOT_PATH + "vars/";
     public static final String ROLES_ROOT_PATH = ROOT_PATH + "roles/";
     public static final String COMMONS_CONFIG_FILE = CONFIG_ROOT_PATH + "common.yml";
     public static final String SITE_CONFIG_FILE = ROOT_PATH + "site.yml";
+    public static final String REQUIREMENTS_CONFIG_FILE = ROOT_PATH + "requirements.yml";
     private final List<String> files = new ArrayList<>();
 
     public AnsibleResources() {
@@ -36,6 +37,11 @@ public final class AnsibleResources {
         }
     }
 
+    /**
+     * Walks through folder structure to add to files list.
+     * @param loader ClassLoader to gather path
+     * @param path actual path, starts with root path
+     */
     private void processFolder(ClassLoader loader, String path) {
         URL url = loader.getResource(path);
         if (url == null) {

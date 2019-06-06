@@ -49,8 +49,8 @@ public abstract class Configuration {
     private FS localFS = FS.XFS;
     private boolean debugRequests;
     private Properties ogeConf = OgeConf.initOgeConfProperties();
-    private List<AnsibleRoleConf> ansibleGalaxyRoles = new ArrayList<>();
-    private List<AnsibleRoleLocalConf> ansibleRoles = new ArrayList<>();
+    private List<AnsibleRoles> ansibleRoles = new ArrayList<>();
+    private List<AnsibleGalaxyRoles> ansibleGalaxyRoles = new ArrayList<>();
 
     private String network;
     private String subnet;
@@ -392,36 +392,6 @@ public abstract class Configuration {
         this.credentialsFile = credentialsFile;
     }
 
-//    public List<String> getMasterAnsibleRoles() {
-//        return masterAnsibleRoles;
-//    }
-//
-//    public void setMasterAnsibleRoles(List<String> masterAnsibleRoles) {
-//        this.masterAnsibleRoles = masterAnsibleRoles != null ? masterAnsibleRoles : new ArrayList<>();
-//        if (masterAnsibleRoles != null && !masterAnsibleRoles.isEmpty()) {
-//            StringBuilder display = new StringBuilder();
-//            for (String role : masterAnsibleRoles) {
-//                display.append(role).append(" ");
-//            }
-//            LOG.info(V, "Additional master ansible roles set: {}", display);
-//        }
-//    }
-//
-//    public List<String> getSlaveAnsibleRoles() {
-//        return slaveAnsibleRoles;
-//    }
-//
-//    public void setSlaveAnsibleRoles(List<String> slaveAnsibleRoles) {
-//        this.slaveAnsibleRoles = slaveAnsibleRoles != null ? slaveAnsibleRoles : new ArrayList<>();
-//        if (slaveAnsibleRoles != null && !slaveAnsibleRoles.isEmpty()) {
-//            StringBuilder display = new StringBuilder();
-//            for (String role : slaveAnsibleRoles) {
-//                display.append(role).append(" ");
-//            }
-//            LOG.info(V, "Additional slave ansible roles set: {}", display);
-//        }
-//    }
-
     public String getCloud9Workspace() {
         return getWorkspace();
     }
@@ -700,46 +670,86 @@ public abstract class Configuration {
         }
     }
 
-    public List<AnsibleRoleConf> getAnsibleGalaxyRoles() {
-        return ansibleGalaxyRoles;
-    }
-
-    public void setAnsibleGalaxyRoles(List<AnsibleRoleConf> ansibleGalaxyRoles) {
-        this.ansibleGalaxyRoles = ansibleGalaxyRoles;
+    /**
+     * Checks if custom ansible roles used.
+     * @return true, if ansible roles given in configuration
+     */
+    public boolean hasCustomAnsibleRoles() {
+        LOG.warn("ansible Roles {}", ansibleRoles);
+        return ansibleRoles != null && !ansibleRoles.isEmpty();
     }
 
     /**
-     * Splits Ansible roles into master / slave / all.
-     * @return array of Lists of Ansible roles
+     * Checks if custom ansible-galaxy roles used.
+     * @return true, if ansible-galaxy roles given in configuration
      */
-    public List<List<AnsibleRoleLocalConf>> getAnsibleRoles() {
-        List<AnsibleRoleLocalConf> masterAnsibleRoles = new ArrayList<>();
-        List<AnsibleRoleLocalConf> slaveAnsibleRoles = new ArrayList<>();
-        List<AnsibleRoleLocalConf> globalAnsibleRoles = new ArrayList<>();
-        for (AnsibleRoleLocalConf role : ansibleRoles) {
-            if (role.getFile() == null && role.getGit() == null && role.getUrl() == null) {
-                LOG.warn("At least one of 'file', 'url' or 'git' has to be specified.");
+    public boolean hasCustomAnsibleGalaxyRoles() {
+        LOG.warn("ansible galaxy Roles {}", ansibleRoles);
+        return ansibleGalaxyRoles != null && !ansibleGalaxyRoles.isEmpty();
+    }
+
+    /**
+     * @return List of Ansible roles
+     */
+    public List<AnsibleRoles> getAnsibleRoles() {
+        List<AnsibleRoles> roles = new ArrayList<>();
+        for (AnsibleRoles role : ansibleRoles) {
+            if (role.getFile() == null && role.getUrl() == null) {
+                LOG.warn("Ansible: At least one of 'file' or 'url' has to be specified. Skipping the role...");
+                continue;
             }
+
+            if (!role.getHosts().equals("master") && !role.getHosts().equals("slave") && !role.getHosts().equals("all")) {
+                LOG.warn("Ansible roles have 'scope' to be defined either as 'master', 'slave' or 'all'. Skipping the role...");
+                continue;
+            }
+            roles.add(role);
+        }
+        return roles;
+    }
+
+    public void setAnsibleRoles(List<AnsibleRoles> ansibleRoles) {
+        if (this.ansibleRoles != null) {
+            this.ansibleRoles.addAll(ansibleRoles);
+        } else {
+            this.ansibleRoles = new ArrayList<>(ansibleRoles);
+        }
+        LOG.warn("set ansibleroles {}", ansibleRoles);
+    }
+
+    /**
+     * @return List of Ansible Galaxy roles
+     */
+    public List<AnsibleGalaxyRoles> getAnsibleGalaxyRoles() {
+        List<AnsibleGalaxyRoles> galaxyRoles = new ArrayList<>();
+        for (AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
+            LOG.warn("getGalaxyRole....");
+            if (role.getGalaxy() == null && role.getGit() == null) {
+                LOG.warn("Ansible Galaxy: At least one of 'galaxy' or 'git' has to be specified. Skipping the role...");
+                continue;
+            }
+
             switch (role.getHosts()) {
                 case "master":
-                    masterAnsibleRoles.add(role);
+                    galaxyRoles.add(role);
                     break;
-                case "slave":
-                    slaveAnsibleRoles.add(role);
+                case "slaves":
+                    galaxyRoles.add(role);
                     break;
                 case "all":
-                    globalAnsibleRoles.add(role);
+                    galaxyRoles.add(role);
                     break;
                 default:
-                    LOG.warn("Ansible roles have 'scope' to be defined either as 'master', 'slave' or 'all'.");
+                    LOG.warn("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'. Skipping the role...");
+
             }
         }
         // TODO Possible source of error
-        return Arrays.asList(masterAnsibleRoles, slaveAnsibleRoles, globalAnsibleRoles);
+        return galaxyRoles;
     }
 
-    public void setAnsibleRoles(List<AnsibleRoleLocalConf> ansibleRoles) {
-        this.ansibleRoles = ansibleRoles;
+    public void setAnsibleGalaxyRoles(List<AnsibleGalaxyRoles> ansibleGalaxyRoles) {
+        this.ansibleGalaxyRoles = this.ansibleGalaxyRoles == null ? ansibleGalaxyRoles : new ArrayList<>(ansibleGalaxyRoles);
     }
 
     /**
@@ -748,9 +758,15 @@ public abstract class Configuration {
      * String name  : name of (ansible-galaxy) role or playbook
      * String hosts : host (master / slave / all)
      * Map vars     : (optional) additional key - value pairs of role
+     * String file  : (optional) file of role
+     * String url   : (optional) url of role
+     * Either file or url
      */
-    public static class AnsibleRoleConf {
+    public static class AnsibleRoles {
+        private String file;
+        private String url;
         private String name;
+
         private String hosts;
         private Map<String, String> vars = new HashMap<>();
 
@@ -766,7 +782,7 @@ public abstract class Configuration {
             return hosts;
         }
 
-        public void setScope(String scope) {
+        public void setHosts(String hosts) {
             this.hosts = hosts;
         }
 
@@ -777,20 +793,6 @@ public abstract class Configuration {
         public void setVars(Map<String, String> vars) {
             this.vars = vars;
         }
-    }
-
-    /**
-     * Provides support for local Ansible roles and playbooks.
-     *
-     * String file  : (optional) file of role
-     * String url   : (optional) url of role
-     * String git   : (optional) git repository of role
-     * Either file / url / git
-     */
-    public static class AnsibleRoleLocalConf extends AnsibleRoleConf {
-        private String file;
-        private String url;
-        private String git;
 
         public String getFile() {
             return file;
@@ -806,6 +808,57 @@ public abstract class Configuration {
 
         public void setUrl(String url) {
             this.url = url;
+        }
+    }
+
+    /**
+     * Provides support for Ansible Galaxy and Git roles and playbooks.
+     *
+     * String name      : name of (ansible-galaxy) role or playbook
+     * String hosts     : host (master / slave / all)
+     * Map vars         : (optional) additional key - value pairs of role
+     * String galaxy    : ansible-galaxy name
+     * String git       : Git source (e.g. GitHub url)
+     * Either galaxy or git
+     */
+    public static class AnsibleGalaxyRoles {
+        private String name;
+        private String hosts;
+        private Map<String, String> vars = new HashMap<>();
+
+        private String galaxy;
+        private String git;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getHosts() {
+            return hosts;
+        }
+
+        public void setHosts(String hosts) {
+            this.hosts = hosts;
+        }
+
+        public Map<String, String> getVars() {
+            return vars;
+        }
+
+        public void setVars(Map<String, String> vars) {
+            this.vars = vars;
+        }
+
+        public String getGalaxy() {
+            return galaxy;
+        }
+
+        public void setGalaxy(String galaxy) {
+            this.galaxy = galaxy;
         }
 
         public String getGit() {

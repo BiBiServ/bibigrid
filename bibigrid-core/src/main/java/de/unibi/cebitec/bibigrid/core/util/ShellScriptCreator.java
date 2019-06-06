@@ -122,16 +122,20 @@ public final class ShellScriptCreator {
         // Install ansible from pypi using pip
         script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n");
         // Install python2 on slaves instances
-        script.append("ansible slaves -i ~/playbook/ansible_hosts --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
+        script.append("ansible slaves -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE
+                + " --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
         // Fix line endings to ensure windows files being used correctly
-        script.append("for file in $(find ~/playbook/ -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
+        script.append("for file in $(find " + AnsibleResources.ROOT_PATH + " -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
 
         // Run ansible-galaxy to install ansible-galaxy playbooks
-        script.append("ansible-galaxy install -r ~/playbook/roles/requirements.yml\n");
+        script.append("ansible-galaxy install --roles-path ~/"
+                + AnsibleResources.ROLES_ROOT_PATH
+                + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
 
         // Execute ansible playbook
-        script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts")
+        script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
+                + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
                 .append(prepare ? " -t install" : "")
                 .append(" | sudo tee -a /var/log/ansible-playbook.log\n");
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
