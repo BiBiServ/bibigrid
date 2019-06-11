@@ -124,6 +124,11 @@ public class StartUp {
         }
     }
 
+    /**
+     * TODO TD, #135
+     * @param commandLine
+     * @param cmdLineOptions
+     */
     private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
         // TODO: improve help modes
         if (commandLine.hasOption("h")) {

@@ -39,6 +39,7 @@ public final class AnsibleResources {
 
     /**
      * Walks through folder structure to add to files list.
+     *
      * @param loader ClassLoader to gather path
      * @param path actual path, starts with root path
      */
@@ -62,6 +63,11 @@ public final class AnsibleResources {
         }
     }
 
+    /**
+     * Adds file paths to files list.
+     *
+     * @param path
+     */
     private void processJar(String path) {
         try {
             JarFile jarFile = new JarFile(new File(path));
@@ -84,6 +90,12 @@ public final class AnsibleResources {
         return getClass().getClassLoader().getResourceAsStream(path);
     }
 
+    /**
+     * Creates list of paths to folders given file list.
+     *
+     * @param files list of files in file structure
+     * @return list of folders
+     */
     public List<String> getDirectories(List<String> files) {
         List<String> folderSet = new ArrayList<>();
         for (String filepath : files) {

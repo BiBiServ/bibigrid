@@ -333,25 +333,21 @@ public abstract class CreateCluster extends Intent {
                 switch (role.getHosts()) {
                     case "master":
                         roleName = AnsibleConfig.getCustomRoleName("master", role.getName());
-                        // TODO masterRole.getFile() valid Path?
-                        String localFilePath = role.getFile();
-                        this.uploadAnsibleRole(channel, resources, localFilePath, roleName);
                         customMasterRoles.add(roleName);
                         break;
                     case "slaves":
                         roleName = AnsibleConfig.getCustomRoleName("slaves", role.getName());
-                        this.uploadAnsibleRole(channel, resources, role.getFile(), roleName);
                         customSlaveRoles.add(roleName);
                         break;
-                    case "all":
+                    default:
                         roleName = AnsibleConfig.getCustomRoleName("all", role.getName());
-                        this.uploadAnsibleRole(channel, resources, role.getFile(), roleName);
                         customMasterRoles.add(roleName);
                         customSlaveRoles.add(roleName);
                 }
+                role.setName(roleName);
+                this.uploadAnsibleRole(channel, resources, role.getFile(), roleName);
 
             }
-
 
             // Add galaxy and git roles to custom roles to add in site file
             List<Configuration.AnsibleGalaxyRoles> ansibleGalaxyRoles = config.getAnsibleGalaxyRoles();
@@ -366,11 +362,12 @@ public abstract class CreateCluster extends Intent {
                         roleName = AnsibleConfig.getCustomRoleName("slaves", role.getName());
                         customSlaveRoles.add(roleName);
                         break;
-                    case "all":
+                    default:
                         roleName = AnsibleConfig.getCustomRoleName("all", role.getName());
                         customMasterRoles.add(roleName);
                         customSlaveRoles.add(roleName);
                 }
+                role.setName(roleName);
             }
 
             // Write the hosts configuration file
@@ -407,6 +404,14 @@ public abstract class CreateCluster extends Intent {
         return uploadCompleted;
     }
 
+    /**
+     * Creates folders for every directory, given a file structure.
+     *
+     * @param channel client side of sftp server channel
+     * @param resources ansible configuration
+     * @param files list of files in file structure
+     * @throws SftpException possible SFTP failure
+     */
     private void createSftpFolders(ChannelSftp channel, AnsibleResources resources, List<String> files) throws SftpException {
         for (String folderPath : resources.getDirectories(files)) {
             String fullPath = channel.getHome() + "/" + folderPath;
@@ -443,6 +448,7 @@ public abstract class CreateCluster extends Intent {
         for (int i = 0; i < files.size(); i++) {
             InputStream stream = new FileInputStream(files.get(i).toFile());
             // Upload the file stream via sftp to the home folder
+            LOG.info("targetFiles(i) {}", targetFiles.get(i));
             String fullPath = channel.getHome() + "/" + targetFiles.get(i).replace("\\", "/");
             LOG.info(V, "SFTP: Upload file {}", fullPath);
             channel.put(stream, fullPath);

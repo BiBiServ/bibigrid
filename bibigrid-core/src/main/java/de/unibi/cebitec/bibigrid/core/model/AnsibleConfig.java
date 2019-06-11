@@ -88,33 +88,27 @@ public final class AnsibleConfig {
      * @param stream write file to remote
      */
     public void writeRequirementsFile(OutputStream stream) {
-        List<Map<String, Object>> galaxy = new ArrayList<>();
-        List<Map<String, Object>> git = new ArrayList<>();
+        List<Map<String, Object>> galaxy_roles = new ArrayList<>();
+        List<Map<String, Object>> git_roles = new ArrayList<>();
+        List<Map<String, Object>> url_roles = new ArrayList<>();
         for (Configuration.AnsibleGalaxyRoles galaxyRole : config.getAnsibleGalaxyRoles()) {
             Map<String, Object> role = new LinkedHashMap<>();
             role.put("name", galaxyRole.getName());
             if (galaxyRole.getGalaxy() != null) {
                 role.put("src", galaxyRole.getGalaxy());
-                galaxy.add(role);
+                galaxy_roles.add(role);
             } else if (galaxyRole.getGit() != null) {
                 role.put("src", galaxyRole.getGit());
-                git.add(role);
+                git_roles.add(role);
+            } else if (galaxyRole.getUrl() != null) {
+                role.put("src", galaxyRole.getUrl());
+                url_roles.add(role);
             }
         }
 
-        writeToOutputStream(stream, galaxy);
-        writeToOutputStream(stream, git);
-    }
-
-    /**
-     * Generates a unique role name with the provided hosts type and index.
-     *
-     * @param hosts master or slaves.
-     * @param i     Index of the custom role folder.
-     * @return custom role name
-     */
-    public String getCustomRoleName(String hosts, int i) {
-        return hosts + "-user-role" + i;
+        writeToOutputStream(stream, galaxy_roles);
+        writeToOutputStream(stream, git_roles);
+        writeToOutputStream(stream, url_roles);
     }
 
     /**
@@ -125,7 +119,7 @@ public final class AnsibleConfig {
      * @return custom role name
      */
     public static String getCustomRoleName(String hosts, String roleName) {
-        return hosts + "-user-role-" + roleName;
+        return hosts + "-" + roleName;
     }
 
     /**
@@ -240,6 +234,24 @@ public final class AnsibleConfig {
     }
 
     /**
+     * Puts parameter values of every given role into Map list.
+     * @return list of roles with single parameters
+     */
+    private List<Map<String, Object>> getAnsibleRoles() {
+        List<AnsibleRoles> roles = config.getAnsibleRoles();
+        List<Map<String, Object>> ansibleRoles = new ArrayList<>();
+        for (AnsibleRoles role : roles) {
+            Map<String, Object> roleConf = new LinkedHashMap<>();
+            roleConf.put("name", role.getName());
+            roleConf.put("file", role.getFile());
+            roleConf.put("hosts", role.getHosts());
+            if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            ansibleRoles.add(roleConf);
+        }
+        return ansibleRoles;
+    }
+
+    /**
      * Puts parameter values of every given ansible-galaxy role into Map list.
      * @return list of roles with single parameters
      */
@@ -252,29 +264,11 @@ public final class AnsibleConfig {
             roleConf.put("hosts", role.getHosts());
             if (role.getGalaxy() != null) roleConf.put("galaxy", role.getGalaxy());
             if (role.getGit() != null) roleConf.put("git", role.getGit());
-            if (!role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            if (role.getUrl() != null) roleConf.put("url", role.getUrl());
+            if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
             ansibleGalaxyRoles.add(roleConf);
         }
         return ansibleGalaxyRoles;
-    }
-
-    /**
-     * Puts parameter values of every given role into Map list.
-     * @return list of roles with single parameters
-     */
-    private List<Map<String, Object>> getAnsibleRoles() {
-        List<AnsibleRoles> roles = config.getAnsibleRoles();
-        List<Map<String, Object>> ansibleRoles = new ArrayList<>();
-        for (AnsibleRoles role : roles) {
-            Map<String, Object> roleConf = new LinkedHashMap<>();
-            roleConf.put("name", role.getName());
-            if (role.getFile() != null) roleConf.put("file", role.getFile());
-            if (role.getUrl() != null) roleConf.put("url", role.getUrl());
-            roleConf.put("hosts", role.getHosts());
-            if (!role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
-            ansibleRoles.add(roleConf);
-        }
-        return ansibleRoles;
     }
 
     private List<String> getEphemeralDevices(int count) {

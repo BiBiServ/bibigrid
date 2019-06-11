@@ -672,19 +672,19 @@ public abstract class Configuration {
 
     /**
      * Checks if custom ansible roles used.
+     *
      * @return true, if ansible roles given in configuration
      */
     public boolean hasCustomAnsibleRoles() {
-        LOG.warn("ansible Roles {}", ansibleRoles);
         return ansibleRoles != null && !ansibleRoles.isEmpty();
     }
 
     /**
      * Checks if custom ansible-galaxy roles used.
+     *
      * @return true, if ansible-galaxy roles given in configuration
      */
     public boolean hasCustomAnsibleGalaxyRoles() {
-        LOG.warn("ansible galaxy Roles {}", ansibleRoles);
         return ansibleGalaxyRoles != null && !ansibleGalaxyRoles.isEmpty();
     }
 
@@ -694,13 +694,16 @@ public abstract class Configuration {
     public List<AnsibleRoles> getAnsibleRoles() {
         List<AnsibleRoles> roles = new ArrayList<>();
         for (AnsibleRoles role : ansibleRoles) {
-            if (role.getFile() == null && role.getUrl() == null) {
-                LOG.warn("Ansible: At least one of 'file' or 'url' has to be specified. Skipping the role...");
+            if (role.getFile() == null) {
+                LOG.warn("Ansible: A 'file' has to be specified. Skipping the role...");
                 continue;
             }
 
-            if (!role.getHosts().equals("master") && !role.getHosts().equals("slave") && !role.getHosts().equals("all")) {
-                LOG.warn("Ansible roles have 'scope' to be defined either as 'master', 'slave' or 'all'. Skipping the role...");
+            if (role.getHosts() == null ||
+                    !role.getHosts().equals("master") &&
+                            !role.getHosts().equals("slave") &&
+                            !role.getHosts().equals("all")) {
+                LOG.warn("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'. Skipping the role...");
                 continue;
             }
             roles.add(role);
@@ -714,7 +717,6 @@ public abstract class Configuration {
         } else {
             this.ansibleRoles = new ArrayList<>(ansibleRoles);
         }
-        LOG.warn("set ansibleroles {}", ansibleRoles);
     }
 
     /**
@@ -723,28 +725,20 @@ public abstract class Configuration {
     public List<AnsibleGalaxyRoles> getAnsibleGalaxyRoles() {
         List<AnsibleGalaxyRoles> galaxyRoles = new ArrayList<>();
         for (AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
-            LOG.warn("getGalaxyRole....");
-            if (role.getGalaxy() == null && role.getGit() == null) {
-                LOG.warn("Ansible Galaxy: At least one of 'galaxy' or 'git' has to be specified. Skipping the role...");
+            if (role.getGalaxy() == null && role.getGit() == null && role.getUrl() == null) {
+                LOG.warn("Ansible Galaxy: At least one of 'galaxy', 'git' or 'url' has to be specified. Skipping the role...");
                 continue;
             }
 
-            switch (role.getHosts()) {
-                case "master":
-                    galaxyRoles.add(role);
-                    break;
-                case "slaves":
-                    galaxyRoles.add(role);
-                    break;
-                case "all":
-                    galaxyRoles.add(role);
-                    break;
-                default:
-                    LOG.warn("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'. Skipping the role...");
-
+            if (role.getHosts() == null ||
+                    !role.getHosts().equals("master") &&
+                            !role.getHosts().equals("slave") &&
+                            !role.getHosts().equals("all")) {
+                LOG.warn("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'. Skipping the role...");
+                continue;
             }
+            galaxyRoles.add(role);
         }
-        // TODO Possible source of error
         return galaxyRoles;
     }
 
@@ -755,23 +749,20 @@ public abstract class Configuration {
     /**
      * Provides support for (local) Ansible roles and playbooks.
      *
-     * String name  : name of (ansible-galaxy) role or playbook
+     * String name  : (optional) name of (ansible-galaxy) role or playbook, default is given name
      * String hosts : host (master / slave / all)
      * Map vars     : (optional) additional key - value pairs of role
-     * String file  : (optional) file of role
-     * String url   : (optional) url of role
-     * Either file or url
+     * String file  : file of role
      */
     public static class AnsibleRoles {
-        private String file;
-        private String url;
         private String name;
+        private String file;
 
         private String hosts;
         private Map<String, String> vars = new HashMap<>();
 
         public String getName() {
-            return name;
+            return name == null ? file : name;
         }
 
         public void setName(String name) {
@@ -801,25 +792,18 @@ public abstract class Configuration {
         public void setFile(String file) {
             this.file = file;
         }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
     }
 
     /**
      * Provides support for Ansible Galaxy and Git roles and playbooks.
      *
-     * String name      : name of (ansible-galaxy) role or playbook
+     * String name      : (optional) name of (ansible-galaxy) role or playbook, default is given name
      * String hosts     : host (master / slave / all)
      * Map vars         : (optional) additional key - value pairs of role
-     * String galaxy    : ansible-galaxy name
-     * String git       : Git source (e.g. GitHub url)
-     * Either galaxy or git
+     * String galaxy    : (optional) ansible-galaxy name
+     * String git       : (optional) Git source (e.g. GitHub url)
+     * String url       : (optional) url of role
+     * Either galaxy, git or url has to be specified
      */
     public static class AnsibleGalaxyRoles {
         private String name;
@@ -828,8 +812,18 @@ public abstract class Configuration {
 
         private String galaxy;
         private String git;
+        private String url;
 
         public String getName() {
+            if (name == null) {
+                if (galaxy != null) {
+                    name = galaxy;
+                } else if (git != null) {
+                    name = git;
+                } else if (url != null) {
+                    name = url;
+                }
+            }
             return name;
         }
 
@@ -867,6 +861,14 @@ public abstract class Configuration {
 
         public void setGit(String git) {
             this.git = git;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
         }
     }
 }
