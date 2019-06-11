@@ -7,6 +7,8 @@ import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,20 +28,36 @@ public abstract class TerminateIntent extends Intent {
 
     /**
      * Terminate all clusters with the specified ids.
+     * Optional a user can be specified to terminate all of its clusters.
      *
      * @return Return true in case of success, false otherwise
      */
     public boolean terminate() {
         final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
         boolean success = true;
+        List<String> toRemove = new ArrayList<>();
         for (String clusterId : config.getClusterIds()) {
-            final Cluster cluster = clusters.get(clusterId);
-            if (cluster == null) {
-                LOG.warn("No cluster with ID '{}' found.", clusterId);
-                success = false;
-                continue;
+            // if '-t user-id'
+            boolean isUser = false;
+            for (Cluster c : clusters.values()) {
+                if (clusterId.equals(c.getUser())) {
+                    toRemove.add(c.getClusterId());
+                    isUser = true;
+                }
             }
+            if (!isUser) {
+                final Cluster cluster = clusters.get(clusterId);
+                if (cluster == null) {
+                    LOG.warn("No cluster with ID '{}' found.", clusterId);
+                    success = false;
+                } else {
+                    toRemove.add(clusterId);
+                }
+            }
+        }
+        for (String clusterId : toRemove) {
             LOG.info("Terminating cluster with ID '{}'.", clusterId);
+            final Cluster cluster = clusters.get(clusterId);
             if (terminateCluster(cluster)) {
                 LOG.info("Cluster '{}' terminated!", clusterId);
             } else {
