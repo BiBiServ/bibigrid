@@ -323,30 +323,25 @@ public abstract class CreateCluster extends Intent {
                 channel.put(stream, fullPath);
             }
 
-            // @ToDo Support custom roles
-            List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
-            // upload master roles
+            // Divide into master and slave roles to write in site.yml
             List<String> customMasterRoles = new ArrayList<>();
             List<String> customSlaveRoles = new ArrayList<>();
+
+            List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
             for (Configuration.AnsibleRoles role : ansibleRoles) {
-                String roleName;
+                String roleName = role.getName();
                 switch (role.getHosts()) {
                     case "master":
-                        roleName = AnsibleConfig.getCustomRoleName("master", role.getName());
                         customMasterRoles.add(roleName);
                         break;
                     case "slaves":
-                        roleName = AnsibleConfig.getCustomRoleName("slaves", role.getName());
                         customSlaveRoles.add(roleName);
                         break;
                     default:
-                        roleName = AnsibleConfig.getCustomRoleName("all", role.getName());
                         customMasterRoles.add(roleName);
                         customSlaveRoles.add(roleName);
                 }
-                role.setName(roleName);
                 this.uploadAnsibleRole(channel, resources, role.getFile(), roleName);
-
             }
 
             // Add galaxy and git roles to custom roles to add in site file
@@ -384,9 +379,11 @@ public abstract class CreateCluster extends Intent {
                             + AnsibleResources.SITE_CONFIG_FILE),
                      customMasterRoles, customSlaveRoles);
 
-             // Write requirements file for ansible-galaxy support
-            commonConfig.writeRequirementsFile(channel.put(channel.getHome() + "/"
-                    + AnsibleResources.REQUIREMENTS_CONFIG_FILE));
+            // Write requirements file for ansible-galaxy support
+            if (!ansibleGalaxyRoles.isEmpty()) {
+                commonConfig.writeRequirementsFile(channel.put(channel.getHome() + "/"
+                        + AnsibleResources.REQUIREMENTS_CONFIG_FILE));
+            }
 
             // Write slave instance specific configuration file
             for (Instance slave : slaveInstances) {
@@ -396,7 +393,7 @@ public abstract class CreateCluster extends Intent {
             }
             uploadCompleted = true;
         } catch (SftpException | IOException e) {
-            LOG.error("SFTP: {}", e);
+            LOG.error("SFTP: ", e);
             uploadCompleted = false;
         } finally {
             channel.disconnect();
@@ -415,10 +412,10 @@ public abstract class CreateCluster extends Intent {
     private void createSftpFolders(ChannelSftp channel, AnsibleResources resources, List<String> files) throws SftpException {
         for (String folderPath : resources.getDirectories(files)) {
             String fullPath = channel.getHome() + "/" + folderPath;
-            LOG.info(V, "SFTP: Create folder {}", fullPath);
             try {
                 channel.cd(fullPath);
             } catch (SftpException e) {
+                LOG.info(V, "SFTP: Create folder {}", fullPath);
                 channel.mkdir(fullPath);
             }
             channel.cd(channel.getHome());
@@ -426,7 +423,7 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
-     * Uploads single ansible role to remote instance.
+     * Uploads single ansible role (.tar.gz) to remote instance.
      *
      * @param channel client side of sftp server channel
      * @param resources ansible configuration
@@ -437,8 +434,8 @@ public abstract class CreateCluster extends Intent {
      */
     private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath, String roleName)
             throws SftpException, IOException {
-        // playbook/roles/ROLE_NAME.yml
-        String basePath = AnsibleResources.ROLES_ROOT_PATH + "/" + roleName + "/";
+        // playbook/roles/ROLE_NAME
+        String basePath = AnsibleResources.ROLES_ROOT_PATH + rolePath;
         Path rootRolePath = Paths.get(rolePath);
         // Walks through valid files in rootRolePath and collects Stream to path list
         List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
@@ -448,7 +445,6 @@ public abstract class CreateCluster extends Intent {
         for (int i = 0; i < files.size(); i++) {
             InputStream stream = new FileInputStream(files.get(i).toFile());
             // Upload the file stream via sftp to the home folder
-            LOG.info("targetFiles(i) {}", targetFiles.get(i));
             String fullPath = channel.getHome() + "/" + targetFiles.get(i).replace("\\", "/");
             LOG.info(V, "SFTP: Upload file {}", fullPath);
             channel.put(stream, fullPath);

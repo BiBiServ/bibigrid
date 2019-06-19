@@ -128,16 +128,23 @@ public final class ShellScriptCreator {
         // Fix line endings to ensure windows files being used correctly
         script.append("for file in $(find " + AnsibleResources.ROOT_PATH + " -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
 
-        // Run ansible-galaxy to install ansible-galaxy playbooks
+        // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
         script.append("ansible-galaxy install --roles-path ~/"
                 + AnsibleResources.ROLES_ROOT_PATH
                 + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
+
+        // Extract ansible roles from files (.tar.gz)
+        script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
+        script.append("tar -xzf *.tar.gz\n");
+        script.append("rm -rf *.tar.gz\n");
+        script.append("cd ~\n");
 
         // Execute ansible playbook
         script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
                 + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
                 .append(prepare ? " -t install" : "")
                 .append(" | sudo tee -a /var/log/ansible-playbook.log\n");
+
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
         return script.toString();
     }

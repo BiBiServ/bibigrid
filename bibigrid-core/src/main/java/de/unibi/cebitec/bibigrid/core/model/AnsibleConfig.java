@@ -83,7 +83,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Generates roles/requirements.yml automatically including ansible-galaxy and git roles.
+     * Generates roles/requirements.yml automatically including roles to install via ansible-galaxy.
      *
      * @param stream write file to remote
      */
@@ -91,6 +91,7 @@ public final class AnsibleConfig {
         List<Map<String, Object>> galaxy_roles = new ArrayList<>();
         List<Map<String, Object>> git_roles = new ArrayList<>();
         List<Map<String, Object>> url_roles = new ArrayList<>();
+
         for (Configuration.AnsibleGalaxyRoles galaxyRole : config.getAnsibleGalaxyRoles()) {
             Map<String, Object> role = new LinkedHashMap<>();
             role.put("name", galaxyRole.getName());
@@ -105,7 +106,6 @@ public final class AnsibleConfig {
                 url_roles.add(role);
             }
         }
-
         writeToOutputStream(stream, galaxy_roles);
         writeToOutputStream(stream, git_roles);
         writeToOutputStream(stream, url_roles);
@@ -174,6 +174,12 @@ public final class AnsibleConfig {
         writeToOutputStream(stream, map);
     }
 
+    /**
+     * Uses stream to write map on remote.
+     *
+     * @param stream OutputStream to remote instance
+     * @param map (yml) file content
+     */
     private void writeToOutputStream(OutputStream stream, Object map) {
         try {
             try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
