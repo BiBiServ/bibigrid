@@ -743,7 +743,7 @@ public abstract class Configuration {
     }
 
     public void setAnsibleGalaxyRoles(List<AnsibleGalaxyRoles> ansibleGalaxyRoles) {
-        this.ansibleGalaxyRoles = this.ansibleGalaxyRoles == null ? ansibleGalaxyRoles : new ArrayList<>(ansibleGalaxyRoles);
+        this.ansibleGalaxyRoles = (this.ansibleGalaxyRoles == null) ? ansibleGalaxyRoles : new ArrayList<>(ansibleGalaxyRoles);
     }
 
     /**
