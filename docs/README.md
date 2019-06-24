@@ -147,6 +147,60 @@ ogeConf:
 The given value(s) will be overwritten in or added to the default configuration. 
 Check `qconf -sconf global` on master to proof the configuration.
 
+## Including Ansible (Galaxy) Roles
+You can include ansible roles from your own machine (compressed as .tar.gz files) automatically into your cluster setup by defining following configuration settings:
+
+```
+ansibleRoles:
+  - name: string		# Name of role, used only as description in config file
+    hosts: string		# One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    file: string		# path/to/file.tar.gz - File on local machine
+    vars: 
+	  key : value		# Environment variables, if default configuration is not the preferred option
+	  ...
+  - name: ...			# Add as many roles as you want
+```
+
+To get a quick overview of the procedure, you can make your own 'Hello World' example role.  
+
+``` > ansible-galaxy init test-role ```  
+
+creates a basic role structure with 'defaults', 'files', 'vars', 'tasks' and other folders. Go into 'tasks' and change the 'main.yml':
+``` main.yml
+- debug:
+    msg: 
+    - "Hello {{ ansible_user }}!"
+```
+
+You then have to archive your role folder (in this case: 'test-role') with the following command:
+
+``` > tar -czvf example-role.tar.gz test-role ```  
+
+You only need the '.tar.gz' file in the next steps. 'example-role' - or whatever you call the archived file - 
+will be the name of the role in your cluster. Now include the following lines into your configuration file:
+
+```
+ansibleRoles:
+  - name: Example role for test purposes	# Name of role, used only as description in config file
+    hosts: master                   		# One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    file: example-role.tar.gz       		# path/to/file.tar.gz - File on local machine
+```
+If you want to include roles from Ansible Galaxy, Git or from a Webserver (as .tar.gz files), add the following lines to your configuration file:
+
+```
+ansibleGalaxyRoles:
+  - name: string		# Name of role, used to redefine role name
+    hosts: string		# One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    galaxy: string		# Galaxy name of role like 'author.rolename'
+    git: string			# GitHub role repository like 'https://github.com/bennojoy/nginx'
+    url: string			# Webserver file url like 'https://some.webserver.example.com/files/master.tar.gzpath/to/file.tar.gz'
+    vars: 
+	  key : value		# Environment variables, if default configuration is not the preferred option
+	  ...
+  - name: ...			# Add as many roles as you want
+```
+Be aware of using only one of 'galaxy', 'git' or 'url'.
+
 ## Cluster maintenance
 ### List running clusters
 Once a cluster is created, it can be listed with the following command. All clusters found
