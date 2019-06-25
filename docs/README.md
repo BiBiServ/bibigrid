@@ -185,6 +185,8 @@ ansibleRoles:
     hosts: master                   		# One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
     file: example-role.tar.gz       		# path/to/file.tar.gz - File on local machine
 ```
+You can download an easy working example [here](examples/example.tar.gz).  
+
 If you want to include roles from Ansible Galaxy, Git or from a Webserver (as .tar.gz files), add the following lines to your configuration file:
 
 ```
@@ -225,8 +227,14 @@ When you're finished using the cluster, you can terminate it using the following
 > bibigrid -t [cluster-id] -v -o ~/config.yml
 ```
 
-If necessary multiple clusters can be terminated at once.
+If necessary multiple clusters can be terminated at once:
 
 ```
 > bibigrid -t [id1]/[id2]/[id3] -v -o ~/config.yml
 ```
+There is also the possibility to terminate all clusters of a user at once:
+```
+> bibigrid -t [user] -v -o ~/config.yml
+```
+Here you have to insert your username instead of '[user]'. This may save time, 
+if you are absolutely certain you don't need any of your clusters anymore.
