@@ -10,9 +10,10 @@ BiBiGrid offers an easy configuration and maintenance of a started cluster via c
 
 BiBiGrid uses [Ansible](https://www.ansible.com) to configure standard Ubuntu 16.04 LTS 
 as well as Ubuntu 18.04 LTS cloud images. Depending on your configuration BiBiGrid can set up
-an HCP cluster for grid computing ([Open Grid Engine](http://gridscheduler.sourceforge.net)), 
+an HCP cluster for grid computing ([Slurm Workload Manager](https://slurm.schedmd.com/documentation.html) 
+as well as [Open Grid Engine](http://gridscheduler.sourceforge.net), provided for Ubuntu 16.04 only), 
 a shared filesystem (on local discs and attached volumes), a cloud IDE for writing, running and debugging 
-([Cloud9](https://github.com/c9/core)) and many more.
+([Theia Web IDE](https://github.com/theia-ide/theia) as well as [Cloud9](https://github.com/c9/core), supported for Ubuntu 16.04 only) and many more.
 
 During resource instantiation BiBiGrid configures the network, local and network volumes, (network) file systems and 
 also the software for an immediately usage of the started cluster. 
@@ -28,6 +29,7 @@ Each cloud provider SDK comes with a set of dependencies which often conflicts w
 (same library, different major version) when building a shaded (fat) jar. The BiBiGrid POM supports Maven profiles 
 to avoid such dependency conflicts.  
 
+At first, clone the repository onto your local machine and change into `bibigrid` directory.
 ~~~BASH
 > git clone https://github.com/BiBiServ/bibigrid.git
 > cd bibigrid
@@ -65,7 +67,10 @@ The default profile is mainly used by IDEs with Maven support.*
 
 ~~~BASH
 > mvn -P googlecloud clean package
-~~~
+~~~   
+
+You can also use the [prebuild binary repository](https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/) 
+to get the latest (and older) versions of BiBiGrid.
 
 ## Getting Started 
 Using BiBiGrid requires a valid cluster configuration and credentials for your cloud provider. 

@@ -676,7 +676,7 @@ public abstract class Configuration {
     }
 
     /**
-     * Provides support for Gridengine global configuration.
+     * Provides support for GridEngine global configuration.
      */
     public static class OgeConf extends Properties {
         public static final String GRIDENGINE_FILES = "/playbook/roles/master/files/gridengine/";
