@@ -56,7 +56,7 @@ handlers:
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridListPostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridCreatePostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridValidatePostHandler
-  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdPostHandler
+  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoPostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdPostHandler
 
 
@@ -90,11 +90,11 @@ paths:
     exec:
       - default
       - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridValidatePostHandler
-  - path: '/bibigrid/info/{id}'
+  - path: '/bibigrid/info'
     method: 'POST'
     exec:
       - default
-      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdPostHandler
+      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoPostHandler
   - path: '/bibigrid/terminate/{id}'
     method: 'POST'
     exec:
