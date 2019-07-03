@@ -94,8 +94,4 @@
         <appender-ref ref="dump"/>
     </logger>
 
-    <logger name="de.unibi.cebitec.bibigrid" level="debug" additivity="false">
-        <appender-ref ref="stdout"/>
-    </logger>
-
 </configuration>
