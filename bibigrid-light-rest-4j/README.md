@@ -19,22 +19,18 @@ mvn clean install
 cd bibigrid/bibigrid-light-rest-4j
 rm -rf application # Needs to be done when there exists an application folder from older api generations
 java -jar light-codegen/codegen-cli/target/codegen-cli.jar -f openapi -o ./application -m openapi.json -c config.json```
+```
+
 ##### After doing code changes you need to compile again with the following commands
 ```
 cd bibigrid/bibigrid-light-rest-4j/application
 mvn clean install exec:exec
 ```
-
-
-
 Your server should now be running on port 8443 of your local machine
+
 
 # Example requests
 Use [Postman](https://www.getpostman.com/) or   
 ```
-curl  https://localhost:8443/
+curl  https://localhost:8443/bibigrid/info
 ```
-
-
-
-
