@@ -13,7 +13,7 @@ public class BibigridInfoPostHandler implements LightHttpHandler {
         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
         exchange.setStatusCode(200);
         System.out.println("test");
-
+        System.out.println(exchange.getInputStream());
         exchange.getResponseSender().send("{\"info\":\"Ich bin noch am hochfahren\",\"log\":\"lorem ipsum lorem ipsum....\"}");
     }
 }
