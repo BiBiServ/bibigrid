@@ -42,16 +42,14 @@ public final class ValidatorOpenstack extends Validator {
         List<String> options = new ArrayList<>();
 
         switch (intentMode) {
-            default:
-                return null;
             case LIST:
+            case HELP:
+            case PREPARE:
+            case VALIDATE:
+            case CREATE:
                 break;
             case TERMINATE:
                 options.add(IntentMode.TERMINATE.getShortParam());
-                break;
-            case PREPARE:
-            case CREATE:
-            case VALIDATE:
                 break;
             case IDE:
                 options.add(IntentMode.IDE.getShortParam());
@@ -59,6 +57,8 @@ public final class ValidatorOpenstack extends Validator {
             case CLOUD9:
                 options.add(IntentMode.CLOUD9.getShortParam());
                 break;
+            default:
+                return null;
         }
         return options;
     }
@@ -103,7 +103,7 @@ public final class ValidatorOpenstack extends Validator {
 
 
             } catch (FileNotFoundException e) {
-                LOG.error("Failed to load openstack credentials file. {}", e);
+                LOG.error("Failed to load openstack credentials file.", e);
             } catch (YAMLException e) {
                 LOG.error("Failed to parse openstack credentials file. {}",
                         e.getCause() != null ? e.getCause().getMessage() : e);
