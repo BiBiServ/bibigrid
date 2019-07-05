@@ -312,16 +312,7 @@ public abstract class CreateCluster extends Intent {
         try {
             // Collect the Ansible files from resources for upload
             AnsibleResources resources = new AnsibleResources();
-            // First the folders need to be created
-            createSftpFolders(channel, resources, resources.getFiles());
-            // Each file is uploaded to it's relative path in the home folder
-            for (String filepath : resources.getFiles()) {
-                InputStream stream = resources.getFileStream(filepath);
-                // Upload the file stream via sftp to the home folder
-                String fullPath = channel.getHome() + "/" + filepath;
-                LOG.info(V, "SFTP: Upload file {}", fullPath);
-                channel.put(stream, fullPath);
-            }
+            this.uploadResourcesFiles(resources, channel);
 
             // Divide into master and slave roles to write in site.yml
             Map<String, String> customMasterRoles = new LinkedHashMap<>();
@@ -348,7 +339,7 @@ public abstract class CreateCluster extends Intent {
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
                             AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
                 }
-                this.uploadAnsibleRole(channel, resources, role.getFile(), roleName);
+                this.uploadAnsibleRole(channel, resources, role.getFile());
             }
 
             // Add galaxy and git roles to custom roles to add in site file
@@ -414,6 +405,29 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
+     * Uploads common Ansible Resources files.
+     *
+     * @param resources ansible configuration
+     * @param channel client side of sftp server channel
+     */
+    private void uploadResourcesFiles(AnsibleResources resources, ChannelSftp channel) {
+        try {
+            // First the folders need to be created
+            createSftpFolders(channel, resources, resources.getFiles());
+            // Each file is uploaded to it's relative path in the home folder
+            for (String filepath : resources.getFiles()) {
+                InputStream stream = resources.getFileStream(filepath);
+                // Upload the file stream via sftp to the home folder
+                String fullPath = channel.getHome() + "/" + filepath;
+                LOG.info(V, "SFTP: Upload file {}", fullPath);
+                channel.put(stream, fullPath);
+            }
+        } catch (SftpException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Creates folders for every directory, given a file structure.
      *
      * @param channel client side of sftp server channel
@@ -435,16 +449,15 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
-     * Uploads single ansible role (.tar.gz) to remote instance.
+     * Uploads single ansible role (.tar.gz, .tgz) to remote instance.
      *
      * @param channel client side of sftp server channel
      * @param resources ansible configuration
      * @param rolePath path/to/role on local machine
-     * @param roleName name of role
      * @throws SftpException possible SFTP failure
      * @throws IOException possible File failure
      */
-    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath, String roleName)
+    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath)
             throws SftpException, IOException {
         // playbook/roles/ROLE_NAME
         String basePath = AnsibleResources.ROLES_ROOT_PATH + rolePath;
