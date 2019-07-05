@@ -32,8 +32,8 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class CreateCluster extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
-    public static final String MASTER_NAME_PREFIX = PREFIX + "master";
-    public static final String SLAVE_NAME_PREFIX = PREFIX + "slave";
+    static final String MASTER_NAME_PREFIX = PREFIX + "master";
+    static final String SLAVE_NAME_PREFIX = PREFIX + "slave";
 
     protected final ProviderModule providerModule;
     protected final Client client;
@@ -282,7 +282,7 @@ public abstract class CreateCluster extends Intent {
                     sshSession.disconnect();
                 }
             } catch (IOException | JSchException e) {
-                LOG.error("SSH: {}", e);
+                LOG.error("SSH: ", e);
             }
         }
         if (configured) {
@@ -310,7 +310,7 @@ public abstract class CreateCluster extends Intent {
         LOG.info(V, "Connecting sftp channel...");
         channel.connect();
         try {
-            // Collect the Ansible files from resources for upload
+            // Collect Ansible files from resources for upload
             AnsibleResources resources = new AnsibleResources();
             this.uploadResourcesFiles(resources, channel);
 
@@ -320,9 +320,10 @@ public abstract class CreateCluster extends Intent {
 
             List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
             for (Configuration.AnsibleRoles role : ansibleRoles) {
-                String roleName = role.getName();
+                String roleName = getSingleFileName(role.getFile()).split(".tgz")[0].split(".tar.gz")[0];
                 Map<String, String> roleVars = role.getVars();
-                String roleVarsFile = roleVars != null && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
+                String roleVarsFile = roleVars != null
+                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
 
                 switch (role.getHosts()) {
                     case "master":
@@ -342,13 +343,13 @@ public abstract class CreateCluster extends Intent {
                 this.uploadAnsibleRole(channel, resources, role.getFile());
             }
 
-            // Add galaxy and git roles to custom roles to add in site file
+            // Add galaxy roles to custom roles to add in site file
             List<Configuration.AnsibleGalaxyRoles> ansibleGalaxyRoles = config.getAnsibleGalaxyRoles();
             for (Configuration.AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
-                String roleName;
+                String roleName = AnsibleConfig.getCustomRoleName(role.getHosts(), role.getName());
                 Map<String, String> roleVars = role.getVars();
-                roleName = AnsibleConfig.getCustomRoleName(role.getHosts(), role.getName());
-                String roleVarsFile = roleVars != null && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
+                String roleVarsFile = roleVars != null
+                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
 
                 switch (role.getHosts()) {
                     case "master":
@@ -453,19 +454,20 @@ public abstract class CreateCluster extends Intent {
      *
      * @param channel client side of sftp server channel
      * @param resources ansible configuration
-     * @param rolePath path/to/role on local machine
+     * @param roleFile path/to/role on local machine
      * @throws SftpException possible SFTP failure
      * @throws IOException possible File failure
      */
-    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath)
+    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String roleFile)
             throws SftpException, IOException {
+        Path rootRolePath = Paths.get(roleFile);
         // playbook/roles/ROLE_NAME
-        String basePath = AnsibleResources.ROLES_ROOT_PATH + rolePath;
-        Path rootRolePath = Paths.get(rolePath);
+        roleFile = this.getSingleFileName(roleFile);
+        String remotePath = AnsibleResources.ROLES_ROOT_PATH + roleFile;
         // Walks through valid files in rootRolePath and collects Stream to path list
         List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
         // create a list of files in role
-        List<String> targetFiles = files.stream().map(p -> basePath + rootRolePath.relativize(p)).collect(Collectors.toList());
+        List<String> targetFiles = files.stream().map(p -> remotePath + rootRolePath.relativize(p)).collect(Collectors.toList());
         createSftpFolders(channel, resources, targetFiles);
         for (int i = 0; i < files.size(); i++) {
             InputStream stream = new FileInputStream(files.get(i).toFile());
@@ -474,6 +476,17 @@ public abstract class CreateCluster extends Intent {
             LOG.info(V, "SFTP: Upload file {}", fullPath);
             channel.put(stream, fullPath);
         }
+    }
+
+    /**
+     * Turns path/to/file.* into file.*.
+     * @param roleFile path/to/file
+     * @return fileName
+     */
+    private String getSingleFileName(String roleFile) {
+        roleFile = roleFile.replace("\\", "/");
+        String[] pathway = roleFile.split("/");
+        return pathway[pathway.length - 1];
     }
 
     /**
