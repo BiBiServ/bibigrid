@@ -184,7 +184,7 @@ public final class AnsibleConfig {
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
         addBooleanOption(map, "enable_theia", config.isTheia());
         addBooleanOption(map, "enable_cloud9", config.isCloud9());
-        addBooleanOption(map,"enable_ganglia",config.isGanglia());
+        addBooleanOption(map, "enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
         if (config.isZabbix()) {
             map.put("zabbix", getZabbixConf());

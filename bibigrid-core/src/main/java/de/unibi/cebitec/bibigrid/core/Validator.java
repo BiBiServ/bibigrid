@@ -2,6 +2,9 @@ package de.unibi.cebitec.bibigrid.core;
 
 import de.unibi.cebitec.bibigrid.core.model.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
@@ -53,7 +56,6 @@ public abstract class Validator {
         // terminate (cluster-id)
         if (req.contains(IntentMode.TERMINATE.getShortParam())) {
             config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
-
         }
         return true;
     }
@@ -71,18 +73,37 @@ public abstract class Validator {
         return true;
     }
 
+    /**
+     * Checks if file(s) given in configuration are valid.
+     * @return true, if file(s) found
+     */
+    private boolean validateAnsibleFiles() {
+        for (Configuration.AnsibleRoles role : config.getAnsibleRoles()) {
+            Path path = Paths.get(role.getFile());
+            if (!Files.isReadable(path)) {
+                LOG.error("Ansible: File {} does not exist.", path);
+                return false;
+            }
+        }
+        return true;
+    }
 
+    /**
+     * Checks, if providerModule exists and requirements fulfilled.
+     * @param mode ProviderMode
+     * @return true, if requirements fulfilled
+     */
     public boolean validate(String mode) {
         config.setMode(mode);
         if (providerModule == null) {
-            LOG.error("No provider module for mode '"+mode+"' found. ");
+            LOG.error("No provider module for mode '" + mode + "' found. ");
             return false;
         }
         if (req == null) {
             LOG.info("No requirements defined ...");
             return true;
         }
-        return parseTerminateParameter() && parseIdeParameter() && validateProviderParameters();
+        return parseTerminateParameter() && parseIdeParameter() && validateAnsibleFiles() && validateProviderParameters();
     }
 
     protected abstract List<String> getRequiredOptions();

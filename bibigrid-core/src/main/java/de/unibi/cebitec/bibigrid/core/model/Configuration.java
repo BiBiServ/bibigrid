@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -692,23 +693,7 @@ public abstract class Configuration {
      * @return List of Ansible roles
      */
     public List<AnsibleRoles> getAnsibleRoles() {
-        List<AnsibleRoles> roles = new ArrayList<>();
-        for (AnsibleRoles role : ansibleRoles) {
-            if (role.getFile() == null) {
-                LOG.warn("Ansible: A 'file' has to be specified. Skipping the role...");
-                continue;
-            }
-
-            if (role.getHosts() == null ||
-                    !role.getHosts().equals("master") &&
-                            !role.getHosts().equals("slave") &&
-                            !role.getHosts().equals("all")) {
-                LOG.warn("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'. Skipping the role...");
-                continue;
-            }
-            roles.add(role);
-        }
-        return roles;
+        return ansibleRoles;
     }
 
     public void setAnsibleRoles(List<AnsibleRoles> ansibleRoles) {

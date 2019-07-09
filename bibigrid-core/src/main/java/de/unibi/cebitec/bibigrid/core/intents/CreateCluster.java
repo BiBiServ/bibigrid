@@ -281,7 +281,7 @@ public abstract class CreateCluster extends Intent {
                             installAndExecuteAnsible(sshSession, prepare);
                     sshSession.disconnect();
                 }
-            } catch (IOException | JSchException e) {
+            } catch (IOException | JSchException | ConfigurationException e) {
                 LOG.error("SSH: ", e);
             }
         }
@@ -303,7 +303,7 @@ public abstract class CreateCluster extends Intent {
      * @throws JSchException possible SSH connection error
      */
     private boolean uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
-                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException {
+                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException, ConfigurationException {
         boolean uploadCompleted;
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Upload Ansible playbook to master instance.");
@@ -320,6 +320,18 @@ public abstract class CreateCluster extends Intent {
 
             List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
             for (Configuration.AnsibleRoles role : ansibleRoles) {
+                if (role.getFile() == null) {
+                    throw new ConfigurationException("Ansible: A 'file' has to be specified.");
+                } else if (!Paths.get(role.getFile()).toFile().isFile()) {
+                    throw new ConfigurationException("Ansible: " + role.getFile() + " is no valid file path");
+                }
+
+                if (role.getHosts() == null ||
+                        !role.getHosts().equals("master") &&
+                                !role.getHosts().equals("slave") &&
+                                !role.getHosts().equals("all")) {
+                    throw new ConfigurationException("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'.");
+                }
                 String roleName = getSingleFileName(role.getFile()).split(".tgz")[0].split(".tar.gz")[0];
                 Map<String, String> roleVars = role.getVars();
                 String roleVarsFile = roleVars != null
