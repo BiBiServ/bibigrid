@@ -14,6 +14,9 @@ import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Checks, if commandline and configuration input is set correctly.
+ */
 public abstract class Validator {
     protected static final Logger LOG = LoggerFactory.getLogger(Validator.class);
     protected final CommandLine cl;
@@ -52,16 +55,22 @@ public abstract class Validator {
         return true;
     }
 
+    /**
+     * Validates correct terminate (cluster-id) cmdline input.
+     * @return true, if terminate parameter set correctly
+     */
     private boolean parseTerminateParameter() {
-        // terminate (cluster-id)
         if (req.contains(IntentMode.TERMINATE.getShortParam())) {
             config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
         }
         return true;
     }
 
+    /**
+     * Validates correct cloud9 / ide (cluster-id) cmdline input.
+     * @return true, if ide parameter set correctly
+     */
     private boolean parseIdeParameter() {
-        // cloud9 (cluster-id)
         if (req.contains(IntentMode.CLOUD9.getShortParam())) {
             config.setClusterIds(cl.getOptionValue(IntentMode.CLOUD9.getShortParam()).trim());
 
@@ -74,14 +83,43 @@ public abstract class Validator {
     }
 
     /**
-     * Checks if file(s) given in configuration are valid.
-     * @return true, if file(s) found
+     * Checks if ansible (galaxy) configuration is valid.
+     * @return true, if file(s) found, galaxy, git or url defined and hosts given
      */
-    private boolean validateAnsibleFiles() {
+    private boolean validateAnsibleRequirements() {
         for (Configuration.AnsibleRoles role : config.getAnsibleRoles()) {
+            if (role.getFile() == null) {
+                LOG.error("Ansible: file parameter not set.");
+                return false;
+            }
             Path path = Paths.get(role.getFile());
             if (!Files.isReadable(path)) {
                 LOG.error("Ansible: File {} does not exist.", path);
+                return false;
+            }
+            if (role.getHosts() == null) {
+                LOG.error("Ansible: hosts parameter not set.");
+                return false;
+            } else if (!role.getHosts().equals("master") &&
+                    !role.getHosts().equals("slave") &&
+                    !role.getHosts().equals("all")) {
+                LOG.error("Ansible: hosts parameter has to be defined either as 'master', 'slave' or 'all'.");
+                return false;
+            }
+        }
+
+        for (Configuration.AnsibleGalaxyRoles role : config.getAnsibleGalaxyRoles()) {
+            if (role.getGalaxy() == null && role.getGit() == null && role.getUrl() == null) {
+                LOG.error("Ansible Galaxy: At least one of 'galaxy', 'git' or 'url' has to be specified.");
+                return false;
+            }
+            if (role.getHosts() == null) {
+                LOG.error("Ansible Galaxy: hosts parameter not set.");
+                return false;
+            } else if (!role.getHosts().equals("master") &&
+                    !role.getHosts().equals("slave") &&
+                    !role.getHosts().equals("all")) {
+                LOG.error("Ansible Galaxy: hosts parameter has to be defined either as 'master', 'slave' or 'all'.");
                 return false;
             }
         }
@@ -103,7 +141,7 @@ public abstract class Validator {
             LOG.info("No requirements defined ...");
             return true;
         }
-        return parseTerminateParameter() && parseIdeParameter() && validateAnsibleFiles() && validateProviderParameters();
+        return parseTerminateParameter() && parseIdeParameter() && validateAnsibleRequirements() && validateProviderParameters();
     }
 
     protected abstract List<String> getRequiredOptions();

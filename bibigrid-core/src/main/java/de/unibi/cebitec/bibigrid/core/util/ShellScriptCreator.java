@@ -133,7 +133,7 @@ public final class ShellScriptCreator {
                 + AnsibleResources.ROLES_ROOT_PATH
                 + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
 
-        // Extract ansible roles from files (.tar.gz)
+        // Extract ansible roles from files (.tar.gz, .tgz)
         script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
         script.append("tar -xzf *.tgz\n");
         script.append("tar -xzf *.tar.gz\n");

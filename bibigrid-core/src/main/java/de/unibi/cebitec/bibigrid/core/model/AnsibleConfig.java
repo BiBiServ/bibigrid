@@ -274,7 +274,7 @@ public final class AnsibleConfig {
         List<Map<String, Object>> ansibleRoles = new ArrayList<>();
         for (AnsibleRoles role : roles) {
             Map<String, Object> roleConf = new LinkedHashMap<>();
-            roleConf.put("name", role.getName());
+            if (role.getName() != null && !role.getName().equals("")) roleConf.put("name", role.getName());
             roleConf.put("file", role.getFile());
             roleConf.put("hosts", role.getHosts());
             if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());

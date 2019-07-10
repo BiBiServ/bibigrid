@@ -708,23 +708,7 @@ public abstract class Configuration {
      * @return List of Ansible Galaxy roles
      */
     public List<AnsibleGalaxyRoles> getAnsibleGalaxyRoles() {
-        List<AnsibleGalaxyRoles> galaxyRoles = new ArrayList<>();
-        for (AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
-            if (role.getGalaxy() == null && role.getGit() == null && role.getUrl() == null) {
-                LOG.warn("Ansible Galaxy: At least one of 'galaxy', 'git' or 'url' has to be specified. Skipping the role...");
-                continue;
-            }
-
-            if (role.getHosts() == null ||
-                    !role.getHosts().equals("master") &&
-                            !role.getHosts().equals("slave") &&
-                            !role.getHosts().equals("all")) {
-                LOG.warn("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'. Skipping the role...");
-                continue;
-            }
-            galaxyRoles.add(role);
-        }
-        return galaxyRoles;
+        return ansibleGalaxyRoles;
     }
 
     public void setAnsibleGalaxyRoles(List<AnsibleGalaxyRoles> ansibleGalaxyRoles) {
@@ -799,6 +783,10 @@ public abstract class Configuration {
         private String git;
         private String url;
 
+        /**
+         * Set name to galaxy, git or url if not set.
+         * @return role name
+         */
         public String getName() {
             if (name == null) {
                 if (galaxy != null) {
