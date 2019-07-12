@@ -146,7 +146,7 @@ public abstract class Validator {
                 }
 
                 if (!isValidAnsibleGalaxyRole(galaxyName[0], galaxyName[1])) {
-                    LOG.error("Ansible Galaxy: galaxy parameter contains no valid name.");
+                    LOG.error("Ansible Galaxy: Not a valid galaxy role {}.", role.getGalaxy());
                     return false;
                 }
             }
