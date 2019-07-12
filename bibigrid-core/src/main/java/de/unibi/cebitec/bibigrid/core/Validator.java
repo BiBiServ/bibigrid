@@ -2,6 +2,12 @@ package de.unibi.cebitec.bibigrid.core;
 
 import de.unibi.cebitec.bibigrid.core.model.*;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +17,10 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
 import org.apache.commons.cli.CommandLine;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,6 +132,79 @@ public abstract class Validator {
                 LOG.error("Ansible Galaxy: hosts parameter has to be defined either as 'master', 'slave' or 'all'.");
                 return false;
             }
+            if (role.getUrl() != null) {
+                if (!isValidURL(role.getUrl())) {
+                    LOG.error("Ansible Galaxy: url parameter contains no valid url.");
+                    return false;
+                }
+            }
+            if (role.getGalaxy() != null) {
+                String[] galaxyName = role.getGalaxy().split("[.]");
+                if (galaxyName.length != 2) {
+                    LOG.error("Ansible Galaxy: galaxy parameter has author.rolename to be defined.");
+                    return false;
+                }
+
+                if (!isValidAnsibleGalaxyRole(galaxyName[0], galaxyName[1])) {
+                    LOG.error("Ansible Galaxy: galaxy parameter contains no valid name.");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Determine validity of URL.
+     * @param url url / galaxy url
+     * @return true, if url is valid
+     */
+    private boolean isValidURL(String url) {
+        try {
+            HttpURLConnection.setFollowRedirects(false);
+            URL u = new URL(url);
+            HttpURLConnection conn = (HttpURLConnection) u.openConnection();
+            conn.connect();
+            int status = conn.getResponseCode();
+            if (status != HttpURLConnection.HTTP_OK) {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Validates galaxy role by checking API values.
+     * @param author galaxy author
+     * @param role name of galaxy role
+     * @return true, if galaxy role is valid
+     */
+    private boolean isValidAnsibleGalaxyRole(String author, String role) {
+        try {
+            String galaxyURL = "https://galaxy.ansible.com/api/v1/roles/?format=json&search=" + role;
+            URL u = new URL(galaxyURL);
+            HttpURLConnection conn = (HttpURLConnection) u.openConnection();
+            InputStream in = new BufferedInputStream(conn.getInputStream());
+            JSONParser parser = new JSONParser();
+            JSONObject jsonObject = (JSONObject) parser.parse(new InputStreamReader(in));
+
+            if (jsonObject.containsKey("count")) {
+                int count = Integer.parseInt(String.valueOf(jsonObject.get("count")));
+                if (count == 0) {
+                    return false;
+                } else if (count == 1) {
+                    // role name is valid, but probably the author is false
+                    JSONArray results = (JSONArray) jsonObject.get("results");
+                    if (!results.toJSONString().contains("\"name\":\"" + author + "\"")) {
+                        return false;
+                    }
+                }
+            }
+        } catch (IOException | ParseException e) {
+            e.printStackTrace();
         }
         return true;
     }
