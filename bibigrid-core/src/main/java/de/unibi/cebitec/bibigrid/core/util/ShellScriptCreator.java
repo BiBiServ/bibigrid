@@ -99,12 +99,17 @@ public final class ShellScriptCreator {
         userData.append("SSHCONFIG\n");
     }
 
+    /**
+     * Builds script to configure ansible and execute ansible commands to install (galaxy) roles / playbooks.
+     * @param prepare true, if still preparation necessary
+     * @return script String to execute in CreateCluster
+     */
     public static String getMasterAnsibleExecutionScript(final boolean prepare) {
         StringBuilder script = new StringBuilder();
         // apt-get update
         script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
         // install python2
-        script.append("sudo apt-get --yes  install apt-transport-https ca-certificates ")
+        script.append("sudo DEBIAN_FRONTEND=noninteractive apt-get --yes  install apt-transport-https ca-certificates ")
                 .append("software-properties-common python python-pip |sudo tee -a /var/log/ssh_exec.log\n");
         // Update pip to latest version
         script.append("sudo pip install --upgrade pip | sudo tee -a /var/log/ssh_exec.log\n");
@@ -117,18 +122,31 @@ public final class ShellScriptCreator {
         // Install ansible from pypi using pip
         script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n");
         // Install python2 on slaves instances
-        script.append("ansible slaves -i ~/playbook/ansible_hosts --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
+        script.append("ansible slaves -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE
+                + " --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
         // Fix line endings to ensure windows files being used correctly
-        script.append("for file in $(find ~/playbook/ -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
+        script.append("for file in $(find " + AnsibleResources.ROOT_PATH + " -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
 
-        // Run ansible-galaxy to install ansible-galaxy playbooks
-        //script.append("ansible-galaxy install -r ~/playbook/requirements.yml\n");
+        // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
+        script.append("ansible-galaxy install --roles-path ~/"
+                + AnsibleResources.ROLES_ROOT_PATH
+                + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
+
+        // Extract ansible roles from files (.tar.gz, .tgz)
+        script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
+        script.append("tar -xzf *.tgz\n");
+        script.append("tar -xzf *.tar.gz\n");
+        script.append("rm -rf *.tgz\n");
+        script.append("rm -rf *.tar.gz\n");
+        script.append("cd ~\n");
 
         // Execute ansible playbook
-        script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts")
+        script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
+                + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
                 .append(prepare ? " -t install" : "")
                 .append(" | sudo tee -a /var/log/ansible-playbook.log\n");
+
         script.append("echo \"CONFIGURATION_FINISHED\"\n");
         return script.toString();
     }

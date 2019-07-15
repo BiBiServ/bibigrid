@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -49,12 +50,12 @@ public abstract class Configuration {
     private FS localFS = FS.XFS;
     private boolean debugRequests;
     private Properties ogeConf = OgeConf.initOgeConfProperties();
+    private List<AnsibleRoles> ansibleRoles = new ArrayList<>();
+    private List<AnsibleGalaxyRoles> ansibleGalaxyRoles = new ArrayList<>();
 
     private String network;
     private String subnet;
     private String[] clusterIds;
-    // private List<String> masterAnsibleRoles = new ArrayList<>();
-    // private List<String> slaveAnsibleRoles = new ArrayList<>();
     // private String cloud9Workspace = DEFAULT_WORKSPACE;  deprecated
     private String workspace = DEFAULT_WORKSPACE;
 
@@ -392,36 +393,6 @@ public abstract class Configuration {
         this.credentialsFile = credentialsFile;
     }
 
-//    public List<String> getMasterAnsibleRoles() {
-//        return masterAnsibleRoles;
-//    }
-//
-//    public void setMasterAnsibleRoles(List<String> masterAnsibleRoles) {
-//        this.masterAnsibleRoles = masterAnsibleRoles != null ? masterAnsibleRoles : new ArrayList<>();
-//        if (masterAnsibleRoles != null && !masterAnsibleRoles.isEmpty()) {
-//            StringBuilder display = new StringBuilder();
-//            for (String role : masterAnsibleRoles) {
-//                display.append(role).append(" ");
-//            }
-//            LOG.info(V, "Additional master ansible roles set: {}", display);
-//        }
-//    }
-//
-//    public List<String> getSlaveAnsibleRoles() {
-//        return slaveAnsibleRoles;
-//    }
-//
-//    public void setSlaveAnsibleRoles(List<String> slaveAnsibleRoles) {
-//        this.slaveAnsibleRoles = slaveAnsibleRoles != null ? slaveAnsibleRoles : new ArrayList<>();
-//        if (slaveAnsibleRoles != null && !slaveAnsibleRoles.isEmpty()) {
-//            StringBuilder display = new StringBuilder();
-//            for (String role : slaveAnsibleRoles) {
-//                display.append(role).append(" ");
-//            }
-//            LOG.info(V, "Additional slave ansible roles set: {}", display);
-//        }
-//    }
-
     public String getCloud9Workspace() {
         return getWorkspace();
     }
@@ -697,6 +668,180 @@ public abstract class Configuration {
                 e.printStackTrace();
                 return null;
             }
+        }
+    }
+
+    /**
+     * Checks if custom ansible roles used.
+     *
+     * @return true, if ansible roles given in configuration
+     */
+    public boolean hasCustomAnsibleRoles() {
+        return ansibleRoles != null && !ansibleRoles.isEmpty();
+    }
+
+    /**
+     * Checks if custom ansible-galaxy roles used.
+     *
+     * @return true, if ansible-galaxy roles given in configuration
+     */
+    public boolean hasCustomAnsibleGalaxyRoles() {
+        return ansibleGalaxyRoles != null && !ansibleGalaxyRoles.isEmpty();
+    }
+
+    /**
+     * @return List of Ansible roles
+     */
+    public List<AnsibleRoles> getAnsibleRoles() {
+        return ansibleRoles;
+    }
+
+    public void setAnsibleRoles(List<AnsibleRoles> ansibleRoles) {
+        if (this.ansibleRoles != null) {
+            this.ansibleRoles.addAll(ansibleRoles);
+        } else {
+            this.ansibleRoles = new ArrayList<>(ansibleRoles);
+        }
+    }
+
+    /**
+     * @return List of Ansible Galaxy roles
+     */
+    public List<AnsibleGalaxyRoles> getAnsibleGalaxyRoles() {
+        return ansibleGalaxyRoles;
+    }
+
+    public void setAnsibleGalaxyRoles(List<AnsibleGalaxyRoles> ansibleGalaxyRoles) {
+        this.ansibleGalaxyRoles = (this.ansibleGalaxyRoles == null) ? ansibleGalaxyRoles : new ArrayList<>(ansibleGalaxyRoles);
+    }
+
+    /**
+     * Provides support for (local) Ansible roles and playbooks.
+     *
+     * String name  : (optional) name of (ansible-galaxy) role or playbook, default is given name
+     * String hosts : host (master / slave / all)
+     * Map vars     : (optional) additional key - value pairs of role
+     * String file  : file of role
+     */
+    public static class AnsibleRoles {
+        private String name;
+        private String file;
+
+        private String hosts;
+        private Map<String, String> vars = new HashMap<>();
+
+        public String getName() {
+            return name == null ? file : name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getHosts() {
+            return hosts;
+        }
+
+        public void setHosts(String hosts) {
+            this.hosts = hosts;
+        }
+
+        public Map<String, String> getVars() {
+            return vars;
+        }
+
+        public void setVars(Map<String, String> vars) {
+            this.vars = vars;
+        }
+
+        public String getFile() {
+            return file;
+        }
+
+        public void setFile(String file) {
+            this.file = file;
+        }
+    }
+
+    /**
+     * Provides support for Ansible Galaxy and Git roles and playbooks.
+     *
+     * String name      : (optional) name of (ansible-galaxy) role or playbook, default is given name
+     * String hosts     : host (master / slave / all)
+     * Map vars         : (optional) additional key - value pairs of role
+     * String galaxy    : (optional) ansible-galaxy name
+     * String git       : (optional) Git source (e.g. GitHub url)
+     * String url       : (optional) url of role
+     * Either galaxy, git or url has to be specified
+     */
+    public static class AnsibleGalaxyRoles {
+        private String name;
+        private String hosts;
+        private Map<String, String> vars = new HashMap<>();
+
+        private String galaxy;
+        private String git;
+        private String url;
+
+        /**
+         * Set name to galaxy, git or url if not set.
+         * @return role name
+         */
+        public String getName() {
+            if (name == null) {
+                if (galaxy != null) {
+                    name = galaxy;
+                } else if (git != null) {
+                    name = git;
+                } else if (url != null) {
+                    name = url;
+                }
+            }
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getHosts() {
+            return hosts;
+        }
+
+        public void setHosts(String hosts) {
+            this.hosts = hosts;
+        }
+
+        public Map<String, String> getVars() {
+            return vars;
+        }
+
+        public void setVars(Map<String, String> vars) {
+            this.vars = vars;
+        }
+
+        public String getGalaxy() {
+            return galaxy;
+        }
+
+        public void setGalaxy(String galaxy) {
+            this.galaxy = galaxy;
+        }
+
+        public String getGit() {
+            return git;
+        }
+
+        public void setGit(String git) {
+            this.git = git;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
         }
     }
 }

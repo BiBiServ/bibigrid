@@ -169,13 +169,13 @@ public abstract class ListIntent extends Intent {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
-        formatter.format("%15s | %10s | %19s | %20s | %15s | %7s | %11s | %11s | %11s%n",
+        formatter.format("%15s | %10s | %19s | %15s | %15s | %7s | %15s | %11s | %11s%n",
                 "cluster-id", "user", "launch date", "key name", "public-ip", "# inst", "group-id", "subnet-id",
                 "network-id");
-        display.append(new String(new char[143]).replace('\0', '-')).append("\n");
+        display.append(new String(new char[142]).replace('\0', '-')).append("\n");
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             Cluster v = entry.getValue();
-            formatter.format("%15s | %10s | %19s | %20s | %15s | %7d | %11s | %11s | %11s%n",
+            formatter.format("%15s | %10s | %19s | %15s | %15s | %7d | %15s | %11s | %11s%n",
                     entry.getKey(),
                     (v.getUser() == null) ? "-" : v.getUser(),
                     (v.getStarted() == null) ? "-" : v.getStarted(),

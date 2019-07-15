@@ -32,8 +32,8 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class CreateCluster extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
-    public static final String MASTER_NAME_PREFIX = PREFIX + "master";
-    public static final String SLAVE_NAME_PREFIX = PREFIX + "slave";
+    static final String MASTER_NAME_PREFIX = PREFIX + "master";
+    static final String SLAVE_NAME_PREFIX = PREFIX + "slave";
 
     protected final ProviderModule providerModule;
     protected final Client client;
@@ -281,8 +281,8 @@ public abstract class CreateCluster extends Intent {
                             installAndExecuteAnsible(sshSession, prepare);
                     sshSession.disconnect();
                 }
-            } catch (IOException | JSchException e) {
-                LOG.error("SSH: {}", e);
+            } catch (IOException | JSchException | ConfigurationException e) {
+                LOG.error("SSH: ", e);
             }
         }
         if (configured) {
@@ -292,16 +292,139 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
+    /**
+     * Uploads ansible roles to master instance.
+     *
+     * @param sshSession ssh connection to master
+     * @param hostsConfig Configuration and list of slave IPs
+     * @param commonConfig common Configuration
+     * @param slaveInstances list of slave instances
+     * @return true, if upload completed successfully
+     * @throws JSchException possible SSH connection error
+     */
     private boolean uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
-                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException {
+                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException, ConfigurationException {
         boolean uploadCompleted;
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Upload Ansible playbook to master instance.");
         LOG.info(V, "Connecting sftp channel...");
         channel.connect();
         try {
-            // Collect the Ansible files from resources for upload
+            // Collect Ansible files from resources for upload
             AnsibleResources resources = new AnsibleResources();
+            this.uploadResourcesFiles(resources, channel);
+
+            // Divide into master and slave roles to write in site.yml
+            Map<String, String> customMasterRoles = new LinkedHashMap<>();
+            Map<String, String> customSlaveRoles = new LinkedHashMap<>();
+
+            List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
+            for (Configuration.AnsibleRoles role : ansibleRoles) {
+                if (role.getFile() == null) {
+                    throw new ConfigurationException("Ansible: A 'file' has to be specified.");
+                } else if (!Paths.get(role.getFile()).toFile().isFile()) {
+                    throw new ConfigurationException("Ansible: " + role.getFile() + " is no valid file path");
+                }
+
+                if (role.getHosts() == null ||
+                        !role.getHosts().equals("master") &&
+                                !role.getHosts().equals("slave") &&
+                                !role.getHosts().equals("all")) {
+                    throw new ConfigurationException("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'.");
+                }
+                String roleName = getSingleFileName(role.getFile()).split(".tgz")[0].split(".tar.gz")[0];
+                Map<String, String> roleVars = role.getVars();
+                String roleVarsFile = roleVars != null
+                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
+
+                switch (role.getHosts()) {
+                    case "master":
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        break;
+                    case "slaves":
+                        customSlaveRoles.put(roleName, roleVarsFile);
+                        break;
+                    default:
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        customSlaveRoles.put(roleName, roleVarsFile);
+                }
+                if (!roleVarsFile.equals("")) {
+                    commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
+                            AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
+                }
+                this.uploadAnsibleRole(channel, resources, role.getFile());
+            }
+
+            // Add galaxy roles to custom roles to add in site file
+            List<Configuration.AnsibleGalaxyRoles> ansibleGalaxyRoles = config.getAnsibleGalaxyRoles();
+            for (Configuration.AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
+                String roleName = AnsibleConfig.getCustomRoleName(role.getHosts(), role.getName());
+                Map<String, String> roleVars = role.getVars();
+                String roleVarsFile = roleVars != null
+                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
+
+                switch (role.getHosts()) {
+                    case "master":
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        break;
+                    case "slaves":
+                        customSlaveRoles.put(roleName, roleVarsFile);
+                        break;
+                    default:
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        customSlaveRoles.put(roleName, roleVarsFile);
+                }
+                if (!roleVarsFile.equals("")) {
+                    commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
+                            AnsibleResources.ROOT_PATH + roleVarsFile), roleVars);
+                }
+                role.setName(roleName);
+            }
+
+            // Write the hosts configuration file
+            try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
+                    AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
+                writer.write(hostsConfig.toString());
+            }
+            // Write the commons configuration file
+            commonConfig.writeCommonFile(channel.put(channel.getHome() + "/"
+                    + AnsibleResources.COMMONS_CONFIG_FILE));
+
+            // Write custom site file
+            commonConfig.writeSiteFile(channel.put(channel.getHome() + "/"
+                            + AnsibleResources.SITE_CONFIG_FILE),
+                     customMasterRoles, customSlaveRoles);
+
+            // Write requirements file for ansible-galaxy support
+            if (!ansibleGalaxyRoles.isEmpty()) {
+                commonConfig.writeRequirementsFile(channel.put(channel.getHome() + "/"
+                        + AnsibleResources.REQUIREMENTS_CONFIG_FILE));
+            }
+
+            // Write slave instance specific configuration file
+            for (Instance slave : slaveInstances) {
+                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/"
+                        + slave.getPrivateIp() + ".yml";
+                commonConfig.writeInstanceFile(slave, channel.put(filename));
+            }
+            uploadCompleted = true;
+        } catch (SftpException | IOException e) {
+            LOG.error("SFTP: ", e);
+            uploadCompleted = false;
+        } finally {
+            channel.disconnect();
+        }
+        return uploadCompleted;
+    }
+
+    /**
+     * Uploads common Ansible Resources files.
+     *
+     * @param resources ansible configuration
+     * @param channel client side of sftp server channel
+     */
+    private void uploadResourcesFiles(AnsibleResources resources, ChannelSftp channel) {
+        try {
             // First the folders need to be created
             createSftpFolders(channel, resources, resources.getFiles());
             // Each file is uploaded to it's relative path in the home folder
@@ -312,59 +435,51 @@ public abstract class CreateCluster extends Intent {
                 LOG.info(V, "SFTP: Upload file {}", fullPath);
                 channel.put(stream, fullPath);
             }
-            // @ToDo JK :: Support custom roles
-//            for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
-//                uploadAnsibleRole(channel, resources, config.getMasterAnsibleRoles().get(i),
-//                        commonConfig.getCustomRoleName("master", i));
-//            }
-//            for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
-//                uploadAnsibleRole(channel, resources, config.getSlaveAnsibleRoles().get(i),
-//                        commonConfig.getCustomRoleName("slaves", i));
-//            }
-            // Write the hosts configuration file
-            try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
-                    AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
-                writer.write(hostsConfig.toString());
-            }
-            // Write the commons configuration file
-            commonConfig.writeCommonFile(channel.put(channel.getHome() + "/" + AnsibleResources.COMMONS_CONFIG_FILE));
-
-            // @ToDo JK :: Support custom site file
-            // commonConfig.writeSiteFile(channel.put(channel.getHome() + "/" + AnsibleResources.SITE_CONFIG_FILE));
-            // Write slave instance specific configuration file
-            for (Instance slave : slaveInstances) {
-                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/" + slave.getPrivateIp() + ".yml";
-                commonConfig.writeInstanceFile(slave, channel.put(filename));
-            }
-            uploadCompleted = true;
-        } catch (SftpException | IOException e) {
-            LOG.error("SFTP: {}", e);
-            uploadCompleted = false;
-        } finally {
-            channel.disconnect();
+        } catch (SftpException e) {
+            e.printStackTrace();
         }
-        return uploadCompleted;
     }
 
+    /**
+     * Creates folders for every directory, given a file structure.
+     *
+     * @param channel client side of sftp server channel
+     * @param resources ansible configuration
+     * @param files list of files in file structure
+     * @throws SftpException possible SFTP failure
+     */
     private void createSftpFolders(ChannelSftp channel, AnsibleResources resources, List<String> files) throws SftpException {
         for (String folderPath : resources.getDirectories(files)) {
             String fullPath = channel.getHome() + "/" + folderPath;
-            LOG.info(V, "SFTP: Create folder {}", fullPath);
             try {
                 channel.cd(fullPath);
             } catch (SftpException e) {
+                LOG.info(V, "SFTP: Create folder {}", fullPath);
                 channel.mkdir(fullPath);
             }
             channel.cd(channel.getHome());
         }
     }
 
-    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath, String roleName)
+    /**
+     * Uploads single ansible role (.tar.gz, .tgz) to remote instance.
+     *
+     * @param channel client side of sftp server channel
+     * @param resources ansible configuration
+     * @param roleFile path/to/role on local machine
+     * @throws SftpException possible SFTP failure
+     * @throws IOException possible File failure
+     */
+    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String roleFile)
             throws SftpException, IOException {
-        String basePath = AnsibleResources.ROLES_ROOT_PATH + "/" + roleName + "/";
-        Path rootRolePath = Paths.get(rolePath);
+        Path rootRolePath = Paths.get(roleFile);
+        // playbook/roles/ROLE_NAME
+        roleFile = this.getSingleFileName(roleFile);
+        String remotePath = AnsibleResources.ROLES_ROOT_PATH + roleFile;
+        // Walks through valid files in rootRolePath and collects Stream to path list
         List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
-        List<String> targetFiles = files.stream().map(p -> basePath + rootRolePath.relativize(p)).collect(Collectors.toList());
+        // create a list of files in role
+        List<String> targetFiles = files.stream().map(p -> remotePath + rootRolePath.relativize(p)).collect(Collectors.toList());
         createSftpFolders(channel, resources, targetFiles);
         for (int i = 0; i < files.size(); i++) {
             InputStream stream = new FileInputStream(files.get(i).toFile());
@@ -375,8 +490,28 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
+    /**
+     * Turns path/to/file.* into file.*.
+     * @param roleFile path/to/file
+     * @return fileName
+     */
+    private String getSingleFileName(String roleFile) {
+        roleFile = roleFile.replace("\\", "/");
+        String[] pathway = roleFile.split("/");
+        return pathway[pathway.length - 1];
+    }
+
+    /**
+     * Installs and executes ansible roles on remote.
+     *
+     * @param sshSession transfer via ssh session
+     * @param prepare true, if still preparation necessary
+     * @return true, if configuration finished
+     * @throws JSchException ssh openChannel exception
+     * @throws IOException BufferedReader exceptions
+     */
     private boolean installAndExecuteAnsible(final Session sshSession, final boolean prepare)
-            throws JSchException, IOException {
+            throws IOException, JSchException {
         LOG.info("Configure and execute Ansible. This take a while. Please be patient.");
         boolean configured = false;
         String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare);

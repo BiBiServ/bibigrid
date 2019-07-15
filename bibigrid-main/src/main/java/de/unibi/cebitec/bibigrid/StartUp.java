@@ -124,6 +124,11 @@ public class StartUp {
         }
     }
 
+    /**
+     * TODO TD, #135
+     * @param commandLine
+     * @param cmdLineOptions
+     */
     private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
         // TODO: improve help modes
         if (commandLine.hasOption("h")) {
@@ -224,6 +229,15 @@ public class StartUp {
         }
     }
 
+    /**
+     * Runs cluster creation and launch processing.
+     * @param module responsible for provider accessibility
+     * @param validator validates overall configuration
+     * @param client Client
+     * @param cluster CreateCluster implementation
+     * @param prepare true, if still preparation necessary
+     * @return true, if cluster built successfully.
+     */
     private static boolean runCreateIntent(ProviderModule module, Validator validator, Client client,
                                            CreateCluster cluster, boolean prepare) {
         try {
