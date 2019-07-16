@@ -206,7 +206,28 @@ Be aware of using only one of 'galaxy', 'git' or 'url'.
 ### Set up Apache Cassandra on your cluster
 
 ### Set up MySQL on the master instance
-
+To configure the MySQL Server on your cluster environment, simply add a suitable role within your ansible galaxy configuration:
+```
+ansibleGalaxyRoles:
+  - name: mysql                                     # Redefine role name
+    hosts: master                                   # Install role on master
+    galaxy: geerlingguy.mysql                       # Galaxy name of role
+    vars:                                           # Necessary variables
+      mysql_root_password: super-secure-password
+      mysql_databases:                              # Here you may specify yiour database
+        - name: example_db
+          encoding: latin1
+          collation: latin1_general_ci
+      mysql_users:                                  # Create user(s) with permissions
+        - name: example_user
+          host: "%"
+          password: similarly-secure-password
+          priv: "example_db.*:ALL"                  # permission on specified database
+```
+This ansible galaxy role is from author geerlingguy who provides many useful ansible roles. 
+After cluster setup and login on master you can check, if everything is going right:  
+``` > mysql --user example_user -p ```  
+Replace 'example_user' and type in your password afterwords - You should end up connected to the MySQL Server.
 
 ## Cluster maintenance
 ### List running clusters
