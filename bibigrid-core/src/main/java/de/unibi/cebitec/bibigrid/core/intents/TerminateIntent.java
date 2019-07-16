@@ -73,6 +73,13 @@ public abstract class TerminateIntent extends Intent {
         return success;
     }
 
+    protected abstract boolean terminateWorker(Cluster cluster, String workerId);
+
+    /**
+     * Terminates the whole cluster.
+     * @param cluster
+     * @return true, if terminate successful
+     */
     protected abstract boolean terminateCluster(Cluster cluster);
 
     private void delete_Key(Cluster cluster) {

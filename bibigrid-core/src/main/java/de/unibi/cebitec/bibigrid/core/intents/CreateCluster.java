@@ -47,10 +47,14 @@ public abstract class CreateCluster extends Intent {
     private Thread interruptionMessageHook;
 
     protected CreateCluster(ProviderModule providerModule, Client client, Configuration config) {
+        this(providerModule, client, config, generateClusterId());
+    }
+
+    protected CreateCluster(ProviderModule providerModule, Client client, Configuration config, String clusterId) {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
-        clusterId = generateClusterId();
+        this.clusterId = clusterId;
         LOG.debug("cluster id: {}", clusterId);
         config.setClusterIds(clusterId);
         this.interruptionMessageHook = new Thread(() ->
@@ -179,6 +183,15 @@ public abstract class CreateCluster extends Intent {
             return false;
         }
         Runtime.getRuntime().removeShutdownHook(this.interruptionMessageHook);
+        return true;
+    }
+
+
+    /**
+     * @TODO TD #117 manual scale, 07-19
+     * @return
+     */
+    public boolean createWorkerInstance() {
         return true;
     }
 

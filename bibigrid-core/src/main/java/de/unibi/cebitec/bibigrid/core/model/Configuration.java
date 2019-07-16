@@ -652,10 +652,19 @@ public abstract class Configuration {
     public static class InstanceConfiguration {
         public InstanceConfiguration() {
         }
-
+        // @TODO should be unique
+        private String name;
         private String type;
         private String image;
         private InstanceType providerType;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
 
         public String getType() {
             return type;
