@@ -333,7 +333,7 @@ public abstract class CreateCluster extends Intent {
                     throw new ConfigurationException("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'.");
                 }
                 String roleName = getSingleFileName(role.getFile()).split(".tgz")[0].split(".tar.gz")[0];
-                Map<String, String> roleVars = role.getVars();
+                Map<String, Object> roleVars = role.getVars();
                 String roleVarsFile = roleVars != null
                         && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
 
@@ -359,7 +359,7 @@ public abstract class CreateCluster extends Intent {
             List<Configuration.AnsibleGalaxyRoles> ansibleGalaxyRoles = config.getAnsibleGalaxyRoles();
             for (Configuration.AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
                 String roleName = AnsibleConfig.getCustomRoleName(role.getHosts(), role.getName());
-                Map<String, String> roleVars = role.getVars();
+                Map<String, Object> roleVars = role.getVars();
                 String roleVarsFile = roleVars != null
                         && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
 

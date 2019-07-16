@@ -203,6 +203,11 @@ ansibleGalaxyRoles:
 ```
 Be aware of using only one of 'galaxy', 'git' or 'url'.
 
+### Set up Apache Cassandra on your cluster
+
+### Set up MySQL on the master instance
+
+
 ## Cluster maintenance
 ### List running clusters
 Once a cluster is created, it can be listed with the following command. All clusters found

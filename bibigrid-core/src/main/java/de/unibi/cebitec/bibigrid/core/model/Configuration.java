@@ -728,7 +728,7 @@ public abstract class Configuration {
         private String file;
 
         private String hosts;
-        private Map<String, String> vars = new HashMap<>();
+        private Map<String, Object> vars = new HashMap<>();
 
         public String getName() {
             return name == null ? file : name;
@@ -746,11 +746,11 @@ public abstract class Configuration {
             this.hosts = hosts;
         }
 
-        public Map<String, String> getVars() {
+        public Map<String, Object> getVars() {
             return vars;
         }
 
-        public void setVars(Map<String, String> vars) {
+        public void setVars(Map<String, Object> vars) {
             this.vars = vars;
         }
 
@@ -777,7 +777,7 @@ public abstract class Configuration {
     public static class AnsibleGalaxyRoles {
         private String name;
         private String hosts;
-        private Map<String, String> vars = new HashMap<>();
+        private Map<String, Object> vars = new HashMap<>();
 
         private String galaxy;
         private String git;
@@ -812,11 +812,11 @@ public abstract class Configuration {
             this.hosts = hosts;
         }
 
-        public Map<String, String> getVars() {
+        public Map<String, Object> getVars() {
             return vars;
         }
 
-        public void setVars(Map<String, String> vars) {
+        public void setVars(Map<String, Object> vars) {
             this.vars = vars;
         }
 

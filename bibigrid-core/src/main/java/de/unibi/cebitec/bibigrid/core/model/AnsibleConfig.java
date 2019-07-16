@@ -102,7 +102,7 @@ public final class AnsibleConfig {
      *
      * @param stream write file to remote
      */
-    public void writeAnsibleVarsFile(OutputStream stream, Map<String, String> vars) {
+    public void writeAnsibleVarsFile(OutputStream stream, Map<String, Object> vars) {
         if (vars != null && !vars.isEmpty()) {
             writeToOutputStream(stream, vars);
         }
