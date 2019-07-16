@@ -184,7 +184,7 @@ public final class AnsibleConfig {
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
         addBooleanOption(map, "enable_theia", config.isTheia());
         addBooleanOption(map, "enable_cloud9", config.isCloud9());
-        addBooleanOption(map,"enable_ganglia",config.isGanglia());
+        addBooleanOption(map, "enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
         if (config.isZabbix()) {
             map.put("zabbix", getZabbixConf());
@@ -274,7 +274,7 @@ public final class AnsibleConfig {
         List<Map<String, Object>> ansibleRoles = new ArrayList<>();
         for (AnsibleRoles role : roles) {
             Map<String, Object> roleConf = new LinkedHashMap<>();
-            roleConf.put("name", role.getName());
+            if (role.getName() != null && !role.getName().equals("")) roleConf.put("name", role.getName());
             roleConf.put("file", role.getFile());
             roleConf.put("hosts", role.getHosts());
             if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());

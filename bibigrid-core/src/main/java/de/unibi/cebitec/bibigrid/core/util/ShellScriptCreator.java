@@ -109,7 +109,7 @@ public final class ShellScriptCreator {
         // apt-get update
         script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
         // install python2
-        script.append("sudo apt-get --yes  install apt-transport-https ca-certificates ")
+        script.append("sudo DEBIAN_FRONTEND=noninteractive apt-get --yes  install apt-transport-https ca-certificates ")
                 .append("software-properties-common python python-pip |sudo tee -a /var/log/ssh_exec.log\n");
         // Update pip to latest version
         script.append("sudo pip install --upgrade pip | sudo tee -a /var/log/ssh_exec.log\n");
@@ -133,9 +133,11 @@ public final class ShellScriptCreator {
                 + AnsibleResources.ROLES_ROOT_PATH
                 + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
 
-        // Extract ansible roles from files (.tar.gz)
+        // Extract ansible roles from files (.tar.gz, .tgz)
         script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
+        script.append("tar -xzf *.tgz\n");
         script.append("tar -xzf *.tar.gz\n");
+        script.append("rm -rf *.tgz\n");
         script.append("rm -rf *.tar.gz\n");
         script.append("cd ~\n");
 

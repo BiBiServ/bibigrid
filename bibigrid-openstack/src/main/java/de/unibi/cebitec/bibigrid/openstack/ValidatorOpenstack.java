@@ -103,7 +103,7 @@ public final class ValidatorOpenstack extends Validator {
 
 
             } catch (FileNotFoundException e) {
-                LOG.error("Failed to load openstack credentials file. {}", e);
+                LOG.error("Failed to load openstack credentials file.", e);
             } catch (YAMLException e) {
                 LOG.error("Failed to parse openstack credentials file. {}",
                         e.getCause() != null ? e.getCause().getMessage() : e);
