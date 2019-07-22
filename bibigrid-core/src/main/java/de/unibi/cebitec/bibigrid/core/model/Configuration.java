@@ -718,17 +718,18 @@ public abstract class Configuration {
     /**
      * Provides support for (local) Ansible roles and playbooks.
      *
-     * String name  : (optional) name of (ansible-galaxy) role or playbook, default is given name
-     * String hosts : host (master / slave / all)
-     * Map vars     : (optional) additional key - value pairs of role
-     * String file  : file of role
+     * String name      : (optional) name of (ansible-galaxy) role or playbook, default is given name
+     * String hosts     : host (master / slave / all)
+     * Map vars         : (optional) additional key - value pairs of role
+     * String varsFile  : (optional) file containing key - value pairs of role
+     * String file      : file of role
      */
     public static class AnsibleRoles {
         private String name;
         private String file;
-
         private String hosts;
         private Map<String, Object> vars = new HashMap<>();
+        private String varsFile;
 
         public String getName() {
             return name == null ? file : name;
@@ -754,6 +755,14 @@ public abstract class Configuration {
             this.vars = vars;
         }
 
+        public String getVarsFile() {
+            return varsFile;
+        }
+
+        public void setVarsFile(String varsFile) {
+            this.varsFile = varsFile;
+        }
+
         public String getFile() {
             return file;
         }
@@ -769,6 +778,7 @@ public abstract class Configuration {
      * String name      : (optional) name of (ansible-galaxy) role or playbook, default is given name
      * String hosts     : host (master / slave / all)
      * Map vars         : (optional) additional key - value pairs of role
+     * String varsFile  : (optional) file containing key - value pairs of role
      * String galaxy    : (optional) ansible-galaxy name
      * String git       : (optional) Git source (e.g. GitHub url)
      * String url       : (optional) url of role
@@ -778,6 +788,7 @@ public abstract class Configuration {
         private String name;
         private String hosts;
         private Map<String, Object> vars = new HashMap<>();
+        private String varsFile;
 
         private String galaxy;
         private String git;
@@ -818,6 +829,14 @@ public abstract class Configuration {
 
         public void setVars(Map<String, Object> vars) {
             this.vars = vars;
+        }
+
+        public String getVarsFile() {
+            return varsFile;
+        }
+
+        public void setVarsFile(String varsFile) {
+            this.varsFile = varsFile;
         }
 
         public String getGalaxy() {

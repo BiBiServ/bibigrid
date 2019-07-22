@@ -140,17 +140,6 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Generates a unique role name with the provided hosts type and name of role.
-     *
-     * @param hosts master, slaves or all
-     * @param roleName name of role
-     * @return custom role name
-     */
-    public static String getCustomRoleName(String hosts, String roleName) {
-        return hosts + "-" + roleName;
-    }
-
-    /**
      * Write specified instance to stream (in YAML format)
      */
     public void writeInstanceFile(Instance instance, OutputStream stream) {
@@ -278,6 +267,7 @@ public final class AnsibleConfig {
             roleConf.put("file", role.getFile());
             roleConf.put("hosts", role.getHosts());
             if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            if (role.getVarsFile() != null) roleConf.put("vars_file", role.getVarsFile());
             ansibleRoles.add(roleConf);
         }
         return ansibleRoles;
@@ -298,6 +288,7 @@ public final class AnsibleConfig {
             if (role.getGit() != null) roleConf.put("git", role.getGit());
             if (role.getUrl() != null) roleConf.put("url", role.getUrl());
             if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            if (role.getVarsFile() != null) roleConf.put("vars_file", role.getVarsFile());
             ansibleGalaxyRoles.add(roleConf);
         }
         return ansibleGalaxyRoles;

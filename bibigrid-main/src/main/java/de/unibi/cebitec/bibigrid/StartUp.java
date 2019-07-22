@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
-import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * Startup/Main class of BiBiGrid.

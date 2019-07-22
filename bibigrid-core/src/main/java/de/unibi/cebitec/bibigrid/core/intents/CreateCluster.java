@@ -12,6 +12,7 @@ import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -318,6 +319,7 @@ public abstract class CreateCluster extends Intent {
             Map<String, String> customMasterRoles = new LinkedHashMap<>();
             Map<String, String> customSlaveRoles = new LinkedHashMap<>();
 
+            // Add Ansible roles
             List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
             for (Configuration.AnsibleRoles role : ansibleRoles) {
                 if (role.getFile() == null) {
@@ -334,35 +336,19 @@ public abstract class CreateCluster extends Intent {
                 }
                 String roleName = getSingleFileName(role.getFile()).split(".tgz")[0].split(".tar.gz")[0];
                 Map<String, Object> roleVars = role.getVars();
+                // Set role key - value pairs
+                if (role.getVarsFile() != null) {
+                    String vars = new String(Files.readAllBytes(Paths.get(role.getVarsFile())));
+                    Yaml yaml = new Yaml();
+                    Map<String, Object> additionalVars = yaml.load(vars);
+                    roleVars.putAll(additionalVars);
+                }
                 String roleVarsFile = roleVars != null
                         && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
-
-                switch (role.getHosts()) {
-                    case "master":
-                        customMasterRoles.put(roleName, roleVarsFile);
-                        break;
-                    case "slaves":
-                        customSlaveRoles.put(roleName, roleVarsFile);
-                        break;
-                    default:
-                        customMasterRoles.put(roleName, roleVarsFile);
-                        customSlaveRoles.put(roleName, roleVarsFile);
-                }
                 if (!roleVarsFile.equals("")) {
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
                             AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
                 }
-                this.uploadAnsibleRole(channel, resources, role.getFile());
-            }
-
-            // Add galaxy roles to custom roles to add in site file
-            List<Configuration.AnsibleGalaxyRoles> ansibleGalaxyRoles = config.getAnsibleGalaxyRoles();
-            for (Configuration.AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
-                String roleName = AnsibleConfig.getCustomRoleName(role.getHosts(), role.getName());
-                Map<String, Object> roleVars = role.getVars();
-                String roleVarsFile = roleVars != null
-                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
-
                 switch (role.getHosts()) {
                     case "master":
                         customMasterRoles.put(roleName, roleVarsFile);
@@ -374,11 +360,40 @@ public abstract class CreateCluster extends Intent {
                         customMasterRoles.put(roleName, roleVarsFile);
                         customSlaveRoles.put(roleName, roleVarsFile);
                 }
+
+                this.uploadAnsibleRole(channel, resources, role.getFile());
+            }
+
+            // Add galaxy roles
+            List<Configuration.AnsibleGalaxyRoles> ansibleGalaxyRoles = config.getAnsibleGalaxyRoles();
+            for (Configuration.AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
+                String roleName = role.getName();
+                Map<String, Object> roleVars = role.getVars();
+                // Set role key - value pairs
+                if (role.getVarsFile() != null) {
+                    String vars = new String(Files.readAllBytes(Paths.get(role.getVarsFile())));
+                    Yaml yaml = new Yaml();
+                    Map<String, Object> additionalVars = yaml.load(vars);
+                    roleVars.putAll(additionalVars);
+                }
+                String roleVarsFile = roleVars != null
+                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
                 if (!roleVarsFile.equals("")) {
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
                             AnsibleResources.ROOT_PATH + roleVarsFile), roleVars);
                 }
                 role.setName(roleName);
+                switch (role.getHosts()) {
+                    case "master":
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        break;
+                    case "slaves":
+                        customSlaveRoles.put(roleName, roleVarsFile);
+                        break;
+                    default:
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        customSlaveRoles.put(roleName, roleVarsFile);
+                }
             }
 
             // Write the hosts configuration file
