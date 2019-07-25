@@ -97,6 +97,10 @@ public abstract class Validator {
      * @return true, if file(s) found, galaxy, git or url defined and hosts given
      */
     private boolean validateAnsibleRequirements() {
+        if (config.hasCustomAnsibleRoles() || config.hasCustomAnsibleGalaxyRoles()) {
+            LOG.info("Checking Ansible Configuration...");
+        }
+        // Check Ansible roles
         for (Configuration.AnsibleRoles role : config.getAnsibleRoles()) {
             if (role.getFile() == null) {
                 LOG.error("Ansible: file parameter not set.");
@@ -105,6 +109,11 @@ public abstract class Validator {
             Path path = Paths.get(role.getFile());
             if (!Files.isReadable(path)) {
                 LOG.error("Ansible: File {} does not exist.", path);
+                return false;
+            }
+            Path varFilePath = Paths.get(role.getVarsFile());
+            if (!Files.isReadable(varFilePath)){
+                LOG.error("Ansible: varsFile {} does not exist.", varFilePath);
                 return false;
             }
             if (role.getHosts() == null) {
@@ -117,10 +126,15 @@ public abstract class Validator {
                 return false;
             }
         }
-
+        // Check Ansible Galaxy roles
         for (Configuration.AnsibleGalaxyRoles role : config.getAnsibleGalaxyRoles()) {
             if (role.getGalaxy() == null && role.getGit() == null && role.getUrl() == null) {
                 LOG.error("Ansible Galaxy: At least one of 'galaxy', 'git' or 'url' has to be specified.");
+                return false;
+            }
+            Path varFilePath = Paths.get(role.getVarsFile());
+            if (!Files.isReadable(varFilePath)){
+                LOG.error("Ansible: varsFile {} does not exist.", varFilePath);
                 return false;
             }
             if (role.getHosts() == null) {

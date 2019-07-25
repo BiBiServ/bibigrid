@@ -102,7 +102,7 @@ public final class AnsibleConfig {
      *
      * @param stream write file to remote
      */
-    public void writeAnsibleVarsFile(OutputStream stream, Map<String, String> vars) {
+    public void writeAnsibleVarsFile(OutputStream stream, Map<String, Object> vars) {
         if (vars != null && !vars.isEmpty()) {
             writeToOutputStream(stream, vars);
         }
@@ -137,17 +137,6 @@ public final class AnsibleConfig {
         roles.addAll(git_roles);
         roles.addAll(url_roles);
         writeToOutputStream(stream, roles);
-    }
-
-    /**
-     * Generates a unique role name with the provided hosts type and name of role.
-     *
-     * @param hosts master, slaves or all
-     * @param roleName name of role
-     * @return custom role name
-     */
-    public static String getCustomRoleName(String hosts, String roleName) {
-        return hosts + "-" + roleName;
     }
 
     /**
@@ -278,6 +267,7 @@ public final class AnsibleConfig {
             roleConf.put("file", role.getFile());
             roleConf.put("hosts", role.getHosts());
             if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            if (role.getVarsFile() != null) roleConf.put("vars_file", role.getVarsFile());
             ansibleRoles.add(roleConf);
         }
         return ansibleRoles;
@@ -298,6 +288,7 @@ public final class AnsibleConfig {
             if (role.getGit() != null) roleConf.put("git", role.getGit());
             if (role.getUrl() != null) roleConf.put("url", role.getUrl());
             if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            if (role.getVarsFile() != null) roleConf.put("vars_file", role.getVarsFile());
             ansibleGalaxyRoles.add(roleConf);
         }
         return ansibleGalaxyRoles;
