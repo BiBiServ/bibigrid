@@ -344,7 +344,7 @@ public abstract class CreateCluster extends Intent {
                     roleVars.putAll(additionalVars);
                 }
                 String roleVarsFile = roleVars != null
-                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
+                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + "-vars.yml" : "";
                 if (!roleVarsFile.equals("")) {
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
                             AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
@@ -377,7 +377,7 @@ public abstract class CreateCluster extends Intent {
                     roleVars.putAll(additionalVars);
                 }
                 String roleVarsFile = roleVars != null
-                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + ".yml" : "";
+                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + "-vars.yml" : "";
                 if (!roleVarsFile.equals("")) {
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
                             AnsibleResources.ROOT_PATH + roleVarsFile), roleVars);
