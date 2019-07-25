@@ -157,7 +157,7 @@ ansibleRoles:
     file: string            # path/to/file.tar.gz - File on local machine
     vars:
         key : value         # Environment variables, if default configuration is not the preferred option
-	    ...
+        ...
     vars_file: string       # Yaml file when many variables are necessary
   - name: ...               # Add as many roles as you want
 ```
