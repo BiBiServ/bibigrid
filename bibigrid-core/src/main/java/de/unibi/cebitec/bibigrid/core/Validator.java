@@ -110,6 +110,9 @@ public abstract class Validator {
             if (!Files.isReadable(path)) {
                 LOG.error("Ansible: File {} does not exist.", path);
                 return false;
+            } else if (!role.getFile().contains(".tgz") && !role.getFile().contains(".tar.gz")){
+                LOG.error("Ansible: File {} has to be a '.tgz' or '.tar.gz'.", path);
+                return false;
             }
             Path varFilePath = Paths.get(role.getVarsFile());
             if (!Files.isReadable(varFilePath)){
