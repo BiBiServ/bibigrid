@@ -114,10 +114,12 @@ public abstract class Validator {
                 LOG.error("Ansible: File {} has to be a '.tgz' or '.tar.gz'.", path);
                 return false;
             }
-            Path varFilePath = Paths.get(role.getVarsFile());
-            if (!Files.isReadable(varFilePath)){
-                LOG.error("Ansible: varsFile {} does not exist.", varFilePath);
-                return false;
+            if (role.getVarsFile() != null) {
+                Path varFilePath = Paths.get(role.getVarsFile());
+                if (!Files.isReadable(varFilePath)){
+                    LOG.error("Ansible: varsFile {} does not exist.", varFilePath);
+                    return false;
+                }
             }
             if (role.getHosts() == null) {
                 LOG.error("Ansible: hosts parameter not set.");
@@ -135,10 +137,12 @@ public abstract class Validator {
                 LOG.error("Ansible Galaxy: At least one of 'galaxy', 'git' or 'url' has to be specified.");
                 return false;
             }
-            Path varFilePath = Paths.get(role.getVarsFile());
-            if (!Files.isReadable(varFilePath)){
-                LOG.error("Ansible: varsFile {} does not exist.", varFilePath);
-                return false;
+            if (role.getVarsFile() != null) {
+                Path varFilePath = Paths.get(role.getVarsFile());
+                if (!Files.isReadable(varFilePath)){
+                    LOG.error("Ansible Galaxy: varsFile {} does not exist.", varFilePath);
+                    return false;
+                }
             }
             if (role.getHosts() == null) {
                 LOG.error("Ansible Galaxy: hosts parameter not set.");
