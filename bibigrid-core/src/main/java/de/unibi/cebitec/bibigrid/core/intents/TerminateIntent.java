@@ -73,11 +73,17 @@ public abstract class TerminateIntent extends Intent {
         return success;
     }
 
+    /**
+     * Terminates single worker instance.
+     * @param cluster specified cluster
+     * @param workerId id for the worker instance
+     * @return true, if worker instance terminated successfully
+     */
     protected abstract boolean terminateWorker(Cluster cluster, String workerId);
 
     /**
      * Terminates the whole cluster.
-     * @param cluster
+     * @param cluster specified cluster
      * @return true, if terminate successful
      */
     protected abstract boolean terminateCluster(Cluster cluster);
