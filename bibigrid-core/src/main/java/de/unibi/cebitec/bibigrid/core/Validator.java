@@ -220,6 +220,11 @@ public abstract class Validator {
                     // role name is valid, but probably the author is false
                     JSONArray results = (JSONArray) jsonObject.get("results");
                     if (!results.toJSONString().contains("\"name\":\"" + author + "\"")) {
+                        LOG.error("Ansible Galaxy: Author {} not correct for specified role.", author);
+                        return false;
+                    }
+                    if (!results.toJSONString().contains("\"name\":\"" + role + "\"")) {
+                        LOG.error("Ansible Galaxy: Name of role {} is not correct.", role);
                         return false;
                     }
                 }

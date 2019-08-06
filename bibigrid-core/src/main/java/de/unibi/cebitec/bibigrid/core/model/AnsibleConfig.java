@@ -87,7 +87,11 @@ public final class AnsibleConfig {
         vars_files = new ArrayList<>();
         vars_files.add(COMMON_FILE);
         vars_files.add(DEFAULT_IP_FILE);
-        vars_files.addAll(customSlaveRoles.values());
+        for (String vars_file : customSlaveRoles.values()) {
+            if (!vars_file.equals("")) {
+                vars_files.add(vars_file);
+            }
+        }
         slaves.put("vars_files", vars_files);
         roles = new ArrayList<>();
         roles.add("common");

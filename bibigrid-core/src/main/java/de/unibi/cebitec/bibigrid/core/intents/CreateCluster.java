@@ -322,30 +322,19 @@ public abstract class CreateCluster extends Intent {
             // Add Ansible roles
             List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
             for (Configuration.AnsibleRoles role : ansibleRoles) {
-                if (role.getFile() == null) {
-                    throw new ConfigurationException("Ansible: A 'file' has to be specified.");
-                } else if (!Paths.get(role.getFile()).toFile().isFile()) {
-                    throw new ConfigurationException("Ansible: " + role.getFile() + " is no valid file path");
-                }
-
-                if (role.getHosts() == null ||
-                        !role.getHosts().equals("master") &&
-                                !role.getHosts().equals("slave") &&
-                                !role.getHosts().equals("all")) {
-                    throw new ConfigurationException("Ansible roles have 'hosts' to be defined either as 'master', 'slave' or 'all'.");
-                }
                 String roleName = getSingleFileName(role.getFile()).split(".tgz")[0].split(".tar.gz")[0];
                 Map<String, Object> roleVars = role.getVars();
                 // Set role key - value pairs
                 if (role.getVarsFile() != null) {
+                    // VarsFile readable since it is proved in Validation
                     String vars = new String(Files.readAllBytes(Paths.get(role.getVarsFile())));
                     Yaml yaml = new Yaml();
                     Map<String, Object> additionalVars = yaml.load(vars);
                     roleVars.putAll(additionalVars);
                 }
-                String roleVarsFile = roleVars != null
-                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + "-vars.yml" : "";
-                if (!roleVarsFile.equals("")) {
+                String roleVarsFile = "";
+                if (roleVars != null && !roleVars.isEmpty()) {
+                    roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
                             AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
                 }
@@ -370,18 +359,20 @@ public abstract class CreateCluster extends Intent {
                 String roleName = role.getName();
                 Map<String, Object> roleVars = role.getVars();
                 // Set role key - value pairs
+                // Put vars from external vars file into Map
                 if (role.getVarsFile() != null) {
                     String vars = new String(Files.readAllBytes(Paths.get(role.getVarsFile())));
                     Yaml yaml = new Yaml();
                     Map<String, Object> additionalVars = yaml.load(vars);
                     roleVars.putAll(additionalVars);
                 }
-                String roleVarsFile = roleVars != null
-                        && !roleVars.isEmpty() ? AnsibleResources.VARS_PATH + roleName + "-vars.yml" : "";
-                if (!roleVarsFile.equals("")) {
+                String roleVarsFile = "";
+                if (roleVars != null && !roleVars.isEmpty()) {
+                    roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
-                            AnsibleResources.ROOT_PATH + roleVarsFile), roleVars);
+                            AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
                 }
+                // Replace ansible galaxy name with self-specified
                 role.setName(roleName);
                 switch (role.getHosts()) {
                     case "master":
