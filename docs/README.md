@@ -197,11 +197,11 @@ ansibleGalaxyRoles:
     galaxy: string          # Galaxy name of role like 'author.rolename'
     git: string             # GitHub role repository like 'https://github.com/bennojoy/nginx'
     url: string             # Webserver file url like 'https://some.webserver.example.com/files/master.tar.gzpath/to/file.tar.gz'
-    vars: 
-	    key : value         # Environment variables, if default configuration is not the preferred option
-	    ...
-	vars_file: string       # Yaml file when many variables are necessary
-  - name: ...			    # Add as many roles as you want
+    vars:
+        key : value         # Environment variables, if default configuration is not the preferred option
+        ...
+    vars_file: string       # Yaml file when many variables are necessary
+  - name: ...               # Add as many roles as you want
 ```
 Be aware of using only one of 'galaxy', 'git' or 'url'.
 
