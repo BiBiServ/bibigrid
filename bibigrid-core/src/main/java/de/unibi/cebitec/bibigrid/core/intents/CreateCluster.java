@@ -334,9 +334,9 @@ public abstract class CreateCluster extends Intent {
                 }
                 String roleVarsFile = "";
                 if (roleVars != null && !roleVars.isEmpty()) {
-                    roleVarsFile = roleName + "-vars.yml";
+                    roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
-                            AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
+                            AnsibleResources.ROOT_PATH + roleVarsFile), roleVars);
                 }
                 switch (role.getHosts()) {
                     case "master":
@@ -368,9 +368,9 @@ public abstract class CreateCluster extends Intent {
                 }
                 String roleVarsFile = "";
                 if (roleVars != null && !roleVars.isEmpty()) {
-                    roleVarsFile = roleName + "-vars.yml";
+                    roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
-                            AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
+                            AnsibleResources.ROOT_PATH + roleVarsFile), roleVars);
                 }
                 // Replace ansible galaxy name with self-specified
                 role.setName(roleName);
