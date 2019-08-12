@@ -164,7 +164,7 @@ ansibleRoles:
 
 To get a quick overview of the procedure, you can make your own 'Hello World' example role.  
 
-``` > ansible-galaxy init test-role ```  
+``` > ansible-galaxy init example_role ```  
 
 creates a basic role structure with 'defaults', 'files', 'vars', 'tasks' and other folders. Go into 'tasks' and change the 'main.yml':
 ``` main.yml
@@ -173,18 +173,19 @@ creates a basic role structure with 'defaults', 'files', 'vars', 'tasks' and oth
     - "Hello {{ ansible_user }}!"
 ```
 
-You then have to archive your role folder (in this case: 'test-role') with the following command:
+You then have to archive your role folder (in this case: 'example_role') with the command below.
+Please make sure that the '.tar.gz' file name and the role folder name are identical.
 
-``` > tar -czvf example-role.tar.gz test-role ```  
+``` > tar -czvf example_role.tar.gz example_role ```  
 
-You only need the '.tar.gz' file in the next steps. 'example-role' - or whatever you call the archived file - 
+You only need the '.tar.gz' file in the next steps. 'example_role' - or whatever you call the archived file - 
 will be the name of the role in your cluster. Now include the following lines into your configuration file:
 
 ```
 ansibleRoles:
   - name: Example role for test purposes	# Name of role, used only as description in config file
     hosts: master                   		# One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
-    file: example-role.tar.gz       		# path/to/file.tar.gz - File on local machine
+    file: example_role.tar.gz       		# path/to/file.tar.gz - File on local machine
 ```
 You can download an easy working example [here](examples/example.tar.gz).  
 
