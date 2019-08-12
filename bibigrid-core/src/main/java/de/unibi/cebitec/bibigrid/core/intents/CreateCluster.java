@@ -282,7 +282,7 @@ public abstract class CreateCluster extends Intent {
                             installAndExecuteAnsible(sshSession, prepare);
                     sshSession.disconnect();
                 }
-            } catch (IOException | JSchException | ConfigurationException e) {
+            } catch (IOException | JSchException e) {
                 LOG.error("SSH: ", e);
             }
         }
@@ -304,7 +304,7 @@ public abstract class CreateCluster extends Intent {
      * @throws JSchException possible SSH connection error
      */
     private boolean uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
-                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException, ConfigurationException {
+                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException {
         boolean uploadCompleted;
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Upload Ansible playbook to master instance.");
@@ -334,7 +334,7 @@ public abstract class CreateCluster extends Intent {
                 }
                 String roleVarsFile = "";
                 if (roleVars != null && !roleVars.isEmpty()) {
-                    roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
+                    roleVarsFile = roleName + "-vars.yml";
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
                             AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
                 }
@@ -368,7 +368,7 @@ public abstract class CreateCluster extends Intent {
                 }
                 String roleVarsFile = "";
                 if (roleVars != null && !roleVars.isEmpty()) {
-                    roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
+                    roleVarsFile = roleName + "-vars.yml";
                     commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
                             AnsibleResources.CONFIG_ROOT_PATH + roleVarsFile), roleVars);
                 }
