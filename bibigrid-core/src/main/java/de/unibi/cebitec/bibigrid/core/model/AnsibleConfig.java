@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import de.unibi.cebitec.bibigrid.core.model.Configuration.AnsibleRoles;
+import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -49,40 +51,96 @@ public final class AnsibleConfig {
         }
     }
 
-//    public void writeSiteFile(OutputStream stream) {
-//        Map<String, Object> master = new LinkedHashMap<>();
-//        master.put("hosts", "master");
-//        master.put("become", "yes");
-//        master.put("vars_files", Arrays.asList("vars/common.yml"));
-//        List<String> roles = new ArrayList<>();
-//        roles.add("common");
-//        roles.add("master");
-////        for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
-////            roles.add(getCustomRoleName("master", i));
-////        }
-//        master.put("roles", roles);
-//        Map<String, Object> slaves = new LinkedHashMap<>();
-//        slaves.put("hosts", "slaves");
-//        slaves.put("become", "yes");
-//        slaves.put("vars_files", Arrays.asList("vars/common.yml", "vars/{{ ansible_default_ipv4.address }}.yml"));
-//        roles = new ArrayList<>();
-//        roles.add("common");
-//        roles.add("slave");
-////        for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
-////            roles.add(getCustomRoleName("slaves", i));
-////        }
-//        slaves.put("roles", roles);
-//        writeToOutputStream(stream, Arrays.asList(master, slaves));
-//    }
+    /**
+     * Generates site.yml automatically including custom ansible roles.
+     *
+     * @param stream write file to remote
+     * @param customMasterRoles master ansible roles names and variable file names
+     * @param customSlaveRoles slave ansible roles names and variable file names
+     */
+    public void writeSiteFile(OutputStream stream,
+                              Map<String, String> customMasterRoles,
+                              Map<String, String> customSlaveRoles) {
+        String COMMON_FILE = AnsibleResources.COMMON_YML;
+        String DEFAULT_IP_FILE = AnsibleResources.VARS_PATH + "{{ ansible_default_ipv4.address }}.yml";
+        // master configuration
+        Map<String, Object> master = new LinkedHashMap<>();
+        master.put("hosts", "master");
+        master.put("become", "yes");
+        List<String> vars_files = new ArrayList<>();
+        vars_files.add(COMMON_FILE);
+        for (String vars_file : customMasterRoles.values()) {
+            if (!vars_file.equals("")) {
+                vars_files.add(vars_file);
+            }
+        }
+        master.put("vars_files", vars_files);
+        List<String> roles = new ArrayList<>();
+        roles.add("common");
+        roles.add("master");
+        roles.addAll(customMasterRoles.keySet());
+        master.put("roles", roles);
+        // slave configuration
+        Map<String, Object> slaves = new LinkedHashMap<>();
+        slaves.put("hosts", "slaves");
+        slaves.put("become", "yes");
+        vars_files = new ArrayList<>();
+        vars_files.add(COMMON_FILE);
+        vars_files.add(DEFAULT_IP_FILE);
+        for (String vars_file : customSlaveRoles.values()) {
+            if (!vars_file.equals("")) {
+                vars_files.add(vars_file);
+            }
+        }
+        slaves.put("vars_files", vars_files);
+        roles = new ArrayList<>();
+        roles.add("common");
+        roles.add("slave");
+        roles.addAll(customSlaveRoles.keySet());
+        slaves.put("roles", roles);
+        writeToOutputStream(stream, Arrays.asList(master, slaves));
+    }
 
     /**
-     * Generates a unique role name with the provided hosts type and index.
+     * Writes file for each ansible role to integrate environment variables.
      *
-     * @param hosts master or slaves.
-     * @param i     Index of the custom role folder.
+     * @param stream write file to remote
      */
-    public String getCustomRoleName(String hosts, int i) {
-        return hosts + "-user-role" + i;
+    public void writeAnsibleVarsFile(OutputStream stream, Map<String, Object> vars) {
+        if (vars != null && !vars.isEmpty()) {
+            writeToOutputStream(stream, vars);
+        }
+    }
+
+    /**
+     * Generates roles/requirements.yml automatically including roles to install via ansible-galaxy.
+     *
+     * @param stream write file to remote
+     */
+    public void writeRequirementsFile(OutputStream stream) {
+        List<Map<String, Object>> galaxy_roles = new ArrayList<>();
+        List<Map<String, Object>> git_roles = new ArrayList<>();
+        List<Map<String, Object>> url_roles = new ArrayList<>();
+
+        for (Configuration.AnsibleGalaxyRoles galaxyRole : config.getAnsibleGalaxyRoles()) {
+            Map<String, Object> role = new LinkedHashMap<>();
+            role.put("name", galaxyRole.getName());
+            if (galaxyRole.getGalaxy() != null) {
+                role.put("src", galaxyRole.getGalaxy());
+                galaxy_roles.add(role);
+            } else if (galaxyRole.getGit() != null) {
+                role.put("src", galaxyRole.getGit());
+                git_roles.add(role);
+            } else if (galaxyRole.getUrl() != null) {
+                role.put("src", galaxyRole.getUrl());
+                url_roles.add(role);
+            }
+        }
+        List<Map<String, Object>> roles = new ArrayList<>();
+        roles.addAll(galaxy_roles);
+        roles.addAll(git_roles);
+        roles.addAll(url_roles);
+        writeToOutputStream(stream, roles);
     }
 
     /**
@@ -92,6 +150,10 @@ public final class AnsibleConfig {
         writeToOutputStream(stream, getInstanceMap(instance, true));
     }
 
+    /**
+     * Generates common.yml to write into ~/playbook/vars/.
+     * @param stream Write file to remote
+     */
     public void writeCommonFile(OutputStream stream) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("mode", config.getMode());
@@ -115,23 +177,37 @@ public final class AnsibleConfig {
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
         addBooleanOption(map, "enable_theia", config.isTheia());
         addBooleanOption(map, "enable_cloud9", config.isCloud9());
-        addBooleanOption(map,"enable_ganglia",config.isGanglia());
+        addBooleanOption(map, "enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
-        map.put("zabbix", getZabbixConf());
-        map.put("oge", getOgeConf());
+        if (config.isZabbix()) {
+            map.put("zabbix", getZabbixConf());
+        }
+        if (config.isOge()) {
+            map.put("oge", getOgeConf());
+        }
+        if (config.hasCustomAnsibleRoles()) {
+            map.put("ansible_roles", getAnsibleRoles());
+        }
+        if (config.hasCustomAnsibleGalaxyRoles()) {
+            map.put("ansible_galaxy_roles", getAnsibleGalaxyRoles());
+        }
 
         writeToOutputStream(stream, map);
     }
 
+    /**
+     * Uses stream to write map on remote.
+     *
+     * @param stream OutputStream to remote instance
+     * @param map (yml) file content
+     */
     private void writeToOutputStream(OutputStream stream, Object map) {
-        try {
-            try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
                 if (map instanceof Map) {
                     writer.write(new Yaml().dumpAsMap(map));
                 } else {
                     writer.write(new Yaml().dumpAs(map, Tag.SEQ, DumperOptions.FlowStyle.BLOCK));
                 }
-            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -182,6 +258,46 @@ public final class AnsibleConfig {
         return ogeConf;
     }
 
+    /**
+     * Puts parameter values of every given role into Map list.
+     * @return list of roles with single parameters
+     */
+    private List<Map<String, Object>> getAnsibleRoles() {
+        List<AnsibleRoles> roles = config.getAnsibleRoles();
+        List<Map<String, Object>> ansibleRoles = new ArrayList<>();
+        for (AnsibleRoles role : roles) {
+            Map<String, Object> roleConf = new LinkedHashMap<>();
+            if (role.getName() != null && !role.getName().equals("")) roleConf.put("name", role.getName());
+            roleConf.put("file", role.getFile());
+            roleConf.put("hosts", role.getHosts());
+            if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            if (role.getVarsFile() != null) roleConf.put("vars_file", role.getVarsFile());
+            ansibleRoles.add(roleConf);
+        }
+        return ansibleRoles;
+    }
+
+    /**
+     * Puts parameter values of every given ansible-galaxy role into Map list.
+     * @return list of roles with single parameters
+     */
+    private List<Map<String, Object>> getAnsibleGalaxyRoles() {
+        List<Configuration.AnsibleGalaxyRoles> roles = config.getAnsibleGalaxyRoles();
+        List<Map<String, Object>> ansibleGalaxyRoles = new ArrayList<>();
+        for (Configuration.AnsibleGalaxyRoles role : roles) {
+            Map<String, Object> roleConf = new LinkedHashMap<>();
+            roleConf.put("name", role.getName());
+            roleConf.put("hosts", role.getHosts());
+            if (role.getGalaxy() != null) roleConf.put("galaxy", role.getGalaxy());
+            if (role.getGit() != null) roleConf.put("git", role.getGit());
+            if (role.getUrl() != null) roleConf.put("url", role.getUrl());
+            if (role.getVars() != null && !role.getVars().isEmpty()) roleConf.put("vars", role.getVars());
+            if (role.getVarsFile() != null) roleConf.put("vars_file", role.getVarsFile());
+            ansibleGalaxyRoles.add(roleConf);
+        }
+        return ansibleGalaxyRoles;
+    }
+
     private List<String> getEphemeralDevices(int count) {
         List<String> ephemerals = new ArrayList<>();
         for (int c = BLOCK_DEVICE_START; c < BLOCK_DEVICE_START + count; c++) {
@@ -212,6 +328,13 @@ public final class AnsibleConfig {
         return nfsSharesMap;
     }
 
+    /**
+     * Creates map of instance configuration.
+     *
+     * @param instance current remote instance
+     * @param full
+     * @return map of instance configuration
+     */
     private Map<String, Object> getInstanceMap(Instance instance, boolean full) {
         Map<String, Object> instanceMap = new LinkedHashMap<>();
         instanceMap.put("ip", instance.getPrivateIp());
@@ -231,5 +354,4 @@ public final class AnsibleConfig {
         }
         return l;
     }
-
 }

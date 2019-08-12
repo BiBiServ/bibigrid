@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
-import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
  * Startup/Main class of BiBiGrid.
@@ -75,9 +74,9 @@ public class StartUp {
         CommandLineParser cli = new DefaultParser();
         OptionGroup intentOptions = getCMDLineOptionGroup();
         Options cmdLineOptions = new Options();
-        cmdLineOptions.addOption(new Option("h","help",false,"get some online help"));
-        cmdLineOptions.addOption(new Option("v","verbose", false,"more verbose output"));
-        cmdLineOptions.addOption(new Option("o","config",true,"path to json configuration file"));
+        cmdLineOptions.addOption(new Option("h","help",false,"Get some online help"));
+        cmdLineOptions.addOption(new Option("v","verbose", false,"More verbose output"));
+        cmdLineOptions.addOption(new Option("o","config",true,"Path to JSON configuration file"));
 
 //        Options cmdLineOptions = getRulesToOptions();
         cmdLineOptions.addOptionGroup(intentOptions);
@@ -124,18 +123,21 @@ public class StartUp {
         }
     }
 
+    /**
+     * Prints out terminal help.
+     * @param commandLine given cl input arguments
+     * @param cmdLineOptions options [-ch -c -v -o ...]
+     */
     private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
-        // TODO: improve help modes
-        if (commandLine.hasOption("h")) {
-            runIntent(commandLine, IntentMode.HELP);
-            return;
-        }
         HelpFormatter help = new HelpFormatter();
         String header = "\nDocumentation at https://github.com/BiBiServ/bibigrid/docs\n\n";
         header += "Loaded provider modules: " + String.join(", ", Provider.getInstance().getProviderNames()) + "\n\n";
         String footer = "";
         String modes = Arrays.stream(IntentMode.values()).map(m -> "--" + m.getLongParam()).collect(Collectors.joining("|"));
         help.printHelp("bibigrid " + modes + " [...]", header, cmdLineOptions, footer);
+        System.out.println('\n');
+        // display instances to create cluster
+        runIntent(commandLine, IntentMode.HELP);
     }
 
     private static void runIntent(CommandLine commandLine, IntentMode intentMode) {
@@ -154,7 +156,8 @@ public class StartUp {
         try {
             validator = module.getCommandLineValidator(commandLine, configurationFile, intentMode);
         } catch (ConfigurationException e) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED, e.getMessage());
+            LOG.error(e.getMessage());
+            LOG.error(ABORT_WITH_NOTHING_STARTED);
             return;
         }
         if (validator.validate(providerMode)) {
@@ -162,7 +165,8 @@ public class StartUp {
             try {
                 client = module.getClient(validator.getConfig());
             } catch (ClientConnectionFailedException e) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED, e.getMessage());
+                LOG.error(e.getMessage());
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
             // In order to validate the native instance types, we need a client. So this step is deferred after
@@ -222,6 +226,16 @@ public class StartUp {
         }
     }
 
+    /**
+     * Runs cluster creation and launch processing.
+     *
+     * @param module responsible for provider accessibility
+     * @param validator validates overall configuration
+     * @param client Client
+     * @param cluster CreateCluster implementation
+     * @param prepare true, if still preparation necessary
+     * @return true, if cluster built successfully.
+     */
     private static boolean runCreateIntent(ProviderModule module, Validator validator, Client client,
                                            CreateCluster cluster, boolean prepare) {
         try {
@@ -271,16 +285,22 @@ public class StartUp {
         return null;
     }
 
+    /**
+     * Displays table of different machines (name, cores, ram, disk space, swap, ephemerals.
+     *
+     * @param module responsible for provider accessibility
+     * @param client Provider client user to connect to cluster
+     * @param config Configuration to get instance type
+     */
     private static void printInstanceTypeHelp(ProviderModule module, Client client, Configuration config) {
-
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
-        formatter.format("%25s | %5s | %15s | %15s | %4s | %10s%n", "name", "cores", "ram Mb", "disk size Mb", "swap",
+        formatter.format("%30s | %7s | %14s | %14s | %4s | %10s%n", "name", "cores", "ram Mb", "disk size Mb", "swap",
                 "ephemerals");
         display.append(new String(new char[89]).replace('\0', '-')).append("\n");
         for (InstanceType type : module.getInstanceTypes(client, config)) {
-            formatter.format("%25s | %5s | %15s | %15s | %4s | %10s%n", type.getValue(), type.getCpuCores(),
+            formatter.format("%30s | %7s | %14s | %14s | %4s | %10s%n", type.getValue(), type.getCpuCores(),
                     type.getMaxRam(), type.getMaxDiskSpace(), type.getSwap(), type.getEphemerals());
         }
         System.out.println(display.toString());

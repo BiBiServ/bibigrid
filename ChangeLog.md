@@ -1,4 +1,14 @@
 
+## Version 2.0.6 < 2.0.5 (08/07/2019)
+
+### Features
+- Configuration option to include ansible (galaxy) files (#100)
+- Added support for Apache Cassandra via ansible (#93)
+
+### Fixes
+- Update documentation for ansible (#143, #145)
+- Fixed help option (-h or --help)
+
 ## Version 2.0.5 < 2.0.4 (04/22/2019)
 
 ### Fixes

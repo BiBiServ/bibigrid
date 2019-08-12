@@ -12,12 +12,19 @@ import java.util.jar.JarFile;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public final class AnsibleResources {
-    private static final String ROOT_PATH = "playbook/";
-    public static final String HOSTS_CONFIG_FILE = ROOT_PATH + "ansible_hosts";
-    public static final String CONFIG_ROOT_PATH = ROOT_PATH + "vars/";
-    public static final String ROLES_ROOT_PATH = ROOT_PATH + "roles/";
-    public static final String COMMONS_CONFIG_FILE = CONFIG_ROOT_PATH + "common.yml";
-    public static final String SITE_CONFIG_FILE = ROOT_PATH + "site.yml";
+    public static final String ROOT_PATH = "playbook/";
+    public static final String ANSIBLE_HOSTS = "ansible_hosts";
+    public static final String VARS_PATH = "vars/";
+    public static final String ROLES_PATH = "roles/";
+    public static final String COMMON_YML = VARS_PATH + "common.yml";
+    public static final String SITE_YML = "site.yml";
+    public static final String REQUIREMENTS_YML = "requirements.yml";
+    public static final String HOSTS_CONFIG_FILE = ROOT_PATH + ANSIBLE_HOSTS;
+    public static final String CONFIG_ROOT_PATH = ROOT_PATH + VARS_PATH;
+    public static final String ROLES_ROOT_PATH = ROOT_PATH + ROLES_PATH;
+    public static final String COMMONS_CONFIG_FILE = ROOT_PATH + COMMON_YML;
+    public static final String SITE_CONFIG_FILE = ROOT_PATH + SITE_YML;
+    public static final String REQUIREMENTS_CONFIG_FILE = ROOT_PATH + REQUIREMENTS_YML;
     private final List<String> files = new ArrayList<>();
 
     public AnsibleResources() {
@@ -36,6 +43,12 @@ public final class AnsibleResources {
         }
     }
 
+    /**
+     * Walks through folder structure to add to files list.
+     *
+     * @param loader ClassLoader to gather path
+     * @param path actual path, starts with root path
+     */
     private void processFolder(ClassLoader loader, String path) {
         URL url = loader.getResource(path);
         if (url == null) {
@@ -56,6 +69,11 @@ public final class AnsibleResources {
         }
     }
 
+    /**
+     * Adds file paths to files list.
+     *
+     * @param path
+     */
     private void processJar(String path) {
         try {
             JarFile jarFile = new JarFile(new File(path));
@@ -78,6 +96,12 @@ public final class AnsibleResources {
         return getClass().getClassLoader().getResourceAsStream(path);
     }
 
+    /**
+     * Creates list of paths to folders given file list.
+     *
+     * @param files list of files in file structure
+     * @return list of folders
+     */
     public List<String> getDirectories(List<String> files) {
         List<String> folderSet = new ArrayList<>();
         for (String filepath : files) {

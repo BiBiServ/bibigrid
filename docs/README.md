@@ -147,6 +147,157 @@ ogeConf:
 The given value(s) will be overwritten in or added to the default configuration. 
 Check `qconf -sconf global` on master to proof the configuration.
 
+## Including Ansible (Galaxy) Roles
+You can include ansible roles from your own machine (compressed as .tar.gz files) automatically into your cluster setup by defining following configuration settings:
+
+```
+ansibleRoles:
+  - name: string            # Name of role, used only as description in config file
+    hosts: string           # One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    file: string            # path/to/file.tar.gz - File on local machine
+    vars:
+        key : value         # Environment variables, if default configuration is not the preferred option
+        ...
+    vars_file: string       # Yaml file when many variables are necessary
+  - name: ...               # Add as many roles as you want
+```
+
+To get a quick overview of the procedure, you can make your own 'Hello World' example role.  
+
+``` > ansible-galaxy init example_role ```  
+
+creates a basic role structure with 'defaults', 'files', 'vars', 'tasks' and other folders. Go into 'tasks' and change the 'main.yml':
+``` main.yml
+- debug:
+    msg: 
+    - "Hello {{ ansible_user }}!"
+```
+
+You then have to archive your role folder (in this case: 'example_role') with the command below.
+Please make sure that the '.tar.gz' file name and the role folder name are identical.
+
+``` > tar -czvf example_role.tar.gz example_role ```  
+
+You only need the '.tar.gz' file in the next steps. 'example_role' - or whatever you call the archived file - 
+will be the name of the role in your cluster. Now include the following lines into your configuration file:
+
+```
+ansibleRoles:
+  - name: Example role for test purposes	# Name of role, used only as description in config file
+    hosts: master                   		# One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    file: example_role.tar.gz       		# path/to/file.tar.gz - File on local machine
+```
+You can download an easy working example [here](examples/example.tar.gz).  
+
+If you want to include roles from Ansible Galaxy, Git or from a Webserver (as .tar.gz files), add the following lines to your configuration file:
+
+```
+ansibleGalaxyRoles:
+  - name: string            # Name of role, used to redefine role name
+    hosts: string           # One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    galaxy: string          # Galaxy name of role like 'author.rolename'
+    git: string             # GitHub role repository like 'https://github.com/bennojoy/nginx'
+    url: string             # Webserver file url like 'https://some.webserver.example.com/files/master.tar.gzpath/to/file.tar.gz'
+    vars:
+        key : value         # Environment variables, if default configuration is not the preferred option
+        ...
+    vars_file: string       # Yaml file when many variables are necessary
+  - name: ...               # Add as many roles as you want
+```
+Be aware of using only one of 'galaxy', 'git' or 'url'.
+
+### Set up Apache Cassandra on your cluster
+If you want to start Apache Cassandra on your cluster, you may include it as follows:
+```
+ansibleGalaxyRoles:
+  - name: Cassandra 
+    hosts: all
+    galaxy: locp.cassandra
+    varsFile: cassandra-vars.yml
+```
+Because Cassandra needs quite a lot additional variables, you may include these via an own Yaml file (e.g. cassandra-vars.yml)
+to keep your configuration file transparent.
+The author (locp) provides variables for a very basic configuration:  
+
+*cassandra-vars.yml*
+```
+cassandra_configuration:
+  authenticator: PasswordAuthenticator
+  cluster_name: MyCassandraCluster
+  commitlog_directory: /data/cassandra/commitlog
+  commitlog_sync: periodic
+  commitlog_sync_period_in_ms: 10000
+  data_file_directories:
+    - /data/cassandra/data
+  endpoint_snitch: GossipingPropertyFileSnitch
+  hints_directory: "/data/cassandra/hints"
+  listen_address: "{{ ansible_default_ipv4.address }}"
+  partitioner: org.apache.cassandra.dht.Murmur3Partitioner
+  saved_caches_directory: /data/cassandra/saved_caches
+  seed_provider:
+    - class_name: "org.apache.cassandra.locator.SimpleSeedProvider"
+      parameters:
+        - seeds: "{{ ansible_default_ipv4.address }}"
+      start_native_transport: true
+cassandra_configure_apache_repo: true
+cassandra_dc: DC1
+# Create an alternative directories structure for the Cassandra data.
+# In this example, the will be a directory called /data owned by root
+# with rwxr-xr-x permissions.  It will have a series of sub-directories
+# all of which will be defaulted to being owned by the cassandra user
+# with rwx------ permissions.
+cassandra_directories:
+    root:
+    group: root
+    mode: "0755"
+    owner: root
+    paths:
+        - /data
+    data:
+    paths:
+        - /data/cassandra
+        - /data/cassandra/commitlog
+        - /data/cassandra/data
+        - /data/cassandra/hints
+        - /data/cassandra/saved_caches
+cassandra_rack: RACK1
+cassandra_repo_apache_release: 311x
+```  
+
+To check if your configuration went well you can try to use the Cassandra Query Language Shell:  
+
+```
+> cqlsh
+```
+
+It's as simple as this! Now you can create databases among the cluster nodes.
+
+### Set up MySQL on the master instance
+To configure the MySQL Server on your cluster environment, simply add a suitable role within your ansible galaxy configuration:
+```
+ansibleGalaxyRoles:
+  - name: mysql                                     # Redefine role name
+    hosts: master                                   # Install role on master
+    galaxy: geerlingguy.mysql                       # Galaxy name of role
+    vars:                                           # Necessary variables
+      mysql_root_password: super-secure-password
+      mysql_databases:                              # Here you may specify yiour database
+        - name: example_db
+          encoding: latin1
+          collation: latin1_general_ci
+      mysql_users:                                  # Create user(s) with permissions
+        - name: example_user
+          host: "%"
+          password: similarly-secure-password
+          priv: "example_db.*:ALL"                  # permission on specified database
+```
+This ansible galaxy role is from author geerlingguy who provides many useful ansible roles. 
+After cluster setup and login on master you can check, if everything is going right:  
+
+``` > mysql --user example_user -p ```  
+
+Replace 'example_user' and type in your password afterwords - You should end up connected to the MySQL Server.
+
 ## Cluster maintenance
 ### List running clusters
 Once a cluster is created, it can be listed with the following command. All clusters found
@@ -171,8 +322,14 @@ When you're finished using the cluster, you can terminate it using the following
 > bibigrid -t [cluster-id] -v -o ~/config.yml
 ```
 
-If necessary multiple clusters can be terminated at once.
+If necessary multiple clusters can be terminated at once:
 
 ```
 > bibigrid -t [id1]/[id2]/[id3] -v -o ~/config.yml
 ```
+There is also the possibility to terminate all clusters of a user at once:
+```
+> bibigrid -t [user] -v -o ~/config.yml
+```
+Here you have to insert your username instead of '[user]'. This may save time, 
+if you are absolutely certain you don't need any of your clusters anymore.
