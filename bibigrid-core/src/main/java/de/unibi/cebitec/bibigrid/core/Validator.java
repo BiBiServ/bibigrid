@@ -126,6 +126,7 @@ public abstract class Validator {
                 return false;
             } else if (!role.getHosts().equals("master") &&
                     !role.getHosts().equals("slave") &&
+                    !role.getHosts().equals("slaves") &&
                     !role.getHosts().equals("all")) {
                 LOG.error("Ansible: hosts parameter has to be defined either as 'master', 'slave' or 'all'.");
                 return false;
@@ -149,6 +150,7 @@ public abstract class Validator {
                 return false;
             } else if (!role.getHosts().equals("master") &&
                     !role.getHosts().equals("slave") &&
+                    !role.getHosts().equals("slaves") &&
                     !role.getHosts().equals("all")) {
                 LOG.error("Ansible Galaxy: hosts parameter has to be defined either as 'master', 'slave' or 'all'.");
                 return false;

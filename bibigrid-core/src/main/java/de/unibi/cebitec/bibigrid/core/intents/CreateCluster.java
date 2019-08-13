@@ -342,6 +342,7 @@ public abstract class CreateCluster extends Intent {
                     case "master":
                         customMasterRoles.put(roleName, roleVarsFile);
                         break;
+                    case "slave":
                     case "slaves":
                         customSlaveRoles.put(roleName, roleVarsFile);
                         break;
@@ -378,6 +379,7 @@ public abstract class CreateCluster extends Intent {
                     case "master":
                         customMasterRoles.put(roleName, roleVarsFile);
                         break;
+                    case "slave":
                     case "slaves":
                         customSlaveRoles.put(roleName, roleVarsFile);
                         break;
