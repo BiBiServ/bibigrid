@@ -125,9 +125,9 @@ public abstract class Validator {
                 LOG.error("Ansible: hosts parameter not set.");
                 return false;
             } else if (!role.getHosts().equals("master") &&
-                    !role.getHosts().equals("slave") &&
+                    !role.getHosts().equals("slaves") &&
                     !role.getHosts().equals("all")) {
-                LOG.error("Ansible: hosts parameter has to be defined either as 'master', 'slave' or 'all'.");
+                LOG.error("Ansible: hosts parameter has to be defined either as 'master', 'slaves' or 'all'.");
                 return false;
             }
         }
