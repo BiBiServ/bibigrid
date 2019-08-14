@@ -31,19 +31,26 @@ public final class ShellScriptCreator {
         userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
         // iplookup function
         userData.append("function iplookup { nslookup ${1} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.' | xargs; }\n");
-        // Log local & resolved hostname
-        userData.append("localip=$(curl --silent --show-error http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+        // log local hostname
+        userData.append("localip=$(wget -O - --quiet http://169.254.169.254/latest/meta-data/local-ipv4 |cat)\n");
         userData.append("log \"hostname is $(hostname)\"\n");
+        // check if resolved  differs from local hostname and force set resolved hostname as local name, needs nslookup
+        userData.append("which nslookup\n");
+        userData.append("if [ $? -eq 0 ]; then \n");
         userData.append("log \"hostname should be $(iplookup $localip)\"\n");
-        // force set hostname
         userData.append("log \"set hostname\"\n");
         userData.append("hostname -b $(iplookup $localip)\n");
+        userData.append("fi\n");
+        // disableAptDailyService
         userData.append("log \"disable apt-daily.(service|timer)\"\n");
         appendDisableAptDailyService(userData);
+        // configure SSH Config
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData, keypair);
+        // umount possibly mounted ephemeral
         userData.append("log \"umount possibly mounted ephemeral\"\n");
         userData.append("umount /mnt\n");
+        // finished
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
         return base64 ? Base64.getEncoder().encodeToString(userData.toString().getBytes()) : userData.toString();
