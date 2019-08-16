@@ -8,8 +8,8 @@ Amazon (AWS EC2 using the official AWS SDK) and Microsoft (Azure using the offic
 which are currently not provided tested.
 BiBiGrid offers an easy configuration and maintenance of a started cluster via command-line.
 
-BiBiGrid uses [Ansible](https://www.ansible.com) to configure standard Ubuntu 16.04 LTS 
-as well as Ubuntu 18.04 LTS cloud images. Depending on your configuration BiBiGrid can set up
+BiBiGrid uses [Ansible](https://www.ansible.com) to configure standard Ubuntu 16.04/18.04 LTS 
+as well as Debian 9/10 cloud images. Depending on your configuration BiBiGrid can set up
 an HCP cluster for grid computing ([Slurm Workload Manager](https://slurm.schedmd.com/documentation.html) 
 as well as [Open Grid Engine](http://gridscheduler.sourceforge.net), provided for Ubuntu 16.04 only), 
 a shared filesystem (on local discs and attached volumes), a cloud IDE for writing, running and debugging 
