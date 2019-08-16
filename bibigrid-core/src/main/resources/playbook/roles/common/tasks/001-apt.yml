@@ -12,7 +12,7 @@
 
 - name: Install common packages
   apt:
-    name: ["apt-transport-https","ca-certificates","curl","software-properties-common","python-pip",'tmux']
+    name: ["apt-transport-https","ca-certificates","curl","software-properties-common","python3-pip"]
     state: "present"
 
 - name: Install OpenStack object store client

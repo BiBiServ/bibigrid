@@ -1,11 +1,11 @@
 - name: Install packages
   apt:
-    name: ["python", "make", "g++", "curl", "git"]
+    name: ["python3", "make", "g++", "curl", "git"]
   when: ansible_distribution_file_variety == 'Debian'
 
 - name: install packages
   yum:
-    name: ["python", "curl", "git", "make", "gcc", "gcc-c++"]
+    name: ["python3", "curl", "git", "make", "gcc", "gcc-c++"]
   when: ansible_distribution_file_variety == 'RedHat'
 
 - name: Create NVM install dir
