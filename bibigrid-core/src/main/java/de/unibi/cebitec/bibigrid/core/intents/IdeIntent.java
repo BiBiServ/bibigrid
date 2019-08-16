@@ -80,7 +80,7 @@ public class IdeIntent extends Intent {
                 sshSession.disconnect();
             }
         } catch (JSchException e) {
-            LOG.error("Failed to start cloud9 on master. {}", e);
+            LOG.error("Failed to start {} IDE on master.", config.isTheia() ? "Theia" : "Cloud9", e);
         } catch (IOException e) {
             e.printStackTrace();
         }

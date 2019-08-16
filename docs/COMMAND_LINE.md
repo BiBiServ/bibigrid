@@ -10,7 +10,8 @@ The parameters you might have to add outside the config YAML are explained in th
 | Long parameter | Short parameter | Values           | Description                        |
 |----------------|-----------------|------------------|------------------------------------|
 | check          | ch              | -                | validate cluster setup             |
-| cloud9         | c9              | cluster-id       | establish a secured connection to running grid running cloud9 |
+| cloud9         | c9              | cluster-id       | establish a secured connection to running grid running cloud9 [deprecated] |
+| ide            | ide             | cluster-id       | establish a secured connection to specified ide |
 | create         | c               | -                | create cluster environment         |
 | config         | o               | path/to/config   | YAML configuration file            |
 | help           | h               | -                | Display help message               |
