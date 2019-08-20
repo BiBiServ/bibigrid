@@ -125,10 +125,6 @@ public final class ShellScriptCreator {
         script.append("ansible slaves -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE
                 + " --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
-        // Fix line endings to ensure windows files being used correctly
-        // @ToDo dangerous!!! Should be restricted to text files only
-        script.append("for file in $(find " + AnsibleResources.ROOT_PATH + " -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
-
         // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
         script.append("ansible-galaxy install --roles-path ~/"
                 + AnsibleResources.ROLES_ROOT_PATH
@@ -139,6 +135,10 @@ public final class ShellScriptCreator {
         script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tgz; do tar -xzf $f; done\n");
         script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tar.gz; do tar -xzf $f; done\n");
         script.append("cd ~\n");
+
+        // Fix line endings for all text based ansible file to ensure windows files being used correctly
+        script.append("files=$(for f in $( find ~/playbook -type f); do  file ${f} | grep ASCII | cut -f 1 -d ':'; done;)\n");
+        script.append("for file in ${file}; do sed -i 's/\\r$//' \"${file}\"; done\n");
 
         // Execute ansible playbook
         script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
