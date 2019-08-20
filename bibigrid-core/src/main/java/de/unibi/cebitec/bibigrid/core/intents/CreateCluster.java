@@ -313,13 +313,16 @@ public abstract class CreateCluster extends Intent {
         try {
             // Collect Ansible files from resources for upload
             AnsibleResources resources = new AnsibleResources();
-            this.uploadResourcesFiles(resources, channel);
+            uploadResourcesFiles(resources, channel);
 
             // Divide into master and slave roles to write in site.yml
             Map<String, String> customMasterRoles = new LinkedHashMap<>();
             Map<String, String> customSlaveRoles = new LinkedHashMap<>();
 
-            // Add Ansible roles
+            // create Role Upload Path on master
+            createSFTPFolder(channel,AnsibleResources.UPLOAD_PATH);
+
+            // Add "extra" Ansible role
             List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
             for (Configuration.AnsibleRoles role : ansibleRoles) {
                 String roleName = getSingleFileName(role.getFile()).split(".tgz")[0].split(".tar.gz")[0];
@@ -351,7 +354,7 @@ public abstract class CreateCluster extends Intent {
                         customSlaveRoles.put(roleName, roleVarsFile);
                 }
 
-                this.uploadAnsibleRole(channel, resources, role.getFile());
+                uploadAnsibleRole(channel, role.getFile());
             }
 
             // Add galaxy roles
@@ -459,43 +462,61 @@ public abstract class CreateCluster extends Intent {
     private void createSftpFolders(ChannelSftp channel, AnsibleResources resources, List<String> files) throws SftpException {
         for (String folderPath : resources.getDirectories(files)) {
             String fullPath = channel.getHome() + "/" + folderPath;
-            try {
-                channel.cd(fullPath);
-            } catch (SftpException e) {
-                LOG.info(V, "SFTP: Create folder {}", fullPath);
-                channel.mkdir(fullPath);
-            }
-            channel.cd(channel.getHome());
+            createSFTPFolder(channel,fullPath);
         }
     }
 
-    /**
-     * Uploads single ansible role (.tar.gz, .tgz) to remote instance.
+    /** Creates a folder for given (if not already exists
      *
      * @param channel client side of sftp server channel
-     * @param resources ansible configuration
+     * @param path path to be created
+     * @throws SftpException possible SFTP failure
+     */
+    private void createSFTPFolder(ChannelSftp channel, String path) throws SftpException {
+        try {
+            channel.cd(path);
+        } catch (SftpException e) {
+            LOG.info(V, "SFTP: Create folder {}", path);
+            channel.mkdir(path);
+        }
+        channel.cd(channel.getHome());
+    }
+
+    /**
+     * Uploads single ansible role (.tar.gz, .tgz) to remote instance to temporary folder.
+     *
+     * @param channel client side of sftp server channel
      * @param roleFile path/to/role on local machine
      * @throws SftpException possible SFTP failure
      * @throws IOException possible File failure
      */
-    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String roleFile)
+    private void uploadAnsibleRole(ChannelSftp channel, String roleFile)
             throws SftpException, IOException {
         Path rootRolePath = Paths.get(roleFile);
         // playbook/roles/ROLE_NAME
-        roleFile = this.getSingleFileName(roleFile);
-        String remotePath = AnsibleResources.ROLES_ROOT_PATH + roleFile;
+        // roleFile = getSingleFileName(roleFile);
+        LOG.info(V,"RoleFile : {}",roleFile);
+        //String remotePath = AnsibleResources.ROLES_ROOT_PATH + roleFile;
+        String remotePath = AnsibleResources.UPLOAD_PATH + getSingleFileName(roleFile);
+        LOG.info(V,"remotePath : {}",remotePath);
+
+        //@ToDo : The following lines possible not necessary
         // Walks through valid files in rootRolePath and collects Stream to path list
-        List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
+        //List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
         // create a list of files in role
-        List<String> targetFiles = files.stream().map(p -> remotePath + rootRolePath.relativize(p)).collect(Collectors.toList());
-        createSftpFolders(channel, resources, targetFiles);
-        for (int i = 0; i < files.size(); i++) {
-            InputStream stream = new FileInputStream(files.get(i).toFile());
-            // Upload the file stream via sftp to the home folder
-            String fullPath = channel.getHome() + "/" + targetFiles.get(i).replace("\\", "/");
-            LOG.info(V, "SFTP: Upload file {}", fullPath);
-            channel.put(stream, fullPath);
-        }
+        //List<String> targetFiles = files.stream().map(p -> remotePath + rootRolePath.relativize(p)).collect(Collectors.toList());
+        // content ???
+
+        // createSftpFolders(channel, resources, targetFiles); Not needed anymore ...
+        //for (int i = 0; i < files.size(); i++) {
+            // source location (local)
+            InputStream stream = new FileInputStream(roleFile);
+            // target location on master
+            // String path  = targetFiles.get(i).replace("\\", "/");  //replace windows paths separator
+            LOG.info(V, "SFTP: Upload file {} to {}", roleFile, remotePath );
+            // Upload the file stream via sftp
+            channel.put(stream, remotePath );
+        //}
     }
 
     /**

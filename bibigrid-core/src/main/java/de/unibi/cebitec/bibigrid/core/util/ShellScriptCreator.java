@@ -126,6 +126,7 @@ public final class ShellScriptCreator {
                 + " --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
         // Fix line endings to ensure windows files being used correctly
+        // @ToDo dangerous!!! Should be restricted to text files only
         script.append("for file in $(find " + AnsibleResources.ROOT_PATH + " -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
 
         // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
@@ -135,10 +136,8 @@ public final class ShellScriptCreator {
 
         // Extract ansible roles from files (.tar.gz, .tgz)
         script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
-        script.append("for f in *.tgz; do tar -xzf $f; done\n");
-        script.append("for f in *.tar.gz; do tar -xzf $f; done\n");
-        script.append("rm -rf *.tgz\n");
-        script.append("rm -rf *.tar.gz\n");
+        script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tgz; do tar -xzf $f; done\n");
+        script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tar.gz; do tar -xzf $f; done\n");
         script.append("cd ~\n");
 
         // Execute ansible playbook
