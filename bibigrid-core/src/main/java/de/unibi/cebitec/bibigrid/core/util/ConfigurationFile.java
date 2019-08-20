@@ -80,7 +80,7 @@ public final class ConfigurationFile {
             } catch (FileNotFoundException e) {
                 throw new ConfigurationException("Failed to load properties file.", e);
             } catch (YAMLException e) {
-                throw new ConfigurationException("Failed to parse configuration file.", e);
+                throw new ConfigurationException("Failed to parse configuration file. "+e.getMessage(), e);
             }
         }
         try {
