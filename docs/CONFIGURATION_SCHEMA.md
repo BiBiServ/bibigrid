@@ -57,7 +57,7 @@ zabbixConf:
     db_user: string                                 # User name for Database. Default is "zabbix"
     db_password: string                             # Password of user. Default is "zabbix"
     timezone: string                                # Default is "Europe/Berlin"
-    servername: string                              # Name of Server. Default is "bibigrid"
+    server_name: string                             # Name of Server. Default is "bibigrid"
     admin_password: string                          # Admin password. Default is "bibigrid". Change hardly recommended!
 ganglia: boolean [yes, "no"]                        # deprecated - supported for Ubuntu 16.04 only. Default is no
     

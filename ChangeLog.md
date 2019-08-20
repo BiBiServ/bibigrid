@@ -1,3 +1,12 @@
+## Version 2.0.7 < 2.0.6 (not released yet)
+
+### Features
+- Add full support for Debian Stretch (9) and Buster (10) (#85)
+
+### Fixes
+- source code documentation & clean up
+- fixed line ending replacement command corrupts custom ansible role .tar.gz files (#151)
+
 
 ## Version 2.0.6 < 2.0.5 (08/07/2019)
 
