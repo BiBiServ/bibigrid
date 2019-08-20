@@ -9,9 +9,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
+ * Utility class AnsibleResources provides some resources (const + function)
+ * concerning the ansible setup on master node.
+ *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public final class AnsibleResources {
+    public static final String UPLOAD_PATH = "/tmp/roles/";
     public static final String ROOT_PATH = "playbook/";
     public static final String ANSIBLE_HOSTS = "ansible_hosts";
     public static final String VARS_PATH = "vars/";
