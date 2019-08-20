@@ -492,31 +492,13 @@ public abstract class CreateCluster extends Intent {
      */
     private void uploadAnsibleRole(ChannelSftp channel, String roleFile)
             throws SftpException, IOException {
-        Path rootRolePath = Paths.get(roleFile);
-        // playbook/roles/ROLE_NAME
-        // roleFile = getSingleFileName(roleFile);
-        LOG.info(V,"RoleFile : {}",roleFile);
-        //String remotePath = AnsibleResources.ROLES_ROOT_PATH + roleFile;
         String remotePath = AnsibleResources.UPLOAD_PATH + getSingleFileName(roleFile);
-        LOG.info(V,"remotePath : {}",remotePath);
-
-        //@ToDo : The following lines possible not necessary
-        // Walks through valid files in rootRolePath and collects Stream to path list
-        //List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
-        // create a list of files in role
-        //List<String> targetFiles = files.stream().map(p -> remotePath + rootRolePath.relativize(p)).collect(Collectors.toList());
-        // content ???
-
-        // createSftpFolders(channel, resources, targetFiles); Not needed anymore ...
-        //for (int i = 0; i < files.size(); i++) {
-            // source location (local)
-            InputStream stream = new FileInputStream(roleFile);
-            // target location on master
-            // String path  = targetFiles.get(i).replace("\\", "/");  //replace windows paths separator
-            LOG.info(V, "SFTP: Upload file {} to {}", roleFile, remotePath );
-            // Upload the file stream via sftp
-            channel.put(stream, remotePath );
-        //}
+        InputStream stream = new FileInputStream(roleFile);
+        // target location on master
+        // String path  = targetFiles.get(i).replace("\\", "/");  //replace windows paths separator
+        LOG.info(V, "SFTP: Upload file {} to {}", roleFile, remotePath );
+        // Upload the file stream via sftp
+        channel.put(stream, remotePath );
     }
 
     /**
