@@ -17,8 +17,8 @@ masterInstance:
   type:
   image:
 
-#BiBiGrid-Slave
-slaveInstances:
+#BiBiGrid-Worker
+workerInstances:
   - type:
     count:
     image:

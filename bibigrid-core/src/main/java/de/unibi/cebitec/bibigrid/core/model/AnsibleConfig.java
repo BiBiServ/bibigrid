@@ -26,16 +26,16 @@ public final class AnsibleConfig {
     private final String blockDeviceBase;
     private final String subnetCidr;
     private final Instance masterInstance;
-    private final List<Instance> slaveInstances;
+    private final List<Instance> workerInstances;
     private List<Configuration.MountPoint> masterMounts;
 
     public AnsibleConfig(Configuration config, String blockDeviceBase, String subnetCidr, Instance masterInstance,
-                         List<Instance> slaveInstances) {
+                         List<Instance> workerInstances) {
         this.config = config;
         this.blockDeviceBase = blockDeviceBase;
         this.subnetCidr = subnetCidr;
         this.masterInstance = masterInstance;
-        this.slaveInstances = new ArrayList<>(slaveInstances);
+        this.workerInstances = new ArrayList<>(workerInstances);
     }
 
     public void setMasterMounts(DeviceMapper masterDeviceMapper) {
@@ -56,11 +56,11 @@ public final class AnsibleConfig {
      *
      * @param stream write file to remote
      * @param customMasterRoles master ansible roles names and variable file names
-     * @param customSlaveRoles slave ansible roles names and variable file names
+     * @param customworkerRoles worker ansible roles names and variable file names
      */
     public void writeSiteFile(OutputStream stream,
                               Map<String, String> customMasterRoles,
-                              Map<String, String> customSlaveRoles) {
+                              Map<String, String> customWorkerRoles) {
         String COMMON_FILE = AnsibleResources.COMMON_YML;
         String DEFAULT_IP_FILE = AnsibleResources.VARS_PATH + "{{ ansible_default_ipv4.address }}.yml";
         // master configuration
@@ -80,25 +80,25 @@ public final class AnsibleConfig {
         roles.add("master");
         roles.addAll(customMasterRoles.keySet());
         master.put("roles", roles);
-        // slave configuration
-        Map<String, Object> slaves = new LinkedHashMap<>();
-        slaves.put("hosts", "slaves");
-        slaves.put("become", "yes");
+        // worker configuration
+        Map<String, Object> workers = new LinkedHashMap<>();
+        workers.put("hosts", "workers");
+        workers.put("become", "yes");
         vars_files = new ArrayList<>();
         vars_files.add(COMMON_FILE);
         vars_files.add(DEFAULT_IP_FILE);
-        for (String vars_file : customSlaveRoles.values()) {
+        for (String vars_file : customWorkerRoles.values()) {
             if (!vars_file.equals("")) {
                 vars_files.add(vars_file);
             }
         }
-        slaves.put("vars_files", vars_files);
+        workers.put("vars_files", vars_files);
         roles = new ArrayList<>();
         roles.add("common");
-        roles.add("slave");
-        roles.addAll(customSlaveRoles.keySet());
-        slaves.put("roles", roles);
-        writeToOutputStream(stream, Arrays.asList(master, slaves));
+        roles.add("worker");
+        roles.addAll(customWorkerRoles.keySet());
+        workers.put("roles", roles);
+        writeToOutputStream(stream, Arrays.asList(master, workers));
     }
 
     /**
@@ -161,7 +161,7 @@ public final class AnsibleConfig {
         map.put("ssh_user", config.getSshUser());
         map.put("munge_key",config.getMungeKey());
         map.put("master", getMasterMap());
-        map.put("slaves", getSlavesMap());
+        map.put("workers", getWorkerMap());
         map.put("CIDR", subnetCidr);
         if (config.isNfs()) {
             map.put("nfs_mounts", getNfsSharesMap());
@@ -347,10 +347,10 @@ public final class AnsibleConfig {
         return instanceMap;
     }
 
-    private List<Map<String, Object>> getSlavesMap() {
+    private List<Map<String, Object>> getWorkerMap() {
         List<Map<String, Object>> l = new ArrayList<>();
-        for (Instance slave : slaveInstances) {
-            l.add(getInstanceMap(slave, true));
+        for (Instance worker : workerInstances) {
+            l.add(getInstanceMap(worker, true));
         }
         return l;
     }

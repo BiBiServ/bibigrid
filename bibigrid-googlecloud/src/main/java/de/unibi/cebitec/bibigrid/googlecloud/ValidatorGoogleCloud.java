@@ -45,11 +45,11 @@ public final class ValidatorGoogleCloud extends Validator {
                 break;
             case PREPARE:
             case CREATE:
-                // @ToDo: Check for config properties USE_MASTER_AS_COMPUTE and SLAVE_INSTANCE_COUNT;
+                // @ToDo: Check for config properties USE_MASTER_AS_COMPUTE and WORKER_INSTANCE_COUNT;
             case VALIDATE:
                 //@ToDo: Check for the following config properties:
                 // MASTER_INSTANCE_TYPE, MASTER_IMAGE
-                // SLAVE_INSTANCE_TYPE, SLAVE_IMAGE
+                // WORKER_INSTANCE_TYPE, WORKER_IMAGE
                 // SSH_USER, SSH_PRIVATE_KEY_FILE, REGION, AVAILABILITY_ZONE
                 // CREDENTIALS_FILE
                 // GOOGLE_IMAGE_PROJECT_ID, GOOGLE_PROJECT_ID

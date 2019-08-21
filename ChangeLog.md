@@ -1,13 +1,14 @@
 ## Version 2.0.7 < 2.0.6 (not released yet)
 
 ### Features
-- Add full support for Debian Stretch (9) and Buster (10) (#85)
+- Add full support for Debian Stretch (9) and Debian Buster (10) (#85)
 
 ### Fixes
 - source code documentation & clean up (#151)
 - fixed line ending replacement command corrupts custom ansible role .tar.gz files (#151)
 - documentation (#141)
 - more helpful error message in case of unsupported configuration properties (#141)
+- update naming scheme for worker nodes -> replace slave[s] with worker (#155)
 
 ## Version 2.0.6 < 2.0.5 (08/07/2019)
 

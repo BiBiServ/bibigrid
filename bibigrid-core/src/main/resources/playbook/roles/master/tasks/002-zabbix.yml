@@ -149,4 +149,4 @@
         dns: "{{ master.hostname }}"
         port: 10050
   with_items:
-    - "{{ slaves }}"
+    - "{{ workers }}"

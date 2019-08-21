@@ -50,8 +50,8 @@ public class TerminateIntentAWS extends TerminateIntent {
         if (cluster.getMasterInstance() != null) {
             instanceIds.add(cluster.getMasterInstance().getId());
         }
-        if (cluster.getSlaveInstances() != null) {
-            for (de.unibi.cebitec.bibigrid.core.model.Instance instance : cluster.getSlaveInstances()) {
+        if (cluster.getWorkerInstances() != null) {
+            for (de.unibi.cebitec.bibigrid.core.model.Instance instance : cluster.getWorkerInstances()) {
                 instanceIds.add(instance.getId());
             }
         }

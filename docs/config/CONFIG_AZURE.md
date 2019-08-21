@@ -34,7 +34,7 @@ masterInstance:
   type: string
   image: string
 
-slaveInstances:
+workerInstances:
   - type: string
     count: integer
     image: string
@@ -44,7 +44,7 @@ slaveInstances:
 # masterAnsibleRoles:
 #  - string
 #  - ...
-# slaveAnsibleRoles:
+# workerAnsibleRoles:
 #  - string
 #  - ...
 

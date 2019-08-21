@@ -1,4 +1,4 @@
-# Install gridengine-client on all slaves
+# Install gridengine-client on all workers
 
 - name: Install gridengine packages
   apt:

@@ -128,8 +128,8 @@ public final class ShellScriptCreator {
         script.append("sudo pip install setuptools | sudo tee -a /var/log/ssh_exec.log\n");
         // Install ansible from pypi using pip
         script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n");
-        // Install python2 on slaves instances
-        script.append("ansible slaves -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE
+        // Install python2 on workers instances
+        script.append("ansible workers -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE
                 + " --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
         // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)

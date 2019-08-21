@@ -34,11 +34,11 @@ masterInstance:
   type: string                                      # Instance Flavor, self-assigned (e.g.: m1.small)
   image: string                                     # Image ID (e.g.: 802e0abe-ac6c-...) or Image name
 
-# Slaves
-slaveInstances:
+# Workers
+workerInstances:
   - type: string                                    # Instance Flavor, self-assigned (e.g.: m1.small)
     image: string                                   # Image ID (e.g.: 802e0abe-ac6c-...) or Image name
-    count: integer                                  # Number of Slave Instances
+    count: integer                                  # Number of Worker Instances
   - ...
   
 # Services
@@ -121,7 +121,7 @@ googleImageProjectId: string                        # ID of Image Project
 ```
 bidPrice: double                                    # Bid Price in USD ($) for each Amazon EC2 instance when launched as Spot Instances
 bidPriceMaster: double
-publicSlaveIps: boolean [yes, no]                   # Every slave gets public IP
+publicWorkerIps: boolean [yes, no]                   # Every worker gets public IP
 useSpotInstances: boolean [yes, no]                 # Usage of unused EC2 capacity in AWS cloud at discount price
 ```
 

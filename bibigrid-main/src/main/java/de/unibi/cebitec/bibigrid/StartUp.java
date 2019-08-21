@@ -205,7 +205,7 @@ public class StartUp {
                     CreateCluster cluster = module.getCreateIntent(client, validator.getConfig());
                     if (runCreateIntent(module, validator, client, cluster, true)) {
                         module.getPrepareIntent(client, validator.getConfig()).prepare(cluster.getMasterInstance(),
-                                cluster.getSlaveInstances());
+                                cluster.getWorkerInstances());
                         module.getTerminateIntent(client, validator.getConfig()).terminate();
                     }
                     break;
@@ -246,7 +246,7 @@ public class StartUp {
                     .createSecurityGroup()
                     .createPlacementGroup()
                     .configureClusterMasterInstance()
-                    .configureClusterSlaveInstance()
+                    .configureClusterWorkerInstance()
                     .launchClusterInstances(prepare);
             if (!success) {
                 LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);

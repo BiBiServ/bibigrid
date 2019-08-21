@@ -31,8 +31,8 @@ public class AnsibleConfigTest {
                     };
                 }
             });
-            List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
-            slaveInstances.add(new SlaveInstanceConfiguration() {
+            List<WorkerInstanceConfiguration> workerInstances = new ArrayList<>();
+            workerInstances.add(new WorkerInstanceConfiguration() {
                 @Override
                 public int getCount() {
                     return 1;
@@ -58,7 +58,7 @@ public class AnsibleConfigTest {
                     };
                 }
             });
-            slaveInstances.add(new SlaveInstanceConfiguration() {
+            workerInstances.add(new WorkerInstanceConfiguration() {
                 @Override
                 public int getCount() {
                     return 2;
@@ -84,9 +84,9 @@ public class AnsibleConfigTest {
                     };
                 }
             });
-            setSlaveInstances(slaveInstances);
+            setWorkerInstances(workerInstances);
             //setMasterAnsibleRoles(Arrays.asList("~/ansible/testrole1", "~/ansible/testrole2"));
-            //setSlaveAnsibleRoles(Arrays.asList("/etc/ansible/testrole3"));
+            //setWorkerAnsibleRoles(Arrays.asList("/etc/ansible/testrole3"));
         }
     }
 
@@ -143,12 +143,12 @@ public class AnsibleConfigTest {
     public void testToString() {
         TestConfiguration testConfiguration = new TestConfiguration();
         TestInstance masterInstance = new TestInstance(testConfiguration.getMasterInstance(), "192.168.33.5");
-        List<Instance> slaveInstances = Arrays.asList(
-                new TestInstance(testConfiguration.getSlaveInstances().get(0), "192.168.33.6"),
-                new TestInstance(testConfiguration.getSlaveInstances().get(1), "192.168.33.7"),
-                new TestInstance(testConfiguration.getSlaveInstances().get(1), "192.168.33.8"));
+        List<Instance> workerInstances = Arrays.asList(
+                new TestInstance(testConfiguration.getWorkerInstances().get(0), "192.168.33.6"),
+                new TestInstance(testConfiguration.getWorkerInstances().get(1), "192.168.33.7"),
+                new TestInstance(testConfiguration.getWorkerInstances().get(1), "192.168.33.8"));
         AnsibleConfig config = new AnsibleConfig(testConfiguration, "/dev/vd", "192.168.33.0/24", masterInstance,
-                slaveInstances);
+                workerInstances);
 
         System.out.println(":Master:");
         // print common configuration
@@ -158,10 +158,10 @@ public class AnsibleConfigTest {
                 System.out.write(b);
             }
         });
-        // print slave specific configuration
-        for (Instance slave : slaveInstances) {
-            System.out.println(":Slave:");
-            config.writeInstanceFile(slave, new OutputStream() {
+        // print worker specific configuration
+        for (Instance worker : workerInstances) {
+            System.out.println(":Worker:");
+            config.writeInstanceFile(worker, new OutputStream() {
                 @Override
                 public void write(int b) {
                     System.out.write(b);
