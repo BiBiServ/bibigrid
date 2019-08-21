@@ -115,22 +115,22 @@ public final class ShellScriptCreator {
         StringBuilder script = new StringBuilder();
         // apt-get update
         script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
-        // install python2
+        // install python3
         script.append("sudo DEBIAN_FRONTEND=noninteractive apt-get --yes  install apt-transport-https ca-certificates ")
-                .append("software-properties-common python python-pip libffi-dev libssl-dev |sudo tee -a /var/log/ssh_exec.log\n");
+                .append("software-properties-common python3 python3-pip libffi-dev libssl-dev |sudo tee -a /var/log/ssh_exec.log\n");
         // Update pip to latest version
         script.append("sudo pip install --upgrade pip | sudo tee -a /var/log/ssh_exec.log\n");
 
         // Upgrade OpenSSL to fix ssl version problems on Ubuntu 16.04
-        script.append("sudo python -m easy_install --upgrade pyOpenSSL\n");    // doesn't work
+        script.append("sudo python3 -m easy_install --upgrade pyOpenSSL\n");    // doesn't work
 
         // Install setuptools from pypi using pip
         script.append("sudo pip install setuptools | sudo tee -a /var/log/ssh_exec.log\n");
         // Install ansible from pypi using pip
         script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n");
-        // Install python2 on workers instances
+        // Install python3 on workers instances
         script.append("ansible workers -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE
-                + " --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
+                + " --become -m raw -a \"apt-get update && apt-get --yes install python3\" | sudo tee -a /var/log/ansible.log\n");
 
         // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
         script.append("ansible-galaxy install --roles-path ~/"
