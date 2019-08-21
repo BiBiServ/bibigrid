@@ -124,10 +124,11 @@ public abstract class Validator {
             if (role.getHosts() == null) {
                 LOG.error("Ansible: hosts parameter not set.");
                 return false;
-            } else if (!role.getHosts().equals("MASTER") &&
-                    !role.getHosts().equals("WORKER") &&
-                    !role.getHosts().equals("ALL")) {
-                LOG.error("Ansible: hosts parameter has to be defined either as 'MASTER', 'WORKER' or 'ALL'.");
+            } else if (!role.getHosts().equals("master") &&
+                    !role.getHosts().equals("worker") &&
+                    !role.getHosts().equals("workers") &&
+                    !role.getHosts().equals("all")) {
+                LOG.error("Ansible: hosts parameter has to be defined either as 'master', 'worker' or 'all'.");
                 return false;
             }
         }
