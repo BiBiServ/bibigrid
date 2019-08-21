@@ -379,10 +379,11 @@ public abstract class CreateCluster extends Intent {
                 // Replace ansible galaxy name with self-specified
                 role.setName(roleName);
                 switch (role.getHosts()) {
-                    case "MASTER":
+                    case "master":
                         customMasterRoles.put(roleName, roleVarsFile);
                         break;
-                    case "WORKER":
+                    case "worker":
+                    case "workers":
                         customWorkerRoles.put(roleName, roleVarsFile);
                         break;
                     default:

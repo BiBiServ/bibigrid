@@ -731,7 +731,7 @@ public abstract class Configuration {
      * Provides support for (local) Ansible roles and playbooks.
      *
      * String name      : (optional) name of (ansible-galaxy) role or playbook, default is given name
-     * String hosts     : host (MASTER / WORKER / ALL)
+     * String hosts     : host (master / worker / all)
      * Map vars         : (optional) additional key - value pairs of role
      * String varsFile  : (optional) file containing key - value pairs of role
      * String file      : file of role
@@ -755,17 +755,15 @@ public abstract class Configuration {
             return hosts;
         }
 
-        public void setHosts(String hosts) throws  ConfigurationException{
-
-            hosts = hosts.toUpperCase();
+        public void setHosts(String hosts) {
             // Exception for deprecated values
-            if (hosts.equals("SLAVE") || hosts.equals("SLAVES")) {
-                LOG.warn("Value 'SLAVES[S]' for property ansibleRoles.hosts is deprecated and will be removed in next major release. " +
-                        "It is replaced 1:1 by 'WORKER'.");
-                this.hosts = "WORKER";
+            if (hosts.equals("slave") || hosts.equals("slaves")) {
+                LOG.warn("Value 'slave[s]' for property ansibleRoles.hosts is deprecated and will be removed in next major release. " +
+                        "It is replaced 1:1 by 'worker'.");
+                this.hosts = "worker";
                 return;
             }
-            if (hosts.equals("ALL") || hosts.equals("WORKER") || hosts.equals("MASTER")) {
+            if (hosts.equals("all") || hosts.equals("worker") || hosts.equals("master")) {
                 this.hosts = hosts;
                 return;
             }
