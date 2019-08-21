@@ -31,12 +31,6 @@ A complete schema for a specific **configuration file** can be found on:
 * [Google Compute Configuration File](config/CONFIG_GOOGLE_COMPUTE.md) *
 * [Amazon AWS Configuration File](config/CONFIG_AWS.md) *
 * [Azure Configuration File](config/CONFIG_AZURE.md) *
-
-Provider specific examples representing the minimal required parameters:
-* [OpenStack Examples](examples/EXAMPLES_OPENSTACK.md)  
-* [Google Compute Examples](examples/EXAMPLES_GOOGLECLOUD.md) *
-* [AWS Examples](examples/EXAMPLES_AWS.md) *
-* [Azure Examples](examples/EXAMPLES_AZURE.md) *
   
 **Google Compute, AWS and Azure will currently not be tested.*
 
