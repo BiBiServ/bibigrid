@@ -34,7 +34,7 @@ public abstract class Configuration {
     private boolean useMasterAsCompute;
     private boolean useMasterWithPublicIp = true;
     private InstanceConfiguration masterInstance = new InstanceConfiguration();
-    private List<SlaveInstanceConfiguration> slaveInstances = new ArrayList<>();
+    private List<WorkerInstanceConfiguration> workerInstances = new ArrayList<>();
     private boolean oge;
     private boolean slurm;
     private String mungeKey;
@@ -59,15 +59,15 @@ public abstract class Configuration {
     // private String cloud9Workspace = DEFAULT_WORKSPACE;  deprecated
     private String workspace = DEFAULT_WORKSPACE;
 
-    public int getSlaveInstanceCount() {
-        if (slaveInstances == null) {
+    public int getWorkerInstanceCount() {
+        if (workerInstances == null) {
             return 0;
         }
-        int slaveInstanceCount = 0;
-        for (SlaveInstanceConfiguration config : slaveInstances) {
-            slaveInstanceCount += config.getCount();
+        int workerInstanceCount = 0;
+        for (WorkerInstanceConfiguration config : workerInstances) {
+            workerInstanceCount += config.getCount();
         }
-        return slaveInstanceCount;
+        return workerInstanceCount;
     }
 
     public void setGridPropertiesFile(String gridPropertiesFile) {
@@ -144,39 +144,51 @@ public abstract class Configuration {
         }
     }
 
-    public List<SlaveInstanceConfiguration> getSlaveInstances() {
-        return slaveInstances;
+    @Deprecated
+    public List<WorkerInstanceConfiguration> getSlaveInstances() {
+        LOG.warn("Property 'slaveInstances' is deprecated and will be removed in next major release. It is replaced 1:1 by 'workerInstances'.");
+        return getWorkerInstances();
     }
 
-    public void setSlaveInstances(List<SlaveInstanceConfiguration> slaveInstances) {
-        this.slaveInstances = slaveInstances != null ? slaveInstances : new ArrayList<>();
-        if (slaveInstances != null && !slaveInstances.isEmpty()) {
+    @Deprecated
+    public void setSlaveInstances(List<WorkerInstanceConfiguration> workerInstances) {
+            LOG.warn("Property 'slaveInstances' is deprecated and will be removed in next major release. It is replaced 1:1 by 'workerInstances'.");
+            setWorkerInstances(workerInstances);
+    }
+
+    public List<WorkerInstanceConfiguration> getWorkerInstances() {
+        return workerInstances;
+    }
+
+    public void setWorkerInstances(List<WorkerInstanceConfiguration> workerInstances) {
+        this.workerInstances = workerInstances != null ? workerInstances : new ArrayList<>();
+        if (workerInstances != null && !workerInstances.isEmpty()) {
             StringBuilder display = new StringBuilder();
-            for (SlaveInstanceConfiguration instanceConfiguration : slaveInstances) {
+            for (WorkerInstanceConfiguration instanceConfiguration : workerInstances) {
                 display.append("[type=").append(instanceConfiguration.getType())
                         .append(", image=").append(instanceConfiguration.getImage())
                         .append(", count=").append(instanceConfiguration.getCount()).append("] ");
             }
-            LOG.info(V, "Slave instances set: {}", display);
+            LOG.info(V, "Worker instances set: {}", display);
         }
     }
 
     /**
      * Helper getter so multiple instance types can be used in a simple for loop.
      */
-    public List<SlaveInstanceConfiguration> getExpandedSlaveInstances() {
-        List<SlaveInstanceConfiguration> result = new ArrayList<>();
-        if (slaveInstances.size() > 0) {
+    public List<WorkerInstanceConfiguration> getExpandedWorkerInstances() {
+        List<WorkerInstanceConfiguration> result = new ArrayList<>();
+        if (workerInstances.size() > 0) {
             int typeIndex = 0;
-            int typeInstancesLeft = slaveInstances.get(0).getCount();
-            for (int i = 0; i < getSlaveInstanceCount(); i++) {
-                result.add(slaveInstances.get(typeIndex));
+            int typeInstancesLeft = workerInstances.get(0).getCount();
+            for (int i = 0; i < getWorkerInstanceCount(); i++) {
+                result.add(workerInstances.get(typeIndex));
                 // If we reach the count of the current type, move to the next instance type
                 typeInstancesLeft--;
                 if (typeInstancesLeft == 0) {
                     typeIndex += 1;
-                    if (typeIndex < slaveInstances.size()) {
-                        typeInstancesLeft = slaveInstances.get(typeIndex).getCount();
+                    if (typeIndex < workerInstances.size()) {
+                        typeInstancesLeft = workerInstances.get(typeIndex).getCount();
                     }
                 }
             }
@@ -565,8 +577,8 @@ public abstract class Configuration {
     }
 
     @SuppressWarnings("WeakerAccess")
-    public static class SlaveInstanceConfiguration extends InstanceConfiguration {
-        public SlaveInstanceConfiguration() {
+    public static class WorkerInstanceConfiguration extends InstanceConfiguration {
+        public WorkerInstanceConfiguration() {
         }
 
         private int count;
@@ -578,7 +590,7 @@ public abstract class Configuration {
         public void setCount(int count) {
             this.count = count;
             if (count < 0) {
-                LOG.warn("Number of slave nodes has to be at least 0. ({})", count);
+                LOG.warn("Number of worker nodes has to be at least 0. ({})", count);
             }
         }
     }
@@ -719,7 +731,7 @@ public abstract class Configuration {
      * Provides support for (local) Ansible roles and playbooks.
      *
      * String name      : (optional) name of (ansible-galaxy) role or playbook, default is given name
-     * String hosts     : host (master / slave / all)
+     * String hosts     : host (MASTER / WORKER / ALL)
      * Map vars         : (optional) additional key - value pairs of role
      * String varsFile  : (optional) file containing key - value pairs of role
      * String file      : file of role
@@ -743,8 +755,22 @@ public abstract class Configuration {
             return hosts;
         }
 
-        public void setHosts(String hosts) {
-            this.hosts = hosts;
+        public void setHosts(String hosts) throws  ConfigurationException{
+
+            hosts = hosts.toUpperCase();
+            // Exception for deprecated values
+            if (hosts.equals("SLAVE") || hosts.equals("SLAVES")) {
+                LOG.warn("Value 'SLAVES[S]' for property ansibleRoles.hosts is deprecated and will be removed in next major release. " +
+                        "It is replaced 1:1 by 'WORKER'.");
+                this.hosts = "WORKER";
+                return;
+            }
+            if (hosts.equals("ALL") || hosts.equals("WORKER") || hosts.equals("MASTER")) {
+                this.hosts = hosts;
+                return;
+            }
+            LOG.error("Unsupported value '{}' for ansibleRoles.hosts.",hosts);
+            this.hosts = "unsupported";
         }
 
         public Map<String, Object> getVars() {
@@ -776,7 +802,7 @@ public abstract class Configuration {
      * Provides support for Ansible Galaxy and Git roles and playbooks.
      *
      * String name      : (optional) name of (ansible-galaxy) role or playbook, default is given name
-     * String hosts     : host (master / slave / all)
+     * String hosts     : host (master / worker / all)
      * Map vars         : (optional) additional key - value pairs of role
      * String varsFile  : (optional) file containing key - value pairs of role
      * String galaxy    : (optional) ansible-galaxy name

@@ -19,7 +19,7 @@ masterInstance:
   type: string
   image: string
 
-slaveInstances:
+workerInstances:
   - type: string
     count: integer
     image: string
@@ -43,7 +43,7 @@ masterInstance:
   type: string
   image: string
 
-slaveInstances:
+workerInstances:
   - type: string
     count: integer
     image: string

@@ -13,7 +13,7 @@ public class Cluster {
     private final String clusterId;
 
     private Instance masterInstance;
-    private List<Instance> slaveInstances = new ArrayList<>();
+    private List<Instance> workerInstances = new ArrayList<>();
 
     private Network network;
     private Subnet subnet;
@@ -67,16 +67,16 @@ public class Cluster {
         this.securityGroup = securityGroup;
     }
 
-    public List<Instance> getSlaveInstances() {
-        return slaveInstances;
+    public List<Instance> getWorkerInstances() {
+        return workerInstances;
     }
 
-    public void setSlaveInstances(List<Instance> slaveInstances) {
-        this.slaveInstances = slaveInstances;
+    public void setWorkerInstances(List<Instance> workerInstances) {
+        this.workerInstances = workerInstances;
     }
 
-    public void addSlaveInstance(Instance instance) {
-        slaveInstances.add(instance);
+    public void addWorkerInstance(Instance instance) {
+        workerInstances.add(instance);
     }
 
     public String getKeyName() {

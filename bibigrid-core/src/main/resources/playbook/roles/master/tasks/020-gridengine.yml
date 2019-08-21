@@ -199,8 +199,8 @@
       creates: /etc/bibigrid/master_exec_host.added
   when: use_master_as_compute == 'yes'
 
-- name: add all slaves as exec host
+- name: add all workers as exec host
   shell: "/etc/bibigrid/gridengine/add_exec.sh $(nslookup {{ item.ip }} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.') {{ item.cores }}"
   environment:
     SGE_ROOT: /var/lib/gridengine
-  with_items: "{{ slaves }}"
+  with_items: "{{ workers }}"

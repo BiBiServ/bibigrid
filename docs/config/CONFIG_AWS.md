@@ -34,7 +34,7 @@ masterInstance:
   type: string
   image: string
 
-slaveInstances:
+workerInstances:
   - type: string
     count: integer
     image: string
@@ -44,7 +44,7 @@ slaveInstances:
 # masterAnsibleRoles:
 #  - string
 #  - ...
-# slaveAnsibleRoles:
+# workerAnsibleRoles:
 #  - string
 #  - ...
 
@@ -83,5 +83,5 @@ localFS: enum [EXT2, EXT3, EXT4, XFS]
 ```
 bidPrice: double
 bidPriceMaster: double
-publicSlaveIps: boolean [yes, no]
+publicWorkerIps: boolean [yes, no]
 ```

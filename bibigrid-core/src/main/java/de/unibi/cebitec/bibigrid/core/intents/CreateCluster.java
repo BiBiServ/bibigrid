@@ -26,7 +26,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 /**
  * CreateCluster Interface must be implemented by all "real" CreateCluster classes and
  * provides the minimum of general functions for the environment, the configuration of
- * master and slave instances and launching the cluster.
+ * master and worker instances and launching the cluster.
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
@@ -34,7 +34,7 @@ public abstract class CreateCluster extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
     static final String MASTER_NAME_PREFIX = PREFIX + "master";
-    static final String SLAVE_NAME_PREFIX = PREFIX + "slave";
+    static final String WORKER_NAME_PREFIX = PREFIX + "worker";
 
     protected final ProviderModule providerModule;
     protected final Client client;
@@ -43,7 +43,7 @@ public abstract class CreateCluster extends Intent {
     protected CreateClusterEnvironment environment;
 
     private Instance masterInstance;
-    private List<Instance> slaveInstances;
+    private List<Instance> workerInstances;
     protected DeviceMapper masterDeviceMapper;
 
     protected CreateCluster(ProviderModule providerModule, Client client, Configuration config) {
@@ -86,7 +86,7 @@ public abstract class CreateCluster extends Intent {
      * <li>&#09.createSecurityGroup()</li>
      * <li>&#09.createPlacementGroup()</li>
      * <li>.configureClusterMasterInstance()</li>
-     * <li>.configureClusterSlaveInstance()</li>
+     * <li>.configureClusterWorkerInstance()</li>
      * <li>.launchClusterInstances()</li>
      * </ol>
      *
@@ -109,10 +109,10 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
-     * Configure and manage Slave-instances to launch.
+     * Configure and manage Worker-instances to launch.
      */
-    public CreateCluster configureClusterSlaveInstance() {
-        LOG.info("Slave instance(s) configured.");
+    public CreateCluster configureClusterWorkerInstance() {
+        LOG.info("Worker instance(s) configured.");
         return this;
     }
 
@@ -131,31 +131,31 @@ public abstract class CreateCluster extends Intent {
             if (masterInstance == null) {
                 return false;
             }
-            slaveInstances = new ArrayList<>();
-            int totalSlaveInstanceCount = config.getSlaveInstanceCount();
-            if (totalSlaveInstanceCount > 0) {
-                LOG.info("Requesting {} slave instance(s) with {} different configurations...",
-                        totalSlaveInstanceCount, config.getSlaveInstances().size());
-                for (int i = 0; i < config.getSlaveInstances().size(); i++) {
-                    Configuration.SlaveInstanceConfiguration instanceConfiguration = config.getSlaveInstances().get(i);
-                    LOG.info("Requesting {} slave instance(s) with same configuration...",
+            workerInstances = new ArrayList<>();
+            int totalWorkerInstanceCount = config.getWorkerInstanceCount();
+            if (totalWorkerInstanceCount > 0) {
+                LOG.info("Requesting {} worker instance(s) with {} different configurations...",
+                        totalWorkerInstanceCount, config.getWorkerInstances().size());
+                for (int i = 0; i < config.getWorkerInstances().size(); i++) {
+                    Configuration.WorkerInstanceConfiguration instanceConfiguration = config.getWorkerInstances().get(i);
+                    LOG.info("Requesting {} worker instance(s) with same configuration...",
                             instanceConfiguration.getCount());
-                    String slaveNameTag = SLAVE_NAME_PREFIX + "-" + clusterId;
-                    List<Instance> slavesBatch = launchClusterSlaveInstances(i, instanceConfiguration, slaveNameTag);
-                    if (slavesBatch == null) {
+                    String workerNameTag = WORKER_NAME_PREFIX + "-" + clusterId;
+                    List<Instance> workersBatch = launchClusterWorkerInstances(i, instanceConfiguration, workerNameTag);
+                    if (workersBatch == null) {
                         return false;
                     }
-                    slaveInstances.addAll(slavesBatch);
+                    workerInstances.addAll(workersBatch);
                 }
             } else {
-                LOG.info("No Slave instance(s) requested!");
+                LOG.info("No Worker instance(s) requested!");
             }
             // just to be sure, everything is present, wait x seconds
             sleep(4);
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
             final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                     masterInstance.getPrivateIp();
-            configureMaster(masterInstance, slaveInstances, environment.getSubnet().getCidr(), prepare);
+            configureMaster(masterInstance, workerInstances, environment.getSubnet().getCidr(), prepare);
             logFinishedInfoMessage(masterIp);
             saveGridPropertiesFile(masterIp);
         } catch (Exception e) {
@@ -178,13 +178,13 @@ public abstract class CreateCluster extends Intent {
     protected abstract Instance launchClusterMasterInstance(String masterNameTag);
 
     /**
-     * Start the batch of cluster slave instances.
+     * Start the batch of cluster worker instances.
      */
-    protected abstract List<Instance> launchClusterSlaveInstances(
-            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag);
+    protected abstract List<Instance> launchClusterWorkerInstances(
+            int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
 
-    protected String buildSlaveInstanceName(int batchIndex, int slaveIndex) {
-        return SLAVE_NAME_PREFIX + (batchIndex + 1) + "-" + (slaveIndex + 1) + "-" + clusterId;
+    protected String buildWorkerInstanceName(int batchIndex, int workerIndex) {
+        return WORKER_NAME_PREFIX + (batchIndex + 1) + "-" + (workerIndex + 1) + "-" + clusterId;
     }
 
     private void logFinishedInfoMessage(final String masterPublicIp) {
@@ -251,11 +251,11 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
-    private void configureMaster(final Instance masterInstance, final List<Instance> slaveInstances,
+    private void configureMaster(final Instance masterInstance, final List<Instance> workerInstances,
                                  final String subnetCidr, final boolean prepare) {
-        AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, slaveInstances);
+        AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, workerInstances);
         AnsibleConfig ansibleConfig = new AnsibleConfig(config, providerModule.getBlockDeviceBase(), subnetCidr,
-                masterInstance, slaveInstances);
+                masterInstance, workerInstances);
         ansibleConfig.setMasterMounts(masterDeviceMapper);
 
         final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
@@ -278,7 +278,7 @@ public abstract class CreateCluster extends Intent {
                     sshSession.connect();
                     LOG.info("Connected to master!");
 
-                    configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig, slaveInstances) &&
+                    configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig, workerInstances) &&
                             installAndExecuteAnsible(sshSession, prepare);
                     sshSession.disconnect();
                 }
@@ -297,14 +297,14 @@ public abstract class CreateCluster extends Intent {
      * Uploads ansible roles to master instance.
      *
      * @param sshSession ssh connection to master
-     * @param hostsConfig Configuration and list of slave IPs
+     * @param hostsConfig Configuration and list of worker IPs
      * @param commonConfig common Configuration
-     * @param slaveInstances list of slave instances
+     * @param workerInstances list of worker instances
      * @return true, if upload completed successfully
      * @throws JSchException possible SSH connection error
      */
     private boolean uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
-                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException {
+                                          AnsibleConfig commonConfig, List<Instance> workerInstances) throws JSchException {
         boolean uploadCompleted;
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Upload Ansible playbook to master instance.");
@@ -315,9 +315,9 @@ public abstract class CreateCluster extends Intent {
             AnsibleResources resources = new AnsibleResources();
             uploadResourcesFiles(resources, channel);
 
-            // Divide into master and slave roles to write in site.yml
+            // Divide into master and worker roles to write in site.yml
             Map<String, String> customMasterRoles = new LinkedHashMap<>();
-            Map<String, String> customSlaveRoles = new LinkedHashMap<>();
+            Map<String, String> customWorkerRoles = new LinkedHashMap<>();
 
             // create Role Upload Path on master
             createSFTPFolder(channel,AnsibleResources.UPLOAD_PATH);
@@ -345,13 +345,13 @@ public abstract class CreateCluster extends Intent {
                     case "master":
                         customMasterRoles.put(roleName, roleVarsFile);
                         break;
-                    case "slave":
-                    case "slaves":
-                        customSlaveRoles.put(roleName, roleVarsFile);
+                    case "worker":
+                    case "workers":
+                        customWorkerRoles.put(roleName, roleVarsFile);
                         break;
                     default:
                         customMasterRoles.put(roleName, roleVarsFile);
-                        customSlaveRoles.put(roleName, roleVarsFile);
+                        customWorkerRoles.put(roleName, roleVarsFile);
                 }
 
                 uploadAnsibleRole(channel, role.getFile());
@@ -379,16 +379,15 @@ public abstract class CreateCluster extends Intent {
                 // Replace ansible galaxy name with self-specified
                 role.setName(roleName);
                 switch (role.getHosts()) {
-                    case "master":
+                    case "MASTER":
                         customMasterRoles.put(roleName, roleVarsFile);
                         break;
-                    case "slave":
-                    case "slaves":
-                        customSlaveRoles.put(roleName, roleVarsFile);
+                    case "WORKER":
+                        customWorkerRoles.put(roleName, roleVarsFile);
                         break;
                     default:
                         customMasterRoles.put(roleName, roleVarsFile);
-                        customSlaveRoles.put(roleName, roleVarsFile);
+                        customWorkerRoles.put(roleName, roleVarsFile);
                 }
             }
 
@@ -404,7 +403,7 @@ public abstract class CreateCluster extends Intent {
             // Write custom site file
             commonConfig.writeSiteFile(channel.put(channel.getHome() + "/"
                             + AnsibleResources.SITE_CONFIG_FILE),
-                     customMasterRoles, customSlaveRoles);
+                     customMasterRoles, customWorkerRoles);
 
             // Write requirements file for ansible-galaxy support
             if (!ansibleGalaxyRoles.isEmpty()) {
@@ -412,11 +411,11 @@ public abstract class CreateCluster extends Intent {
                         + AnsibleResources.REQUIREMENTS_CONFIG_FILE));
             }
 
-            // Write slave instance specific configuration file
-            for (Instance slave : slaveInstances) {
+            // Write worker instance specific configuration file
+            for (Instance worker : workerInstances) {
                 String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/"
-                        + slave.getPrivateIp() + ".yml";
-                commonConfig.writeInstanceFile(slave, channel.put(filename));
+                        + worker.getPrivateIp() + ".yml";
+                commonConfig.writeInstanceFile(worker, channel.put(filename));
             }
             uploadCompleted = true;
         } catch (SftpException | IOException e) {
@@ -570,7 +569,7 @@ public abstract class CreateCluster extends Intent {
         return masterInstance;
     }
 
-    public List<Instance> getSlaveInstances() {
-        return slaveInstances;
+    public List<Instance> getWorkerInstances() {
+        return workerInstances;
     }
 }

@@ -105,22 +105,22 @@ public class ValidateIntent extends Intent {
             LOG.error(e.getMessage());
         }
         try {
-            for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-                InstanceImage slaveImage = client.getImageByIdOrName(instanceConfiguration.getImage());
-                if (slaveImage == null) {
-                    LOG.error("Failed to find slave image ({}).", instanceConfiguration.getImage());
+            for (Configuration.InstanceConfiguration instanceConfiguration : config.getWorkerInstances()) {
+                InstanceImage workerImage = client.getImageByIdOrName(instanceConfiguration.getImage());
+                if (workerImage == null) {
+                    LOG.error("Failed to find worker image ({}).", instanceConfiguration.getImage());
                 } else {
-                    typeImageMap.put(instanceConfiguration, slaveImage);
+                    typeImageMap.put(instanceConfiguration, workerImage);
                 }
             }
         } catch (NotYetSupportedException e) {
             LOG.error(e.getMessage());
         }
-        if (typeImageMap.size() != config.getSlaveInstances().size() + 1) {
-            LOG.error("Master and Slave images could not be found.");
+        if (typeImageMap.size() != config.getWorkerInstances().size() + 1) {
+            LOG.error("Master and Worker images could not be found.");
             return false;
         }
-        LOG.info(V, "Master and Slave images have been found.");
+        LOG.info(V, "Master and Worker images have been found.");
         boolean success = true;
         for (InstanceImage image : typeImageMap.values()) {
             if (!checkProviderImageProperties(image)) {
@@ -156,15 +156,15 @@ public class ValidateIntent extends Intent {
     }
 
     private boolean checkInstanceTypes() {
-        boolean allSlavesClusterInstances = config.getSlaveInstances().stream().allMatch(
+        boolean allWorkersClusterInstances = config.getWorkerInstances().stream().allMatch(
                 x -> x.getProviderType().isClusterInstance());
         final InstanceType masterClusterType = config.getMasterInstance().getProviderType();
-        if (masterClusterType.isClusterInstance() != allSlavesClusterInstances) {
+        if (masterClusterType.isClusterInstance() != allWorkersClusterInstances) {
             LOG.error("If cluster instances are used please create a homogeneous group.");
             return false;
         } else if (masterClusterType.isClusterInstance()) {
             // If master instance is a cluster instance check if the types are the same
-            if (config.getSlaveInstances().stream().anyMatch(x -> masterClusterType != x.getProviderType())) {
+            if (config.getWorkerInstances().stream().anyMatch(x -> masterClusterType != x.getProviderType())) {
                 LOG.error("If cluster instances are used please create a homogeneous group.");
                 return false;
             }

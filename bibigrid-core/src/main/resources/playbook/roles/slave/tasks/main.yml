@@ -1,7 +1,7 @@
 - debug:
     msg: "[BIBIGRID] Mount disk"
 - include: 005-disk.yml
-  tags: ['disk','slave-disk']
+  tags: ['disk','worker-disk']
 
 - debug:
     msg: "[BIBIGRID] Setup NFS"
@@ -9,7 +9,7 @@
     - enable_nfs == 'yes'
 - include: 010-nfs.yml
   when: enable_nfs == 'yes'
-  tags: ['nfs','slave-nfs']
+  tags: ['nfs','worker-nfs']
 
 - debug:
     msg: "[BIBIGRID] Setup GridEngine"
@@ -18,13 +18,13 @@
 - include: 020-gridengine.yml
   when:
     - enable_gridengine == 'yes'
-  tags: ['gridengine','slave-gridengine']
+  tags: ['gridengine','worker-gridengine']
 
 - debug:
     msg: "[BIBIGRID] Setup Slurm Worker"
   when: enable_slurm == 'yes'
 - include: 021-slurm.yml
-  tags: ['slurm','slave-slurm']
+  tags: ['slurm','worker-slurm']
   when: enable_slurm == 'yes'
 
 
