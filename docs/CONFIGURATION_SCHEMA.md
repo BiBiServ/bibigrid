@@ -79,6 +79,29 @@ masterMounts:                                       # Mount volumes to master no
 
 localFS: enum [EXT2, EXT3, EXT4, XFS]               # Local FileSystem. Default is XFS
 
+# Ansible Usage
+ansibleRoles:
+  - name: string                                    # Name of role, used only as description in config file
+    hosts: string                                   # One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts
+    file: string                                    # path/to/file.tar.gz - File on local machine
+    vars:
+        key : value                                 # Environment variables, if default configuration is not the preferred option
+        ...
+    vars_file: string                               # Yaml file when many variables are necessary
+  - name: ...                                       # Add as many roles as you want
+
+ansibleGalaxyRoles:
+  - name: string                                    # Name of role, used to redefine role name
+    hosts: string                                   # One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts
+    galaxy: string                                  # Galaxy name of role like 'author.rolename'
+    git: string                                     # GitHub role repository like 'https://github.com/bennojoy/nginx'
+    url: string                                     # Webserver file url like 'https://some.webserver.example.com/files/master.tar.gzpath/to/file.tar.gz'
+    vars:
+        key : value                                 # Environment variables, if default configuration is not the preferred option
+        ...
+    vars_file: string                               # Yaml file when many variables are necessary
+  - name: ...                                       # Add as many roles as you want
+
 # Web IDE Usage
 theia: boolean [yes, "no"]                          # Enable / Disable Theia Web IDE, Default is no
 cloud9: boolean [yes, "no"]                         # deprecated - Enable / Disable Cloud9 Web IDE, Default is no
