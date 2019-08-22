@@ -1,3 +1,8 @@
+- name: Debian based system
+  debug:
+    msg : Using apt to install packages
+
+
 - name: Deactivate auto-update function
   shell: |
         systemctl stop apt-daily.service

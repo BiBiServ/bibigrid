@@ -334,12 +334,16 @@ public class CreateClusterOpenstack extends CreateCluster {
         List<? extends Address> addressList;
         Server server;
         do {
-            sleep(1, false);
+            sleep(2, false);
             // refresh server object - ugly
             server = os.compute().servers().get(serverId);
             addressList = server.getAddresses().getAddresses().get(networkName);
-            LOG.info(V, "addressList {}", addressList);
+            if (addressList == null) {
+                LOG.info(V,"Wait for address ...");
+            }
+
         } while (addressList == null || addressList.isEmpty());
+        LOG.info(V, "address: {}", addressList);
         return addressList.get(0);
     }
 

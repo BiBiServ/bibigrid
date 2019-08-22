@@ -1,6 +1,8 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.*;
+
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -109,9 +111,10 @@ public final class ShellScriptCreator {
     /**
      * Builds script to configure ansible and execute ansible commands to install (galaxy) roles / playbooks.
      * @param prepare true, if still preparation necessary
+     * @param Configuration config
      * @return script String to execute in CreateCluster
      */
-    public static String getMasterAnsibleExecutionScript(final boolean prepare) {
+    public static String getMasterAnsibleExecutionScript(final boolean prepare, final Configuration config) {
         StringBuilder script = new StringBuilder();
         // apt-get update
         script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
@@ -133,10 +136,11 @@ public final class ShellScriptCreator {
                 + " --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
 
         // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
-        script.append("ansible-galaxy install --roles-path ~/"
-                + AnsibleResources.ROLES_ROOT_PATH
-                + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
-
+        if (config.hasCustomAnsibleGalaxyRoles()) {
+            script.append("ansible-galaxy install --roles-path ~/"
+                    + AnsibleResources.ROLES_ROOT_PATH
+                    + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
+        }
         // Extract ansible roles from files (.tar.gz, .tgz)
         script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
         script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tgz; do tar -xzf $f; done\n");
@@ -147,13 +151,15 @@ public final class ShellScriptCreator {
         script.append("files=$(for f in $( find ~/playbook -type f); do  file ${f} | grep ASCII | cut -f 1 -d ':'; done;)\n");
         script.append("for file in ${file}; do sed -i 's/\\r$//' \"${file}\"; done\n");
 
+        script.append("echo Execute ansible-playbook\n");
         // Execute ansible playbook
         script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
                 + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
                 .append(prepare ? " -t install" : "")
-                .append(" | sudo tee -a /var/log/ansible-playbook.log\n");
+        //       .append(" | sudo tee -a /var/log/ansible-playbook.log")
+                .append("\n");
 
-        script.append("echo \"CONFIGURATION_FINISHED\"\n");
+        script.append("if [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n");
         return script.toString();
     }
 }

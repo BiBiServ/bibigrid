@@ -9,6 +9,8 @@
 - documentation (#141)
 - more helpful error message in case of unsupported configuration properties (#141)
 - update naming scheme for worker nodes -> replace slave[s] with worker (#155)
+- upgrade 3rd party lib dependencies
+- improve error handling (#154) - rewrite/restructure CreateCluster functionality
 
 ## Version 2.0.6 < 2.0.5 (08/07/2019)
 
