@@ -17,6 +17,5 @@
 "enableRegistry": false,
 "supportDb": false,
 "supportH2ForTest": false,
-"supportClient": false,
-"dockerOrganization": "networknt"
+"supportClient": false
 }
