@@ -7,11 +7,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Access {
 
-    private byte[] credentialsFile;
-    private byte[] sshPublicKeyFile;
+    private String credentialsFile;
+    private String sshPublicKeyFile;
     private String sshUser;
     private String keypair;
-    private byte[] sshPrivateKeyFile;
+    private String sshPrivateKeyFile;
     private String region;
     private String availabilityZone;
 
@@ -19,20 +19,20 @@ public class Access {
     }
 
     @JsonProperty("credentialsFile")
-    public byte[] getCredentialsFile() {
+    public String getCredentialsFile() {
         return credentialsFile;
     }
 
-    public void setCredentialsFile(byte[] credentialsFile) {
+    public void setCredentialsFile(String credentialsFile) {
         this.credentialsFile = credentialsFile;
     }
 
     @JsonProperty("sshPublicKeyFile")
-    public byte[] getSshPublicKeyFile() {
+    public String getSshPublicKeyFile() {
         return sshPublicKeyFile;
     }
 
-    public void setSshPublicKeyFile(byte[] sshPublicKeyFile) {
+    public void setSshPublicKeyFile(String sshPublicKeyFile) {
         this.sshPublicKeyFile = sshPublicKeyFile;
     }
 
@@ -55,11 +55,11 @@ public class Access {
     }
 
     @JsonProperty("sshPrivateKeyFile")
-    public byte[] getSshPrivateKeyFile() {
+    public String getSshPrivateKeyFile() {
         return sshPrivateKeyFile;
     }
 
-    public void setSshPrivateKeyFile(byte[] sshPrivateKeyFile) {
+    public void setSshPrivateKeyFile(String sshPrivateKeyFile) {
         this.sshPrivateKeyFile = sshPrivateKeyFile;
     }
 
@@ -93,18 +93,18 @@ public class Access {
 
         Access Access = (Access) o;
 
-        return Arrays.equals(credentialsFile, Access.credentialsFile) &&
-               Arrays.equals(sshPublicKeyFile, Access.sshPublicKeyFile) &&
+        return Objects.equals(credentialsFile, Access.credentialsFile) &&
+               Objects.equals(sshPublicKeyFile, Access.sshPublicKeyFile) &&
                Objects.equals(sshUser, Access.sshUser) &&
                Objects.equals(keypair, Access.keypair) &&
-               Arrays.equals(sshPrivateKeyFile, Access.sshPrivateKeyFile) &&
+               Objects.equals(sshPrivateKeyFile, Access.sshPrivateKeyFile) &&
                Objects.equals(region, Access.region) &&
                Objects.equals(availabilityZone, Access.availabilityZone);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(Arrays.hashCode(credentialsFile), Arrays.hashCode(sshPublicKeyFile), sshUser, keypair, Arrays.hashCode(sshPrivateKeyFile), region, availabilityZone);
+        return Objects.hash(credentialsFile, sshPublicKeyFile, sshUser, keypair, sshPrivateKeyFile, region, availabilityZone);
     }
 
     @Override

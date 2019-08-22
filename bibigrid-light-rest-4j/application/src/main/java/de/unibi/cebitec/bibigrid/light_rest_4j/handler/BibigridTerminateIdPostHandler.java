@@ -10,8 +10,6 @@ public class BibigridTerminateIdPostHandler implements LightHttpHandler {
     
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-        exchange.setStatusCode(200);
-        exchange.getResponseSender().send("{\"info\":\"Ich bin noch am hochfahren\",\"log\":\"lorem ipsum lorem ipsum....\"}");
+        exchange.endExchange();
     }
 }
