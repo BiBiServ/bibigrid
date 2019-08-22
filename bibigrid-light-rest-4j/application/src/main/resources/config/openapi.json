@@ -4,7 +4,7 @@
           "sshUser",
           "keypair",
           "region",
-          "availabilityZone"],"properties":{"credentialsFile":{"type": "string","format": "binary"},"sshPublicKeyFile":{"type": "string","format": "binary"},"sshUser":{"type": "string","example": "ubuntu"},"keypair":{"type": "string","example": "mmustermann-key"},"sshPrivateKeyFile":{"type": "string","format": "binary"},"region":{"type": "string","example": "Bielefeld"},"availabilityZone":{"type": "string","example": "default"}}},"Error":{"type": "object","required":["code",
+          "availabilityZone"],"properties":{"credentialsFile":{"type": "string","example": "encoded bibiserv.yml"},"sshPublicKeyFile":{"type": "string","example": "encoded key.pub"},"sshUser":{"type": "string","example": "ubuntu"},"keypair":{"type": "string","example": "mmustermann-key"},"sshPrivateKeyFile":{"type": "string","example": "encoded key"},"region":{"type": "string","example": "Bielefeld"},"availabilityZone":{"type": "string","example": "default"}}},"Error":{"type": "object","required":["code",
           "message"],"properties":{"message":{"type": "string"},"code":{"type": "integer","format": "int32"}}},"ClusterConfiguration":{"description": "See https://github.com/BiBiServ/bibigrid/blob/master/docs/README.md","type": "object","required":["mode",
           "access",
           "subnet"],"properties":{"mode":{"type": "string","example": "openstack"},"subnet":{"type": "string","example": "internalsub"},"masterInstance":{"type": "object","required": [
@@ -18,43 +18,6 @@
               "image": {
                 "type": "string",
                 "example": "Ubuntu 16.04 LTS (2019-05-08)"
-              }
-            }},"access":{"type": "object","required": [
-              "credentialsFile",
-              "sshPrivateKeyFile",
-              "sshPublicKeyFile",
-              "sshUser",
-              "keypair",
-              "region",
-              "availabilityZone"
-            ],"properties": {
-              "credentialsFile": {
-                "type": "string",
-                "example": "/credentials/bibiserv.yml"
-              },
-              "sshPrivateKeyFile": {
-                "type": "string",
-                "example": "./ssh/key"
-              },
-              "sshPublicKeyFile": {
-                "type": "string",
-                "example": "./ssh/key.pub"
-              },
-              "sshUser": {
-                "type": "string",
-                "example": "ubuntu"
-              },
-              "keypair": {
-                "type": "string",
-                "example": "mmustermann-key"
-              },
-              "region": {
-                "type": "string",
-                "example": "Bielefeld"
-              },
-              "availabilityZone": {
-                "type": "string",
-                "example": "default"
               }
             }},"nfsShares":{"type": "string","example": "/vol/xxx"},"theia":{"type": "string","example": "yes"},"masterMounts":{"type": "object","required": [
               "source",
@@ -88,35 +51,25 @@
               }
             }}}},"ClusterList":{"type": "object","properties":{"clusters":{"type": "array","items":{"type": "object","properties": {
                 "cluster": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "Name + ID"
                 },
                 "runtime": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "Timestamp"
                 }
-              }}}}},"ClusterStatus":{"type": "object","properties":{"log":{"type": "string"},"info":{"type": "string"}}}}},"openapi": "3.0.0","paths": {
+              }}}}},"ClusterStatus":{"type": "object","properties":{"log":{"type": "string","example": "Timestamp"},"info":{"type": "string","example": "Am Hochfahren"}}}}},"openapi": "3.0.0","paths": {
     "/bibigrid/list": {
       "post": {
         "summary": "List all running clusters for a user",
         "operationId": "listRunningClusters",
         "requestBody": {
-          "description": "YAML like access object",
+          "description": "YAML like configuration object",
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "orderId": {
-                    "type": "integer"
-                  },
-                  "userId": {
-                    "type": "integer"
-                  },
-                  "fileName": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                }
+                "$ref": "#/components/schemas/Access"
               }
             }
           }
@@ -153,10 +106,10 @@
         "summary": "Create a bibigrid cluster for a user",
         "operationId": "createClusterByConfig",
         "requestBody": {
-          "description": "YAML like configuration and access objects",
+          "description": "YAML like configuration object",
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
@@ -208,10 +161,10 @@
         "summary": "Validate a cluster config",
         "operationId": "validateClusterConfig",
         "requestBody": {
-          "description": "YAML like configuration and access objects",
+          "description": "YAML like configuration object",
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
@@ -269,11 +222,22 @@
       "post": {
         "summary": "Check the status of the cluster creation process",
         "operationId": "checkClusterCreationStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The id of cluster to terminate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "description": "YAML like access object",
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Access"
               }
@@ -282,17 +246,6 @@
         },
         "tags": [
           "cluster"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "The id of the cluster",
-            "schema": {
-              "type": "integer"
-            }
-          }
         ],
         "responses": {
           "200": {
@@ -324,13 +277,24 @@
     },
     "/bibigrid/terminate/{id}": {
       "post": {
-        "summary": "Terminate a cluster",
+        "summary": "End a cluster",
         "operationId": "terminateCluster",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The id of cluster to terminate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "description": "YAML like access object",
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Access"
               }
@@ -340,17 +304,6 @@
         "tags": [
           "cluster"
         ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "The id of cluster to terminate",
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Expected response to a valid request",
@@ -358,10 +311,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClusterStatus"
-                },
-                "example": {
-                  "info": "Ich bin noch am hochfahren",
-                  "log": "lorem ipsum lorem ipsum...."
                 }
               }
             }
