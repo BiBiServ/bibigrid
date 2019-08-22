@@ -56,7 +56,7 @@ public final class AnsibleConfig {
      *
      * @param stream write file to remote
      * @param customMasterRoles master ansible roles names and variable file names
-     * @param customworkerRoles worker ansible roles names and variable file names
+     * @param customWorkerRoles worker ansible roles names and variable file names
      */
     public void writeSiteFile(OutputStream stream,
                               Map<String, String> customMasterRoles,
