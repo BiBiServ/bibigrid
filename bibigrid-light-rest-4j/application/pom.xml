@@ -7,13 +7,6 @@
     <name>bibigrid-light-rest-4j</name>
     <version>1.0.0</version>
 
-    <parent>
-        <artifactId>bibigrid</artifactId>
-        <groupId>de.unibi.cebitec.bibigrid</groupId>
-        <version>2.0.6</version>
-        <relativePath>../../pom.xml</relativePath>
-    </parent>
-
     <properties>
         <java.version>11</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
