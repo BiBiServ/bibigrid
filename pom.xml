@@ -22,7 +22,7 @@
                 <module>bibigrid-googlecloud</module>
                 <module>bibigrid-openstack</module>
                 <module>bibigrid-main</module>
-                <module>bibigrid-light-rest-4j/application</module>
+                <module>bibigrid-light-rest-4j</module>
             </modules>
             <build>
                 <finalName>bibigrid-${project.version}</finalName>
