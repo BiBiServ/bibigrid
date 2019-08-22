@@ -30,11 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 @Ignore
-public class BibigridTerminateIdPostHandlerTest {
+public class BibigridInfoIdPostHandlerTest {
     @ClassRule
     public static TestServer server = TestServer.getInstance();
 
-    static final Logger logger = LoggerFactory.getLogger(BibigridTerminateIdPostHandlerTest.class);
+    static final Logger logger = LoggerFactory.getLogger(BibigridInfoIdPostHandlerTest.class);
     static final boolean enableHttp2 = server.getServerConfig().isEnableHttp2();
     static final boolean enableHttps = server.getServerConfig().isEnableHttps();
     static final int httpPort = server.getServerConfig().getHttpPort();
@@ -43,7 +43,7 @@ public class BibigridTerminateIdPostHandlerTest {
     static final String JSON_MEDIA_TYPE = "application/json";
 
     @Test
-    public void testBibigridTerminateIdPostHandlerTest() throws ClientException {
+    public void testBibigridInfoIdPostHandlerTest() throws ClientException {
 
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -54,7 +54,7 @@ public class BibigridTerminateIdPostHandlerTest {
             throw new ClientException(e);
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
-        String requestUri = "/bibigrid/terminate/XvEzpWDWJwetSADrVWGJmg";
+        String requestUri = "/bibigrid/info/UuUBOTcLdZHnMHyYf";
         String httpMethod = "post";
         try {
             ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.POST);
