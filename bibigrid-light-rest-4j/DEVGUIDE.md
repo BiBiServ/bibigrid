@@ -21,6 +21,9 @@ rm -rf application # Needs to be done when there exists an application folder fr
 java -jar light-codegen/codegen-cli/target/codegen-cli.jar -f openapi -o ./application -m openapi.json -c config.json```
 ##### After doing code changes you need to compile again with the following commands
 ```
+
+```
+
 cd bibigrid/bibigrid-light-rest-4j/application
 mvn clean install exec:exec
 ```
@@ -34,6 +37,5 @@ Use [Postman](https://www.getpostman.com/) or
 ```
 curl  https://localhost:8443/
 ```
-
 
 
