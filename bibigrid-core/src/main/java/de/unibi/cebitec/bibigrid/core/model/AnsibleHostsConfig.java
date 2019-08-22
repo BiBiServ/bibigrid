@@ -35,7 +35,7 @@ public class AnsibleHostsConfig {
         hostsConfig.append("localhost ansible_connection=local\n\n");
         hostsConfig.append("[workers]\n");
         for (String workerIp : workerIps) {
-            hostsConfig.append(workerIp).append(" ansible_connection=ssh ansible_user=");
+            hostsConfig.append(workerIp).append(" ansible_connection=ssh ansible_python_interpreter=python3 ansible_user=");
             hostsConfig.append(config.getSshUser()).append("\n");
         }
         return hostsConfig.toString();
