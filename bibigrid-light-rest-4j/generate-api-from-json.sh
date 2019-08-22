@@ -1,3 +1,4 @@
+<<<<<<< cc21bc97ebee526803caf147f57fb4d1ea0d967e
 rm -rf application
 rm -rf .mvn
 rm -rf .gitignore
