@@ -10,7 +10,6 @@ public class ClusterConfiguration {
     private String mode;
     private String subnet;
     private Object masterInstance;
-    private Object access;
     private String nfsShares;
     private String theia;
     private Object masterMounts;
@@ -44,15 +43,6 @@ public class ClusterConfiguration {
 
     public void setMasterInstance(Object masterInstance) {
         this.masterInstance = masterInstance;
-    }
-
-    @JsonProperty("access")
-    public Object getAccess() {
-        return access;
-    }
-
-    public void setAccess(Object access) {
-        this.access = access;
     }
 
     @JsonProperty("nfsShares")
@@ -106,7 +96,6 @@ public class ClusterConfiguration {
         return Objects.equals(mode, ClusterConfiguration.mode) &&
                Objects.equals(subnet, ClusterConfiguration.subnet) &&
                Objects.equals(masterInstance, ClusterConfiguration.masterInstance) &&
-               Objects.equals(access, ClusterConfiguration.access) &&
                Objects.equals(nfsShares, ClusterConfiguration.nfsShares) &&
                Objects.equals(theia, ClusterConfiguration.theia) &&
                Objects.equals(masterMounts, ClusterConfiguration.masterMounts) &&
@@ -115,7 +104,7 @@ public class ClusterConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hash(mode, subnet, masterInstance, access, nfsShares, theia, masterMounts, slaveInstances);
+        return Objects.hash(mode, subnet, masterInstance, nfsShares, theia, masterMounts, slaveInstances);
     }
 
     @Override
@@ -125,7 +114,6 @@ public class ClusterConfiguration {
         sb.append("    mode: ").append(toIndentedString(mode)).append("\n");
         sb.append("    subnet: ").append(toIndentedString(subnet)).append("\n");
         sb.append("    masterInstance: ").append(toIndentedString(masterInstance)).append("\n");
-        sb.append("    access: ").append(toIndentedString(access)).append("\n");
         sb.append("    nfsShares: ").append(toIndentedString(nfsShares)).append("\n");
         sb.append("    theia: ").append(toIndentedString(theia)).append("\n");
         sb.append("    masterMounts: ").append(toIndentedString(masterMounts)).append("\n");
