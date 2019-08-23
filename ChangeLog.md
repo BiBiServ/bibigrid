@@ -1,3 +1,26 @@
+## Version 2.0.7 < 2.0.6 (not released yet)
+
+### Features
+- Add full support for Debian Stretch (9) and Debian Buster (10) (#85)
+
+### Fixes
+- source code documentation & clean up (#151)
+- fixed line ending replacement command corrupts custom ansible role .tar.gz files (#151)
+- documentation (#141)
+- more helpful error message in case of unsupported configuration properties (#141)
+- update naming scheme for worker nodes -> replace slave[s] with worker (#155)
+- upgrade 3rd party lib dependencies
+- improve error handling (#154) - rewrite/restructure CreateCluster functionality
+
+## Version 2.0.6 < 2.0.5 (08/07/2019)
+
+### Features
+- Configuration option to include ansible (galaxy) files (#100)
+- Added support for Apache Cassandra via ansible (#93)
+
+### Fixes
+- Update documentation for ansible (#143, #145)
+- Fixed help option (-h or --help)
 
 ## Version 2.0.5 < 2.0.4 (04/22/2019)
 

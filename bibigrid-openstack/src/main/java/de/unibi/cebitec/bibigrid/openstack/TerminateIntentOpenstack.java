@@ -38,12 +38,12 @@ public class TerminateIntentOpenstack extends TerminateIntent {
                 return false;
             }
         }
-        // slaves
-        for (Instance slave : cluster.getSlaveInstances()) {
-            if (slave != null) {
-                ActionResponse response = os.compute().servers().delete(slave.getId());
+        // workers
+        for (Instance worker : cluster.getWorkerInstances()) {
+            if (worker != null) {
+                ActionResponse response = os.compute().servers().delete(worker.getId());
                 if (!response.isSuccess()) {
-                    LOG.error("Failed to delete instance '{}'. {}", slave.getName(), response.getFault());
+                    LOG.error("Failed to delete instance '{}'. {}", worker.getName(), response.getFault());
                     return false;
                 }
             }

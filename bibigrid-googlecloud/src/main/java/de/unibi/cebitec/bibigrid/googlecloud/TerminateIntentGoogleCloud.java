@@ -39,7 +39,7 @@ public class TerminateIntentGoogleCloud extends TerminateIntent {
 
     private boolean terminateInstances(final Compute compute, final Cluster cluster) {
         final String zone = config.getAvailabilityZone();
-        List<Instance> instances = cluster.getSlaveInstances();
+        List<Instance> instances = cluster.getWorkerInstances();
         if (cluster.getMasterInstance() != null) {
             instances.add(cluster.getMasterInstance());
         }

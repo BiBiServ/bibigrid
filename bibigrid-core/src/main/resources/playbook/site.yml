@@ -5,11 +5,11 @@
   roles:
   - common
   - master
-- hosts: slaves
+- hosts: workers
   become: 'yes'
   vars_files:
   - vars/common.yml
   - vars/{{ ansible_default_ipv4.address }}.yml
   roles:
   - common
-  - slave
+  - worker

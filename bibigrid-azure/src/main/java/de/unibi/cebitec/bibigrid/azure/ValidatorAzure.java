@@ -44,12 +44,12 @@ public final class ValidatorAzure extends Validator {
             case CREATE:
 //                options.add(RuleBuilder.RuleNames.SSH_USER.getShortParam());
 //                options.add(RuleBuilder.RuleNames.USE_MASTER_AS_COMPUTE.getShortParam());
-//                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_COUNT.getShortParam());
+//                options.add(RuleBuilder.RuleNames.WORKER_INSTANCE_COUNT.getShortParam());
             case VALIDATE:
 //                options.add(RuleBuilder.RuleNames.MASTER_INSTANCE_TYPE.getShortParam());
 //                options.add(RuleBuilder.RuleNames.MASTER_IMAGE.getShortParam());
-//                options.add(RuleBuilder.RuleNames.SLAVE_INSTANCE_TYPE.getShortParam());
-//                options.add(RuleBuilder.RuleNames.SLAVE_IMAGE.getShortParam());
+//                options.add(RuleBuilder.RuleNames.WORKER_INSTANCE_TYPE.getShortParam());
+//                options.add(RuleBuilder.RuleNames.WORKER_IMAGE.getShortParam());
 //                options.add(RuleBuilder.RuleNames.KEYPAIR.getShortParam());
 //                options.add(RuleBuilder.RuleNames.SSH_PRIVATE_KEY_FILE.getShortParam());
 //                options.add(RuleBuilder.RuleNames.REGION.getShortParam());

@@ -29,30 +29,30 @@ public abstract class PrepareIntent extends Intent {
      *
      * @return Return true in case of success, false otherwise
      */
-    public boolean prepare(final Instance masterInstance, final List<Instance> slaveInstances) {
-        LOG.info("Stopping {} instances...", slaveInstances.size());
+    public boolean prepare(final Instance masterInstance, final List<Instance> workerInstances) {
+        LOG.info("Stopping {} instances...", workerInstances.size());
         stopInstance(masterInstance);
-        for (Instance instance : slaveInstances) {
+        for (Instance instance : workerInstances) {
             if (!stopInstance(instance)) {
                 return false;
             }
         }
         LOG.info("Waiting for instances to shutdown...");
         waitForInstanceShutdown(masterInstance);
-        for (Instance instance : slaveInstances) {
+        for (Instance instance : workerInstances) {
             waitForInstanceShutdown(instance);
         }
         LOG.info("Creating images...");
         LOG.info("Creating master instance image...");
         boolean success = true;
         createImageFromInstance(masterInstance, IMAGE_PREFIX + "master-" + config.getClusterIds()[0]);
-        List<String> alreadyCreatedSlaveImages = new ArrayList<>();
-        for (Instance instance : slaveInstances) {
+        List<String> alreadyCreatedWorkerImages = new ArrayList<>();
+        for (Instance instance : workerInstances) {
             String imageType = instance.getConfiguration().getImage();
-            if (!alreadyCreatedSlaveImages.contains(imageType)) {
-                alreadyCreatedSlaveImages.add(imageType);
-                String slaveImageName = IMAGE_PREFIX + "slave-" + config.getClusterIds()[0] + "-" + alreadyCreatedSlaveImages.size();
-                if (!createImageFromInstance(instance, slaveImageName)) {
+            if (!alreadyCreatedWorkerImages.contains(imageType)) {
+                alreadyCreatedWorkerImages.add(imageType);
+                String workerImageName = IMAGE_PREFIX + "worker-" + config.getClusterIds()[0] + "-" + alreadyCreatedWorkerImages.size();
+                if (!createImageFromInstance(instance, workerImageName)) {
                     success = false;
                 }
             }

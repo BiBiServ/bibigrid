@@ -222,20 +222,20 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
     @Override
-    protected List<Instance> launchClusterSlaveInstances(
-            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
-        Map<String, InstanceOpenstack> slaves = new HashMap<>();
+    protected List<Instance> launchClusterWorkerInstances(
+            int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
+        Map<String, InstanceOpenstack> workers = new HashMap<>();
         try {
             final Map<String, String> metadata = new HashMap<>();
-            metadata.put(Instance.TAG_NAME, slaveNameTag);
+            metadata.put(Instance.TAG_NAME, workerNameTag);
             metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
             metadata.put(Instance.TAG_USER, config.getUser());
-            InstanceTypeOpenstack slaveSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
+            InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
             for (int i = 0; i < instanceConfiguration.getCount(); i++) {
                 ServerCreateBuilder scb = null;
                     scb = Builders.server()
-                            .name(buildSlaveInstanceName(batchIndex, i))
-                            .flavor(slaveSpec.getFlavor().getId())
+                            .name(buildWorkerInstanceName(batchIndex, i))
+                            .flavor(workerSpec.getFlavor().getId())
                             //.image(instanceConfiguration.getImage())
                             .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
                             .keypairName(config.getKeypair())
@@ -251,49 +251,49 @@ public class CreateClusterOpenstack extends CreateCluster {
                 ServerCreate sc  = scb.build();
                 Server server = os.compute().servers().boot(sc);
                 InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
-                slaves.put(server.getId(), instance);
+                workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }
-            LOG.info("Waiting for slave instances ready...");
+            LOG.info("Waiting for worker instances ready...");
             int active = 0;
             List<String> ignoreList = new ArrayList<>();
-            while (slaves.size() > active + ignoreList.size()) {
+            while (workers.size() > active + ignoreList.size()) {
                 // wait for some seconds to not overload REST API
                 sleep(2);
                 // get fresh server object for given server id
-                for (InstanceOpenstack slave : slaves.values()) {
+                for (InstanceOpenstack worker : workers.values()) {
                     //ignore if instance is already active ...
-                    if (!(slave.isActive() || slave.hasError())) {
+                    if (!(worker.isActive() || worker.hasError())) {
                         // check server status
-                        checkForServerAndUpdateInstance(slave.getId(), slave);
-                        if (slave.isActive()) {
+                        checkForServerAndUpdateInstance(worker.getId(), worker);
+                        if (worker.isActive()) {
                             active++;
-                            LOG.info("[{}/{}] Instance '{}' is active!", active, slaves.size(), slave.getHostname());
-                        } else if (slave.hasError()) {
-                            LOG.warn("Ignore slave instance '{}'.", slave.getHostname());
-                            ignoreList.add(slave.getId());
+                            LOG.info("[{}/{}] Instance '{}' is active!", active, workers.size(), worker.getHostname());
+                        } else if (worker.hasError()) {
+                            LOG.warn("Ignore worker instance '{}'.", worker.getHostname());
+                            ignoreList.add(worker.getId());
                         }
                     }
                 }
             }
-            // remove ignored instances from slave map
+            // remove ignored instances from worker map
             for (String id : ignoreList) {
-                slaves.remove(id);
+                workers.remove(id);
             }
-            LOG.info(V, "Wait for slave network configuration finished...");
-            // wait for slave network finished ... update server instance list
-            for (InstanceOpenstack slave : slaves.values()) {
-                slave.setPrivateIp(waitForAddress(slave.getId(), environment.getNetwork().getName()).getAddr());
-                slave.updateNeutronHostname();
+            LOG.info(V, "Wait for worker network configuration finished...");
+            // wait for worker network finished ... update server instance list
+            for (InstanceOpenstack worker : workers.values()) {
+                worker.setPrivateIp(waitForAddress(worker.getId(), environment.getNetwork().getName()).getAddr());
+                worker.updateNeutronHostname();
             }
             // TODO
-            // Mount a volume to slave instance
-            // - create (count of slave instances) snapshots
+            // Mount a volume to worker instance
+            // - create (count of worker instances) snapshots
             // - mount each snapshot as volume to an instance
         } catch (NotYetSupportedException e) {
             // Should never occur
         }
-        return new ArrayList<>(slaves.values());
+        return new ArrayList<>(workers.values());
     }
 
     private NetFloatingIP getFloatingIP(List<String> blacklist) {
@@ -334,12 +334,16 @@ public class CreateClusterOpenstack extends CreateCluster {
         List<? extends Address> addressList;
         Server server;
         do {
-            sleep(1, false);
+            sleep(2, false);
             // refresh server object - ugly
             server = os.compute().servers().get(serverId);
             addressList = server.getAddresses().getAddresses().get(networkName);
-            LOG.info(V, "addressList {}", addressList);
+            if (addressList == null) {
+                LOG.info(V,"Wait for address ...");
+            }
+
         } while (addressList == null || addressList.isEmpty());
+        LOG.info(V, "address: {}", addressList);
         return addressList.get(0);
     }
 

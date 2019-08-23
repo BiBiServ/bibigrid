@@ -1,6 +1,6 @@
 - name: Install cloud9 dependencies
   apt:
-    name: ["build-essential","python"]
+    name: ["build-essential","python3"]
     state: "present"
 
 - name: Install cloud9 nodejs-legacy

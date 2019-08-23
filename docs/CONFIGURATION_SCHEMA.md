@@ -34,11 +34,11 @@ masterInstance:
   type: string                                      # Instance Flavor, self-assigned (e.g.: m1.small)
   image: string                                     # Image ID (e.g.: 802e0abe-ac6c-...) or Image name
 
-# Slaves
-slaveInstances:
+# Workers
+workerInstances:
   - type: string                                    # Instance Flavor, self-assigned (e.g.: m1.small)
     image: string                                   # Image ID (e.g.: 802e0abe-ac6c-...) or Image name
-    count: integer                                  # Number of Slave Instances
+    count: integer                                  # Number of Worker Instances
   - ...
   
 # Services
@@ -57,7 +57,7 @@ zabbixConf:
     db_user: string                                 # User name for Database. Default is "zabbix"
     db_password: string                             # Password of user. Default is "zabbix"
     timezone: string                                # Default is "Europe/Berlin"
-    servername: string                              # Name of Server. Default is "bibigrid"
+    server_name: string                             # Name of Server. Default is "bibigrid"
     admin_password: string                          # Admin password. Default is "bibigrid". Change hardly recommended!
 ganglia: boolean [yes, "no"]                        # deprecated - supported for Ubuntu 16.04 only. Default is no
     
@@ -78,6 +78,29 @@ masterMounts:                                       # Mount volumes to master no
   - ...
 
 localFS: enum [EXT2, EXT3, EXT4, XFS]               # Local FileSystem. Default is XFS
+
+# Ansible Usage
+ansibleRoles:
+  - name: string                                    # Name of role, used only as description in config file
+    hosts: string                                   # One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts
+    file: string                                    # path/to/file.tar.gz - File on local machine
+    vars:
+        key : value                                 # Environment variables, if default configuration is not the preferred option
+        ...
+    vars_file: string                               # Yaml file when many variables are necessary
+  - name: ...                                       # Add as many roles as you want
+
+ansibleGalaxyRoles:
+  - name: string                                    # Name of role, used to redefine role name
+    hosts: string                                   # One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts
+    galaxy: string                                  # Galaxy name of role like 'author.rolename'
+    git: string                                     # GitHub role repository like 'https://github.com/bennojoy/nginx'
+    url: string                                     # Webserver file url like 'https://some.webserver.example.com/files/master.tar.gzpath/to/file.tar.gz'
+    vars:
+        key : value                                 # Environment variables, if default configuration is not the preferred option
+        ...
+    vars_file: string                               # Yaml file when many variables are necessary
+  - name: ...                                       # Add as many roles as you want
 
 # Web IDE Usage
 theia: boolean [yes, "no"]                          # Enable / Disable Theia Web IDE, Default is no
@@ -121,7 +144,7 @@ googleImageProjectId: string                        # ID of Image Project
 ```
 bidPrice: double                                    # Bid Price in USD ($) for each Amazon EC2 instance when launched as Spot Instances
 bidPriceMaster: double
-publicSlaveIps: boolean [yes, no]                   # Every slave gets public IP
+publicWorkerIps: boolean [yes, no]                   # Every worker gets public IP
 useSpotInstances: boolean [yes, no]                 # Usage of unused EC2 capacity in AWS cloud at discount price
 ```
 

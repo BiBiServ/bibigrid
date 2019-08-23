@@ -6,18 +6,17 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -25,15 +24,15 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 /**
  * CreateCluster Interface must be implemented by all "real" CreateCluster classes and
  * provides the minimum of general functions for the environment, the configuration of
- * master and slave instances and launching the cluster.
+ * master and worker instances and launching the cluster.
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public abstract class CreateCluster extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
-    public static final String MASTER_NAME_PREFIX = PREFIX + "master";
-    public static final String SLAVE_NAME_PREFIX = PREFIX + "slave";
+    static final String MASTER_NAME_PREFIX = PREFIX + "master";
+    static final String WORKER_NAME_PREFIX = PREFIX + "worker";
 
     protected final ProviderModule providerModule;
     protected final Client client;
@@ -42,7 +41,7 @@ public abstract class CreateCluster extends Intent {
     protected CreateClusterEnvironment environment;
 
     private Instance masterInstance;
-    private List<Instance> slaveInstances;
+    private List<Instance> workerInstances;
     protected DeviceMapper masterDeviceMapper;
 
     protected CreateCluster(ProviderModule providerModule, Client client, Configuration config) {
@@ -85,7 +84,7 @@ public abstract class CreateCluster extends Intent {
      * <li>&#09.createSecurityGroup()</li>
      * <li>&#09.createPlacementGroup()</li>
      * <li>.configureClusterMasterInstance()</li>
-     * <li>.configureClusterSlaveInstance()</li>
+     * <li>.configureClusterWorkerInstance()</li>
      * <li>.launchClusterInstances()</li>
      * </ol>
      *
@@ -108,10 +107,10 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
-     * Configure and manage Slave-instances to launch.
+     * Configure and manage Worker-instances to launch.
      */
-    public CreateCluster configureClusterSlaveInstance() {
-        LOG.info("Slave instance(s) configured.");
+    public CreateCluster configureClusterWorkerInstance() {
+        LOG.info("Worker instance(s) configured.");
         return this;
     }
 
@@ -130,31 +129,31 @@ public abstract class CreateCluster extends Intent {
             if (masterInstance == null) {
                 return false;
             }
-            slaveInstances = new ArrayList<>();
-            int totalSlaveInstanceCount = config.getSlaveInstanceCount();
-            if (totalSlaveInstanceCount > 0) {
-                LOG.info("Requesting {} slave instance(s) with {} different configurations...",
-                        totalSlaveInstanceCount, config.getSlaveInstances().size());
-                for (int i = 0; i < config.getSlaveInstances().size(); i++) {
-                    Configuration.SlaveInstanceConfiguration instanceConfiguration = config.getSlaveInstances().get(i);
-                    LOG.info("Requesting {} slave instance(s) with same configuration...",
+            workerInstances = new ArrayList<>();
+            int totalWorkerInstanceCount = config.getWorkerInstanceCount();
+            if (totalWorkerInstanceCount > 0) {
+                LOG.info("Requesting {} worker instance(s) with {} different configurations...",
+                        totalWorkerInstanceCount, config.getWorkerInstances().size());
+                for (int i = 0; i < config.getWorkerInstances().size(); i++) {
+                    Configuration.WorkerInstanceConfiguration instanceConfiguration = config.getWorkerInstances().get(i);
+                    LOG.info("Requesting {} worker instance(s) with same configuration...",
                             instanceConfiguration.getCount());
-                    String slaveNameTag = SLAVE_NAME_PREFIX + "-" + clusterId;
-                    List<Instance> slavesBatch = launchClusterSlaveInstances(i, instanceConfiguration, slaveNameTag);
-                    if (slavesBatch == null) {
+                    String workerNameTag = WORKER_NAME_PREFIX + "-" + clusterId;
+                    List<Instance> workersBatch = launchClusterWorkerInstances(i, instanceConfiguration, workerNameTag);
+                    if (workersBatch == null) {
                         return false;
                     }
-                    slaveInstances.addAll(slavesBatch);
+                    workerInstances.addAll(workersBatch);
                 }
             } else {
-                LOG.info("No Slave instance(s) requested!");
+                LOG.info("No Worker instance(s) requested!");
             }
             // just to be sure, everything is present, wait x seconds
             sleep(4);
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
             final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                     masterInstance.getPrivateIp();
-            configureMaster(masterInstance, slaveInstances, environment.getSubnet().getCidr(), prepare);
+            configure(masterInstance, workerInstances, environment.getSubnet().getCidr(), prepare);
             logFinishedInfoMessage(masterIp);
             saveGridPropertiesFile(masterIp);
         } catch (Exception e) {
@@ -177,13 +176,13 @@ public abstract class CreateCluster extends Intent {
     protected abstract Instance launchClusterMasterInstance(String masterNameTag);
 
     /**
-     * Start the batch of cluster slave instances.
+     * Start the batch of cluster worker instances.
      */
-    protected abstract List<Instance> launchClusterSlaveInstances(
-            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag);
+    protected abstract List<Instance> launchClusterWorkerInstances(
+            int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
 
-    protected String buildSlaveInstanceName(int batchIndex, int slaveIndex) {
-        return SLAVE_NAME_PREFIX + (batchIndex + 1) + "-" + (slaveIndex + 1) + "-" + clusterId;
+    protected String buildWorkerInstanceName(int batchIndex, int workerIndex) {
+        return WORKER_NAME_PREFIX + (batchIndex + 1) + "-" + (workerIndex + 1) + "-" + clusterId;
     }
 
     private void logFinishedInfoMessage(final String masterPublicIp) {
@@ -250,11 +249,11 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
-    private void configureMaster(final Instance masterInstance, final List<Instance> slaveInstances,
-                                 final String subnetCidr, final boolean prepare) {
-        AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, slaveInstances);
+    private void configure(final Instance masterInstance, final List<Instance> workerInstances,
+                           final String subnetCidr, final boolean prepare) throws ConfigurationException {
+        AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, workerInstances);
         AnsibleConfig ansibleConfig = new AnsibleConfig(config, providerModule.getBlockDeviceBase(), subnetCidr,
-                masterInstance, slaveInstances);
+                masterInstance, workerInstances);
         ansibleConfig.setMasterMounts(masterDeviceMapper);
 
         final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
@@ -277,31 +276,173 @@ public abstract class CreateCluster extends Intent {
                     sshSession.connect();
                     LOG.info("Connected to master!");
 
-                    configured = uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig, slaveInstances) &&
-                            installAndExecuteAnsible(sshSession, prepare);
-                    sshSession.disconnect();
+                    /*
+                        ConfigurationException is thrown by 'uploadAnsibleToMaster' and 'installAndExecuteAnsible'
+                        in the case anything failed during the upload or ansible run. The exception is caught by
+                        'launchClusterInstances'.
+                        But not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
+                        ConfugurationException, close the sshSession and throw a new ConfigurationException
+
+                     */
+                    try {
+                        uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig, workerInstances);
+                        installAndExecuteAnsible(sshSession, prepare);
+                    } catch (ConfigurationException e) {
+                        throw new ConfigurationException(e.getMessage());
+                    } finally {
+                        sshSession.disconnect();
+                    }
                 }
             } catch (IOException | JSchException e) {
-                LOG.error("SSH: {}", e);
+                throw new ConfigurationException(e);
             }
         }
-        if (configured) {
-            LOG.info(I, "Master instance has been configured.");
-        } else {
-            LOG.error("Master instance configuration failed!");
-        }
+        LOG.info(I, "Cluster has been configured.");
     }
 
-    private boolean uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
-                                          AnsibleConfig commonConfig, List<Instance> slaveInstances) throws JSchException {
-        boolean uploadCompleted;
+    /**
+     * Uploads ansible roles to master instance.
+     *
+     * @param sshSession ssh connection to master
+     * @param hostsConfig Configuration and list of worker IPs
+     * @param commonConfig common Configuration
+     * @param workerInstances list of worker instances
+     * @throws JSchException possible SSH connection error
+     * @throws ConfigurationException possible upload error
+     */
+    private void uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
+                                          AnsibleConfig commonConfig, List<Instance> workerInstances) throws JSchException, ConfigurationException {
+
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Upload Ansible playbook to master instance.");
         LOG.info(V, "Connecting sftp channel...");
         channel.connect();
         try {
-            // Collect the Ansible files from resources for upload
+            // Collect Ansible files from resources for upload
             AnsibleResources resources = new AnsibleResources();
+            uploadResourcesFiles(resources, channel);
+
+            // Divide into master and worker roles to write in site.yml
+            Map<String, String> customMasterRoles = new LinkedHashMap<>();
+            Map<String, String> customWorkerRoles = new LinkedHashMap<>();
+
+            // create Role Upload Path on master
+            createSFTPFolder(channel,AnsibleResources.UPLOAD_PATH);
+
+            // Add "extra" Ansible role
+            List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
+            for (Configuration.AnsibleRoles role : ansibleRoles) {
+                String roleName = getSingleFileName(role.getFile()).split(".tgz")[0].split(".tar.gz")[0];
+                Map<String, Object> roleVars = role.getVars();
+                // Set role key - value pairs
+                if (role.getVarsFile() != null) {
+                    // VarsFile readable since it is proved in Validation
+                    String vars = new String(Files.readAllBytes(Paths.get(role.getVarsFile())));
+                    Yaml yaml = new Yaml();
+                    Map<String, Object> additionalVars = yaml.load(vars);
+                    roleVars.putAll(additionalVars);
+                }
+                String roleVarsFile = "";
+                if (roleVars != null && !roleVars.isEmpty()) {
+                    roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
+                    commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
+                            AnsibleResources.ROOT_PATH + roleVarsFile), roleVars);
+                }
+                switch (role.getHosts()) {
+                    case "master":
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        break;
+                    case "worker":
+                    case "workers":
+                        customWorkerRoles.put(roleName, roleVarsFile);
+                        break;
+                    default:
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        customWorkerRoles.put(roleName, roleVarsFile);
+                }
+
+                uploadAnsibleRole(channel, role.getFile());
+            }
+
+            // Add galaxy roles
+            List<Configuration.AnsibleGalaxyRoles> ansibleGalaxyRoles = config.getAnsibleGalaxyRoles();
+            for (Configuration.AnsibleGalaxyRoles role : ansibleGalaxyRoles) {
+                String roleName = role.getName();
+                Map<String, Object> roleVars = role.getVars();
+                // Set role key - value pairs
+                // Put vars from external vars file into Map
+                if (role.getVarsFile() != null) {
+                    String vars = new String(Files.readAllBytes(Paths.get(role.getVarsFile())));
+                    Yaml yaml = new Yaml();
+                    Map<String, Object> additionalVars = yaml.load(vars);
+                    roleVars.putAll(additionalVars);
+                }
+                String roleVarsFile = "";
+                if (roleVars != null && !roleVars.isEmpty()) {
+                    roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
+                    commonConfig.writeAnsibleVarsFile(channel.put(channel.getHome() + "/" +
+                            AnsibleResources.ROOT_PATH + roleVarsFile), roleVars);
+                }
+                // Replace ansible galaxy name with self-specified
+                role.setName(roleName);
+                switch (role.getHosts()) {
+                    case "master":
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        break;
+                    case "worker":
+                    case "workers":
+                        customWorkerRoles.put(roleName, roleVarsFile);
+                        break;
+                    default:
+                        customMasterRoles.put(roleName, roleVarsFile);
+                        customWorkerRoles.put(roleName, roleVarsFile);
+                }
+            }
+
+            // Write the hosts configuration file
+            try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
+                    AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
+                writer.write(hostsConfig.toString());
+            }
+            // Write the commons configuration file
+            commonConfig.writeCommonFile(channel.put(channel.getHome() + "/"
+                    + AnsibleResources.COMMONS_CONFIG_FILE));
+
+            // Write custom site file
+            commonConfig.writeSiteFile(channel.put(channel.getHome() + "/"
+                            + AnsibleResources.SITE_CONFIG_FILE),
+                     customMasterRoles, customWorkerRoles);
+
+            // Write requirements file for ansible-galaxy support
+            if (!ansibleGalaxyRoles.isEmpty()) {
+                commonConfig.writeRequirementsFile(channel.put(channel.getHome() + "/"
+                        + AnsibleResources.REQUIREMENTS_CONFIG_FILE));
+            }
+
+            // Write worker instance specific configuration file
+            for (Instance worker : workerInstances) {
+                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/"
+                        + worker.getPrivateIp() + ".yml";
+                commonConfig.writeInstanceFile(worker, channel.put(filename));
+            }
+
+        } catch (SftpException | IOException e) {
+            throw new ConfigurationException(e);
+
+        } finally {
+            channel.disconnect();
+        }
+
+    }
+
+    /**
+     * Uploads common Ansible Resources files.
+     *
+     * @param resources ansible configuration
+     * @param channel client side of sftp server channel
+     */
+    private void uploadResourcesFiles(AnsibleResources resources, ChannelSftp channel) {
+        try {
             // First the folders need to be created
             createSftpFolders(channel, resources, resources.getFiles());
             // Each file is uploaded to it's relative path in the home folder
@@ -312,108 +453,175 @@ public abstract class CreateCluster extends Intent {
                 LOG.info(V, "SFTP: Upload file {}", fullPath);
                 channel.put(stream, fullPath);
             }
-            // @ToDo JK :: Support custom roles
-//            for (int i = 0; i < config.getMasterAnsibleRoles().size(); i++) {
-//                uploadAnsibleRole(channel, resources, config.getMasterAnsibleRoles().get(i),
-//                        commonConfig.getCustomRoleName("master", i));
-//            }
-//            for (int i = 0; i < config.getSlaveAnsibleRoles().size(); i++) {
-//                uploadAnsibleRole(channel, resources, config.getSlaveAnsibleRoles().get(i),
-//                        commonConfig.getCustomRoleName("slaves", i));
-//            }
-            // Write the hosts configuration file
-            try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
-                    AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
-                writer.write(hostsConfig.toString());
-            }
-            // Write the commons configuration file
-            commonConfig.writeCommonFile(channel.put(channel.getHome() + "/" + AnsibleResources.COMMONS_CONFIG_FILE));
-
-            // @ToDo JK :: Support custom site file
-            // commonConfig.writeSiteFile(channel.put(channel.getHome() + "/" + AnsibleResources.SITE_CONFIG_FILE));
-            // Write slave instance specific configuration file
-            for (Instance slave : slaveInstances) {
-                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/" + slave.getPrivateIp() + ".yml";
-                commonConfig.writeInstanceFile(slave, channel.put(filename));
-            }
-            uploadCompleted = true;
-        } catch (SftpException | IOException e) {
-            LOG.error("SFTP: {}", e);
-            uploadCompleted = false;
-        } finally {
-            channel.disconnect();
+        } catch (SftpException e) {
+            e.printStackTrace();
         }
-        return uploadCompleted;
     }
 
+    /**
+     * Creates folders for every directory, given a file structure.
+     *
+     * @param channel client side of sftp server channel
+     * @param resources ansible configuration
+     * @param files list of files in file structure
+     * @throws SftpException possible SFTP failure
+     */
     private void createSftpFolders(ChannelSftp channel, AnsibleResources resources, List<String> files) throws SftpException {
         for (String folderPath : resources.getDirectories(files)) {
             String fullPath = channel.getHome() + "/" + folderPath;
-            LOG.info(V, "SFTP: Create folder {}", fullPath);
-            try {
-                channel.cd(fullPath);
-            } catch (SftpException e) {
-                channel.mkdir(fullPath);
-            }
-            channel.cd(channel.getHome());
+            createSFTPFolder(channel,fullPath);
         }
     }
 
-    private void uploadAnsibleRole(ChannelSftp channel, AnsibleResources resources, String rolePath, String roleName)
+    /** Creates a folder for given (if not already exists
+     *
+     * @param channel client side of sftp server channel
+     * @param path path to be created
+     * @throws SftpException possible SFTP failure
+     */
+    private void createSFTPFolder(ChannelSftp channel, String path) throws SftpException {
+        try {
+            channel.cd(path);
+        } catch (SftpException e) {
+            LOG.info(V, "SFTP: Create folder {}", path);
+            channel.mkdir(path);
+        }
+        channel.cd(channel.getHome());
+    }
+
+    /**
+     * Uploads single ansible role (.tar.gz, .tgz) to remote instance to temporary folder.
+     *
+     * @param channel client side of sftp server channel
+     * @param roleFile path/to/role on local machine
+     * @throws SftpException possible SFTP failure
+     * @throws IOException possible File failure
+     */
+    private void uploadAnsibleRole(ChannelSftp channel, String roleFile)
             throws SftpException, IOException {
-        String basePath = AnsibleResources.ROLES_ROOT_PATH + "/" + roleName + "/";
-        Path rootRolePath = Paths.get(rolePath);
-        List<Path> files = Files.walk(rootRolePath).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
-        List<String> targetFiles = files.stream().map(p -> basePath + rootRolePath.relativize(p)).collect(Collectors.toList());
-        createSftpFolders(channel, resources, targetFiles);
-        for (int i = 0; i < files.size(); i++) {
-            InputStream stream = new FileInputStream(files.get(i).toFile());
-            // Upload the file stream via sftp to the home folder
-            String fullPath = channel.getHome() + "/" + targetFiles.get(i).replace("\\", "/");
-            LOG.info(V, "SFTP: Upload file {}", fullPath);
-            channel.put(stream, fullPath);
-        }
+        String remotePath = AnsibleResources.UPLOAD_PATH + getSingleFileName(roleFile);
+        InputStream stream = new FileInputStream(roleFile);
+        // target location on master
+        LOG.info(V, "SFTP: Upload file {} to {}", roleFile, remotePath );
+        // Upload the file stream via sftp
+        channel.put(stream, remotePath );
     }
 
-    private boolean installAndExecuteAnsible(final Session sshSession, final boolean prepare)
-            throws JSchException, IOException {
+    /**
+     * Turns path/to/file.* into file.*.
+     * @param roleFile path/to/file
+     * @return fileName
+     */
+    private String getSingleFileName(String roleFile) {
+        roleFile = roleFile.replace("\\", "/");
+        String[] pathway = roleFile.split("/");
+        return pathway[pathway.length - 1];
+    }
+
+
+
+    /**
+     * Installs and executes ansible roles on remote.
+     *
+     * @param sshSession transfer via ssh session
+     * @param prepare true, if still preparation necessary
+     * @throws JSchException ssh openChannel exception
+     * @throws IOException BufferedReader exceptions
+     * @throws ConfigurationException if configuration was unsuccesful
+     */
+    private void installAndExecuteAnsible(final Session sshSession,  final boolean prepare)
+            throws IOException, JSchException, ConfigurationException {
         LOG.info("Configure and execute Ansible. This take a while. Please be patient.");
-        boolean configured = false;
-        String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare);
+
+        String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare, config);
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-        BufferedReader stdout = new BufferedReader(new InputStreamReader(channel.getInputStream()));
-        BufferedReader stderr = new BufferedReader(new InputStreamReader(channel.getErrStream()));
-        channel.setCommand(execCommand);
-        LOG.info(V, "Connecting ssh channel...");
-        channel.connect();
-        String lineOut, lineError = null;
-        while (((lineOut = stdout.readLine()) != null) || ((lineError = stderr.readLine()) != null)) {
-            if (lineOut != null) {
-                if (lineOut.contains("CONFIGURATION_FINISHED")) {
-                    configured = true;
+        /*
+           The fct have to watch and parse the stdout and stderr stream at the same time. Since BufferReader.readline()
+           blocks, the only solution I found is to work with separate threads for stdout and stderror of the ssh channel.
+
+           The following code snipset seems to be more complicated than it should be (in other languages).
+            If you find a better solution feel free to replace it.
+         */
+
+
+        // "Runnable" for stdout
+        LineReaderRunnable stdout = new LineReaderRunnable(new BufferedReader(new InputStreamReader(channel.getInputStream()))) {
+            @Override
+            public void work_on_line(String lineOut) {
+                if (lineOut.contains("CONFIGURATION FINISHED")) {
+                    returnCode = 0;
+                    returnMsg = ""; // clear possible msg
+                } else if (lineOut.contains("failed:")) {
+                    returnMsg = lineOut;
                 }
-                int indexOfLogMessage = lineOut.indexOf("\"[BIBIGRID] ");
-                if (indexOfLogMessage > 0) {
-                    LOG.info("Ansible: {}", lineOut.substring(indexOfLogMessage + 12, lineOut.length() - 1));
+                if (VerboseOutputFilter.SHOW_VERBOSE) {
+                    // in verbose mode show every line generated by ansible
+                    LOG.info(V, "{}", lineOut);
                 } else {
-                    LOG.info(V, "SSH: {}", lineOut);
+                    // otherwise show only ansible msg containing "[BIBIGRID]"
+                    int indexOfLogMessage = lineOut.indexOf("\"[BIBIGRID] ");
+                    if (indexOfLogMessage > 0) {
+                        LOG.info("[Ansible] {}",  lineOut.substring(indexOfLogMessage + 12, lineOut.length() - 1));
+                    }
                 }
-                if (lineOut.contains("fatal") && lineOut.contains(" FAILED! => ")) {
-                    LOG.info("Ansible: There might be a problem with the ansible script ({}). " +
-                            "Please check '/var/log/ansible-playbook.log' on the master instance " +
-                            "after BiBiGrid finished.", lineOut);
+            }
+
+            @Override
+            public void work_on_exception(Exception e) {
+                LOG.error("Evaluate stderr : "+e.getMessage());
+                returnCode = 1;
+            }
+        };
+
+        // "Runnable" for stderr
+        LineReaderRunnable stderr = new LineReaderRunnable(new BufferedReader(new InputStreamReader(channel.getErrStream()))) {
+            @Override
+            public void work_on_line(String lineError) {
+                // Check for real errors and print them to the error log ...
+                if (lineError.contains("ERROR") || lineError.contains("error") | lineError.contains("Error")) {
+                    LOG.error("{}", lineError);
+                } else { // ... and everything else as warning !
+                    LOG.warn(V,"{}",lineError);
                 }
             }
-            if (lineError != null && !configured) {
-                LOG.error("SSH: {}", lineError);
+
+            @Override
+            public void work_on_exception(Exception e) {
+                LOG.error("Evaluate stderr : "+e.getMessage());
+                returnCode = 1;
             }
-            if (channel.isClosed() && configured) {
-                LOG.info(V, "SSH: exit-status: {}", channel.getExitStatus());
-                configured = true;
-            }
+
+        };
+
+        // Create threads ...
+        Thread t_stdout = new Thread(stdout);
+        Thread t_stderr = new Thread(stderr);
+
+        // ... start them ...
+        t_stdout.start();
+        t_stderr.start();
+
+        // ... start ansible ...
+        channel.setCommand(execCommand);
+        // ... connect channel
+        channel.connect();
+
+        // ... wait for threads finished ...
+        try {
+            t_stdout.join();
+            t_stderr.join();
+        } catch (InterruptedException e) {
+            throw new ConfigurationException("Exception occured while evaluate ansible output!");
         }
+
+        // and  disconnect channel
         channel.disconnect();
-        return configured;
+
+
+
+        if (stdout.getReturnCode() != 0) {
+            throw new ConfigurationException("Cluster configuration failed.\n"+stdout.getReturnMsg());
+        }
     }
 
     public Configuration getConfig() {
@@ -424,7 +632,43 @@ public abstract class CreateCluster extends Intent {
         return masterInstance;
     }
 
-    public List<Instance> getSlaveInstances() {
-        return slaveInstances;
+    public List<Instance> getWorkerInstances() {
+        return workerInstances;
+    }
+}
+
+abstract class LineReaderRunnable implements Runnable {
+
+    BufferedReader br;
+
+    protected int returnCode = -1;
+    protected String returnMsg = "";
+
+    public LineReaderRunnable(BufferedReader br){
+        this.br = br;
+    }
+
+    public abstract void work_on_line(String line);
+
+    public abstract void work_on_exception(Exception e);
+
+    @Override
+    public void run() {
+        try {
+            String line;
+            while ((line = br.readLine()) != null ) {
+                work_on_line(line);
+            }
+        } catch (IOException ex) {
+            work_on_exception(ex);
+        }
+    }
+
+    public int getReturnCode(){
+        return returnCode;
+    }
+
+    public String getReturnMsg(){
+        return returnMsg;
     }
 }

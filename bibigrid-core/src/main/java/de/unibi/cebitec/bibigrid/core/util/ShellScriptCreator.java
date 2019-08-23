@@ -1,6 +1,8 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.*;
+
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,19 +33,26 @@ public final class ShellScriptCreator {
         userData.append("function log { date +\"%x %R:%S - ${1}\";}\n");
         // iplookup function
         userData.append("function iplookup { nslookup ${1} | grep name | cut -f 2 -d '=' | cut -f 1 -d '.' | xargs; }\n");
-        // Log local & resolved hostname
-        userData.append("localip=$(curl --silent --show-error http://169.254.169.254/latest/meta-data/local-ipv4)\n");
+        // log local hostname
+        userData.append("localip=$(wget -O - --quiet http://169.254.169.254/latest/meta-data/local-ipv4 |cat)\n");
         userData.append("log \"hostname is $(hostname)\"\n");
+        // check if resolved  differs from local hostname and force set resolved hostname as local name, needs nslookup
+        userData.append("which nslookup\n");
+        userData.append("if [ $? -eq 0 ]; then \n");
         userData.append("log \"hostname should be $(iplookup $localip)\"\n");
-        // force set hostname
         userData.append("log \"set hostname\"\n");
         userData.append("hostname -b $(iplookup $localip)\n");
+        userData.append("fi\n");
+        // disableAptDailyService
         userData.append("log \"disable apt-daily.(service|timer)\"\n");
         appendDisableAptDailyService(userData);
+        // configure SSH Config
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData, keypair);
+        // umount possibly mounted ephemeral
         userData.append("log \"umount possibly mounted ephemeral\"\n");
         userData.append("umount /mnt\n");
+        // finished
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
         return base64 ? Base64.getEncoder().encodeToString(userData.toString().getBytes()) : userData.toString();
@@ -99,37 +108,58 @@ public final class ShellScriptCreator {
         userData.append("SSHCONFIG\n");
     }
 
-    public static String getMasterAnsibleExecutionScript(final boolean prepare) {
+    /**
+     * Builds script to configure ansible and execute ansible commands to install (galaxy) roles / playbooks.
+     * @param prepare true, if still preparation necessary
+     * @param Configuration config
+     * @return script String to execute in CreateCluster
+     */
+    public static String getMasterAnsibleExecutionScript(final boolean prepare, final Configuration config) {
         StringBuilder script = new StringBuilder();
         // apt-get update
         script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
-        // install python2
-        script.append("sudo apt-get --yes  install apt-transport-https ca-certificates ")
-                .append("software-properties-common python python-pip |sudo tee -a /var/log/ssh_exec.log\n");
+        // install python3
+        script.append("sudo DEBIAN_FRONTEND=noninteractive apt-get --yes  install apt-transport-https ca-certificates ")
+                .append("software-properties-common python3 python3-pip libffi-dev libssl-dev |sudo tee -a /var/log/ssh_exec.log\n");
         // Update pip to latest version
-        script.append("sudo pip install --upgrade pip | sudo tee -a /var/log/ssh_exec.log\n");
+        script.append("sudo pip3 install --upgrade pip | sudo tee -a /var/log/ssh_exec.log\n");
 
         // Upgrade OpenSSL to fix ssl version problems on Ubuntu 16.04
-        script.append("sudo python -m easy_install --upgrade pyOpenSSL\n");
+        script.append("sudo python3 -m easy_install --upgrade pyOpenSSL\n");    // doesn't work
 
         // Install setuptools from pypi using pip
-        script.append("sudo pip install setuptools | sudo tee -a /var/log/ssh_exec.log\n");
+        script.append("sudo pip3 install setuptools | sudo tee -a /var/log/ssh_exec.log\n");
         // Install ansible from pypi using pip
-        script.append("sudo pip install ansible | sudo tee -a /var/log/ssh_exec.log\n");
-        // Install python2 on slaves instances
-        script.append("ansible slaves -i ~/playbook/ansible_hosts --become -m raw -a \"apt-get update && apt-get --yes install python\" | sudo tee -a /var/log/ansible.log\n");
+        script.append("sudo pip3 install ansible | sudo tee -a /var/log/ssh_exec.log\n");
+        // Install python3 on workers instances
+        script.append("ansible workers -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE
+                + " --become -m raw -a \"apt-get update && apt-get --yes install python3\" | sudo tee -a /var/log/ansible.log\n");
 
-        // Fix line endings to ensure windows files being used correctly
-        script.append("for file in $(find ~/playbook/ -name '*.*'); do sed -i 's/\\r$//' \"$file\"; done\n");
+        // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
+        if (config.hasCustomAnsibleGalaxyRoles()) {
+            script.append("ansible-galaxy install --roles-path ~/"
+                    + AnsibleResources.ROLES_ROOT_PATH
+                    + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
+        }
+        // Extract ansible roles from files (.tar.gz, .tgz)
+        script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
+        script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tgz; do tar -xzf $f; done\n");
+        script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tar.gz; do tar -xzf $f; done\n");
+        script.append("cd ~\n");
 
-        // Run ansible-galaxy to install ansible-galaxy playbooks
-        //script.append("ansible-galaxy install -r ~/playbook/requirements.yml\n");
+        // Fix line endings for all text based ansible file to ensure windows files being used correctly
+        script.append("files=$(for f in $( find ~/playbook -type f); do  file ${f} | grep ASCII | cut -f 1 -d ':'; done;)\n");
+        script.append("for file in ${file}; do sed -i 's/\\r$//' \"${file}\"; done\n");
 
+        script.append("echo Execute ansible-playbook\n");
         // Execute ansible playbook
-        script.append("ansible-playbook ~/playbook/site.yml -i ~/playbook/ansible_hosts")
+        script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
+                + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
                 .append(prepare ? " -t install" : "")
-                .append(" | sudo tee -a /var/log/ansible-playbook.log\n");
-        script.append("echo \"CONFIGURATION_FINISHED\"\n");
+        //       .append(" | sudo tee -a /var/log/ansible-playbook.log")
+                .append("\n");
+
+        script.append("if [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n");
         return script.toString();
     }
 }

@@ -92,14 +92,14 @@ public class CreateClusterAzure extends CreateCluster {
     }
 
     @Override
-    protected List<Instance> launchClusterSlaveInstances(
-            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
-        List<VirtualMachine> slaveInstances = new ArrayList<>();
-        String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true);
+    protected List<Instance> launchClusterWorkerInstances(
+            int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
+        List<VirtualMachine> workerInstances = new ArrayList<>();
+        String base64WorkerUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true);
         InstanceImageAzure image = (InstanceImageAzure) client.getImageById(instanceConfiguration.getImage());
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
-            VirtualMachine slaveInstance = compute.virtualMachines()
-                    .define(buildSlaveInstanceName(batchIndex, i))
+            VirtualMachine workerInstance = compute.virtualMachines()
+                    .define(buildWorkerInstanceName(batchIndex, i))
                     .withRegion(config.getRegion())
                     .withExistingResourceGroup(((CreateClusterEnvironmentAzure) environment).getResourceGroup())
                     .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
@@ -109,21 +109,21 @@ public class CreateClusterAzure extends CreateCluster {
                     .withSpecificLinuxImageVersion(image.getInternal())
                     .withRootUsername(config.getSshUser())
                     .withSsh("") // TODO
-                    .withCustomData(base64SlaveUserData)
+                    .withCustomData(base64WorkerUserData)
                     .withNewDataDisk(50)
                     .withSize(instanceConfiguration.getProviderType().getValue())
                     .withTag(Instance.TAG_BIBIGRID_ID, clusterId)
                     .withTag(Instance.TAG_USER, config.getUser())
-                    .withTag(Instance.TAG_NAME, slaveNameTag)
+                    .withTag(Instance.TAG_NAME, workerNameTag)
                     .withTag(InstanceAzure.TAG_CREATION, getCurrentTime())
                     .create();
             // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())
-            slaveInstances.add(slaveInstance);
+            workerInstances.add(workerInstance);
         }
-        LOG.info("Waiting for slave instance(s) to finish booting...");
-        waitForInstancesStatusCheck(slaveInstances);
-        LOG.info(I, "Slave instance(s) is now running!");
-        return slaveInstances.stream().map(i -> new InstanceAzure(instanceConfiguration, i)).collect(Collectors.toList());
+        LOG.info("Waiting for worker instance(s) to finish booting...");
+        waitForInstancesStatusCheck(workerInstances);
+        LOG.info(I, "Worker instance(s) is now running!");
+        return workerInstances.stream().map(i -> new InstanceAzure(instanceConfiguration, i)).collect(Collectors.toList());
     }
 
     private void waitForInstancesStatusCheck(List<VirtualMachine> instances) {

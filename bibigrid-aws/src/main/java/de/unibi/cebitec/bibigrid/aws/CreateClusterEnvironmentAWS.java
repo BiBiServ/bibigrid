@@ -109,7 +109,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
     public CreateClusterAWS createPlacementGroup() {
         // if all instance-types fulfill the cluster specifications, create a placementGroup.
         boolean allTypesClusterInstances = getConfig().getMasterInstance().getProviderType().isClusterInstance();
-        for (Configuration.InstanceConfiguration instanceConfiguration : getConfig().getSlaveInstances()) {
+        for (Configuration.InstanceConfiguration instanceConfiguration : getConfig().getWorkerInstances()) {
             allTypesClusterInstances = allTypesClusterInstances &&
                     instanceConfiguration.getProviderType().isClusterInstance();
         }

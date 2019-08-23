@@ -3,14 +3,14 @@
     path: /etc/bibigrid
     state: directory
     owner: root
-    group: ubuntu
+    group: '{{ ansible_distribution | lower }}'
     mode: 0775
 
 - file:
     path: /vol/
     state: directory
     owner: root
-    group: ubuntu
+    group: '{{ ansible_distribution | lower }}'
     mode: 0775
 
 - file:
@@ -22,12 +22,12 @@
     path: /opt
     state: directory
     owner: root
-    group: ubuntu
+    group: '{{ ansible_distribution | lower }}'
     mode: 0775
 
-- name: Create link in ubuntu home
+- name: Create link in '{{ ansible_distribution | lower }}' home
   file:
     src: /vol/
-    dest: /home/ubuntu/vol
+    dest: '/home/{{ ansible_distribution | lower }}/vol'
     state: link
 

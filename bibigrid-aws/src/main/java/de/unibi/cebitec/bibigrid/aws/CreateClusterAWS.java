@@ -36,10 +36,10 @@ public class CreateClusterAWS extends CreateCluster {
     private String base64MasterUserData;
 
     private InstanceNetworkInterfaceSpecification masterNetworkInterface;
-    private InstanceNetworkInterfaceSpecification slaveNetworkInterface;
+    private InstanceNetworkInterfaceSpecification workerNetworkInterface;
     private List<BlockDeviceMapping> masterDeviceMappings;
     private Tag bibigridId, username;
-    private List<List<BlockDeviceMapping>> slaveBlockDeviceMappings;
+    private List<List<BlockDeviceMapping>> workerBlockDeviceMappings;
 
     private final ConfigurationAWS config;
 
@@ -110,26 +110,26 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     @Override
-    public CreateClusterAWS configureClusterSlaveInstance() {
+    public CreateClusterAWS configureClusterWorkerInstance() {
         buildClientsNetworkInterface();
         buildClientsDeviceMappings();
         return this;
     }
 
     private void buildClientsNetworkInterface() {
-        slaveNetworkInterface = new InstanceNetworkInterfaceSpecification()
+        workerNetworkInterface = new InstanceNetworkInterfaceSpecification()
                 .withGroups(((CreateClusterEnvironmentAWS) environment).getSecurityGroup())
                 .withSubnetId(environment.getSubnet().getId())
-                .withAssociatePublicIpAddress(config.isPublicSlaveIps())
+                .withAssociatePublicIpAddress(config.isPublicWorkerIps())
                 .withDeviceIndex(0);
     }
 
     private void buildClientsDeviceMappings() {
-        // now defining Slave Volumes
-        slaveBlockDeviceMappings = new ArrayList<>();
-        for (Configuration.InstanceConfiguration instanceConfiguration : config.getSlaveInstances()) {
-            de.unibi.cebitec.bibigrid.core.model.InstanceType slaveSpec = instanceConfiguration.getProviderType();
-            slaveBlockDeviceMappings.add(buildEphemeralList(slaveSpec.getEphemerals()));
+        // now defining Worker Volumes
+        workerBlockDeviceMappings = new ArrayList<>();
+        for (Configuration.InstanceConfiguration instanceConfiguration : config.getWorkerInstances()) {
+            de.unibi.cebitec.bibigrid.core.model.InstanceType workerSpec = instanceConfiguration.getProviderType();
+            workerBlockDeviceMappings.add(buildEphemeralList(workerSpec.getEphemerals()));
         }
     }
 
@@ -225,42 +225,42 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     @Override
-    protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchClusterSlaveInstances(
-            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveName) {
-        // run slave instances and supply userdata
-        List<Instance> slaveInstances;
-        Tag slaveNameTag = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME).withValue(slaveName);
-        String base64SlaveUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true);
+    protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchClusterWorkerInstances(
+            int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerName) {
+        // run worker instances and supply userdata
+        List<Instance> workerInstances;
+        Tag workerNameTag = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME).withValue(workerName);
+        String base64WorkerUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true);
         if (config.isUseSpotInstances()) {
-            RequestSpotInstancesRequest slaveReq = new RequestSpotInstancesRequest()
+            RequestSpotInstancesRequest workerReq = new RequestSpotInstancesRequest()
                     .withType(SpotInstanceType.OneTime)
                     .withInstanceCount(instanceConfiguration.getCount())
                     .withLaunchGroup("lg_" + clusterId)
                     .withSpotPrice(Double.toString(config.getBidPrice()));
 
-            LaunchSpecification slaveLaunchSpecification = new LaunchSpecification()
+            LaunchSpecification workerLaunchSpecification = new LaunchSpecification()
                     .withInstanceType(InstanceType.fromValue(instanceConfiguration.getProviderType().getValue()))
                     .withPlacement(spotInstancePlacement)
                     .withKeyName(config.getKeypair())
                     .withImageId(instanceConfiguration.getImage())
-                    .withUserData(base64SlaveUserData)
-                    .withBlockDeviceMappings(slaveBlockDeviceMappings.get(batchIndex))
-                    .withNetworkInterfaces(slaveNetworkInterface);
+                    .withUserData(base64WorkerUserData)
+                    .withBlockDeviceMappings(workerBlockDeviceMappings.get(batchIndex))
+                    .withNetworkInterfaces(workerNetworkInterface);
 
-            slaveReq.setLaunchSpecification(slaveLaunchSpecification);
-            RequestSpotInstancesResult slaveReqResult = ec2.requestSpotInstances(slaveReq);
-            List<SpotInstanceRequest> slaveReqResponses = slaveReqResult.getSpotInstanceRequests();
+            workerReq.setLaunchSpecification(workerLaunchSpecification);
+            RequestSpotInstancesResult workerReqResult = ec2.requestSpotInstances(workerReq);
+            List<SpotInstanceRequest> workerReqResponses = workerReqResult.getSpotInstanceRequests();
             // collect all spotInstanceRequestIds ...
             List<String> spotInstanceRequestIds = new ArrayList<>();
-            for (SpotInstanceRequest requestResponse : slaveReqResponses) {
+            for (SpotInstanceRequest requestResponse : workerReqResponses) {
                 spotInstanceRequestIds.add(requestResponse.getSpotInstanceRequestId());
             }
             sleep(1);
             LOG.info(V, "tag spot request instances");
-            // tag spot requests (slave)
+            // tag spot requests (worker)
             CreateTagsRequest ctr = new CreateTagsRequest()
                     .withResources(spotInstanceRequestIds)
-                    .withTags(bibigridId, username, slaveNameTag);
+                    .withTags(bibigridId, username, workerNameTag);
             // Setting tags for spot requests can cause an amazon service exception, if the spot request
             // returns an id, but the id isn't registered in spot request registry yet.
             int counter = 0;
@@ -279,40 +279,40 @@ public class CreateClusterAWS extends CreateCluster {
                     }
                 }
             }
-            LOG.info("Waiting for slave instance(s) (spot request) to finish booting...");
-            // wait for spot request (slave) finished
-            slaveInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
+            LOG.info("Waiting for worker instance(s) (spot request) to finish booting...");
+            // wait for spot request (worker) finished
+            workerInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
         } else {
-            RunInstancesRequest slaveReq = new RunInstancesRequest()
+            RunInstancesRequest workerReq = new RunInstancesRequest()
                     .withInstanceType(InstanceType.fromValue(instanceConfiguration.getProviderType().getValue()))
                     .withMinCount(instanceConfiguration.getCount())
                     .withMaxCount(instanceConfiguration.getCount())
                     .withPlacement(instancePlacement)
                     .withKeyName(config.getKeypair())
                     .withImageId(instanceConfiguration.getImage())
-                    .withUserData(base64SlaveUserData)
-                    .withBlockDeviceMappings(slaveBlockDeviceMappings.get(batchIndex))
-                    .withNetworkInterfaces(slaveNetworkInterface);
+                    .withUserData(base64WorkerUserData)
+                    .withBlockDeviceMappings(workerBlockDeviceMappings.get(batchIndex))
+                    .withNetworkInterfaces(workerNetworkInterface);
 
-            RunInstancesResult runInstancesResult = ec2.runInstances(slaveReq);
+            RunInstancesResult runInstancesResult = ec2.runInstances(workerReq);
             runInstancesResult.getReservation().getReservationId();
-            // create a list of all slave instances
-            List<String> slaveInstanceListIds = new ArrayList<>();
+            // create a list of all worker instances
+            List<String> workerInstanceListIds = new ArrayList<>();
             for (Instance i : runInstancesResult.getReservation().getInstances()) {
-                slaveInstanceListIds.add(i.getInstanceId());
+                workerInstanceListIds.add(i.getInstanceId());
             }
-            LOG.info("Waiting for slave instance(s) to finish booting...");
-            slaveInstances = waitForInstances(slaveInstanceListIds);
+            LOG.info("Waiting for worker instance(s) to finish booting...");
+            workerInstances = waitForInstances(workerInstanceListIds);
         }
         // Waiting for master instance to run
-        LOG.info(I, "Slave instance(s) is now running!");
-        // Tagging all slaves with a name
-        for (Instance si : slaveInstances) {
+        LOG.info(I, "Worker instance(s) is now running!");
+        // Tagging all workers with a name
+        for (Instance si : workerInstances) {
             ec2.createTags(new CreateTagsRequest()
                     .withResources(si.getInstanceId())
-                    .withTags(bibigridId, username, slaveNameTag));
+                    .withTags(bibigridId, username, workerNameTag));
         }
-        return slaveInstances.stream().map(i -> new InstanceAWS(instanceConfiguration, i)).collect(Collectors.toList());
+        return workerInstances.stream().map(i -> new InstanceAWS(instanceConfiguration, i)).collect(Collectors.toList());
     }
 
     /**
