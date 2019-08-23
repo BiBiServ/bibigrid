@@ -143,8 +143,7 @@ public final class ShellScriptCreator {
         }
         // Extract ansible roles from files (.tar.gz, .tgz)
         script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
-        script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tgz; do tar -xzf $f; done\n");
-        script.append("for f in " + AnsibleResources.UPLOAD_PATH + "*.tar.gz; do tar -xzf $f; done\n");
+        script.append("for f in $(find /tmp/roles -type f -regex '.*\\.t\\(ar\\.\\)?gz'); do tar -xzf $f; done\n");
         script.append("cd ~\n");
 
         // Fix line endings for all text based ansible file to ensure windows files being used correctly

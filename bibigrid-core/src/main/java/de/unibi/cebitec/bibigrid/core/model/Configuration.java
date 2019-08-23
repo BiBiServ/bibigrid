@@ -16,7 +16,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class Configuration {
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
-    private static final String DEFAULT_WORKSPACE = "~/";
+    private static final String DEFAULT_WORKSPACE = "$HOME";
 
     private String mode;
     private String user = System.getProperty("user.name");
