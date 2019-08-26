@@ -111,7 +111,7 @@ public final class ShellScriptCreator {
     /**
      * Builds script to configure ansible and execute ansible commands to install (galaxy) roles / playbooks.
      * @param prepare true, if still preparation necessary
-     * @param Configuration config
+     * @param config Configuration
      * @return script String to execute in CreateCluster
      */
     public static String getMasterAnsibleExecutionScript(final boolean prepare, final Configuration config) {
