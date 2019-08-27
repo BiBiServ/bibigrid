@@ -151,12 +151,19 @@ public final class ShellScriptCreator {
         script.append("for file in ${file}; do sed -i 's/\\r$//' \"${file}\"; done\n");
 
         script.append("echo Execute ansible-playbook\n");
-        // Execute ansible playbook
-        script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
-                + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
-                .append(prepare ? " -t install" : "")
+        script.append("sudo touch /var/log/ansible-playbook.log\n");
+        script.append("sudo chown ${USER}:${USER} /var/log/ansible-playbook.log\n");
+        script.append("python3 ${HOME}/playbook/tools/tee.py --cmd \"$(which ansible-playbook)").
+                append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
+                append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
+                append("\" --outfile /var/log/ansible-playbook.log \n");
+
+        // Execute ansible playbook using tee
+        //script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
+        //        + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
+        //        .append(prepare ? " -t install" : "")
         //       .append(" | sudo tee -a /var/log/ansible-playbook.log")
-                .append("\n");
+        //        .append("\n");
 
         script.append("if [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n");
         return script.toString();
