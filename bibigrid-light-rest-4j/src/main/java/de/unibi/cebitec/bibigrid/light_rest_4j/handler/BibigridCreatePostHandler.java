@@ -15,6 +15,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
 
+
         Map<String, Object> body = (Map<String, Object>)exchange.getAttachment(BodyHandler.REQUEST_BODY);
 
         Access file = Config.getInstance().getMapper().convertValue(body.get("access"), Access.class);
@@ -22,8 +23,6 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
 
         System.out.println(file);
         System.out.println(cfg);
-
-
 
         exchange.endExchange();
     }
