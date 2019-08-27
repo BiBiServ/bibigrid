@@ -1,9 +1,9 @@
-# we have to make sure that the disk is NOT mounted by cloud-init beforehand
-- name: mount ephemeral disk
+- name: Create /vol bind mount from /mnt ephemeral
   mount:
     path: /vol
-    src: "{{ master.ephemerals[0] }}"
-    fstype: ext4
+    src: /mnt
+    fstype: none
+    opts: bind,auto
     state: mounted
   when: master.ephemerals[0] is defined
 

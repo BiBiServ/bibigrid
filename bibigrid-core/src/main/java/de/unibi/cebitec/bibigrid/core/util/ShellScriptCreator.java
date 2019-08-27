@@ -49,9 +49,6 @@ public final class ShellScriptCreator {
         // configure SSH Config
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData, keypair);
-        // umount possibly mounted ephemeral
-        userData.append("log \"umount possibly mounted ephemeral\"\n");
-        userData.append("umount /mnt\n");
         // finished
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
