@@ -127,7 +127,8 @@ class ClientOpenstack extends Client {
     @Override
     public InstanceImage getImageByIdOrName(String img) {
         for (Image image : internalClient.compute().images().list()) {
-            if (image.getName().equals(img) || image.getId().equals(img)) {
+            if (image.getStatus() == Image.Status.ACTIVE
+                    && (image.getName().equals(img) || image.getId().equals(img))) {
                 return new InstanceImageOpenstack(image);
             }
         }
