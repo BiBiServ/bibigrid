@@ -164,6 +164,10 @@ public abstract class CreateCluster extends Intent {
             logFinishedInfoMessage(masterIp);
             saveGridPropertiesFile(masterIp);
         } catch (Exception e) {
+            if (Configuration.DEBUG) {
+                logFinishedInfoMessage(
+                        config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() : masterInstance.getPrivateIp());
+            }
             // print stacktrace only verbose mode, otherwise the message is fine
             if (VerboseOutputFilter.SHOW_VERBOSE) {
                 LOG.error(e.getMessage(), e);
