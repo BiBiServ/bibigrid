@@ -11,6 +11,7 @@ The parameters you might have to add outside the config YAML are explained in th
 |----------------|-----------------|------------------|------------------------------------|
 | check          | ch              | -                | validate cluster setup             |
 | cloud9         | c9              | cluster-id       | establish a secured connection to running grid running cloud9 [deprecated] |
+| debug          | d               | -                | prevent BiBiGrid to shutdown a failed cluster setup |
 | ide            | ide             | cluster-id       | establish a secured connection to specified ide |
 | create         | c               | -                | create cluster environment         |
 | config         | o               | path/to/config   | YAML configuration file            |
