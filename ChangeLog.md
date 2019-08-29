@@ -48,9 +48,6 @@
 - upgrade 3rd party lib dependencies
 - improve error handling (#154) - rewrite/restructure CreateCluster functionality
 - bind mount ephemeral disks to prevent filesystem corruption after reboot (#160)
-- Openstack : display message in case of auth failure (#165)
-- Slurm : respect useMasterAsCompute setting (#167)
-- improve wording of printed messages (#169)
 
 ## Version 2.0.6 < 2.0.5 (08/07/2019)
 
