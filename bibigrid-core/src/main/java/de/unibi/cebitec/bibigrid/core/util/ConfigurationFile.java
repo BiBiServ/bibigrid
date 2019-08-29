@@ -31,22 +31,23 @@ public final class ConfigurationFile {
     private String propertiesMode;
 
     public ConfigurationFile(CommandLine commandLine) {
+        Path defaultPropertiesFilePath = Paths.get(DEFAULT_DIRNAME, DEFAULT_FILENAME);
         if (commandLine.hasOption(PROPERTIES_FILEPATH_PARAMETER)) {
             String path = commandLine.getOptionValue(PROPERTIES_FILEPATH_PARAMETER);
             Path newPath = Paths.get(path);
             if (Files.isReadable(newPath)) {
                 propertiesFilePath = newPath;
                 isAlternativeFilepath = true;
-                LOG.info("Alternative config file {} will be used.", propertiesFilePath.toString());
+                LOG.info("Using alternative config file: '{}'.", propertiesFilePath.toString());
             } else {
-                LOG.error("Alternative config ({}) file is not readable. Try to use default.", newPath.toString());
+                LOG.error("Alternative config ({}) file is not readable. Falling back to default: '{}'", newPath.toString(), defaultPropertiesFilePath.toString());
             }
         }
         if (propertiesFilePath == null) {
-            propertiesFilePath = Paths.get(DEFAULT_DIRNAME, DEFAULT_FILENAME);
+            propertiesFilePath = defaultPropertiesFilePath;
         }
         if (Files.exists(propertiesFilePath)) {
-            LOG.info(V, "Reading default options from properties file at '{}'.", propertiesFilePath);
+            LOG.info(V, "Reading options from properties file at '{}'.", propertiesFilePath);
             try {
                 // In order to load the yaml file directly into the provider Configuration we have to peek the mode
                 Map<String, String> yamlMap = new Yaml().load(new FileInputStream(propertiesFilePath.toFile()));
@@ -55,7 +56,7 @@ public final class ConfigurationFile {
                 LOG.error("Failed to load mode parameter from properties file.");
             }
         } else {
-            LOG.info("No properties file for default options found ({}). Using command line parameters only.",
+            LOG.info("No properties file found at '{}'. Using command line parameters only.",
                     propertiesFilePath);
         }
     }

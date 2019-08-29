@@ -32,7 +32,7 @@ class ClientOpenstack extends Client {
             internalClient = credentials.getDomain() != null ?
                     buildOSClientV3(credentials) :
                     buildOSClientV2(credentials);
-            LOG.info("Openstack connection established.");
+            LOG.info("OpenStack connection established.");
         } catch (Exception e) {
             throw new ClientConnectionFailedException("Failed to connect openstack client.", e);
         }

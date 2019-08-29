@@ -89,7 +89,7 @@ public class SshFactory {
     }
 
     public static boolean pollSshPortIsAvailable(String masterPublicIp) {
-        LOG.info(V, "Check if SSH port is available and ready...");
+        LOG.info(V, "Checking if SSH port is available and ready ...");
         int attempt = SSH_POLL_ATTEMPTS;
         while (attempt > 0) {
             try {

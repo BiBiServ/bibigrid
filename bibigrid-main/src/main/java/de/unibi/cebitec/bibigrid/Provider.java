@@ -34,7 +34,7 @@ public final class Provider {
             try {
                 ProviderModule module = moduleClass.getConstructor().newInstance();
                 providers.put(module.getName().toLowerCase(Locale.US), module);
-                LOG.info(VerboseOutputFilter.V, "Registered provider module " + module.getName());
+                LOG.info(VerboseOutputFilter.V, "Registered provider module: " + module.getName());
             } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 LOG.error("Failed to load provider module '{}'. {}", moduleClass.getName(), e);
             }
@@ -60,7 +60,7 @@ public final class Provider {
     public ProviderModule getProviderModule(String providerName) {
         providerName = providerName.toLowerCase(Locale.US);
         if (!providers.containsKey(providerName)) {
-            LOG.error("Malformed meta-mode! use: [{}] or leave it blank.", String.join(", ", getProviderNames()));
+            LOG.error("Malformed meta-mode! Please use: [{}] or leave it blank.", String.join(", ", getProviderNames()));
             return null;
         }
         return providers.get(providerName);

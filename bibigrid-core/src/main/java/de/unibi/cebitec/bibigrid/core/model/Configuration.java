@@ -111,7 +111,7 @@ public abstract class Configuration {
 
     public void setSshPublicKeyFile(String sshPublicKeyFile) {
         this.sshPublicKeyFile = sshPublicKeyFile.trim();
-        LOG.info(V, "SSH public key file found! ({})", this.sshPublicKeyFile);
+        LOG.info(V, "SSH public key file found. ({})", this.sshPublicKeyFile);
     }
 
     public String getSshPrivateKeyFile() {
@@ -120,7 +120,7 @@ public abstract class Configuration {
 
     public void setSshPrivateKeyFile(String sshPrivateKeyFile) {
         this.sshPrivateKeyFile = sshPrivateKeyFile.trim();
-        LOG.info(V, "SSH private key file found! ({})", this.sshPrivateKeyFile);
+        LOG.info(V, "SSH private key file found. ({})", this.sshPrivateKeyFile);
     }
 
     public String getRegion() {
@@ -142,7 +142,7 @@ public abstract class Configuration {
             StringBuilder display = new StringBuilder();
             display.append("[type=").append(masterInstance.getType()).append(", image=")
                     .append(masterInstance.getImage()).append("] ");
-            LOG.info(V, "Master instances set: {}", display);
+            LOG.info(V, "Master instance configuration set: {}", display);
         }
     }
 
@@ -171,7 +171,7 @@ public abstract class Configuration {
                         .append(", image=").append(instanceConfiguration.getImage())
                         .append(", count=").append(instanceConfiguration.getCount()).append("] ");
             }
-            LOG.info(V, "Worker instances set: {}", display);
+            LOG.info(V, "Worker instance(s) configuration set: {}", display);
         }
     }
 
@@ -317,8 +317,8 @@ public abstract class Configuration {
     public void setOge(boolean oge) {
         this.oge = oge;
         if (oge) {
-            LOG.warn("GridEngine (oge) support is deprecated and is only supported using Ubuntu 16.04. " +
-                    "The Support will be removed in near future. Use Slurm instead.");
+            LOG.warn("GridEngine (oge) support is deprecated (only supported using Ubuntu 16.04.) " +
+                    "and will be removed in the near future! Please use Slurm instead.");
         }
     }
 
@@ -412,7 +412,7 @@ public abstract class Configuration {
     }
 
     public void setCloud9Workspace(String cloud9Workspace) {
-        LOG.warn("Option cloud9Workspace is deprecated. Use workspace instead.");
+        LOG.warn("Option cloud9Workspace is deprecated. Please use workspace instead.");
         setWorkspace(cloud9Workspace);
     }
 
@@ -467,8 +467,8 @@ public abstract class Configuration {
     public void setGanglia(boolean ganglia) {
         this.ganglia = ganglia;
         if (ganglia) {
-            LOG.warn("Ganglia (oge) support is deprecated and is only supported using Ubuntu 16.04. " +
-                     "The Support will be removed in near future. Use Zabbix instead.");
+            LOG.warn("Ganglia (oge) support is deprecated (only supported using Ubuntu 16.04.) " +
+                     "and will be removed in the near future. Please use Zabbix instead.");
         }
     }
 

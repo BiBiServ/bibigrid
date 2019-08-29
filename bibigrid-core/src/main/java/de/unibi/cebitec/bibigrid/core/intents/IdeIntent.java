@@ -62,7 +62,7 @@ public class IdeIntent extends Intent {
         JSch.setLogger(new JSchLogger());
         try {
             ssh.addIdentity(config.getSshPrivateKeyFile());
-            LOG.info("Trying to connect to master...");
+            LOG.info("Trying to connect to master ...");
             sleep(4);
             // Create new Session to avoid packet corruption.
             Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),

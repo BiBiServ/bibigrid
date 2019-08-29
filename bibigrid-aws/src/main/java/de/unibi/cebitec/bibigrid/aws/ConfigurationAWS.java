@@ -48,7 +48,7 @@ public class ConfigurationAWS extends Configuration {
     public void setUseSpotInstances(boolean useSpotInstances) {
         this.useSpotInstances = useSpotInstances;
         if (useSpotInstances) {
-            LOG.info(V, "Use spot request for all");
+            LOG.info(V, "Using spot requests for all instance requests.");
         }
     }
 }

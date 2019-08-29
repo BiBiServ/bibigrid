@@ -59,7 +59,7 @@ public class TerminateIntentAWS extends TerminateIntent {
             TerminateInstancesRequest terminateInstanceRequest = new TerminateInstancesRequest();
             terminateInstanceRequest.setInstanceIds(instanceIds);
             ec2.terminateInstances(terminateInstanceRequest);
-            LOG.info("Wait for instances to shut down. This can take a while, so please be patient!");
+            LOG.info("Waiting for instances to shut down. This might take a while.");
             do {
                 DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
                 describeInstancesRequest.setInstanceIds(instanceIds);
