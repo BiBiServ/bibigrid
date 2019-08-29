@@ -51,7 +51,7 @@ public class CreateClusterAzure extends CreateCluster {
 
     @Override
     protected InstanceAzure launchClusterMasterInstance(String masterNameTag) {
-        LOG.info("Requesting master instance...");
+        LOG.info("Requesting master instance ...");
         //compute.publicIPAddresses().define("").withRegion("").withExistingResourceGroup("").withStaticIP().
         InstanceImageAzure image = (InstanceImageAzure) client.getImageById(config.getMasterInstance().getImage());
         VirtualMachine masterInstance = setMasterPublicIpMode(compute.virtualMachines()
@@ -75,7 +75,7 @@ public class CreateClusterAzure extends CreateCluster {
         // TODO .attachDisks(config.getMasterMounts())
         // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())
         // Waiting for master instance to run
-        LOG.info("Waiting for master instance to finish booting...");
+        LOG.info("Waiting for master instance to finish booting ...");
         waitForInstancesStatusCheck(Collections.singletonList(masterInstance));
         LOG.info(I, "Master instance is now running!");
         return new InstanceAzure(config.getMasterInstance(), masterInstance);
@@ -120,14 +120,14 @@ public class CreateClusterAzure extends CreateCluster {
             // TODO .setInstanceSchedulingOptions(config.isUseSpotInstances())
             workerInstances.add(workerInstance);
         }
-        LOG.info("Waiting for worker instance(s) to finish booting...");
+        LOG.info("Waiting for worker instance(s) to finish booting ...");
         waitForInstancesStatusCheck(workerInstances);
         LOG.info(I, "Worker instance(s) is now running!");
         return workerInstances.stream().map(i -> new InstanceAzure(instanceConfiguration, i)).collect(Collectors.toList());
     }
 
     private void waitForInstancesStatusCheck(List<VirtualMachine> instances) {
-        LOG.info("Waiting for Status Checks on instances...");
+        LOG.info("Waiting for Status Checks on instances ...");
         for (VirtualMachine instance : instances) {
             do {
                 PowerState status = instance.powerState();

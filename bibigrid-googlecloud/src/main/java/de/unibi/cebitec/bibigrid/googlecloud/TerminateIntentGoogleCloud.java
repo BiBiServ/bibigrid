@@ -45,7 +45,7 @@ public class TerminateIntentGoogleCloud extends TerminateIntent {
         }
         boolean success = true;
         if (instances.size() > 0) {
-            LOG.info("Wait for {} instances to shut down. This can take a while, so please be patient!", instances.size());
+            LOG.info("Waiting for {} instances to shut down. This might take a while.", instances.size());
             for (Instance i : instances) {
                 try {
                     Operation operation = compute.instances().delete(config.getGoogleProjectId(), zone, i.getName()).execute();

@@ -56,7 +56,7 @@ public class TerminateIntentOpenstack extends TerminateIntent {
                 if (ar.isSuccess()) {
                     break;
                 }
-                LOG.warn("{} Try again in a second...", ar.getFault());
+                LOG.warn("{} Trying again ...", ar.getFault());
             }
             LOG.info("Security group '{}' deleted.", cluster.getSecurityGroup());
         }

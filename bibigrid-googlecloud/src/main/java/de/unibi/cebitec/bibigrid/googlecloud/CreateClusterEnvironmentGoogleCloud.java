@@ -59,7 +59,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
                     String.format("No suitable subnet found with region '%s' in auto creating network '%s'!",
                             region, network.getName()));
         }
-        LOG.debug(V, "Use '{}' for reused subnet.", subnet.getCidr());
+        LOG.debug(V, "Using '{}' for reused subnet.", subnet.getCidr());
     }
 
     private void createNewSubnet(ConfigurationGoogleCloud config) {
@@ -74,7 +74,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
         }
         SubNets subnets = new SubNets(listOfUsedCidr.size() > 0 ? listOfUsedCidr.get(0) : "10.128.0.0", 24);
         String subnetCidr = subnets.nextCidr(listOfUsedCidr);
-        LOG.debug(V, "Use '{}' for generated subnet.", subnetCidr);
+        LOG.debug(V, "Using '{}' for generated subnet.", subnetCidr);
         // create new subnet
         try {
             Subnetwork subnetwork = new Subnetwork().setIpCidrRange(subnetCidr).setRegion(region)
@@ -92,7 +92,7 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
     @Override
     public CreateClusterEnvironmentGoogleCloud createSecurityGroup() {
         // create security group with full internal access / ssh from outside
-        LOG.info("Creating security group...");
+        LOG.info("Creating security group ...");
         // Collect all firewall rules grouped by the source ip range because the number of rules
         // is limited and therefore should be combined!
         Map<String, List<Firewall.Allowed>> firewallRuleMap = new HashMap<>();

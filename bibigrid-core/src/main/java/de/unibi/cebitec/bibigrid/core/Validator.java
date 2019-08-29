@@ -98,7 +98,7 @@ public abstract class Validator {
      */
     private boolean validateAnsibleRequirements() {
         if (config.hasCustomAnsibleRoles() || config.hasCustomAnsibleGalaxyRoles()) {
-            LOG.info("Checking Ansible Configuration...");
+            LOG.info("Checking Ansible configuration ...");
         }
         // Check Ansible roles
         for (Configuration.AnsibleRoles role : config.getAnsibleRoles()) {
@@ -108,16 +108,16 @@ public abstract class Validator {
             }
             Path path = Paths.get(role.getFile());
             if (!Files.isReadable(path)) {
-                LOG.error("Ansible: File {} does not exist.", path);
+                LOG.error("Ansible: File '{}' does not exist.", path);
                 return false;
             } else if (!role.getFile().contains(".tgz") && !role.getFile().contains(".tar.gz")){
-                LOG.error("Ansible: File {} has to be a '.tgz' or '.tar.gz'.", path);
+                LOG.error("Ansible: File '{}' has to be a '.tgz' or '.tar.gz'.", path);
                 return false;
             }
             if (role.getVarsFile() != null) {
                 Path varFilePath = Paths.get(role.getVarsFile());
                 if (!Files.isReadable(varFilePath)){
-                    LOG.error("Ansible: varsFile {} does not exist.", varFilePath);
+                    LOG.error("Ansible: varsFile '{}' does not exist.", varFilePath);
                     return false;
                 }
             }
@@ -128,7 +128,7 @@ public abstract class Validator {
                     !role.getHosts().equals("worker") &&
                     !role.getHosts().equals("workers") &&
                     !role.getHosts().equals("all")) {
-                LOG.error("Ansible: hosts parameter has to be defined either as 'master', 'worker' or 'all'.");
+                LOG.error("Ansible: hosts parameter has to be defined as either 'master', 'worker' or 'all'.");
                 return false;
             }
         }
@@ -152,12 +152,12 @@ public abstract class Validator {
                     !role.getHosts().equals("worker") &&
                     !role.getHosts().equals("workers") &&
                     !role.getHosts().equals("all")) {
-                LOG.error("Ansible Galaxy: hosts parameter has to be defined either as 'master', 'worker' or 'all'.");
+                LOG.error("Ansible Galaxy: hosts parameter has to be defined as either 'master', 'worker' or 'all'.");
                 return false;
             }
             if (role.getUrl() != null) {
                 if (!isValidURL(role.getUrl())) {
-                    LOG.error("Ansible Galaxy: url parameter contains no valid url.");
+                    LOG.error("Ansible Galaxy: url parameter contains no valid URL.");
                     return false;
                 }
             }
@@ -169,7 +169,7 @@ public abstract class Validator {
                 }
 
                 if (!isValidAnsibleGalaxyRole(galaxyName[0], galaxyName[1])) {
-                    LOG.error("Ansible Galaxy: Not a valid galaxy role {}.", role.getGalaxy());
+                    LOG.error("Ansible Galaxy: Not a valid galaxy role: {}.", role.getGalaxy());
                     return false;
                 }
             }
@@ -222,11 +222,11 @@ public abstract class Validator {
                     // role name is valid, but probably the author is false
                     JSONArray results = (JSONArray) jsonObject.get("results");
                     if (!results.toJSONString().contains("\"name\":\"" + author + "\"")) {
-                        LOG.error("Ansible Galaxy: Author {} not correct for specified role.", author);
+                        LOG.error("Ansible Galaxy: Author '{}' invalid for specified role.", author);
                         return false;
                     }
                     if (!results.toJSONString().contains("\"name\":\"" + role + "\"")) {
-                        LOG.error("Ansible Galaxy: Name of role {} is not correct.", role);
+                        LOG.error("Ansible Galaxy: Name of role '{}' is invalid.", role);
                         return false;
                     }
                 }

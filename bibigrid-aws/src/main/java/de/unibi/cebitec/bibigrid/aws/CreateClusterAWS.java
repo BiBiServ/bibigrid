@@ -141,7 +141,7 @@ public class CreateClusterAWS extends CreateCluster {
 
     @Override
     protected InstanceAWS launchClusterMasterInstance(String masterName) {
-        LOG.info("Requesting master instance...");
+        LOG.info("Requesting master instance ...");
         Instance masterInstance;
         Tag masterNameTag = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME).withValue(masterName);
         if (config.isUseSpotInstances()) {
@@ -190,7 +190,7 @@ public class CreateClusterAWS extends CreateCluster {
             RunInstancesResult runInstancesResult = ec2.runInstances(masterReq);
             runInstancesResult.getReservation().getReservationId();
             masterInstance = runInstancesResult.getReservation().getInstances().get(0);
-            LOG.info("Waiting for master instance to finish booting...");
+            LOG.info("Waiting for master instance to finish booting ...");
             // Waiting for master instance to run
             masterInstance = waitForInstances(Collections.singletonList(masterInstance.getInstanceId())).get(0);
         }
@@ -205,7 +205,7 @@ public class CreateClusterAWS extends CreateCluster {
                 .withResources(masterInstance.getInstanceId())
                 .withTags(bibigridId, username, masterNameTag));
         // Waiting for Status Checks to finish
-        LOG.info("Waiting for Status Checks on master ...");
+        LOG.info("Waiting for status checks on master ...");
         do {
             DescribeInstanceStatusRequest request = new DescribeInstanceStatusRequest();
             request.setInstanceIds(Collections.singletonList(masterInstance.getInstanceId()));
@@ -271,7 +271,7 @@ public class CreateClusterAWS extends CreateCluster {
                     finished = true;
                 } catch (AmazonServiceException ase) {
                     if (counter < 5) {
-                        LOG.warn("{} ... try again in 10 seconds.", ase.getMessage());
+                        LOG.warn("{} ... trying again in 10 seconds.", ase.getMessage());
                         sleep(10);
                         counter++;
                     } else {
@@ -279,7 +279,7 @@ public class CreateClusterAWS extends CreateCluster {
                     }
                 }
             }
-            LOG.info("Waiting for worker instance(s) (spot request) to finish booting...");
+            LOG.info("Waiting for worker instance(s) (spot request) to finish booting ...");
             // wait for spot request (worker) finished
             workerInstances = waitForInstances(waitForSpotInstances(spotInstanceRequestIds));
         } else {
@@ -301,7 +301,7 @@ public class CreateClusterAWS extends CreateCluster {
             for (Instance i : runInstancesResult.getReservation().getInstances()) {
                 workerInstanceListIds.add(i.getInstanceId());
             }
-            LOG.info("Waiting for worker instance(s) to finish booting...");
+            LOG.info("Waiting for worker instance(s) to finish booting ...");
             workerInstances = waitForInstances(workerInstanceListIds);
         }
         // Waiting for master instance to run
@@ -339,7 +339,7 @@ public class CreateClusterAWS extends CreateCluster {
                 for (Instance e : reservationInstances) {
                     String state = e.getState().getName();
                     if (!state.equals(InstanceStateName.Running.toString())) {
-                        LOG.debug(V, "ID " + e.getInstanceId() + "in state:" + state);
+                        LOG.debug(V, "ID " + e.getInstanceId() + " in state:" + state);
                         allRunning = false;
                         break;
                     }
@@ -390,7 +390,7 @@ public class CreateClusterAWS extends CreateCluster {
                 anyOpen = true;
             }
             // Sleep for 30 seconds.
-            LOG.debug(V, "Wait for spot instance request finished!");
+            LOG.debug(V, "Waiting for spot instance request completion ...");
             sleep(30);
         } while (anyOpen);
 

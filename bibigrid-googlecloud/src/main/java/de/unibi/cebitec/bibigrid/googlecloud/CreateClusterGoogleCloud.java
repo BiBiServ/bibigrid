@@ -57,7 +57,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
 
     @Override
     protected InstanceGoogleCloud launchClusterMasterInstance(String masterNameTag) {
-        LOG.info("Requesting master instance...");
+        LOG.info("Requesting master instance ...");
         final Map<String, String> labels = new HashMap<>();
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, masterNameTag);
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID, clusterId);
@@ -72,7 +72,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                 config.getMasterMounts(), config.getGoogleImageProjectId());
         GoogleCloudUtils.setInstanceSchedulingOptions(masterInstance, config.isUseSpotInstances());
         // Waiting for master instance to run
-        LOG.info("Waiting for master instance to finish booting...");
+        LOG.info("Waiting for master instance to finish booting ...");
         try {
             String zone = config.getAvailabilityZone();
             Operation createMasterOperation = compute.instances()
@@ -125,7 +125,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                 return null;
             }
         }
-        LOG.info("Waiting for worker instance(s) to finish booting...");
+        LOG.info("Waiting for worker instance(s) to finish booting ...");
         List<Instance> workerInstances = waitForInstances(workerInstanceBuilders, workerInstanceOperations);
         LOG.info(I, "Worker instance(s) is now running!");
         waitForInstancesStatusCheck(workerInstances);
@@ -133,7 +133,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     }
 
     private void waitForInstancesStatusCheck(List<Instance> instances) {
-        LOG.info("Waiting for Status Checks on instances...");
+        LOG.info("Waiting for status checks on instances ...");
         for (int i = 0; i < instances.size(); i++) {
             Instance instance = instances.get(i);
             do {

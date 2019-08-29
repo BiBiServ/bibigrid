@@ -76,40 +76,40 @@ public final class ValidatorOpenstack extends Validator {
                         new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class));
                 OpenStackCredentials openStackCredentials = openstackConfig.getOpenstackCredentials();
                 if (openStackCredentials.getDomain() == null) {
-                    LOG.error("OpenstackCredentials property 'domain' not set!");
+                    LOG.error("Credentials file: Missing 'domain' parameter!");
                     return false;
                 }
                 if (openStackCredentials.getTenantDomain() == null) {
-                    LOG.error("OpenstackCredentials property 'tenantDomain' not set!");
+                    LOG.error("Credentials file: Missing 'tenantDomain' parameter!");
                     return false;
                 }
                 if (openStackCredentials.getTenantName() == null) {
-                    LOG.error("OpenstackCredentials property 'tenantName' not set!");
+                    LOG.error("Credentials file: Missing 'tenantName' parameter!");
                     return false;
                 }
                 if (openStackCredentials.getEndpoint() == null) {
-                    LOG.error("OpenstackCredentials property 'endpoint' not set!");
+                    LOG.error("Credentials file: Missing 'endpoint' parameter!");
                     return false;
                 }
                 if (openStackCredentials.getUsername() == null) {
-                    LOG.error("OpenstackCredentials property 'username' not set!");
+                    LOG.error("Credentials file: Missing 'username' parameter!");
                     return false;
                 }
                 if (openStackCredentials.getPassword() == null) {
-                    LOG.error("OpenstackCredentials property 'password' not set!");
+                    LOG.error("Credentials file: Missing 'password' parameter!");
                     return false;
                 }
                 return true;
 
 
             } catch (FileNotFoundException e) {
-                LOG.error("Failed to load openstack credentials file.", e);
+                LOG.error("Failed to locate openstack credentials file.", e);
             } catch (YAMLException e) {
                 LOG.error("Failed to parse openstack credentials file. {}",
                         e.getCause() != null ? e.getCause().getMessage() : e);
             }
         } else {
-            LOG.error("Option 'credentialsFile' not set");
+            LOG.error("Option 'credentialsFile' not set!");
         }
         return false;
     }

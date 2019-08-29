@@ -66,7 +66,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
             }
             SubNets subnets = new SubNets(this.network.getCidr() != null ? this.network.getCidr() : "10.128.0.0", 24);
             String subnetCidr = subnets.nextCidr(listOfUsedCidr); // TODO: not generating correct next cidr according to azure
-            LOG.debug(V, "Use {} for generated subnet.", subnetCidr);
+            LOG.debug(V, "Using '{}' for generated subnet.", subnetCidr);
             // create new subnet
             try {
                 subnetName = SUBNET_PREFIX + cluster.getClusterId();
@@ -88,7 +88,7 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
     @Override
     public CreateClusterEnvironmentAzure createSecurityGroup() {
         // create security group with full internal access / ssh from outside
-        LOG.info("Creating security group...");
+        LOG.info("Creating security group ...");
         // Create the firewall rules
         try {
             NetworkSecurityGroup.Update update = securityGroup.update();
