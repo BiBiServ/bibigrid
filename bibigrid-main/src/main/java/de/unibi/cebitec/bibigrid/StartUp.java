@@ -33,9 +33,9 @@ public class StartUp {
     private static final Logger LOG = LoggerFactory.getLogger(StartUp.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
     private static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation. Instances already running. " +
-            "I will try to shut them down but in case of an error they might remain running. Please check manually " +
+            "Attempting to shut them down but in case of an error they might remain running. Please verify " +
             "afterwards.";
-    private static final String KEEP = "Keep partly configured cluster for debug purpose. Please shut down manually.";
+    private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
 
     private static OptionGroup getCMDLineOptionGroup() {
         OptionGroup intentOptions = new OptionGroup();
@@ -218,12 +218,12 @@ public class StartUp {
                     module.getTerminateIntent(client, validator.getConfig()).terminate();
                     break;
                 case CLOUD9:
-                    LOG.warn("Arg --cloud9 is deprecated. Use --ide instead.");
+                    LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
                 case IDE:
                     new IdeIntent(module, client, validator.getConfig()).start();
                     break;
                 default:
-                    LOG.warn("unknown intent mode");
+                    LOG.warn("Unknown intent mode.");
                     break;
             }
         } else {
@@ -291,7 +291,7 @@ public class StartUp {
             } catch (IllegalArgumentException ignored) {
             }
         }
-        LOG.error("No suitable mode found in command line or properties file. Exit");
+        LOG.error("No suitable mode found in command line or properties file. Exiting.");
         return null;
     }
 

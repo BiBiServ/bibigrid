@@ -56,7 +56,7 @@ public abstract class TerminateIntent extends Intent {
             }
         }
         for (String clusterId : toRemove) {
-            LOG.info("Terminating cluster with ID '{}'.", clusterId);
+            LOG.info("Terminating cluster with ID '{}' ...", clusterId);
             final Cluster cluster = clusters.get(clusterId);
             if (terminateCluster(cluster)) {
                 LOG.info("Cluster '{}' terminated!", clusterId);

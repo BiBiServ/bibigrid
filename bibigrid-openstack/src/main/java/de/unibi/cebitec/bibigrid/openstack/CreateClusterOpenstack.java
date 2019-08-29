@@ -152,7 +152,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                                 break;
                             case CREATING: {
                                 sleep(5);
-                                LOG.info(V, "Wait for Volume '{}' available.", v.getId());
+                                LOG.info(V, "Waiting for volume '{}' to be available.", v.getId());
                                 v = os.blockStorage().volumes().get(mountPoint.getSource());
                                 break;
                             }
@@ -209,13 +209,13 @@ public class CreateClusterOpenstack extends CreateCluster {
                     assigned = checkForFloatingIp(tmp, floatingIp.getFloatingIpAddress());
                     if (assigned) {
                         master.setPublicIp(floatingIp.getFloatingIpAddress());
-                        LOG.info("FloatingIP '{}' assigned to Master (ID: {}).", master.getPublicIp(), master.getId());
+                        LOG.info("FloatingIP '{}' has been assigned to the master (ID: {}).", master.getPublicIp(), master.getId());
                     } else {
-                        LOG.warn("FloatingIP '{}' assignment failed! Try another one...", floatingIp.getFloatingIpAddress());
+                        LOG.warn("FloatingIP '{}' assignment failed! Trying a different IP ...", floatingIp.getFloatingIpAddress());
                     }
                 }
             } else {
-                LOG.warn("FloatingIP '{}' assignment failed with fault '{}'! Try another one...", floatingIp.getFloatingIpAddress(), ar.getFault());
+                LOG.warn("FloatingIP '{}' assignment failed: '{}'. Trying a different IP ...", floatingIp.getFloatingIpAddress(), ar.getFault());
             }
         }
         return true;
@@ -254,7 +254,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                 workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }
-            LOG.info("Waiting for worker instances ready...");
+            LOG.info("Waiting for worker instances to be ready ...");
             int active = 0;
             List<String> ignoreList = new ArrayList<>();
             while (workers.size() > active + ignoreList.size()) {
@@ -270,7 +270,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                             active++;
                             LOG.info("[{}/{}] Instance '{}' is active!", active, workers.size(), worker.getHostname());
                         } else if (worker.hasError()) {
-                            LOG.warn("Ignore worker instance '{}'.", worker.getHostname());
+                            LOG.warn("Ignoring worker instance '{}'.", worker.getHostname());
                             ignoreList.add(worker.getId());
                         }
                     }
@@ -280,7 +280,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             for (String id : ignoreList) {
                 workers.remove(id);
             }
-            LOG.info(V, "Wait for worker network configuration finished...");
+            LOG.info(V, "Waiting for worker network configuration completion ...");
             // wait for worker network finished ... update server instance list
             for (InstanceOpenstack worker : workers.values()) {
                 worker.setPrivateIp(waitForAddress(worker.getId(), environment.getNetwork().getName()).getAddr());
@@ -339,7 +339,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             server = os.compute().servers().get(serverId);
             addressList = server.getAddresses().getAddresses().get(networkName);
             if (addressList == null) {
-                LOG.info(V,"Wait for address ...");
+                LOG.info(V,"Waiting for address ...");
             }
 
         } while (addressList == null || addressList.isEmpty());
@@ -429,9 +429,9 @@ public class CreateClusterOpenstack extends CreateCluster {
                     instance.setError(true);
                     Fault fault = server.getFault();
                     if (fault == null) {
-                        LOG.error("Launch '{}' failed without message!", server.getName());
+                        LOG.error("Launch of '{}' failed with an unknown error!", server.getName());
                     } else {
-                        LOG.error("Launch '{}' failed with Code '{}'. {}", server.getName(), fault.getCode(), fault.getMessage());
+                        LOG.error("Launch of '{}' failed with error code '{}'. Message: '{}'", server.getName(), fault.getCode(), fault.getMessage());
                     }
                     break;
                 default:
@@ -439,7 +439,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     break;
             }
         } else {
-            LOG.warn(V, "Status of instance '{}' not available (== null).", server.getId());
+            LOG.warn(V, "Status of instance '{}' is not available (== null).", server.getId());
         }
     }
 

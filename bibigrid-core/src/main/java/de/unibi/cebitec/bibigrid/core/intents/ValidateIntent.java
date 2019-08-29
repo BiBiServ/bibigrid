@@ -75,7 +75,7 @@ public class ValidateIntent extends Intent {
         }
         LOG.info("Checking servergroup...");
         if (checkServerGroup()) {
-            LOG.info(V,"Server group has been successful.");
+            LOG.info(V,"Server group check has been successful.");
         } else {
             LOG.error("Failed to check server group.");
             success = false;

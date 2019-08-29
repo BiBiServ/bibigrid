@@ -51,7 +51,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
                 .collect(Collectors.toList());
         SubNets subnets = new SubNets(network.getCidr(), 24);
         String subnetCidr = subnets.nextCidr(listOfUsedCidr);
-        LOG.debug(V, "Use {} for generated subnet.", subnetCidr);
+        LOG.debug(V, "Using '{}' for generated subnet.", subnetCidr);
         // create new subnet
         CreateSubnetRequest createSubnetRequest = new CreateSubnetRequest(network.getId(), subnetCidr);
         createSubnetRequest.withAvailabilityZone(getConfig().getAvailabilityZone());
@@ -67,7 +67,7 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
                 .withTags(cluster.getBibigridId(), new Tag(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, SUBNET_PREFIX + cluster.getClusterId()));
         ec2.createTags(tagRequest);
         // create security group with full internal access / ssh from outside
-        LOG.info("Creating security group...");
+        LOG.info("Creating security group ...");
         CreateSecurityGroupRequest secReq = new CreateSecurityGroupRequest();
         secReq.withGroupName(SECURITY_GROUP_PREFIX + cluster.getClusterId())
                 .withDescription(cluster.getClusterId())
@@ -115,10 +115,10 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         }
         if (allTypesClusterInstances) {
             placementGroup = (PLACEMENT_GROUP_PREFIX + cluster.getClusterId());
-            LOG.info("Creating placement group...");
+            LOG.info("Creating placement group ...");
             ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
         } else {
-            LOG.info(V, "Placement Group not available for selected Instances-types...");
+            LOG.info(V, "Placement groups are not available for the specified instance type ...");
             return cluster;
         }
         return cluster;
