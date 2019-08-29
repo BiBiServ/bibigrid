@@ -15,9 +15,12 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class Configuration {
+    /* DEBUG mode */
+    public static boolean DEBUG = false;
+    /* Const */
+
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
     private static final String DEFAULT_WORKSPACE = "$HOME";
-
     private String mode;
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
@@ -56,7 +59,6 @@ public abstract class Configuration {
     private String network;
     private String subnet;
     private String[] clusterIds;
-    // private String cloud9Workspace = DEFAULT_WORKSPACE;  deprecated
     private String workspace = DEFAULT_WORKSPACE;
 
     public int getWorkerInstanceCount() {

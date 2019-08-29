@@ -1,14 +1,14 @@
-# we have to make sure that the disk is NOT mounted by cloud-init beforehand
-- name: mount disk
+- name: Create /vol/scratch bind mount from /mnt ephemeral
   mount:
     path: /vol/scratch
-    src: "{{ ephemerals[0] }}"
-    fstype: ext4
+    src: /mnt
+    fstype: none
+    opts: bind,auto
     state: mounted
   when:
     - ephemerals
     
-- name: Change permission for newly mounted /vol/scratch mount point
+- name: Change permissions for /vol/scratch mount point
   file:
     path: /vol/scratch
     state: directory
