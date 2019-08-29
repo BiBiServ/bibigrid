@@ -180,7 +180,4 @@ class ClientOpenstack extends Client {
         }
         return null;
     }
-
-
-
 }
