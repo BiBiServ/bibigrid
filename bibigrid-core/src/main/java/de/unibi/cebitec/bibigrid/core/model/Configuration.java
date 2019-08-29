@@ -214,7 +214,7 @@ public abstract class Configuration {
     public void setSshPrivateKeyFile(String sshPrivateKeyFile) {
         LOG.warn("Deprecation warning: Properties 'sshPrivateKeyFile' is not longer used.");
         this.sshPrivateKeyFile = sshPrivateKeyFile.trim();
-        LOG.info(V, "SSH private key file found. ({})", this.sshPrivateKeyFile);
+        LOG.info(V, "SSH private key file found! ({})", this.sshPrivateKeyFile);
     }
 
     public String getRegion() {
@@ -236,7 +236,7 @@ public abstract class Configuration {
             StringBuilder display = new StringBuilder();
             display.append("[type=").append(masterInstance.getType()).append(", image=")
                     .append(masterInstance.getImage()).append("] ");
-            LOG.info(V, "Master instance configuration set: {}", display);
+            LOG.info(V, "Master instances set: {}", display);
         }
     }
 
@@ -266,7 +266,7 @@ public abstract class Configuration {
                         .append(", image=").append(instanceConfiguration.getImage())
                         .append(", count=").append(instanceConfiguration.getCount()).append("] ");
             }
-            LOG.info(V, "Worker instance(s) configuration set: {}", display);
+            LOG.info(V, "Worker instances set: {}", display);
         }
     }
 
