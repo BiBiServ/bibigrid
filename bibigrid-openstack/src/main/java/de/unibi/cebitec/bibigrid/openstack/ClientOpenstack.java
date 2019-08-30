@@ -35,9 +35,15 @@ class ClientOpenstack extends Client {
                     buildOSClientV2(credentials);
             LOG.info("Openstack connection established.");
         } catch (AuthenticationException e) {
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
             throw new ClientConnectionFailedException(String.format("Connection failed: %s. " +
                     "Please make sure the supplied OpenStack credentials are valid.", e.getLocalizedMessage()), e);
         } catch (Exception e) {
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
             throw new ClientConnectionFailedException(String.format("Failed to connect openstack " +
                     "client: %s: %s", e.getClass().getSimpleName(), e.getLocalizedMessage()), e);
         }
