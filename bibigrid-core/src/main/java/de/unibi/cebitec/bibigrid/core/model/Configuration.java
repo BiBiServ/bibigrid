@@ -532,6 +532,14 @@ public abstract class Configuration {
         this.localDNSLookup = localDNSLookup;
     }
 
+    public boolean isLocalDNSLookup() {
+        return localDNSLookup;
+    }
+
+    public void setLocalDNSLookup(boolean localDNSLookup) {
+        this.localDNSLookup = localDNSLookup;
+    }
+
     public boolean isSlurm() {
         return slurm;
     }
