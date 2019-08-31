@@ -1,8 +1,9 @@
-## Version 2.0.7 < 2.0.6 (not released yet)
+## Version 2.0.7 < 2.0.6 (08/31/2019)
 
 ### Features
 - add full support for Debian Stretch (9) and Debian Buster (10) (#85)
 - make Slurm workers return to service automatically after reboot (#168)
+- add support for local DNS lookup (#170)
 
 ### Fixes
 - source code documentation & clean up (#151)
