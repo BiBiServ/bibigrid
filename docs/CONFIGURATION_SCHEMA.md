@@ -28,6 +28,8 @@ ports:
     number: integer [1 - 65535]                     # Port number, (e.g. TCP-Port 80 - HTTP)
     ipRange: string                                 # "current" or CIDR mask to restrict access, (e.g.: 129.60.50.0/24)
   - ...
+localDNSLookup: boolean [yes,no]                    # Enable local DNS lookup. Creates an entry for and on each host in
+                                                    # /etc/hosts. Should only be enabled if no or a malfunction DNS is available.
 
 # Master 
 masterInstance:
