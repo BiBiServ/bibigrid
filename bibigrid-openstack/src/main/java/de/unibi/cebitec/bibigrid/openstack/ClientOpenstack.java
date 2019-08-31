@@ -4,6 +4,7 @@ import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.compute.ServerGroupService;
+import org.openstack4j.api.exceptions.AuthenticationException;
 import org.openstack4j.model.common.Identifier;
 import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.storage.block.Volume;
@@ -33,8 +34,18 @@ class ClientOpenstack extends Client {
                     buildOSClientV3(credentials) :
                     buildOSClientV2(credentials);
             LOG.info("Openstack connection established.");
+        } catch (AuthenticationException e) {
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
+            throw new ClientConnectionFailedException(String.format("Connection failed: %s. " +
+                    "Please make sure the supplied OpenStack credentials are valid.", e.getLocalizedMessage()), e);
         } catch (Exception e) {
-            throw new ClientConnectionFailedException("Failed to connect openstack client.", e);
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
+            throw new ClientConnectionFailedException(String.format("Failed to connect openstack " +
+                    "client: %s: %s", e.getClass().getSimpleName(), e.getLocalizedMessage()), e);
         }
     }
 
@@ -127,7 +138,8 @@ class ClientOpenstack extends Client {
     @Override
     public InstanceImage getImageByIdOrName(String img) {
         for (Image image : internalClient.compute().images().list()) {
-            if (image.getName().equals(img) || image.getId().equals(img)) {
+            if (image.getStatus() == Image.Status.ACTIVE
+                    && (image.getName().equals(img) || image.getId().equals(img))) {
                 return new InstanceImageOpenstack(image);
             }
         }

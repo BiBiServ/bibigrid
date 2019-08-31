@@ -62,7 +62,7 @@ public class IdeIntent extends Intent {
         JSch.setLogger(new JSchLogger());
         try {
             ssh.addIdentity(config.getSshPrivateKeyFile());
-            LOG.info("Trying to connect to master...");
+            LOG.info("Trying to connect to master ...");
             sleep(4);
             // Create new Session to avoid packet corruption.
             Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
@@ -80,7 +80,7 @@ public class IdeIntent extends Intent {
                 sshSession.disconnect();
             }
         } catch (JSchException e) {
-            LOG.error("Failed to start cloud9 on master. {}", e);
+            LOG.error("Failed to start {} IDE on master.", config.isTheia() ? "Theia" : "Cloud9", e);
         } catch (IOException e) {
             e.printStackTrace();
         }

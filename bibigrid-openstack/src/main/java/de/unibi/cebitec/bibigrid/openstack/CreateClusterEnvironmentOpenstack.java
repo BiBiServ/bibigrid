@@ -78,7 +78,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                     throw new ConfigurationException("No network with id '" + subnet.getNetworkId() + "' found!");
                 }
                 router = getRouterByNetwork(osc, network.getId(), subnet.getId()); // @ToDo
-                LOG.info("Use existing subnet (ID: {}, CIDR: {}).", subnet.getId(), subnet.getCidr());
+                LOG.info("Using existing subnet. (ID: {}, CIDR: {})", subnet.getId(), subnet.getCidr());
                 this.subnet = new SubnetOpenstack(subnet);
                 this.network = new NetworkOpenstack(network, router);
                 return this;
@@ -91,7 +91,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                     throw new ConfigurationException("No network with name '" + cfg.getSubnet() + "' found!");
                 }
                 router = getRouterByNetwork(osc, network);
-                LOG.info("Use existing network (ID: {}) and router (ID: {}).", network.getId(), router.getId());
+                LOG.info("Using existing network (ID: {}) and router (ID: {}).", network.getId(), router.getId());
             }
             if (router == null) {
                 if (cfg.getRouter() == null) {
@@ -101,7 +101,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                     if (router == null) {
                         throw new ConfigurationException("No router with name '" + cfg.getRouter() + "' found!");
                     }
-                    LOG.info("Use existing router (ID: {}).", router.getId());
+                    LOG.info("Using existing router (ID: {}).", router.getId());
                 }
                 // create a new network
                 network = osc.networking().network().create(Builders.network()
@@ -136,7 +136,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                     .build());
 
             cfg.setSubnet(subnet.getName());
-            LOG.info("subnet (ID: {}, NAME: {}, CIDR: {}) created.", subnet.getId(), subnet.getName(), subnet.getCidr());
+            LOG.info("Subnet (ID: {}, NAME: {}, CIDR: {}) created.", subnet.getId(), subnet.getName(), subnet.getCidr());
 
             RouterInterface routerInterface = osc.networking().router().attachInterface(router.getId(),
                     AttachInterfaceType.SUBNET, subnet.getId());
@@ -159,9 +159,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
         if (securityGroup != null) {
             sge = getSecGroupExtensionByName(osc, securityGroup);
             if (sge == null) {
-                LOG.warn("Configured Security group (name: {}) not found. Try to create a new one...", securityGroup);
+                LOG.warn("Configured security group (name: {}) not found. Trying to create a new one ...", securityGroup);
             } else {
-                LOG.info("Use existing Security group (name: {}).", sge.getName());
+                LOG.info("Using existing Security group (name: {}).", sge.getName());
                 return this;
             }
         }
@@ -181,7 +181,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                         (p.getType().equals(Port.Protocol.UDP) ? IPProtocol.UDP : IPProtocol.ICMP);
                 csgs.createRule(getPortBuilder(sge.getId(), protocol, p.getNumber(), p.getNumber()).cidr(p.getIpRange()).build());
             }
-            LOG.info("Security group (name: {}) created.", sge.getName());
+            LOG.info("Security group created. (name: {})", sge.getName());
         } catch (ClientResponseException e) {
             throw new ConfigurationException(e.getMessage(), e);
         }
@@ -272,7 +272,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             lop = ps.list(portListOptions);
         }
         if (subnetId == null && lop.size() > 1) {
-            LOG.warn("Network (ID: {}) uses more than one router, return the first one!", networkId);
+            LOG.warn("Network (ID: {}) uses more than one router, returning the first one!", networkId);
         }
         for (org.openstack4j.model.network.Port port : lop) {
             if (subnetId == null) {
@@ -285,7 +285,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 }
             }
         }
-        LOG.warn("No router matches given constraints...");
+        LOG.warn("No router matches given constraints!");
         return null;
     }
 

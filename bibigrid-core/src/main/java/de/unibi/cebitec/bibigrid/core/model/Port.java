@@ -68,7 +68,7 @@ public class Port {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Could not parse the supplied ipRange '{}'. Valid ipRange has following " +
+            LOG.error("Could not parse the supplied ipRange: '{}'. A valid ipRange has the following " +
                     "pattern: (current|'ip4v-address'|'ip4v-range/CIDR') {}", ipRange, e.getMessage());
             throw new ConfigurationException(e);
         }

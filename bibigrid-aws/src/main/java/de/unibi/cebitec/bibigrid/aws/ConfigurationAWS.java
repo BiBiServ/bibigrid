@@ -14,7 +14,7 @@ public class ConfigurationAWS extends Configuration {
 
     private double bidPrice;
     private double bidPriceMaster;
-    private boolean publicSlaveIps = false;
+    private boolean publicWorkerIps = false;
     private boolean useSpotInstances = false;
 
     public double getBidPrice() {
@@ -33,12 +33,12 @@ public class ConfigurationAWS extends Configuration {
         this.bidPriceMaster = bidPriceMaster;
     }
 
-    public boolean isPublicSlaveIps() {
-        return publicSlaveIps;
+    public boolean isPublicWorkerIps() {
+        return publicWorkerIps;
     }
 
-    public void setPublicSlaveIps(boolean publicSlaveIps) {
-        this.publicSlaveIps = publicSlaveIps;
+    public void setPublicWorkerIps(boolean publicWorkerIps) {
+        this.publicWorkerIps = publicWorkerIps;
     }
 
     public boolean isUseSpotInstances() {
@@ -48,7 +48,7 @@ public class ConfigurationAWS extends Configuration {
     public void setUseSpotInstances(boolean useSpotInstances) {
         this.useSpotInstances = useSpotInstances;
         if (useSpotInstances) {
-            LOG.info(V, "Use spot request for all");
+            LOG.info(V, "Using spot requests for all instance requests.");
         }
     }
 }

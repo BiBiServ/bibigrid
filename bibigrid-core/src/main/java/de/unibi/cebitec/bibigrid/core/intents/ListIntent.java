@@ -92,7 +92,7 @@ public abstract class ListIntent extends Intent {
             return;
         Cluster cluster = getOrCreateCluster(clusterId);
         loadInstanceConfiguration(instance);
-        // Check whether master or slave instance
+        // Check whether master or worker instance
         String name = instance.getTag(Instance.TAG_NAME);
         if (name == null) {
             name = instance.getName();
@@ -108,7 +108,7 @@ public abstract class ListIntent extends Intent {
                         instance.getName(), clusterId);
             }
         } else {
-            cluster.addSlaveInstance(instance);
+            cluster.addWorkerInstance(instance);
         }
         checkInstanceKeyName(instance, cluster);
         checkInstanceUserTag(instance, cluster);
@@ -146,7 +146,7 @@ public abstract class ListIntent extends Intent {
         }
         String name = instance.getName();
         if (name != null && (name.startsWith(CreateCluster.MASTER_NAME_PREFIX) ||
-                name.startsWith(CreateCluster.SLAVE_NAME_PREFIX))) {
+                name.startsWith(CreateCluster.WORKER_NAME_PREFIX))) {
             return getClusterIdFromName(name);
         }
         return null;
@@ -181,7 +181,7 @@ public abstract class ListIntent extends Intent {
                     (v.getStarted() == null) ? "-" : v.getStarted(),
                     (v.getKeyName() == null ? "-" : v.getKeyName()),
                     (v.getPublicIp() == null ? "-" : v.getPublicIp()),
-                    ((v.getMasterInstance() != null ? 1 : 0) + v.getSlaveInstances().size()),
+                    ((v.getMasterInstance() != null ? 1 : 0) + v.getWorkerInstances().size()),
                     (v.getSecurityGroup() == null ? "-" : cutStringIfNecessary(v.getSecurityGroup())),
                     (v.getSubnet() == null ? "-" : cutStringIfNecessary(v.getSubnet().getId())),
                     (v.getNetwork() == null ? "-" : cutStringIfNecessary(v.getNetwork().getId())));
@@ -220,10 +220,10 @@ public abstract class ListIntent extends Intent {
             display.append("\nmaster-instance:\n");
             addInstanceToDetailString(display, cluster.getMasterInstance());
         }
-        if (cluster.getSlaveInstances() != null) {
-            for (Instance slaveInstance : cluster.getSlaveInstances()) {
-                display.append("\nslave-instance:\n");
-                addInstanceToDetailString(display, slaveInstance);
+        if (cluster.getWorkerInstances() != null) {
+            for (Instance workerInstance : cluster.getWorkerInstances()) {
+                display.append("\nworker-instance:\n");
+                addInstanceToDetailString(display, workerInstance);
             }
         }
         return display.toString();

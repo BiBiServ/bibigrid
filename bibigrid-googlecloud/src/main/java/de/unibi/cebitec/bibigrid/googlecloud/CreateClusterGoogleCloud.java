@@ -57,7 +57,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
 
     @Override
     protected InstanceGoogleCloud launchClusterMasterInstance(String masterNameTag) {
-        LOG.info("Requesting master instance...");
+        LOG.info("Requesting master instance ...");
         final Map<String, String> labels = new HashMap<>();
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, masterNameTag);
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID, clusterId);
@@ -72,7 +72,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                 config.getMasterMounts(), config.getGoogleImageProjectId());
         GoogleCloudUtils.setInstanceSchedulingOptions(masterInstance, config.isUseSpotInstances());
         // Waiting for master instance to run
-        LOG.info("Waiting for master instance to finish booting...");
+        LOG.info("Waiting for master instance to finish booting ...");
         try {
             String zone = config.getAvailabilityZone();
             Operation createMasterOperation = compute.instances()
@@ -94,46 +94,46 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     }
 
     @Override
-    protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchClusterSlaveInstances(
-            int batchIndex, Configuration.SlaveInstanceConfiguration instanceConfiguration, String slaveNameTag) {
+    protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchClusterWorkerInstances(
+            int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
         final int instanceCount = instanceConfiguration.getCount();
         final String zone = config.getAvailabilityZone();
         final Map<String, String> labels = new HashMap<>();
-        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, slaveNameTag);
+        labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME, workerNameTag);
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID, clusterId);
         labels.put(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER, config.getUser().replace(".", "_"));
         // Create instances
-        Instance[] slaveInstanceBuilders = new Instance[instanceCount];
-        Operation[] slaveInstanceOperations = new Operation[instanceCount];
+        Instance[] workerInstanceBuilders = new Instance[instanceCount];
+        Operation[] workerInstanceOperations = new Operation[instanceCount];
         for (int i = 0; i < instanceCount; i++) {
-            String slaveInstanceId = buildSlaveInstanceName(batchIndex, i);
-            Instance slaveBuilder = GoogleCloudUtils.getInstanceBuilder(compute, config, slaveInstanceId,
+            String workerInstanceId = buildWorkerInstanceName(batchIndex, i);
+            Instance workerBuilder = GoogleCloudUtils.getInstanceBuilder(compute, config, workerInstanceId,
                     instanceConfiguration.getProviderType().getValue())
                     .setNetworkInterfaces(Collections.singletonList(buildExternalNetworkInterface()))
                     .setLabels(labels)
                     .setMetadata(buildMetadata(instanceStartupScript));
-            GoogleCloudUtils.attachDisks(compute, slaveBuilder, instanceConfiguration.getImage(), config, null,
+            GoogleCloudUtils.attachDisks(compute, workerBuilder, instanceConfiguration.getImage(), config, null,
                     config.getGoogleImageProjectId());
-            GoogleCloudUtils.setInstanceSchedulingOptions(slaveBuilder, config.isUseSpotInstances());
+            GoogleCloudUtils.setInstanceSchedulingOptions(workerBuilder, config.isUseSpotInstances());
             try {
                 // Start the instance
-                slaveInstanceOperations[i] = compute.instances()
-                        .insert(config.getGoogleProjectId(), zone, slaveBuilder).execute();
-                slaveInstanceBuilders[i] = slaveBuilder;
+                workerInstanceOperations[i] = compute.instances()
+                        .insert(config.getGoogleProjectId(), zone, workerBuilder).execute();
+                workerInstanceBuilders[i] = workerBuilder;
             } catch (Exception e) {
-                LOG.error("Failed to start slave instance. {}", e);
+                LOG.error("Failed to start worker instance. {}", e);
                 return null;
             }
         }
-        LOG.info("Waiting for slave instance(s) to finish booting...");
-        List<Instance> slaveInstances = waitForInstances(slaveInstanceBuilders, slaveInstanceOperations);
-        LOG.info(I, "Slave instance(s) is now running!");
-        waitForInstancesStatusCheck(slaveInstances);
-        return slaveInstances.stream().map(i -> new InstanceGoogleCloud(instanceConfiguration, i)).collect(Collectors.toList());
+        LOG.info("Waiting for worker instance(s) to finish booting ...");
+        List<Instance> workerInstances = waitForInstances(workerInstanceBuilders, workerInstanceOperations);
+        LOG.info(I, "Worker instance(s) is now running!");
+        waitForInstancesStatusCheck(workerInstances);
+        return workerInstances.stream().map(i -> new InstanceGoogleCloud(instanceConfiguration, i)).collect(Collectors.toList());
     }
 
     private void waitForInstancesStatusCheck(List<Instance> instances) {
-        LOG.info("Waiting for Status Checks on instances...");
+        LOG.info("Waiting for status checks on instances ...");
         for (int i = 0; i < instances.size(); i++) {
             Instance instance = instances.get(i);
             do {

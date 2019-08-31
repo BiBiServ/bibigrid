@@ -33,8 +33,9 @@ public class StartUp {
     private static final Logger LOG = LoggerFactory.getLogger(StartUp.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
     private static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation. Instances already running. " +
-            "I will try to shut them down but in case of an error they might remain running. Please check manually " +
+            "Attempting to shut them down but in case of an error they might remain running. Please verify " +
             "afterwards.";
+    private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
 
     private static OptionGroup getCMDLineOptionGroup() {
         OptionGroup intentOptions = new OptionGroup();
@@ -77,13 +78,17 @@ public class StartUp {
         cmdLineOptions.addOption(new Option("h","help",false,"Get some online help"));
         cmdLineOptions.addOption(new Option("v","verbose", false,"More verbose output"));
         cmdLineOptions.addOption(new Option("o","config",true,"Path to JSON configuration file"));
+        cmdLineOptions.addOption(new Option("d","debug",false,"Don't shut down cluster in the case of a configuration error."));
 
-//        Options cmdLineOptions = getRulesToOptions();
         cmdLineOptions.addOptionGroup(intentOptions);
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
             if (cl.hasOption("v")) {
                 VerboseOutputFilter.SHOW_VERBOSE = true;
+
+            }
+            if (cl.hasOption("debug")) {
+                Configuration.DEBUG = true;
             }
             IntentMode intentMode = IntentMode.fromString(intentOptions.getSelected());
             switch (intentMode) {
@@ -205,7 +210,7 @@ public class StartUp {
                     CreateCluster cluster = module.getCreateIntent(client, validator.getConfig());
                     if (runCreateIntent(module, validator, client, cluster, true)) {
                         module.getPrepareIntent(client, validator.getConfig()).prepare(cluster.getMasterInstance(),
-                                cluster.getSlaveInstances());
+                                cluster.getWorkerInstances());
                         module.getTerminateIntent(client, validator.getConfig()).terminate();
                     }
                     break;
@@ -213,12 +218,12 @@ public class StartUp {
                     module.getTerminateIntent(client, validator.getConfig()).terminate();
                     break;
                 case CLOUD9:
-                    LOG.warn("Arg --cloud9 is deprecated. Use --ide instead.");
+                    LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
                 case IDE:
                     new IdeIntent(module, client, validator.getConfig()).start();
                     break;
                 default:
-                    LOG.warn("unknown intent mode");
+                    LOG.warn("Unknown intent mode.");
                     break;
             }
         } else {
@@ -246,16 +251,21 @@ public class StartUp {
                     .createSecurityGroup()
                     .createPlacementGroup()
                     .configureClusterMasterInstance()
-                    .configureClusterSlaveInstance()
+                    .configureClusterWorkerInstance()
                     .launchClusterInstances(prepare);
             if (!success) {
-                LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-                TerminateIntent cleanupIntent = module.getTerminateIntent(client, validator.getConfig());
-                cleanupIntent.terminate();
+                /*  In DEBUG mode keep partial configured cluster running, otherwise clean it up */
+                if (Configuration.DEBUG) {
+                    LOG.error(StartUp.KEEP);
+                } else {
+                    LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
+                    TerminateIntent cleanupIntent = module.getTerminateIntent(client, validator.getConfig());
+                    cleanupIntent.terminate();
+                }
                 return false;
             }
         } catch (ConfigurationException ex) {
-            // print stacktrace only verbose mode, otherwise the message is fine
+            // print stacktrace only in verbose mode, otherwise just the message is fine
             if (VerboseOutputFilter.SHOW_VERBOSE) {
                 LOG.error("Failed to create cluster. {} {}", ex.getMessage(), ex);
             } else {
@@ -281,7 +291,7 @@ public class StartUp {
             } catch (IllegalArgumentException ignored) {
             }
         }
-        LOG.error("No suitable mode found in command line or properties file. Exit");
+        LOG.error("No suitable mode found in command line or properties file. Exiting.");
         return null;
     }
 

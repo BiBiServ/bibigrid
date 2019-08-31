@@ -65,9 +65,9 @@ public abstract class CreateClusterEnvironment {
             }
         }
         if (network.getCidr() != null) {
-            LOG.info(V, "Use network '{}' with name '{}' and CIDR '{}'.", network.getId(), network.getName(), network.getCidr());
+            LOG.info(V, "Using network '{}' with name '{}' and CIDR '{}'.", network.getId(), network.getName(), network.getCidr());
         } else {
-            LOG.info(V, "Use Network '{}' with name '{}'.", network.getId(), network.getName());
+            LOG.info(V, "Using Network '{}' with name '{}'.", network.getId(), network.getName());
         }
         return this;
     }

@@ -31,12 +31,6 @@ A complete schema for a specific **configuration file** can be found on:
 * [Google Compute Configuration File](config/CONFIG_GOOGLE_COMPUTE.md) *
 * [Amazon AWS Configuration File](config/CONFIG_AWS.md) *
 * [Azure Configuration File](config/CONFIG_AZURE.md) *
-
-Provider specific examples representing the minimal required parameters:
-* [OpenStack Examples](examples/EXAMPLES_OPENSTACK.md)  
-* [Google Compute Examples](examples/EXAMPLES_GOOGLECLOUD.md) *
-* [AWS Examples](examples/EXAMPLES_AWS.md) *
-* [Azure Examples](examples/EXAMPLES_AZURE.md) *
   
 **Google Compute, AWS and Azure will currently not be tested.*
 
@@ -63,7 +57,7 @@ masterInstance:
   type: f1-micro
   image: ubuntu-1604-xenial-v20171212
 
-slaveInstances:
+workerInstances:
   - type: f1-micro
     count: 2
     image: ubuntu-1604-xenial-v20171212
@@ -153,7 +147,7 @@ You can include ansible roles from your own machine (compressed as .tar.gz files
 ```
 ansibleRoles:
   - name: string            # Name of role, used only as description in config file
-    hosts: string           # One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    hosts: string           # One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts
     file: string            # path/to/file.tar.gz - File on local machine
     vars:
         key : value         # Environment variables, if default configuration is not the preferred option
@@ -184,7 +178,7 @@ will be the name of the role in your cluster. Now include the following lines in
 ```
 ansibleRoles:
   - name: Example role for test purposes	# Name of role, used only as description in config file
-    hosts: master                   		# One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    hosts: master                   		# One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts
     file: example_role.tar.gz       		# path/to/file.tar.gz - File on local machine
 ```
 You can download an easy working example [here](examples/example.tar.gz).  
@@ -194,7 +188,7 @@ If you want to include roles from Ansible Galaxy, Git or from a Webserver (as .t
 ```
 ansibleGalaxyRoles:
   - name: string            # Name of role, used to redefine role name
-    hosts: string           # One of 'master', 'slaves' or 'all' to roll out ansible roles to specified hosts
+    hosts: string           # One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts
     galaxy: string          # Galaxy name of role like 'author.rolename'
     git: string             # GitHub role repository like 'https://github.com/bennojoy/nginx'
     url: string             # Webserver file url like 'https://some.webserver.example.com/files/master.tar.gzpath/to/file.tar.gz'

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>bibigrid</artifactId>
         <groupId>de.unibi.cebitec.bibigrid</groupId>
-        <version>2.0.6</version>
+        <version>2.0.7</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -21,22 +21,22 @@
                 <dependency>
                     <groupId>de.unibi.cebitec.bibigrid</groupId>
                     <artifactId>bibigrid-openstack</artifactId>
-                    <version>2.0.6</version>
+                    <version>2.0.7</version>
                 </dependency>
                 <dependency>
                     <groupId>de.unibi.cebitec.bibigrid</groupId>
                     <artifactId>bibigrid-aws</artifactId>
-                    <version>2.0.6</version>
+                    <version>2.0.7</version>
                 </dependency>
                 <dependency>
                     <groupId>de.unibi.cebitec.bibigrid</groupId>
                     <artifactId>bibigrid-azure</artifactId>
-                    <version>2.0.6</version>
+                    <version>2.0.7</version>
                 </dependency>
                 <dependency>
                     <groupId>de.unibi.cebitec.bibigrid</groupId>
                     <artifactId>bibigrid-googlecloud</artifactId>
-                    <version>2.0.6</version>
+                    <version>2.0.7</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -47,7 +47,7 @@
                 <dependency>
                     <groupId>de.unibi.cebitec.bibigrid</groupId>
                     <artifactId>bibigrid-openstack</artifactId>
-                    <version>2.0.6</version>
+                    <version>2.0.7</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -58,7 +58,7 @@
                 <dependency>
                     <groupId>de.unibi.cebitec.bibigrid</groupId>
                     <artifactId>bibigrid-aws</artifactId>
-                    <version>2.0.6</version>
+                    <version>2.0.7</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -69,7 +69,7 @@
                 <dependency>
                     <groupId>de.unibi.cebitec.bibigrid</groupId>
                     <artifactId>bibigrid-azure</artifactId>
-                    <version>2.0.6</version>
+                    <version>2.0.7</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -80,7 +80,7 @@
                 <dependency>
                     <groupId>de.unibi.cebitec.bibigrid</groupId>
                     <artifactId>bibigrid-googlecloud</artifactId>
-                    <version>2.0.6</version>
+                    <version>2.0.7</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -91,7 +91,7 @@
         <dependency>
             <groupId>de.unibi.cebitec.bibigrid</groupId>
             <artifactId>bibigrid-core</artifactId>
-            <version>2.0.6</version>
+            <version>2.0.7</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>

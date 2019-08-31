@@ -1,3 +1,22 @@
+## Version 2.0.7 < 2.0.6 (08/31/2019)
+
+### Features
+- add full support for Debian Stretch (9) and Debian Buster (10) (#85)
+- make Slurm workers return to service automatically after reboot (#168)
+- add support for local DNS lookup (#170)
+
+### Fixes
+- source code documentation & clean up (#151)
+- fixed line ending replacement command corrupts custom ansible role .tar.gz files (#151)
+- documentation (#141)
+- more helpful error message in case of unsupported configuration properties (#141)
+- update naming scheme for worker nodes -> replace slave[s] with worker (#155)
+- upgrade 3rd party lib dependencies
+- improve error handling (#154) - rewrite/restructure CreateCluster functionality
+- bind mount ephemeral disks to prevent filesystem corruption after reboot (#160)
+- Openstack : display message in case of auth failure (#165)
+- Slurm : respect useMasterAsCompute setting (#167)
+- improve wording of printed messages (#169)
 
 ## Version 2.0.6 < 2.0.5 (08/07/2019)
 

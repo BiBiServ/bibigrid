@@ -9,13 +9,15 @@ The parameters you might have to add outside the config YAML are explained in th
 
 | Long parameter | Short parameter | Values           | Description                        |
 |----------------|-----------------|------------------|------------------------------------|
-| check          | ch              | -                | validate cluster setup             |
-| cloud9         | c9              | cluster-id       | establish a secured connection to running grid running cloud9 |
-| create         | c               | -                | create cluster environment         |
-| config         | o               | path/to/config   | YAML configuration file            |
 | help           | h               | -                | Display help message               |
-| list           | l               | -                | lists all started clusters         |
-| prepare        | p               | -                | prepares cluster setup             |
-| terminate      | t               | cluster-id       | terminate cluster                  |
-| verbose        | v               | -                | increases logging level during setup |
 | version        | V               | -                | Check version                      |
+| list           | l               | -                | Lists all started clusters         |
+| verbose        | v               | -                | Increases logging level during setup |
+| check          | ch              | -                | Validate cluster setup             |
+| prepare        | p               | -                | Prepares cluster setup             |
+| debug          | d               | -                | Prevent BiBiGrid to shutdown a failed cluster setup |
+| create         | c               | -                | Create cluster environment         |
+| config         | o               | path/to/config   | YAML configuration file            |
+| cloud9         | c9              | cluster-id       | Establish a secured connection to running grid running cloud9 [deprecated] |
+| ide            | ide             | cluster-id       | Establish a secured connection to specified ide |
+| terminate      | t               | cluster-id       | Terminate cluster                  |
