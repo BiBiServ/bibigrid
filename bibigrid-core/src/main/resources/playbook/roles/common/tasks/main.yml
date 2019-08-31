@@ -12,6 +12,13 @@
   tags: ["pkg","common-pkg"]
   when: "ansible_distribution_file_variety == 'RedHat'"
 
+- block:
+    - debug:
+        msg: "[BIBIGRID] Add all hosts (IP/NAME) to /etc/hosts for local DNS lockup."
+    - include: 004-hosts.yml
+  tags: ['hosts','common-hosts']
+  when:
+    - local_dns_lookup == 'yes'
 
 - block:
     - debug:
@@ -29,8 +36,6 @@
   tags: ["zabbix","common-zabbix"]
   when:
     - enable_zabbix == 'yes'
-
-
 
 - debug:
     msg: "[BIBIGRID] Generate directory structure available on all hosts"

@@ -40,6 +40,7 @@ public abstract class Configuration {
     private List<WorkerInstanceConfiguration> workerInstances = new ArrayList<>();
     private boolean oge;
     private boolean slurm;
+    private boolean localDNSLookup;
     private String mungeKey;
     private boolean nfs = true;
     private boolean cloud9;
@@ -426,6 +427,14 @@ public abstract class Configuration {
         }
         this.workspace = workspace;
         LOG.info(V, "Workspace set: {}", workspace);
+    }
+
+    public boolean isLocalDNSLookup() {
+        return localDNSLookup;
+    }
+
+    public void setLocalDNSLookup(boolean localDNSLookup) {
+        this.localDNSLookup = localDNSLookup;
     }
 
     public boolean isSlurm() {

@@ -172,6 +172,7 @@ public final class AnsibleConfig {
         }
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
+        addBooleanOption(map, "local_dns_lookup", config.isLocalDNSLookup());
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "enable_slurm",config.isSlurm());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());

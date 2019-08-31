@@ -1,0 +1,10 @@
+- name: Update the /etc/hosts file with master/worker informations
+  lineinfile:
+    path: "/etc/hosts"
+    regexp: "{{ item.ip }}\t{{ item.hostname }}"
+    line: "{{ item.ip }}\t{{ item.hostname }}"
+    state: present
+    backup: yes
+  with_items:
+    - "{{ master }}"
+    - "{{ workers }}"
