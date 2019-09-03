@@ -1,84 +1,84 @@
 {
-	"info": {
-		"_postman_id": "d89301e7-4e65-482d-9fd2-0cf5e1df1f52",
-		"name": "BA",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": " https://localhost:8443/bibigrid/list",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"clusterConfiguration\": {\n    \"mode\": \"openstack\",\n    \"subnet\": \"internalsub\",\n    \"masterInstance\": {\n      \"type\": \"de.NBI.small+ephemeral\",\n      \"image\": \"Ubuntu 16.04 LTS (2019-05-08)\"\n    },\n    \"slaveInstances\": {\n      \"type\": \"de.NBI.small\",\n      \"image\": \"Ubuntu 16.04 LTS (2019-05-08)\",\n      \"count\": 1\n    },\n    \"masterMounts\": {\n      \"source\": \"a6042a6f-9232-4f26-948b-a487dd5e8cd8\",\n      \"target\": \"/vol/xxx\"\n    },\n    \"nfsShares\": \"/vol/xxx\",\n    \"theia\": \"yes\"\n  },\n  \"access\": {\n    \"credentialsFile\": \"encoded bibiserv.yml\",\n    \"sshPrivateKeyFile\": \"encoded key\",\n    \"sshPublicKeyFile\": \"encoded key.pub\",\n    \"sshUser\": \"ubuntu\",\n    \"keypair\": \"mmustermann-key\",\n    \"region\": \"Bielefeld\",\n    \"availabilityZone\": \"default\"\n  }\n}"
-				},
-				"url": {
-					"raw": "https://localhost:8443/bibigrid/create",
-					"protocol": "https",
-					"host": [
-						"localhost"
-					],
-					"port": "8443",
-					"path": [
-						"bibigrid",
-						"create"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "NEW https://localhost:8443/bibigrid/list",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					},
-					{
-						"key": "",
-						"value": "",
-						"type": "text",
-						"disabled": true
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \n    \"credentialsFile\": \"encoded bibiserv.yml\",\n    \"sshPrivateKeyFile\": \"encoded key\",\n    \"sshPublicKeyFile\": \"encoded key.pub\",\n    \"sshUser\": \"ubuntu\",\n    \"keypair\": \"mmustermann-key\",\n    \"region\": \"Bielefeld\",\n    \"availabilityZone\": \"default\"\n  \n}"
-				},
-				"url": {
-					"raw": "https://localhost:8443/bibigrid/info/1",
-					"protocol": "https",
-					"host": [
-						"localhost"
-					],
-					"port": "8443",
-					"path": [
-						"bibigrid",
-						"info",
-						"1"
-					]
-				}
-			},
-			"response": []
-		}
-	]
+  "info": {
+    "_postman_id": "d89301e7-4e65-482d-9fd2-0cf5e1df1f52",
+    "name": "BA",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "https://localhost:8443/bibigrid/info/1",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"mode\": \"openstack\",\n  \"subnet\": \"internalsub\",\n  \"credentialsFile\": \"YWJjCg==\",\n  \"sshPrivateKeyFile\": \"YWJjCg==\",\n  \"sshPublicKeyFile\": \"YWJjCg==\",\n  \"sshUser\": \"ubuntu\",\n  \"keypair\": \"mmustermann-key\",\n  \"region\": \"Bielefeld\",\n  \"availabilityZone\": \"default\",\n  \"masterInstance\": {\n    \"type\": \"de.NBI.small+ephemeral\",\n    \"image\": \"Ubuntu 16.04 LTS (2019-05-08)\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/validate",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "validate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "NEW https://localhost:8443/bibigrid/list",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "",
+            "value": "",
+            "type": "text",
+            "disabled": true
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n    \"credentialsFile\": \"encoded bibiserv.yml\",\n    \"sshPrivateKeyFile\": \"encoded key\",\n    \"sshPublicKeyFile\": \"encoded key.pub\",\n    \"sshUser\": \"ubuntu\",\n    \"keypair\": \"mmustermann-key\",\n    \"region\": \"Bielefeld\",\n    \"availabilityZone\": \"default\"\n  \n}"
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/info/1",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "info",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
 }
