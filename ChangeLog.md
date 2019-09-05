@@ -1,3 +1,11 @@
+## Version 2.0.8 < 2.0.7 (not yet released)
+
+### Features
+- show cleanup reminder if user hits ctrl+c during setup (#172)
+
+### Fixes
+- cluster list: optimize column widths and ellipsize usernames (#173)
+
 ## Version 2.0.7 < 2.0.6 (08/31/2019)
 
 ### Features
