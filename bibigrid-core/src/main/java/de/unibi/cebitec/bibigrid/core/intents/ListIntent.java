@@ -169,24 +169,43 @@ public abstract class ListIntent extends Intent {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
-        formatter.format("%15s | %10s | %19s | %15s | %15s | %7s | %15s | %11s | %11s%n",
+        String lineFormat = "%16s | %13s | %19s | %14s | %15s | %7s | %13s | %11s | %11s%n";
+        formatter.format(lineFormat,
                 "cluster-id", "user", "launch date", "key name", "public-ip", "# inst", "group-id", "subnet-id",
                 "network-id");
-        display.append(new String(new char[142]).replace('\0', '-')).append("\n");
+        display.append(new String(new char[143]).replace('\0', '-')).append("\n");
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             Cluster v = entry.getValue();
-            formatter.format("%15s | %10s | %19s | %15s | %15s | %7d | %15s | %11s | %11s%n",
+            formatter.format(lineFormat,
                     entry.getKey(),
-                    (v.getUser() == null) ? "-" : v.getUser(),
+                    (v.getUser() == null) ? "-" : ellipsize(v.getUser(), 13),
                     (v.getStarted() == null) ? "-" : v.getStarted(),
-                    (v.getKeyName() == null ? "-" : v.getKeyName()),
+                    (v.getKeyName() == null ? "-" : ellipsize(v.getKeyName(), 14)),
                     (v.getPublicIp() == null ? "-" : v.getPublicIp()),
                     ((v.getMasterInstance() != null ? 1 : 0) + v.getWorkerInstances().size()),
-                    (v.getSecurityGroup() == null ? "-" : cutStringIfNecessary(v.getSecurityGroup())),
-                    (v.getSubnet() == null ? "-" : cutStringIfNecessary(v.getSubnet().getId())),
-                    (v.getNetwork() == null ? "-" : cutStringIfNecessary(v.getNetwork().getId())));
+                    (v.getSecurityGroup() == null ? "-" : ellipsize(v.getSecurityGroup(), 13)),
+                    (v.getSubnet() == null ? "-" : ellipsize(v.getSubnet().getId(), 11)),
+                    (v.getNetwork() == null ? "-" : ellipsize(v.getNetwork().getId(), 11)));
         }
         return display.toString();
+    }
+
+    /**
+     * Shorten a string to fit a maximum length and possibly add an ellipse at the end.
+     *
+     * @param s      string to shorten
+     * @param maxLen maximum length for the string to fit into
+     * @return shortened string
+     */
+    private String ellipsize(String s, int maxLen) {
+        if (s == null) {
+            return null;
+        }
+        if (s.length() > maxLen) {
+            return s.substring(0, maxLen - 1).concat("…");
+        } else {
+            return s;
+        }
     }
 
     public final String toDetailString(String clusterId) {
@@ -242,9 +261,5 @@ public abstract class ListIntent extends Intent {
             display.append("  image: ").append(instanceConfig.getImage()).append("\n");
         }
         display.append("  launch-date: ").append(instance.getCreationTimestamp().format(dateTimeFormatter)).append("\n");
-    }
-
-    private String cutStringIfNecessary(String s) {
-        return s.length() > 11 ? s.substring(0, 9) + ".." : s;
     }
 }
