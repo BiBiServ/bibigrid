@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ import java.util.*;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
+@JsonDeserialize(as = Tomate.class)
 public abstract class Configuration {
     /* DEBUG mode */
     public static boolean DEBUG = false;
