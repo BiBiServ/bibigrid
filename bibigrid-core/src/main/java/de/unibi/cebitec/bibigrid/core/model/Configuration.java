@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+
 import de.unibi.cebitec.bibigrid.core.intents.IdeIntent;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
