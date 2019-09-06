@@ -5,7 +5,12 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import java.util.List;
 import java.util.Properties;
 
-public class Tomate extends Configuration{
+/**
+ * Concrete implementation of Configuration class.
+ * Serves as custom deserializer to automatically be able to map a json body to the abstract Configuration class.
+ * Working example can be found in the bibigrid-light-rest-4j controllers.
+ */
+public class ConcreteConfiguration extends Configuration{
 
         @Override
         public int getWorkerInstanceCount() {
@@ -248,7 +253,7 @@ public class Tomate extends Configuration{
     }
 
 
-    public Tomate(){};
+    public ConcreteConfiguration(){};
 
 
 }
