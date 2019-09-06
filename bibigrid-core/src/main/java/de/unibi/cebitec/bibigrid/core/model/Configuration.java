@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -15,7 +14,7 @@ import java.util.*;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
-@JsonDeserialize(as = Tomate.class)
+@JsonDeserialize(as = ConcreteConfiguration.class)
 public abstract class Configuration {
     /* DEBUG mode */
     public static boolean DEBUG = false;
