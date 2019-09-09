@@ -63,8 +63,11 @@ public abstract class CreateCluster extends Intent {
         );
     }
 
+    /**
+     * Generates a cut down base64 encoded version of a random UUID.
+     * @return cluster id
+     */
     static String generateClusterId() {
-        // Cluster ID is a cut down base64 encoded version of a random UUID:
         UUID clusterIdUUID = UUID.randomUUID();
         ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
         bb.putLong(clusterIdUUID.getMostSignificantBits());
@@ -189,21 +192,29 @@ public abstract class CreateCluster extends Intent {
 
     /**
      * @TODO TD #117 manual scale, 07-19
-     * @return
+     * @return true, if worker instance created successfully
      */
     public boolean createWorkerInstance() {
         return true;
     }
 
     /**
+     * Removes worker instance from cluster.
+     * @return true, if worker instance removed successfully
+     */
+    public boolean removeWorkerInstance() {return true; }
+
+    /**
      * Start the configured cluster master instance.
      *
      * @param masterNameTag The generated name tag for the master instance.
+     * @return master Instance
      */
     protected abstract Instance launchClusterMasterInstance(String masterNameTag);
 
     /**
      * Start the batch of cluster worker instances.
+     * @return List of slave Instances
      */
     protected abstract List<Instance> launchClusterWorkerInstances(
             int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
