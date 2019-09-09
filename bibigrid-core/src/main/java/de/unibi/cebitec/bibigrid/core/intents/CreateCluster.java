@@ -555,8 +555,6 @@ public abstract class CreateCluster extends Intent {
         return pathway[pathway.length - 1];
     }
 
-
-
     /**
      * Installs and executes ansible roles on remote.
      *
@@ -572,6 +570,7 @@ public abstract class CreateCluster extends Intent {
 
         String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare, config);
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
+
         /*
            The fct have to watch and parse the stdout and stderr stream at the same time. Since BufferReader.readline()
            blocks, the only solution I found is to work with separate threads for stdout and stderror of the ssh channel.
@@ -579,8 +578,6 @@ public abstract class CreateCluster extends Intent {
            The following code snipset seems to be more complicated than it should be (in other languages).
             If you find a better solution feel free to replace it.
          */
-
-
         // "Runnable" for stdout
         LineReaderRunnable stdout = new LineReaderRunnable(new BufferedReader(new InputStreamReader(channel.getInputStream()))) {
             @Override
