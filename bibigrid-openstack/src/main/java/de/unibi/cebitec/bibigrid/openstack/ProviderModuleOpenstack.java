@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ * @author mfriedrichs(at)techfak.uni-bielefeld.de, jkrueger(a)cebitec.uni-bielefeld.de
  */
 @SuppressWarnings("unused")
 public class ProviderModuleOpenstack extends ProviderModule {
@@ -24,12 +24,16 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    public Validator getCommandLineValidator(final CommandLine commandLine,
-                                             final ConfigurationFile configurationFile,
-                                             final IntentMode intentMode)
-            throws ConfigurationException {
-        return new ValidatorOpenstack(commandLine, configurationFile, intentMode, this);
+    public Class<? extends Configuration> getConfigurationClass() {
+        return ConfigurationOpenstack.class;
     }
+
+    @Override
+    public Validator getValidator(Configuration config, ProviderModule module) throws ConfigurationException {
+        return new ValidatorOpenstack(config, module);
+    }
+
+
 
     @Override
     public Client getClient(Configuration config) throws ClientConnectionFailedException {

@@ -12,8 +12,6 @@ import java.util.*;
 
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
-import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
-import org.apache.commons.cli.CommandLine;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -26,25 +24,17 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class Validator {
     protected static final Logger LOG = LoggerFactory.getLogger(Validator.class);
-    protected final CommandLine cl;
+
     protected final List<String> req;
-    protected final ConfigurationFile configurationFile;
-    protected final IntentMode intentMode;
+
     private final ProviderModule providerModule;
-    protected final Configuration config;
+    protected Configuration config;
     private Configuration.WorkerInstanceConfiguration commandLineWorkerInstance;
 
-    public Validator(final CommandLine cl, final ConfigurationFile configurationFile,
-                     final IntentMode intentMode, final ProviderModule providerModule)
+    public Validator(final Configuration config, final ProviderModule providerModule)
             throws ConfigurationException {
-        this.cl = cl;
-        this.configurationFile = configurationFile;
-        this.intentMode = intentMode;
+        this.config = config;
         this.providerModule = providerModule;
-        config = configurationFile.loadConfiguration(getProviderConfigurationClass());
-        if (config != null && configurationFile.isAlternativeFilepath()) {
-            config.setAlternativeConfigPath(configurationFile.getPropertiesFilePath().toString());
-        }
         req = getRequiredOptions();
     }
 
@@ -54,40 +44,6 @@ public abstract class Validator {
      */
     protected abstract Class<? extends Configuration> getProviderConfigurationClass();
 
-    protected final boolean checkRequiredParameter(String shortParam, String value) {
-        if (req.contains(shortParam) && isStringNullOrEmpty(value)) {
-            LOG.error("-" + shortParam + " option is required!");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Validates correct terminate (cluster-id) cmdline input.
-     * @return true, if terminate parameter set correctly
-     */
-    private boolean parseTerminateParameter() {
-        if (req.contains(IntentMode.TERMINATE.getShortParam())) {
-            config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
-        }
-        return true;
-    }
-
-    /**
-     * Validates correct cloud9 / ide (cluster-id) cmdline input.
-     * @return true, if ide parameter set correctly
-     */
-    private boolean parseIdeParameter() {
-        if (req.contains(IntentMode.CLOUD9.getShortParam())) {
-            config.setClusterIds(cl.getOptionValue(IntentMode.CLOUD9.getShortParam()).trim());
-
-        }
-        if (req.contains(IntentMode.IDE.getShortParam())) {
-            config.setClusterIds(cl.getOptionValue(IntentMode.IDE.getShortParam()).trim());
-
-        }
-        return true;
-    }
 
     /**
      * Checks, whether a private / public keys File is readable.
@@ -263,22 +219,10 @@ public abstract class Validator {
 
     /**
      * Checks, if providerModule exists and requirements fulfilled.
-     * @param mode ProviderMode
      * @return true, if requirements fulfilled
      */
-    public boolean validate(String mode) {
-        config.setMode(mode);
-        if (providerModule == null) {
-            LOG.error("No provider module for mode '" + mode + "' found. ");
-            return false;
-        }
-        if (req == null) {
-            LOG.info("No requirements defined ...");
-            return true;
-        }
-        return parseTerminateParameter() &&
-                parseIdeParameter() &&
-                validateSSHKeyFiles() &&
+    public boolean validate() {
+        return validateSSHKeyFiles() &&
                 validateAnsibleRequirements() &&
                 validateProviderParameters();
     }
@@ -319,7 +263,4 @@ public abstract class Validator {
         return v;
     }
 
-    public Configuration getConfig() {
-        return config;
-    }
 }

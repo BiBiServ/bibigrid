@@ -4,9 +4,17 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -16,12 +24,50 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 @SuppressWarnings({"WeakerAccess", "unused"})
 @JsonDeserialize(as = ConcreteConfiguration.class)
 public abstract class Configuration {
-    /* DEBUG mode */
+    /* public const */
     public static boolean DEBUG = false;
-    /* Const */
-
+    /* protected const */
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
+
+    /* private const */
     private static final String DEFAULT_WORKSPACE = "$HOME";
+    private static final String DEFAULT_DIRNAME = System.getProperty("user.home");
+    private static final String DEFAULT_FILENAME = ".bibigrid.yml";
+    private static final String PROPERTIES_FILEPATH_PARAMETER = "o";
+
+    public static Configuration loadConfiguration(Class<? extends Configuration> configurationClass, String path) throws ConfigurationException{
+        Path propertiesFilePath = null;
+
+        Path defaultPropertiesFilePath = Paths.get(DEFAULT_DIRNAME, DEFAULT_FILENAME);
+        if (path != null)  {
+            Path newPath = Paths.get(path);
+            if (Files.isReadable(newPath)) {
+                propertiesFilePath = newPath;
+                LOG.info("Using alternative config file: '{}'.", propertiesFilePath.toString());
+            } else {
+                LOG.error("Alternative config ({}) file is not readable. Falling back to default: '{}'", newPath.toString(), defaultPropertiesFilePath.toString());
+            }
+        }
+        if (propertiesFilePath == null) {
+            propertiesFilePath = defaultPropertiesFilePath;
+        }
+
+        try {
+            return new Yaml().loadAs(new FileInputStream(propertiesFilePath.toFile()), configurationClass);
+        } catch (FileNotFoundException e) {
+            if (DEBUG) {
+                e.printStackTrace();
+            }
+            throw new ConfigurationException("Failed to load properties file.", e);
+        } catch (YAMLException e) {
+            throw new ConfigurationException("Failed to parse configuration file. "+e.getMessage(), e);
+        }
+
+    }
+
+
+    /* properties */
+
     private String mode;
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
@@ -60,7 +106,7 @@ public abstract class Configuration {
 
     private String network;
     private String subnet;
-    private String[] clusterIds;
+    private String[] clusterIds = new String [0];
     private String workspace = DEFAULT_WORKSPACE;
 
     public int getWorkerInstanceCount() {
