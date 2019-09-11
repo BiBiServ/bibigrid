@@ -22,11 +22,13 @@ public class ProviderModuleAWS extends ProviderModule {
     }
 
     @Override
-    public Validator getCommandLineValidator(final CommandLine commandLine,
-                                             final ConfigurationFile configurationFile,
-                                             final IntentMode intentMode)
-            throws ConfigurationException {
-        return new ValidatorAWS(commandLine, configurationFile, intentMode, this);
+    public Class<? extends Configuration> getConfigurationClass() {
+        return ConfigurationAWS.class;
+    }
+
+    @Override
+    public Validator getValidator(Configuration config, ProviderModule module) throws ConfigurationException {
+        return new ValidatorAWS(config,module);
     }
 
     @Override
