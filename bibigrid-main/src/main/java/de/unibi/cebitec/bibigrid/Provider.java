@@ -46,7 +46,7 @@ public final class Provider {
         return providers.keySet().toArray(providerNames);
     }
 
-    public boolean hasProvider(String providerName) {
+    public boolean hasProvider(String providerName){
         return providers.containsKey(providerName);
     }
 

@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.Validator;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.IntentMode;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
@@ -25,10 +26,9 @@ import java.util.List;
 public final class ValidatorOpenstack extends Validator {
     private final ConfigurationOpenstack openstackConfig;
 
-    ValidatorOpenstack(final CommandLine cl, final ConfigurationFile configurationFile,
-                       final IntentMode intentMode, final ProviderModule providerModule)
+    ValidatorOpenstack(final Configuration config, final ProviderModule providerModule)
             throws ConfigurationException {
-        super(cl, configurationFile, intentMode, providerModule);
+        super( config, providerModule);
         openstackConfig = (ConfigurationOpenstack) config;
     }
 
@@ -39,28 +39,7 @@ public final class ValidatorOpenstack extends Validator {
 
     @Override
     protected List<String> getRequiredOptions() {
-        List<String> options = new ArrayList<>();
-
-        switch (intentMode) {
-            case LIST:
-            case HELP:
-            case PREPARE:
-            case VALIDATE:
-            case CREATE:
-                break;
-            case TERMINATE:
-                options.add(IntentMode.TERMINATE.getShortParam());
-                break;
-            case IDE:
-                options.add(IntentMode.IDE.getShortParam());
-                break;
-            case CLOUD9:
-                options.add(IntentMode.CLOUD9.getShortParam());
-                break;
-            default:
-                return null;
-        }
-        return options;
+        return null;
     }
 
     @Override
