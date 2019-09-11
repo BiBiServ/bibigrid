@@ -13,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Openstack specific implementation for a validator
@@ -44,38 +45,14 @@ public final class ValidatorOpenstack extends Validator {
     }
 
     private boolean loadAndparseCredentialParameters() {
+
+        OpenStackCredentials openStackCredentials = null;
+
+        // if credentials is given, read it ...
         if (config.getCredentialsFile() != null) {
             try {
                 File credentialsFile = Paths.get(config.getCredentialsFile()).toFile();
-                openstackConfig.setOpenstackCredentials(
-                        new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class));
-                OpenStackCredentials openStackCredentials = openstackConfig.getOpenstackCredentials();
-                if (openStackCredentials.getDomain() == null) {
-                    LOG.error("Credentials file: Missing 'domain' parameter!");
-                    return false;
-                }
-                if (openStackCredentials.getTenantDomain() == null) {
-                    LOG.error("Credentials file: Missing 'tenantDomain' parameter!");
-                    return false;
-                }
-                if (openStackCredentials.getTenantName() == null) {
-                    LOG.error("Credentials file: Missing 'tenantName' parameter!");
-                    return false;
-                }
-                if (openStackCredentials.getEndpoint() == null) {
-                    LOG.error("Credentials file: Missing 'endpoint' parameter!");
-                    return false;
-                }
-                if (openStackCredentials.getUsername() == null) {
-                    LOG.error("Credentials file: Missing 'username' parameter!");
-                    return false;
-                }
-                if (openStackCredentials.getPassword() == null) {
-                    LOG.error("Credentials file: Missing 'password' parameter!");
-                    return false;
-                }
-                return true;
-
+                openStackCredentials =  new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class);
 
             } catch (FileNotFoundException e) {
                 LOG.error("Failed to locate openstack credentials file.", e);
@@ -84,9 +61,66 @@ public final class ValidatorOpenstack extends Validator {
                         e.getCause() != null ? e.getCause().getMessage() : e);
             }
         } else {
-            LOG.error("Option 'credentialsFile' not set!");
+            // ... otherwise try to extract necessary informations from environment
+            openStackCredentials = new OpenStackCredentials();
+
+            Map env =  System.getenv();
+
+            if (env.containsKey("OS_PROJECT_NAME")){
+                openStackCredentials.setProjectName((String)env.get("OS_PROJECT_NAME"));
+            }
+            if (env.containsKey("OS_USER_DOMAIN_NAME")){
+                openStackCredentials.setDomain((String)env.get("OS_USER_DOMAIN_NAME"));
+            }
+            if (env.containsKey("OS_PROJECT_DOMAIN_NAME")){
+                openStackCredentials.setProjectDomain((String)env.get("OS_PROJECT_DOMAIN_NAME"));
+            }
+
+            if (env.containsKey("OS_AUTH_URL")){
+                openStackCredentials.setEndpoint((String)env.get("OS_AUTH_URL"));
+            }
+            if (env.containsKey("OS_PASSWORD")){
+                openStackCredentials.setPassword((String)env.get("OS_PASSWORD"));
+            }
+            if (env.containsKey("OS_USERNAME")){
+                openStackCredentials.setUsername((String)env.get("OS_USERNAME"));
+            }
         }
-        return false;
+
+        if (openStackCredentials == null) {
+            LOG.error("Openstack credentials missing (file or environment).");
+            return false;
+        }
+
+        if (openStackCredentials.getDomain() == null) {
+            LOG.error("Openstack credentials : Missing 'domain' parameter!");
+            return false;
+        }
+        if (openStackCredentials.getProjectDomain() == null) {
+            LOG.error("Openstack credentials : Missing 'projectDomain' parameter!");
+            return false;
+        }
+        if (openStackCredentials.getProjectName() == null) {
+            LOG.error("Openstack credentials : Missing 'projectName' parameter!");
+            return false;
+        }
+        if (openStackCredentials.getEndpoint() == null) {
+            LOG.error("Openstack credentials : Missing 'endpoint' parameter!");
+            return false;
+        }
+        if (openStackCredentials.getUsername() == null) {
+            LOG.error("Openstack credentials : Missing 'username' parameter!");
+            return false;
+        }
+        if (openStackCredentials.getPassword() == null) {
+            LOG.error("Openstack credentials : Missing 'password' parameter!");
+            return false;
+        }
+
+        openstackConfig.setOpenstackCredentials(openStackCredentials);
+
+        return true;
+
     }
 
 }
