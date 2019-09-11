@@ -2,10 +2,7 @@ package de.unibi.cebitec.bibigrid.core;
 
 import de.unibi.cebitec.bibigrid.core.model.*;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
@@ -88,6 +85,33 @@ public abstract class Validator {
         if (req.contains(IntentMode.IDE.getShortParam())) {
             config.setClusterIds(cl.getOptionValue(IntentMode.IDE.getShortParam()).trim());
 
+        }
+        return true;
+    }
+
+    /**
+     * Checks, whether a private / public keys File is readable.
+     * @return true, if file is valid
+     */
+    private boolean validateSSHKeyFiles() {
+        Path privateKeyFile = Paths.get(config.getSshPrivateKeyFile());
+        Path publicKeyFile = Paths.get(config.getSshPublicKeyFile());
+
+        if (!Files.exists(privateKeyFile)) {
+            LOG.error("Not a valid sshPrivateKeyFile {}.", privateKeyFile.toString());
+            return false;
+        }
+        if (!Files.isReadable(privateKeyFile)) {
+            LOG.error("The sshPrivateKeyFile {} is not readable.", privateKeyFile.toString());
+            return false;
+        }
+        if (!Files.exists(publicKeyFile)) {
+            LOG.error("Not a valid sshPublicKeyFile {}.", publicKeyFile.toString());
+            return false;
+        }
+        if (!Files.isReadable(publicKeyFile)) {
+            LOG.error("The sshPublicKeyFile {} is not readable.", publicKeyFile.toString());
+            return false;
         }
         return true;
     }
@@ -252,7 +276,11 @@ public abstract class Validator {
             LOG.info("No requirements defined ...");
             return true;
         }
-        return parseTerminateParameter() && parseIdeParameter() && validateAnsibleRequirements() && validateProviderParameters();
+        return parseTerminateParameter() &&
+                parseIdeParameter() &&
+                validateSSHKeyFiles() &&
+                validateAnsibleRequirements() &&
+                validateProviderParameters();
     }
 
     protected abstract List<String> getRequiredOptions();
