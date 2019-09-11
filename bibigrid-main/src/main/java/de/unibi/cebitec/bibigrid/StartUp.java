@@ -319,6 +319,7 @@ public class StartUp {
         }
         return true;
     }
+
     /**
      * Displays table of different machines (name, cores, ram, disk space, swap, ephemerals.
      *
