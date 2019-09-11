@@ -24,12 +24,15 @@ public class ProviderModuleAzure extends ProviderModule {
     }
 
     @Override
-    public Validator getCommandLineValidator(final CommandLine commandLine,
-                                             final ConfigurationFile configurationFile,
-                                             final IntentMode intentMode)
-            throws ConfigurationException {
-        return new ValidatorAzure(commandLine, configurationFile, intentMode, this);
+    public Class<? extends Configuration> getConfigurationClass() {
+        return ConfigurationAzure.class;
     }
+
+    @Override
+    public Validator getValidator(Configuration config, ProviderModule module) throws ConfigurationException {
+        return new ValidatorAzure(config,module);
+    }
+
 
     @Override
     public Client getClient(Configuration config) throws ClientConnectionFailedException {

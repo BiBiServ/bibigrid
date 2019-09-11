@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 /**
- * Openstack specfic implementation for a CommandValidatorOpenstack
+ * Openstack specific implementation for a validator
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de, t.dilger(at)uni-bielefeld.de, jkrueger(at)cebitec.uni-bielefeld.de
  */
