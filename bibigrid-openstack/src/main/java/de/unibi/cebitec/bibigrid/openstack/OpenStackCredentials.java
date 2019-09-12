@@ -1,10 +1,17 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.Validator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de, jkrueger(at)cebitec.uni-bielefeld.de
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public final class OpenStackCredentials {
+
+    protected static final Logger LOG = LoggerFactory.getLogger(OpenStackCredentials.class);
+
     public OpenStackCredentials() {
     }
 
@@ -31,11 +38,14 @@ public final class OpenStackCredentials {
         this.password = password != null ? password.trim() : null;
     }
 
+    @Deprecated
     public String getTenantName() {
         return projectName;
     }
 
+    @Deprecated
     public void setTenantName(String tenantName) {
+        LOG.warn("Properties \"tenantName\" is deprecated, use \"projectName\" instead.");
         this.projectName = tenantName != null ? tenantName.trim() : null;
     }
 
@@ -55,11 +65,14 @@ public final class OpenStackCredentials {
         this.domain = domain != null ? domain.trim() : null;
     }
 
+    @Deprecated
     public String getTenantDomain() {
         return projectDomain == null ? domain : projectDomain;
     }
 
+    @Deprecated
     public void setTenantDomain(String tenantDomain) {
+        LOG.warn("Properties \"tenantDomain\" is deprecated, use \"projectDomain\" instead.");
         this.projectDomain = tenantDomain != null ? tenantDomain.trim() : null;
     }
 
@@ -72,7 +85,7 @@ public final class OpenStackCredentials {
     }
 
     public String getProjectDomain() {
-        return projectDomain;
+        return projectDomain == null ? domain : projectDomain;
     }
 
     public void setProjectDomain(String projectDomain) {

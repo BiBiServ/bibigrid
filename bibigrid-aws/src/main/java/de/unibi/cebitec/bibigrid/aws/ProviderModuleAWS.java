@@ -5,8 +5,6 @@ import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
-import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
-import org.apache.commons.cli.CommandLine;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,11 +20,13 @@ public class ProviderModuleAWS extends ProviderModule {
     }
 
     @Override
-    public Validator getCommandLineValidator(final CommandLine commandLine,
-                                             final ConfigurationFile configurationFile,
-                                             final IntentMode intentMode)
-            throws ConfigurationException {
-        return new ValidatorAWS(commandLine, configurationFile, intentMode, this);
+    public Class<? extends Configuration> getConfigurationClass() {
+        return ConfigurationAWS.class;
+    }
+
+    @Override
+    public Validator getValidator(Configuration config, ProviderModule module) throws ConfigurationException {
+        return new ValidatorAWS(config,module);
     }
 
     @Override

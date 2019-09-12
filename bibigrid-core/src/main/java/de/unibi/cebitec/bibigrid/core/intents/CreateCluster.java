@@ -44,6 +44,8 @@ public abstract class CreateCluster extends Intent {
     private List<Instance> workerInstances;
     protected DeviceMapper masterDeviceMapper;
 
+    private Thread interruptionMessageHook;
+
     protected CreateCluster(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
         this.client = client;
@@ -51,6 +53,10 @@ public abstract class CreateCluster extends Intent {
         clusterId = generateClusterId();
         LOG.debug("cluster id: {}", clusterId);
         config.setClusterIds(clusterId);
+        this.interruptionMessageHook = new Thread(() ->
+                LOG.error("Cluster setup was interrupted!\n\n" +
+                        "Please clean up the remains using: -t {}\n\n", this.clusterId)
+        );
     }
 
     static String generateClusterId() {
@@ -91,6 +97,7 @@ public abstract class CreateCluster extends Intent {
      * @throws ConfigurationException Throws an exception if the creation of the cluster environment failed.
      */
     public CreateClusterEnvironment createClusterEnvironment() throws ConfigurationException {
+        Runtime.getRuntime().addShutdownHook(this.interruptionMessageHook);
         return environment = providerModule.getClusterEnvironment(client, this);
     }
 
@@ -167,8 +174,10 @@ public abstract class CreateCluster extends Intent {
             } else {
                 LOG.error(e.getMessage());
             }
+            Runtime.getRuntime().removeShutdownHook(this.interruptionMessageHook);
             return false;
         }
+        Runtime.getRuntime().removeShutdownHook(this.interruptionMessageHook);
         return true;
     }
 
@@ -335,6 +344,7 @@ public abstract class CreateCluster extends Intent {
 
             // create Role Upload Path on master
             createSFTPFolder(channel,AnsibleResources.UPLOAD_PATH);
+
 
             // Add "extra" Ansible role
             List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
@@ -597,6 +607,7 @@ public abstract class CreateCluster extends Intent {
                 LOG.error("Evaluate stderr : "+e.getMessage());
                 returnCode = 1;
             }
+
 
         };
 

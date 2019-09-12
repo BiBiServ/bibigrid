@@ -2,10 +2,7 @@ package de.unibi.cebitec.bibigrid.core;
 
 import de.unibi.cebitec.bibigrid.core.model.*;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
@@ -15,8 +12,6 @@ import java.util.*;
 
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
-import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
-import org.apache.commons.cli.CommandLine;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -29,25 +24,18 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class Validator {
     protected static final Logger LOG = LoggerFactory.getLogger(Validator.class);
-    protected final CommandLine cl;
+
     protected final List<String> req;
-    protected final ConfigurationFile configurationFile;
-    protected final IntentMode intentMode;
+
     private final ProviderModule providerModule;
-    protected final Configuration config;
+
+    protected Configuration config;
     private Configuration.WorkerInstanceConfiguration commandLineWorkerInstance;
 
-    public Validator(final CommandLine cl, final ConfigurationFile configurationFile,
-                     final IntentMode intentMode, final ProviderModule providerModule)
+    public Validator(final Configuration config, final ProviderModule providerModule)
             throws ConfigurationException {
-        this.cl = cl;
-        this.configurationFile = configurationFile;
-        this.intentMode = intentMode;
+        this.config = config;
         this.providerModule = providerModule;
-        config = configurationFile.loadConfiguration(getProviderConfigurationClass());
-        if (config != null && configurationFile.isAlternativeFilepath()) {
-            config.setAlternativeConfigPath(configurationFile.getPropertiesFilePath().toString());
-        }
         req = getRequiredOptions();
     }
 
@@ -57,41 +45,33 @@ public abstract class Validator {
      */
     protected abstract Class<? extends Configuration> getProviderConfigurationClass();
 
-    protected final boolean checkRequiredParameter(String shortParam, String value) {
-        if (req.contains(shortParam) && isStringNullOrEmpty(value)) {
-            LOG.error("-" + shortParam + " option is required!");
+
+    /**
+     * Checks, whether a private / public keys File is readable.
+     * @return true, if file is valid
+     */
+    private boolean validateSSHKeyFiles() {
+        Path privateKeyFile = Paths.get(config.getSshPrivateKeyFile());
+        Path publicKeyFile = Paths.get(config.getSshPublicKeyFile());
+
+        if (!Files.exists(privateKeyFile)) {
+            LOG.error("Not a valid sshPrivateKeyFile {}.", privateKeyFile.toString());
+            return false;
+        }
+        if (!Files.isReadable(privateKeyFile)) {
+            LOG.error("The sshPrivateKeyFile {} is not readable.", privateKeyFile.toString());
+            return false;
+        }
+        if (!Files.exists(publicKeyFile)) {
+            LOG.error("Not a valid sshPublicKeyFile {}.", publicKeyFile.toString());
+            return false;
+        }
+        if (!Files.isReadable(publicKeyFile)) {
+            LOG.error("The sshPublicKeyFile {} is not readable.", publicKeyFile.toString());
             return false;
         }
         return true;
     }
-
-    /**
-     * Validates correct terminate (cluster-id) cmdline input.
-     * @return true, if terminate parameter set correctly
-     */
-    private boolean parseTerminateParameter() {
-        if (req.contains(IntentMode.TERMINATE.getShortParam())) {
-            config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
-        }
-        return true;
-    }
-
-    /**
-     * Validates correct cloud9 / ide (cluster-id) cmdline input.
-     * @return true, if ide parameter set correctly
-     */
-    private boolean parseIdeParameter() {
-        if (req.contains(IntentMode.CLOUD9.getShortParam())) {
-            config.setClusterIds(cl.getOptionValue(IntentMode.CLOUD9.getShortParam()).trim());
-
-        }
-        if (req.contains(IntentMode.IDE.getShortParam())) {
-            config.setClusterIds(cl.getOptionValue(IntentMode.IDE.getShortParam()).trim());
-
-        }
-        return true;
-    }
-
     /**
      * Checks if ansible (galaxy) configuration is valid.
      * @return true, if file(s) found, galaxy, git or url defined and hosts given
@@ -238,21 +218,13 @@ public abstract class Validator {
     }
 
     /**
-     * Checks, if providerModule exists and requirements fulfilled.
-     * @param mode ProviderMode
+     * Checks requirements.
      * @return true, if requirements fulfilled
      */
-    public boolean validate(String mode) {
-        config.setMode(mode);
-        if (providerModule == null) {
-            LOG.error("No provider module for mode '" + mode + "' found. ");
-            return false;
-        }
-        if (req == null) {
-            LOG.info("No requirements defined ...");
-            return true;
-        }
-        return parseTerminateParameter() && parseIdeParameter() && validateAnsibleRequirements() && validateProviderParameters();
+    public boolean validate() {
+        return validateSSHKeyFiles() &&
+                validateAnsibleRequirements() &&
+                validateProviderParameters();
     }
 
     protected abstract List<String> getRequiredOptions();
@@ -291,7 +263,4 @@ public abstract class Validator {
         return v;
     }
 
-    public Configuration getConfig() {
-        return config;
-    }
 }

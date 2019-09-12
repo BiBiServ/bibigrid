@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * Provider module for accessing the implementation details for a specific cloud provider.
  *
- * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ * @author mfriedrichs(at)techfak.uni-bielefeld.de, jkrueger(at)cebitec.uni-bielefeld.de
  */
 public abstract class ProviderModule {
     private Map<String, InstanceType> instanceTypes;
@@ -26,13 +26,33 @@ public abstract class ProviderModule {
      */
     public abstract String getName();
 
+
     /**
-     * Get the command line validator implementation for the specified provider, that can handle
-     * provider specific parameters.
+     * Get the configuration implementation for the specified provider, that have provider specific parameters.
+     *
+     * @param path
+     * @return
+     * @throws ConfigurationException
      */
-    public abstract Validator getCommandLineValidator(
-            final CommandLine commandLine, final ConfigurationFile configurationFile, final IntentMode intentMode)
-            throws ConfigurationException;
+    public Configuration getConfiguration(String path) throws ConfigurationException {
+        return Configuration.loadConfiguration(getConfigurationClass(),path);
+    }
+
+
+    /**
+     *
+     * @return
+     */
+    public abstract Class<? extends Configuration> getConfigurationClass();
+
+    /**
+     * Get the validator implementation for the specified provider, that can handle provider specific parameters.
+     *
+     * @return
+     * @throws ConfigurationException
+     */
+
+    public abstract Validator getValidator(Configuration config, ProviderModule module) throws ConfigurationException;
 
     public abstract Client getClient(Configuration config) throws ClientConnectionFailedException;
 

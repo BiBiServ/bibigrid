@@ -79,17 +79,13 @@ public class StartUp {
         cmdLineOptions.addOption(new Option("v","verbose", false,"More verbose output"));
         cmdLineOptions.addOption(new Option("o","config",true,"Path to JSON configuration file"));
         cmdLineOptions.addOption(new Option("d","debug",false,"Don't shut down cluster in the case of a configuration error."));
-
+        cmdLineOptions.addOption(new Option("m","mode",true,"One of "+String.join(",",Provider.getInstance().getProviderNames())));
         cmdLineOptions.addOptionGroup(intentOptions);
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
-            if (cl.hasOption("v")) {
-                VerboseOutputFilter.SHOW_VERBOSE = true;
 
-            }
-            if (cl.hasOption("debug")) {
-                Configuration.DEBUG = true;
-            }
+            // Help and Version
+
             IntentMode intentMode = IntentMode.fromString(intentOptions.getSelected());
             switch (intentMode) {
                 case VERSION:
@@ -98,16 +94,89 @@ public class StartUp {
                 case HELP:
                     printHelp(cl, cmdLineOptions);
                     break;
-                case CREATE:
-                case PREPARE:
-                case LIST:
-                case TERMINATE:
-                case VALIDATE:
-                case IDE:
-                case CLOUD9:
-                    runIntent(cl, intentMode);
-                    break;
             }
+
+
+            // Options
+            if (cl.hasOption("v")) {
+                VerboseOutputFilter.SHOW_VERBOSE = true;
+
+            }
+            if (cl.hasOption("debug")) {
+                Configuration.DEBUG = true;
+            }
+
+            String providerMode = null;
+            if (cl.hasOption("mode")) {
+                providerMode = cl.getOptionValue("mode");
+            }
+
+            String configurationFile = null;
+            if (cl.hasOption("config")) {
+                configurationFile = cl.getOptionValue("config");
+            }
+
+            // get Provider /ProviderModule
+            ProviderModule module = null;
+            String []  availableProviderModes = Provider.getInstance().getProviderNames();
+            if (availableProviderModes.length == 1) {
+                LOG.info("Use {} provider.",availableProviderModes[0]);
+                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
+            } else {
+                LOG.info("Use {} provider.",providerMode);
+                module = Provider.getInstance().getProviderModule(providerMode);
+            }
+            if (module == null) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return;
+            }
+
+
+            try {
+
+                // get provider specific configuration
+                Configuration config = module.getConfiguration(configurationFile);
+
+
+                // get provider specific validator
+                Validator validator =  module.getValidator(config,module);
+
+                switch (intentMode){
+                    case TERMINATE:
+                        config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
+                        break;
+
+                    case IDE:
+                        config.setClusterIds(cl.getOptionValue(IntentMode.IDE.getShortParam().trim()));
+                        break;
+                    case CLOUD9:
+                        config.setClusterIds(cl.getOptionValue(IntentMode.CLOUD9.getShortParam().trim()));
+                        break;
+                    case CREATE:
+                    case PREPARE:
+                    case LIST:
+
+                        String clusterId = cl.getOptionValue(IntentMode.LIST.getShortParam());
+                        if (clusterId != null) {
+                            config.setClusterIds(clusterId.trim());
+                        }
+                        break;
+                    case VALIDATE:
+                }
+                if (validator.validate()) {
+                    runIntent(module, validator, config, intentMode);
+                } else {
+                    LOG.error(ABORT_WITH_NOTHING_STARTED);
+                }
+
+
+            } catch (ConfigurationException e) {
+                LOG.error(e.getMessage());
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return;
+            }
+
+
         } catch (ParseException pe) {
             LOG.error("Error while parsing the commandline arguments: {}", pe.getMessage());
             LOG.error(ABORT_WITH_NOTHING_STARTED);
@@ -142,33 +211,15 @@ public class StartUp {
         help.printHelp("bibigrid " + modes + " [...]", header, cmdLineOptions, footer);
         System.out.println('\n');
         // display instances to create cluster
-        runIntent(commandLine, IntentMode.HELP);
+        //runIntent(commandLine, IntentMode.HELP);
     }
 
-    private static void runIntent(CommandLine commandLine, IntentMode intentMode) {
-        ConfigurationFile configurationFile = new ConfigurationFile(commandLine);
-        String providerMode = parseProviderMode(commandLine, configurationFile);
-        if (providerMode == null) {
-            LOG.error(StartUp.ABORT_WITH_NOTHING_STARTED);
-            return;
-        }
-        ProviderModule module = Provider.getInstance().getProviderModule(providerMode);
-        if (module == null) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
-            return;
-        }
-        Validator validator;
-        try {
-            validator = module.getCommandLineValidator(commandLine, configurationFile, intentMode);
-        } catch (ConfigurationException e) {
-            LOG.error(e.getMessage());
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
-            return;
-        }
-        if (validator.validate(providerMode)) {
+    private static void runIntent(ProviderModule module, Validator validator, Configuration config, IntentMode intentMode) {
+
+
             Client client;
             try {
-                client = module.getClient(validator.getConfig());
+                client = module.getClient(config);
             } catch (ClientConnectionFailedException e) {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
@@ -181,67 +232,66 @@ public class StartUp {
             }
             switch (intentMode) {
                 case HELP:
-                    printInstanceTypeHelp(module, client, validator.getConfig());
+                    printInstanceTypeHelp(module, client, config);
                     break;
                 case LIST:
-                    ListIntent listIntent = module.getListIntent(client, validator.getConfig());
-                    String clusterId = commandLine.getOptionValue(IntentMode.LIST.getShortParam());
-                    if (clusterId != null) {
-                        LOG.info(listIntent.toDetailString(clusterId));
+                    ListIntent listIntent = module.getListIntent(client, config);
+                    String  [] ids =  config.getClusterIds();
+                    if (ids != null && ids.length > 0) {
+                        LOG.info(listIntent.toDetailString(ids[0]));
                     } else {
                         LOG.info(listIntent.toString());
                     }
                     break;
                 case VALIDATE:
-                    if (module.getValidateIntent(client, validator.getConfig()).validate()) {
+                    if (module.getValidateIntent(client, config).validate()) {
                        LOG.info(I, "You can now start your cluster.");
                     } else {
                        LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case CREATE:
-                    if (module.getValidateIntent(client, validator.getConfig()).validate()) {
-                        runCreateIntent(module, validator, client, module.getCreateIntent(client, validator.getConfig()), false);
+                    if (module.getValidateIntent(client, config).validate()) {
+                        runCreateIntent(module, config, client, module.getCreateIntent(client, config), false);
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case PREPARE:
-                    CreateCluster cluster = module.getCreateIntent(client, validator.getConfig());
-                    if (runCreateIntent(module, validator, client, cluster, true)) {
-                        module.getPrepareIntent(client, validator.getConfig()).prepare(cluster.getMasterInstance(),
+                    CreateCluster cluster = module.getCreateIntent(client, config);
+                    if (runCreateIntent(module, config, client, cluster, true)) {
+                        module.getPrepareIntent(client, config).prepare(cluster.getMasterInstance(),
                                 cluster.getWorkerInstances());
-                        module.getTerminateIntent(client, validator.getConfig()).terminate();
+                        module.getTerminateIntent(client, config).terminate();
+
                     }
                     break;
                 case TERMINATE:
-                    module.getTerminateIntent(client, validator.getConfig()).terminate();
+                    module.getTerminateIntent(client, config).terminate();
                     break;
                 case CLOUD9:
                     LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
                 case IDE:
-                    new IdeIntent(module, client, validator.getConfig()).start();
+                    new IdeIntent(module, client, config).start();
                     break;
                 default:
                     LOG.warn("Unknown intent mode.");
                     break;
             }
-        } else {
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
-        }
+
     }
 
     /**
      * Runs cluster creation and launch processing.
      *
      * @param module responsible for provider accessibility
-     * @param validator validates overall configuration
+     * @param config overall configuration
      * @param client Client
      * @param cluster CreateCluster implementation
      * @param prepare true, if still preparation necessary
      * @return true, if cluster built successfully.
      */
-    private static boolean runCreateIntent(ProviderModule module, Validator validator, Client client,
+    private static boolean runCreateIntent(ProviderModule module, Configuration config, Client client,
                                            CreateCluster cluster, boolean prepare) {
         try {
             boolean success = cluster
@@ -259,7 +309,9 @@ public class StartUp {
                     LOG.error(StartUp.KEEP);
                 } else {
                     LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-                    TerminateIntent cleanupIntent = module.getTerminateIntent(client, validator.getConfig());
+
+                    TerminateIntent cleanupIntent = module.getTerminateIntent(client, config);
+
                     cleanupIntent.terminate();
                 }
                 return false;
@@ -274,25 +326,6 @@ public class StartUp {
             return false;
         }
         return true;
-    }
-
-    private static String parseProviderMode(CommandLine commandLine, ConfigurationFile configurationFile) {
-        if (!commandLine.hasOption("mode")) {
-            String[] providerNames = Provider.getInstance().getProviderNames();
-            if (configurationFile.getPropertiesMode() == null && providerNames.length == 1) {
-                return providerNames[0];
-            }
-            if (configurationFile.getPropertiesMode() != null) {
-                return configurationFile.getPropertiesMode();
-            }
-        } else {
-            try {
-                return commandLine.getOptionValue("mode", "").trim();
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        LOG.error("No suitable mode found in command line or properties file. Exiting.");
-        return null;
     }
 
     /**
