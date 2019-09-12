@@ -85,6 +85,7 @@ public final class ValidatorOpenstack extends Validator {
             if (env.containsKey("OS_USERNAME")){
                 openStackCredentials.setUsername((String)env.get("OS_USERNAME"));
             }
+
         }
 
         if (openStackCredentials == null) {

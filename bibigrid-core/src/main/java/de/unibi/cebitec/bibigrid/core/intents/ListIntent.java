@@ -186,6 +186,7 @@ public abstract class ListIntent extends Intent {
                     (v.getSecurityGroup() == null ? "-" : ellipsize(v.getSecurityGroup(), 13)),
                     (v.getSubnet() == null ? "-" : ellipsize(v.getSubnet().getId(), 11)),
                     (v.getNetwork() == null ? "-" : ellipsize(v.getNetwork().getId(), 11)));
+
         }
         return display.toString();
     }

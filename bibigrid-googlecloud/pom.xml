@@ -5,7 +5,9 @@
     <parent>
         <artifactId>bibigrid</artifactId>
         <groupId>de.unibi.cebitec.bibigrid</groupId>
+
         <version>2.0.8</version>
+
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +17,9 @@
         <dependency>
             <groupId>de.unibi.cebitec.bibigrid</groupId>
             <artifactId>bibigrid-core</artifactId>
+
             <version>2.0.8</version>
+
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>

@@ -28,6 +28,7 @@ public abstract class Validator {
     protected final List<String> req;
 
     private final ProviderModule providerModule;
+
     protected Configuration config;
     private Configuration.WorkerInstanceConfiguration commandLineWorkerInstance;
 

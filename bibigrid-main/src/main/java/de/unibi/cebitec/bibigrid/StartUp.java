@@ -85,6 +85,7 @@ public class StartUp {
             CommandLine cl = cli.parse(cmdLineOptions, args);
 
             // Help and Version
+
             IntentMode intentMode = IntentMode.fromString(intentOptions.getSelected());
             switch (intentMode) {
                 case VERSION:
@@ -262,6 +263,7 @@ public class StartUp {
                         module.getPrepareIntent(client, config).prepare(cluster.getMasterInstance(),
                                 cluster.getWorkerInstances());
                         module.getTerminateIntent(client, config).terminate();
+
                     }
                     break;
                 case TERMINATE:
@@ -307,7 +309,9 @@ public class StartUp {
                     LOG.error(StartUp.KEEP);
                 } else {
                     LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
+
                     TerminateIntent cleanupIntent = module.getTerminateIntent(client, config);
+
                     cleanupIntent.terminate();
                 }
                 return false;

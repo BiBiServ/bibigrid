@@ -65,6 +65,8 @@ public abstract class Configuration {
 
     /* properties */
 
+    protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
+    private static final String DEFAULT_WORKSPACE = "$HOME";
     private String mode;
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
@@ -103,7 +105,9 @@ public abstract class Configuration {
 
     private String network;
     private String subnet;
+
     private String[] clusterIds = new String [0];
+
     private String workspace = DEFAULT_WORKSPACE;
 
     public int getWorkerInstanceCount() {
@@ -202,6 +206,7 @@ public abstract class Configuration {
             LOG.warn("Property 'slaveInstances' is deprecated and will be removed in next major release. It is replaced 1:1 by 'workerInstances'.");
             setWorkerInstances(workerInstances);
     }
+
 
     public List<WorkerInstanceConfiguration> getWorkerInstances() {
         return workerInstances;
