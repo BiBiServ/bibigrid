@@ -26,7 +26,6 @@ public abstract class Validator {
     protected static final Logger LOG = LoggerFactory.getLogger(Validator.class);
 
     protected final List<String> req;
-
     private final ProviderModule providerModule;
     protected Configuration config;
     private Configuration.WorkerInstanceConfiguration commandLineWorkerInstance;
@@ -71,7 +70,6 @@ public abstract class Validator {
         }
         return true;
     }
-
     /**
      * Checks if ansible (galaxy) configuration is valid.
      * @return true, if file(s) found, galaxy, git or url defined and hosts given

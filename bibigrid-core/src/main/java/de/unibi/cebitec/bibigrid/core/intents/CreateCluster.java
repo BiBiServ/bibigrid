@@ -345,6 +345,7 @@ public abstract class CreateCluster extends Intent {
             // create Role Upload Path on master
             createSFTPFolder(channel,AnsibleResources.UPLOAD_PATH);
 
+
             // Add "extra" Ansible role
             List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
             for (Configuration.AnsibleRoles role : ansibleRoles) {
@@ -606,6 +607,7 @@ public abstract class CreateCluster extends Intent {
                 LOG.error("Evaluate stderr : "+e.getMessage());
                 returnCode = 1;
             }
+
 
         };
 

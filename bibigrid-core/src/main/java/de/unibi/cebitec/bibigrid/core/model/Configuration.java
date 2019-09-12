@@ -65,7 +65,6 @@ public abstract class Configuration {
 
     }
 
-
     /* properties */
 
     private String mode;
@@ -106,7 +105,9 @@ public abstract class Configuration {
 
     private String network;
     private String subnet;
+
     private String[] clusterIds = new String [0];
+
     private String workspace = DEFAULT_WORKSPACE;
 
     public int getWorkerInstanceCount() {
@@ -205,6 +206,7 @@ public abstract class Configuration {
             LOG.warn("Property 'slaveInstances' is deprecated and will be removed in next major release. It is replaced 1:1 by 'workerInstances'.");
             setWorkerInstances(workerInstances);
     }
+
 
     public List<WorkerInstanceConfiguration> getWorkerInstances() {
         return workerInstances;
