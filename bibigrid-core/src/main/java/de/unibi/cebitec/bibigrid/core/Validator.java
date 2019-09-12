@@ -217,7 +217,7 @@ public abstract class Validator {
     }
 
     /**
-     * Checks, if providerModule exists and requirements fulfilled.
+     * Checks requirements.
      * @return true, if requirements fulfilled
      */
     public boolean validate() {
