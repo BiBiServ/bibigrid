@@ -66,7 +66,6 @@ public abstract class Configuration {
     }
 
     /* properties */
-
     private String mode;
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
