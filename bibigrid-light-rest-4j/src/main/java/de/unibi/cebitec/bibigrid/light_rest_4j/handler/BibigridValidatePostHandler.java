@@ -58,33 +58,26 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
             ProviderModule module;
             module = Provider.getInstance().getProviderModule(c.getMode());
             System.out.println(module);
+            
+
+            Client client;
+            try {
+                client = module.getClient(c);
+            } catch (ClientConnectionFailedException e) {
+                LOG.error(e.getMessage());
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return;
+            }
 
 
-            Validator validator;
-//            try {
-//
-//                // use id instead of commandline object
-//                //validator = module.getCommandLineValidator(commandLine, c, module);
-//            } catch (ConfigurationException e) {
-//                LOG.error(e.getMessage());
-//                LOG.error(ABORT_WITH_NOTHING_STARTED);
-//                return;
-//            }
-//            if (validator.validate("openstack")) {
-//                Client client;
-//                try {
-//                    client = module.getClient(validator.getConfig());
-//                } catch (ClientConnectionFailedException e) {
-//                    LOG.error(e.getMessage());
-//                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-//                    return;
-//                }
-//                // In order to validate the native instance types, we need a client. So this step is deferred after
-//                // client connection is established.
-//                if (!validator.validateProviderTypes(client)) {
-//                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-//                }
-//            }
+
+            if (module.getValidateIntent(client, c).validate()) {
+                LOG.info(I, "You can now start your cluster.");
+            } else {
+                LOG.error("There were one or more errors. Please adjust your configuration.");
+            }
+
+
         }
         catch(Exception e){
             System.out.println(e);
