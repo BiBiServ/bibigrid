@@ -15,10 +15,15 @@ public class ConfigurationOpenstack extends Configuration {
     private String securityGroup;
 
     public OpenStackCredentials getOpenstackCredentials() {
+
+        LOG.info(openstackCredentials.getUsername());
+
         return openstackCredentials;
     }
 
     public void setOpenstackCredentials(final OpenStackCredentials openstackCredentials) {
+        LOG.error(openstackCredentials.getPassword());
+
         this.openstackCredentials = openstackCredentials;
     }
 
