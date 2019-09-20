@@ -23,7 +23,6 @@ import java.util.*;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
-@JsonDeserialize(as = ConcreteConfiguration.class)
 public abstract class Configuration {
     /* public const */
     public static boolean DEBUG = false;

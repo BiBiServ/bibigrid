@@ -1,17 +1,16 @@
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
+import de.unibi.cebitec.bibigrid.openstack.OpenStackCredentials;
+import org.yaml.snakeyaml.Yaml;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.unibi.cebitec.bibigrid.Provider;
 import com.networknt.body.BodyHandler;
 import com.networknt.handler.LightHttpHandler;
-import de.unibi.cebitec.bibigrid.StartUp;
-import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.ConcreteConfiguration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
+import de.unibi.cebitec.bibigrid.openstack.ConfigurationOpenstack;
 import io.undertow.server.HttpServerExchange;
 import org.jose4j.json.internal.json_simple.JSONObject;
 import org.jose4j.json.internal.json_simple.parser.JSONParser;
@@ -37,7 +36,7 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
 
 
 
-    public Configuration c = new ConcreteConfiguration();
+    public Configuration c = new ConfigurationOpenstack();
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -45,33 +44,30 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
         ObjectMapper mapper = new ObjectMapper();
         Map s = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
         String j = mapper.writeValueAsString(s);
-        JSONObject json = (JSONObject)new JSONParser().parse(j);
-        byte[] decodedBytes = Base64.getDecoder().decode( (String) json.get("credentialsFile"));
-        String decodedString = new String(decodedBytes);
+
+        ConfigurationOpenstack test = new Yaml().loadAs(j,ConfigurationOpenstack.class);
 
         try {
-            // create Configuration object
-            ObjectMapper objectMapper = new ObjectMapper();
-            c = objectMapper.readValue(j, Configuration.class);
-
-            // create Provider Module
             ProviderModule module;
-            module = Provider.getInstance().getProviderModule(c.getMode());
-            System.out.println(module);
-            
+            module = Provider.getInstance().getProviderModule(test.getMode());
 
             Client client;
             try {
-                client = module.getClient(c);
+                LOG.error("1 ist null");
+                client = module.getClient(test);
+                LOG.error("2 ist null");
             } catch (ClientConnectionFailedException e) {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
 
+            if(client == null){
+                LOG.error("Client ist null");
+            }
+            LOG.error(client.getClass().toString());
 
-
-            if (module.getValidateIntent(client, c).validate()) {
+            if (module.getValidateIntent(client, test).validate()) {
                 LOG.info(I, "You can now start your cluster.");
             } else {
                 LOG.error("There were one or more errors. Please adjust your configuration.");
@@ -80,6 +76,8 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
 
         }
         catch(Exception e){
+            LOG.error("Phillip ist null");
+
             System.out.println(e);
         }
 
