@@ -58,15 +58,13 @@ public class IdeIntent extends Intent {
     }
 
     private void startPortForwarding(final String masterIp) {
-        JSch ssh = new JSch();
-        JSch.setLogger(new JSchLogger());
+
         try {
-            ssh.addIdentity(config.getSshPrivateKeyFile());
+
             LOG.info("Trying to connect to master ...");
             sleep(4);
             // Create new Session to avoid packet corruption.
-            Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
-                    Paths.get(config.getSshPrivateKeyFile()));
+            Session sshSession = SshFactory.createSshSession(config, masterIp);
             if (sshSession != null) {
                 sshSession.setPortForwardingL(PORT, "localhost", PORT);
                 // Start connection attempt

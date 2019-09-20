@@ -271,19 +271,21 @@ public abstract class CreateCluster extends Intent {
 
         final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                 masterInstance.getPrivateIp();
-        JSch ssh = new JSch();
-        JSch.setLogger(new JSchLogger());
+//        JSch ssh = new JSch();
+//        JSch.setLogger(new JSchLogger());
         LOG.info("Now configuring...");
         boolean configured = false;
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (sshPortIsReady) {
             try {
-                ssh.addIdentity(config.getSshPrivateKeyFile());
+                //ssh.addIdentity(config.getSshPrivateKeyFile());
                 LOG.info("Trying to connect to master...");
                 sleep(4);
                 // Create new Session to avoid packet corruption.
-                Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
-                        Paths.get(config.getSshPrivateKeyFile()));
+//                Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
+//                        Paths.get(config.getSshPrivateKeyFile()));
+
+                Session sshSession = SshFactory.createSshSession(config,masterIp);
                 if (sshSession != null) {
                     // Start connection attempt
                     sshSession.connect();
@@ -294,7 +296,7 @@ public abstract class CreateCluster extends Intent {
                         in the case anything failed during the upload or ansible run. The exception is caught by
                         'launchClusterInstances'.
                         But not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
-                        ConfugurationException, close the sshSession and throw a new ConfigurationException
+                        ConfigurationException, close the sshSession and throw a new ConfigurationException
 
                      */
                     try {
