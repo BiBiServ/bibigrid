@@ -48,12 +48,12 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
         try {
             ProviderModule module;
             module = Provider.getInstance().getProviderModule(test.getMode());
-            
+
             Client client;
             try {
-//                LOG.error("1 ist null");
+                LOG.error("1 ist null");
                 client = module.getClient(test);
-//                LOG.error("2 ist null");
+                LOG.error("2 ist null");
             } catch (ClientConnectionFailedException e) {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
