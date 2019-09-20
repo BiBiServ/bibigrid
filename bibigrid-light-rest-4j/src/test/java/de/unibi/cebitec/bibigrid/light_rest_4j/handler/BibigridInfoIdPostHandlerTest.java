@@ -54,7 +54,7 @@ public class BibigridInfoIdPostHandlerTest {
             throw new ClientException(e);
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
-        String requestUri = "/bibigrid/info/TvhcCIfByKImxvGKhJbbDl";
+        String requestUri = "/bibigrid/info/dUraZAgyVdkakbwzTHerGgGrwdgS";
         String httpMethod = "post";
         try {
             ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.POST);

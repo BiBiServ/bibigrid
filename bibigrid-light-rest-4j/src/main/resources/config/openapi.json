@@ -227,7 +227,9 @@
                       "username",
                       "domain",
                       "password",
-                      "endpoint"
+                      "endpoint",
+                      "projectName",
+                      "projectDomain"
                     ],
                     "properties": {
                       "username": {
@@ -241,6 +243,12 @@
                         "type": "string"
                       },
                       "endpoint": {
+                        "type": "string"
+                      },
+                      "projectName": {
+                        "type": "string"
+                      },
+                      "projectDomain": {
                         "type": "string"
                       }
                     }
