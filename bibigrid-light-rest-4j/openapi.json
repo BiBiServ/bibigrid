@@ -301,6 +301,29 @@
                         "example": "Ubuntu 16.04 LTS (2019-05-08)"
                       }
                     }
+                  },
+                  "workerInstances": {
+                    "type": "array",
+                    "items": {
+                      "required": [
+                        "type",
+                        "image",
+                        "count"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "example": "de.NBI.small+ephemeral"
+                        },
+                        "image": {
+                          "type": "string",
+                          "example": "Ubuntu 16.04 LTS (2019-05-08)"
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      }
+                    }
                   }
                 }
               }
