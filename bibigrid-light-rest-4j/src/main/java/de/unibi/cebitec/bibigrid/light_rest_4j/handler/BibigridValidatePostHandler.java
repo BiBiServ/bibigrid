@@ -36,8 +36,6 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
 
 
 
-    public Configuration c = new ConfigurationOpenstack();
-
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
 
@@ -50,21 +48,21 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
         try {
             ProviderModule module;
             module = Provider.getInstance().getProviderModule(test.getMode());
-
+            
             Client client;
             try {
-                LOG.error("1 ist null");
+//                LOG.error("1 ist null");
                 client = module.getClient(test);
-                LOG.error("2 ist null");
+//                LOG.error("2 ist null");
             } catch (ClientConnectionFailedException e) {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
 
-            if(client == null){
-                LOG.error("Client ist null");
-            }
+//            if(client == null){
+//                LOG.error("Client ist null");
+//            }
             LOG.error(client.getClass().toString());
 
             if (module.getValidateIntent(client, test).validate()) {
@@ -76,9 +74,7 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
 
         }
         catch(Exception e){
-            LOG.error("Phillip ist null");
-
-            System.out.println(e);
+            LOG.error(e.getLocalizedMessage());
         }
 
 
