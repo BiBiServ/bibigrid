@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
+import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.openstack.OpenStackCredentials;
 import org.yaml.snakeyaml.Yaml;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,29 +44,48 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
         Map s = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
         String j = mapper.writeValueAsString(s);
 
-        ConfigurationOpenstack test = new Yaml().loadAs(j,ConfigurationOpenstack.class);
+        ConfigurationOpenstack config = new Yaml().loadAs(j,ConfigurationOpenstack.class);
 
         try {
-            ProviderModule module;
-            module = Provider.getInstance().getProviderModule(test.getMode());
+
+
+
+            // get Provider /ProviderModule
+            ProviderModule module = null;
+            String providerMode = config.getMode();
+
+            LOG.info("TIM IST DA.");
+
+
+            String []  availableProviderModes = Provider.getInstance().getProviderNames();
+            if (availableProviderModes.length == 1) {
+                LOG.info("Use {} provider.",availableProviderModes[0]);
+                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
+            } else {
+                LOG.info("Use {} provider.",providerMode);
+                module = Provider.getInstance().getProviderModule(providerMode);
+            }
+            if (module == null) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return;
+            }
 
             Client client;
             try {
-                LOG.error("1 ist null");
-                client = module.getClient(test);
-                LOG.error("2 ist null");
+                client = module.getClient(config);
             } catch (ClientConnectionFailedException e) {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
+            Validator validator =  module.getValidator(config,module);
+            if (!validator.validateProviderTypes(client)) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+            }
 
-//            if(client == null){
-//                LOG.error("Client ist null");
-//            }
             LOG.error(client.getClass().toString());
 
-            if (module.getValidateIntent(client, test).validate()) {
+            if (module.getValidateIntent(client, config).validate()) {
                 LOG.info(I, "You can now start your cluster.");
             } else {
                 LOG.error("There were one or more errors. Please adjust your configuration.");
