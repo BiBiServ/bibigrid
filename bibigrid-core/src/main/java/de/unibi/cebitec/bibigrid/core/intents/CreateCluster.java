@@ -192,6 +192,7 @@ public abstract class CreateCluster extends Intent {
 
     /**
      * @TODO TD #117 manual scale, 07-19
+     * Adds a worker instance to cluster.
      * @return true, if worker instance created successfully
      */
     public boolean createWorkerInstance() {
