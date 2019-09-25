@@ -1,7 +1,10 @@
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
+import de.unibi.cebitec.bibigrid.StartUp;
 import de.unibi.cebitec.bibigrid.core.Validator;
+import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.openstack.OpenStackCredentials;
+import io.undertow.util.HttpString;
 import org.yaml.snakeyaml.Yaml;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.unibi.cebitec.bibigrid.Provider;
@@ -27,6 +30,10 @@ import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
  */
 public class BibigridValidatePostHandler implements LightHttpHandler{
 
+
+
+    String testerror;
+
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
     private static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation. Instances already running. " +
@@ -34,28 +41,25 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
             "afterwards.";
     private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
 
+    public String getError() {
+        return testerror;
+    }
 
-
+    public void setError(String error) {
+        this.testerror = error;
+    }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
-        Map s = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
-        String j = mapper.writeValueAsString(s);
-
-        ConfigurationOpenstack config = new Yaml().loadAs(j,ConfigurationOpenstack.class);
+        Map bodyMap = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
+        String requestBody = mapper.writeValueAsString(bodyMap);
+        ConfigurationOpenstack config = new Yaml().loadAs(requestBody,ConfigurationOpenstack.class);
 
         try {
-
-
-
-            // get Provider /ProviderModule
             ProviderModule module = null;
             String providerMode = config.getMode();
-
-            LOG.info("TIM IST DA.");
-
 
             String []  availableProviderModes = Provider.getInstance().getProviderNames();
             if (availableProviderModes.length == 1) {
@@ -83,24 +87,30 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
             }
 
-            LOG.error(client.getClass().toString());
 
-            if (module.getValidateIntent(client, config).validate()) {
-                LOG.info(I, "You can now start your cluster.");
-            } else {
-                LOG.error("There were one or more errors. Please adjust your configuration.");
+            try {
+                ValidateIntent intent  = module.getValidateIntent(client, config);
+                if (intent.validate()) {
+                    LOG.info(I, "You can now start your cluster.");
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.setStatusCode(200);
+                    exchange.getResponseSender().send("{\"is_valid\":\"true\",\"info\":\"You can now start your cluster.\"}");
+                } else {
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.setStatusCode(200);
+                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getErrorMessage()+"\"}");
+                }
             }
-
-
+            catch (Exception e){
+                LOG.error("Server Crash");
+                exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                exchange.setStatusCode(200);
+                exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
+            }
         }
         catch(Exception e){
-            LOG.error(e.getLocalizedMessage());
+            LOG.error(e.getMessage());
         }
-
-
-
-
-
         exchange.endExchange();
     }
 }
