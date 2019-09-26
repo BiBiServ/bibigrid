@@ -14,6 +14,8 @@ import org.openstack4j.model.network.options.PortListOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * Implements TerminateIntent for Openstack.
  *
@@ -27,6 +29,18 @@ public class TerminateIntentOpenstack extends TerminateIntent {
     TerminateIntentOpenstack(ProviderModule providerModule, Client client, Configuration config) {
         super(providerModule, client, config);
         os = ((ClientOpenstack) client).getInternal();
+    }
+
+    @Override
+    protected boolean terminateWorker(Cluster cluster) {
+        List<Instance> workerInstances = cluster.getWorkerInstances();
+        Instance lastWorker = workerInstances.get(workerInstances.size()-1);
+        ActionResponse response = os.compute().servers().delete(lastWorker.getId());
+        if (!response.isSuccess()) {
+            LOG.error("Failed to delete instance '{}'. {}", lastWorker.getName(), response.getFault());
+            return false;
+        }
+        return true;
     }
 
     @Override
