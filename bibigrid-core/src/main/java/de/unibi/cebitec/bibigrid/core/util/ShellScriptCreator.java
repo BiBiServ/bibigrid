@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 public final class ShellScriptCreator {
     private static final Logger LOG = LoggerFactory.getLogger(ShellScriptCreator.class);
 
-    public static String getUserData(Configuration config, ClusterKeyPair keypair, boolean base64) {
+    public static String getUserData(Configuration config, boolean base64) {
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
         // redirect output
@@ -48,7 +48,7 @@ public final class ShellScriptCreator {
         appendDisableAptDailyService(userData);
         // configure SSH Config
         userData.append("log \"configure ssh\"\n");
-        appendSshConfiguration(config, userData, keypair);
+        appendSshConfiguration(config, userData);
         // finished
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
@@ -68,15 +68,17 @@ public final class ShellScriptCreator {
                 "done\n");
     }
 
-    private static void appendSshConfiguration(Configuration config, StringBuilder userData, ClusterKeyPair keypair) {
+    private static void appendSshConfiguration(Configuration config, StringBuilder userData) {
         String user = config.getSshUser();
         String userSshPath = "/home/" + user + "/.ssh/";
-        userData.append("echo '").append(keypair.getPrivateKey()).append("' > ").append(userSshPath).append("id_rsa\n");
+        // ssh-keys
+        userData.append("echo '").append(config.getClusterKeyPair().getPrivateKey()).append("' > ").append(userSshPath).append("id_rsa\n");
         userData.append("chown ").append(user).append(":").append(user).append(" ").append(userSshPath)
                 .append("id_rsa\n");
         userData.append("chmod 600 ").append(userSshPath).append("id_rsa\n");
-        userData.append("echo '").append(keypair.getPublicKey()).append("' >> ").append(userSshPath)
+        userData.append("echo '").append(config.getClusterKeyPair().getPublicKey()).append("' >> ").append(userSshPath)
                 .append("authorized_keys\n");
+
         if (config.getSshPublicKeyFile() != null) {
             Path publicKeyFile = Paths.get(config.getSshPublicKeyFile());
             try {
@@ -97,6 +99,7 @@ public final class ShellScriptCreator {
                 LOG.error("Failed to add ssh public key file '{}'. {}", config.getSshPublicKeyFile(), e);
             }
         }
+        // ssh config
         userData.append("cat > ").append(userSshPath).append("config << SSHCONFIG\n");
         userData.append("Host *\n");
         userData.append("\tCheckHostIP no\n");

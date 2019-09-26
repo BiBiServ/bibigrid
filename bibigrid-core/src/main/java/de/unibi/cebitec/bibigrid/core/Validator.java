@@ -48,23 +48,19 @@ public abstract class Validator {
 
 
     /**
-     * Checks, whether a private / public keys File is readable and
-     * is supported by SSHFactory.
+     * Checks, whetherpublic keys File is readable
      *
      * @return true, if file is valid
      */
     private boolean validateSSHKeyFiles() {
-        Path privateKeyFile = Paths.get(config.getSshPrivateKeyFile());
+
+        if (config.getSshPublicKeyFile() == null) {
+            LOG.error("Property 'sshPublicKeyFile' not set.");
+            return false;
+        }
+
         Path publicKeyFile = Paths.get(config.getSshPublicKeyFile());
 
-        if (!Files.exists(privateKeyFile)) {
-            LOG.error("Not a valid sshPrivateKeyFile {}.", privateKeyFile.toString());
-            return false;
-        }
-        if (!Files.isReadable(privateKeyFile)) {
-            LOG.error("The sshPrivateKeyFile {} is not readable.", privateKeyFile.toString());
-            return false;
-        }
         if (!Files.exists(publicKeyFile)) {
             LOG.error("Not a valid sshPublicKeyFile {}.", publicKeyFile.toString());
             return false;

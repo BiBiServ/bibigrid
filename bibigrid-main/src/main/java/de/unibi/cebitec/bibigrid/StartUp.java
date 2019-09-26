@@ -294,12 +294,15 @@ public class StartUp {
     private static boolean runCreateIntent(ProviderModule module, Configuration config, Client client,
                                            CreateCluster cluster, boolean prepare) {
         try {
-            boolean success = cluster
-                    .createClusterEnvironment()
+            // configure environment
+            cluster .createClusterEnvironment()
                     .createNetwork()
                     .createSubnet()
                     .createSecurityGroup()
-                    .createPlacementGroup()
+                    .createKeyPair()
+                    .createPlacementGroup();
+            // configure cluster
+            boolean success =  cluster
                     .configureClusterMasterInstance()
                     .configureClusterWorkerInstance()
                     .launchClusterInstances(prepare);

@@ -81,6 +81,15 @@ public abstract class ListIntent extends Intent {
                 }
             }
         }
+
+        List<String> keypairs = client.getKeypairNames();
+        if (keypairs != null) {
+            for (String name : keypairs) {
+                if (name != null && name.startsWith(CreateCluster.PREFIX)) {
+                    getOrCreateCluster(getClusterIdFromName(name)).setKeyName(name);
+                }
+            }
+        }
     }
 
     protected abstract List<Instance> getInstances();

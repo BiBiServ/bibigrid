@@ -23,7 +23,8 @@ public class SshFactory {
         JSch jssh = new JSch();
         JSch.setLogger(new JSchLogger());
         Session sshSession = jssh.getSession(config.getSshUser(), ip, 22);
-        jssh.addIdentity(config.getSshPrivateKeyFile());
+        Configuration.ClusterKeyPair ckp = config.getClusterKeyPair();
+        jssh.addIdentity(ckp.getName(),ckp.getPrivateKey().getBytes(),ckp.getPublicKey().getBytes(),null);
         UserInfo userInfo = getConsolePasswordUserInfo();
         sshSession.setUserInfo(userInfo);
         return sshSession;
