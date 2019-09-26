@@ -30,10 +30,6 @@ import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
  */
 public class BibigridValidatePostHandler implements LightHttpHandler{
 
-
-
-    String testerror;
-
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
     private static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation. Instances already running. " +
@@ -41,13 +37,6 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
             "afterwards.";
     private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
 
-    public String getError() {
-        return testerror;
-    }
-
-    public void setError(String error) {
-        this.testerror = error;
-    }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -86,7 +75,6 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
             if (!validator.validateProviderTypes(client)) {
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
             }
-
 
             try {
                 ValidateIntent intent  = module.getValidateIntent(client, config);

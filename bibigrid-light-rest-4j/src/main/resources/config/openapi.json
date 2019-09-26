@@ -1,14 +1,5 @@
 {"components":{"schemas":{"Error":{"type": "object","required":["code",
-          "message"],"properties":{"message":{"type": "string"},"code":{"type": "integer","format": "int32"}}},"ClusterStatus":{"type": "object","properties":{"log":{"type": "string","example": "Timestamp"},"info":{"type": "string","example": "Am Hochfahren"}}},"ClusterList":{"type": "object","properties":{"clusters":{"type": "array","items":{"type": "object","properties": {
-                "cluster": {
-                  "type": "string",
-                  "example": "Name + ID"
-                },
-                "runtime": {
-                  "type": "string",
-                  "example": "Timestamp"
-                }
-              }}}}}}},"openapi": "3.0.0","paths": {
+          "message"],"properties":{"message":{"type": "string"},"code":{"type": "integer","format": "int32"}}},"ClusterStatus":{"type": "object","properties":{"log":{"type": "string","example": "Timestamp"},"info":{"type": "string","example": "Am Hochfahren"}}}}},"openapi": "3.0.0","paths": {
     "/bibigrid/list": {
       "post": {
         "summary": "List all running clusters for a user",
@@ -21,6 +12,9 @@
               "schema": {
                 "type": "object",
                 "required": [
+                  "openstackCredentials",
+                  "mode",
+                  "subnet",
                   "sshPrivateKeyFile",
                   "sshPublicKeyFile",
                   "sshUser",
@@ -29,6 +23,46 @@
                   "availabilityZone"
                 ],
                 "properties": {
+                  "openstackCredentials": {
+                    "type": "object",
+                    "required": [
+                      "username",
+                      "domain",
+                      "password",
+                      "endpoint",
+                      "projectName",
+                      "projectDomain"
+                    ],
+                    "properties": {
+                      "username": {
+                        "type": "string",
+                        "example": "mmustermann"
+                      },
+                      "domain": {
+                        "type": "string"
+                      },
+                      "password": {
+                        "type": "string"
+                      },
+                      "endpoint": {
+                        "type": "string"
+                      },
+                      "projectName": {
+                        "type": "string"
+                      },
+                      "projectDomain": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "mode": {
+                    "type": "string",
+                    "example": "openstack"
+                  },
+                  "subnet": {
+                    "type": "string",
+                    "example": "internalsub"
+                  },
                   "sshPrivateKeyFile": {
                     "type": "string",
                     "format": "byte"
@@ -67,7 +101,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClusterList"
+                  "type": "object",
+                  "properties": {
+                    "info": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
