@@ -89,6 +89,7 @@ public abstract class Configuration {
     private String keypair;
     private String sshPublicKeyFile;
     private String sshPublicKey;
+    private String id;
     private ClusterKeyPair clusterKeyPair = new ClusterKeyPair();
     @Deprecated
     private String sshPrivateKeyFile;
@@ -303,17 +304,45 @@ public abstract class Configuration {
         LOG.info(V, "Server group set. ({})", this.serverGroup);
     }
 
+    /**
+     * Return a list of cluster id. Currently used for termination intent only.
+     * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     *      * necessary for termination intent.
+     *
+     * @return Return a list of cluster id.
+     */
     public String[] getClusterIds() {
         return Arrays.copyOf(clusterIds, clusterIds.length);
     }
 
+
     /**
-     * Set the cluster Id(s) either as a single cluster "id" or as multiple "id1/id2/id3".
+     * Set the id of current
+     * @param id
+     */
+    public void setId(String id) {
+        this.id = id;
+
+    }
+
+    public String getId(){
+        return id;
+    }
+
+    /**
+     * Set the clusterid for termination intent either as a single cluster "id" or as multiple "id1/id2/id3".
+     * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     *      * necessary for termination intent.
      */
     public void setClusterIds(String clusterIds) {
         this.clusterIds = clusterIds == null ? new String[0] : clusterIds.split("[/,]");
     }
 
+    /**
+     * Set the clusterid for termination intent as cluster id list".
+     * @ToDo:  Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     * necessary for termination intent.
+     */
     public void setClusterIds(String[] clusterIds) {
         this.clusterIds = clusterIds == null ? new String[0] : clusterIds;
     }
@@ -1018,10 +1047,16 @@ public abstract class Configuration {
         }
 
         public void store() throws IOException {
+            // private key
             Path p = Paths.get(KEYS_DIR+System.getProperty("file.separator")+name);
             Files.createFile(p,KEYS_PERMS);
             OutputStream fout = Files.newOutputStream(p);
             fout.write(privateKey.getBytes());
+            fout.close();
+            // public key
+            p = Paths.get(KEYS_DIR+System.getProperty("file.separator")+name+".pub");
+            fout = Files.newOutputStream(p);
+            fout.write(publicKey.getBytes());
             fout.close();
 
         }
@@ -1030,6 +1065,9 @@ public abstract class Configuration {
             Path p = Paths.get(KEYS_DIR+System.getProperty("file.separator")+name);
             InputStream fin = Files.newInputStream(p);
             privateKey  = new String(fin.readAllBytes());
+            p = Paths.get(KEYS_DIR+System.getProperty("file.separator")+name+".pub");
+            fin = Files.newInputStream(p);
+            publicKey = new String(fin.readAllBytes());
         }
     }
 }

@@ -38,17 +38,17 @@ public class IdeIntent extends Intent {
     }
 
     public void start() {
-        if (config.getClusterIds().length == 0) {
+        if (config.getId() == null) {
             LOG.error("ClusterId not found. Please provide a valid cluster id.");
             return;
         }
-        String clusterId = config.getClusterIds()[0];
+        String id = config.getId();
         final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
-        if (!clusters.containsKey(clusterId)) {
-            LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", clusterId);
+        if (!clusters.containsKey(id)) {
+            LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", id);
             return;
         }
-        String masterIp = clusters.get(clusterId).getPublicIp();
+        String masterIp = clusters.get(id).getPublicIp();
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (!sshPortIsReady) {
             LOG.error("Failed to poll master ssh port.");
