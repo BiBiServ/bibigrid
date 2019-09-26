@@ -19,7 +19,7 @@ public abstract class TerminateIntent extends Intent {
     private final ProviderModule providerModule;
     protected final Client client;
     private final Configuration config;
-    private String terminateResponse = "Internal server error";
+    private String terminateResponse = "Internal server error!";
 
     public String getTerminateResponse() {
         return terminateResponse;
