@@ -35,7 +35,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
 
     @Override
     public CreateCluster configureClusterMasterInstance() {
-        String startupScript = ShellScriptCreator.getUserData(config, environment.getKeypair(), false);
+        String startupScript = ShellScriptCreator.getUserData(config, false);
         instanceStartupScript = new Metadata.Items().setKey("startup-script").setValue(startupScript);
         masterNetworkInterface = buildExternalNetworkInterface();
         return super.configureClusterMasterInstance();
