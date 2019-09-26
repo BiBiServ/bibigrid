@@ -79,9 +79,18 @@ public abstract class TerminateIntent extends Intent {
         try {
             Path p = Paths.get(Configuration.KEYS_DIR + System.getProperty("file.separator") + cluster.getKeyName());
             Files.delete(p);
-            LOG.info("Key {} deleted.",p.toString());
+            LOG.info("Private key {} deleted.",p.toString());
         } catch (IOException e) {
             //  ignore exception
         }
+
+        try {
+            Path p = Paths.get(Configuration.KEYS_DIR + System.getProperty("file.separator") + cluster.getKeyName() + ".pub");
+            Files.delete(p);
+            LOG.info("Public key {} deleted.",p.toString());
+        } catch (IOException e) {
+            //  ignore exception
+        }
+
     }
 }
