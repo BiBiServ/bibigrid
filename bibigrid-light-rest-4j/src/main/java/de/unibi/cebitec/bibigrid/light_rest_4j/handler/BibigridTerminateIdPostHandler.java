@@ -1,15 +1,86 @@
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.body.BodyHandler;
 import com.networknt.handler.LightHttpHandler;
+import de.unibi.cebitec.bibigrid.Provider;
+import de.unibi.cebitec.bibigrid.core.Validator;
+import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
+import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
+import de.unibi.cebitec.bibigrid.openstack.ConfigurationOpenstack;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
 public class BibigridTerminateIdPostHandler implements LightHttpHandler {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
+    private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
+    private static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation. Instances already running. " +
+            "Attempting to shut them down but in case of an error they might remain running. Please verify " +
+            "afterwards.";
+    private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
     
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+        Map bodyMap = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
+        String requestBody = mapper.writeValueAsString(bodyMap);
+        ConfigurationOpenstack config = new Yaml().loadAs(requestBody,ConfigurationOpenstack.class);
+        String clusterId = exchange.getQueryParameters().get("id").getFirst();
+        config.setClusterIds(clusterId);
+
+        try {
+            ProviderModule module = null;
+            String providerMode = config.getMode();
+
+            String []  availableProviderModes = Provider.getInstance().getProviderNames();
+            if (availableProviderModes.length == 1) {
+                LOG.info("Use {} provider.",availableProviderModes[0]);
+                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
+            } else {
+                LOG.info("Use {} provider.",providerMode);
+                module = Provider.getInstance().getProviderModule(providerMode);
+            }
+            if (module == null) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return;
+            }
+
+            Client client;
+            try {
+                client = module.getClient(config);
+            } catch (ClientConnectionFailedException e) {
+                LOG.error(e.getMessage());
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return;
+            }
+            TerminateIntent terminateIntent = module.getTerminateIntent(client, config);
+            terminateIntent.terminate();
+
+            exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+            exchange.setStatusCode(200);
+            Map<String, Object> params = new HashMap<>();
+            params.put("info",terminateIntent.getTerminateResponse());
+            String payload = new ObjectMapper().writeValueAsString(params);
+            exchange.getResponseSender().send(payload);
+        }
+        catch(Exception e){
+            LOG.error(e.getMessage());
+            exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+            exchange.setStatusCode(400);
+            exchange.getResponseSender().send("{\"Internal server error\"}");
+        }
         exchange.endExchange();
     }
 }
