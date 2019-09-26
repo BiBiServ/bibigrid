@@ -30,9 +30,18 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public class ValidateIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntent.class);
     protected final Client client;
+
+    public String getValidateResponse() {
+        return validateResponse;
+    }
+
+    public void setValidateResponse(String validateResponse) {
+        this.validateResponse = validateResponse;
+    }
+
     protected final Configuration config;
 
-    private String errorMessage = "42";
+    private String validateResponse = "Internal server error!";
 
     public ValidateIntent(final Client client, final Configuration config) {
         this.client = client;
@@ -45,7 +54,7 @@ public class ValidateIntent extends Intent {
         if (!connect()) {
             LOG.error("API connection not successful. Please check your configuration.");
             // If not even the connection can be established, the next steps won't be necessary
-            errorMessage = "API connection not successful. Please check your configuration.";
+            validateResponse = "API connection not successful. Please check your configuration.";
             return false;
         }
         LOG.info("Checking images...");
@@ -101,12 +110,12 @@ public class ValidateIntent extends Intent {
             InstanceImage masterImage = client.getImageByIdOrName(config.getMasterInstance().getImage());
             if (masterImage == null) {
                 LOG.error("Failed to find master image ({}).", config.getMasterInstance().getImage());
-                errorMessage="Failed to find master image: "+config.getMasterInstance().getImage();
+                validateResponse="Failed to find master image: "+config.getMasterInstance().getImage();
             } else {
                 typeImageMap.put(config.getMasterInstance(), masterImage);
             }
         } catch (NotYetSupportedException e) {
-            errorMessage = e.getMessage();
+            validateResponse = e.getMessage();
             LOG.error(e.getMessage());
         }
         try {
@@ -114,19 +123,19 @@ public class ValidateIntent extends Intent {
                 InstanceImage workerImage = client.getImageByIdOrName(instanceConfiguration.getImage());
                 if (workerImage == null) {
                     LOG.error("Failed to find worker image ({}).", instanceConfiguration.getImage());
-                    errorMessage="Failed to find worker image: "+instanceConfiguration.getImage();
+                    validateResponse="Failed to find worker image: "+instanceConfiguration.getImage();
 
                 } else {
                     typeImageMap.put(instanceConfiguration, workerImage);
                 }
             }
         } catch (NotYetSupportedException e) {
-            errorMessage = e.getMessage();
+            validateResponse = e.getMessage();
             LOG.error(e.getMessage());
         }
         if (typeImageMap.size() != config.getWorkerInstances().size() + 1) {
             LOG.error("Master and Worker images could not be found.");
-            errorMessage = "Master and Worker images could not be found.";
+            validateResponse = "Master and Worker images could not be found.";
             return false;
         }
         LOG.info(V, "Master and Worker images have been found.");
@@ -154,14 +163,14 @@ public class ValidateIntent extends Intent {
         if (instanceConfiguration.getProviderType().getMaxDiskSpace() < image.getMinDiskSpace()) {
             LOG.error("The image {} needs more disk space than the instance type {} provides.",
                     instanceConfiguration.getImage(), instanceConfiguration.getProviderType().getValue());
-            errorMessage="The image "+instanceConfiguration.getImage()+"needs more disk space than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides";
+            validateResponse="The image "+instanceConfiguration.getImage()+"needs more disk space than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides";
 
             success = false;
         }
         if (instanceConfiguration.getProviderType().getMaxRam() < image.getMinRam()) {
             LOG.error("The image {} needs more memory than the instance type {} provides.",
                     instanceConfiguration.getImage(), instanceConfiguration.getProviderType().getValue());
-            errorMessage="The image "+instanceConfiguration.getImage()+"needs more memory than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides";
+            validateResponse="The image "+instanceConfiguration.getImage()+"needs more memory than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides";
             success = false;
         }
         return success;
@@ -173,13 +182,13 @@ public class ValidateIntent extends Intent {
         final InstanceType masterClusterType = config.getMasterInstance().getProviderType();
         if (masterClusterType.isClusterInstance() != allWorkersClusterInstances) {
             LOG.error("If cluster instances are used please create a homogeneous group.");
-            errorMessage = "If cluster instances are used please create a homogeneous group.";
+            validateResponse = "If cluster instances are used please create a homogeneous group.";
             return false;
         } else if (masterClusterType.isClusterInstance()) {
             // If master instance is a cluster instance check if the types are the same
             if (config.getWorkerInstances().stream().anyMatch(x -> masterClusterType != x.getProviderType())) {
                 LOG.error("If cluster instances are used please create a homogeneous group.");
-                errorMessage = "If cluster instances are used please create a homogeneous group.";
+                validateResponse = "If cluster instances are used please create a homogeneous group.";
                 return false;
             }
         }
@@ -203,14 +212,14 @@ public class ValidateIntent extends Intent {
                 Snapshot snapshot = client.getSnapshotByIdOrName(snapshotId);
                 if (snapshot == null) {
                     LOG.error("Snapshot/Volume '{}' could not be found.", snapshotId);
-                    errorMessage = "Snapshot/Volume '"+snapshotId+"' could not be found.";
+                    validateResponse = "Snapshot/Volume '"+snapshotId+"' could not be found.";
                     allCheck = false;
                 } else {
                     LOG.info(V, "Snapshot/Volume '{}' found.", snapshotId);
                 }
             } catch (NotYetSupportedException e) {
                 LOG.error(e.getMessage());
-                errorMessage = e.getMessage();
+                validateResponse = e.getMessage();
                 allCheck = false;
             }
         }
@@ -225,7 +234,7 @@ public class ValidateIntent extends Intent {
                 // If the network could not be found, try if the user provided a network id instead of the name.
                 if (network == null) {
                     LOG.error("Network '{}' could not be found.", config.getNetwork());
-                    errorMessage = "Network '"+config.getNetwork()+"' could not be found.";
+                    validateResponse = "Network '"+config.getNetwork()+"' could not be found.";
                     result = false;
                 } else {
                     LOG.info(V, "Network '{}' found.", config.getNetwork());
@@ -233,7 +242,7 @@ public class ValidateIntent extends Intent {
                 }
             } catch (NotYetSupportedException e) {
                 LOG.error(e.getMessage());
-                errorMessage = e.getMessage();
+                validateResponse = e.getMessage();
                 result = false;
             }
         }
@@ -242,7 +251,7 @@ public class ValidateIntent extends Intent {
                 Subnet subnet = client.getSubnetByIdOrName(config.getSubnet());
                 if (subnet == null) {
                     LOG.error("Subnet '{}' could not be found.", config.getSubnet());
-                    errorMessage = "Subnet '"+config.getSubnet()+"' could not be found.";
+                    validateResponse = "Subnet '"+config.getSubnet()+"' could not be found.";
                     result = false;
                 } else {
                     LOG.info(V, "Subnet '{}' found.", config.getSubnet());
@@ -250,7 +259,7 @@ public class ValidateIntent extends Intent {
                 }
             } catch (NotYetSupportedException e){
                 LOG.error(e.getMessage());
-                errorMessage = e.getMessage();
+                validateResponse = e.getMessage();
                 result = false;
             }
         }
@@ -264,7 +273,7 @@ public class ValidateIntent extends Intent {
                 ServerGroup serverGroup = client.getServerGroupByIdOrName(config.getServerGroup());
                 if (serverGroup == null) {
                     LOG.error("ServerGroup '{}' could not be found.", config.getServerGroup());
-                    errorMessage = "ServerGroup '"+config.getServerGroup()+"' could not be found.";
+                    validateResponse = "ServerGroup '"+config.getServerGroup()+"' could not be found.";
                     result = false;
                 } else {
                     LOG.info(V, "ServerGroup '{}' found.", config.getServerGroup());
@@ -272,18 +281,12 @@ public class ValidateIntent extends Intent {
                 }
             } catch (NotYetSupportedException e){
                 LOG.warn(e.getMessage());
-                errorMessage = e.getMessage();
+                validateResponse = e.getMessage();
             }
         }
         return result;
     }
 
 
-    public String getErrorMessage() {
-        return errorMessage;
-    }
 
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
 }

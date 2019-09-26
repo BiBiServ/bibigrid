@@ -86,12 +86,11 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
                 } else {
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                     exchange.setStatusCode(200);
-                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getErrorMessage()+"\"}");
+                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
                 }
             }
             catch (Exception e){
-                LOG.error("Server Crash");
-                exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
                 exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
             }
