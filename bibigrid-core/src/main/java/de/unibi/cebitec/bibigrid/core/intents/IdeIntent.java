@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -25,11 +28,12 @@ import java.util.Map;
  */
 public class IdeIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(IdeIntent.class);
-    private static final int PORT = 8181;
+    private static final int DEFAULT_IDE_PORT = 8181;
 
     private final ProviderModule providerModule;
     private final Client client;
     private final Configuration config;
+    private int idePort;
 
     public IdeIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
@@ -69,11 +73,12 @@ public class IdeIntent extends Intent {
             // Create new Session to avoid packet corruption.
             Session sshSession = SshFactory.createSshSession(config, masterIp);
             if (sshSession != null) {
-                sshSession.setPortForwardingL(PORT, "localhost", PORT);
+                this.setIDEPort(DEFAULT_IDE_PORT);
+                sshSession.setPortForwardingL(idePort, "localhost", DEFAULT_IDE_PORT);
                 // Start connection attempt
                 sshSession.connect();
                 LOG.info("Connected to master!");
-                LOG.info("You can now open the Web IDE at http://localhost:{}", PORT);
+                LOG.info("You can now open the Web IDE at http://localhost:{}", idePort);
                 openBrowser();
                 LOG.info("Press any key, to close this session...");
                 //noinspection ResultOfMethodCallIgnored
@@ -87,9 +92,24 @@ public class IdeIntent extends Intent {
         }
     }
 
+    /**
+     * Checks if IDE port (default 8181) is already binded.
+     * Uses next port (+1) if available
+     * @param port check if port is already listened on
+     */
+    private void setIDEPort(int port) {
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            // serverSocket.setReuseAddress(false); required only on OSX
+            serverSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), port), 1);
+            this.idePort = port;
+        } catch (Exception ex) {
+            setIDEPort(++port);
+        }
+    }
+
     private void openBrowser() {
         try {
-            Desktop.getDesktop().browse(new URL("http://localhost:" + PORT).toURI());
+            Desktop.getDesktop().browse(new URL("http://localhost:" + idePort).toURI());
         } catch (Exception ignored) {
         }
     }
