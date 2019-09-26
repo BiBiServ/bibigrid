@@ -86,7 +86,6 @@ public class BibigridListPostHandler implements LightHttpHandler {
                 params.put("info",listIntent.toString());
                 String payload = new ObjectMapper().writeValueAsString(params);
                 exchange.getResponseSender().send(payload);
-                exchange.getResponseSender().send(payload);
             }
         }
         catch(Exception e){

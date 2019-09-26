@@ -19,6 +19,15 @@ public abstract class TerminateIntent extends Intent {
     private final ProviderModule providerModule;
     protected final Client client;
     private final Configuration config;
+    private String terminateResponse = "Internal server error";
+
+    public String getTerminateResponse() {
+        return terminateResponse;
+    }
+
+    public void setTerminateResponse(String terminateResponse) {
+        this.terminateResponse = terminateResponse;
+    }
 
     protected TerminateIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
@@ -49,6 +58,7 @@ public abstract class TerminateIntent extends Intent {
                 final Cluster cluster = clusters.get(clusterId);
                 if (cluster == null) {
                     LOG.warn("No cluster with ID '{}' found.", clusterId);
+                    terminateResponse ="No cluster with ID '"+clusterId+"' found.";
                     success = false;
                 } else {
                     toRemove.add(clusterId);
@@ -60,8 +70,10 @@ public abstract class TerminateIntent extends Intent {
             final Cluster cluster = clusters.get(clusterId);
             if (terminateCluster(cluster)) {
                 LOG.info("Cluster '{}' terminated!", clusterId);
+                terminateResponse = "Cluster '"+clusterId+"' terminated!";
             } else {
                 LOG.info("Failed to terminate cluster '{}'!", clusterId);
+                terminateResponse = "Failed to terminate cluster '"+clusterId+"'!";
                 success = false;
             }
         }
