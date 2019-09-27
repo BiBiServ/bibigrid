@@ -1,11 +1,17 @@
 # Getting Started
 Starting a cluster requires a valid configuration file and credentials. Following are the necessary steps with 
-detailed information for each cloud provider. For an up-to-date user Setup-Tutorial for the BiBiGrid take a look at the [de.NBI Wiki](https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/).
+detailed information. BiBiGrid is based on OpenStack, if you're using another cloud provider take a look at the [specific setup](cloud-providers/CONFIGURATION.md).
+For an up-to-date user Setup-Tutorial for the BiBiGrid visit [de.NBI Wiki](https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/).
 
 ### Setting up credentials
 For communication with the cloud provider API, credentials have to be setup.
 Additionally during cluster creation the master instance will handle software updates and installations for all cluster instances using ansible.
-In order to upload and execute commands a valid ssh-keypair needs to be setup, too.
+BiBiGrid creates a One-Time-SSH-Private-Key for each cluster during setup. In order to connect to the remote 
+you have to have a valid public SSH key placed locally as well as on the cloud provider server. This should be in your home directory in a hidden .ssh folder (~/.ssh/id_rsa.pub).
+If you don't have setup SSH yet, you can create a keypair as follows:
+```
+ssh-keygen -f ~ -t rsa -b 4096
+```
 
 When using the ssh public key parameter in config or command line, the setup of ssh keys in the credentials setup can be skipped!
 * [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)  
@@ -38,20 +44,22 @@ A complete schema for a specific **configuration file** can be found on:
 The configuration file is a plain text file in YAML format. A short example would be:
 
 ```
-#use google cloud compute
-mode: googlecloud
-googleProjectId: XXXXX
-googleImageProjectId: ubuntu-os-cloud
-credentialsFile: ~/google-credentials.json
+#configuration.yml
+mode: openstack
+credentialsFile: /HOME_DIR/.bibigrid/credentials.yml
 
-region: europe-west1
+#Access
+sshPublicKeyFile: 
+  - "/HOME_DIR/.ssh/id_rsa.pub"
+sshUser: ubuntu
+region: Bielefeld
+availabilityZone: default
 
 network: default
 subnet: default
 
 user: testuser
 sshUser: testuser
-sshPrivateKeyFile: ~/cloud.ppk
 
 masterInstance:
   type: f1-micro
@@ -106,7 +114,9 @@ The IDE can be started with a simple command:
 > bibigrid --ide [cluster-id] -v -o ~/config.yml
 ```
 The process will run until an input is provided or it's terminated. 
-The IDE is available under [http://localhost:8181](http://localhost:8181) and will be started automatically.
+The IDE is available under [http://localhost:8181](http://localhost:8181) and will be started automatically. 
+If you are using multiple sessions on the same server the port will be incremented until an upper limit. 
+For more flexibility you can set the IDE ports in the configuration.
 
 ### Monitoring via Zabbix Web Frontend
 If you want to monitor a cluster, you can integrate the zabbix support into your configuration file:
@@ -211,7 +221,7 @@ ansibleGalaxyRoles:
 ```
 Because Cassandra needs quite a lot additional variables, you may include these via an own Yaml file (e.g. cassandra-vars.yml)
 to keep your configuration file transparent.
-The author (locp) provides variables for a very basic configuration:  
+The author (locp) provides variables for a very [basic configuration](https://galaxy.ansible.com/locp/cassandra):  
 
 *cassandra-vars.yml*
 ```

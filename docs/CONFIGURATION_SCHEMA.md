@@ -7,15 +7,19 @@ more detailed configuration possibilities.
 
 ```
 # Cloud Usage
-mode: enum [openstack, aws, googlecloud, azure]     # Provider mode
+mode: openstack                                     # Provider mode [optionally aws, googlecloud, azure]
 
 # Access
 user: string                                        # User name (just for VM tagging)
 sshUser: string                                     # SSH user name, default is "ubuntu"
-keypair: string                                     # Keypair name for authentication (aws and openstack only)
-sshPublicKeyFile: string                            # SSH public key file (e.g.: .ssh/id_rsa.pub)
-sshPrivateKeyFile: string                           # SSH private key file (e.g.: .ssh/id_rsa)
-credentialsFile: string                             # credentials file (e.g.: */.bibigrid.credentials.yml)
+sshPublicKeyFile: string                            # SSH public key file (default: .ssh/id_rsa.pub)
+sshPublicKeyFiles:                                  # Optional SSH public key file list
+  - string
+  - ...
+sshPublicKeys:                                      # Optional bare public (!) SSH keys
+  - string
+  - ...
+credentialsFile: string                             # path/to/credentials (default: /HOMEDIRECTORY/.bibigrid/credentials.yml)
 
 region: string                                      # Specific region
 availabilityZone: string                            # e.g.: default, maintenance, ...
@@ -30,7 +34,6 @@ ports:
   - ...
 localDNSLookup: boolean [yes,no]                    # Enable local DNS lookup. Creates an entry for and on each host in
                                                     # /etc/hosts. Should only be enabled if no or a malfunction DNS is available.
-
 # Master 
 masterInstance:
   type: string                                      # Instance Flavor, self-assigned (e.g.: m1.small)

@@ -86,6 +86,7 @@ public abstract class Configuration {
     private String mode;
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
+    @Deprecated
     private String keypair;
     private String sshPublicKeyFile;
     private List<String> sshPublicKeyFiles = new ArrayList<>();
