@@ -38,7 +38,7 @@ public abstract class CreateClusterEnvironment {
             Configuration config = cluster.getConfig();
             Configuration.ClusterKeyPair clusterKeyPair = cluster.getConfig().getClusterKeyPair();
             JSch ssh = new JSch();
-            KeyPair keypair = KeyPair.genKeyPair(ssh, KeyPair.RSA);
+            KeyPair keypair = KeyPair.genKeyPair(ssh, KeyPair.RSA,4096);
             ByteArrayOutputStream bao = new ByteArrayOutputStream();
             keypair.writePrivateKey(bao);
             clusterKeyPair.setPrivateKey(bao.toString());
