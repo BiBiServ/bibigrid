@@ -78,11 +78,9 @@ public final class ShellScriptCreator {
         userData.append("chown ").append(user).append(":").append(user).append(" ").append(userSshPath).append("id_rsa\n");
         userData.append("chmod 600 ").append(userSshPath).append("id_rsa\n");
 
-        // place *all* public keys with authorized keys
+        // place *all* additional public keys within authorized keys
         List<String> pks = new ArrayList<>();
-        // cluster keypair - normally not necessary since this is also be done by *cloud-init*
-        pks.add(config.getClusterKeyPair().getPublicKey());
-        // public keys
+               // public keys
         pks.addAll(config.getSshPublicKeys());
         // public key files
         List<String> pkfs = new ArrayList<>(config.getSshPublicKeyFiles());
@@ -104,17 +102,15 @@ public final class ShellScriptCreator {
             // Check if we have a public key like putty saves them
             if (pk.startsWith("----")) {
                 String tmp = "tmp.pub";
-                userData.append("echo '").append(pk).append("' > ").append(userSshPath)
+                userData.append("echo '").append(pk.trim()).append("' > ").append(userSshPath)
                         .append(tmp).append("\n");
                 userData.append("ssh-keygen -i -f ").append(userSshPath).append(tmp).append(" >> ")
                         .append(userSshPath).append("authorized_keys\n");
                 userData.append("rm ").append(userSshPath).append(tmp).append("\n");
             } else {
-                userData.append("echo '").append(pk).append("' >> ").append(userSshPath)
+                userData.append("echo '").append(pk.trim()).append("' >> ").append(userSshPath)
                         .append("authorized_keys\n");
             }
-
-
         }
 
         // ssh config
