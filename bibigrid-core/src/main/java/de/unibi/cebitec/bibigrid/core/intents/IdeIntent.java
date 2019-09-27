@@ -29,11 +29,14 @@ import java.util.Map;
 public class IdeIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(IdeIntent.class);
     private static final int DEFAULT_IDE_PORT = 8181;
+    private static final int DEFAULT_IDE_PORT_END = 8383;
 
     private final ProviderModule providerModule;
     private final Client client;
     private final Configuration config;
+
     private int idePort;
+    private int idePortLast;
 
     public IdeIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
@@ -73,7 +76,13 @@ public class IdeIntent extends Intent {
             // Create new Session to avoid packet corruption.
             Session sshSession = SshFactory.createSshSession(config, masterIp);
             if (sshSession != null) {
-                this.setIDEPort(DEFAULT_IDE_PORT);
+                if (config.)
+                while (!portAvailable(idePort)) {
+                    if (idePort > idePortLast) {
+
+                    }
+                    idePort++;
+                }
                 sshSession.setPortForwardingL(idePort, "localhost", DEFAULT_IDE_PORT);
                 // Start connection attempt
                 sshSession.connect();
@@ -94,17 +103,25 @@ public class IdeIntent extends Intent {
 
     /**
      * Checks if IDE port (default 8181) is already binded.
-     * Uses next port (+1) if available
      * @param port check if port is already listened on
+     * @return true, if port available
      */
-    private void setIDEPort(int port) {
+    private boolean portAvailable(int port) {
         try (ServerSocket serverSocket = new ServerSocket()) {
             // serverSocket.setReuseAddress(false); required only on OSX
             serverSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), port), 1);
-            this.idePort = port;
+            return true;
         } catch (Exception ex) {
-            setIDEPort(++port);
+            return false;
         }
+    }
+
+    public int getIdePort() {
+        return idePort;
+    }
+
+    public int getIdePortLast() {
+        return idePortLast;
     }
 
     private void openBrowser() {

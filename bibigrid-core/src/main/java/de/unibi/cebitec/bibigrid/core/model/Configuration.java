@@ -114,6 +114,7 @@ public abstract class Configuration {
     private boolean nfs = true;
     private boolean cloud9;
     private boolean theia;
+    private List<Integer> ideConf;
     private boolean ganglia;
     private boolean zabbix;
     private ZabbixConf zabbixConf = new ZabbixConf();
@@ -502,10 +503,12 @@ public abstract class Configuration {
 
     public boolean isIDE() { return cloud9 || theia; }
 
+    @Deprecated
     public boolean isCloud9() {
         return cloud9;
     }
 
+    @Deprecated
     public void setCloud9(boolean cloud9) throws ConfigurationException {
         if (cloud9&&theia) {
             LOG.error("Only one IDE (either Theia or Cloud9) can be set.");
@@ -515,10 +518,12 @@ public abstract class Configuration {
         LOG.info(V, "Cloud9 support {}.", cloud9 ? "enabled" : "disabled");
     }
 
+    @Deprecated
     public boolean isTheia() {
         return theia;
     }
 
+    @Deprecated
     public void setTheia(boolean theia) throws ConfigurationException {
         if (cloud9&&theia) {
             LOG.error("Only one IDE (either Theia or Cloud9) can be set.");
@@ -526,6 +531,14 @@ public abstract class Configuration {
         }
         this.theia = theia;
         LOG.info(V, "Theia support {}.", theia ? "enabled" : "disabled");
+    }
+
+    public List<Integer> getIdeConf() {
+        return ideConf;
+    }
+
+    public void setIdeConf(List<Integer> ideConf) {
+        this.ideConf = ideConf;
     }
 
     public String getCredentialsFile() {
@@ -821,6 +834,10 @@ public abstract class Configuration {
                 return null;
             }
         }
+    }
+
+    public static class IdeConf {
+        private int port
     }
 
     /**
