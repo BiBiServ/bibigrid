@@ -7,6 +7,7 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedExc
 import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,6 +78,11 @@ class ClientAzure extends Client {
         return internalClient.networks().list().stream()
                 .flatMap(network -> network.subnets().values().stream())
                 .map(SubnetAzure::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getKeypairNames() {
+        throw new NotImplementedException();
     }
 
     @Override
