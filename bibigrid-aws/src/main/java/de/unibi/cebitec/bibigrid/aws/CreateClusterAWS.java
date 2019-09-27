@@ -55,7 +55,7 @@ public class CreateClusterAWS extends CreateCluster {
     public CreateCluster configureClusterMasterInstance() {
         super.configureClusterMasterInstance();
         buildMasterDeviceMappings();
-        base64MasterUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true);
+        base64MasterUserData = ShellScriptCreator.getUserData(config, true);
         buildMasterPlacementGroup();
         buildMasterNetworkInterface();
         return this;
@@ -230,7 +230,7 @@ public class CreateClusterAWS extends CreateCluster {
         // run worker instances and supply userdata
         List<Instance> workerInstances;
         Tag workerNameTag = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_NAME).withValue(workerName);
-        String base64WorkerUserData = ShellScriptCreator.getUserData(config, environment.getKeypair(), true);
+        String base64WorkerUserData = ShellScriptCreator.getUserData(config, true);
         if (config.isUseSpotInstances()) {
             RequestSpotInstancesRequest workerReq = new RequestSpotInstancesRequest()
                     .withType(SpotInstanceType.OneTime)

@@ -164,15 +164,16 @@ public abstract class CreateCluster extends Intent {
             logFinishedInfoMessage(masterIp);
             saveGridPropertiesFile(masterIp);
         } catch (Exception e) {
-            if (Configuration.DEBUG) {
-                logFinishedInfoMessage(
-                        config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() : masterInstance.getPrivateIp());
-            }
+
             // print stacktrace only verbose mode, otherwise the message is fine
             if (VerboseOutputFilter.SHOW_VERBOSE) {
                 LOG.error(e.getMessage(), e);
             } else {
                 LOG.error(e.getMessage());
+            }
+            if (Configuration.DEBUG) {
+                logFinishedInfoMessage(
+                        config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() : masterInstance.getPrivateIp());
             }
             Runtime.getRuntime().removeShutdownHook(this.interruptionMessageHook);
             return false;
@@ -214,7 +215,7 @@ public abstract class CreateCluster extends Intent {
         sb.append("setx BIBIGRID_MASTER \"").append(masterPublicIp).append("\"\n\n");
         sb.append("You can then log on the master node with:\n\n")
                 .append("putty -i ")
-                .append(config.getSshPrivateKeyFile())
+                .append(config.KEYS_DIR).append("\\").append(config.getClusterKeyPair().getName())
                 .append(" ").append(config.getSshUser()).append("@%BIBIGRID_MASTER%\n\n");
         sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
         sb.append("You can easily terminate the cluster at any time with:\n")
@@ -232,7 +233,7 @@ public abstract class CreateCluster extends Intent {
         sb.append("export BIBIGRID_MASTER=").append(masterPublicIp).append("\n\n");
         sb.append("You can then log on the master node with:\n\n")
                 .append("ssh -i ")
-                .append(config.getSshPrivateKeyFile())
+                .append(config.KEYS_DIR).append("/").append(config.getClusterKeyPair().getName())
                 .append(" ").append(config.getSshUser()).append("@$BIBIGRID_MASTER\n\n");
         sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
         sb.append("You can easily terminate the cluster at any time with:\n")
@@ -271,19 +272,21 @@ public abstract class CreateCluster extends Intent {
 
         final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                 masterInstance.getPrivateIp();
-        JSch ssh = new JSch();
-        JSch.setLogger(new JSchLogger());
+//        JSch ssh = new JSch();
+//        JSch.setLogger(new JSchLogger());
         LOG.info("Now configuring...");
         boolean configured = false;
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (sshPortIsReady) {
             try {
-                ssh.addIdentity(config.getSshPrivateKeyFile());
+                //ssh.addIdentity(config.getSshPrivateKeyFile());
                 LOG.info("Trying to connect to master...");
                 sleep(4);
                 // Create new Session to avoid packet corruption.
-                Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
-                        Paths.get(config.getSshPrivateKeyFile()));
+//                Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
+//                        Paths.get(config.getSshPrivateKeyFile()));
+
+                Session sshSession = SshFactory.createSshSession(config,masterIp);
                 if (sshSession != null) {
                     // Start connection attempt
                     sshSession.connect();
@@ -294,7 +297,7 @@ public abstract class CreateCluster extends Intent {
                         in the case anything failed during the upload or ansible run. The exception is caught by
                         'launchClusterInstances'.
                         But not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
-                        ConfugurationException, close the sshSession and throw a new ConfigurationException
+                        ConfigurationException, close the sshSession and throw a new ConfigurationException
 
                      */
                     try {

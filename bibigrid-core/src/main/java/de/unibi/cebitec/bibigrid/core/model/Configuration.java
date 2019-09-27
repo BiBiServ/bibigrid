@@ -6,13 +6,13 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
+import java.net.URI;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -23,14 +23,33 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class Configuration {
     /* public const */
     public static boolean DEBUG = false;
+    public static final String DEFAULT_WORKSPACE = "$HOME";
+    public static final String CONFIG_DIR = System.getProperty("user.home")+System.getProperty("file.separator")+".bibigrid";
+    public static final String KEYS_DIR = CONFIG_DIR + System.getProperty("file.separator")+"keys";
+    public static final FileAttribute KEYS_PERMS = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"));
+
     /* protected const */
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 
-    /* private const */
-    private static final String DEFAULT_WORKSPACE = "$HOME";
+    @Deprecated
     private static final String DEFAULT_DIRNAME = System.getProperty("user.home");
+    @Deprecated
     private static final String DEFAULT_FILENAME = ".bibigrid.yml";
     private static final String PROPERTIES_FILEPATH_PARAMETER = "o";
+
+    public Configuration() throws IOException {
+            Path config_path = Paths.get(CONFIG_DIR);
+            Path key_path = Paths.get(KEYS_DIR);
+
+            if (Files.notExists(config_path)) {
+                LOG.info("Creating BiBiGrid configuration directory '{}'",CONFIG_DIR);
+                Files.createDirectory(config_path);
+            }
+            if (Files.notExists(key_path)) {
+                LOG.info("Creating BiBiGrid key directory '{}'", KEYS_DIR);
+                Files.createDirectory(key_path);
+            }
+    }
 
     public static Configuration loadConfiguration(Class<? extends Configuration> configurationClass, String path) throws ConfigurationException{
         Path propertiesFilePath = null;
@@ -69,6 +88,11 @@ public abstract class Configuration {
     private String sshUser = "ubuntu";
     private String keypair;
     private String sshPublicKeyFile;
+    private List<String> sshPublicKeyFiles = new ArrayList<>();
+    private List<String> sshPublicKeys = new ArrayList<>();
+    private String id;
+    private ClusterKeyPair clusterKeyPair = new ClusterKeyPair();
+    @Deprecated
     private String sshPrivateKeyFile;
     private String alternativeConfigPath;
     private String gridPropertiesFile;
@@ -142,14 +166,23 @@ public abstract class Configuration {
         this.useMasterWithPublicIp = useMasterWithPublicIp;
     }
 
+    @Deprecated
     public String getKeypair() {
         return keypair;
     }
 
+    @Deprecated
     public void setKeypair(String keypair) {
+        LOG.warn("Deprecation warning: Properties 'keypair' is not longer used.");
         this.keypair = keypair.trim();
         LOG.info(V, "Keypair name set. ({})", this.keypair);
     }
+
+    public ClusterKeyPair getClusterKeyPair() {
+        return clusterKeyPair;
+    }
+
+
 
     public String getSshPublicKeyFile() {
         return sshPublicKeyFile;
@@ -160,11 +193,30 @@ public abstract class Configuration {
         LOG.info(V, "SSH public key file found. ({})", this.sshPublicKeyFile);
     }
 
+    public List<String> getSshPublicKeyFiles() {
+        return sshPublicKeyFiles;
+    }
+
+    public void setSshPublicKeyFiles(List<String> sshPublicKeyFiles) {
+        this.sshPublicKeyFiles = sshPublicKeyFiles;
+    }
+
+    public List<String> getSshPublicKeys() {
+        return sshPublicKeys;
+    }
+
+    public void setSshPublicKeys(List<String> sshPublicKeys) {
+        this.sshPublicKeys = sshPublicKeys;
+    }
+
+    @Deprecated
     public String getSshPrivateKeyFile() {
         return sshPrivateKeyFile;
     }
 
+    @Deprecated
     public void setSshPrivateKeyFile(String sshPrivateKeyFile) {
+        LOG.warn("Deprecation warning: Properties 'sshPrivateKeyFile' is not longer used.");
         this.sshPrivateKeyFile = sshPrivateKeyFile.trim();
         LOG.info(V, "SSH private key file found. ({})", this.sshPrivateKeyFile);
     }
@@ -263,17 +315,45 @@ public abstract class Configuration {
         LOG.info(V, "Server group set. ({})", this.serverGroup);
     }
 
+    /**
+     * Return a list of cluster id. Currently used for termination intent only.
+     * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     *      * necessary for termination intent.
+     *
+     * @return Return a list of cluster id.
+     */
     public String[] getClusterIds() {
         return Arrays.copyOf(clusterIds, clusterIds.length);
     }
 
+
     /**
-     * Set the cluster Id(s) either as a single cluster "id" or as multiple "id1/id2/id3".
+     * Set the id of current
+     * @param id
+     */
+    public void setId(String id) {
+        this.id = id;
+
+    }
+
+    public String getId(){
+        return id;
+    }
+
+    /**
+     * Set the clusterid for termination intent either as a single cluster "id" or as multiple "id1/id2/id3".
+     * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     *      * necessary for termination intent.
      */
     public void setClusterIds(String clusterIds) {
         this.clusterIds = clusterIds == null ? new String[0] : clusterIds.split("[/,]");
     }
 
+    /**
+     * Set the clusterid for termination intent as cluster id list".
+     * @ToDo:  Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     * necessary for termination intent.
+     */
     public void setClusterIds(String[] clusterIds) {
         this.clusterIds = clusterIds == null ? new String[0] : clusterIds;
     }
@@ -686,6 +766,7 @@ public abstract class Configuration {
         EXT2, EXT3, EXT4, XFS
     }
 
+
     /** private helper class that converts a byte array to an Hex String
      *
      * @param hash
@@ -942,6 +1023,102 @@ public abstract class Configuration {
 
         public void setUrl(String url) {
             this.url = url;
+        }
+
+    }
+
+    /**
+     * Representation of a SSH Cluster KeyPair.
+     */
+    public static class ClusterKeyPair {
+
+        private String privateKey;
+        private String publicKey;
+        private String name;
+
+        public String getPrivateKey() {
+            return privateKey;
+        }
+
+        public void setPrivateKey(String privateKey) {
+            this.privateKey = privateKey;
+        }
+
+        public String getPublicKey() {
+            return publicKey;
+        }
+
+        public void setPublicKey(String publicKey) {
+            this.publicKey = publicKey;
+        }
+
+        /**
+         * Return the name of the keypair
+         *
+         * @return
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * Set the name of the keypair.
+         *
+         * @param name
+         */
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        /**
+         *  Store public AND private key in Configuration.KEY_DIR as name[.pub].
+         *
+         * @throws IOException
+         */
+        public void store() throws IOException {
+            // private key
+            try {
+                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name);
+                Files.createFile(p, KEYS_PERMS);
+                OutputStream fout = Files.newOutputStream(p);
+                fout.write(privateKey.getBytes());
+                fout.close();
+            } catch (IOException e){
+                throw new IOException("Error writing private key :"+e.getMessage(),e);
+            }
+            // public key
+            try {
+                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name + ".pub");
+                OutputStream fout = Files.newOutputStream(p);
+                fout.write(publicKey.getBytes());
+                fout.close();
+            } catch (IOException e) {
+                throw new IOException("Error writing public key :"+e.getMessage(),e);
+            }
+        }
+
+        /**
+         * Load public and private key from Configuration.KEYS_DIR.
+         *
+         * @throws IOException
+         */
+        public void load() throws IOException {
+            //private key
+            try {
+                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name);
+                InputStream fin = Files.newInputStream(p);
+                privateKey = new String(fin.readAllBytes());
+            } catch (IOException e) {
+                throw new IOException("Error loading private key :"+e.getMessage(),e);
+            }
+            // public key
+            try {
+                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name + ".pub");
+                InputStream fin = Files.newInputStream(p);
+                publicKey = new String(fin.readAllBytes());
+            } catch (IOException e){
+                throw new IOException("Error loading public key :"+e.getMessage(),e);
+            }
         }
     }
 }

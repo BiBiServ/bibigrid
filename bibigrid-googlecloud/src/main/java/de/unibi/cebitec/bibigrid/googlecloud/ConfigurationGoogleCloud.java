@@ -2,6 +2,8 @@ package de.unibi.cebitec.bibigrid.googlecloud;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
+import java.io.IOException;
+
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de, jkrueger(at)cebitec.uni-bielefeld.de
  */
@@ -11,7 +13,8 @@ public class ConfigurationGoogleCloud extends Configuration {
     private String googleImageProjectId;
     private boolean useSpotInstances;
 
-    public ConfigurationGoogleCloud() {
+    public ConfigurationGoogleCloud() throws IOException {
+        super();
     }
 
     public String getGoogleProjectId() {

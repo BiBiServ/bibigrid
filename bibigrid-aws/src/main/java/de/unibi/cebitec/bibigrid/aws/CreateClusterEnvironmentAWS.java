@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
@@ -101,12 +102,21 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
         return this;
     }
 
+    @Override
+    public CreateClusterEnvironment createKeyPair() throws ConfigurationException {
+//        Configuration.ClusterKeyPair ckp = getConfig().getClusterKeyPair();
+////        CreateKeyPairRequest keyPairRequest = new CreateKeyPairRequest();
+////        keyPairRequest.setKeyName(ckp.getName());
+////        keyPairRequest.
+        throw new NotImplementedException();
+    }
+
     private IpPermission buildIpPermission(String protocol, int fromPort, int toPort) {
         return new IpPermission().withIpProtocol(protocol).withFromPort(fromPort).withToPort(toPort);
     }
 
     @Override
-    public CreateClusterAWS createPlacementGroup() {
+    public CreateClusterEnvironmentAWS createPlacementGroup() {
         // if all instance-types fulfill the cluster specifications, create a placementGroup.
         boolean allTypesClusterInstances = getConfig().getMasterInstance().getProviderType().isClusterInstance();
         for (Configuration.InstanceConfiguration instanceConfiguration : getConfig().getWorkerInstances()) {
@@ -119,9 +129,8 @@ public class CreateClusterEnvironmentAWS extends CreateClusterEnvironment {
             ec2.createPlacementGroup(new CreatePlacementGroupRequest(placementGroup, PlacementStrategy.Cluster));
         } else {
             LOG.info(V, "Placement groups are not available for the specified instance type ...");
-            return cluster;
         }
-        return cluster;
+        return this;
     }
 
     String getPlacementGroup() {

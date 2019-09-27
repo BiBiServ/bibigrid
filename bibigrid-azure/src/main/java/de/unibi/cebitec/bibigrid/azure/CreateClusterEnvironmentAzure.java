@@ -10,6 +10,7 @@ import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.util.SubNets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -107,6 +108,11 @@ public class CreateClusterEnvironmentAzure extends CreateClusterEnvironment {
             LOG.error("Failed to create firewall rules. {}", e);
         }
         return this;
+    }
+
+    @Override
+    public CreateClusterEnvironment createKeyPair() throws ConfigurationException {
+        throw new NotImplementedException();
     }
 
     @SuppressWarnings("SameParameterValue")

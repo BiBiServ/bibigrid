@@ -24,6 +24,8 @@ public abstract class Client {
 
     public abstract List<Subnet> getSubnets();
 
+    public abstract List<String> getKeypairNames();
+
     @Deprecated
     public abstract Subnet getSubnetByName(String subnetName);
 

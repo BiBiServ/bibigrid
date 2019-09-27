@@ -2,6 +2,8 @@ package de.unibi.cebitec.bibigrid.aws;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
+import java.io.IOException;
+
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
@@ -9,7 +11,8 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class ConfigurationAWS extends Configuration {
-    public ConfigurationAWS() {
+    public ConfigurationAWS() throws IOException {
+        super();
     }
 
     private double bidPrice;
