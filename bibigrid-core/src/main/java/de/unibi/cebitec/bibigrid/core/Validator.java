@@ -48,26 +48,28 @@ public abstract class Validator {
 
 
     /**
-     * Checks, whetherpublic keys File is readable
+     * Checks, whether public keys files are readable
      *
      * @return true, if file is valid
      */
     private boolean validateSSHKeyFiles() {
 
-        if (config.getSshPublicKeyFile() == null) {
-            LOG.error("Property 'sshPublicKeyFile' not set.");
-            return false;
+
+        List<String> keyFiles = new ArrayList<>(config.getSshPublicKeyFiles());
+        if (config.getSshPublicKeyFile() != null) {
+            keyFiles.add(config.getSshPublicKeyFile());
         }
 
-        Path publicKeyFile = Paths.get(config.getSshPublicKeyFile());
-
-        if (!Files.exists(publicKeyFile)) {
-            LOG.error("Not a valid sshPublicKeyFile {}.", publicKeyFile.toString());
-            return false;
-        }
-        if (!Files.isReadable(publicKeyFile)) {
-            LOG.error("The sshPublicKeyFile {} is not readable.", publicKeyFile.toString());
-            return false;
+        for(String i : keyFiles) {
+            Path publicKeyFile = Paths.get(i);
+            if (!Files.exists(publicKeyFile)) {
+                LOG.error("SshPublicKeyFile {} does not exists.", publicKeyFile.toString());
+                return false;
+            }
+            if (!Files.isReadable(publicKeyFile)) {
+                LOG.error("SshPublicKeyFile {} is not readable.", publicKeyFile.toString());
+                return false;
+            }
         }
         return true;
     }

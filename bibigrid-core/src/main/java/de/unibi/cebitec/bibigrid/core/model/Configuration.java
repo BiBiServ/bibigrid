@@ -88,7 +88,8 @@ public abstract class Configuration {
     private String sshUser = "ubuntu";
     private String keypair;
     private String sshPublicKeyFile;
-    private String sshPublicKey;
+    private List<String> sshPublicKeyFiles = new ArrayList<>();
+    private List<String> sshPublicKeys = new ArrayList<>();
     private String id;
     private ClusterKeyPair clusterKeyPair = new ClusterKeyPair();
     @Deprecated
@@ -192,18 +193,28 @@ public abstract class Configuration {
         LOG.info(V, "SSH public key file found. ({})", this.sshPublicKeyFile);
     }
 
-    public String getSshPublicKey() {
-        return sshPublicKey;
+    public List<String> getSshPublicKeyFiles() {
+        return sshPublicKeyFiles;
     }
 
-    public void setSshPublicKey(String sshPublicKey) {
-        this.sshPublicKey = sshPublicKey;
+    public void setSshPublicKeyFiles(List<String> sshPublicKeyFiles) {
+        this.sshPublicKeyFiles = sshPublicKeyFiles;
     }
 
+    public List<String> getSshPublicKeys() {
+        return sshPublicKeys;
+    }
+
+    public void setSshPublicKeys(List<String> sshPublicKeys) {
+        this.sshPublicKeys = sshPublicKeys;
+    }
+
+    @Deprecated
     public String getSshPrivateKeyFile() {
         return sshPrivateKeyFile;
     }
 
+    @Deprecated
     public void setSshPrivateKeyFile(String sshPrivateKeyFile) {
         LOG.warn("Deprecation warning: Properties 'sshPrivateKeyFile' is not longer used.");
         this.sshPrivateKeyFile = sshPrivateKeyFile.trim();
@@ -1016,6 +1027,9 @@ public abstract class Configuration {
 
     }
 
+    /**
+     * Representation of a SSH Cluster KeyPair.
+     */
     public static class ClusterKeyPair {
 
         private String privateKey;
@@ -1038,36 +1052,73 @@ public abstract class Configuration {
             this.publicKey = publicKey;
         }
 
+        /**
+         * Return the name of the keypair
+         *
+         * @return
+         */
         public String getName() {
             return name;
         }
 
+        /**
+         * Set the name of the keypair.
+         *
+         * @param name
+         */
         public void setName(String name) {
             this.name = name;
         }
 
+        /**
+         *  Store public AND private key in Configuration.KEY_DIR as name[.pub].
+         *
+         * @throws IOException
+         */
         public void store() throws IOException {
             // private key
-            Path p = Paths.get(KEYS_DIR+System.getProperty("file.separator")+name);
-            Files.createFile(p,KEYS_PERMS);
-            OutputStream fout = Files.newOutputStream(p);
-            fout.write(privateKey.getBytes());
-            fout.close();
+            try {
+                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name);
+                Files.createFile(p, KEYS_PERMS);
+                OutputStream fout = Files.newOutputStream(p);
+                fout.write(privateKey.getBytes());
+                fout.close();
+            } catch (IOException e){
+                throw new IOException("Error writing private key :"+e.getMessage(),e);
+            }
             // public key
-            p = Paths.get(KEYS_DIR+System.getProperty("file.separator")+name+".pub");
-            fout = Files.newOutputStream(p);
-            fout.write(publicKey.getBytes());
-            fout.close();
-
+            try {
+                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name + ".pub");
+                OutputStream fout = Files.newOutputStream(p);
+                fout.write(publicKey.getBytes());
+                fout.close();
+            } catch (IOException e) {
+                throw new IOException("Error writing public key :"+e.getMessage(),e);
+            }
         }
 
+        /**
+         * Load public and private key from Configuration.KEYS_DIR.
+         *
+         * @throws IOException
+         */
         public void load() throws IOException {
-            Path p = Paths.get(KEYS_DIR+System.getProperty("file.separator")+name);
-            InputStream fin = Files.newInputStream(p);
-            privateKey  = new String(fin.readAllBytes());
-            p = Paths.get(KEYS_DIR+System.getProperty("file.separator")+name+".pub");
-            fin = Files.newInputStream(p);
-            publicKey = new String(fin.readAllBytes());
+            //private key
+            try {
+                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name);
+                InputStream fin = Files.newInputStream(p);
+                privateKey = new String(fin.readAllBytes());
+            } catch (IOException e) {
+                throw new IOException("Error loading private key :"+e.getMessage(),e);
+            }
+            // public key
+            try {
+                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name + ".pub");
+                InputStream fin = Files.newInputStream(p);
+                publicKey = new String(fin.readAllBytes());
+            } catch (IOException e){
+                throw new IOException("Error loading public key :"+e.getMessage(),e);
+            }
         }
     }
 }

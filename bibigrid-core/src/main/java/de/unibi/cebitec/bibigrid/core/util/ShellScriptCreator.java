@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,34 +73,50 @@ public final class ShellScriptCreator {
     private static void appendSshConfiguration(Configuration config, StringBuilder userData) {
         String user = config.getSshUser();
         String userSshPath = "/home/" + user + "/.ssh/";
-        // ssh-keys
+        // place private cluster ssh-key as 'default' on all instances to allow instance interconnection between all instances
         userData.append("echo '").append(config.getClusterKeyPair().getPrivateKey()).append("' > ").append(userSshPath).append("id_rsa\n");
-        userData.append("chown ").append(user).append(":").append(user).append(" ").append(userSshPath)
-                .append("id_rsa\n");
+        userData.append("chown ").append(user).append(":").append(user).append(" ").append(userSshPath).append("id_rsa\n");
         userData.append("chmod 600 ").append(userSshPath).append("id_rsa\n");
-        userData.append("echo '").append(config.getClusterKeyPair().getPublicKey()).append("' >> ").append(userSshPath)
-                .append("authorized_keys\n");
 
+        // place *all* public keys with authorized keys
+        List<String> pks = new ArrayList<>();
+        // cluster keypair - normally not necessary since this is also be done by *cloud-init*
+        pks.add(config.getClusterKeyPair().getPublicKey());
+        // public keys
+        pks.addAll(config.getSshPublicKeys());
+        // public key files
+        List<String> pkfs = new ArrayList<>(config.getSshPublicKeyFiles());
         if (config.getSshPublicKeyFile() != null) {
-            Path publicKeyFile = Paths.get(config.getSshPublicKeyFile());
+            pkfs.add(config.getSshPublicKeyFile());
+        }
+        // read each key and add content to overall list
+        for (String pkf :  pkfs) {
             try {
-                String publicKey = new String(Files.readAllBytes(publicKeyFile));
-                // Check if we have a public key like putty saves them
-                if (publicKey.startsWith("----")) {
-                    String publicKeyFilename = "bibigrid-ssh-public-key-file.pub";
-                    userData.append("echo '").append(publicKey).append("' > ").append(userSshPath)
-                            .append(publicKeyFilename).append("\n");
-                    userData.append("ssh-keygen -i -f ").append(userSshPath).append(publicKeyFilename).append(" >> ")
-                            .append(userSshPath).append("authorized_keys\n");
-                    userData.append("rm ").append(userSshPath).append(publicKeyFilename).append("\n");
-                } else {
-                    userData.append("echo '").append(publicKey).append("' >> ").append(userSshPath)
-                            .append("authorized_keys\n");
-                }
-            } catch (IOException e) {
-                LOG.error("Failed to add ssh public key file '{}'. {}", config.getSshPublicKeyFile(), e);
+                String pk = new String(Files.readAllBytes(Paths.get(pkf)));
+                pks.add(pk);
+            } catch (IOException e){
+                LOG.error("Failed to read public key : {}",pkf);
             }
         }
+
+        // add all keys to authorized keys
+        for (String pk : pks) {
+            // Check if we have a public key like putty saves them
+            if (pk.startsWith("----")) {
+                String tmp = "tmp.pub";
+                userData.append("echo '").append(pk).append("' > ").append(userSshPath)
+                        .append(tmp).append("\n");
+                userData.append("ssh-keygen -i -f ").append(userSshPath).append(tmp).append(" >> ")
+                        .append(userSshPath).append("authorized_keys\n");
+                userData.append("rm ").append(userSshPath).append(tmp).append("\n");
+            } else {
+                userData.append("echo '").append(pk).append("' >> ").append(userSshPath)
+                        .append("authorized_keys\n");
+            }
+
+
+        }
+
         // ssh config
         userData.append("cat > ").append(userSshPath).append("config << SSHCONFIG\n");
         userData.append("Host *\n");
