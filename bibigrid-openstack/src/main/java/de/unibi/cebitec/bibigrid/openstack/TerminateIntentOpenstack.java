@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import org.openstack4j.api.OSClient;
@@ -103,8 +104,8 @@ public class TerminateIntentOpenstack extends TerminateIntent {
                 LOG.warn("Can't remove network '{}'. {}", cluster.getNetwork(), ar.getFault());
             }
         }
-        // keypair
-        if (cluster.getKeyName() != null) {
+        // keypair (but only if it starts with CreateCluster.PREFIX)
+        if (cluster.getKeyName() != null && cluster.getKeyName().startsWith(CreateCluster.PREFIX)) {
             // delete keypair
             ActionResponse ar  = os.compute().keypairs().delete(cluster.getKeyName());
             if (ar.isSuccess()) {
