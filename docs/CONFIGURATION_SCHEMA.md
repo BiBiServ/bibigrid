@@ -138,21 +138,3 @@ openstackCredentials:
   domain: string                                    # Name of ID of user domain
   tenantDomain: string                              # OpenStack user project domain
 ```
-
-**Google Compute specific schema**
-```
-googleProjectId: string                             # ID of Google Compute Engine Project
-googleImageProjectId: string                        # ID of Image Project 
-```
-
-**AWS specific schema**
-```
-bidPrice: double                                    # Bid Price in USD ($) for each Amazon EC2 instance when launched as Spot Instances
-bidPriceMaster: double
-publicWorkerIps: boolean [yes, no]                   # Every worker gets public IP
-useSpotInstances: boolean [yes, no]                 # Usage of unused EC2 capacity in AWS cloud at discount price
-```
-
-**Azure specific schema**
-
-There are currently no azure specific parameters.

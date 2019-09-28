@@ -14,10 +14,7 @@ ssh-keygen -f ~ -t rsa -b 4096
 ```
 
 When using the ssh public key parameter in config or command line, the setup of ssh keys in the credentials setup can be skipped!
-* [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)  
-* [Google Compute credentials setup](../bibigrid-googlecloud/docs/Credentials_Setup.md) *
-* [Amazon AWS credentials setup](../bibigrid-aws/docs/Credentials_Setup.md) *
-* [Microsoft Azure credentials setup](../bibigrid-azure/docs/Credentials_Setup.md) *
+* [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)
 
 ### Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
@@ -31,14 +28,6 @@ A complete schema for a **configuration file** can be found [here](CONFIGURATION
 The configuration file is written in YAML format. In contrast to the command line
 parameters, a configuration file is easier to maintain and in some cases provides
 more detailed configuration possibilities.
-
-A complete schema for a specific **configuration file** can be found on:
-* [OpenStack Configuration File](config/CONFIG_OPENSTACK.md)  
-* [Google Compute Configuration File](config/CONFIG_GOOGLE_COMPUTE.md) *
-* [Amazon AWS Configuration File](config/CONFIG_AWS.md) *
-* [Azure Configuration File](config/CONFIG_AZURE.md) *
-  
-**Google Compute, AWS and Azure will currently not be tested.*
 
 #### Writing and using a configuration file
 The configuration file is a plain text file in YAML format. A short example would be:
@@ -58,40 +47,41 @@ availabilityZone: default
 network: default
 subnet: default
 
-user: testuser
-sshUser: testuser
-
 masterInstance:
   type: f1-micro
-  image: ubuntu-1604-xenial-v20171212
+  image: 'Ubuntu 18.04 LTS (2019-08-08)'
 
 workerInstances:
   - type: f1-micro
     count: 2
-    image: ubuntu-1604-xenial-v20171212
+    image: 'Ubuntu 18.04 LTS (2019-08-08)'
 
 ports:
   - type: TCP
     number: 80
   - type: TCP
     number: 443
+
+nfs: yes
+theia: yes
+slurm: yes
 ```
 
-This file can now be used with the "-o" command line parameter and the path to the configuration file.
+This file can now be included using the "-o" command line parameter and the path to the configuration file.
 
 ### Creating a bibigrid alias
-To keep the cluster setup process simpler you can set an alias for the BiBiGrid JAR file installed before. 
+To keep the cluster setup process simple you can set an alias for the BiBiGrid JAR file installed before. 
 The Unix command should look like the following (depending on JAR filename):
 ```
 > alias bibigrid="java -jar /path/to/bibigrid-*.jar"
 ```
 
 Instead of the java command there will be used the 'bibigrid' command just created. 
-Since the alias only applies in the current terminal session, it is recommended to add it to the 
-'.bashrc' file in the home directory.
+Since the alias only applies in the current terminal session, it is thus recommended to add it to the 
+'.bashrc' file in the home directory to use it persistently.
 
 ### Validating the cluster configuration
-Before starting the cluster directly after writing the configuration file, several components can be validated beforehand.
+Before starting the cluster directly after writing the configuration file, several components can be validated via the check command '-ch' beforehand.
 This prevents the majority of possible errors or typos, resulting in incomplete cluster setups.
 ```
 > bibigrid -ch -v -o ~/config.yml
@@ -106,10 +96,7 @@ this may take some time.
 ```
 
 ### Starting the Web IDE
-At first you need to have activated the 'theia' or 'cloud9' feature in the configuration file.
-Although both IDEs are supported, Theia IDE is recommended. Cloud9 support is deprecated and 
-will not be further integrated in future.
-The IDE can be started with a simple command:
+Enable the Theia IDE in the configuration file using `theia: yes`. The IDE can be started with the following command:
 ```
 > bibigrid --ide [cluster-id] -v -o ~/config.yml
 ```
@@ -119,7 +106,7 @@ If you are using multiple sessions on the same server the port will be increment
 For more flexibility you can set the IDE ports in the configuration.
 
 ### Monitoring via Zabbix Web Frontend
-If you want to monitor a cluster, you can integrate the zabbix support into your configuration file:
+If you want to monitor a cluster, you can integrate the Zabbix support into your configuration file:
 ```
 zabbix: yes
 zabbixConf:
@@ -152,7 +139,7 @@ The given value(s) will be overwritten in or added to the default configuration.
 Check `qconf -sconf global` on master to proof the configuration.
 
 ## Including Ansible (Galaxy) Roles
-You can include ansible roles from your own machine (compressed as .tar.gz files) automatically into your cluster setup by defining following configuration settings:
+You can include ansible roles from your local machine (compressed as .tar.gz files) automatically into your cluster setup by defining following configuration settings:
 
 ```
 ansibleRoles:
