@@ -1,20 +1,13 @@
 # Getting Started
-Starting a cluster requires a valid configuration file and credentials. Following are the necessary steps with 
+Starting a cluster requires a valid configuration file and credentials of the cloud provider. Following are the necessary steps with 
 detailed information. BiBiGrid is based on OpenStack, if you're using another cloud provider take a look at the [specific setup](cloud-providers/CONFIGURATION.md).
 For an up-to-date user Setup-Tutorial for the BiBiGrid visit [de.NBI Wiki](https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/).
 
 ### Setting up credentials
 For communication with the cloud provider API, credentials have to be setup.
+Therefore you have to place a public SSH Key on the OpenStack server and set up the API credentials.
+Visit [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md) for a detailed credentials setup tutorial.
 Additionally during cluster creation the master instance will handle software updates and installations for all cluster instances using ansible.
-BiBiGrid creates a One-Time-SSH-Private-Key for each cluster during setup. In order to connect to the remote 
-you have to have a valid public SSH key placed locally as well as on the cloud provider server. This should be in your home directory in a hidden .ssh folder (~/.ssh/id_rsa.pub).
-If you don't have setup SSH yet, you can create a keypair as follows:
-```
-ssh-keygen -f ~ -t rsa -b 4096
-```
-
-When using the ssh public key parameter in config or command line, the setup of ssh keys in the credentials setup can be skipped!
-* [OpenStack credentials setup](../bibigrid-openstack/docs/Credentials_Setup.md)
 
 ### Writing the configuration file
 The configuration file specifies the composition of the requested cluster. Many parameters are shared across all cloud providers, however some parameters are provider specific.
@@ -96,7 +89,7 @@ this may take some time.
 ```
 
 ### Starting the Web IDE
-Enable the Theia IDE in the configuration file using `theia: yes`. The IDE can be started with the following command:
+Enable the Theia IDE in the configuration file using `dtheia: yes`. The IDE can be started with the following command:
 ```
 > bibigrid --ide [cluster-id] -v -o ~/config.yml
 ```
@@ -280,7 +273,7 @@ ansibleGalaxyRoles:
         - name: example_user
           host: "%"
           password: similarly-secure-password
-          priv: "example_db.*:ALL"                  # permission on specified database
+          priv: "example_db.*:ALL"                  # Permission on specified database
 ```
 This ansible galaxy role is from author geerlingguy who provides many useful ansible roles. 
 After cluster setup and login on master you can check, if everything is going right:  
@@ -301,13 +294,14 @@ with the selected provider will be listed, including some detail information.
 Example output:
 
 ```
-     cluster-id |       user |         launch date |             key name |       public-ip |  # inst |    group-id |   subnet-id |  network-id
+     cluster-id |       user |         launch date |           key name |       public-ip |  # inst |    group-id |   subnet-id |  network-id
 -----------------------------------------------------------------------------------------------------------------------------------------------
-fkiseokf34ekfeo |   testuser |   20/02/18 09:25:10 |          cluster-key |    XXX.XX.XX.XX |       3 | a45b6a63-.. |           - |           -
+fkiseokf34ekfeo |   testuser |   20/08/19 09:25:10 |   bibigrid-fkis... |    XXX.XX.XX.XX |       3 | a45b6a63-.. |           - |           -
 ```
 
 ### Terminate the cluster
-When you're finished using the cluster, you can terminate it using the following command and the logged cluster-id when the cluster was created.
+When you're finished using the cluster, you can terminate it using the following command and the logged cluster-id 
+when the cluster was created. The SSH Key Pair in the *.bibigrid/keys* folder will be deleted since they are only used once per cluster.
 
 ```
 > bibigrid -t [cluster-id] -v -o ~/config.yml

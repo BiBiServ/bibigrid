@@ -19,7 +19,7 @@ sshPublicKeyFiles:                                  # Optional SSH public key fi
 sshPublicKeys:                                      # Optional bare public (!) SSH keys
   - string
   - ...
-credentialsFile: string                             # path/to/credentials (default: /HOMEDIRECTORY/.bibigrid/credentials.yml)
+credentialsFile: string                             # path/to/credentials (default: HOME_DIR/.bibigrid/credentials.yml)
 
 region: string                                      # Specific region
 availabilityZone: string                            # e.g.: default, maintenance, ...
@@ -129,7 +129,7 @@ One could enter more source and target values to provide more volumes to be moun
 ```
 router: string                                      # Logical component, forwards data packets between networks
 securityGroup: string                               # Like a virtual firewall in network  
-serverGroup: string                                 # provides a mechanism to group servers according to certain policy
+serverGroup: string                                 # Provides a mechanism to group servers according to certain policy
 openstackCredentials:
   tenantName: string                                # OpenStack project name
   username: string                                  # Name of user
