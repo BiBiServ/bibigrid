@@ -32,8 +32,6 @@ public abstract class Configuration {
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 
     @Deprecated
-    private static final String DEFAULT_DIRNAME = System.getProperty("user.home");
-    @Deprecated
     private static final String DEFAULT_CONFIG_FILENAME = "configuration.yml";
     private static final String PROPERTIES_FILEPATH_PARAMETER = "o";
 
