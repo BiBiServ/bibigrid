@@ -1,7 +1,8 @@
 # Configuration File Schema
 The configuration file is written in YAML format. In contrast to the command line
 parameters, a configuration file is easier to maintain and in some cases provides
-more detailed configuration possibilities.
+more detailed configuration possibilities. The default configuration file is placed in the *.bibigrid* folder 
+in your home directory which will be created during cluster setup.
 
 **Shared schema**
 

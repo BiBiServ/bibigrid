@@ -77,7 +77,7 @@ Since the alias only applies in the current terminal session, it is thus recomme
 Before starting the cluster directly after writing the configuration file, several components can be validated via the check command '-ch' beforehand.
 This prevents the majority of possible errors or typos, resulting in incomplete cluster setups.
 ```
-> bibigrid -ch -v -o ~/config.yml
+> bibigrid -ch -v -o config.yml
 ```
 The command will be executed by default when creating a new cluster.
 
@@ -85,7 +85,7 @@ The command will be executed by default when creating a new cluster.
 Once the configuration is validated, the creation of the cluster can be started. Depending on the parameters
 this may take some time.
 ```
-> bibigrid -c -v -o ~/config.yml
+> bibigrid -c -v -o config.yml
 ```
 
 ### Starting the Web IDE
