@@ -32,9 +32,7 @@ public abstract class Configuration {
     protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 
     @Deprecated
-    private static final String DEFAULT_DIRNAME = System.getProperty("user.home");
-    @Deprecated
-    private static final String DEFAULT_FILENAME = ".bibigrid.yml";
+    private static final String DEFAULT_CONFIG_FILENAME = "configuration.yml";
     private static final String PROPERTIES_FILEPATH_PARAMETER = "o";
 
     public Configuration() throws IOException {
@@ -54,7 +52,7 @@ public abstract class Configuration {
     public static Configuration loadConfiguration(Class<? extends Configuration> configurationClass, String path) throws ConfigurationException{
         Path propertiesFilePath = null;
 
-        Path defaultPropertiesFilePath = Paths.get(DEFAULT_DIRNAME, DEFAULT_FILENAME);
+        Path defaultPropertiesFilePath = Paths.get(CONFIG_DIR, DEFAULT_CONFIG_FILENAME);
         if (path != null)  {
             Path newPath = Paths.get(path);
             if (Files.isReadable(newPath)) {
