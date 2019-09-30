@@ -13,7 +13,7 @@ mode: openstack                                     # Provider mode [optionally 
 # Access
 user: string                                        # User name (just for VM tagging)
 sshUser: string                                     # SSH user name, default is "ubuntu"
-sshPublicKeyFile: string                            # SSH public key file (default: .ssh/id_rsa.pub)
+sshPublicKeyFile: string                            # Optional SSH public key file 
 sshPublicKeyFiles:                                  # Optional SSH public key file list
   - string
   - ...
