@@ -175,6 +175,7 @@ public abstract class CreateCluster extends Intent {
                 logFinishedInfoMessage(
                         config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() : masterInstance.getPrivateIp());
             }
+
             Runtime.getRuntime().removeShutdownHook(this.interruptionMessageHook);
             return false;
         }

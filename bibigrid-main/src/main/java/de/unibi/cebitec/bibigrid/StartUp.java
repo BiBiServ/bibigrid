@@ -146,16 +146,20 @@ public class StartUp {
                         config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
                         break;
 
+
                     case CLOUD9:
                     case IDE:
                         config.setId(cl.getOptionValue(IntentMode.IDE.getShortParam().trim()));
+
                         break;
                     case CREATE:
                     case PREPARE:
                     case LIST:
+
                         String id = cl.getOptionValue(IntentMode.LIST.getShortParam());
                         if (id != null) {
                             config.setId(id.trim());
+
                         }
                         break;
                     case VALIDATE:
@@ -233,7 +237,9 @@ public class StartUp {
                     break;
                 case LIST:
                     ListIntent listIntent = module.getListIntent(client, config);
+
                     if (config.getId() == null || config.getId().isEmpty()) {
+
                         LOG.info(listIntent.toString());
                     } else {
                         LOG.info(listIntent.toDetailString(config.getId()));
@@ -279,7 +285,6 @@ public class StartUp {
                             e.printStackTrace();
                         }
                     }
-
                     break;
                 default:
                     LOG.warn("Unknown intent mode.");

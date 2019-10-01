@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
+
 import java.io.*;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
@@ -13,6 +14,7 @@ import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -53,6 +55,7 @@ public abstract class Configuration {
         Path propertiesFilePath = null;
 
         Path defaultPropertiesFilePath = Paths.get(CONFIG_DIR, DEFAULT_CONFIG_FILENAME);
+
         if (path != null)  {
             Path newPath = Paths.get(path);
             if (Files.isReadable(newPath)) {
