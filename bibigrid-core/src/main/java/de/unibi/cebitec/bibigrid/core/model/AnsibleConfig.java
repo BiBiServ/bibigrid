@@ -169,7 +169,7 @@ public final class AnsibleConfig {
         }
         if (config.isIDE()) {
             map.put("ide_workspace", config.getWorkspace());
-            map.put("ideConf", config.getIdeConf());
+            map.put("ideConf", getIdeConf());
         }
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
@@ -256,6 +256,15 @@ public final class AnsibleConfig {
             ogeConf.put(name, oc.getProperty(name));
         }
         return ogeConf;
+    }
+
+    private Map<String, Object> getIdeConf() {
+        Configuration.IdeConf ic = config.getIdeConf();
+        Map<String, Object> ideConf = new LinkedHashMap<>();
+        ideConf.put("ide", ic.isIde());
+        ideConf.put("port_start", ic.getPort_start());
+        ideConf.put("port_end", ic.getPort_end());
+        return ideConf;
     }
 
     /**

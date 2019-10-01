@@ -83,7 +83,6 @@ public abstract class Configuration {
 
     }
 
-
     /* properties */
     private String mode;
     private String user = System.getProperty("user.name");
@@ -117,7 +116,7 @@ public abstract class Configuration {
     private boolean cloud9;
     @Deprecated
     private boolean theia;
-    private IdeConf ideConf;
+    private IdeConf ideConf = new IdeConf();
     private boolean ganglia;
     private boolean zabbix;
     private ZabbixConf zabbixConf = new ZabbixConf();
@@ -504,41 +503,6 @@ public abstract class Configuration {
         LOG.info(V, "Debug requests {}.", debugRequests ? "enabled" : "disabled");
     }
 
-    public boolean isIDE() { return ideConf.ide; }
-
-    @Deprecated
-    public boolean isCloud9() {
-        return cloud9;
-    }
-
-    @Deprecated
-    public void setCloud9(boolean cloud9) {
-        LOG.warn("cloud9 parameter is deprecated. Please use IdeConf instead.");
-        LOG.warn("Cloud9 will not longer be supported and is replaced by the Theia Web IDE.");
-        this.cloud9 = cloud9;
-        ideConf.setIde(cloud9);
-    }
-
-    @Deprecated
-    public boolean isTheia() {
-        return theia;
-    }
-
-    @Deprecated
-    public void setTheia(boolean theia) {
-        LOG.warn("theia parameter is deprecated. Please use IdeConf instead.");
-        this.theia = theia;
-        ideConf.setIde(theia);
-    }
-
-    public IdeConf getIdeConf() {
-        return ideConf;
-    }
-
-    public void setIdeConf(IdeConf ideConf) {
-        this.ideConf = ideConf;
-    }
-
     public String getCredentialsFile() {
         return credentialsFile;
     }
@@ -547,10 +511,12 @@ public abstract class Configuration {
         this.credentialsFile = credentialsFile;
     }
 
+    @Deprecated
     public String getCloud9Workspace() {
         return getWorkspace();
     }
 
+    @Deprecated
     public void setCloud9Workspace(String cloud9Workspace) {
         LOG.warn("Option cloud9Workspace is deprecated. Please use workspace instead.");
         setWorkspace(cloud9Workspace);
@@ -832,6 +798,41 @@ public abstract class Configuration {
                 return null;
             }
         }
+    }
+
+    @Deprecated
+    public boolean isCloud9() {
+        return cloud9;
+    }
+
+    @Deprecated
+    public void setCloud9(boolean cloud9) {
+        LOG.warn("cloud9 parameter is deprecated. Please use IdeConf instead.");
+        LOG.warn("Cloud9 will not longer be supported and is replaced by the Theia Web IDE.");
+        this.cloud9 = cloud9;
+        ideConf.setIde(cloud9);
+    }
+
+    @Deprecated
+    public boolean isTheia() {
+        return theia;
+    }
+
+    @Deprecated
+    public void setTheia(boolean theia) {
+        LOG.warn("theia parameter is deprecated. Please use IdeConf instead.");
+        this.theia = theia;
+        ideConf.setIde(theia);
+    }
+
+    public boolean isIDE() { return ideConf != null; }
+
+    public IdeConf getIdeConf() {
+        return ideConf;
+    }
+
+    public void setIdeConf(IdeConf ideConf) {
+        this.ideConf = ideConf;
     }
 
     /**

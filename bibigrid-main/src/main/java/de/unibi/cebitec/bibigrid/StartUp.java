@@ -96,7 +96,6 @@ public class StartUp {
                     break;
             }
 
-
             // Options
             if (cl.hasOption("v")) {
                 VerboseOutputFilter.SHOW_VERBOSE = true;
@@ -131,12 +130,9 @@ public class StartUp {
                 return;
             }
 
-
             try {
-
                 // get provider specific configuration
                 Configuration config = module.getConfiguration(configurationFile);
-
 
                 // get provider specific validator
                 Validator validator =  module.getValidator(config,module);
@@ -145,12 +141,9 @@ public class StartUp {
                     case TERMINATE:
                         config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
                         break;
-
-
                     case CLOUD9:
                     case IDE:
                         config.setId(cl.getOptionValue(IntentMode.IDE.getShortParam().trim()));
-
                         break;
                     case CREATE:
                     case PREPARE:
@@ -169,8 +162,6 @@ public class StartUp {
                 } else {
                     LOG.error(ABORT_WITH_NOTHING_STARTED);
                 }
-
-
             } catch (ConfigurationException e) {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
@@ -216,8 +207,6 @@ public class StartUp {
     }
 
     private static void runIntent(ProviderModule module, Validator validator, Configuration config, IntentMode intentMode) {
-
-
             Client client;
             try {
                 client = module.getClient(config);

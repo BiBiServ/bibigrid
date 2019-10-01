@@ -64,6 +64,10 @@ public class IdeIntent extends Intent {
             LOG.error("Failed to poll master ssh port.");
             return;
         }
+        if (!config.isIDE()) {
+            LOG.error("IDE not set in configuration.");
+            return;
+        }
         startPortForwarding(masterIp);
     }
 
