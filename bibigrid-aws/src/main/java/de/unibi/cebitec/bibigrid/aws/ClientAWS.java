@@ -97,6 +97,13 @@ class ClientAWS extends Client {
     }
 
     @Override
+    public List<String> getKeypairNames() {
+        DescribeKeyPairsRequest request = new DescribeKeyPairsRequest();
+        DescribeKeyPairsResult result = internalClient.describeKeyPairs(request);
+        return result.getKeyPairs().stream().map(KeyPairInfo::getKeyName).collect(Collectors.toList());
+    }
+
+    @Override
     public Subnet getSubnetByName(String subnetName) {
         return getSubnetByIdOrName(subnetName);
     }

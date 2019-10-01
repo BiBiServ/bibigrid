@@ -38,17 +38,20 @@ public class IdeIntent extends Intent {
     }
 
     public void start() {
-        if (config.getClusterIds().length == 0) {
+        if (config.getId() == null) {
             LOG.error("ClusterId not found. Please provide a valid cluster id.");
             return;
         }
-        String clusterId = config.getClusterIds()[0];
+        String id = config.getId();
         final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
-        if (!clusters.containsKey(clusterId)) {
-            LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", clusterId);
+        if (!clusters.containsKey(id)) {
+            LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", id);
             return;
         }
-        String masterIp = clusters.get(clusterId).getPublicIp();
+
+        String masterIp = config.isUseMasterWithPublicIp() ? clusters.get(id).getPublicIp() :
+                clusters.get(id).getPrivateIp();
+
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (!sshPortIsReady) {
             LOG.error("Failed to poll master ssh port.");
@@ -58,15 +61,13 @@ public class IdeIntent extends Intent {
     }
 
     private void startPortForwarding(final String masterIp) {
-        JSch ssh = new JSch();
-        JSch.setLogger(new JSchLogger());
+
         try {
-            ssh.addIdentity(config.getSshPrivateKeyFile());
+
             LOG.info("Trying to connect to master ...");
             sleep(4);
             // Create new Session to avoid packet corruption.
-            Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
-                    Paths.get(config.getSshPrivateKeyFile()));
+            Session sshSession = SshFactory.createSshSession(config, masterIp);
             if (sshSession != null) {
                 sshSession.setPortForwardingL(PORT, "localhost", PORT);
                 // Start connection attempt

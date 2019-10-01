@@ -12,6 +12,7 @@ import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -114,6 +115,12 @@ class ClientOpenstack extends Client {
     }
 
     @Override
+    public List<String> getKeypairNames() {
+        return internalClient.compute().keypairs().list()
+                .stream().map(org.openstack4j.model.compute.Keypair::getName).collect(Collectors.toList());
+    }
+
+    @Override
     public Subnet getSubnetByName(String subnetName) {return getSubnetByIdOrName(subnetName); }
 
     @Override
@@ -173,4 +180,7 @@ class ClientOpenstack extends Client {
         }
         return null;
     }
+
+
+
 }

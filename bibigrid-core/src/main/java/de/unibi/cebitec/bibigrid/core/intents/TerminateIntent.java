@@ -7,6 +7,10 @@ import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +73,7 @@ public abstract class TerminateIntent extends Intent {
             LOG.info("Terminating cluster with ID '{}' ...", clusterId);
             final Cluster cluster = clusters.get(clusterId);
             if (terminateCluster(cluster)) {
+                delete_Key(cluster);
                 LOG.info("Cluster '{}' terminated!", clusterId);
                 terminateResponse = "Cluster '"+clusterId+"' terminated!";
             } else {
@@ -81,4 +86,23 @@ public abstract class TerminateIntent extends Intent {
     }
 
     protected abstract boolean terminateCluster(Cluster cluster);
+
+    private void delete_Key(Cluster cluster) {
+        try {
+            Path p = Paths.get(Configuration.KEYS_DIR + System.getProperty("file.separator") + cluster.getKeyName());
+            Files.delete(p);
+            LOG.info("Private key {} deleted.",p.toString());
+        } catch (IOException e) {
+            //  ignore exception
+        }
+
+        try {
+            Path p = Paths.get(Configuration.KEYS_DIR + System.getProperty("file.separator") + cluster.getKeyName() + ".pub");
+            Files.delete(p);
+            LOG.info("Public key {} deleted.",p.toString());
+        } catch (IOException e) {
+            //  ignore exception
+        }
+
+    }
 }

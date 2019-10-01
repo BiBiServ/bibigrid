@@ -2,6 +2,7 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.Port;
 import de.unibi.cebitec.bibigrid.core.util.SubNets;
@@ -19,6 +20,7 @@ import org.openstack4j.api.networking.PortService;
 import org.openstack4j.model.compute.IPProtocol;
 import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.compute.builder.SecurityGroupRuleBuilder;
+import org.openstack4j.model.compute.*;
 import org.openstack4j.model.network.AttachInterfaceType;
 import org.openstack4j.model.network.IP;
 import org.openstack4j.model.network.IPVersionType;
@@ -185,6 +187,17 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
         } catch (ClientResponseException e) {
             throw new ConfigurationException(e.getMessage(), e);
         }
+        return this;
+    }
+
+    @Override
+    public CreateClusterEnvironment createKeyPair() throws ConfigurationException {
+        OSClient osc = cluster.getClient();
+        Configuration.ClusterKeyPair ckp = getConfig().getClusterKeyPair();
+        if (osc.compute().keypairs().create(ckp.getName(),ckp.getPublicKey())  == null) {
+            throw new ConfigurationException("Can't create KeyPair");
+        }
+        LOG.info("KeyPair '{}' created.",ckp.getName());
         return this;
     }
 

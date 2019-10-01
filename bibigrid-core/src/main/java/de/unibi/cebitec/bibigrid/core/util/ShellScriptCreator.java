@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +23,7 @@ import org.slf4j.LoggerFactory;
 public final class ShellScriptCreator {
     private static final Logger LOG = LoggerFactory.getLogger(ShellScriptCreator.class);
 
-    public static String getUserData(Configuration config, ClusterKeyPair keypair, boolean base64) {
+    public static String getUserData(Configuration config, boolean base64) {
         StringBuilder userData = new StringBuilder();
         userData.append("#!/bin/bash\n");
         // redirect output
@@ -48,7 +50,7 @@ public final class ShellScriptCreator {
         appendDisableAptDailyService(userData);
         // configure SSH Config
         userData.append("log \"configure ssh\"\n");
-        appendSshConfiguration(config, userData, keypair);
+        appendSshConfiguration(config, userData);
         // finished
         userData.append("log \"userdata.finished\"\n");
         userData.append("exit 0\n");
@@ -62,41 +64,58 @@ public final class ShellScriptCreator {
                 "systemctl stop apt-daily.timer\n" +
                 "systemctl disable apt-daily.timer\n" +
                 "systemctl kill --kill-who=all apt-daily.service\n" +
+                "if [ $? -eq 0 ]; then \n" +
                 "while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)\n" +
                 "do\n" +
                 "  sleep 1;\n" +
-                "done\n");
+                "done\n" +
+                "fi\n");
     }
 
-    private static void appendSshConfiguration(Configuration config, StringBuilder userData, ClusterKeyPair keypair) {
+    private static void appendSshConfiguration(Configuration config, StringBuilder userData) {
         String user = config.getSshUser();
         String userSshPath = "/home/" + user + "/.ssh/";
-        userData.append("echo '").append(keypair.getPrivateKey()).append("' > ").append(userSshPath).append("id_rsa\n");
-        userData.append("chown ").append(user).append(":").append(user).append(" ").append(userSshPath)
-                .append("id_rsa\n");
+        // place private cluster ssh-key as 'default' on all instances to allow instance interconnection between all instances
+        userData.append("echo '").append(config.getClusterKeyPair().getPrivateKey()).append("' > ").append(userSshPath).append("id_rsa\n");
+        userData.append("chown ").append(user).append(":").append(user).append(" ").append(userSshPath).append("id_rsa\n");
         userData.append("chmod 600 ").append(userSshPath).append("id_rsa\n");
-        userData.append("echo '").append(keypair.getPublicKey()).append("' >> ").append(userSshPath)
-                .append("authorized_keys\n");
+
+        // place *all* additional public keys within authorized keys
+        List<String> pks = new ArrayList<>();
+               // public keys
+        pks.addAll(config.getSshPublicKeys());
+        // public key files
+        List<String> pkfs = new ArrayList<>(config.getSshPublicKeyFiles());
         if (config.getSshPublicKeyFile() != null) {
-            Path publicKeyFile = Paths.get(config.getSshPublicKeyFile());
+            pkfs.add(config.getSshPublicKeyFile());
+        }
+        // read each key and add content to overall list
+        for (String pkf :  pkfs) {
             try {
-                String publicKey = new String(Files.readAllBytes(publicKeyFile));
-                // Check if we have a public key like putty saves them
-                if (publicKey.startsWith("----")) {
-                    String publicKeyFilename = "bibigrid-ssh-public-key-file.pub";
-                    userData.append("echo '").append(publicKey).append("' > ").append(userSshPath)
-                            .append(publicKeyFilename).append("\n");
-                    userData.append("ssh-keygen -i -f ").append(userSshPath).append(publicKeyFilename).append(" >> ")
-                            .append(userSshPath).append("authorized_keys\n");
-                    userData.append("rm ").append(userSshPath).append(publicKeyFilename).append("\n");
-                } else {
-                    userData.append("echo '").append(publicKey).append("' >> ").append(userSshPath)
-                            .append("authorized_keys\n");
-                }
-            } catch (IOException e) {
-                LOG.error("Failed to add ssh public key file '{}'. {}", config.getSshPublicKeyFile(), e);
+                String pk = new String(Files.readAllBytes(Paths.get(pkf)));
+                pks.add(pk);
+            } catch (IOException e){
+                LOG.error("Failed to read public key : {}",pkf);
             }
         }
+
+        // add all keys to authorized keys
+        for (String pk : pks) {
+            // Check if we have a public key like putty saves them
+            if (pk.startsWith("----")) {
+                String tmp = "tmp.pub";
+                userData.append("echo '").append(pk.trim()).append("' > ").append(userSshPath)
+                        .append(tmp).append("\n");
+                userData.append("ssh-keygen -i -f ").append(userSshPath).append(tmp).append(" >> ")
+                        .append(userSshPath).append("authorized_keys\n");
+                userData.append("rm ").append(userSshPath).append(tmp).append("\n");
+            } else {
+                userData.append("echo '").append(pk.trim()).append("' >> ").append(userSshPath)
+                        .append("authorized_keys\n");
+            }
+        }
+
+        // ssh config
         userData.append("cat > ").append(userSshPath).append("config << SSHCONFIG\n");
         userData.append("Host *\n");
         userData.append("\tCheckHostIP no\n");
