@@ -272,20 +272,14 @@ public abstract class CreateCluster extends Intent {
 
         final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                 masterInstance.getPrivateIp();
-//        JSch ssh = new JSch();
-//        JSch.setLogger(new JSchLogger());
         LOG.info("Now configuring...");
         boolean configured = false;
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (sshPortIsReady) {
             try {
-                //ssh.addIdentity(config.getSshPrivateKeyFile());
                 LOG.info("Trying to connect to master...");
                 sleep(4);
                 // Create new Session to avoid packet corruption.
-//                Session sshSession = SshFactory.createNewSshSession(ssh, masterIp, config.getSshUser(),
-//                        Paths.get(config.getSshPrivateKeyFile()));
-
                 Session sshSession = SshFactory.createSshSession(config,masterIp);
                 if (sshSession != null) {
                     // Start connection attempt

@@ -48,7 +48,10 @@ public class IdeIntent extends Intent {
             LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", id);
             return;
         }
-        String masterIp = clusters.get(id).getPublicIp();
+
+        String masterIp = config.isUseMasterWithPublicIp() ? clusters.get(id).getPublicIp() :
+                clusters.get(id).getPrivateIp();
+
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (!sshPortIsReady) {
             LOG.error("Failed to poll master ssh port.");

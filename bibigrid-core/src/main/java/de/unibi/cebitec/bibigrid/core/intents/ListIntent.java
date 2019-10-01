@@ -110,6 +110,7 @@ public abstract class ListIntent extends Intent {
             if (cluster.getMasterInstance() == null) {
                 cluster.setMasterInstance(instance);
                 cluster.setPublicIp(instance.getPublicIp());
+                cluster.setPrivateIp(instance.getPrivateIp());
                 cluster.setKeyName(instance.getKeyName());
                 cluster.setStarted(instance.getCreationTimestamp().format(dateTimeFormatter));
             } else {
