@@ -64,10 +64,12 @@ public final class ShellScriptCreator {
                 "systemctl stop apt-daily.timer\n" +
                 "systemctl disable apt-daily.timer\n" +
                 "systemctl kill --kill-who=all apt-daily.service\n" +
+                "if [ $? -eq 0 ]; then \n" +
                 "while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)\n" +
                 "do\n" +
                 "  sleep 1;\n" +
-                "done\n");
+                "done\n" +
+                "fi\n");
     }
 
     private static void appendSshConfiguration(Configuration config, StringBuilder userData) {

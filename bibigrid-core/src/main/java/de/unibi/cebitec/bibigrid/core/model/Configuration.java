@@ -1105,7 +1105,7 @@ public abstract class Configuration {
             try {
                 Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name);
                 InputStream fin = Files.newInputStream(p);
-                privateKey = new String(fin.readAllBytes());
+                privateKey = new String(readAllBytes(fin));
             } catch (IOException e) {
                 throw new IOException("Error loading private key :"+e.getMessage(),e);
             }
@@ -1113,10 +1113,23 @@ public abstract class Configuration {
             try {
                 Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name + ".pub");
                 InputStream fin = Files.newInputStream(p);
-                publicKey = new String(fin.readAllBytes());
+                // Java > 9
+                // publicKey = new String(fin.readAllBytes());
+                publicKey = new String(readAllBytes(fin));
             } catch (IOException e){
                 throw new IOException("Error loading public key :"+e.getMessage(),e);
             }
         }
+    }
+
+    private static byte [] readAllBytes (InputStream in) throws IOException{
+        int nRead;
+        byte [] data = new byte [1024];
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        while ((nRead = in.read(data,0,data.length)) != -1) {
+            buffer.write(data,0,nRead);
+        }
+        buffer.flush();
+        return buffer.toByteArray();
     }
 }

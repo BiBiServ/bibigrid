@@ -10,10 +10,12 @@
         systemctl stop apt-daily.timer
         systemctl disable apt-daily.timer
         systemctl kill --kill-who=all apt-daily.service
-        while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)
-        do
-          sleep 1;
-        done
+        if [ $? -eq 0 ]; then
+          while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)
+          do
+            sleep 1;
+          done
+        fi
 
 - name: Install common packages
   apt:
