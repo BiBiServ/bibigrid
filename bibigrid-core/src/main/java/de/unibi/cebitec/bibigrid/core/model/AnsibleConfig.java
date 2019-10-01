@@ -169,6 +169,7 @@ public final class AnsibleConfig {
         }
         if (config.isIDE()) {
             map.put("ide_workspace", config.getWorkspace());
+            map.put("ideConf", config.getIdeConf());
         }
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
@@ -176,8 +177,6 @@ public final class AnsibleConfig {
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "enable_slurm",config.isSlurm());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
-        addBooleanOption(map, "enable_theia", config.isTheia());
-        addBooleanOption(map, "enable_cloud9", config.isCloud9());
         addBooleanOption(map, "enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
         if (config.isZabbix()) {

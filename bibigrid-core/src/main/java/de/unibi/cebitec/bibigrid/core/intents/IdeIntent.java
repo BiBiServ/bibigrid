@@ -28,15 +28,15 @@ import java.util.Map;
  */
 public class IdeIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(IdeIntent.class);
-    private static final int DEFAULT_IDE_PORT = 8181;
-    private static final int DEFAULT_IDE_PORT_END = 8383;
+    public static final int DEFAULT_IDE_PORT = 8181;
+    public static final int DEFAULT_IDE_PORT_END = 8383;
 
     private final ProviderModule providerModule;
     private final Client client;
     private final Configuration config;
 
-    private int idePort;
-    private int idePortLast;
+    private int idePort = DEFAULT_IDE_PORT;
+    private int idePortLast = DEFAULT_IDE_PORT_END;
 
     public IdeIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
@@ -67,6 +67,10 @@ public class IdeIntent extends Intent {
         startPortForwarding(masterIp);
     }
 
+    /**
+     * To use the IDE in a browser locally, ports have to be forwarded to connect to the remote.
+     * @param masterIp IP of the master instance
+     */
     private void startPortForwarding(final String masterIp) {
 
         try {
@@ -76,10 +80,12 @@ public class IdeIntent extends Intent {
             // Create new Session to avoid packet corruption.
             Session sshSession = SshFactory.createSshSession(config, masterIp);
             if (sshSession != null) {
-                if (config.)
+                this.idePort = config.getIdeConf().getPort_start();
+                this.idePortLast = config.getIdeConf().getPort_end();
                 while (!portAvailable(idePort)) {
-                    if (idePort > idePortLast) {
-
+                    if(idePort > idePortLast) {
+                        LOG.warn("There is no free port available to forward to Theia IDE.");
+                        break;
                     }
                     idePort++;
                 }
@@ -95,7 +101,7 @@ public class IdeIntent extends Intent {
                 sshSession.disconnect();
             }
         } catch (JSchException e) {
-            LOG.error("Failed to start {} IDE on master.", config.isTheia() ? "Theia" : "Cloud9", e);
+            LOG.error("Failed to start Theia IDE on master.", e);
         } catch (IOException e) {
             e.printStackTrace();
         }

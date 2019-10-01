@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import de.unibi.cebitec.bibigrid.core.intents.IdeIntent;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,9 +113,11 @@ public abstract class Configuration {
     private boolean localDNSLookup;
     private String mungeKey;
     private boolean nfs = true;
+    @Deprecated
     private boolean cloud9;
+    @Deprecated
     private boolean theia;
-    private List<Integer> ideConf;
+    private IdeConf ideConf;
     private boolean ganglia;
     private boolean zabbix;
     private ZabbixConf zabbixConf = new ZabbixConf();
@@ -501,7 +504,7 @@ public abstract class Configuration {
         LOG.info(V, "Debug requests {}.", debugRequests ? "enabled" : "disabled");
     }
 
-    public boolean isIDE() { return cloud9 || theia; }
+    public boolean isIDE() { return ideConf.ide; }
 
     @Deprecated
     public boolean isCloud9() {
@@ -509,13 +512,11 @@ public abstract class Configuration {
     }
 
     @Deprecated
-    public void setCloud9(boolean cloud9) throws ConfigurationException {
-        if (cloud9&&theia) {
-            LOG.error("Only one IDE (either Theia or Cloud9) can be set.");
-            throw new ConfigurationException("Only one IDE (either Theia or Cloud9) can be set.");
-        }
+    public void setCloud9(boolean cloud9) {
+        LOG.warn("cloud9 parameter is deprecated. Please use IdeConf instead.");
+        LOG.warn("Cloud9 will not longer be supported and is replaced by the Theia Web IDE.");
         this.cloud9 = cloud9;
-        LOG.info(V, "Cloud9 support {}.", cloud9 ? "enabled" : "disabled");
+        ideConf.setIde(cloud9);
     }
 
     @Deprecated
@@ -524,20 +525,17 @@ public abstract class Configuration {
     }
 
     @Deprecated
-    public void setTheia(boolean theia) throws ConfigurationException {
-        if (cloud9&&theia) {
-            LOG.error("Only one IDE (either Theia or Cloud9) can be set.");
-            throw new ConfigurationException("Only one IDE (either Theia or Cloud9) can be set.");
-        }
+    public void setTheia(boolean theia) {
+        LOG.warn("theia parameter is deprecated. Please use IdeConf instead.");
         this.theia = theia;
-        LOG.info(V, "Theia support {}.", theia ? "enabled" : "disabled");
+        ideConf.setIde(theia);
     }
 
-    public List<Integer> getIdeConf() {
+    public IdeConf getIdeConf() {
         return ideConf;
     }
 
-    public void setIdeConf(List<Integer> ideConf) {
+    public void setIdeConf(IdeConf ideConf) {
         this.ideConf = ideConf;
     }
 
@@ -836,8 +834,40 @@ public abstract class Configuration {
         }
     }
 
+    /**
+     * Configuration of IDE.
+     * port_start is the port used for the first connection.
+     * If there are multiple users on the same server, ports will be incremented until port_end
+     */
     public static class IdeConf {
-        private int port
+        private boolean ide = false;
+        private int port_start = IdeIntent.DEFAULT_IDE_PORT;
+        private int port_end = IdeIntent.DEFAULT_IDE_PORT_END;
+
+        public boolean isIde() {
+            return ide;
+        }
+
+        public void setIde(boolean ide) {
+            this.ide = ide;
+            LOG.info(V, "Theia support {}.", ide ? "enabled" : "disabled");
+        }
+
+        public int getPort_start() {
+            return port_start;
+        }
+
+        public void setPort_start(int port_start) {
+            this.port_start = port_start;
+        }
+
+        public int getPort_end() {
+            return port_end;
+        }
+
+        public void setPort_end(int port_end) {
+            this.port_end = port_end;
+        }
     }
 
     /**
