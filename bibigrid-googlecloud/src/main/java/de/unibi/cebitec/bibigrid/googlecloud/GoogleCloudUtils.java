@@ -88,7 +88,7 @@ final class GoogleCloudUtils {
             for (Configuration.MountPoint mountPoint : mounts) {
                 // For the creation of the cluster it's sufficient to add a counter as suffix.
                 // The cluster ID is already the greatest difference between multiple clusters.
-                String diskId = "disk-" + config.getClusterIds()[0] + "-" + mountPoint.getSource() + diskCounter;
+                String diskId = "disk-" + config.getId() + "-" + mountPoint.getSource() + diskCounter;
                 diskCounter++;
                 AttachedDisk mountDisk = createMountDisk(compute, config, mountPoint.getSource(), diskId);
                 if (mountDisk != null) {

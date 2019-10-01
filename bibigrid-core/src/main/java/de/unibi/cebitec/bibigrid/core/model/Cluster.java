@@ -21,6 +21,7 @@ public class Cluster {
     private String placementGroup; // AWS
 
     private String publicIp;
+    private String privateIp;
     private String securityGroup;
     private String keyName;
     private String user;
@@ -116,6 +117,14 @@ public class Cluster {
     }
 
     public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
+    }
+
+    public String getPrivateIp() {
+        return publicIp;
+    }
+
+    public void setPrivateIp(String publicIp) {
         this.publicIp = publicIp;
     }
 }

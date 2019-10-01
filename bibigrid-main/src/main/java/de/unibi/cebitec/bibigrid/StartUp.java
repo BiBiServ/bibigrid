@@ -146,19 +146,20 @@ public class StartUp {
                         config.setClusterIds(cl.getOptionValue(IntentMode.TERMINATE.getShortParam()).trim());
                         break;
 
-                    case IDE:
-                        config.setClusterIds(cl.getOptionValue(IntentMode.IDE.getShortParam().trim()));
-                        break;
+
                     case CLOUD9:
-                        config.setClusterIds(cl.getOptionValue(IntentMode.CLOUD9.getShortParam().trim()));
+                    case IDE:
+                        config.setId(cl.getOptionValue(IntentMode.IDE.getShortParam().trim()));
+
                         break;
                     case CREATE:
                     case PREPARE:
                     case LIST:
 
-                        String clusterId = cl.getOptionValue(IntentMode.LIST.getShortParam());
-                        if (clusterId != null) {
-                            config.setClusterIds(clusterId.trim());
+                        String id = cl.getOptionValue(IntentMode.LIST.getShortParam());
+                        if (id != null) {
+                            config.setId(id.trim());
+
                         }
                         break;
                     case VALIDATE:
@@ -236,11 +237,12 @@ public class StartUp {
                     break;
                 case LIST:
                     ListIntent listIntent = module.getListIntent(client, config);
-                    String  [] ids =  config.getClusterIds();
-                    if (ids != null && ids.length > 0) {
-                        LOG.info(listIntent.toDetailString(ids[0]));
-                    } else {
+
+                    if (config.getId() == null || config.getId().isEmpty()) {
+
                         LOG.info(listIntent.toString());
+                    } else {
+                        LOG.info(listIntent.toDetailString(config.getId()));
                     }
                     break;
                 case VALIDATE:
@@ -272,7 +274,17 @@ public class StartUp {
                 case CLOUD9:
                     LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
                 case IDE:
-                    new IdeIntent(module, client, config).start();
+                    // load private key
+                    try {
+                        config.getClusterKeyPair().setName(CreateCluster.PREFIX+config.getId());
+                        config.getClusterKeyPair().load();
+                        new IdeIntent(module, client, config).start();
+                    } catch (IOException e) {
+                        LOG.error("Exception occurred loading private key. {}",e.getMessage());
+                        if (Configuration.DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
                     break;
                 default:
                     LOG.warn("Unknown intent mode.");
@@ -294,12 +306,15 @@ public class StartUp {
     private static boolean runCreateIntent(ProviderModule module, Configuration config, Client client,
                                            CreateCluster cluster, boolean prepare) {
         try {
-            boolean success = cluster
-                    .createClusterEnvironment()
+            // configure environment
+            cluster .createClusterEnvironment()
                     .createNetwork()
                     .createSubnet()
                     .createSecurityGroup()
-                    .createPlacementGroup()
+                    .createKeyPair()
+                    .createPlacementGroup();
+            // configure cluster
+            boolean success =  cluster
                     .configureClusterMasterInstance()
                     .configureClusterWorkerInstance()
                     .launchClusterInstances(prepare);

@@ -10,6 +10,7 @@ import de.unibi.cebitec.bibigrid.core.model.Port;
 import de.unibi.cebitec.bibigrid.core.util.SubNets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 
@@ -131,6 +132,12 @@ public class CreateClusterEnvironmentGoogleCloud extends CreateClusterEnvironmen
             LOG.error("Failed to create firewall rules. {}", e);
         }
         return this;
+    }
+
+    @Override
+    public CreateClusterEnvironment createKeyPair() throws ConfigurationException {
+        // Register a new key at Google Cloud is not yet implemented.
+        throw new NotImplementedException();
     }
 
     private Firewall.Allowed buildFirewallRule(String protocol, String... ports) {

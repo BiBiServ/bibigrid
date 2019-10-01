@@ -1,9 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
-import com.jcraft.jsch.UserInfo;
+import com.jcraft.jsch.*;
 
 import java.io.Console;
 import java.net.InetSocketAddress;
@@ -12,6 +9,7 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Scanner;
 
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,17 +19,15 @@ public class SshFactory {
     private static final Logger LOG = LoggerFactory.getLogger(SshFactory.class);
     private static final int SSH_POLL_ATTEMPTS = 25;
 
-    public static Session createNewSshSession(JSch ssh, String dns, String user, Path identity) {
-        try {
-            Session sshSession = ssh.getSession(user, dns, 22);
-            ssh.addIdentity(identity.toString());
-            UserInfo userInfo = getConsolePasswordUserInfo();
-            sshSession.setUserInfo(userInfo);
-            return sshSession;
-        } catch (JSchException e) {
-            LOG.error(e.getMessage());
-            return null;
-        }
+    public static Session createSshSession(Configuration config, String ip) throws JSchException{
+        JSch jssh = new JSch();
+        JSch.setLogger(new JSchLogger());
+        Session sshSession = jssh.getSession(config.getSshUser(), ip, 22);
+        Configuration.ClusterKeyPair ckp = config.getClusterKeyPair();
+        jssh.addIdentity(ckp.getName(),ckp.getPrivateKey().getBytes(),ckp.getPublicKey().getBytes(),null);
+        UserInfo userInfo = getConsolePasswordUserInfo();
+        sshSession.setUserInfo(userInfo);
+        return sshSession;
     }
 
     private static UserInfo getConsolePasswordUserInfo() {

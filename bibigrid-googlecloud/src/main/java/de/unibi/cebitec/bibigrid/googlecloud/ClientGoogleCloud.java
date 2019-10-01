@@ -14,6 +14,7 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedExc
 import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -106,6 +107,11 @@ class ClientGoogleCloud extends Client {
         } catch (IOException ignored) {
         }
         return null;
+    }
+
+    @Override
+    public List<String> getKeypairNames() {
+        throw new NotImplementedException();
     }
 
     @Override

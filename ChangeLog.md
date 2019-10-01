@@ -1,3 +1,12 @@
+
+## Version 2.0.9 < 2.0.8 (10/01/2019)
+
+### Features
+- Restructure SSH-Key handling, use One-Time SSH keys (#184, fixes #181)
+
+### Fixes
+- IDE arg: port forwarding to "private" ips, if property "UseMasterWithPublicIp" unset (#188)
+
 ## Version 2.0.8 < 2.0.7 (09/12/2019)
 
 ### Features

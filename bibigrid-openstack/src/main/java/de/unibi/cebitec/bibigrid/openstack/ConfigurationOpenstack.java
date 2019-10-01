@@ -2,12 +2,15 @@ package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 
+import java.io.IOException;
+
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class ConfigurationOpenstack extends Configuration {
-    public ConfigurationOpenstack() {
+    public ConfigurationOpenstack() throws IOException {
+        super();
     }
 
     private OpenStackCredentials openstackCredentials;
