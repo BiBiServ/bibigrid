@@ -1,21 +1,26 @@
 # Configuration File Schema
 The configuration file is written in YAML format. In contrast to the command line
 parameters, a configuration file is easier to maintain and in some cases provides
-more detailed configuration possibilities.
+more detailed configuration possibilities. The default configuration file is placed in the *.bibigrid* folder 
+in your home directory which will be created during cluster setup.
 
 **Shared schema**
 
 ```
 # Cloud Usage
-mode: enum [openstack, aws, googlecloud, azure]     # Provider mode
+mode: openstack                                     # Provider mode [optionally aws, googlecloud, azure]
 
 # Access
 user: string                                        # User name (just for VM tagging)
 sshUser: string                                     # SSH user name, default is "ubuntu"
-keypair: string                                     # Keypair name for authentication (aws and openstack only)
-sshPublicKeyFile: string                            # SSH public key file (e.g.: .ssh/id_rsa.pub)
-sshPrivateKeyFile: string                           # SSH private key file (e.g.: .ssh/id_rsa)
-credentialsFile: string                             # credentials file (e.g.: */.bibigrid.credentials.yml)
+sshPublicKeyFile: string                            # Optional SSH public key file 
+sshPublicKeyFiles:                                  # Optional SSH public key file list
+  - string
+  - ...
+sshPublicKeys:                                      # Optional bare public (!) SSH keys
+  - string
+  - ...
+credentialsFile: string                             # path/to/credentials (default: HOME_DIR/.bibigrid/credentials.yml)
 
 region: string                                      # Specific region
 availabilityZone: string                            # e.g.: default, maintenance, ...
@@ -30,7 +35,6 @@ ports:
   - ...
 localDNSLookup: boolean [yes,no]                    # Enable local DNS lookup. Creates an entry for and on each host in
                                                     # /etc/hosts. Should only be enabled if no or a malfunction DNS is available.
-
 # Master 
 masterInstance:
   type: string                                      # Instance Flavor, self-assigned (e.g.: m1.small)
@@ -126,7 +130,7 @@ One could enter more source and target values to provide more volumes to be moun
 ```
 router: string                                      # Logical component, forwards data packets between networks
 securityGroup: string                               # Like a virtual firewall in network  
-serverGroup: string                                 # provides a mechanism to group servers according to certain policy
+serverGroup: string                                 # Provides a mechanism to group servers according to certain policy
 openstackCredentials:
   tenantName: string                                # OpenStack project name
   username: string                                  # Name of user
@@ -135,21 +139,3 @@ openstackCredentials:
   domain: string                                    # Name of ID of user domain
   tenantDomain: string                              # OpenStack user project domain
 ```
-
-**Google Compute specific schema**
-```
-googleProjectId: string                             # ID of Google Compute Engine Project
-googleImageProjectId: string                        # ID of Image Project 
-```
-
-**AWS specific schema**
-```
-bidPrice: double                                    # Bid Price in USD ($) for each Amazon EC2 instance when launched as Spot Instances
-bidPriceMaster: double
-publicWorkerIps: boolean [yes, no]                   # Every worker gets public IP
-useSpotInstances: boolean [yes, no]                 # Usage of unused EC2 capacity in AWS cloud at discount price
-```
-
-**Azure specific schema**
-
-There are currently no azure specific parameters.
