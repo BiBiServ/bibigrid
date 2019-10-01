@@ -1,4 +1,4 @@
-## Version 2.0.9 < 2.0.8 (Not yet released)
+## Version 2.0.9 < 2.0.8 (10/01/2019)
 
 ### Features
 - Restructure SSH-Key handling, use One-Time SSH keys (#184, fixes #181)
