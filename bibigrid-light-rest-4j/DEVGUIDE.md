@@ -28,16 +28,37 @@ cd bibigrid/bibigrid-light-rest-4j/
 mvn clean install exec:exec
 ```
 
-##### Changing the api specification without re-generating the whole project:
-Make changes to api config found in 
-```
-/bibigrid-light-rest-4j/src/main/resources/config/openapi.json 
-``` 
-Apply changes with:
-```
-cd bibigrid/bibigrid-light-rest-4j/
-mvn clean install exec:exec
-```
+##### Changing the api specification
+* Minor changes, like altering the accepted request bodies, can be made without having to re-generate the whole project
+by editing the openapi.json config found under:
+    ```
+    /bibigrid-light-rest-4j/src/main/resources/config/openapi.json 
+    ``` 
+    Apply changes with:
+    ```
+    cd bibigrid/bibigrid-light-rest-4j/
+    mvn clean install exec:exec
+    ```
+  It is highly recommended to also update the   ```/bibigrid/bibigrid-light-rest-4j/openapi.json  ``` to match the minor changes
+  in    ```/bibigrid-light-rest-4j/src/main/resources/config/openapi.json  ``` config because otherwise making major changes gets difficult (read below).
+
+* Major changes, like adding new routes, changing http request methods requires you to re-generate the whole project.  
+  Do those changes to openapi.json located under 
+  ```    
+  /bibigrid-light-rest-4j/openapi.json 
+  ```
+  and then it gets tricky since generating the project creates 2 problems
+  * it resets minor change in ```/bibigrid-light-rest-4j/src/main/resources/config/openapi.json  ``` config  
+  * it overwrites the controllers and models 
+  #####Quick and dirty solution: 
+  * manually merge content of minor changes config ```/bibigrid-light-rest-4j/src/main/resources/config/openapi.json``` into the
+    major changes ```/bibigrid/bibigrid-light-rest-4j/openapi.json  ```
+  * copy the content of all the controllers to a text editor and then paste the logic back after
+    the project has been generated with
+  ```    
+  sh generate-api-from-json.sh
+  ```
+
 
 ##### Making changes to classes outside bibigrid-light-rest-4j project
 Make changes to desired classes and then run

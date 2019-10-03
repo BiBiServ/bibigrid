@@ -409,7 +409,7 @@
       }
     },
     "/bibigrid/info/{id}": {
-      "post": {
+      "get": {
         "summary": "Check the status of the cluster creation process",
         "operationId": "checkClusterCreationStatus",
         "parameters": [
@@ -417,7 +417,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "The id of cluster to terminate",
+            "description": "The id of cluster to get information about",
             "schema": {
               "type": "string"
             }
@@ -431,7 +431,9 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "sshPrivateKeyFile",
+                  "openstackCredentials",
+                  "mode",
+                  "subnet",
                   "sshPublicKeyFile",
                   "sshUser",
                   "keypair",
@@ -439,9 +441,45 @@
                   "availabilityZone"
                 ],
                 "properties": {
-                  "sshPrivateKeyFile": {
+                  "openstackCredentials": {
+                    "type": "object",
+                    "required": [
+                      "username",
+                      "domain",
+                      "password",
+                      "endpoint",
+                      "projectName",
+                      "projectDomain"
+                    ],
+                    "properties": {
+                      "username": {
+                        "type": "string",
+                        "example": "mmustermann"
+                      },
+                      "domain": {
+                        "type": "string"
+                      },
+                      "password": {
+                        "type": "string"
+                      },
+                      "endpoint": {
+                        "type": "string"
+                      },
+                      "projectName": {
+                        "type": "string"
+                      },
+                      "projectDomain": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "mode": {
                     "type": "string",
-                    "format": "byte"
+                    "example": "openstack"
+                  },
+                  "subnet": {
+                    "type": "string",
+                    "example": "internalsub"
                   },
                   "sshPublicKeyFile": {
                     "type": "string",
