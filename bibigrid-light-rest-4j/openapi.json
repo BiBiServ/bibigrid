@@ -426,7 +426,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "The id of cluster to terminate",
+            "description": "The id of cluster to get information about",
             "schema": {
               "type": "string"
             }
