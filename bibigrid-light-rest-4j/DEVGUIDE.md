@@ -1,16 +1,27 @@
 # Development Guide
 Simple guide for developing the bibigrid rest api.
-# Starting the server
+
+## Before getting started
+Take a good look at the api documentation located at
+```
+/bibigrid/bibigrid-light-rest-4j/src/main/resources/config/openapi.json
+```
+ with [swagger](https://editor.swagger.io/)
+
+## Starting the server
 ```
 cd bibigrid/bibigrid-light-rest-4j/
 mvn clean install exec:exec
 ```
 Your server should now be running on port 8443 of your local machine
 
-
-# Developing
+## Developing
 ##### Making changes to controllers
-Controllers are found in bibigrid-light-rest-4j/src/main/java/de/unibi/cebitec/bibigrid/light_rest_4j/handler/  
+Controllers are found under 
+```
+/bibigrid/bibigrid-light-rest-4j/src/main/java/de/unibi/cebitec/bibigrid/light_rest_4j/handler/  
+```
+
 After doing changes compile with:
 ```
 cd bibigrid/bibigrid-light-rest-4j/
@@ -18,7 +29,10 @@ mvn clean install exec:exec
 ```
 
 ##### Changing the api specification without re-generating the whole project:
-Make changes to api config found in bibigrid-light-rest-4j/src/main/resources/config/openapi.json  
+Make changes to api config found in 
+```
+/bibigrid-light-rest-4j/src/main/resources/config/openapi.json 
+``` 
 Apply changes with:
 ```
 cd bibigrid/bibigrid-light-rest-4j/
@@ -40,7 +54,7 @@ mvn clean install exec:exec
 
 
 
-# History
+## History
 ##### This documents how the whole project was created (see [light-rest-4j docs](https://doc.networknt.com/references/light-codegen/openapi-generator/) for additional help)
 #### Setup needed repositories
 ```
@@ -64,6 +78,9 @@ cd bibigrid/bibigrid-light-rest-4j/
 mvn clean install exec:exec
 ```
 
+
+##### Author
+Tim-Niklas Rose
 
 
 Your server should now be running on port 8443 of your local machine
