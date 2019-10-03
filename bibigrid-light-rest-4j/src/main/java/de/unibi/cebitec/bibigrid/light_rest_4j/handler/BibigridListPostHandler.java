@@ -4,17 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.body.BodyHandler;
 import com.networknt.handler.LightHttpHandler;
 import de.unibi.cebitec.bibigrid.Provider;
-import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
-import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.openstack.ConfigurationOpenstack;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
-import org.jose4j.json.internal.json_simple.JSONArray;
-import org.jose4j.json.internal.json_simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -22,17 +18,10 @@ import org.yaml.snakeyaml.Yaml;
 import java.util.HashMap;
 import java.util.Map;
 
-import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
-
 public class BibigridListPostHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
-    private static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation. Instances already running. " +
-            "Attempting to shut them down but in case of an error they might remain running. Please verify " +
-            "afterwards.";
-    private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
-
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -67,7 +56,6 @@ public class BibigridListPostHandler implements LightHttpHandler {
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
-            Validator validator =  module.getValidator(config,module);
 
             ListIntent listIntent = module.getListIntent(client, config);
             String  [] ids =  config.getClusterIds();

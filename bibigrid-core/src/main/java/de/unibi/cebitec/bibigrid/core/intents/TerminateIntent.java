@@ -23,20 +23,22 @@ public abstract class TerminateIntent extends Intent {
     private final ProviderModule providerModule;
     protected final Client client;
     private final Configuration config;
+
+    /*
+    The terminateResponse attribute is used to save the response of the terminate intent and make it accessible to other
+    classes such as the terminate Controller of the bibigrid REST API where the terminate response needs to be sent back
+    to the user via json-body and not only printed to console.
+    */
     private String terminateResponse = "Internal server error!";
-
-    public String getTerminateResponse() {
-        return terminateResponse;
-    }
-
-    public void setTerminateResponse(String terminateResponse) {
-        this.terminateResponse = terminateResponse;
-    }
 
     protected TerminateIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
+    }
+
+    public String getTerminateResponse() {
+        return terminateResponse;
     }
 
     /**

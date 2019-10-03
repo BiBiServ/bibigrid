@@ -30,6 +30,20 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public class ValidateIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ValidateIntent.class);
     protected final Client client;
+    protected final Configuration config;
+
+    /*
+    The validateResponse attribute is used to save the possible causes of a misconfigured configuration and make it accessible to other
+    classes, e.g. the validate- or create-Controller for bibigrid REST API (found in bibigrid-light-rest-4j module)
+    where the cause of a misconfigured configuration needs to be sent back to the user via json-body and not only
+    printed to console.
+     */
+    private String validateResponse = "Internal server error!";
+
+    public ValidateIntent(final Client client, final Configuration config) {
+        this.client = client;
+        this.config = config;
+    }
 
     public String getValidateResponse() {
         return validateResponse;
@@ -37,15 +51,6 @@ public class ValidateIntent extends Intent {
 
     public void setValidateResponse(String validateResponse) {
         this.validateResponse = validateResponse;
-    }
-
-    protected final Configuration config;
-
-    private String validateResponse = "Internal server error!";
-
-    public ValidateIntent(final Client client, final Configuration config) {
-        this.client = client;
-        this.config = config;
     }
 
     public boolean validate() {
