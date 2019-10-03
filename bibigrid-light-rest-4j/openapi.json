@@ -440,6 +440,9 @@
               "schema": {
                 "type": "object",
                 "required": [
+                  "openstackCredentials",
+                  "mode",
+                  "subnet",
                   "sshPrivateKeyFile",
                   "sshPublicKeyFile",
                   "sshUser",
@@ -448,6 +451,46 @@
                   "availabilityZone"
                 ],
                 "properties": {
+                  "openstackCredentials": {
+                    "type": "object",
+                    "required": [
+                      "username",
+                      "domain",
+                      "password",
+                      "endpoint",
+                      "projectName",
+                      "projectDomain"
+                    ],
+                    "properties": {
+                      "username": {
+                        "type": "string",
+                        "example": "mmustermann"
+                      },
+                      "domain": {
+                        "type": "string"
+                      },
+                      "password": {
+                        "type": "string"
+                      },
+                      "endpoint": {
+                        "type": "string"
+                      },
+                      "projectName": {
+                        "type": "string"
+                      },
+                      "projectDomain": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "mode": {
+                    "type": "string",
+                    "example": "openstack"
+                  },
+                  "subnet": {
+                    "type": "string",
+                    "example": "internalsub"
+                  },
                   "sshPrivateKeyFile": {
                     "type": "string",
                     "format": "byte"
