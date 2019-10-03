@@ -54,7 +54,7 @@ public class BibigridTerminateIdDeleteHandlerTest {
             throw new ClientException(e);
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
-        String requestUri = "/bibigrid/terminate/mHvnKLaM";
+        String requestUri = "/bibigrid/terminate/THdUSNYdemcRGUSjLSSvymHY";
         String httpMethod = "delete";
         try {
             ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.DELETE);

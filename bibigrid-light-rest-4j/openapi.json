@@ -347,9 +347,11 @@
             "type": "string",
             "example": "internalsub"
           },
-          "sshPublicKeyFile": {
-            "type": "string",
-            "format": "byte"
+          "sshPublicKeys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "sshUser": {
             "type": "string",

@@ -72,7 +72,7 @@
               "projectDomain": {
                 "type": "string"
               }
-            }},"sshPublicKeyFile":{"type": "string","format": "byte"},"sshUser":{"type": "string","example": "ubuntu"},"keypair":{"type": "string","example": "mmustermann-key"},"region":{"type": "string","example": "Bielefeld"},"availabilityZone":{"type": "string","example": "default"},"workerInstances":{"type": "array","items":{"type": "object","required": [
+            }},"sshPublicKeys":{"type": "array","items":{"type": "string"}},"sshUser":{"type": "string","example": "ubuntu"},"keypair":{"type": "string","example": "mmustermann-key"},"region":{"type": "string","example": "Bielefeld"},"availabilityZone":{"type": "string","example": "default"},"workerInstances":{"type": "array","items":{"type": "object","required": [
                 "type",
                 "image",
                 "count"

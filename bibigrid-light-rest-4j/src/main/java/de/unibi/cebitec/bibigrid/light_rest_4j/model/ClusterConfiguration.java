@@ -11,7 +11,7 @@ public class ClusterConfiguration {
     private String subnet;
     private Object masterInstance;
     private Object openstackCredentials;
-    private byte sshPublicKeyFile;
+    private java.util.List<String> sshPublicKeys;
     private String sshUser;
     private String keypair;
     private String region;
@@ -57,13 +57,13 @@ public class ClusterConfiguration {
         this.openstackCredentials = openstackCredentials;
     }
 
-    @JsonProperty("sshPublicKeyFile")
-    public byte getSshPublicKeyFile() {
-        return sshPublicKeyFile;
+    @JsonProperty("sshPublicKeys")
+    public java.util.List<String> getSshPublicKeys() {
+        return sshPublicKeys;
     }
 
-    public void setSshPublicKeyFile(byte sshPublicKeyFile) {
-        this.sshPublicKeyFile = sshPublicKeyFile;
+    public void setSshPublicKeys(java.util.List<String> sshPublicKeys) {
+        this.sshPublicKeys = sshPublicKeys;
     }
 
     @JsonProperty("sshUser")
@@ -127,7 +127,7 @@ public class ClusterConfiguration {
                Objects.equals(subnet, ClusterConfiguration.subnet) &&
                Objects.equals(masterInstance, ClusterConfiguration.masterInstance) &&
                Objects.equals(openstackCredentials, ClusterConfiguration.openstackCredentials) &&
-               Objects.equals(sshPublicKeyFile, ClusterConfiguration.sshPublicKeyFile) &&
+               Objects.equals(sshPublicKeys, ClusterConfiguration.sshPublicKeys) &&
                Objects.equals(sshUser, ClusterConfiguration.sshUser) &&
                Objects.equals(keypair, ClusterConfiguration.keypair) &&
                Objects.equals(region, ClusterConfiguration.region) &&
@@ -137,7 +137,7 @@ public class ClusterConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hash(mode, subnet, masterInstance, openstackCredentials, sshPublicKeyFile, sshUser, keypair, region, availabilityZone, workerInstances);
+        return Objects.hash(mode, subnet, masterInstance, openstackCredentials, sshPublicKeys, sshUser, keypair, region, availabilityZone, workerInstances);
     }
 
     @Override
@@ -148,7 +148,7 @@ public class ClusterConfiguration {
         sb.append("    subnet: ").append(toIndentedString(subnet)).append("\n");
         sb.append("    masterInstance: ").append(toIndentedString(masterInstance)).append("\n");
         sb.append("    openstackCredentials: ").append(toIndentedString(openstackCredentials)).append("\n");
-        sb.append("    sshPublicKeyFile: ").append(toIndentedString(sshPublicKeyFile)).append("\n");
+        sb.append("    sshPublicKeys: ").append(toIndentedString(sshPublicKeys)).append("\n");
         sb.append("    sshUser: ").append(toIndentedString(sshUser)).append("\n");
         sb.append("    keypair: ").append(toIndentedString(keypair)).append("\n");
         sb.append("    region: ").append(toIndentedString(region)).append("\n");

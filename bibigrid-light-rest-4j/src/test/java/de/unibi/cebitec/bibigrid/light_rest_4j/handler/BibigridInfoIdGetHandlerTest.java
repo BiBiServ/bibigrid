@@ -54,7 +54,7 @@ public class BibigridInfoIdGetHandlerTest {
             throw new ClientException(e);
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
-        String requestUri = "/bibigrid/info/XUunTTvdH";
+        String requestUri = "/bibigrid/info/kCAYpUxOQcRJgflLtfbskCAu";
         String httpMethod = "get";
         try {
             ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.GET);
