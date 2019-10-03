@@ -233,14 +233,20 @@
         </dependency>
         <dependency>
             <groupId>de.unibi.cebitec.bibigrid</groupId>
+            <artifactId>bibigrid-core</artifactId>
+            <version>2.0.9</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.unibi.cebitec.bibigrid</groupId>
             <artifactId>bibigrid-openstack</artifactId>
-            <version>2.0.8</version>
+            <version>2.0.9</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>de.unibi.cebitec.bibigrid</groupId>
             <artifactId>bibigrid-main</artifactId>
-            <version>2.0.8</version>
+            <version>2.0.9</version>
             <scope>compile</scope>
         </dependency>
 

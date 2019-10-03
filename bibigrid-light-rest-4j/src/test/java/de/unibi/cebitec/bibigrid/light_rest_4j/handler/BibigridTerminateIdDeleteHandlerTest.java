@@ -30,11 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 @Ignore
-public class BibigridInfoIdPostHandlerTest {
+public class BibigridTerminateIdDeleteHandlerTest {
     @ClassRule
     public static TestServer server = TestServer.getInstance();
 
-    static final Logger logger = LoggerFactory.getLogger(BibigridInfoIdPostHandlerTest.class);
+    static final Logger logger = LoggerFactory.getLogger(BibigridTerminateIdDeleteHandlerTest.class);
     static final boolean enableHttp2 = server.getServerConfig().isEnableHttp2();
     static final boolean enableHttps = server.getServerConfig().isEnableHttps();
     static final int httpPort = server.getServerConfig().getHttpPort();
@@ -43,7 +43,7 @@ public class BibigridInfoIdPostHandlerTest {
     static final String JSON_MEDIA_TYPE = "application/json";
 
     @Test
-    public void testBibigridInfoIdPostHandlerTest() throws ClientException {
+    public void testBibigridTerminateIdDeleteHandlerTest() throws ClientException {
 
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -54,15 +54,13 @@ public class BibigridInfoIdPostHandlerTest {
             throw new ClientException(e);
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
-        String requestUri = "/bibigrid/info/yGDvowINIuUVqdulVdob";
-        String httpMethod = "post";
+        String requestUri = "/bibigrid/terminate/mHvnKLaM";
+        String httpMethod = "delete";
         try {
-            ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.POST);
+            ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.DELETE);
             
-            request.getRequestHeaders().put(Headers.CONTENT_TYPE, JSON_MEDIA_TYPE);
-            request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
             //customized header parameters 
-            connection.sendRequest(request, client.createClientCallback(reference, latch, "{\"content\": \"request body to be replaced\"}"));
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
             
             latch.await();
         } catch (Exception e) {

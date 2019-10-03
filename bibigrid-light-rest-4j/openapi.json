@@ -10,7 +10,7 @@
   },
   "paths": {
     "/bibigrid/list": {
-      "post": {
+      "get": {
         "summary": "List all running clusters for a user",
         "operationId": "listRunningClusters",
         "requestBody": {
@@ -19,84 +19,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "openstackCredentials",
-                  "mode",
-                  "subnet",
-                  "sshPrivateKeyFile",
-                  "sshPublicKeyFile",
-                  "sshUser",
-                  "keypair",
-                  "region",
-                  "availabilityZone"
-                ],
-                "properties": {
-                  "openstackCredentials": {
-                    "type": "object",
-                    "required": [
-                      "username",
-                      "domain",
-                      "password",
-                      "endpoint",
-                      "projectName",
-                      "projectDomain"
-                    ],
-                    "properties": {
-                      "username": {
-                        "type": "string",
-                        "example": "mmustermann"
-                      },
-                      "domain": {
-                        "type": "string"
-                      },
-                      "password": {
-                        "type": "string"
-                      },
-                      "endpoint": {
-                        "type": "string"
-                      },
-                      "projectName": {
-                        "type": "string"
-                      },
-                      "projectDomain": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "mode": {
-                    "type": "string",
-                    "example": "openstack"
-                  },
-                  "subnet": {
-                    "type": "string",
-                    "example": "internalsub"
-                  },
-                  "sshPrivateKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshPublicKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshUser": {
-                    "type": "string",
-                    "example": "ubuntu"
-                  },
-                  "keypair": {
-                    "type": "string",
-                    "example": "mmustermann-key"
-                  },
-                  "region": {
-                    "type": "string",
-                    "example": "Bielefeld"
-                  },
-                  "availabilityZone": {
-                    "type": "string",
-                    "example": "default"
-                  }
-                }
+                "$ref": "#/components/schemas/Authorization"
               }
             }
           }
@@ -143,73 +66,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "mode",
-                  "subnet",
-                  "credentialsFile",
-                  "sshPrivateKeyFile",
-                  "sshPublicKeyFile",
-                  "sshUser",
-                  "keypair",
-                  "region",
-                  "availabilityZone"
-                ],
-                "properties": {
-                  "mode": {
-                    "type": "string",
-                    "example": "openstack"
-                  },
-                  "subnet": {
-                    "type": "string",
-                    "example": "internalsub"
-                  },
-                  "credentialsFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshPrivateKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshPublicKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshUser": {
-                    "type": "string",
-                    "example": "ubuntu"
-                  },
-                  "keypair": {
-                    "type": "string",
-                    "example": "mmustermann-key"
-                  },
-                  "region": {
-                    "type": "string",
-                    "example": "Bielefeld"
-                  },
-                  "availabilityZone": {
-                    "type": "string",
-                    "example": "default"
-                  },
-                  "masterInstance": {
-                    "type": "object",
-                    "required": [
-                      "type",
-                      "image"
-                    ],
-                    "properties": {
-                      "type": {
-                        "type": "string",
-                        "example": "de.NBI.small+ephemeral"
-                      },
-                      "image": {
-                        "type": "string",
-                        "example": "Ubuntu 16.04 LTS (2019-05-08)"
-                      }
-                    }
-                  }
-                }
+                "$ref": "#/components/schemas/ClusterConfiguration"
               }
             }
           }
@@ -256,124 +113,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "openstackCredentials",
-                  "mode",
-                  "subnet",
-                  "sshPrivateKeyFile",
-                  "sshPublicKeyFile",
-                  "sshUser",
-                  "keypair",
-                  "region",
-                  "availabilityZone"
-                ],
-                "properties": {
-                  "openstackCredentials": {
-                    "type": "object",
-                    "required": [
-                      "username",
-                      "domain",
-                      "password",
-                      "endpoint",
-                      "projectName",
-                      "projectDomain"
-                    ],
-                    "properties": {
-                      "username": {
-                        "type": "string",
-                        "example": "mmustermann"
-                      },
-                      "domain": {
-                        "type": "string"
-                      },
-                      "password": {
-                        "type": "string"
-                      },
-                      "endpoint": {
-                        "type": "string"
-                      },
-                      "projectName": {
-                        "type": "string"
-                      },
-                      "projectDomain": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "mode": {
-                    "type": "string",
-                    "example": "openstack"
-                  },
-                  "subnet": {
-                    "type": "string",
-                    "example": "internalsub"
-                  },
-                  "sshPrivateKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshPublicKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshUser": {
-                    "type": "string",
-                    "example": "ubuntu"
-                  },
-                  "keypair": {
-                    "type": "string",
-                    "example": "mmustermann-key"
-                  },
-                  "region": {
-                    "type": "string",
-                    "example": "Bielefeld"
-                  },
-                  "availabilityZone": {
-                    "type": "string",
-                    "example": "default"
-                  },
-                  "masterInstance": {
-                    "type": "object",
-                    "required": [
-                      "type",
-                      "image"
-                    ],
-                    "properties": {
-                      "type": {
-                        "type": "string",
-                        "example": "de.NBI.small+ephemeral"
-                      },
-                      "image": {
-                        "type": "string",
-                        "example": "Ubuntu 16.04 LTS (2019-05-08)"
-                      }
-                    }
-                  },
-                  "workerInstances": {
-                    "type": "array",
-                    "items": {
-                      "required": [
-                        "type",
-                        "image",
-                        "count"
-                      ],
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "example": "de.NBI.small+ephemeral"
-                        },
-                        "image": {
-                          "type": "string",
-                          "example": "Ubuntu 16.04 LTS (2019-05-08)"
-                        },
-                        "count": {
-                          "type": "integer"
-                        }
-                      }
-                    }
-                  }
-                }
+                "$ref": "#/components/schemas/ClusterConfiguration"
               }
             }
           }
@@ -418,7 +158,7 @@
       }
     },
     "/bibigrid/info/{id}": {
-      "post": {
+      "get": {
         "summary": "Check the status of the cluster creation process",
         "operationId": "checkClusterCreationStatus",
         "parameters": [
@@ -438,84 +178,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "openstackCredentials",
-                  "mode",
-                  "subnet",
-                  "sshPrivateKeyFile",
-                  "sshPublicKeyFile",
-                  "sshUser",
-                  "keypair",
-                  "region",
-                  "availabilityZone"
-                ],
-                "properties": {
-                  "openstackCredentials": {
-                    "type": "object",
-                    "required": [
-                      "username",
-                      "domain",
-                      "password",
-                      "endpoint",
-                      "projectName",
-                      "projectDomain"
-                    ],
-                    "properties": {
-                      "username": {
-                        "type": "string",
-                        "example": "mmustermann"
-                      },
-                      "domain": {
-                        "type": "string"
-                      },
-                      "password": {
-                        "type": "string"
-                      },
-                      "endpoint": {
-                        "type": "string"
-                      },
-                      "projectName": {
-                        "type": "string"
-                      },
-                      "projectDomain": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "mode": {
-                    "type": "string",
-                    "example": "openstack"
-                  },
-                  "subnet": {
-                    "type": "string",
-                    "example": "internalsub"
-                  },
-                  "sshPrivateKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshPublicKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshUser": {
-                    "type": "string",
-                    "example": "ubuntu"
-                  },
-                  "keypair": {
-                    "type": "string",
-                    "example": "mmustermann-key"
-                  },
-                  "region": {
-                    "type": "string",
-                    "example": "Bielefeld"
-                  },
-                  "availabilityZone": {
-                    "type": "string",
-                    "example": "default"
-                  }
-                }
+                "$ref": "#/components/schemas/Authorization"
               }
             }
           }
@@ -552,7 +215,7 @@
       }
     },
     "/bibigrid/terminate/{id}": {
-      "post": {
+      "delete": {
         "summary": "End a cluster",
         "operationId": "terminateCluster",
         "parameters": [
@@ -572,84 +235,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "openstackCredentials",
-                  "mode",
-                  "subnet",
-                  "sshPrivateKeyFile",
-                  "sshPublicKeyFile",
-                  "sshUser",
-                  "keypair",
-                  "region",
-                  "availabilityZone"
-                ],
-                "properties": {
-                  "openstackCredentials": {
-                    "type": "object",
-                    "required": [
-                      "username",
-                      "domain",
-                      "password",
-                      "endpoint",
-                      "projectName",
-                      "projectDomain"
-                    ],
-                    "properties": {
-                      "username": {
-                        "type": "string",
-                        "example": "mmustermann"
-                      },
-                      "domain": {
-                        "type": "string"
-                      },
-                      "password": {
-                        "type": "string"
-                      },
-                      "endpoint": {
-                        "type": "string"
-                      },
-                      "projectName": {
-                        "type": "string"
-                      },
-                      "projectDomain": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "mode": {
-                    "type": "string",
-                    "example": "openstack"
-                  },
-                  "subnet": {
-                    "type": "string",
-                    "example": "internalsub"
-                  },
-                  "sshPrivateKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshPublicKeyFile": {
-                    "type": "string",
-                    "format": "byte"
-                  },
-                  "sshUser": {
-                    "type": "string",
-                    "example": "ubuntu"
-                  },
-                  "keypair": {
-                    "type": "string",
-                    "example": "mmustermann-key"
-                  },
-                  "region": {
-                    "type": "string",
-                    "example": "Bielefeld"
-                  },
-                  "availabilityZone": {
-                    "type": "string",
-                    "example": "default"
-                  }
-                }
+                "$ref": "#/components/schemas/Authorization"
               }
             }
           }
@@ -715,6 +301,187 @@
           "log": {
             "type": "string",
             "example": "Timestamp"
+          }
+        }
+      },
+      "ClusterConfiguration": {
+        "type": "object",
+        "properties": {
+          "openstackCredentials": {
+            "type": "object",
+            "required": [
+              "username",
+              "domain",
+              "password",
+              "endpoint",
+              "projectName",
+              "projectDomain"
+            ],
+            "properties": {
+              "username": {
+                "type": "string",
+                "example": "mmustermann"
+              },
+              "domain": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "endpoint": {
+                "type": "string"
+              },
+              "projectName": {
+                "type": "string"
+              },
+              "projectDomain": {
+                "type": "string"
+              }
+            }
+          },
+          "mode": {
+            "type": "string",
+            "example": "openstack"
+          },
+          "subnet": {
+            "type": "string",
+            "example": "internalsub"
+          },
+          "sshPublicKeyFile": {
+            "type": "string",
+            "format": "byte"
+          },
+          "sshUser": {
+            "type": "string",
+            "example": "ubuntu"
+          },
+          "keypair": {
+            "type": "string",
+            "example": "mmustermann-key"
+          },
+          "region": {
+            "type": "string",
+            "example": "Bielefeld"
+          },
+          "availabilityZone": {
+            "type": "string",
+            "example": "default"
+          },
+          "masterInstance": {
+            "type": "object",
+            "required": [
+              "type",
+              "image"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "de.NBI.small+ephemeral"
+              },
+              "image": {
+                "type": "string",
+                "example": "Ubuntu 16.04 LTS (2019-05-08)"
+              }
+            }
+          },
+          "workerInstances": {
+            "type": "array",
+            "items": {
+              "required": [
+                "type",
+                "image",
+                "count"
+              ],
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "de.NBI.small+ephemeral"
+                },
+                "image": {
+                  "type": "string",
+                  "example": "Ubuntu 16.04 LTS (2019-05-08)"
+                },
+                "count": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Authorization": {
+        "type": "object",
+        "required": [
+          "openstackCredentials",
+          "mode",
+          "subnet",
+          "sshPublicKeyFile",
+          "sshUser",
+          "keypair",
+          "region",
+          "availabilityZone"
+        ],
+        "properties": {
+          "openstackCredentials": {
+            "type": "object",
+            "required": [
+              "username",
+              "domain",
+              "password",
+              "endpoint",
+              "projectName",
+              "projectDomain"
+            ],
+            "properties": {
+              "username": {
+                "type": "string",
+                "example": "mmustermann"
+              },
+              "domain": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "endpoint": {
+                "type": "string"
+              },
+              "projectName": {
+                "type": "string"
+              },
+              "projectDomain": {
+                "type": "string"
+              }
+            }
+          },
+          "mode": {
+            "type": "string",
+            "example": "openstack"
+          },
+          "subnet": {
+            "type": "string",
+            "example": "internalsub"
+          },
+          "sshPublicKeyFile": {
+            "type": "string",
+            "format": "byte"
+          },
+          "sshUser": {
+            "type": "string",
+            "example": "ubuntu"
+          },
+          "keypair": {
+            "type": "string",
+            "example": "mmustermann-key"
+          },
+          "region": {
+            "type": "string",
+            "example": "Bielefeld"
+          },
+          "availabilityZone": {
+            "type": "string",
+            "example": "default"
           }
         }
       }

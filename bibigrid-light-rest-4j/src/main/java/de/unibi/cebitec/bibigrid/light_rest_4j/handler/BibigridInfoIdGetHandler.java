@@ -6,7 +6,7 @@ import io.undertow.util.HttpString;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BibigridInfoIdPostHandler implements LightHttpHandler {
+public class BibigridInfoIdGetHandler implements LightHttpHandler {
     
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
