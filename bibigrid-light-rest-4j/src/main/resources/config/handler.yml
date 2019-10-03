@@ -53,11 +53,11 @@ handlers:
   - com.networknt.specification.SpecSwaggerUIHandler@swaggerui
   # - com.networknt.metrics.prometheus.PrometheusGetHandler@getprometheus
   # Business Handlers
-  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridListPostHandler
+  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridListGetHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridCreatePostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridValidatePostHandler
-  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdPostHandler
-  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdPostHandler
+  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdGetHandler
+  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdDeleteHandler
 
 
 chains:
@@ -76,10 +76,10 @@ chains:
 
 paths:
   - path: '/bibigrid/list'
-    method: 'POST'
+    method: 'GET'
     exec:
       - default
-      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridListPostHandler
+      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridListGetHandler
   - path: '/bibigrid/create'
     method: 'POST'
     exec:
@@ -91,15 +91,15 @@ paths:
       - default
       - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridValidatePostHandler
   - path: '/bibigrid/info/{id}'
-    method: 'POST'
+    method: 'GET'
     exec:
       - default
-      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdPostHandler
+      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdGetHandler
   - path: '/bibigrid/terminate/{id}'
-    method: 'POST'
+    method: 'DELETE'
     exec:
       - default
-      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdPostHandler
+      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdDeleteHandler
 
   - path: '/health/de.unibi.cebitec.bibigrid.light_rest_4j.bibigrid_light_rest_4j-1.0.0'
     method: 'get'

@@ -30,11 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 @Ignore
-public class BibigridListPostHandlerTest {
+public class BibigridInfoIdGetHandlerTest {
     @ClassRule
     public static TestServer server = TestServer.getInstance();
 
-    static final Logger logger = LoggerFactory.getLogger(BibigridListPostHandlerTest.class);
+    static final Logger logger = LoggerFactory.getLogger(BibigridInfoIdGetHandlerTest.class);
     static final boolean enableHttp2 = server.getServerConfig().isEnableHttp2();
     static final boolean enableHttps = server.getServerConfig().isEnableHttps();
     static final int httpPort = server.getServerConfig().getHttpPort();
@@ -43,7 +43,7 @@ public class BibigridListPostHandlerTest {
     static final String JSON_MEDIA_TYPE = "application/json";
 
     @Test
-    public void testBibigridListPostHandlerTest() throws ClientException {
+    public void testBibigridInfoIdGetHandlerTest() throws ClientException {
 
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -54,15 +54,13 @@ public class BibigridListPostHandlerTest {
             throw new ClientException(e);
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
-        String requestUri = "/bibigrid/list";
-        String httpMethod = "post";
+        String requestUri = "/bibigrid/info/XUunTTvdH";
+        String httpMethod = "get";
         try {
-            ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.POST);
+            ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.GET);
             
-            request.getRequestHeaders().put(Headers.CONTENT_TYPE, JSON_MEDIA_TYPE);
-            request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
             //customized header parameters 
-            connection.sendRequest(request, client.createClientCallback(reference, latch, "{\"content\": \"request body to be replaced\"}"));
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
             
             latch.await();
         } catch (Exception e) {
