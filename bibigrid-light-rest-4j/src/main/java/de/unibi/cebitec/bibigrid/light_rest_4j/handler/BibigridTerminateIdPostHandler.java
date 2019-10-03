@@ -22,11 +22,7 @@ public class BibigridTerminateIdPostHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
-    private static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation. Instances already running. " +
-            "Attempting to shut them down but in case of an error they might remain running. Please verify " +
-            "afterwards.";
-    private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
-    
+
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
 

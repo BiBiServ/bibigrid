@@ -1,13 +1,52 @@
-# openapi-light-rest-4j-example
-Bachelor Thesis
-
 # Development Guide
-Easy step by step guide to create a simple rest api using openapi 3.0 and the light-rest-4j framework.
-
-
-##### Set up light java and codegen for a new project. Only needed if the bibigrid-light-rest-4j directory is empty.
+Simple guide for developing the bibigrid rest api.
+# Starting the server
 ```
-cd bibigrid/bibigrid-light-rest-4j
+cd bibigrid/bibigrid-light-rest-4j/
+mvn clean install exec:exec
+```
+Your server should now be running on port 8443 of your local machine
+
+
+# Developing
+##### Making changes to controllers
+Controllers are found in bibigrid-light-rest-4j/src/main/java/de/unibi/cebitec/bibigrid/light_rest_4j/handler/  
+After doing changes compile with:
+```
+cd bibigrid/bibigrid-light-rest-4j/
+mvn clean install exec:exec
+```
+
+##### Changing the api specification without re-generating the whole project:
+Make changes to api config found in bibigrid-light-rest-4j/src/main/resources/config/openapi.json  
+Apply changes with:
+```
+cd bibigrid/bibigrid-light-rest-4j/
+mvn clean install exec:exec
+```
+
+##### Making changes to classes outside bibigrid-light-rest-4j project
+Make changes to desired classes and then run
+```
+cd bibigrid/
+mvn clean install
+```
+And then run
+```
+cd bibigrid/bibigrid-light-rest-4j/
+mvn clean install exec:exec
+```
+
+
+
+
+# History
+##### This documents how the whole project was created (see [light-rest-4j docs](https://doc.networknt.com/references/light-codegen/openapi-generator/) for additional help)
+#### Setup needed repositories
+```
+cd bibigrid
+mkdir bibigrid-light-rest-4j
+cd bibigrid-light-rest-4j/
 git clone https://github.com/networknt/model-config.git
 git clone https://github.com/networknt/light-codegen.git
 cd light-codegen
@@ -16,14 +55,12 @@ mvn clean install
 
 #### Generate api from config.json and openapi.json
 ```
-cd bibigrid/bibigrid-light-rest-4j
-rm -rf application # Needs to be done when there exists an application folder from older api generations
-java -jar light-codegen/codegen-cli/target/codegen-cli.jar -f openapi -o ./application -m openapi.json -c config.json```
+cd bibigrid/bibigrid-light-rest-4j/
+sh generate-api-from-json.sh
 ```
-##### After doing code changes you need to compile again with the following commands
-
+#### Starting the server
 ```
-cd bibigrid/bibigrid-light-rest-4j/application
+cd bibigrid/bibigrid-light-rest-4j/
 mvn clean install exec:exec
 ```
 
@@ -36,3 +73,4 @@ Use [Postman](https://www.getpostman.com/) or
 ```
 curl  https://localhost:8443/
 ```
+
