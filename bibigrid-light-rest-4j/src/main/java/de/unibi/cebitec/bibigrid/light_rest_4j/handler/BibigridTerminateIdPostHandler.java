@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.body.BodyHandler;
 import com.networknt.handler.LightHttpHandler;
 import de.unibi.cebitec.bibigrid.Provider;
-import de.unibi.cebitec.bibigrid.core.Validator;
-import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -17,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
