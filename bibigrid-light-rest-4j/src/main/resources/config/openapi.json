@@ -1,97 +1,17 @@
-{"components":{"schemas":{"Authorization":{"type": "object","required":["openstackCredentials",
-          "mode",
-          "subnet",
-          "sshPublicKeyFile",
-          "sshUser",
-          "keypair",
-          "region",
-          "availabilityZone"],"properties":{"mode":{"type": "string","example": "openstack"},"subnet":{"type": "string","example": "internalsub"},"openstackCredentials":{"type": "object","required": [
-              "username",
-              "domain",
-              "password",
-              "endpoint",
-              "projectName",
-              "projectDomain"
-            ],"properties": {
-              "username": {
-                "type": "string",
-                "example": "mmustermann"
-              },
-              "domain": {
-                "type": "string"
-              },
-              "password": {
-                "type": "string"
-              },
-              "endpoint": {
-                "type": "string"
-              },
-              "projectName": {
-                "type": "string"
-              },
-              "projectDomain": {
-                "type": "string"
-              }
-            }},"sshPublicKeyFile":{"type": "string","format": "byte"},"sshUser":{"type": "string","example": "ubuntu"},"keypair":{"type": "string","example": "mmustermann-key"},"region":{"type": "string","example": "Bielefeld"},"availabilityZone":{"type": "string","example": "default"}}},"Error":{"type": "object","required":["code",
-          "message"],"properties":{"message":{"type": "string"},"code":{"type": "integer","format": "int32"}}},"ClusterConfiguration":{"type": "object","properties":{"mode":{"type": "string","example": "openstack"},"subnet":{"type": "string","example": "internalsub"},"masterInstance":{"type": "object","required": [
-              "type",
-              "image"
-            ],"properties": {
-              "type": {
-                "type": "string",
-                "example": "de.NBI.small+ephemeral"
-              },
-              "image": {
-                "type": "string",
-                "example": "Ubuntu 16.04 LTS (2019-05-08)"
-              }
-            }},"openstackCredentials":{"type": "object","required": [
-              "username",
-              "domain",
-              "password",
-              "endpoint",
-              "projectName",
-              "projectDomain"
-            ],"properties": {
-              "username": {
-                "type": "string",
-                "example": "mmustermann"
-              },
-              "domain": {
-                "type": "string"
-              },
-              "password": {
-                "type": "string"
-              },
-              "endpoint": {
-                "type": "string"
-              },
-              "projectName": {
-                "type": "string"
-              },
-              "projectDomain": {
-                "type": "string"
-              }
-            }},"sshPublicKeys":{"type": "array","items":{"type": "string"}},"sshUser":{"type": "string","example": "ubuntu"},"keypair":{"type": "string","example": "mmustermann-key"},"region":{"type": "string","example": "Bielefeld"},"availabilityZone":{"type": "string","example": "default"},"workerInstances":{"type": "array","items":{"type": "object","required": [
-                "type",
-                "image",
-                "count"
-              ],"properties": {
-                "type": {
-                  "type": "string",
-                  "example": "de.NBI.small+ephemeral"
-                },
-                "image": {
-                  "type": "string",
-                  "example": "Ubuntu 16.04 LTS (2019-05-08)"
-                },
-                "count": {
-                  "type": "integer"
-                }
-              }}}}},"ClusterStatus":{"type": "object","properties":{"log":{"type": "string","example": "Timestamp"},"info":{"type": "string","example": "Am Hochfahren"}}}}},"openapi": "3.0.0","paths": {
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Bibigrid",
+    "description": "A REST-Api specification for bibigrid cluster management.",
+    "license": {
+      "name": "Dont know yet"
+    }
+  },
+  "paths": {
     "/bibigrid/list": {
       "get": {
-        "summary": "List all running clusters for a user",
+        "summary": "List all running clusters",
         "operationId": "listRunningClusters",
         "requestBody": {
           "description": "YAML like configuration object",
@@ -138,7 +58,7 @@
     },
     "/bibigrid/create": {
       "post": {
-        "summary": "Create a bibigrid cluster for a user",
+        "summary": "Create a bibigrid cluster",
         "operationId": "createClusterByConfig",
         "requestBody": {
           "description": "YAML like configuration object",
@@ -352,11 +272,192 @@
         }
       }
     }
-  },"info": {
-    "version": "1.0.0",
-    "title": "Bibigrid",
-    "description": "A REST-Api specification for bibigrid cluster management.",
-    "license": {
-      "name": "Dont know yet"
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ClusterStatus": {
+        "type": "object",
+        "properties": {
+          "info": {
+            "type": "string",
+            "example": "Am Hochfahren"
+          },
+          "log": {
+            "type": "string",
+            "example": "Timestamp"
+          }
+        }
+      },
+      "ClusterConfiguration": {
+        "type": "object",
+        "properties": {
+          "openstackCredentials": {
+            "type": "object",
+            "required": [
+              "username",
+              "domain",
+              "password",
+              "endpoint",
+              "projectName",
+              "projectDomain"
+            ],
+            "properties": {
+              "username": {
+                "type": "string",
+                "example": "mmustermann"
+              },
+              "domain": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "endpoint": {
+                "type": "string"
+              },
+              "projectName": {
+                "type": "string"
+              },
+              "projectDomain": {
+                "type": "string"
+              }
+            }
+          },
+          "mode": {
+            "type": "string",
+            "example": "openstack"
+          },
+          "subnet": {
+            "type": "string",
+            "example": "internalsub"
+          },
+          "sshPublicKeys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sshUser": {
+            "type": "string",
+            "example": "ubuntu"
+          },
+          "keypair": {
+            "type": "string",
+            "example": "mmustermann-key"
+          },
+          "region": {
+            "type": "string",
+            "example": "Bielefeld"
+          },
+          "availabilityZone": {
+            "type": "string",
+            "example": "default"
+          },
+          "masterInstance": {
+            "type": "object",
+            "required": [
+              "type",
+              "image"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "de.NBI.small+ephemeral"
+              },
+              "image": {
+                "type": "string",
+                "example": "Ubuntu 16.04 LTS (2019-05-08)"
+              }
+            }
+          },
+          "workerInstances": {
+            "type": "array",
+            "items": {
+              "required": [
+                "type",
+                "image",
+                "count"
+              ],
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "de.NBI.small+ephemeral"
+                },
+                "image": {
+                  "type": "string",
+                  "example": "Ubuntu 16.04 LTS (2019-05-08)"
+                },
+                "count": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Authorization": {
+        "type": "object",
+        "required": [
+          "openstackCredentials",
+          "mode"
+        ],
+        "properties": {
+          "openstackCredentials": {
+            "description": "Content of credentials file (default path HOME_DIR/.bibigrid/credentials.yml)",
+            "type": "object",
+            "required": [
+              "username",
+              "domain",
+              "password",
+              "endpoint",
+              "projectName",
+              "projectDomain"
+            ],
+            "properties": {
+              "username": {
+                "type": "string"
+              },
+              "domain": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "endpoint": {
+                "type": "string"
+              },
+              "projectName": {
+                "type": "string"
+              },
+              "projectDomain": {
+                "type": "string"
+              }
+            }
+          },
+          "mode": {
+            "type": "string",
+            "example": "openstack",
+            "description": "Provider mode [optionally aws, googlecloud, azure]"
+          }
+        }
+      }
     }
-  }}
+  }
+}
