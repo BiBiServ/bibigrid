@@ -11,7 +11,7 @@
   "paths": {
     "/bibigrid/list": {
       "get": {
-        "summary": "List all running clusters for a user",
+        "summary": "List all running clusters",
         "operationId": "listRunningClusters",
         "requestBody": {
           "description": "YAML like configuration object",
@@ -58,7 +58,7 @@
     },
     "/bibigrid/create": {
       "post": {
-        "summary": "Create a bibigrid cluster for a user",
+        "summary": "Create a bibigrid cluster",
         "operationId": "createClusterByConfig",
         "requestBody": {
           "description": "YAML like configuration object",
@@ -416,16 +416,11 @@
         "type": "object",
         "required": [
           "openstackCredentials",
-          "mode",
-          "subnet",
-          "sshPublicKeyFile",
-          "sshUser",
-          "keypair",
-          "region",
-          "availabilityZone"
+          "mode"
         ],
         "properties": {
           "openstackCredentials": {
+            "description": "Content of credentials file (default path HOME_DIR/.bibigrid/credentials.yml)",
             "type": "object",
             "required": [
               "username",
@@ -437,8 +432,7 @@
             ],
             "properties": {
               "username": {
-                "type": "string",
-                "example": "mmustermann"
+                "type": "string"
               },
               "domain": {
                 "type": "string"
@@ -459,31 +453,8 @@
           },
           "mode": {
             "type": "string",
-            "example": "openstack"
-          },
-          "subnet": {
-            "type": "string",
-            "example": "internalsub"
-          },
-          "sshPublicKeyFile": {
-            "type": "string",
-            "format": "byte"
-          },
-          "sshUser": {
-            "type": "string",
-            "example": "ubuntu"
-          },
-          "keypair": {
-            "type": "string",
-            "example": "mmustermann-key"
-          },
-          "region": {
-            "type": "string",
-            "example": "Bielefeld"
-          },
-          "availabilityZone": {
-            "type": "string",
-            "example": "default"
+            "example": "openstack",
+            "description": "Provider mode [optionally aws, googlecloud, azure]"
           }
         }
       }

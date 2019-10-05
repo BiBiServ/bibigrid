@@ -28,14 +28,7 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
 
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-
-        ObjectMapper mapper = new ObjectMapper();
-        Map bodyMap = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
-        String requestBody = mapper.writeValueAsString(bodyMap);
-        ConfigurationOpenstack config = new Yaml().loadAs(requestBody,ConfigurationOpenstack.class);
-
+    private void validateConfig(ConfigurationOpenstack config, HttpServerExchange exchange){
         try {
             ProviderModule module = null;
             String providerMode = config.getMode();
@@ -52,7 +45,6 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
-
             Client client;
             try {
                 client = module.getClient(config);
@@ -65,7 +57,6 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
             if (!validator.validateProviderTypes(client)) {
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
             }
-
             try {
                 ValidateIntent intent  = module.getValidateIntent(client, config);
                 if (intent.validate()) {
@@ -78,16 +69,27 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
                     exchange.setStatusCode(200);
                     exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
                 }
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
                 exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
             }
-        }
-        catch(Exception e){
+        } catch(Exception e) {
             LOG.error(e.getMessage());
         }
+        exchange.endExchange();
+    }
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+        Map bodyMap = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
+        String requestBody = mapper.writeValueAsString(bodyMap);
+        ConfigurationOpenstack config = new Yaml().loadAs(requestBody,ConfigurationOpenstack.class);
+
+        validateConfig(config, exchange);
+
         exchange.endExchange();
     }
 }
