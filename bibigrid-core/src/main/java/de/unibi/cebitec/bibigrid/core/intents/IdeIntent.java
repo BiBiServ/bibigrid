@@ -28,6 +28,7 @@ import java.util.Map;
  */
 public class IdeIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(IdeIntent.class);
+    public static final String DEFAULT_IDE_WORKSPACE = "$HOME";
     public static final int DEFAULT_IDE_PORT = 8181;
     public static final int DEFAULT_IDE_PORT_END = 8383;
 

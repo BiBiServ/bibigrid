@@ -9,8 +9,6 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 
 import java.io.*;
-import java.net.URI;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
@@ -26,7 +24,6 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class Configuration {
     /* public const */
     public static boolean DEBUG = false;
-    public static final String DEFAULT_WORKSPACE = "$HOME";
     public static final String CONFIG_DIR = System.getProperty("user.home")+System.getProperty("file.separator")+".bibigrid";
     public static final String KEYS_DIR = CONFIG_DIR + System.getProperty("file.separator")+"keys";
     public static final FileAttribute KEYS_PERMS = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"));
@@ -116,6 +113,8 @@ public abstract class Configuration {
     private boolean cloud9;
     @Deprecated
     private boolean theia;
+    @Deprecated
+    private String workspace;
     private IdeConf ideConf = new IdeConf();
     private boolean ganglia;
     private boolean zabbix;
@@ -133,8 +132,6 @@ public abstract class Configuration {
     private String subnet;
 
     private String[] clusterIds = new String [0];
-
-    private String workspace = DEFAULT_WORKSPACE;
 
     public int getWorkerInstanceCount() {
         if (workerInstances == null) {
@@ -518,20 +515,19 @@ public abstract class Configuration {
 
     @Deprecated
     public void setCloud9Workspace(String cloud9Workspace) {
-        LOG.warn("Option cloud9Workspace is deprecated. Please use workspace instead.");
-        setWorkspace(cloud9Workspace);
+        LOG.warn("Option cloud9Workspace is deprecated. Please use attribute workspace in ideConf instead.");
+        ideConf.setWorkspace(cloud9Workspace);
     }
 
+    @Deprecated
     public String getWorkspace() {
         return workspace;
     }
 
+    @Deprecated
     public void setWorkspace(String workspace) {
-        if (workspace == null || workspace.length() == 0) {
-            workspace = DEFAULT_WORKSPACE;
-        }
-        this.workspace = workspace;
-        LOG.info(V, "Workspace set: {}", workspace);
+        LOG.warn("Option workspace is deprecated. Please use attribute workspace in ideConf instead.");
+        ideConf.setWorkspace(workspace);
     }
 
     public boolean isLocalDNSLookup() {
@@ -842,6 +838,7 @@ public abstract class Configuration {
      */
     public static class IdeConf {
         private boolean ide = false;
+        private String workspace = IdeIntent.DEFAULT_IDE_WORKSPACE;
         private int port_start = IdeIntent.DEFAULT_IDE_PORT;
         private int port_end = IdeIntent.DEFAULT_IDE_PORT_END;
 
@@ -852,6 +849,17 @@ public abstract class Configuration {
         public void setIde(boolean ide) {
             this.ide = ide;
             LOG.info(V, "Theia support {}.", ide ? "enabled" : "disabled");
+        }
+
+        public String getWorkspace() {
+            return workspace;
+        }
+
+        public void setWorkspace(String workspace) {
+            if (workspace == null || workspace.length() == 0) {
+                workspace = IdeIntent.DEFAULT_IDE_WORKSPACE;
+            }
+            this.workspace = workspace;
         }
 
         public int getPort_start() {
