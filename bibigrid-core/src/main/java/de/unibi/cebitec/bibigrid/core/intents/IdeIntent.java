@@ -77,9 +77,7 @@ public class IdeIntent extends Intent {
      * @param masterIp IP of the master instance
      */
     private void startPortForwarding(final String masterIp) {
-
         try {
-
             LOG.info("Trying to connect to master ...");
             sleep(4);
             // Create new Session to avoid packet corruption.
@@ -94,15 +92,17 @@ public class IdeIntent extends Intent {
                     }
                     idePort++;
                 }
-                sshSession.setPortForwardingL(idePort, "localhost", DEFAULT_IDE_PORT);
-                // Start connection attempt
-                sshSession.connect();
-                LOG.info("Connected to master!");
-                LOG.info("You can now open the Web IDE at http://localhost:{}", idePort);
-                openBrowser();
-                LOG.info("Press any key, to close this session...");
-                //noinspection ResultOfMethodCallIgnored
-                System.in.read();
+                if (portAvailable(idePort)) {
+                    sshSession.setPortForwardingL(idePort, "localhost", DEFAULT_IDE_PORT);
+                    // Start connection attempt
+                    sshSession.connect();
+                    LOG.info("Connected to master!");
+                    LOG.info("You can now open the Web IDE at http://localhost:{}", idePort);
+                    openBrowser();
+                    LOG.info("Press any key, to close this session...");
+                    //noinspection ResultOfMethodCallIgnored
+                    System.in.read();
+                }
                 sshSession.disconnect();
             }
         } catch (JSchException e) {
