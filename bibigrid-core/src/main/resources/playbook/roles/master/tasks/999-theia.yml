@@ -19,15 +19,15 @@
     theia_ide_user: "{{ ansible_env.SUDO_USER }}"
   when: theia_ide_user is not defined
 
-- name: Set fact 'theia_ide_workspace' when not defined
+- name: Set fact 'ide_workspace' when not defined
   set_fact:
     theia_ide_workspace: "{{ ansible_env.PWD }}"
-  when: theia_ide_workspace is not defined
+  when: ide_workspace is not defined
 
-- name: Set fact 'theia_ide_workspace' when defined
+- name: Set fact 'ide_workspace' when defined
   set_fact:
     theia_ide_workspace: "{{ ide_workspace }}"
-  when: theia_ide_workspace is defined
+  when: ide_workspace is defined
 
 - name: Install nvm
   shell: |

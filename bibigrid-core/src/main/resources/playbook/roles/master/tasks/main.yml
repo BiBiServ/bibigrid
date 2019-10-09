@@ -48,19 +48,10 @@
   tags: ["master-slurm","slurm"]
 
 - debug:
-    msg: "[BIBIGRID] Setup Cloud9"
-  when:
-    - enable_cloud9 == 'yes'
-- include: 999-cloud9.yml
-  when:
-    - enable_cloud9 == 'yes'
-  tags: ["master-cloud9","cloud9"]
-
-- debug:
     msg: "[BIBIGRID] Setup Theia"
   when:
-    - enable_theia == 'yes'
+    - enable_ide == 'yes'
 - include: 999-theia.yml
   when:
-    - enable_theia == 'yes'
+    - enable_ide == 'yes'
   tags: ["master-theia","theia"]
