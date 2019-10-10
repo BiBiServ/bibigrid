@@ -1,12 +1,10 @@
 ## Version 2.0.10 < 2.0.9 (not yet released)
 
 ### Features
-- use another Port for TheiaIDE forwarding when it's already bound (#180)
+- added IdeConf parameter to integrate usage of self-assigned port(s) for TheiaIDE forwarding (prevents already bound ports (#180))
 
 ### Fixes 
 - update & upgrade entire system (#193)
-
-
 
 ## Version 2.0.9 < 2.0.8 (10/01/2019)
 
