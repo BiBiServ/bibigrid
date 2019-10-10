@@ -23,6 +23,15 @@ import java.util.Map;
 public final class ValidatorOpenstack extends Validator {
     private final ConfigurationOpenstack openstackConfig;
 
+    private static class EnvCredentials {
+        private static String PROJECT_NAME = "OS_PROJECT_NAME";
+        private static String USER_DOMAIN_NAME = "OS_USER_DOMAIN_NAME";
+        private static String PROJECT_DOMAIN_ID = "OS_PROJECT_DOMAIN_ID";
+        private static String AUTH_URL = "OS_AUTH_URL";
+        private static String PASSWORD = "OS_PASSWORD";
+        private static String USERNAME = "OS_USERNAME";
+    }
+
     ValidatorOpenstack(final Configuration config, final ProviderModule providerModule)
             throws ConfigurationException {
         super( config, providerModule);
@@ -44,11 +53,13 @@ public final class ValidatorOpenstack extends Validator {
         return loadAndparseCredentialParameters();
     }
 
+    /**
+     * Loads credentials.yml or environment variables set via sourced RC file.
+     * @return true, if credentials loaded successfully
+     */
     private boolean loadAndparseCredentialParameters() {
-
         OpenStackCredentials openStackCredentials = null;
 
-        // if credentials is given, read it ...
         if (config.getCredentialsFile() != null) {
             try {
                 File credentialsFile = Paths.get(config.getCredentialsFile()).toFile();
@@ -61,31 +72,27 @@ public final class ValidatorOpenstack extends Validator {
                         e.getCause() != null ? e.getCause().getMessage() : e);
             }
         } else {
-            // ... otherwise try to extract necessary informations from environment
-            openStackCredentials = new OpenStackCredentials();
-
+            LOG.info("No credentials file provided. Checking environment variables ...");
             Map env =  System.getenv();
-
-            if (env.containsKey("OS_PROJECT_NAME")){
-                openStackCredentials.setProjectName((String)env.get("OS_PROJECT_NAME"));
+            openStackCredentials = new OpenStackCredentials();
+            if (env.containsKey(EnvCredentials.PROJECT_NAME)) {
+                openStackCredentials.setProjectName((String)env.get(EnvCredentials.PROJECT_NAME));
             }
-            if (env.containsKey("OS_USER_DOMAIN_NAME")){
-                openStackCredentials.setDomain((String)env.get("OS_USER_DOMAIN_NAME"));
+            if (env.containsKey(EnvCredentials.USER_DOMAIN_NAME)) {
+                openStackCredentials.setDomain((String)env.get(EnvCredentials.USER_DOMAIN_NAME));
             }
-            if (env.containsKey("OS_PROJECT_DOMAIN_NAME")){
-                openStackCredentials.setProjectDomain((String)env.get("OS_PROJECT_DOMAIN_NAME"));
+            if (env.containsKey(EnvCredentials.PROJECT_DOMAIN_ID)) {
+                openStackCredentials.setProjectDomain((String)env.get(EnvCredentials.PROJECT_DOMAIN_ID));
             }
-
-            if (env.containsKey("OS_AUTH_URL")){
-                openStackCredentials.setEndpoint((String)env.get("OS_AUTH_URL"));
+            if (env.containsKey(EnvCredentials.AUTH_URL)) {
+                openStackCredentials.setEndpoint((String)env.get(EnvCredentials.AUTH_URL));
             }
-            if (env.containsKey("OS_PASSWORD")){
-                openStackCredentials.setPassword((String)env.get("OS_PASSWORD"));
+            if (env.containsKey(EnvCredentials.PASSWORD)) {
+                openStackCredentials.setPassword((String)env.get(EnvCredentials.PASSWORD));
             }
-            if (env.containsKey("OS_USERNAME")){
-                openStackCredentials.setUsername((String)env.get("OS_USERNAME"));
+            if (env.containsKey(EnvCredentials.USERNAME)) {
+                openStackCredentials.setUsername((String)env.get(EnvCredentials.USERNAME));
             }
-
         }
 
         if (openStackCredentials == null) {
