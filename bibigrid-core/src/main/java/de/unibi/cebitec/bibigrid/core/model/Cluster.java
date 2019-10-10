@@ -121,10 +121,10 @@ public class Cluster {
     }
 
     public String getPrivateIp() {
-        return publicIp;
+        return privateIp;
     }
 
-    public void setPrivateIp(String publicIp) {
-        this.publicIp = publicIp;
+    public void setPrivateIp(String privateIp) {
+        this.privateIp = privateIp;
     }
 }
