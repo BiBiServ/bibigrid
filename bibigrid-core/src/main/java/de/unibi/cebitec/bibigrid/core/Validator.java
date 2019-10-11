@@ -54,8 +54,6 @@ public abstract class Validator {
      * @return true, if file is valid
      */
     private boolean validateSSHKeyFiles() {
-
-
         List<String> keyFiles = new ArrayList<>(config.getSshPublicKeyFiles());
         if (config.getSshPublicKeyFile() != null) {
             keyFiles.add(config.getSshPublicKeyFile());
