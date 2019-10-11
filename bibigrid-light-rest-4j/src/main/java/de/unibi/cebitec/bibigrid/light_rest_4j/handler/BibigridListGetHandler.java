@@ -70,10 +70,7 @@ public class BibigridListGetHandler implements LightHttpHandler {
             } else {
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
-                Map<String, Object> params = new HashMap<>();
-                params.put("info",listIntent.toString());
-                String payload = new ObjectMapper().writeValueAsString(params);
-                exchange.getResponseSender().send(payload);
+                exchange.getResponseSender().send(listIntent.toJsonString());
             }
         }
         catch(Exception e){
