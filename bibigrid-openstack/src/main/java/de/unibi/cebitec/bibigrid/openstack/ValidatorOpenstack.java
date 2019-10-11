@@ -62,7 +62,7 @@ public final class ValidatorOpenstack extends Validator {
         if (config.getCredentialsFile() != null) {
             openStackCredentials = loadCredentialsFile();
         } else {
-            LOG.warn("No credentials file provided. Checking environment variables ...");
+            LOG.info("No credentials file provided. Checking environment variables ...");
             openStackCredentials = loadEnvCredentials();
         }
         if (openStackCredentials == null) {
@@ -128,7 +128,6 @@ public final class ValidatorOpenstack extends Validator {
 
         for (EnvCredentials credentials : EnvCredentials.values()) {
             if (!env.containsKey(credentials.name())) {
-                LOG.warn("No environment variables provided.");
                 return null;
             }
         }
