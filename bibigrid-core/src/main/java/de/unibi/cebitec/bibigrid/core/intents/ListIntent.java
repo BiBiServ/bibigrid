@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,6 +165,50 @@ public abstract class ListIntent extends Intent {
     }
 
     protected abstract void loadInstanceConfiguration(Instance instance);
+
+    /**
+     * Return a json representation string of found cluster objects map.
+     */
+    public final String toJsonString(){
+        Map<String, Object> jsonMap = new HashMap<>();
+        ObjectMapper mapper = new ObjectMapper();
+        if (clusterMap == null) {
+            clusterMap = new HashMap<>();
+            searchClusterIfNecessary();
+        }
+        if (clusterMap.isEmpty()) {
+            jsonMap.put("info","No BiBiGrid cluster found!");
+            try {
+                return mapper.writeValueAsString(jsonMap);
+            }
+            catch(JsonProcessingException e){
+                return "{\"Internal server error\":\"JsonProcessingException\"}";
+            }
+        }
+        List<Map<String, Object>> list = new LinkedList<>();
+        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            Cluster v = entry.getValue();
+            Map<String, Object> cluster = new HashMap<>();
+            cluster.put("cluster-id",v.getClusterId());
+            cluster.put("user",(v.getUser() == null) ? "-" : v.getUser());
+            cluster.put("launch date", (v.getStarted() == null) ? "-" : v.getStarted());
+            cluster.put("key name", (v.getKeyName() == null ? "-" : v.getKeyName()));
+            cluster.put("public-ip",(v.getPublicIp() == null ? "-" : v.getPublicIp()));
+            cluster.put("# inst", ((v.getMasterInstance() != null ? 1 : 0) + v.getWorkerInstances().size()));
+            cluster.put("group-id", (v.getSecurityGroup() == null ? "-" : v.getSecurityGroup()));
+            cluster.put("subnet-id", (v.getSubnet() == null ? "-" : v.getSubnet().getId()));
+            cluster.put("network-id"   , (v.getNetwork() == null ? "-" : v.getNetwork().getId()));
+            list.add(cluster);
+        }
+        jsonMap.put("info", list);
+        try {
+            return mapper.writeValueAsString(jsonMap);
+        }
+        catch(JsonProcessingException e){
+            return "{\"Internal server error\":\"JsonProcessingException\"}";
+        }
+    }
+
 
     /**
      * Return a String representation of found cluster objects map.
