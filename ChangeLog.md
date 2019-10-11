@@ -5,6 +5,7 @@
 
 ### Fixes 
 - update & upgrade entire system (#193)
+- improve error handling (#191)
 
 ## Version 2.0.9 < 2.0.8 (10/01/2019)
 
