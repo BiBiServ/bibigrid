@@ -2,6 +2,8 @@ package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
 import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
+import de.unibi.cebitec.bibigrid.core.model.Configuration;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import io.undertow.util.HttpString;
 import org.yaml.snakeyaml.Yaml;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,68 +30,56 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
 
-    private void validateConfig(ConfigurationOpenstack config, HttpServerExchange exchange){
-        try {
-            ProviderModule module = null;
-            String providerMode = config.getMode();
 
-            String []  availableProviderModes = Provider.getInstance().getProviderNames();
-            if (availableProviderModes.length == 1) {
-                LOG.info("Use {} provider.",availableProviderModes[0]);
-                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
-            } else {
-                LOG.info("Use {} provider.",providerMode);
-                module = Provider.getInstance().getProviderModule(providerMode);
-            }
-            if (module == null) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-                return;
-            }
-            Client client;
+    @Override
+    public void handleRequest(HttpServerExchange exchange) {
+
+        ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+        if(serviceProviderConnector.connectToServiceProvider(exchange)){
+
+            ProviderModule module = serviceProviderConnector.getModule();
+            Client client = serviceProviderConnector.getClient();
+            ConfigurationOpenstack config = serviceProviderConnector.getConfig();
+
             try {
-                client = module.getClient(config);
-            } catch (ClientConnectionFailedException e) {
-                LOG.error(e.getMessage());
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-                return;
-            }
-            Validator validator =  module.getValidator(config,module);
-            if (!validator.validateProviderTypes(client)) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-            }
-            try {
-                ValidateIntent intent  = module.getValidateIntent(client, config);
-                if (intent.validate()) {
-                    LOG.info(I, "You can now start your cluster.");
+                Validator validator = module.getValidator(config, module);
+                if (!validator.validateProviderTypes(client)) {
+                    LOG.error(ABORT_WITH_NOTHING_STARTED);
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                     exchange.setStatusCode(200);
-                    exchange.getResponseSender().send("{\"is_valid\":\"true\",\"info\":\"You can now start your cluster.\"}");
-                } else {
-                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                    exchange.setStatusCode(200);
-                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
+                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
+                    // Maybe TODO determine whether master of worker instance was invalid
                 }
-            } catch (Exception e) {
+                try {
+                    ValidateIntent intent  = module.getValidateIntent(client, config);
+                    if (intent.validate()) {
+                        LOG.info(I, "You can now start your cluster.");
+                        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                        exchange.setStatusCode(200);
+                        exchange.getResponseSender().send("{\"is_valid\":\"true\",\"info\":\"You can now start your cluster.\"}");
+                    } else {
+                        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                        exchange.setStatusCode(200);
+                        exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
+                    }
+                } catch (Exception e) {
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.setStatusCode(200);
+                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
+                    // TODO better message for request
+                }
+            } catch(ConfigurationException c){
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
                 exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
+                // TODO better message for request
             }
-        } catch(Exception e) {
-            LOG.error(e.getMessage());
+        } else{
+            exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+            exchange.setStatusCode(400);
+            exchange.getResponseSender().send("{\"{\"error\":\"Connection to service provider could not be established\",\"}");
+            // TODO better message for request
         }
-        exchange.endExchange();
-    }
-
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-
-        ObjectMapper mapper = new ObjectMapper();
-        Map bodyMap = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
-        String requestBody = mapper.writeValueAsString(bodyMap);
-        ConfigurationOpenstack config = new Yaml().loadAs(requestBody,ConfigurationOpenstack.class);
-
-        validateConfig(config, exchange);
-
         exchange.endExchange();
     }
 }
