@@ -1,9 +1,11 @@
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.body.BodyHandler;
 import com.networknt.handler.LightHttpHandler;
 import de.unibi.cebitec.bibigrid.Provider;
+import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
@@ -21,43 +23,19 @@ import java.util.Map;
 public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
-    private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
+    public void handleRequest(HttpServerExchange exchange) {
 
-        ObjectMapper mapper = new ObjectMapper();
-        Map bodyMap = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
-        String requestBody = mapper.writeValueAsString(bodyMap);
-        ConfigurationOpenstack config = new Yaml().loadAs(requestBody,ConfigurationOpenstack.class);
-        String clusterId = exchange.getQueryParameters().get("id").getFirst();
-        config.setClusterIds(clusterId);
+        ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+        if(serviceProviderConnector.connectToServiceProvider(exchange)){
 
-        try {
-            ProviderModule module = null;
-            String providerMode = config.getMode();
+            ProviderModule module = serviceProviderConnector.getModule();
+            Client client = serviceProviderConnector.getClient();
+            ConfigurationOpenstack config = serviceProviderConnector.getConfig();
+            String clusterId = exchange.getQueryParameters().get("id").getFirst();
+            config.setClusterIds(clusterId);
 
-            String []  availableProviderModes = Provider.getInstance().getProviderNames();
-            if (availableProviderModes.length == 1) {
-                LOG.info("Use {} provider.",availableProviderModes[0]);
-                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
-            } else {
-                LOG.info("Use {} provider.",providerMode);
-                module = Provider.getInstance().getProviderModule(providerMode);
-            }
-            if (module == null) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-                return;
-            }
-
-            Client client;
-            try {
-                client = module.getClient(config);
-            } catch (ClientConnectionFailedException e) {
-                LOG.error(e.getMessage());
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-                return;
-            }
             TerminateIntent terminateIntent = module.getTerminateIntent(client, config);
             terminateIntent.terminate();
 
@@ -65,15 +43,22 @@ public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
             exchange.setStatusCode(200);
             Map<String, Object> params = new HashMap<>();
             params.put("info",terminateIntent.getTerminateResponse());
-            String payload = new ObjectMapper().writeValueAsString(params);
-            exchange.getResponseSender().send(payload);
-        }
-        catch(Exception e){
-            LOG.error(e.getMessage());
+            try {
+                String payload = new ObjectMapper().writeValueAsString(params);
+                exchange.getResponseSender().send(payload);
+            } catch (JsonProcessingException j){
+                LOG.error(j.getMessage());
+                exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                exchange.setStatusCode(400);
+                exchange.getResponseSender().send("{\"{\"error\":\""+j.getMessage()+"\",\"}");
+            }
+        } else{
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"Internal server error\"}");
+            exchange.getResponseSender().send("{\"{\"error\":\"Connection to service provider could not be established\",\"}");
+            // TODO better message for request
         }
         exchange.endExchange();
     }
+
 }

@@ -46,8 +46,7 @@ public class BibigridListGetHandler implements LightHttpHandler {
                 exchange.setStatusCode(200);
                 exchange.getResponseSender().send(listIntent.toJsonString());
             }
-        }
-        else{
+        } else{
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
             exchange.getResponseSender().send("{\"{\"error\":\"Connection to service provider could not be established\",\"}");
