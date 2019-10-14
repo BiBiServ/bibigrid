@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.body.BodyHandler;
 import com.networknt.handler.LightHttpHandler;
@@ -24,62 +26,40 @@ public class BibigridListGetHandler implements LightHttpHandler {
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
+    public void handleRequest(HttpServerExchange exchange){
 
-        ObjectMapper mapper = new ObjectMapper();
-        Map bodyMap = (Map)exchange.getAttachment(BodyHandler.REQUEST_BODY);
-        String requestBody = mapper.writeValueAsString(bodyMap);
-        ConfigurationOpenstack config = new Yaml().loadAs(requestBody,ConfigurationOpenstack.class);
+        OpenstackConnector openstackConnector = new OpenstackConnector();
+        if(openstackConnector.connectToServiceProvider(exchange)){
 
-        try {
-            ProviderModule module = null;
-            String providerMode = config.getMode();
-
-            String []  availableProviderModes = Provider.getInstance().getProviderNames();
-            if (availableProviderModes.length == 1) {
-                LOG.info("Use {} provider.",availableProviderModes[0]);
-                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
-            } else {
-                LOG.info("Use {} provider.",providerMode);
-                module = Provider.getInstance().getProviderModule(providerMode);
-            }
-            if (module == null) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-                return;
-            }
-
-            Client client;
-            try {
-                client = module.getClient(config);
-            } catch (ClientConnectionFailedException e) {
-                LOG.error(e.getMessage());
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-                return;
-            }
-
-            ListIntent listIntent = module.getListIntent(client, config);
-            String  [] ids =  config.getClusterIds();
+            ListIntent listIntent =  openstackConnector.getModule().getListIntent(openstackConnector.getClient(), openstackConnector.getConfig());
+            String  [] ids =  openstackConnector.getConfig().getClusterIds();
 
             if (ids != null && ids.length > 0) {
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
                 Map<String, Object> params = new HashMap<>();
-                String payload = new ObjectMapper().writeValueAsString(params);
-                params.put("info",listIntent.toDetailString(ids[0]));
-                exchange.getResponseSender().send(payload);
+                try {
+                    String payload = new ObjectMapper().writeValueAsString(params);
+                    params.put("info",listIntent.toDetailString(ids[0]));
+                    exchange.getResponseSender().send(payload);
+                } catch(JsonProcessingException e){
+                    LOG.error(e.getMessage());
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.setStatusCode(400);
+                    exchange.getResponseSender().send("{\"{\"error\":\""+e.getMessage()+"\",\"}");
+                }
+
             } else {
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
                 exchange.getResponseSender().send(listIntent.toJsonString());
             }
         }
-        catch(Exception e){
-            LOG.error(e.getMessage());
+        else{
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"Internal server error\"}");
+            exchange.getResponseSender().send("{\"{\"error\":\"Connection to service provider could not be established\",\"}");
         }
-        exchange.endExchange();
     }
 
 }
