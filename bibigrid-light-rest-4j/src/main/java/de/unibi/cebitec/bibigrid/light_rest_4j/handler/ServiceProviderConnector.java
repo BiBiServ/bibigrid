@@ -15,7 +15,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.util.Map;
 
-public class OpenstackConnector {
+public class ServiceProviderConnector {
 
     ConfigurationOpenstack config;
     ProviderModule module;

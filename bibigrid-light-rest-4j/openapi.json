@@ -298,10 +298,6 @@
       },
       "ClusterConfiguration": {
         "type": "object",
-        "required": [
-          "mode",
-          "openstackCredentials"
-        ],
         "properties": {
           "mode": {
             "type": "string",
@@ -636,10 +632,6 @@
       },
       "Authorization": {
         "type": "object",
-        "required": [
-          "openstackCredentials",
-          "mode"
-        ],
         "properties": {
           "openstackCredentials": {
             "description": "Content of credentials file (default path HOME_DIR/.bibigrid/credentials.yml)",
