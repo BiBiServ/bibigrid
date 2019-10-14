@@ -2,23 +2,16 @@ package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
 import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import io.undertow.util.HttpString;
-import org.yaml.snakeyaml.Yaml;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.unibi.cebitec.bibigrid.Provider;
-import com.networknt.body.BodyHandler;
 import com.networknt.handler.LightHttpHandler;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.openstack.ConfigurationOpenstack;
 import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 
