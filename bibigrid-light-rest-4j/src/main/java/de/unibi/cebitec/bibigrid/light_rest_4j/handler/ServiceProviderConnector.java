@@ -17,9 +17,9 @@ import java.util.Map;
 
 public class ServiceProviderConnector {
 
-    ConfigurationOpenstack config;
-    ProviderModule module;
-    Client client;
+    private ConfigurationOpenstack config;
+    private ProviderModule module;
+    private Client client;
 
     public Client getClient() {
         return client;
