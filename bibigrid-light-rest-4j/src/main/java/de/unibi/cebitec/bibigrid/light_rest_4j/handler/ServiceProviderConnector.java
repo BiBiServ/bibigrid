@@ -8,6 +8,7 @@ import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.openstack.ConfigurationOpenstack;
+import de.unibi.cebitec.bibigrid.openstack.OpenStackCredentials;
 import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,25 +57,49 @@ public class ServiceProviderConnector {
         module = null;
         String providerMode = bodyMap.get("mode").toString();
 
-        String[] availableProviderModes = Provider.getInstance().getProviderNames();
-        if (availableProviderModes.length == 1) {
-            LOG.info("Use {} provider.", availableProviderModes[0]);
-            module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
-        } else {
-            LOG.info("Use {} provider.", providerMode);
-            module = Provider.getInstance().getProviderModule(providerMode);
-        }
-        if (module == null) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
-            return false;
-        }
+        if (providerMode.equals("openstack")) {
+            String[] availableProviderModes = Provider.getInstance().getProviderNames();
+            if (availableProviderModes.length == 1) {
+                LOG.info("Use {} provider.", availableProviderModes[0]);
+                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
+            } else {
+                LOG.info("Use {} provider.", providerMode);
+                module = Provider.getInstance().getProviderModule(providerMode);
+            }
+            if (module == null) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return false;
+            }
 
-         ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new ObjectMapper();
             try {
                 String requestBody = mapper.writeValueAsString(bodyMap);
 
                 // TODO evaluate error handling possibilities
                 config = new Yaml().loadAs(requestBody, ConfigurationOpenstack.class);
+
+                Map env = System.getenv();
+                OpenStackCredentials openStackCredentials = new OpenStackCredentials();
+
+                if (env.containsKey("OS_PROJECT_NAME")) {
+                    openStackCredentials.setProjectName((String) env.get("OS_PROJECT_NAME"));
+                }
+                if (env.containsKey("OS_USER_DOMAIN_NAME")) {
+                    openStackCredentials.setDomain((String) env.get("OS_USER_DOMAIN_NAME"));
+                }
+                if (env.containsKey("OS_PROJECT_DOMAIN_NAME")) {
+                    openStackCredentials.setProjectDomain((String) env.get("OS_PROJECT_DOMAIN_NAME"));
+                }
+                if (env.containsKey("OS_AUTH_URL")) {
+                    openStackCredentials.setEndpoint((String) env.get("OS_AUTH_URL"));
+                }
+                if (env.containsKey("OS_PASSWORD")) {
+                    openStackCredentials.setPassword((String) env.get("OS_PASSWORD"));
+                }
+                if (env.containsKey("OS_USERNAME")) {
+                    openStackCredentials.setUsername((String) env.get("OS_USERNAME"));
+                }
+                config.setOpenstackCredentials(openStackCredentials);
 
                 try {
                     client = module.getClient(config);
@@ -82,13 +107,14 @@ public class ServiceProviderConnector {
                 } catch (ClientConnectionFailedException e) {
                     LOG.error(e.getMessage());
                     LOG.error(ABORT_WITH_NOTHING_STARTED);
+                    return false;
                 }
 
-            } catch(JsonProcessingException j){
+            } catch (JsonProcessingException j) {
                 LOG.error(j.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return false;
             }
-        return false;
+        } else { return false; }
     }
 }
