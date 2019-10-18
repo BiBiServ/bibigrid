@@ -21,6 +21,7 @@ public class ServiceProviderConnector {
     private ProviderModule module;
     private Client client;
 
+
     public Client getClient() {
         return client;
     }
@@ -51,27 +52,29 @@ public class ServiceProviderConnector {
 
     public boolean connectToServiceProvider(HttpServerExchange exchange) {
 
-        ObjectMapper mapper = new ObjectMapper();
         Map bodyMap = (Map) exchange.getAttachment(BodyHandler.REQUEST_BODY);
-        try {
-            String requestBody = mapper.writeValueAsString(bodyMap);
-            config = new Yaml().loadAs(requestBody, ConfigurationOpenstack.class);
-            try {
-                module = null;
-                String providerMode = config.getMode();
+        module = null;
+        String providerMode = bodyMap.get("mode").toString();
 
-                String[] availableProviderModes = Provider.getInstance().getProviderNames();
-                if (availableProviderModes.length == 1) {
-                    LOG.info("Use {} provider.", availableProviderModes[0]);
-                    module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
-                } else {
-                    LOG.info("Use {} provider.", providerMode);
-                    module = Provider.getInstance().getProviderModule(providerMode);
-                }
-                if (module == null) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-                    return false;
-                }
+        String[] availableProviderModes = Provider.getInstance().getProviderNames();
+        if (availableProviderModes.length == 1) {
+            LOG.info("Use {} provider.", availableProviderModes[0]);
+            module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
+        } else {
+            LOG.info("Use {} provider.", providerMode);
+            module = Provider.getInstance().getProviderModule(providerMode);
+        }
+        if (module == null) {
+            LOG.error(ABORT_WITH_NOTHING_STARTED);
+            return false;
+        }
+
+         ObjectMapper mapper = new ObjectMapper();
+            try {
+                String requestBody = mapper.writeValueAsString(bodyMap);
+
+                // TODO evaluate error handling possibilities
+                config = new Yaml().loadAs(requestBody, ConfigurationOpenstack.class);
 
                 try {
                     client = module.getClient(config);
@@ -81,15 +84,11 @@ public class ServiceProviderConnector {
                     LOG.error(ABORT_WITH_NOTHING_STARTED);
                 }
 
-
-            } catch (Exception e) {
-                LOG.error(e.getMessage());
+            } catch(JsonProcessingException j){
+                LOG.error(j.getMessage());
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return false;
             }
-        } catch(JsonProcessingException e){
-            LOG.error(e.getMessage());
-            return false;
-        }
         return false;
     }
 }
