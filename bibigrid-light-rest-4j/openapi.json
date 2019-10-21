@@ -319,38 +319,6 @@
               "type": "string"
             }
           },
-          "openstackCredentials": {
-            "type": "object",
-            "description": "Content of credentials file (default path HOME_DIR/.bibigrid/credentials.yml)",
-            "required": [
-              "username",
-              "domain",
-              "password",
-              "endpoint",
-              "projectName",
-              "projectDomain"
-            ],
-            "properties": {
-              "username": {
-                "type": "string"
-              },
-              "domain": {
-                "type": "string"
-              },
-              "password": {
-                "type": "string"
-              },
-              "endpoint": {
-                "type": "string"
-              },
-              "projectName": {
-                "type": "string"
-              },
-              "projectDomain": {
-                "type": "string"
-              }
-            }
-          },
           "subnet": {
             "type": "string",
             "example": "internalsub",
@@ -633,38 +601,6 @@
       "Authorization": {
         "type": "object",
         "properties": {
-          "openstackCredentials": {
-            "description": "Content of credentials file (default path HOME_DIR/.bibigrid/credentials.yml)",
-            "type": "object",
-            "required": [
-              "username",
-              "domain",
-              "password",
-              "endpoint",
-              "projectName",
-              "projectDomain"
-            ],
-            "properties": {
-              "username": {
-                "type": "string"
-              },
-              "domain": {
-                "type": "string"
-              },
-              "password": {
-                "type": "string"
-              },
-              "endpoint": {
-                "type": "string"
-              },
-              "projectName": {
-                "type": "string"
-              },
-              "projectDomain": {
-                "type": "string"
-              }
-            }
-          },
           "mode": {
             "type": "string",
             "example": "openstack",
