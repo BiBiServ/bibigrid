@@ -97,26 +97,15 @@ public class StartUp {
             }
 
             // Options
-            if (cl.hasOption("v")) {
-                VerboseOutputFilter.SHOW_VERBOSE = true;
+            VerboseOutputFilter.SHOW_VERBOSE = cl.hasOption("v");
+            Configuration.DEBUG = cl.hasOption("debug");
 
-            }
-            if (cl.hasOption("debug")) {
-                Configuration.DEBUG = true;
-            }
+            String providerMode = cl.getOptionValue("mode");
 
-            String providerMode = null;
-            if (cl.hasOption("mode")) {
-                providerMode = cl.getOptionValue("mode");
-            }
-
-            String configurationFile = null;
-            if (cl.hasOption("config")) {
-                configurationFile = cl.getOptionValue("config");
-            }
+            String configurationFile = cl.getOptionValue("config");
 
             // get Provider /ProviderModule
-            ProviderModule module = null;
+            ProviderModule module;
             String []  availableProviderModes = Provider.getInstance().getProviderNames();
             if (availableProviderModes.length == 1) {
                 LOG.info("Use {} provider.",availableProviderModes[0]);
