@@ -15,7 +15,6 @@ import java.util.Map;
 public class BibigridListGetHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
-    private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
 
     @Override
     public void handleRequest(HttpServerExchange exchange){
@@ -38,9 +37,8 @@ public class BibigridListGetHandler implements LightHttpHandler {
                     LOG.error(e.getMessage());
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                     exchange.setStatusCode(400);
-                    exchange.getResponseSender().send("{\"{\"error\":\""+e.getMessage()+"\",\"}");
+                    exchange.getResponseSender().send("{\"error\":\""+e.getMessage()+"\"}");
                 }
-
             } else {
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
@@ -49,7 +47,7 @@ public class BibigridListGetHandler implements LightHttpHandler {
         } else{
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"{\"error\":\"Connection to service provider could not be established\",\"}");
+            exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
         }
         exchange.endExchange();
     }
