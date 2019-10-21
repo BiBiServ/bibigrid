@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -90,27 +91,44 @@ public class ServiceProviderConnector {
                 Map env = System.getenv();
                 OpenStackCredentials openStackCredentials = new OpenStackCredentials();
 
-                ArrayList<String> env_vars = new ArrayList<String>( Arrays.asList(  "OS_PROJECT_NAME",
-                                                                                    "OS_USER_DOMAIN_NAME",
-                                                                                    "OS_PROJECT_DOMAIN_NAME",
-                                                                                    "OS_AUTH_URL",
-                                                                                    "OS_PASSWORD",
-                                                                                    "OS_USERNAME"));
-                boolean env_valid = true;
-                for(String var : env_vars){
-                    if (env.containsKey(var)) {
-                        openStackCredentials.setProjectName((String) env.get(var));
-                    } else {
-                        env_valid = false;
-                    }
-                }
-
-                if(!env_valid) {
-                    error = "There were some errors in your environment variables. Did you source the Openstack RC File?";
-                    LOG.info(this.getError());
+                if (env.containsKey("OS_PROJECT_NAME")) {
+                    openStackCredentials.setProjectName((String) env.get("OS_PROJECT_NAME"));
+                } else {
+                    error = "Project Name not found";
+                    LOG.info(error);
                     return false;
                 }
-
+                if (env.containsKey("OS_USER_DOMAIN_NAME")) {
+                    openStackCredentials.setDomain((String) env.get("OS_USER_DOMAIN_NAME"));
+                } else {
+                    error = "User domain not found";
+                    LOG.info(error);
+                    return false;
+                }
+                if (env.containsKey("OS_PROJECT_DOMAIN_NAME")) {
+                    openStackCredentials.setProjectDomain((String) env.get("OS_PROJECT_DOMAIN_NAME"));
+                }
+                if (env.containsKey("OS_AUTH_URL")) {
+                    openStackCredentials.setEndpoint((String) env.get("OS_AUTH_URL"));
+                } else {
+                    error = "Auth url not found";
+                    LOG.info(error);
+                    return false;
+                }
+                if (env.containsKey("OS_PASSWORD")) {
+                    openStackCredentials.setPassword((String) env.get("OS_PASSWORD"));
+                } else {
+                    error = "Password not found";
+                    LOG.info(error);
+                    return false;
+                }
+                if (env.containsKey("OS_USERNAME")) {
+                    openStackCredentials.setUsername((String) env.get("OS_USERNAME"));
+                } else {
+                    error = "Username not found";
+                    LOG.info(error);
+                    return false;
+                }
                 config.setOpenstackCredentials(openStackCredentials);
 
                 try {
