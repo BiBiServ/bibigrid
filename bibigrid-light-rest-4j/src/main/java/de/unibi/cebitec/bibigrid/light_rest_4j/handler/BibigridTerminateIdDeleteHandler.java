@@ -52,11 +52,10 @@ public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
                 exchange.setStatusCode(400);
                 exchange.getResponseSender().send("{\"{\"error\":\""+j.getMessage()+"\",\"}");
             }
-        } else{
+        } else {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"{\"error\":\"Connection to service provider could not be established\",\"}");
-            // TODO better message for request
+            exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
         }
         exchange.endExchange();
     }

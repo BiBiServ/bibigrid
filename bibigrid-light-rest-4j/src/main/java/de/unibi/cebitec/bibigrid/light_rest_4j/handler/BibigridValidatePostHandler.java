@@ -67,11 +67,10 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
                 exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
                 // TODO better message for request
             }
-        } else{
+        } else {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"{\"error\":\"Connection to service provider could not be established\",\"}");
-            // TODO better message for request
+            exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
         }
         exchange.endExchange();
     }
