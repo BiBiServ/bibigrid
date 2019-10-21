@@ -85,6 +85,7 @@ public class StartUp {
             CommandLine cl = cli.parse(cmdLineOptions, args);
 
             // Help and Version
+
             IntentMode intentMode = IntentMode.fromString(intentOptions.getSelected());
             switch (intentMode) {
                 case VERSION:
@@ -96,12 +97,38 @@ public class StartUp {
             }
 
             // Options
-            VerboseOutputFilter.SHOW_VERBOSE = cl.hasOption("v");
-            Configuration.DEBUG = cl.hasOption("debug");
+            if (cl.hasOption("v")) {
+                VerboseOutputFilter.SHOW_VERBOSE = true;
 
-            String configurationFile = cl.getOptionValue("config");
+            }
+            if (cl.hasOption("debug")) {
+                Configuration.DEBUG = true;
+            }
 
-            ProviderModule module = initProviderModule(cl.getOptionValue("mode"));
+            String providerMode = null;
+            if (cl.hasOption("mode")) {
+                providerMode = cl.getOptionValue("mode");
+            }
+
+            String configurationFile = null;
+            if (cl.hasOption("config")) {
+                configurationFile = cl.getOptionValue("config");
+            }
+
+            // get Provider /ProviderModule
+            ProviderModule module = null;
+            String []  availableProviderModes = Provider.getInstance().getProviderNames();
+            if (availableProviderModes.length == 1) {
+                LOG.info("Use {} provider.",availableProviderModes[0]);
+                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
+            } else {
+                LOG.info("Use {} provider.",providerMode);
+                module = Provider.getInstance().getProviderModule(providerMode);
+            }
+            if (module == null) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return;
+            }
 
             try {
                 // get provider specific configuration
@@ -137,31 +164,12 @@ public class StartUp {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
             }
+
+
         } catch (ParseException pe) {
             LOG.error("Error while parsing the commandline arguments: {}", pe.getMessage());
             LOG.error(ABORT_WITH_NOTHING_STARTED);
         }
-    }
-
-    /**
-     * Initializes ProviderModule.
-     * @param providerMode cl option "mode"
-     * @return module, if initialization finished properly, otherwise null
-     */
-    private static ProviderModule initProviderModule(String providerMode) {
-        ProviderModule module;
-        String [] availableProviderModes = Provider.getInstance().getProviderNames();
-        if (availableProviderModes.length == 1) {
-            LOG.info("Use {} provider.",availableProviderModes[0]);
-            module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
-        } else {
-            LOG.info("Use {} provider.",providerMode);
-            module = Provider.getInstance().getProviderModule(providerMode);
-        }
-        if (module == null) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
-        }
-        return module;
     }
 
     private static void printVersionInfo() {
@@ -191,83 +199,83 @@ public class StartUp {
         String modes = Arrays.stream(IntentMode.values()).map(m -> "--" + m.getLongParam()).collect(Collectors.joining("|"));
         help.printHelp("bibigrid " + modes + " [...]", header, cmdLineOptions, footer);
         System.out.println('\n');
+        // display instances to create cluster
+        //runIntent(commandLine, IntentMode.HELP);
     }
 
     private static void runIntent(ProviderModule module, Validator validator, Configuration config, IntentMode intentMode) {
-        Client client;
-        try {
-            client = module.getClient(config);
-        } catch (ClientConnectionFailedException e) {
-            LOG.error(e.getMessage());
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
-            return;
-        }
+            Client client;
+            try {
+                client = module.getClient(config);
+            } catch (ClientConnectionFailedException e) {
+                LOG.error(e.getMessage());
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return;
+            }
+            // In order to validate the native instance types, we need a client. So this step is deferred after
+            // client connection is established.
+            if (!validator.validateProviderTypes(client)) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+            }
+            switch (intentMode) {
+                case HELP:
+                    printInstanceTypeHelp(module, client, config);
+                    break;
+                case LIST:
+                    ListIntent listIntent = module.getListIntent(client, config);
 
-        switch (intentMode) {
-            case HELP:
-                printInstanceTypeHelp(module, client, config);
-                break;
-            case LIST:
-                ListIntent listIntent = module.getListIntent(client, config);
-                if (config.getId() == null || config.getId().isEmpty()) {
-                    LOG.info(listIntent.toString());
-                } else {
-                    LOG.info(listIntent.toDetailString(config.getId()));
-                }
-                break;
-            case VALIDATE:
-                if (!validator.validateProviderTypes(client)) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-                }
-                if (module.getValidateIntent(client, config).validate()) {
-                    LOG.info(I, "You can now start your cluster.");
-                } else {
-                    LOG.error("There were one or more errors. Please adjust your configuration.");
-                }
-                break;
-            case CREATE:
-                if (!validator.validateProviderTypes(client)) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-                }
-                if (module.getValidateIntent(client, config).validate()) {
-                    runCreateIntent(module, config, client, module.getCreateIntent(client, config), false);
-                } else {
-                    LOG.error("There were one or more errors. Please adjust your configuration.");
-                }
-                break;
-            case PREPARE:
-                if (!validator.validateProviderTypes(client)) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-                }
-                CreateCluster cluster = module.getCreateIntent(client, config);
-                if (runCreateIntent(module, config, client, cluster, true)) {
-                    module.getPrepareIntent(client, config).prepare(cluster.getMasterInstance(),
-                            cluster.getWorkerInstances());
-                    module.getTerminateIntent(client, config).terminate();
-                }
-                break;
-            case TERMINATE:
-                module.getTerminateIntent(client, config).terminate();
-                break;
-            case CLOUD9:
-                LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
-            case IDE:
-                // load private key
-                try {
-                    config.getClusterKeyPair().setName(CreateCluster.PREFIX+config.getId());
-                    config.getClusterKeyPair().load();
-                    new IdeIntent(module, client, config).start();
-                } catch (IOException e) {
-                    LOG.error("Exception occurred loading private key. {}",e.getMessage());
-                    if (Configuration.DEBUG) {
-                        e.printStackTrace();
+                    if (config.getId() == null || config.getId().isEmpty()) {
+
+                        LOG.info(listIntent.toString());
+                    } else {
+                        LOG.info(listIntent.toDetailString(config.getId()));
                     }
-                }
-                break;
-            default:
-                LOG.warn("Unknown intent mode.");
-                break;
-        }
+                    break;
+                case VALIDATE:
+                    if (module.getValidateIntent(client, config).validate()) {
+                       LOG.info(I, "You can now start your cluster.");
+                    } else {
+                       LOG.error("There were one or more errors. Please adjust your configuration.");
+                    }
+                    break;
+                case CREATE:
+                    if (module.getValidateIntent(client, config).validate()) {
+                        runCreateIntent(module, config, client, module.getCreateIntent(client, config), false);
+                    } else {
+                        LOG.error("There were one or more errors. Please adjust your configuration.");
+                    }
+                    break;
+                case PREPARE:
+                    CreateCluster cluster = module.getCreateIntent(client, config);
+                    if (runCreateIntent(module, config, client, cluster, true)) {
+                        module.getPrepareIntent(client, config).prepare(cluster.getMasterInstance(),
+                                cluster.getWorkerInstances());
+                        module.getTerminateIntent(client, config).terminate();
+                    }
+                    break;
+                case TERMINATE:
+                    module.getTerminateIntent(client, config).terminate();
+                    break;
+                case CLOUD9:
+                    LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
+                case IDE:
+                    // load private key
+                    try {
+                        config.getClusterKeyPair().setName(CreateCluster.PREFIX+config.getId());
+                        config.getClusterKeyPair().load();
+                        new IdeIntent(module, client, config).start();
+                    } catch (IOException e) {
+                        LOG.error("Exception occurred loading private key. {}",e.getMessage());
+                        if (Configuration.DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
+                    break;
+                default:
+                    LOG.warn("Unknown intent mode.");
+                    break;
+            }
+
     }
 
     /**
@@ -301,10 +309,7 @@ public class StartUp {
                     LOG.error(StartUp.KEEP);
                 } else {
                     LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-
-                    TerminateIntent cleanupIntent = module.getTerminateIntent(client, config);
-
-                    cleanupIntent.terminate();
+                    module.getTerminateIntent(client, config).terminate();
                 }
                 return false;
             }

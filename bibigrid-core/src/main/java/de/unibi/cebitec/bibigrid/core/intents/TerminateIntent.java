@@ -31,42 +31,40 @@ public abstract class TerminateIntent extends Intent {
     }
 
     /**
-     * Terminate all clusters with the specified ids.
-     * Optional a user can be specified to terminate all of its clusters.
-     *
-     * @return Return true in case of success, false otherwise
+     * Terminates all clusters with the specified ids or from a specified user.
+     * @return true in case of success, false otherwise
      */
     public boolean terminate() {
         final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
         boolean success = true;
-        List<String> toRemove = new ArrayList<>();
+        List<Cluster> toRemove = new ArrayList<>();
         for (String clusterId : config.getClusterIds()) {
             // if '-t user-id'
             boolean isUser = false;
             for (Cluster c : clusters.values()) {
                 if (clusterId.equals(c.getUser())) {
-                    toRemove.add(c.getClusterId());
+                    toRemove.add(c);
                     isUser = true;
                 }
             }
             if (!isUser) {
                 final Cluster cluster = clusters.get(clusterId);
                 if (cluster == null) {
-                    LOG.warn("No cluster with ID '{}' found.", clusterId);
+                    LOG.error("No cluster with ID '{}' found.", clusterId);
                     success = false;
                 } else {
-                    toRemove.add(clusterId);
+                    toRemove.add(cluster);
                 }
             }
         }
-        for (String clusterId : toRemove) {
-            LOG.info("Terminating cluster with ID '{}' ...", clusterId);
-            final Cluster cluster = clusters.get(clusterId);
+        for (Cluster cluster: toRemove) {
+            String clusterID = cluster.getClusterId()
+            LOG.info("Terminating cluster with ID '{}' ...", clusterID);
             if (terminateCluster(cluster)) {
                 delete_Key(cluster);
-                LOG.info("Cluster '{}' terminated!", clusterId);
+                LOG.info("Cluster '{}' terminated!", clusterID);
             } else {
-                LOG.info("Failed to terminate cluster '{}'!", clusterId);
+                LOG.error("Failed to terminate cluster '{}'!", clusterID);
                 success = false;
             }
         }
@@ -74,12 +72,28 @@ public abstract class TerminateIntent extends Intent {
     }
 
     /**
+     * Terminates current instances in case of an error while setup.
+     * @return true in case of success, false otherwise
+     */
+    public boolean terminateCurrentInstances() {
+
+    }
+
+    /**
+     * Terminates all clusters started by specified user.
+     * @param user name of user
+     * @return true in case of success, false otherwise
+     */
+    private boolean terminateUserInstances(String user) {
+
+    }
+
+    /**
      * Terminates single worker instance.
      * @param cluster specified cluster
-     * @param workerId id for the worker instance
      * @return true, if worker instance terminated successfully
      */
-    protected abstract boolean terminateWorker(Cluster cluster, String workerId);
+    protected abstract boolean terminateWorker(Cluster cluster);
 
     /**
      * Terminates the whole cluster.
