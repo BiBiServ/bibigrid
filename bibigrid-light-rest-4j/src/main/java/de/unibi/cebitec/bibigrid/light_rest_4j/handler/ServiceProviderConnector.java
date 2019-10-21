@@ -14,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class ServiceProviderConnector {
@@ -21,7 +24,12 @@ public class ServiceProviderConnector {
     private ConfigurationOpenstack config;
     private ProviderModule module;
     private Client client;
+    private String error = "";
 
+
+    public void setError(String error) { this.error = error; }
+
+    public String getError() { return error; }
 
     public Client getClient() {
         return client;
@@ -67,6 +75,7 @@ public class ServiceProviderConnector {
                 module = Provider.getInstance().getProviderModule(providerMode);
             }
             if (module == null) {
+                error = ABORT_WITH_NOTHING_STARTED;
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return false;
             }
@@ -75,46 +84,54 @@ public class ServiceProviderConnector {
             try {
                 String requestBody = mapper.writeValueAsString(bodyMap);
 
-                // TODO evaluate error handling possibilities
+                // TODO figure out whether parsing can fail
                 config = new Yaml().loadAs(requestBody, ConfigurationOpenstack.class);
 
                 Map env = System.getenv();
                 OpenStackCredentials openStackCredentials = new OpenStackCredentials();
 
-                if (env.containsKey("OS_PROJECT_NAME")) {
-                    openStackCredentials.setProjectName((String) env.get("OS_PROJECT_NAME"));
+                ArrayList<String> env_vars = new ArrayList<String>( Arrays.asList(  "OS_PROJECT_NAME",
+                                                                                    "OS_USER_DOMAIN_NAME",
+                                                                                    "OS_PROJECT_DOMAIN_NAME",
+                                                                                    "OS_AUTH_URL",
+                                                                                    "OS_PASSWORD",
+                                                                                    "OS_USERNAME"));
+                boolean env_valid = true;
+                for(String var : env_vars){
+                    if (env.containsKey(var)) {
+                        openStackCredentials.setProjectName((String) env.get(var));
+                    } else {
+                        env_valid = false;
+                    }
                 }
-                if (env.containsKey("OS_USER_DOMAIN_NAME")) {
-                    openStackCredentials.setDomain((String) env.get("OS_USER_DOMAIN_NAME"));
+
+                if(!env_valid) {
+                    error = "There were some errors in your environment variables. Did you source the Openstack RC File?";
+                    LOG.info(this.getError());
+                    return false;
                 }
-                if (env.containsKey("OS_PROJECT_DOMAIN_NAME")) {
-                    openStackCredentials.setProjectDomain((String) env.get("OS_PROJECT_DOMAIN_NAME"));
-                }
-                if (env.containsKey("OS_AUTH_URL")) {
-                    openStackCredentials.setEndpoint((String) env.get("OS_AUTH_URL"));
-                }
-                if (env.containsKey("OS_PASSWORD")) {
-                    openStackCredentials.setPassword((String) env.get("OS_PASSWORD"));
-                }
-                if (env.containsKey("OS_USERNAME")) {
-                    openStackCredentials.setUsername((String) env.get("OS_USERNAME"));
-                }
+
                 config.setOpenstackCredentials(openStackCredentials);
 
                 try {
                     client = module.getClient(config);
                     return true;
                 } catch (ClientConnectionFailedException e) {
-                    LOG.error(e.getMessage());
+                    error = e.getMessage();
+                    LOG.error(error);
                     LOG.error(ABORT_WITH_NOTHING_STARTED);
                     return false;
                 }
 
             } catch (JsonProcessingException j) {
-                LOG.error(j.getMessage());
+                error = j.getMessage();
+                LOG.error(error);
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return false;
             }
-        } else { return false; }
+        } else {
+            error = "Currently only Openstack as provider is supported";
+            return false;
+        }
     }
 }
