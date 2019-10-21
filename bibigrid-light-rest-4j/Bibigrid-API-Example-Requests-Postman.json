@@ -1,168 +1,168 @@
 {
-	"info": {
-		"_postman_id": "d4db64a4-696b-48d4-95fa-1769753e639a",
-		"name": "Bibigrid-API",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "List",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n     \"mode\": \"openstack\",\n     \"openstackCredentials\": {\n\t\t\"username\": \"mmustermann\",\n\t \t\"domain\": \"default\",\n\t \t\"password\": \"password\",\n\t \t\"endpoint\": \"https://openstack.cebitec.uni-bielefeld.de:5000/v3\",\n\t \t\"projectName\": \"CloudComputing\",\n\t \t\"projectDomain\": \"default\"\n\t }\n}\t\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "https://localhost:8443/bibigrid/list",
-					"protocol": "https",
-					"host": [
-						"localhost"
-					],
-					"port": "8443",
-					"path": [
-						"bibigrid",
-						"list"
-					]
-				},
-				"description": "Lists running clusters"
-			},
-			"response": []
-		},
-		{
-			"name": "Terminate",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"type": "text",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n     \"mode\": \"openstack\",\n     \"openstackCredentials\": {\n\t\t\"username\": \"mmustermann\",\n\t \t\"domain\": \"default\",\n\t \t\"password\": \"password\",\n\t \t\"endpoint\": \"https://openstack.cebitec.uni-bielefeld.de:5000/v3\",\n\t \t\"projectName\": \"CloudComputing\",\n\t \t\"projectDomain\": \"default\"\n\t }\n}\t\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "https://localhost:8443/bibigrid/terminate/id",
-					"protocol": "https",
-					"host": [
-						"localhost"
-					],
-					"port": "8443",
-					"path": [
-						"bibigrid",
-						"terminate",
-						"id"
-					]
-				},
-				"description": "Terminate cluster by id"
-			},
-			"response": []
-		},
-		{
-			"name": "Validate",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n     \"mode\": \"openstack\",\n\t \"subnet\": \"internalsub\",\n\t \"openstackCredentials\": {\n\t\t\"username\": \"mmustermann\",\n\t \t\"domain\": \"default\",\n\t \t\"password\": \"password\",\n\t \t\"endpoint\": \"https://openstack.cebitec.uni-bielefeld.de:5000/v3\",\n\t \t\"projectName\": \"CloudComputing\",\n\t \t\"projectDomain\": \"default\"\n\t },\n\t \"sshUser\": \"debian\",\n\t \"region\": \"Bielefeld\",\n\t \"availabilityZone\": \"default\",\n\t  \"masterInstance\": {\n\t    \"type\": \"de.NBI tiny\",\n\t    \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\"\n\t  },\n    \"workerInstances\": [{\n\t    \"type\": \"de.NBI tiny\",\n\t    \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\",\n\t    \"count\": 1\n\t}]\n \n}\t\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "https://localhost:8443/bibigrid/validate",
-					"protocol": "https",
-					"host": [
-						"localhost"
-					],
-					"port": "8443",
-					"path": [
-						"bibigrid",
-						"validate"
-					]
-				},
-				"description": "Validate cluster config"
-			},
-			"response": []
-		},
-		{
-			"name": "Create",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n     \"mode\": \"openstack\",\n\t \"subnet\": \"internalsub\",\n\t \"openstackCredentials\": {\n\t\t\"username\": \"mmustermann\",\n\t \t\"domain\": \"default\",\n\t \t\"password\": \"password\",\n\t \t\"endpoint\": \"https://openstack.cebitec.uni-bielefeld.de:5000/v3\",\n\t \t\"projectName\": \"CloudComputing\",\n\t \t\"projectDomain\": \"default\"\n\t },\n\t \"sshUser\": \"debian\",\n\t \"region\": \"Bielefeld\",\n\t \"availabilityZone\": \"default\",\n\t  \"masterInstance\": {\n\t    \"type\": \"de.NBI tiny\",\n\t    \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\"\n\t  },\n    \"workerInstances\": [{\n\t    \"type\": \"de.NBI tiny\",\n\t    \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\",\n\t    \"count\": 1\n\t}]\n \n}\t\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "https://localhost:8443/bibigrid/create",
-					"protocol": "https",
-					"host": [
-						"localhost"
-					],
-					"port": "8443",
-					"path": [
-						"bibigrid",
-						"create"
-					]
-				},
-				"description": "Create a cluster"
-			},
-			"response": []
-		}
-	],
-	"protocolProfileBehavior": {}
+  "info": {
+    "_postman_id": "4e48ce26-fbcd-47b9-9554-d338103d230c",
+    "name": "Bibigrid-API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n     \"mode\": \"openstack\"\n}\t\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/list",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "list"
+          ]
+        },
+        "description": "Lists running clusters"
+      },
+      "response": []
+    },
+    {
+      "name": "Terminate",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n     \"mode\": \"openstack\"\n}\t\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/terminate/id",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "terminate",
+            "id"
+          ]
+        },
+        "description": "Terminate cluster by id"
+      },
+      "response": []
+    },
+    {
+      "name": "Validate",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n     \"mode\": \"openstack\",\n\t \"subnet\": \"internalsub\",\n\t \"sshUser\": \"debian\",\n\t \"region\": \"Bielefeld\",\n\t \"availabilityZone\": \"default\",\n\t  \"masterInstance\": {\n\t    \"type\": \"de.NBI tiny\",\n\t    \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\"\n\t  },\n    \"workerInstances\": [{\n\t    \"type\": \"de.NBI tiny\",\n\t    \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\",\n\t    \"count\": 1\n\t}]\n \n}\t\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/validate",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "validate"
+          ]
+        },
+        "description": "Validate cluster config"
+      },
+      "response": []
+    },
+    {
+      "name": "Create",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n     \"mode\": \"openstack\",\n\t \"subnet\": \"internalsub\",\n\t \"sshUser\": \"debian\",\n\t \"region\": \"Bielefeld\",\n\t \"availabilityZone\": \"default\",\n\t  \"masterInstance\": {\n\t    \"type\": \"de.NBI tiny\",\n\t    \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\"\n\t  },\n    \"workerInstances\": [{\n\t    \"type\": \"de.NBI tiny\",\n\t    \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\",\n\t    \"count\": 1\n\t}]\n \n}\t\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/create",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "create"
+          ]
+        },
+        "description": "Create a cluster"
+      },
+      "response": []
+    }
+  ],
+  "protocolProfileBehavior": {}
 }
