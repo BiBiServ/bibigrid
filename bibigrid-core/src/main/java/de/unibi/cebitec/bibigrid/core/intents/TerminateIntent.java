@@ -58,7 +58,7 @@ public abstract class TerminateIntent extends Intent {
             }
         }
         for (Cluster cluster: toRemove) {
-            String clusterID = cluster.getClusterId()
+            String clusterID = cluster.getClusterId();
             LOG.info("Terminating cluster with ID '{}' ...", clusterID);
             if (terminateCluster(cluster)) {
                 delete_Key(cluster);
@@ -76,7 +76,7 @@ public abstract class TerminateIntent extends Intent {
      * @return true in case of success, false otherwise
      */
     public boolean terminateCurrentInstances() {
-
+        return true;
     }
 
     /**
@@ -85,7 +85,7 @@ public abstract class TerminateIntent extends Intent {
      * @return true in case of success, false otherwise
      */
     private boolean terminateUserInstances(String user) {
-
+        return true;
     }
 
     /**

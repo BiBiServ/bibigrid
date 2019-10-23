@@ -85,39 +85,24 @@ public class StartUp {
             CommandLine cl = cli.parse(cmdLineOptions, args);
 
             // Help and Version
-
             IntentMode intentMode = IntentMode.fromString(intentOptions.getSelected());
             switch (intentMode) {
                 case VERSION:
                     printVersionInfo();
-                    break;
+                    return;
                 case HELP:
                     printHelp(cl, cmdLineOptions);
-                    break;
+                    return;
             }
 
             // Options
-            VerboseOutputFilter.SHOW_VERBOSE = cl.hasOption("v");
+            VerboseOutputFilter.SHOW_VERBOSE = cl.hasOption("verbose");
             Configuration.DEBUG = cl.hasOption("debug");
 
             String providerMode = cl.getOptionValue("mode");
-
             String configurationFile = cl.getOptionValue("config");
 
-            // get Provider /ProviderModule
-            ProviderModule module;
-            String []  availableProviderModes = Provider.getInstance().getProviderNames();
-            if (availableProviderModes.length == 1) {
-                LOG.info("Use {} provider.",availableProviderModes[0]);
-                module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
-            } else {
-                LOG.info("Use {} provider.",providerMode);
-                module = Provider.getInstance().getProviderModule(providerMode);
-            }
-            if (module == null) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-                return;
-            }
+            ProviderModule module = loadProviderModule(providerMode);
 
             try {
                 // get provider specific configuration
@@ -144,6 +129,8 @@ public class StartUp {
                         break;
                     case VALIDATE:
                 }
+
+                // TODO validation should not be executed in list and terminate options
                 if (validator.validate()) {
                     runIntent(module, validator, config, intentMode);
                 } else {
@@ -161,6 +148,31 @@ public class StartUp {
         }
     }
 
+    /**
+     * Initializes provider module.
+     * @param providerMode
+     * @return provider module or null, if initialization was not successfully
+     */
+    private static ProviderModule loadProviderModule(String providerMode) {
+        LOG.warn(providerMode);
+        ProviderModule module;
+        String [] availableProviderModes = Provider.getInstance().getProviderNames();
+        if (availableProviderModes.length == 1) {
+            LOG.info("Use {} provider.",availableProviderModes[0]);
+            module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
+        } else {
+            LOG.info("Use {} provider.", providerMode);
+            module = Provider.getInstance().getProviderModule(providerMode);
+        }
+        if (module == null) {
+            LOG.error(ABORT_WITH_NOTHING_STARTED);
+        }
+        return module;
+    }
+
+    /**
+     * Prints out version of BiBiGrid with date of build.
+     */
     private static void printVersionInfo() {
         try {
             URL jarUrl = StartUp.class.getProtectionDomain().getCodeSource().getLocation();
@@ -192,6 +204,13 @@ public class StartUp {
         //runIntent(commandLine, IntentMode.HELP);
     }
 
+    /**
+     * Runs intent of a client by specified cl intentMode.
+     * @param module provider specific interface
+     * @param validator validation of configuration
+     * @param config
+     * @param intentMode
+     */
     private static void runIntent(ProviderModule module, Validator validator, Configuration config, IntentMode intentMode) {
             Client client;
             try {
@@ -298,7 +317,7 @@ public class StartUp {
                     LOG.error(StartUp.KEEP);
                 } else {
                     LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-                    module.getTerminateIntent(client, config).terminate();
+                    module.getTerminateIntent(client, config).terminateCurrentInstances();
                 }
                 return false;
             }
