@@ -34,31 +34,31 @@ public class IdeIntent extends Intent {
 
     private final ProviderModule providerModule;
     private final Client client;
+    private final String clusterId;
     private final Configuration config;
 
     private int idePort = DEFAULT_IDE_PORT;
     private int idePortLast = DEFAULT_IDE_PORT_END;
 
-    public IdeIntent(ProviderModule providerModule, Client client, Configuration config) {
+    public IdeIntent(ProviderModule providerModule, Client client, String clusterId, Configuration config) {
         this.providerModule = providerModule;
         this.client = client;
+        this.clusterId = clusterId;
         this.config = config;
     }
 
     public void start() {
-        if (config.getId() == null) {
+        if (clusterId == null) {
             LOG.error("ClusterId not found. Please provide a valid cluster id.");
             return;
         }
-        String id = config.getId();
         final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
-        if (!clusters.containsKey(id)) {
-            LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", id);
+        if (!clusters.containsKey(clusterId)) {
+            LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", clusterId);
             return;
         }
-
-        String masterIp = config.isUseMasterWithPublicIp() ? clusters.get(id).getPublicIp() :
-                clusters.get(id).getPrivateIp();
+        Cluster cluster = clusters.get(clusterId);
+        String masterIp = config.isUseMasterWithPublicIp() ? cluster.getPublicIp() : cluster.getPrivateIp();
 
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (!sshPortIsReady) {

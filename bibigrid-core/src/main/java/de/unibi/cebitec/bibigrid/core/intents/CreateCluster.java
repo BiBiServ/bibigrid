@@ -56,7 +56,6 @@ public abstract class CreateCluster extends Intent {
         this.config = config;
         this.clusterId = clusterId;
         LOG.debug("cluster id: {}", clusterId);
-        config.setClusterIds(clusterId);
         this.interruptionMessageHook = new Thread(() ->
                 LOG.error("Cluster setup was interrupted!\n\n" +
                         "Please clean up the remains using: -t {}\n\n", this.clusterId)

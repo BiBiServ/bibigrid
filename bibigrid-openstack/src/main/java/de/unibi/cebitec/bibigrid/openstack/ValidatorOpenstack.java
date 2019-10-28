@@ -50,16 +50,12 @@ public final class ValidatorOpenstack extends Validator {
         return null;
     }
 
-    @Override
-    protected boolean validateProviderParameters() {
-        return loadAndparseCredentialParameters();
-    }
-
     /**
      * Loads credentials.yml or environment variables set via sourced RC file.
      * @return true, if credentials loaded successfully
      */
-    private boolean loadAndparseCredentialParameters() {
+    @Override
+    public boolean validateProviderParameters() {
         OpenStackCredentials openStackCredentials;
         if (config.getCredentialsFile() != null) {
             openStackCredentials = loadCredentialsFile();

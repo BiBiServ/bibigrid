@@ -1,6 +1,5 @@
 package de.unibi.cebitec.bibigrid.core;
 
-import de.unibi.cebitec.bibigrid.core.intents.IdeIntent;
 import de.unibi.cebitec.bibigrid.core.model.*;
 
 import java.io.*;
@@ -12,7 +11,6 @@ import java.util.*;
 
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
-import de.unibi.cebitec.bibigrid.core.util.SshFactory;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -218,27 +216,29 @@ public abstract class Validator {
      * Checks requirements.
      * @return true, if requirements fulfilled
      */
-    public boolean validate() {
+    public boolean validateConfiguration() {
         boolean validSSHKeyFiles = validateSSHKeyFiles();
-        boolean validProviderParameters = validateProviderParameters();
         boolean validAnsibleRequirements = true;
         if (config.hasCustomAnsibleRoles() || config.hasCustomAnsibleGalaxyRoles()) {
             LOG.info("Checking Ansible configuration ...");
             validAnsibleRequirements = validateAnsibleRequirements();
         }
         return validSSHKeyFiles &&
-                validProviderParameters &&
                 validAnsibleRequirements;
     }
 
     protected abstract List<String> getRequiredOptions();
 
-    protected abstract boolean validateProviderParameters();
+    /**
+     * Check provider specific configuration credentials.
+     * @return true, if validation successful, otherwise false
+     */
+    public abstract boolean validateProviderParameters();
 
     /**
-     * Validates master and worker instance(s).
-     * @param client cloud provider client
-     * @return true, if provider instance types could be set successfully
+     * Checks master instanceType.
+     * @param client Client
+     * @return true, if validation successful, otherwise false
      */
     public boolean validateProviderTypes(Client client) {
         try {

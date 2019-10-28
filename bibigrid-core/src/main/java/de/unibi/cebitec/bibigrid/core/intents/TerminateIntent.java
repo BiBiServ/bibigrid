@@ -32,60 +32,60 @@ public abstract class TerminateIntent extends Intent {
 
     /**
      * Terminates all clusters with the specified ids or from a specified user.
-     * @return true in case of success, false otherwise
+     * @param parameters user-ids or cluster-ids
      */
-    public boolean terminate() {
+    public void terminate(String[] parameters) {
         final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
-        boolean success = true;
-        List<Cluster> toRemove = new ArrayList<>();
-        for (String clusterId : config.getClusterIds()) {
-            // if '-t user-id'
-            boolean isUser = false;
-            for (Cluster c : clusters.values()) {
-                if (clusterId.equals(c.getUser())) {
-                    toRemove.add(c);
-                    isUser = true;
-                }
-            }
-            if (!isUser) {
-                final Cluster cluster = clusters.get(clusterId);
-                if (cluster == null) {
-                    LOG.error("No cluster with ID '{}' found.", clusterId);
-                    success = false;
+        int nr = 0;
+        while (nr < parameters.length) {
+            if (parameters[nr].equals("worker")) {
+                if (++nr < parameters.length) {
+                    Cluster workerCluster = clusters.get(parameters[nr]);
+                    terminateWorker(workerCluster);
                 } else {
+                    LOG.error("Missing clusterId for worker termination.");
+                }
+                nr++;
+            } else {
+                terminate(parameters[nr]);
+            }
+        }
+    }
+
+    /**
+     * Terminates the clusters with the specified id or specified user.
+     * @param parameter user-id or cluster-id
+     */
+    public void terminate(String parameter) {
+        final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
+        List<Cluster> toRemove = new ArrayList<>();
+        Cluster provided = clusters.get(parameter);
+        if (provided != null) {
+            toRemove.add(provided);
+        } else {
+            // check if '-t user-id'
+            for (Cluster cluster : clusters.values()) {
+                if (parameter.equals(cluster.getUser())) {
                     toRemove.add(cluster);
                 }
             }
         }
+
+        if (toRemove.isEmpty()) {
+            LOG.error("No cluster with ID '{}' found.", parameter);
+            return;
+        }
+
         for (Cluster cluster: toRemove) {
-            String clusterID = cluster.getClusterId();
-            LOG.info("Terminating cluster with ID '{}' ...", clusterID);
+            String clusterId = cluster.getClusterId();
+            LOG.info("Terminating cluster with ID '{}' ...", clusterId);
             if (terminateCluster(cluster)) {
                 delete_Key(cluster);
-                LOG.info("Cluster '{}' terminated!", clusterID);
+                LOG.info("Cluster '{}' terminated!", clusterId);
             } else {
-                LOG.error("Failed to terminate cluster '{}'!", clusterID);
-                success = false;
+                LOG.error("Cluster '{}' could not be terminated successfully.", clusterId);
             }
         }
-        return success;
-    }
-
-    /**
-     * Terminates current instances in case of an error while setup.
-     * @return true in case of success, false otherwise
-     */
-    public boolean terminateCurrentInstances() {
-        return true;
-    }
-
-    /**
-     * Terminates all clusters started by specified user.
-     * @param user name of user
-     * @return true in case of success, false otherwise
-     */
-    private boolean terminateUserInstances(String user) {
-        return true;
     }
 
     /**
