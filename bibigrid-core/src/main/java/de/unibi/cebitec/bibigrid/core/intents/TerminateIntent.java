@@ -41,7 +41,13 @@ public abstract class TerminateIntent extends Intent {
             if (parameters[nr].equals("worker")) {
                 if (++nr < parameters.length) {
                     Cluster workerCluster = clusters.get(parameters[nr]);
-                    terminateWorker(workerCluster);
+                    String clusterId = workerCluster.getClusterId();
+                    LOG.info("Terminating worker for cluster with ID '{}' ...", clusterId);
+                    if (terminateWorker(workerCluster)) {
+                        LOG.info("Worker for cluster '{}' terminated!", clusterId);
+                    } else {
+                        LOG.error("Worker for cluster '{}' could not be terminated successfully.", clusterId);
+                    }
                 } else {
                     LOG.error("Missing clusterId for worker termination.");
                 }

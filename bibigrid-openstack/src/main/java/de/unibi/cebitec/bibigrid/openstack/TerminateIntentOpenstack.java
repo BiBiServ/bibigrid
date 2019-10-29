@@ -34,6 +34,10 @@ public class TerminateIntentOpenstack extends TerminateIntent {
     @Override
     protected boolean terminateWorker(Cluster cluster) {
         List<Instance> workerInstances = cluster.getWorkerInstances();
+        if (workerInstances.size() == 0) {
+            LOG.error("There is no worker instance with clusterId {}.", cluster.getClusterId());
+            return false;
+        }
         Instance lastWorker = workerInstances.get(workerInstances.size()-1);
         ActionResponse response = os.compute().servers().delete(lastWorker.getId());
         if (!response.isSuccess()) {

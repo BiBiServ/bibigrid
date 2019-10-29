@@ -57,8 +57,9 @@ public final class ValidatorOpenstack extends Validator {
     @Override
     public boolean validateProviderParameters() {
         OpenStackCredentials openStackCredentials;
-        if (config.getCredentialsFile() != null) {
-            openStackCredentials = loadCredentialsFile();
+        String path = config.getCredentialsFile();
+        if (path != null) {
+            openStackCredentials = loadCredentialsFile(path);
         } else {
             LOG.info("No credentials file provided. Checking environment variables ...");
             openStackCredentials = loadEnvCredentials();
@@ -76,9 +77,9 @@ public final class ValidatorOpenstack extends Validator {
      * Loads credentials file and checks, if every parameter has been set.
      * @return openStackCredentials if parameters given, otherwise null
      */
-    private OpenStackCredentials loadCredentialsFile() {
+    private OpenStackCredentials loadCredentialsFile(String path) {
         try {
-            File credentialsFile = Paths.get(config.getCredentialsFile()).toFile();
+            File credentialsFile = Paths.get(path).toFile();
             OpenStackCredentials openStackCredentials =  new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class);
             LOG.info("Found valid credentials file.");
             if (openStackCredentials.getProjectName() == null) {
