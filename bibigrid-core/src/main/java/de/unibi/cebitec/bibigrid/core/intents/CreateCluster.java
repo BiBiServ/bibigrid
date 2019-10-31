@@ -574,13 +574,6 @@ public abstract class CreateCluster extends Intent {
         String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare, config);
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
 
-        /*
-           The fct have to watch and parse the stdout and stderr stream at the same time. Since BufferReader.readline()
-           blocks, the only solution I found is to work with separate threads for stdout and stderror of the ssh channel.
-
-           The following code snipset seems to be more complicated than it should be (in other languages).
-            If you find a better solution feel free to replace it.
-         */
         // "Runnable" for stdout
         LineReaderRunnable stdout = new LineReaderRunnable(channel.getInputStream());
 
@@ -612,7 +605,7 @@ public abstract class CreateCluster extends Intent {
         channel.disconnect();
 
         if (stdout.getReturnCode() != 0) {
-            throw new ConfigurationException("Cluster configuration failed.\n"+stdout.getReturnMsg());
+            throw new ConfigurationException("Cluster configuration failed.\n" + stdout.getReturnMsg());
         }
     }
 
@@ -628,7 +621,17 @@ public abstract class CreateCluster extends Intent {
         return workerInstances;
     }
 
+    /**
+     * Watch and parse the stdout and stderr stream at the same time.
+     * Since BufferReader.readline() blocks,
+     * the only solution I found is to work with separate threads for stdout and stderror of the ssh channel.
+     *
+     * The following code snipset seems to be more complicated than it should be (in other languages).
+     * If you find a better solution feel free to replace it.
+     */
     private static class LineReaderRunnable implements Runnable {
+        private static final String LOG_MSG_BG = "\"[BIBIGRID] ";
+
         BufferedReader br;
 
         int returnCode = -1;
@@ -650,13 +653,13 @@ public abstract class CreateCluster extends Intent {
                 LOG.info(V, "{}", line);
             } else {
                 // otherwise show only ansible msg containing "[BIBIGRID]"
-                int indexOfLogMessage = line.indexOf("\"[BIBIGRID] ");
+                int indexOfLogMessage = line.indexOf(LOG_MSG_BG);
                 if (indexOfLogMessage > 0) {
-                    LOG.info("[Ansible] {}",  line.substring(indexOfLogMessage + 12, line.length() - 1));
+                    LOG.info("[Ansible] {}",  line.substring(indexOfLogMessage + LOG_MSG_BG.length(), line.length() - 1));
                 }
             }
             // Check for real errors and print them to the error log ...
-            if (line.contains("ERROR") || line.contains("error") | line.contains("Error")) {
+            if (line.toLowerCase().contains("ERROR".toLowerCase())) {
                 LOG.error("{}", line);
             } else { // ... and everything else as warning !
                 LOG.warn(V,"{}",line);
@@ -664,7 +667,7 @@ public abstract class CreateCluster extends Intent {
         }
 
         void work_on_exception(Exception e) {
-            LOG.error("Evaluate stderr : "+e.getMessage());
+            LOG.error("Evaluate stderr : " + e.getMessage());
             returnCode = 1;
         }
 
