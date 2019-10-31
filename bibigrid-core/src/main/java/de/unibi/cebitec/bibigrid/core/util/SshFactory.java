@@ -5,7 +5,6 @@ import com.jcraft.jsch.*;
 import java.io.Console;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Scanner;
 

@@ -18,7 +18,6 @@ import java.util.Map;
 
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
-import org.openstack4j.api.compute.ServerGroupService;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.compute.*;
 import org.openstack4j.model.compute.builder.ServerCreateBuilder;
@@ -41,8 +40,8 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     private final OSClient os;
 
-    CreateClusterOpenstack(final ProviderModule providerModule, Client client, final Configuration config) {
-        super(providerModule, client, config);
+    CreateClusterOpenstack(final ProviderModule providerModule, Client client, final Configuration config, final String clusterId) {
+        super(providerModule, client, config, clusterId);
         os = ((ClientOpenstack) client).getInternal();
     }
 

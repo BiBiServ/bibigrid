@@ -209,17 +209,23 @@ public class StartUp {
                     break;
                 case CREATE:
                     if (module.getValidateIntent(client, config).validate()) {
-                        runCreateIntent(module, config, client, module.getCreateIntent(client, config), false);
+                        String clusterId = parameters.length == 1 ? parameters[0] : null;
+                        CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
+                        runCreateIntent(module, config, client, cluster, false);
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case PREPARE:
-                    CreateCluster cluster = module.getCreateIntent(client, config);
-                    if (runCreateIntent(module, config, client, cluster, true)) {
-                        String clusterId = parameters[0];
-                        module.getPrepareIntent(client, config).prepare(cluster);
-                        module.getTerminateIntent(client, config).terminate(clusterId);
+                    if (module.getValidateIntent(client, config).validate()) {
+                        String clusterId = parameters.length == 1 ? parameters[0] : null;
+                        CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
+                        if (runCreateIntent(module, config, client, cluster, true)) {
+                            module.getPrepareIntent(client, config).prepare(cluster);
+                            module.getTerminateIntent(client, config).terminate(clusterId);
+                        }
+                    } else {
+                        LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case TERMINATE:
@@ -230,7 +236,10 @@ public class StartUp {
                 case IDE:
                     try {
                         // Load private key file
-                        String clusterId = clOptions.get(intentMode)[0];
+                        if (parameters.length != 1) {
+                            LOG.error("Wrong usage. Please use --ide <cluster-id");
+                        }
+                        String clusterId = parameters.length == 1 ? parameters[0] : null;
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
                         new IdeIntent(module, client, clusterId, config).start();
@@ -273,7 +282,7 @@ public class StartUp {
                     .configureClusterWorkerInstance()
                     .launchClusterInstances(prepare);
             if (!success) {
-                /*  In DEBUG mode keep partial configured cluster running, otherwise clean it up */
+                //  In DEBUG mode keep partial configured cluster running, otherwise clean it up
                 if (Configuration.DEBUG) {
                     LOG.error(StartUp.KEEP);
                 } else {
@@ -322,7 +331,7 @@ public class StartUp {
         header += "Loaded provider modules: " + String.join(", ", Provider.getInstance().getProviderNames()) + "\n\n";
         String footer = "";
         String modes = Arrays.stream(IntentMode.values()).map(m -> "--" + m.getLongParam()).collect(Collectors.joining("|"));
-        help.printHelp("bibigrid " + modes + " [...]", header, cmdLineOptions, footer);
+        //help.printHelp("bibigrid " + modes + " [...]", header, cmdLineOptions, footer);
         System.out.println('\n');
         // display instances to create cluster
         //runIntent(commandLine, IntentMode.HELP);

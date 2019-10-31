@@ -5,8 +5,6 @@ import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
-import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
-import org.apache.commons.cli.CommandLine;
 
 import java.util.Collection;
 import java.util.Map;
@@ -62,7 +60,7 @@ public abstract class ProviderModule {
 
     public abstract PrepareIntent getPrepareIntent(Client client, Configuration config);
 
-    public abstract CreateCluster getCreateIntent(Client client, Configuration config);
+    public abstract CreateCluster getCreateIntent(Client client, Configuration config, String clusterId);
 
     public abstract CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster)
             throws ConfigurationException;

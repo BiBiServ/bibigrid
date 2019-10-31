@@ -5,8 +5,6 @@ import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
-import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
-import org.apache.commons.cli.CommandLine;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Flavor;
 
@@ -56,8 +54,8 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    public CreateCluster getCreateIntent(Client client, Configuration config) {
-        return new CreateClusterOpenstack(this, client, config);
+    public CreateCluster getCreateIntent(Client client, Configuration config, String clusterId) {
+        return new CreateClusterOpenstack(this, client, config, clusterId);
     }
 
     @Override
