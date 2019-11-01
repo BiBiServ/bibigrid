@@ -13,53 +13,47 @@ import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
-
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
+
 
 public class ServiceProviderConnector {
 
     private ConfigurationOpenstack config;
     private ProviderModule module;
     private Client client;
-    private String error = "";
 
+    /*
+    A string is used for custom error messages and to share them with controllers when connection to service provider
+    fails.
+     */
+    private String error = "";
 
     public void setError(String error) { this.error = error; }
 
     public String getError() { return error; }
 
-    public Client getClient() {
-        return client;
-    }
+    public Client getClient() { return client; }
 
-    public void setClient(Client client) {
-        this.client = client;
-    }
+    public void setClient(Client client) { this.client = client; }
 
-    public void setConfig(ConfigurationOpenstack config) {
-        this.config = config;
-    }
+    public void setConfig(ConfigurationOpenstack config) { this.config = config; }
 
-    public ConfigurationOpenstack getConfig() {
-        return config;
-    }
+    public ConfigurationOpenstack getConfig() { return config; }
 
-    public ProviderModule getModule() {
-        return module;
-    }
+    public ProviderModule getModule() { return module; }
 
-    public void setModule(ProviderModule module) {
-        this.module = module;
-    }
+    public void setModule(ProviderModule module) { this.module = module; }
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
 
-
+    /**
+     * Establish a connection to cloud computing service provider based on a HTTP request and environment vars.
+     * This method is based off StartUp.java where a connection is established based on CMD.
+     * @param exchange Received HTTP request
+     * @return  <code>true</code> if connection could be established.
+     *          <code>false</code> otherwise.
+     */
     public boolean connectToServiceProvider(HttpServerExchange exchange) {
 
         Map bodyMap = (Map) exchange.getAttachment(BodyHandler.REQUEST_BODY);
@@ -94,38 +88,39 @@ public class ServiceProviderConnector {
                 if (env.containsKey("OS_PROJECT_NAME")) {
                     openStackCredentials.setProjectName((String) env.get("OS_PROJECT_NAME"));
                 } else {
-                    error = "Project Name not found";
+                    error = "Project Name not found. Was the CloudComputing-openrc.sh file sourced?";
                     LOG.info(error);
                     return false;
                 }
                 if (env.containsKey("OS_USER_DOMAIN_NAME")) {
                     openStackCredentials.setDomain((String) env.get("OS_USER_DOMAIN_NAME"));
                 } else {
-                    error = "User domain not found";
+                    error = "User domain not found. Was the CloudComputing-openrc.sh file sourced?";
                     LOG.info(error);
                     return false;
                 }
+                // optional parameter
                 if (env.containsKey("OS_PROJECT_DOMAIN_NAME")) {
                     openStackCredentials.setProjectDomain((String) env.get("OS_PROJECT_DOMAIN_NAME"));
                 }
                 if (env.containsKey("OS_AUTH_URL")) {
                     openStackCredentials.setEndpoint((String) env.get("OS_AUTH_URL"));
                 } else {
-                    error = "Auth url not found";
+                    error = "Auth url not found. Was the CloudComputing-openrc.sh file sourced?";
                     LOG.info(error);
                     return false;
                 }
                 if (env.containsKey("OS_PASSWORD")) {
                     openStackCredentials.setPassword((String) env.get("OS_PASSWORD"));
                 } else {
-                    error = "Password not found";
+                    error = "Password not found. Was the CloudComputing-openrc.sh file sourced?";
                     LOG.info(error);
                     return false;
                 }
                 if (env.containsKey("OS_USERNAME")) {
                     openStackCredentials.setUsername((String) env.get("OS_USERNAME"));
                 } else {
-                    error = "Username not found";
+                    error = "Username not found. Was the CloudComputing-openrc.sh file sourced?";
                     LOG.info(error);
                     return false;
                 }
