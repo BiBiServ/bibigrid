@@ -7,7 +7,6 @@ dist/
 .settings
 .metadata/
 *.iml
-*.log
 *.tmp
 *.zip
 *.bak
