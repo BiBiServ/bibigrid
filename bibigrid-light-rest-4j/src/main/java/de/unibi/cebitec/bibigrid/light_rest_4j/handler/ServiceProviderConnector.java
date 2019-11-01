@@ -49,7 +49,8 @@ public class ServiceProviderConnector {
 
     /**
      * Establish a connection to cloud computing service provider based on a HTTP request and environment vars.
-     * This method is based off StartUp.java where a connection is established based on CMD.
+     * This method is based on the main() method of StartUp.java where a connection is established based on CMD and
+     * environment vars.
      * @param exchange Received HTTP request
      * @return  <code>true</code> if connection could be established.
      *          <code>false</code> otherwise.
