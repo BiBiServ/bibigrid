@@ -103,8 +103,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                     else{
                         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                         exchange.setStatusCode(200);
-                        exchange.getResponseSender().send("{\"code\":\"TODO\",\"message\":\"TODO!\"}");
-                        // TODO better error message
+                        exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
                     }
                 } else {
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
@@ -114,8 +113,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
             } catch(ConfigurationException c) {
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
-                exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
-                // TODO better message for request
+                exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+c.getMessage()+"\"}");
             }
         } else {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
