@@ -16,7 +16,7 @@ public class BibigridInfoIdGetHandler implements LightHttpHandler {
         if(serviceProviderConnector.connectToServiceProvider(exchange)){
             String clusterId = exchange.getQueryParameters().get("id").getFirst();
             try{
-                FileInputStream fstream = new FileInputStream("../../bibigrid-main/"+clusterId+".log");
+                FileInputStream fstream = new FileInputStream("../"+clusterId+".log");
                 BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
                 String strLine;
                 String lastLine = "";
