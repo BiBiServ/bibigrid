@@ -235,6 +235,11 @@ public abstract class Validator {
 
     protected abstract boolean validateProviderParameters();
 
+    /**
+     * Validates master and worker instance(s).
+     * @param client cloud provider client
+     * @return true, if provider instance types could be set successfully
+     */
     public boolean validateProviderTypes(Client client) {
         try {
             InstanceType masterType = providerModule.getInstanceType(client, config, config.getMasterInstance().getType());
