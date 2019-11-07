@@ -574,8 +574,8 @@ public abstract class CreateCluster extends Intent {
         String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare, config);
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
 
-        LineReaderRunnable stdout = new LineReaderRunnable(channel.getInputStream());
-        LineReaderRunnable stderr = new LineReaderRunnable(channel.getErrStream());
+        LineReaderRunnable stdout = new LineReaderRunnable(channel.getInputStream(), true);
+        LineReaderRunnable stderr = new LineReaderRunnable(channel.getErrStream(), false);
 
         // Create threads ...
         Thread t_stdout = new Thread(stdout);
@@ -618,27 +618,39 @@ public abstract class CreateCluster extends Intent {
         return workerInstances;
     }
 
+}
+
+/**
+ * Watch and parse the stdout and stderr stream at the same time.
+ * Since BufferReader.readline() blocks,
+ * the only solution I found is to work with separate threads for stdout and stderror of the ssh channel.
+ *
+ * The following code snipset seems to be more complicated than it should be (in other languages).
+ * If you find a better solution feel free to replace it.
+ */
+class LineReaderRunnable implements Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
+    private static final String LOG_MSG_BG = "\"[BIBIGRID] ";
+
+    private BufferedReader br;
+
+    private boolean regular;
+
+    private int returnCode = -1;
+    private String returnMsg = "";
+
     /**
-     * Watch and parse the stdout and stderr stream at the same time.
-     * Since BufferReader.readline() blocks,
-     * the only solution I found is to work with separate threads for stdout and stderror of the ssh channel.
-     *
-     * The following code snipset seems to be more complicated than it should be (in other languages).
-     * If you find a better solution feel free to replace it.
+     * Initializes new Runnable with input / error stream.
+     * @param stream InputStream with regular and error Logging
+     * @param regular true, if regular stream, false, if error stream
      */
-    private static class LineReaderRunnable implements Runnable {
-        private static final String LOG_MSG_BG = "\"[BIBIGRID] ";
+    LineReaderRunnable(InputStream stream, boolean regular) {
+        this.br = new BufferedReader(new InputStreamReader(stream));
+        this.regular = regular;
+    }
 
-        BufferedReader br;
-
-        int returnCode = -1;
-        String returnMsg = "";
-
-        LineReaderRunnable(InputStream stream) {
-            this.br = new BufferedReader(new InputStreamReader(stream));
-        }
-
-        void work_on_line(String line) {
+    private void work_on_line(String line) {
+        if (regular) {
             if (line.contains("CONFIGURATION FINISHED")) {
                 returnCode = 0;
                 returnMsg = ""; // clear possible msg
@@ -655,6 +667,7 @@ public abstract class CreateCluster extends Intent {
                     LOG.info("[Ansible] {}",  line.substring(indexOfLogMessage + LOG_MSG_BG.length(), line.length() - 1));
                 }
             }
+        } else {
             // Check for real errors and print them to the error log ...
             if (line.toLowerCase().contains("ERROR".toLowerCase())) {
                 LOG.error("{}", line);
@@ -662,32 +675,31 @@ public abstract class CreateCluster extends Intent {
                 LOG.warn(V,"{}",line);
             }
         }
+    }
 
-        void work_on_exception(Exception e) {
-            LOG.error("Evaluate stderr : " + e.getMessage());
-            returnCode = 1;
-        }
+    private void work_on_exception(Exception e) {
+        LOG.error("Evaluate stderr : " + e.getMessage());
+        returnCode = 1;
+    }
 
-        @Override
-        public void run() {
-            try {
-                String line;
-                while ((line = br.readLine()) != null ) {
-                    work_on_line(line);
-                }
-            } catch (IOException ex) {
-                work_on_exception(ex);
+    @Override
+    public void run() {
+        try {
+            String line;
+            while ((line = br.readLine()) != null ) {
+                work_on_line(line);
             }
-        }
-
-        int getReturnCode(){
-            return returnCode;
-        }
-
-        String getReturnMsg(){
-            return returnMsg;
+        } catch (IOException ex) {
+            work_on_exception(ex);
         }
     }
 
+    int getReturnCode(){
+        return returnCode;
+    }
+
+    String getReturnMsg(){
+        return returnMsg;
+    }
 }
 
