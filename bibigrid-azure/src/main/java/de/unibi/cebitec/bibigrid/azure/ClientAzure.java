@@ -4,10 +4,11 @@ import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.ImageReference;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.NotImplementedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 
 import java.io.File;
 import java.io.IOException;

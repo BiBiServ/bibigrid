@@ -10,6 +10,7 @@ import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import static de.unibi.cebitec.bibigrid.aws.CreateClusterAWS.PREFIX;
 
 import de.unibi.cebitec.bibigrid.core.model.Port;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.NotImplementedException;
 import de.unibi.cebitec.bibigrid.core.util.SubNets;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de

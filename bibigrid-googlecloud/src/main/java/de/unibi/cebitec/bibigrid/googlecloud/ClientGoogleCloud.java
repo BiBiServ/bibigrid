@@ -11,10 +11,11 @@ import com.google.api.services.compute.model.Image;
 import com.google.api.services.compute.model.Subnetwork;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.NotImplementedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 
 import java.io.FileInputStream;
 import java.io.IOException;
