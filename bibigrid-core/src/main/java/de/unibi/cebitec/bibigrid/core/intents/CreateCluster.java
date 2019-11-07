@@ -202,12 +202,6 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
-     * Removes worker instance from cluster.
-     * @return true, if worker instance removed successfully
-     */
-    public boolean removeWorkerInstance() {return true; }
-
-    /**
      * Start the configured cluster master instance.
      *
      * @param masterNameTag The generated name tag for the master instance.
