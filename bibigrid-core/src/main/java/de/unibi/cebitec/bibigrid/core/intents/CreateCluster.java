@@ -574,10 +574,7 @@ public abstract class CreateCluster extends Intent {
         String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare, config);
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
 
-        // "Runnable" for stdout
         LineReaderRunnable stdout = new LineReaderRunnable(channel.getInputStream());
-
-        // "Runnable" for stderr
         LineReaderRunnable stderr = new LineReaderRunnable(channel.getErrStream());
 
         // Create threads ...
@@ -598,7 +595,7 @@ public abstract class CreateCluster extends Intent {
             t_stdout.join();
             t_stderr.join();
         } catch (InterruptedException e) {
-            throw new ConfigurationException("Exception occured while evaluate ansible output!");
+            throw new ConfigurationException("Exception occurred during evaluation of ansible output!");
         }
 
         // and  disconnect channel

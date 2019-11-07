@@ -45,10 +45,8 @@ public abstract class Validator {
      */
     protected abstract Class<? extends Configuration> getProviderConfigurationClass();
 
-
     /**
      * Checks, whether public keys files are readable
-     *
      * @return true, if file is valid
      */
     private boolean validateSSHKeyFiles() {
@@ -57,8 +55,8 @@ public abstract class Validator {
             keyFiles.add(config.getSshPublicKeyFile());
         }
 
-        for(String i : keyFiles) {
-            Path publicKeyFile = Paths.get(i);
+        for(String keyFile : keyFiles) {
+            Path publicKeyFile = Paths.get(keyFile);
             if (!Files.exists(publicKeyFile)) {
                 LOG.error("SshPublicKeyFile {} does not exists.", publicKeyFile.toString());
                 return false;

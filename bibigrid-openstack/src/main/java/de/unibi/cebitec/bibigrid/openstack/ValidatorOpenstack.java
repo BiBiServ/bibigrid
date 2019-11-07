@@ -36,7 +36,7 @@ public final class ValidatorOpenstack extends Validator {
 
     ValidatorOpenstack(final Configuration config, final ProviderModule providerModule)
             throws ConfigurationException {
-        super( config, providerModule);
+        super(config, providerModule);
         openstackConfig = (ConfigurationOpenstack) config;
     }
 

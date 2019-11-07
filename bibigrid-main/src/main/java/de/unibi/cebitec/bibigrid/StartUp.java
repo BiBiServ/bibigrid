@@ -35,35 +35,50 @@ public class StartUp {
             "afterwards.";
     private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
 
+    private static final String CID = "cluster-id";
+    private static final String WORKERS = "worker-instances";
+    private static final int SCALE_ARGS = 4; // cluster-id, instance-type, image, count
+
     private static OptionGroup getCMDLineOptionGroup() {
         OptionGroup intentOptions = new OptionGroup();
         intentOptions.setRequired(true);
-        Option terminate = new Option(IntentMode.TERMINATE.getShortParam(), IntentMode.TERMINATE.getLongParam(),
+        Option terminate = new Option(TERMINATE.getShortParam(), TERMINATE.getLongParam(),
                 true, "Terminate running cluster");
-        terminate.setArgName("cluster-id");
-        Option cloud9 = new Option(IntentMode.CLOUD9.getShortParam(), IntentMode.CLOUD9.getLongParam(),
+        terminate.setArgs(Option.UNLIMITED_VALUES);
+        terminate.setArgName(CID);
+        Option upscale = new Option(SCALE_UP.getShortParam(), SCALE_UP.getLongParam(),
+                true, "Adds a given amount of workers of a specific instance type");
+        upscale.setArgs(SCALE_ARGS);
+        upscale.setArgName(WORKERS);
+        Option downscale = new Option(SCALE_DOWN.getShortParam(), SCALE_DOWN.getLongParam(),
+                true, "Terminates a given amount of workers of a specific instance type");
+        downscale.setArgs(SCALE_ARGS);
+        downscale.setArgName(WORKERS);
+        Option cloud9 = new Option(CLOUD9.getShortParam(), CLOUD9.getLongParam(),
                 true, "Start the cloud9 IDE");
-        cloud9.setArgName("cluster-id");
-        Option ide = new Option(IntentMode.IDE.getShortParam(), IntentMode.IDE.getLongParam(),
+        cloud9.setArgName(CID);
+        Option ide = new Option(IDE.getShortParam(), IDE.getLongParam(),
                 true, "Start a Web IDE");
-        ide.setArgName("cluster-id");
-        Option list = new Option(IntentMode.LIST.getShortParam(), IntentMode.LIST.getLongParam(),
+        ide.setArgName(CID);
+        Option list = new Option(LIST.getShortParam(), LIST.getLongParam(),
                 true, "List running clusters");
         list.setOptionalArg(true);
-        list.setArgName("cluster-id");
+        list.setArgName(CID);
         intentOptions
                 .addOption(new Option(VERSION.getShortParam(), VERSION.getLongParam(),
                         false, "Version"))
-                .addOption(new Option(IntentMode.HELP.getShortParam(), IntentMode.HELP.getLongParam(),
+                .addOption(new Option(HELP.getShortParam(), HELP.getLongParam(),
                         false, "Help"))
-                .addOption(new Option(IntentMode.CREATE.getShortParam(), IntentMode.CREATE.getLongParam(),
+                .addOption(new Option(CREATE.getShortParam(), CREATE.getLongParam(),
                         false, "Create cluster"))
-                .addOption(new Option(IntentMode.PREPARE.getShortParam(), IntentMode.PREPARE.getLongParam(),
+                .addOption(new Option(PREPARE.getShortParam(), PREPARE.getLongParam(),
                         false, "Prepare cluster images for faster setup"))
                 .addOption(list)
-                .addOption(new Option(IntentMode.VALIDATE.getShortParam(), IntentMode.VALIDATE.getLongParam(),
+                .addOption(new Option(VALIDATE.getShortParam(), VALIDATE.getLongParam(),
                         false, "Validate the configuration file"))
                 .addOption(terminate)
+                .addOption(upscale)
+                .addOption(downscale)
                 .addOption(cloud9)
                 .addOption(ide);
         return intentOptions;
@@ -72,13 +87,13 @@ public class StartUp {
     public static void main(String[] args) {
         CommandLineParser cli = new DefaultParser();
         OptionGroup intentOptions = getCMDLineOptionGroup();
-        Options cmdLineOptions = new Options();
-        cmdLineOptions.addOption(new Option("h","help",false,"Get some online help"));
-        cmdLineOptions.addOption(new Option("v","verbose", false,"More verbose output"));
-        cmdLineOptions.addOption(new Option("o","config",true,"Path to JSON configuration file"));
-        cmdLineOptions.addOption(new Option("d","debug",false,"Don't shut down cluster in the case of a configuration error."));
-        cmdLineOptions.addOption(new Option("m","mode",true,"One of "+String.join(",",Provider.getInstance().getProviderNames())));
-        cmdLineOptions.addOptionGroup(intentOptions);
+        Options cmdLineOptions = new Options()
+                .addOption(new Option("h","help",false,"Get some online help"))
+                .addOption(new Option("v","verbose", false,"More verbose output"))
+                .addOption(new Option("o","config",true,"Path to JSON configuration file"))
+                .addOption(new Option("d","debug",false,"Don't shut down cluster in the case of a configuration error."))
+                .addOption(new Option("m","mode",true,"One of "+String.join(",",Provider.getInstance().getProviderNames())))
+                .addOptionGroup(intentOptions);
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
 
@@ -111,10 +126,9 @@ public class StartUp {
                 // Map of IntentMode and clusterIds
                 Map<IntentMode, String[]> clOptions = new HashMap<>();
                 for (IntentMode im : IntentMode.values()) {
-                    String param = cl.getOptionValue(im.getShortParam());
-                    String[] parameters = null;
-                    if (param != null) {
-                        parameters = param.trim().split("[/,]");
+                    String[] parameters = cl.getOptionValues(im.getShortParam());
+                    if (parameters == null) {
+                        parameters = new String[] {cl.getOptionValue(im.getShortParam())};
                     }
                     clOptions.put(im, parameters);
                 }
@@ -187,7 +201,11 @@ public class StartUp {
                     LOG.info(listIntent.toString());
                 } else {
                     String clusterId = parameters[0];
-                    LOG.info(listIntent.toDetailString(clusterId));
+                    if (clusterId != null) {
+                        LOG.info(listIntent.toDetailString(clusterId));
+                    } else {
+                        LOG.info(listIntent.toString());
+                    }
                 }
                  return;
             }
@@ -209,7 +227,7 @@ public class StartUp {
                     break;
                 case CREATE:
                     if (module.getValidateIntent(client, config).validate()) {
-                        String clusterId = parameters.length == 1 ? parameters[0] : null;
+                        String clusterId = parameters != null ? parameters[0] : null;
                         CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
                         runCreateIntent(module, config, client, cluster, false);
                     } else {
@@ -218,7 +236,7 @@ public class StartUp {
                     break;
                 case PREPARE:
                     if (module.getValidateIntent(client, config).validate()) {
-                        String clusterId = parameters.length == 1 ? parameters[0] : null;
+                        String clusterId = parameters != null ? parameters[0] : null;
                         CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
                         if (runCreateIntent(module, config, client, cluster, true)) {
                             module.getPrepareIntent(client, config).prepare(cluster);
@@ -231,15 +249,25 @@ public class StartUp {
                 case TERMINATE:
                     module.getTerminateIntent(client, config).terminate(parameters);
                     break;
+                case SCALE_UP:
+                case SCALE_DOWN:
+                    // intentMode has at least 4 parameters by specification, error if less
+                    String clusterId = parameters[0];
+                    String instanceType = parameters[1];
+                    String image = parameters[2];
+                    int count = Integer.parseInt(parameters[3]);
+                    LOG.info("Terminating {} instances +" +
+                            "of worker instance type {} +" +
+                            "with image {} +" +
+                            "for cluster with ID '{}' ...", count, instanceType, image, clusterId);
+                    module.getTerminateIntent(client, config).terminateInstances(clusterId, instanceType, image, count);
+                    break;
                 case CLOUD9:
                     LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
                 case IDE:
                     try {
                         // Load private key file
-                        if (parameters.length != 1) {
-                            LOG.error("Wrong usage. Please use --ide <cluster-id");
-                        }
-                        String clusterId = parameters.length == 1 ? parameters[0] : null;
+                        clusterId = parameters.length == 1 ? parameters[0] : null;
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
                         new IdeIntent(module, client, clusterId, config).start();

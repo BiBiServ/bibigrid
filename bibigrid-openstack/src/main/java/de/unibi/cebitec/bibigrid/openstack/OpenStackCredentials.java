@@ -1,15 +1,16 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
-import de.unibi.cebitec.bibigrid.core.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de, jkrueger(at)cebitec.uni-bielefeld.de
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public final class OpenStackCredentials {
-
     protected static final Logger LOG = LoggerFactory.getLogger(OpenStackCredentials.class);
 
     public OpenStackCredentials() {
@@ -90,5 +91,16 @@ public final class OpenStackCredentials {
 
     public void setProjectDomain(String projectDomain) {
         this.projectDomain = projectDomain;
+    }
+
+    public List<String> getCredentials() {
+        List<String> credentials = new ArrayList<>();
+        credentials.add(projectName);
+        credentials.add(username);
+        credentials.add(password);
+        credentials.add(endpoint);
+        credentials.add(domain);
+        credentials.add(projectDomain);
+        return credentials;
     }
 }

@@ -1,9 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.Cluster;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Intent to process termination of cluster or worker instances.
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public abstract class TerminateIntent extends Intent {
@@ -35,26 +33,8 @@ public abstract class TerminateIntent extends Intent {
      * @param parameters user-ids or cluster-ids
      */
     public void terminate(String[] parameters) {
-        final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
-        int nr = 0;
-        while (nr < parameters.length) {
-            if (parameters[nr].equals("worker")) {
-                if (++nr < parameters.length) {
-                    Cluster workerCluster = clusters.get(parameters[nr]);
-                    String clusterId = workerCluster.getClusterId();
-                    LOG.info("Terminating worker for cluster with ID '{}' ...", clusterId);
-                    if (terminateWorker(workerCluster)) {
-                        LOG.info("Worker for cluster '{}' terminated!", clusterId);
-                    } else {
-                        LOG.error("Worker for cluster '{}' could not be terminated successfully.", clusterId);
-                    }
-                } else {
-                    LOG.error("Missing clusterId for worker termination.");
-                }
-                nr++;
-            } else {
-                terminate(parameters[nr]);
-            }
+        for (String clusterId : parameters) {
+            terminate(clusterId);
         }
     }
 
@@ -95,11 +75,44 @@ public abstract class TerminateIntent extends Intent {
     }
 
     /**
+     * Scale down cluster by terminating specified worker instances.
+     * @param clusterId Id of specified cluster
+     * @param instanceType type of worker instance
+     * @param image image of worker instance
+     * @param count nr of worker instances to be terminated
+     */
+    public void terminateInstances(String clusterId, String instanceType, String image, int count) {
+        final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
+        Cluster cluster = clusters.get(clusterId);
+        List<Instance> workers = cluster.getWorkerInstances();
+        // Get list of workers with specified type and image
+        for (Instance worker : workers) {
+            if (!worker.getConfiguration().getType().equals(instanceType) ||
+            !worker.getConfiguration().getImage().equals(image)) {
+                workers.remove(worker);
+            }
+        }
+        if (workers.size() <= count) {
+            for (int i = 0; i <= count; count--) {
+                Instance worker = workers.get(workers.size() - count);
+                if (terminateWorker(worker)) {
+                    LOG.info("Worker '{}' terminated!", worker.getId());
+                } else {
+                    LOG.error("Worker '{}' could not be terminated successfully.", worker.getId());
+                }
+            }
+        } else {
+            LOG.error("Could not find {} workers with specified instance type and image in cluster.", count);
+        }
+
+    }
+
+    /**
      * Terminates single worker instance.
-     * @param cluster specified cluster
+     * @param worker specified worker instance
      * @return true, if worker instance terminated successfully
      */
-    protected abstract boolean terminateWorker(Cluster cluster);
+    protected abstract boolean terminateWorker(Instance worker);
 
     /**
      * Terminates the whole cluster.
