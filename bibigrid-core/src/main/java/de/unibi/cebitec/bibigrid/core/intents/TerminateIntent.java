@@ -84,16 +84,18 @@ public abstract class TerminateIntent extends Intent {
     public void terminateInstances(String clusterId, String instanceType, String image, int count) {
         final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
         Cluster cluster = clusters.get(clusterId);
-        List<Instance> workers = cluster.getWorkerInstances();
+        List<Instance> workers = new ArrayList<>();
         // Get list of workers with specified type and image
-        for (Instance worker : workers) {
-            if (!worker.getConfiguration().getType().equals(instanceType) ||
-            !worker.getConfiguration().getImage().equals(image)) {
-                workers.remove(worker);
+        for (Instance worker : cluster.getWorkerInstances()) {
+            String workerType = worker.getConfiguration().getType();
+            String workerImage = worker.getConfiguration().getImage();
+            LOG.warn("Nr der Worker types: {}", ((Configuration.WorkerInstanceConfiguration) worker.getConfiguration()).getCount());
+            if (workerType.equals(instanceType) && workerImage.equals(image)) {
+                workers.add(worker);
             }
         }
-        if (workers.size() <= count) {
-            for (int i = 0; i <= count; count--) {
+        if (count <= workers.size()) {
+            for (int i = 0; i < count; count--) {
                 Instance worker = workers.get(workers.size() - count);
                 if (terminateWorker(worker)) {
                     LOG.info("Worker '{}' terminated!", worker.getId());

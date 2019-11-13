@@ -142,6 +142,7 @@ public abstract class CreateCluster extends Intent {
         try {
             String masterNameTag = MASTER_NAME_PREFIX + "-" + clusterId;
             masterInstance = launchClusterMasterInstance(masterNameTag);
+            masterInstance.getConfiguration().setMaster(true);
             if (masterInstance == null) {
                 return false;
             }

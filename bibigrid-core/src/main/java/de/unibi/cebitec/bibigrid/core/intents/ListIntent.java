@@ -28,9 +28,13 @@ public abstract class ListIntent extends Intent {
         this.config = config;
     }
 
+    /**
+     * Extract cluster from clusterMap or create a new one if not yet existent.
+     * @param clusterId Id of cluster
+     * @return cluster
+     */
     protected final Cluster getOrCreateCluster(String clusterId) {
         Cluster cluster;
-        // check if entry already available
         if (clusterMap.containsKey(clusterId)) {
             cluster = clusterMap.get(clusterId);
         } else {
@@ -51,6 +55,12 @@ public abstract class ListIntent extends Intent {
         return clusterMap;
     }
 
+    /**
+     * Extracts cluster Id from name, e.g. bibigrid-worker1-2-jbxoecbvtfu3n5f.
+     * Probably an error source, if names change -> search in clusterMap and getId ?
+     * @param name instance name
+     * @return clusterId
+     */
     protected static String getClusterIdFromName(String name) {
         String[] parts = name.split("-");
         return parts[parts.length - 1];

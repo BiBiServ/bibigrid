@@ -45,13 +45,16 @@ public class ListIntentOpenstack extends ListIntent {
 
     @Override
     protected List<Instance> getInstances() {
-        return os.compute().servers().list().stream().map(i -> new InstanceOpenstack(null, i)).collect(Collectors.toList());
+        List<? extends Server> serverList = os.compute().servers().list();
+        List<Instance> list = serverList.stream().map(i -> new InstanceOpenstack(null, i)).collect(Collectors.toList());
+        Collections.reverse(list);
+        return list;
     }
 
     @Override
     protected void loadInstanceConfiguration(Instance instance) {
         Server server = ((InstanceOpenstack) instance).getInternal();
-        Configuration.InstanceConfiguration instanceConfiguration = new Configuration.InstanceConfiguration();
+        Configuration.InstanceConfiguration instanceConfiguration = new Configuration.WorkerInstanceConfiguration();
         Flavor flavor = server.getFlavor();
         if (flavor != null) {
             instanceConfiguration.setType(flavor.getName());
@@ -63,6 +66,10 @@ public class ListIntentOpenstack extends ListIntent {
         Image image = server.getImage();
         if (image != null) {
             instanceConfiguration.setImage(image.getName());
+        }
+        if (!instance.getConfiguration().isMaster()) {
+            int count = ((Configuration.WorkerInstanceConfiguration) instance.getConfiguration()).getCount();
+            ((Configuration.WorkerInstanceConfiguration) instanceConfiguration).setCount(count);
         }
         instance.setConfiguration(instanceConfiguration);
     }
