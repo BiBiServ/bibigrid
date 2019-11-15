@@ -164,7 +164,6 @@ public abstract class CreateCluster extends Intent {
             logFinishedInfoMessage(masterIp);
             saveGridPropertiesFile(masterIp);
         } catch (Exception e) {
-
             // print stacktrace only verbose mode, otherwise the message is fine
             if (VerboseOutputFilter.SHOW_VERBOSE) {
                 LOG.error(e.getMessage(), e);
@@ -216,7 +215,7 @@ public abstract class CreateCluster extends Intent {
         sb.append("setx BIBIGRID_MASTER \"").append(masterPublicIp).append("\"\n\n");
         sb.append("You can then log on the master node with:\n\n")
                 .append("putty -i ")
-                .append(config.KEYS_DIR).append("\\").append(config.getClusterKeyPair().getName())
+                .append(Configuration.KEYS_DIR).append("\\").append(config.getClusterKeyPair().getName())
                 .append(" ").append(config.getSshUser()).append("@%BIBIGRID_MASTER%\n\n");
         sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
         sb.append("You can easily terminate the cluster at any time with:\n")
@@ -234,7 +233,7 @@ public abstract class CreateCluster extends Intent {
         sb.append("export BIBIGRID_MASTER=").append(masterPublicIp).append("\n\n");
         sb.append("You can then log on the master node with:\n\n")
                 .append("ssh -i ")
-                .append(config.KEYS_DIR).append("/").append(config.getClusterKeyPair().getName())
+                .append(Configuration.KEYS_DIR).append("/").append(config.getClusterKeyPair().getName())
                 .append(" ").append(config.getSshUser()).append("@$BIBIGRID_MASTER\n\n");
         sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
         sb.append("You can easily terminate the cluster at any time with:\n")

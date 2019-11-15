@@ -1,3 +1,11 @@
+## Version 2.0.10 < 2.0.9 (not yet released)
+
+### Features
+- added IdeConf parameter to integrate usage of self-assigned port(s) for TheiaIDE forwarding (prevents already bound ports (#180))
+
+### Fixes 
+- update & upgrade entire system (#193)
+- improve error handling (#191)
 
 ## Version 2.0.9 < 2.0.8 (10/01/2019)
 
@@ -48,12 +56,6 @@
 ### Fixes
 - Update documentation for ansible (#143, #145)
 - Fixed help option (-h or --help)
-
-## Version 2.0.5 < 2.0.4 (04/22/2019)
-
-### Fixes
-- Update documentation (#127,#131)
-- Fix a bug concerning multiple slaves types (#130)
 
 ## Version 2.0.5 < 2.0.4 (04/22/2019)
 

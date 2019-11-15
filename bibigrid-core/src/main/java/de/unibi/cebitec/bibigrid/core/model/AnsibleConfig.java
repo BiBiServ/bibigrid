@@ -163,23 +163,22 @@ public final class AnsibleConfig {
         map.put("master", getMasterMap());
         map.put("workers", getWorkerMap());
         map.put("CIDR", subnetCidr);
-        if (config.isNfs()) {
-            map.put("nfs_mounts", getNfsSharesMap());
-            map.put("ext_nfs_mounts", getExtNfsSharesMap());
-        }
-        if (config.isIDE()) {
-            map.put("ide_workspace", config.getWorkspace());
-        }
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
         addBooleanOption(map, "local_dns_lookup", config.isLocalDNSLookup());
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "enable_slurm",config.isSlurm());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
-        addBooleanOption(map, "enable_theia", config.isTheia());
-        addBooleanOption(map, "enable_cloud9", config.isCloud9());
         addBooleanOption(map, "enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
+        addBooleanOption(map, "enable_ide", config.isIDE());
+        if (config.isNfs()) {
+            map.put("nfs_mounts", getNfsSharesMap());
+            map.put("ext_nfs_mounts", getExtNfsSharesMap());
+        }
+        if (config.isIDE()) {
+            map.put("ideConf", getIdeConf());
+        }
         if (config.isZabbix()) {
             map.put("zabbix", getZabbixConf());
         }
@@ -257,6 +256,15 @@ public final class AnsibleConfig {
             ogeConf.put(name, oc.getProperty(name));
         }
         return ogeConf;
+    }
+
+    private Map<String, Object> getIdeConf() {
+        Configuration.IdeConf ic = config.getIdeConf();
+        Map<String, Object> ideConf = new LinkedHashMap<>();
+        ideConf.put("ide", ic.isIde());
+        ideConf.put("port_start", ic.getPort_start());
+        ideConf.put("port_end", ic.getPort_end());
+        return ideConf;
     }
 
     /**

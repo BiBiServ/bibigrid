@@ -1,7 +1,5 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,50 +165,6 @@ public abstract class ListIntent extends Intent {
     protected abstract void loadInstanceConfiguration(Instance instance);
 
     /**
-     * Return a json representation string of found cluster objects map.
-     */
-    public final String toJsonString(){
-        Map<String, Object> jsonMap = new HashMap<>();
-        ObjectMapper mapper = new ObjectMapper();
-        if (clusterMap == null) {
-            clusterMap = new HashMap<>();
-            searchClusterIfNecessary();
-        }
-        if (clusterMap.isEmpty()) {
-            jsonMap.put("info","No BiBiGrid cluster found!");
-            try {
-                return mapper.writeValueAsString(jsonMap);
-            }
-            catch(JsonProcessingException e){
-                return "{\"Internal server error\":\"JsonProcessingException\"}";
-            }
-        }
-        List<Map<String, Object>> list = new LinkedList<>();
-        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
-            Cluster v = entry.getValue();
-            Map<String, Object> cluster = new HashMap<>();
-            cluster.put("cluster-id",v.getClusterId());
-            cluster.put("user",(v.getUser() == null) ? "-" : v.getUser());
-            cluster.put("launch date", (v.getStarted() == null) ? "-" : v.getStarted());
-            cluster.put("key name", (v.getKeyName() == null ? "-" : v.getKeyName()));
-            cluster.put("public-ip",(v.getPublicIp() == null ? "-" : v.getPublicIp()));
-            cluster.put("# inst", ((v.getMasterInstance() != null ? 1 : 0) + v.getWorkerInstances().size()));
-            cluster.put("group-id", (v.getSecurityGroup() == null ? "-" : v.getSecurityGroup()));
-            cluster.put("subnet-id", (v.getSubnet() == null ? "-" : v.getSubnet().getId()));
-            cluster.put("network-id"   , (v.getNetwork() == null ? "-" : v.getNetwork().getId()));
-            list.add(cluster);
-        }
-        jsonMap.put("info", list);
-        try {
-            return mapper.writeValueAsString(jsonMap);
-        }
-        catch(JsonProcessingException e){
-            return "{\"Internal server error\":\"JsonProcessingException\"}";
-        }
-    }
-
-
-    /**
      * Return a String representation of found cluster objects map.
      */
     @Override
@@ -225,11 +179,11 @@ public abstract class ListIntent extends Intent {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
-        String lineFormat = "%16s | %13s | %19s | %14s | %15s | %7s | %13s | %11s | %11s%n";
+        String lineFormat = "%16s | %13s | %19s | %14s | %15s | %15s | %7s | %13s | %11s | %11s%n";
         formatter.format(lineFormat,
-                "cluster-id", "user", "launch date", "key name", "public-ip", "# inst", "group-id", "subnet-id",
+                "cluster-id", "user", "launch date", "key name", "public-ip", "private-ip", "# inst", "group-id", "subnet-id",
                 "network-id");
-        display.append(new String(new char[143]).replace('\0', '-')).append("\n");
+        display.append(new String(new char[161]).replace('\0', '-')).append("\n");
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             Cluster v = entry.getValue();
             formatter.format(lineFormat,
@@ -238,10 +192,12 @@ public abstract class ListIntent extends Intent {
                     (v.getStarted() == null) ? "-" : v.getStarted(),
                     (v.getKeyName() == null ? "-" : ellipsize(v.getKeyName(), 14)),
                     (v.getPublicIp() == null ? "-" : v.getPublicIp()),
+                    (v.getPrivateIp() == null ? "-" : v.getPrivateIp()),
                     ((v.getMasterInstance() != null ? 1 : 0) + v.getWorkerInstances().size()),
                     (v.getSecurityGroup() == null ? "-" : ellipsize(v.getSecurityGroup(), 13)),
                     (v.getSubnet() == null ? "-" : ellipsize(v.getSubnet().getId(), 11)),
                     (v.getNetwork() == null ? "-" : ellipsize(v.getNetwork().getId(), 11)));
+
         }
         return display.toString();
     }
