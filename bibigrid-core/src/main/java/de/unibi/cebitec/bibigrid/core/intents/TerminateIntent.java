@@ -89,7 +89,8 @@ public abstract class TerminateIntent extends Intent {
         for (Instance worker : cluster.getWorkerInstances()) {
             String workerType = worker.getConfiguration().getType();
             String workerImage = worker.getConfiguration().getImage();
-            LOG.warn("Nr der Worker types: {}", ((Configuration.WorkerInstanceConfiguration) worker.getConfiguration()).getCount());
+            LOG.warn("type and image: {} {}", workerType, workerImage);
+            LOG.warn("Nr der Worker types: {}", config.getWorkerInstances().size());
             if (workerType.equals(instanceType) && workerImage.equals(image)) {
                 workers.add(worker);
             }

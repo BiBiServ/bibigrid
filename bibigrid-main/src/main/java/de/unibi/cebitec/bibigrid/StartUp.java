@@ -256,8 +256,8 @@ public class StartUp {
                     String instanceType = parameters[1];
                     String image = parameters[2];
                     int count = Integer.parseInt(parameters[3]);
-                    LOG.info("Terminating {} instances " +
-                            "of worker instance type {} " +
+                    LOG.info("Terminating {} " + (count == 1 ? "instance" : "instances") +
+                            " of worker instance type {} " +
                             "with image {} " +
                             "for cluster with ID '{}' ...", count, instanceType, image, clusterId);
                     module.getTerminateIntent(client, config).terminateInstances(clusterId, instanceType, image, count);
