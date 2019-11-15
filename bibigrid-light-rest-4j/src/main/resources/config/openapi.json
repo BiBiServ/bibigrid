@@ -534,6 +534,7 @@
                 "file": {
                   "type": "string",
                   "description": "path/to/file.tar.gz - File on local machine"
+
                 },
                 "vars": {
                   "type": "object",
