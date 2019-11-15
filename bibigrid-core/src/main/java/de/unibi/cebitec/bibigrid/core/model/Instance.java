@@ -12,6 +12,8 @@ public abstract class Instance {
     public static final String TAG_USER = "user";
     public static final String TAG_BIBIGRID_ID = "bibigrid-id";
 
+    private boolean isMaster = false;
+
     private Configuration.InstanceConfiguration configuration;
 
     protected Instance(Configuration.InstanceConfiguration configuration) {
@@ -41,4 +43,12 @@ public abstract class Instance {
     public abstract ZonedDateTime getCreationTimestamp();
 
     public abstract String getKeyName();
+
+    public boolean isMaster() {
+        return isMaster;
+    }
+
+    public void setMaster(boolean master) {
+        isMaster = master;
+    }
 }

@@ -613,7 +613,6 @@ public abstract class Configuration {
         private String image;
         private InstanceType providerType;
 
-        private boolean isMaster = false;
 
         public String getName() {
             return name;
@@ -645,14 +644,6 @@ public abstract class Configuration {
 
         public void setProviderType(InstanceType providerType) {
             this.providerType = providerType;
-        }
-
-        public boolean isMaster() {
-            return isMaster;
-        }
-
-        public void setMaster(boolean master) {
-            isMaster = master;
         }
     }
 
@@ -710,7 +701,8 @@ public abstract class Configuration {
     }
 
 
-    /** private helper class that converts a byte array to an Hex String
+    /**
+     * private helper class that converts a byte array to an Hex String.
      *
      * @param hash
      * @return

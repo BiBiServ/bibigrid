@@ -13,6 +13,7 @@ import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.*;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements ListIntent for Openstack.
@@ -51,10 +52,17 @@ public class ListIntentOpenstack extends ListIntent {
         return list;
     }
 
+    /**
+     * SETS instanceConfiguration by internal configuration.
+     * @param instance given master / worker instance
+     */
     @Override
     protected void loadInstanceConfiguration(Instance instance) {
         Server server = ((InstanceOpenstack) instance).getInternal();
-        Configuration.InstanceConfiguration instanceConfiguration = new Configuration.WorkerInstanceConfiguration();
+        Configuration.InstanceConfiguration instanceConfiguration =
+                instance.isMaster()
+                        ? new Configuration.InstanceConfiguration()
+                        : new Configuration.WorkerInstanceConfiguration();
         Flavor flavor = server.getFlavor();
         if (flavor != null) {
             instanceConfiguration.setType(flavor.getName());
@@ -66,10 +74,6 @@ public class ListIntentOpenstack extends ListIntent {
         Image image = server.getImage();
         if (image != null) {
             instanceConfiguration.setImage(image.getName());
-        }
-        if (!instance.getConfiguration().isMaster()) {
-            int count = ((Configuration.WorkerInstanceConfiguration) instance.getConfiguration()).getCount();
-            ((Configuration.WorkerInstanceConfiguration) instanceConfiguration).setCount(count);
         }
         instance.setConfiguration(instanceConfiguration);
     }

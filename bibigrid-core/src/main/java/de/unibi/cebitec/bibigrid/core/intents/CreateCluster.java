@@ -142,7 +142,7 @@ public abstract class CreateCluster extends Intent {
         try {
             String masterNameTag = MASTER_NAME_PREFIX + "-" + clusterId;
             masterInstance = launchClusterMasterInstance(masterNameTag);
-            masterInstance.getConfiguration().setMaster(true);
+            masterInstance.setMaster(true);
             if (masterInstance == null) {
                 return false;
             }
@@ -697,4 +697,3 @@ class LineReaderRunnable implements Runnable {
         return returnMsg;
     }
 }
-
