@@ -17,7 +17,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 public class SshFactory {
     private static final Logger LOG = LoggerFactory.getLogger(SshFactory.class);
-    private static final int SSH_POLL_ATTEMPTS = 25;
+    private static final int SSH_POLL_ATTEMPTS = 50;
 
     public static Session createSshSession(Configuration config, String ip) throws JSchException{
         JSch jssh = new JSch();
@@ -101,7 +101,7 @@ public class SshFactory {
                 LOG.error(V, "Poll SSH {}", ex.getMessage());
             }
             try {
-                Thread.sleep(2000);
+                Thread.sleep(4000);
             } catch (InterruptedException ignored) {
             }
         }
