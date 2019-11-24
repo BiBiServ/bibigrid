@@ -1,4 +1,8 @@
-# rm -rf .mvn
+#Script to re-generate the api based on the openapi.json and config.json file. In the beginning, all previously
+#genererated files are removed and then light-codegen (a part of the light-rest-4j framework) will generate the project
+#from the scratch.
+# See https://doc.networknt.com/references/light-codegen/openapi-generator/ for more information about the generation process.
+rm -rf .mvn
 rm -rf .gitignore
 rm -rf .build.sh
 rm kubernetes.yml
