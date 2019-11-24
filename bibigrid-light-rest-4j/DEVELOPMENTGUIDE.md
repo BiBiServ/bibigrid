@@ -4,10 +4,9 @@ Simple guide for developing the bibigrid rest api.
 ## Before getting started
 Take a good look at the api documentation located at
 ```
-/bibigrid/bibigrid-light-rest-4j/src/main/resources/config/openapi.json
+/bibigrid/bibigrid-light-rest-4j/src/main/resources/config/documentation.html
 ```
- with [swagger](https://editor.swagger.io/)
-
+A guide for viewing the documentation is provide inside the above mentioned html file.
 ## Starting the server
 ```
 cd bibigrid/bibigrid-light-rest-4j/
