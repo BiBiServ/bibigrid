@@ -1,0 +1,51 @@
+<!--
+Html file for visualizing the openapi specs ins swagger ui.
+You need to start a simple http server which hosts this html file and the openapi.json file to avoid cross-origin resource
+sharing errors.
+
+Step by step guide to view the latest documentation:
+1. Open a terminal inside the same directory as this specui.html file (bibigrid/bibigrid-light-rest-4j/src/main/resources/config/)
+2. Start a simple HTTP server, e.g. a python server with:
+   Python 2 users: python -m SimpleHTTPServer 8000
+   Python 3 users: python -m http.server 8000
+3. Visit http://127.0.0.1:8000/documentation.html inside your browser
+
+Note: The normal rest-api server does not need to be running.
+-->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>OpenAPI Spec</title>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui.css">
+</head>
+
+<body>
+<div id="swagger-ui"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui-bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui-standalone-preset.js"></script>
+<script>
+  window.onload = function() {
+    const ui = SwaggerUIBundle({
+      url: "http://127.0.0.1:8000/openapi.json",
+      validatorUrl : false,
+      dom_id: '#swagger-ui',
+      deepLinking: true,
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIStandalonePreset
+      ],
+      plugins: [
+        SwaggerUIBundle.plugins.DownloadUrl
+      ],
+      layout: "StandaloneLayout"
+    })
+
+    window.ui = ui
+  }
+</script>
+</body>
+
+</html>
