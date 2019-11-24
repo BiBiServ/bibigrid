@@ -32,14 +32,6 @@
         </encoder>
     </appender>
 
-    <appender name="log" class="ch.qos.logback.core.FileAppender">
-        <File>log/test.log</File>
-        <Append>false</Append>
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>%d{HH:mm:ss.SSS} [%thread] %X{sId} %X{cId} %-5level %class{36}:%L %M - %msg%n</Pattern>
-        </layout>
-    </appender>
-
     <!--audit log-->
     <appender name="audit" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>log/audit.log</file> <!-- logfile location -->
