@@ -32,7 +32,7 @@ public final class ValidatorOpenstack extends Validator {
         OS_USERNAME
     }
 
-    ValidatorOpenstack(final Configuration config, final ProviderModule providerModule)
+    public ValidatorOpenstack(final Configuration config, final ProviderModule providerModule)
             throws ConfigurationException {
         super( config, providerModule);
         openstackConfig = (ConfigurationOpenstack) config;
@@ -122,7 +122,7 @@ public final class ValidatorOpenstack extends Validator {
      * Loads environment variables.
      * @return openStackCredentials if parameters given, otherwise null
      */
-    private OpenStackCredentials loadEnvCredentials() {
+    public OpenStackCredentials loadEnvCredentials() {
         Map env =  System.getenv();
         OpenStackCredentials openStackCredentials = new OpenStackCredentials();
 
