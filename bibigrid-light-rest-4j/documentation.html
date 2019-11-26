@@ -4,7 +4,7 @@ You need to start a simple http server which hosts this html file and the openap
 sharing errors.
 
 Step by step guide to view the latest documentation:
-1. Open a terminal inside the same directory as this specui.html file (bibigrid/bibigrid-light-rest-4j/src/main/resources/config/)
+1. Open a terminal inside the same directory as this specui.html file (bibigrid/bibigrid-light-rest-4j)
 2. Start a simple HTTP server, e.g. a python server with:
    Python 2 users: python -m SimpleHTTPServer 8000
    Python 3 users: python -m http.server 8000
@@ -29,7 +29,7 @@ Note: The normal rest-api server does not need to be running.
 <script>
   window.onload = function() {
     const ui = SwaggerUIBundle({
-      url: "http://127.0.0.1:8000/openapi.json",
+      url: "http://127.0.0.1:8000/src/main/resources/config/openapi.json",
       validatorUrl : false,
       dom_id: '#swagger-ui',
       deepLinking: true,
