@@ -24,6 +24,8 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
             "Attempting to shut them down but in case of an error they might remain running. Please verify " +
             "afterwards.";
     private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
+    // Establish connection to service provider
+    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
 
     /*
     Attribute that is used to send the cluster_id back to the user
@@ -79,9 +81,6 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange){
-
-        // Establish connection to service provider
-        ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
         if(serviceProviderConnector.connectToServiceProvider(exchange)){
             ProviderModule module = serviceProviderConnector.getModule();
             Client client = serviceProviderConnector.getClient();
@@ -94,7 +93,6 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                 }
                 ValidateIntent intent  = module.getValidateIntent(client, config);
                 if (intent.validate()) {
-                    // TODO figure out the meaning of last param prepare
                     if(runCreateIntent(module, config, client, module.getCreateIntent(client, config), false)){
                         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                         exchange.setStatusCode(200);
@@ -102,17 +100,17 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                     }
                     else{
                         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                        exchange.setStatusCode(200);
+                        exchange.setStatusCode(400);
                         exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
                     }
                 } else {
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                    exchange.setStatusCode(200);
+                    exchange.setStatusCode(400);
                     exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
                 }
             } catch(ConfigurationException c) {
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                exchange.setStatusCode(200);
+                exchange.setStatusCode(400);
                 exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+c.getMessage()+"\"}");
             }
         } else {

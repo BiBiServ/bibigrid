@@ -49,7 +49,7 @@ public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
                     exchange.getResponseSender().send(payload);
                 } catch (JsonProcessingException j){
                     LOG.error(j.getMessage());
-                    exchange.setStatusCode(400);
+                    exchange.setStatusCode(500);
                     exchange.getResponseSender().send("{\"error\":\""+j.getMessage()+"\"}");
                 }
             } else {
