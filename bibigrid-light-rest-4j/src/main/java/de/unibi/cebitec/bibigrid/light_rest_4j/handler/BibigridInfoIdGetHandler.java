@@ -10,9 +10,10 @@ import java.io.InputStreamReader;
 
 public class BibigridInfoIdGetHandler implements LightHttpHandler {
 
+    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+
     @Override
     public void handleRequest(HttpServerExchange exchange){
-        ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
         if(serviceProviderConnector.connectToServiceProvider(exchange)){
             String clusterId = exchange.getQueryParameters().get("id").getFirst();
             try{
@@ -28,14 +29,12 @@ public class BibigridInfoIdGetHandler implements LightHttpHandler {
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(200);
                 exchange.getResponseSender().send("{\"info\":\"Starting up\",\"log\":\""+lastLine+"\"}");
-
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                exchange.setStatusCode(200);
+                exchange.setStatusCode(500);
                 exchange.getResponseSender().send("{\"error\":\"Unable to find log file.\"}");
             }
-
         } else {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);

@@ -22,12 +22,12 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
+    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
 
 
     @Override
     public void handleRequest(HttpServerExchange exchange) {
 
-        ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
         if(serviceProviderConnector.connectToServiceProvider(exchange)){
 
             ProviderModule module = serviceProviderConnector.getModule();
@@ -39,30 +39,24 @@ public class BibigridValidatePostHandler implements LightHttpHandler{
                 if (!validator.validateProviderTypes(client)) {
                     LOG.error(ABORT_WITH_NOTHING_STARTED);
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                    exchange.setStatusCode(200);
+                    exchange.setStatusCode(400);
                     exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\"Invalid instance type\"}");
                     // Maybe TODO determine whether master of worker instance was invalid
                 }
-                try {
-                    ValidateIntent intent  = module.getValidateIntent(client, config);
-                    if (intent.validate()) {
-                        LOG.info(I, "You can now start your cluster.");
-                        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                        exchange.setStatusCode(200);
-                        exchange.getResponseSender().send("{\"is_valid\":\"true\",\"info\":\"You can now start your cluster.\"}");
-                    } else {
-                        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                        exchange.setStatusCode(200);
-                        exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
-                    }
-                } catch (Exception e) {
+                ValidateIntent intent  = module.getValidateIntent(client, config);
+                if (intent.validate()) {
+                    LOG.info(I, "You can now start your cluster.");
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                     exchange.setStatusCode(200);
-                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+e.getMessage()+"\"}");
+                    exchange.getResponseSender().send("{\"is_valid\":\"true\",\"info\":\"You can now start your cluster.\"}");
+                } else {
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.setStatusCode(400);
+                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
                 }
             } catch(ConfigurationException c){
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                exchange.setStatusCode(200);
+                exchange.setStatusCode(400);
                 exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+c.getMessage()+"\"}");
             }
         } else {

@@ -12,18 +12,17 @@ import java.util.Date;
 public class BibigridListGetHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
+    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
 
     @Override
     public void handleRequest(HttpServerExchange exchange){
         long startTime = System.nanoTime();
-        ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
         if(serviceProviderConnector.connectToServiceProvider(exchange)){
             ListIntent listIntent = serviceProviderConnector.getModule().getListIntent(serviceProviderConnector.getClient(), serviceProviderConnector.getConfig());
-            exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(200);
             exchange.getResponseSender().send(listIntent.toJsonString());
         } else {
-            exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
             exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
         }
