@@ -1,7 +1,5 @@
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.handler.LightHttpHandler;
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import io.undertow.server.HttpServerExchange;
@@ -9,8 +7,7 @@ import io.undertow.util.HttpString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Date;
 
 public class BibigridListGetHandler implements LightHttpHandler {
 
@@ -18,38 +15,23 @@ public class BibigridListGetHandler implements LightHttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange){
-
+        long startTime = System.nanoTime();
         ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
         if(serviceProviderConnector.connectToServiceProvider(exchange)){
-
-            ListIntent listIntent =  serviceProviderConnector.getModule().getListIntent(serviceProviderConnector.getClient(), serviceProviderConnector.getConfig());
-            String  [] ids =  serviceProviderConnector.getConfig().getClusterIds();
-
-            if (ids != null && ids.length > 0) {
-                exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                exchange.setStatusCode(200);
-                Map<String, Object> params = new HashMap<>();
-                try {
-                    String payload = new ObjectMapper().writeValueAsString(params);
-                    params.put("info",listIntent.toDetailString(ids[0]));
-                    exchange.getResponseSender().send(payload);
-                } catch(JsonProcessingException e){
-                    LOG.error(e.getMessage());
-                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                    exchange.setStatusCode(400);
-                    exchange.getResponseSender().send("{\"error\":\""+e.getMessage()+"\"}");
-                }
-            } else {
-                exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                exchange.setStatusCode(200);
-                exchange.getResponseSender().send(listIntent.toJsonString());
-            }
+            ListIntent listIntent = serviceProviderConnector.getModule().getListIntent(serviceProviderConnector.getClient(), serviceProviderConnector.getConfig());
+            exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+            exchange.setStatusCode(200);
+            exchange.getResponseSender().send(listIntent.toJsonString());
         } else {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
             exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
         }
         exchange.endExchange();
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime)/1000000; // needed time for handling the request in ms
+        LOG.info("GET /bibigrid/list "+ exchange.getStatusCode()+ " " + duration+"ms\n");
+
     }
 
 }
