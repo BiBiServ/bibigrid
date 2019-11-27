@@ -1,6 +1,9 @@
 
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
+import de.unibi.cebitec.bibigrid.openstack.ValidatorOpenstack;
+import org.junit.*;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import com.networknt.client.Http2Client;
 import com.networknt.exception.ClientException;
 import com.networknt.openapi.ResponseValidator;
@@ -15,10 +18,6 @@ import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
 import io.undertow.util.Headers;
 import io.undertow.util.Methods;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -32,6 +31,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 public class BibigridCreatePostHandlerTest {
+    @Rule
+    public final EnvironmentVariables environmentVariables
+            = new EnvironmentVariables();
+
+    @Before public void clearEnvironment()
+    {
+        for (ValidatorOpenstack.EnvCredentials var : ValidatorOpenstack.EnvCredentials.values()) {
+            environmentVariables.clear(var.toString());
+            Assert.assertNull(System.getenv(var.toString()));
+        }
+    }
+
     @ClassRule
     public static TestServer server = TestServer.getInstance();
 
@@ -102,8 +113,10 @@ public class BibigridCreatePostHandlerTest {
         }
     }
 
+
     @Test
     public void testBibigridCreatePostHandlerTest() throws ClientException {
+
         // Valid Request but CloudComputingopenrc.sh file isnt sourced.
         sendTestRequest("{\"mode\":\"openstack\"}", NO_ENV_VARS, 400);
         System.out.println();
