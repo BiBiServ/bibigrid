@@ -116,7 +116,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
         } else {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
+            exchange.getResponseSender().send("{\"message\":\""+serviceProviderConnector.getError()+"\"}");
         }
         exchange.endExchange();
     }

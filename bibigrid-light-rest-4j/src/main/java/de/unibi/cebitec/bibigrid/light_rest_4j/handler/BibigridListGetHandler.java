@@ -24,7 +24,8 @@ public class BibigridListGetHandler implements LightHttpHandler {
             exchange.getResponseSender().send(listIntent.toJsonString());
         } else {
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
+            exchange.getResponseSender().send("{\"message\":\""+serviceProviderConnector.getError()+". This is most likely" +
+                    " caused by not sourcing the CloudComputingOpenRC.sh file."+"\"}");
         }
         exchange.endExchange();
         long endTime = System.nanoTime();

@@ -2,20 +2,15 @@ package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.body.BodyHandler;
 import com.networknt.handler.LightHttpHandler;
-import de.unibi.cebitec.bibigrid.Provider;
-import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.openstack.ConfigurationOpenstack;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,16 +45,16 @@ public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
                 } catch (JsonProcessingException j){
                     LOG.error(j.getMessage());
                     exchange.setStatusCode(500);
-                    exchange.getResponseSender().send("{\"error\":\""+j.getMessage()+"\"}");
+                    exchange.getResponseSender().send("{\"message\":\""+j.getMessage()+"\"}");
                 }
             } else {
                 exchange.setStatusCode(400);
-                exchange.getResponseSender().send("{\"error\":\""+terminateIntent.getTerminateResponse()+"\"}");
+                exchange.getResponseSender().send("{\"message\":\""+terminateIntent.getTerminateResponse()+"\"}");
             }
         } else {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
+            exchange.getResponseSender().send("{\"message\":\""+serviceProviderConnector.getError()+"\"}");
         }
         long endTime = System.nanoTime();
         long duration = (endTime - startTime)/1000000; // needed time for handling the request in ms

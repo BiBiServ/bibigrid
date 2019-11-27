@@ -33,12 +33,12 @@ public class BibigridInfoIdGetHandler implements LightHttpHandler {
                 System.err.println("Error: " + e.getMessage());
                 exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                 exchange.setStatusCode(500);
-                exchange.getResponseSender().send("{\"error\":\"Unable to find log file.\"}");
+                exchange.getResponseSender().send("{\"message\":\"Unable to find log file.\"}");
             }
         } else {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"error\":\""+serviceProviderConnector.getError()+"\"}");
+            exchange.getResponseSender().send("{\"message\":\""+serviceProviderConnector.getError()+"\"}");
         }
         exchange.endExchange();
     }
