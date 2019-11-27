@@ -12,6 +12,7 @@ import java.util.List;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class AnsibleHostsConfig {
+    private static final String PYTHON_INTERPRETER = "ansible_python_interpreter=python3";
     private final Configuration config;
     private final List<String> workerIps;
 
@@ -32,10 +33,10 @@ public class AnsibleHostsConfig {
         hostsConfig.append("The local ip address of each worker must\n");
         hostsConfig.append("# be inserted in the worker section\n\n");
         hostsConfig.append("[master]\n");
-        hostsConfig.append("localhost ansible_connection=local\n\n");
+        hostsConfig.append("localhost ansible_connection=local " + PYTHON_INTERPRETER + "\n\n");
         hostsConfig.append("[workers]\n");
         for (String workerIp : workerIps) {
-            hostsConfig.append(workerIp).append(" ansible_connection=ssh ansible_python_interpreter=python3 ansible_user=");
+            hostsConfig.append(workerIp).append(" ansible_connection=ssh " + PYTHON_INTERPRETER + " ansible_user=");
             hostsConfig.append(config.getSshUser()).append("\n");
         }
         return hostsConfig.toString();
