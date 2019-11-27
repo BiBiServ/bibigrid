@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Error {
 
     private String message;
-    private Integer code;
 
     public Error () {
     }
@@ -20,15 +19,6 @@ public class Error {
 
     public void setMessage(String message) {
         this.message = message;
-    }
-
-    @JsonProperty("code")
-    public Integer getCode() {
-        return code;
-    }
-
-    public void setCode(Integer code) {
-        this.code = code;
     }
 
     @Override
@@ -43,13 +33,12 @@ public class Error {
 
         Error Error = (Error) o;
 
-        return Objects.equals(message, Error.message) &&
-               Objects.equals(code, Error.code);
+        return Objects.equals(message, Error.message);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(message, code);
+        return Objects.hash(message);
     }
 
     @Override
@@ -57,7 +46,6 @@ public class Error {
         StringBuilder sb = new StringBuilder();
         sb.append("class Error {\n");
         sb.append("    message: ").append(toIndentedString(message)).append("\n");
-        sb.append("    code: ").append(toIndentedString(code)).append("\n");
         sb.append("}");
         return sb.toString();
     }

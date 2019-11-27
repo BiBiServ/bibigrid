@@ -101,7 +101,7 @@ paths:
       - default
       - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdDeleteHandler
 
-  - path: 'server/health'
+  - path: '/server/health'
     method: 'get'
     exec:
       - health

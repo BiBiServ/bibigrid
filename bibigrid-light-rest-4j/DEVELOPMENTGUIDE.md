@@ -4,7 +4,7 @@ Simple guide for developing the bibigrid rest api.
 ## Before getting started
 Take a good look at the api documentation located at
 ```
-/bibigrid/bibigrid-light-rest-4j/src/main/resources/config/documentation.html
+/bibigrid/bibigrid-light-rest-4j/documentation.html
 ```
 A guide for viewing the documentation is provide inside the above mentioned html file.
 ## Starting the server
@@ -14,16 +14,22 @@ mvn clean install exec:exec
 ```
 Your server should now be running on port 8443 of your local machine.
 
-When the server is used for the first time, you will need to build the other bibigrid projects, because
+When the server is used for the first time, you will need to build the other bibigrid projects because
 of the dependencies. 
 This is done with: 
 ```
 cd bibigrid/
 mvn clean install -DskpTests
+``` 
+or
 ```
+cd bibigrid/
+mvn clean install
+``` 
+
 
 ## Developing
-##### Making changes to controllers
+##### Making changes to handlers
 Controllers are found under:
 ```
 /bibigrid/bibigrid-light-rest-4j/src/main/java/de/unibi/cebitec/bibigrid/light_rest_4j/handler/  
@@ -34,6 +40,7 @@ After doing changes compile with:
 cd bibigrid/bibigrid-light-rest-4j/
 mvn clean install exec:exec
 ```
+If you want to skip tests (saves a few seconds) add -DskipTests to the maven command above.
 
 ##### Making changes to the api specification
 Important: There are 2 openapi.json files which are used by light-rest-4j. 
@@ -49,7 +56,7 @@ Make changes to desired classes and then build module to which changes were made
 building all modules with:
 ```
 cd bibigrid/
-mvn clean install -DskpTests
+mvn clean install
 ```
 And then run:
 ```
