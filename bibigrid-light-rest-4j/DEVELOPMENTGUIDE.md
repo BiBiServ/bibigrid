@@ -19,11 +19,6 @@ of the dependencies.
 This is done with: 
 ```
 cd bibigrid/
-mvn clean install -DskpTests
-``` 
-or
-```
-cd bibigrid/
 mvn clean install
 ``` 
 

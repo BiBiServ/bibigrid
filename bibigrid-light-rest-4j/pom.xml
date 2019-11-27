@@ -40,6 +40,13 @@
 
     <dependencies>
         <dependency>
+            <!-- dependecy for mocking environment vars for tests-->
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>1.19.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.networknt</groupId>
             <artifactId>config</artifactId>
             <version>${version.light-4j}</version>

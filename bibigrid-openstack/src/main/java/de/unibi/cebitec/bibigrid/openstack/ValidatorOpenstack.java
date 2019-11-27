@@ -23,7 +23,7 @@ import java.util.Map;
 public final class ValidatorOpenstack extends Validator {
     private final ConfigurationOpenstack openstackConfig;
 
-    private enum EnvCredentials {
+    public enum EnvCredentials {
         OS_PROJECT_NAME,
         OS_USER_DOMAIN_NAME,
         OS_USER_DOMAIN_ID,

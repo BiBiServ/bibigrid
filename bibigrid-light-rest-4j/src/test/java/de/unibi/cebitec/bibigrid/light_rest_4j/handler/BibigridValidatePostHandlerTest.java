@@ -7,6 +7,7 @@ import com.networknt.openapi.ResponseValidator;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.StringUtils;
+import de.unibi.cebitec.bibigrid.openstack.ValidatorOpenstack;
 import io.undertow.UndertowOptions;
 import io.undertow.client.ClientConnection;
 import io.undertow.client.ClientRequest;
@@ -15,10 +16,8 @@ import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
 import io.undertow.util.Headers;
 import io.undertow.util.Methods;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.Ignore;
+import org.junit.*;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -32,6 +31,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 public class BibigridValidatePostHandlerTest {
+
+    @Rule
+    public final EnvironmentVariables environmentVariables
+            = new EnvironmentVariables();
+
+    @Before public void clearEnvironment()
+    {
+        for (ValidatorOpenstack.EnvCredentials var : ValidatorOpenstack.EnvCredentials.values()) {
+            environmentVariables.clear(var.toString());
+            Assert.assertNull(System.getenv(var.toString()));
+        }
+    }
 
     @ClassRule
     public static TestServer server = TestServer.getInstance();
