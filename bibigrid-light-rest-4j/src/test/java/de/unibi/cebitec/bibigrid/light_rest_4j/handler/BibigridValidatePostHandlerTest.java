@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Ignore
 public class BibigridValidatePostHandlerTest {
+
     @ClassRule
     public static TestServer server = TestServer.getInstance();
 
@@ -41,10 +42,11 @@ public class BibigridValidatePostHandlerTest {
     static final int httpsPort = server.getServerConfig().getHttpsPort();
     static final String url = enableHttp2 || enableHttps ? "https://localhost:" + httpsPort : "http://localhost:" + httpPort;
     static final String JSON_MEDIA_TYPE = "application/json";
+    static final String NO_REQUEST_BODY = "{\"statusCode\":400,\"code\":\"ERR11014\",\"message\":\"VALIDATOR_REQUEST_BODY_MISSING\",\"description\":\"Method get on path /bibigrid/list requires a request body. None found.\",\"severity\":\"ERROR\"}";
+    static final String BAD_REQUEST_BODY = "{\"statusCode\":500,\"code\":\"ERR10010\",\"message\":\"RUNTIME_EXCEPTION\",\"description\":\"Unexpected runtime exception\",\"severity\":\"ERROR\"}";
+    static final String NO_ENV_VARS = "{\"error\":\"Failed to connect openstack client: NullPointerException: null\"}";
 
-    @Test
-    public void testBibigridValidatePostHandlerTest() throws ClientException {
-
+    public void sendTestRequest(String requestBody, String expectedResponseBody, int expectedStatusCode) throws ClientException {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -58,12 +60,12 @@ public class BibigridValidatePostHandlerTest {
         String httpMethod = "post";
         try {
             ClientRequest request = new ClientRequest().setPath(requestUri).setMethod(Methods.POST);
-            
+
             request.getRequestHeaders().put(Headers.CONTENT_TYPE, JSON_MEDIA_TYPE);
             request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
-            //customized header parameters 
+            //customized header parameters
             connection.sendRequest(request, client.createClientCallback(reference, latch, "{\"content\": \"request body to be replaced\"}"));
-            
+
             latch.await();
         } catch (Exception e) {
             logger.error("Exception: ", e);
@@ -83,7 +85,17 @@ public class BibigridValidatePostHandlerTest {
         } else {
             status = responseValidator.validateResponseContent(body, requestUri, httpMethod, String.valueOf(statusCode), JSON_MEDIA_TYPE);
         }
-        Assert.assertNull(status);
+    }
+
+    @Test
+    public void testBibigridValidatePostHandlerTest() throws ClientException {
+        try{
+            // Test rejection of invalid requests
+            sendTestRequest("{\"mode\":\"openstack\"}", NO_ENV_VARS, 400);
+            sendTestRequest("{\"badBody\":\"badProvider\"}", BAD_REQUEST_BODY, 500);
+        } catch (ClientException c){
+            System.out.println(c.getMessage());
+        }
     }
 }
 
