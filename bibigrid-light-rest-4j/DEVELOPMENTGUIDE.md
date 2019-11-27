@@ -25,7 +25,7 @@ mvn clean install
 
 ## Developing
 ##### Making changes to handlers
-Controllers are found under:
+Handlers are found under:
 ```
 /bibigrid/bibigrid-light-rest-4j/src/main/java/de/unibi/cebitec/bibigrid/light_rest_4j/handler/  
 ```
@@ -43,7 +43,7 @@ Important: There are 2 openapi.json files which are used by light-rest-4j.
     is used for request validation at runtime. Modify this file when making changes to API.
 * The openapi.json located at   ```/bibigrid/bibigrid-light-rest-4j/openapi.json  ```   is the initial Openapi specs 
     file which is used to generate the project.
-    
+Changes should always be made to both openapi.json files just to be safe.   
 
 
 ##### Making changes to classes outside bibigrid-light-rest-4j Module.
