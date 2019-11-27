@@ -15,37 +15,72 @@ Note: The normal rest-api server does not need to be running.
 
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <title>OpenAPI Spec</title>
     <link rel="stylesheet" type="text/css"
           href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui.css">
-</head>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
 
-<body>
-<div id="swagger-ui"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui-bundle.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui-standalone-preset.js"></script>
-<script>
-  window.onload = function() {
-    const ui = SwaggerUIBundle({
-      url: "http://127.0.0.1:8000/src/main/resources/config/openapi.json",
-      validatorUrl : false,
-      dom_id: '#swagger-ui',
-      deepLinking: true,
-      presets: [
-        SwaggerUIBundle.presets.apis,
-        SwaggerUIStandalonePreset
-      ],
-      plugins: [
-        SwaggerUIBundle.plugins.DownloadUrl
-      ],
-      layout: "StandaloneLayout"
-    })
+    <div
+      id="md"
+      style="
+        border-radius: 25px;
+        background: #89bf04;
+        padding: 20px;
+        font-size: 12pt;
+        color:#fff;;
+        font-family: sans-serif;"
+    >
+    </div>
 
-    window.ui = ui
-  }
-</script>
-</body>
+    <div
+      id="readme"
+      style="
+        margin-top: 16px;
+        border-radius: 25px;
+        background: rgba(0,0,0,.05);
+        padding: 20px;
+        font-size: 12pt;
+        font-family: sans-serif;
+        color: #3b4151;"
+    >
+    </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/10.0.0/markdown-it.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui-bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui-standalone-preset.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script>
+      window.onload = function() {
+        const ui = SwaggerUIBundle({
+          url: "http://127.0.0.1:8000/src/main/resources/config/openapi.json",
+          validatorUrl : false,
+          dom_id: '#swagger-ui',
+          deepLinking: true,
+          presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIStandalonePreset
+          ],
+          plugins: [
+            SwaggerUIBundle.plugins.DownloadUrl
+          ],
+          layout: "StandaloneLayout"
+        })
+
+        window.ui = ui
+      }
+
+      //Display markdown
+      md = new markdownit
+      $.get('http://127.0.0.1:8000/DEVELOPMENTGUIDE.md', function(data) {
+        document.getElementById("md").innerHTML = md.render(data);
+      });
+
+      $.get('http://127.0.0.1:8000/README.md', function(data) {
+        document.getElementById("readme").innerHTML = md.render(data);
+      });
+    </script>
+  </body>
 </html>
