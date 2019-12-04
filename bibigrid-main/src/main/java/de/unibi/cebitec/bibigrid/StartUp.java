@@ -110,8 +110,15 @@ public class StartUp {
             }
 
             // Options
-            VerboseOutputFilter.SHOW_VERBOSE = cl.hasOption("verbose");
-            Configuration.DEBUG = cl.hasOption("debug");
+            if (cl.hasOption("verbose")) {
+                VerboseOutputFilter.SHOW_VERBOSE = true;
+                LOG.info("Enable verbose mode for more detailed output.");
+            }
+
+            if (cl.hasOption("debug")) {
+                Configuration.DEBUG = true;
+                LOG.info("Enable debug mode to keep cluster in case of a configuration error.");
+            }
 
             String providerMode = cl.getOptionValue("mode");
             String configurationFile = cl.getOptionValue("config");

@@ -13,6 +13,8 @@ public abstract class Instance {
     public static final String TAG_BIBIGRID_ID = "bibigrid-id";
 
     private boolean isMaster = false;
+    private int batchIndex;
+    private int workerIndex;
 
     private Configuration.InstanceConfiguration configuration;
 
@@ -50,5 +52,21 @@ public abstract class Instance {
 
     public void setMaster(boolean master) {
         isMaster = master;
+    }
+
+    public int getBatchIndex() {
+        return batchIndex;
+    }
+
+    public void setBatchIndex(int batchIndex) {
+        this.batchIndex = batchIndex;
+    }
+
+    public int getWorkerIndex() {
+        return workerIndex;
+    }
+
+    public void setWorkerIndex(int workerIndex) {
+        this.workerIndex = workerIndex;
     }
 }
