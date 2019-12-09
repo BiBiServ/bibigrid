@@ -77,37 +77,27 @@ public abstract class TerminateIntent extends Intent {
     /**
      * Scale down cluster by terminating specified worker instances.
      * @param clusterId Id of specified cluster
-     * @param instanceType type of worker instance
-     * @param image image of worker instance
+     * @param workerBatch idx of worker configuration
      * @param count nr of worker instances to be terminated
      */
-    public void terminateInstances(String clusterId, String instanceType, String image, int count) {
+    public void terminateInstances(String clusterId, int workerBatch, int count) {
         final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
         Cluster cluster = clusters.get(clusterId);
-        List<Instance> workers = new ArrayList<>();
-        // Get list of workers with specified type and image
-        for (Instance worker : cluster.getWorkerInstances()) {
-            String workerType = worker.getConfiguration().getType();
-            String workerImage = worker.getConfiguration().getImage();
-            LOG.warn("type and image: {} {}", workerType, workerImage);
-            LOG.warn("Nr der Worker types: {}", config.getWorkerInstances().size());
-            if (workerType.equals(instanceType) && workerImage.equals(image)) {
-                workers.add(worker);
-            }
-        }
-        if (count <= workers.size()) {
-            for (int i = 0; i < count; count--) {
-                Instance worker = workers.get(workers.size() - count);
-                if (terminateWorker(worker)) {
-                    LOG.info("Worker '{}' terminated!", worker.getId());
-                } else {
-                    LOG.error("Worker '{}' could not be terminated successfully.", worker.getId());
-                }
-            }
-        } else {
-            LOG.error("Could not find {} workers with specified instance type and image in cluster.", count);
+        List<Instance> workers = cluster.getWorkerInstances(workerBatch);
+        LOG.warn(workers.toString());
+        if (workers.isEmpty() || workers.size() < count) {
+            LOG.error("Could not find {} " + (count == 1 ? "worker" : "workers") + " with specified workerBatch in cluster.", count);
+            return;
         }
 
+        for (int i = 0; i < count; i++) {
+            Instance worker = workers.get(i);
+            if (terminateWorker(worker)) {
+                LOG.info("Worker '{}' terminated!", worker.getId());
+            } else {
+                LOG.error("Worker '{}' could not be terminated successfully.", worker.getId());
+            }
+        }
     }
 
     /**

@@ -28,7 +28,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     private NetworkInterface masterNetworkInterface;
 
     CreateClusterGoogleCloud(final ProviderModule providerModule, Client client, final ConfigurationGoogleCloud config) {
-        super(providerModule, client, config);
+        super(providerModule, client, config, null);
         this.config = config;
         compute = ((ClientGoogleCloud) client).getInternal();
     }
@@ -106,7 +106,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         Instance[] workerInstanceBuilders = new Instance[instanceCount];
         Operation[] workerInstanceOperations = new Operation[instanceCount];
         for (int i = 0; i < instanceCount; i++) {
-            String workerInstanceId = buildWorkerInstanceName(batchIndex, i);
+            String workerInstanceId = buildWorkerInstanceName(batchIndex + 1, i + 1);
             Instance workerBuilder = GoogleCloudUtils.getInstanceBuilder(compute, config, workerInstanceId,
                     instanceConfiguration.getProviderType().getValue())
                     .setNetworkInterfaces(Collections.singletonList(buildExternalNetworkInterface()))

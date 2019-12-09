@@ -218,7 +218,7 @@ public abstract class CreateCluster extends Intent {
             int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
 
     protected String buildWorkerInstanceName(int batchIndex, int workerIndex) {
-        return WORKER_NAME_PREFIX + (batchIndex + 1) + "-" + (workerIndex + 1) + "-" + clusterId;
+        return WORKER_NAME_PREFIX + "-" + (batchIndex) + "-" + (workerIndex) + "-" + clusterId;
     }
 
     private void logFinishedInfoMessage(final String masterPublicIp) {

@@ -231,19 +231,21 @@ public class CreateClusterOpenstack extends CreateCluster {
             metadata.put(Instance.TAG_USER, config.getUser());
             InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
             for (int i = 0; i < instanceConfiguration.getCount(); i++) {
-                ServerCreateBuilder scb = null;
-                    scb = Builders.server()
-                            .name(buildWorkerInstanceName(batchIndex, i))
-                            .flavor(workerSpec.getFlavor().getId())
-                            //.image(instanceConfiguration.getImage())
-                            .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
-                            .keypairName(config.getClusterKeyPair().getName())
-                            .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
-                            .availabilityZone(config.getAvailabilityZone())
-                            .userData(ShellScriptCreator.getUserData(config, true))
-                            .addMetadata(metadata)
-                            .configDrive(instanceConfiguration.getProviderType().getConfigDrive() != 0)
-                            .networks(Arrays.asList(environment.getNetwork().getId()));
+                int workerBatch = batchIndex + 1;
+                int workerIndex = i + 1;
+                ServerCreateBuilder scb =
+                        Builders.server()
+                                .name(buildWorkerInstanceName(workerBatch, workerIndex))
+                                .flavor(workerSpec.getFlavor().getId())
+                                //.image(instanceConfiguration.getImage())
+                                .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
+                                .keypairName(config.getClusterKeyPair().getName())
+                                .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
+                                .availabilityZone(config.getAvailabilityZone())
+                                .userData(ShellScriptCreator.getUserData(config, true))
+                                .addMetadata(metadata)
+                                .configDrive(instanceConfiguration.getProviderType().getConfigDrive() != 0)
+                                .networks(Arrays.asList(environment.getNetwork().getId()));
                 if (config.getServerGroup() != null) {
                     scb.addSchedulerHint("group", config.getServerGroup());
                 }
@@ -252,6 +254,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                 InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
                 instance.setBatchIndex(batchIndex);
                 instance.setWorkerIndex(i);
+                LOG.info("Set worker batch to: {} and index to: {}.", batchIndex, i);
                 workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }

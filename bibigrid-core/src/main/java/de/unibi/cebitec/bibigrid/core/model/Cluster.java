@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -127,5 +129,38 @@ public class Cluster {
 
     public void setPrivateIp(String privateIp) {
         this.privateIp = privateIp;
+    }
+
+    /**
+     * Returns worker instances of given batch.
+     * @param batchIndex idx of worker configuration
+     * @return list of instances of specified worker configuration idx
+     */
+    public List<Instance> getWorkerInstances(int batchIndex) {
+        List<Instance> workers = new ArrayList<>();
+        for (Instance worker : workerInstances) {
+            LoggerFactory.getLogger(Cluster.class).warn("worker batch: " + worker.getBatchIndex());
+            if (worker.getBatchIndex() == batchIndex) {
+                workers.add(worker);
+            }
+        }
+        return workers;
+    }
+
+    /**
+     * Returns single worker instance with specified worker batch and worker index.
+     * @param batchIndex idx of worker configuration
+     * @param workerIndex idx of worker in batch configuration
+     * @return worker instance
+     */
+    public Instance getWorkerInstance(int batchIndex, int workerIndex) {
+        Instance worker = null;
+        List<Instance> workers = getWorkerInstances(batchIndex);
+        for (Instance w : workers) {
+            if (w.getWorkerIndex() == workerIndex) {
+                worker = w;
+            }
+        }
+        return worker;
     }
 }

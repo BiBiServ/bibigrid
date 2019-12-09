@@ -37,7 +37,7 @@ public class StartUp {
 
     private static final String CID = "cluster-id";
     private static final String WORKERS = "worker-instances";
-    private static final int SCALE_ARGS = 4; // cluster-id, instance-type, image, count
+    private static final int SCALE_ARGS = 3; // cluster-id, workerBatch, count
 
     private static OptionGroup getCMDLineOptionGroup() {
         OptionGroup intentOptions = new OptionGroup();
@@ -258,16 +258,17 @@ public class StartUp {
                     break;
                 case SCALE_UP:
                 case SCALE_DOWN:
-                    // intentMode has at least 4 parameters by specification, error if less
                     String clusterId = parameters[0];
-                    String instanceType = parameters[1];
-                    String image = parameters[2];
-                    int count = Integer.parseInt(parameters[3]);
-                    LOG.info("Terminating {} " + (count == 1 ? "instance" : "instances") +
-                            " of worker instance type {} " +
-                            "with image {} " +
-                            "for cluster with ID '{}' ...", count, instanceType, image, clusterId);
-                    module.getTerminateIntent(client, config).terminateInstances(clusterId, instanceType, image, count);
+                    int workerBatch;
+                    int count;
+                    try {
+                        workerBatch = Integer.parseInt(parameters[1]);
+                        count = Integer.parseInt(parameters[2]);
+                    } catch (NumberFormatException nf) {
+                        LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <workerIndex> <Nr> instead.'");
+                        return;
+                    }
+                    module.getTerminateIntent(client, config).terminateInstances(clusterId, workerBatch, count);
                     break;
                 case CLOUD9:
                     LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
