@@ -252,9 +252,9 @@ public class CreateClusterOpenstack extends CreateCluster {
                 ServerCreate sc  = scb.build();
                 Server server = os.compute().servers().boot(sc);
                 InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
-                instance.setBatchIndex(batchIndex);
-                instance.setWorkerIndex(i);
-                LOG.info("Set worker batch to: {} and index to: {}.", batchIndex, i);
+                instance.setBatchIndex(workerBatch);
+                instance.setWorkerIndex(workerIndex);
+                LOG.info("Set worker batch to: {} and index to: {}.", workerBatch, workerIndex);
                 workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }

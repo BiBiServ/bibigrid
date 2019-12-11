@@ -91,7 +91,7 @@ public abstract class TerminateIntent extends Intent {
         }
 
         for (int i = 0; i < count; i++) {
-            Instance worker = workers.get(i);
+            Instance worker = workers.get(workers.size() - 1 - i);
             if (terminateWorker(worker)) {
                 LOG.info("Worker '{}' terminated!", worker.getId());
             } else {
