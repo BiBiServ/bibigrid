@@ -26,6 +26,8 @@ public final class ValidatorOpenstack extends Validator {
     private enum EnvCredentials {
         OS_PROJECT_NAME,
         OS_USER_DOMAIN_NAME,
+        OS_USER_DOMAIN_ID,
+        OS_PROJECT_DOMAIN_NAME,
         OS_PROJECT_DOMAIN_ID,
         OS_AUTH_URL,
         OS_PASSWORD,
@@ -66,7 +68,7 @@ public final class ValidatorOpenstack extends Validator {
             openStackCredentials = loadEnvCredentials();
         }
         if (openStackCredentials == null) {
-            LOG.error("No credentials provided. Please use a credentials file or source the OpenStack RC file.");
+            LOG.error("No or incomplete credentials provided. Please use a credentials file or source the OpenStack RC file.");
             return false;
         }
         LOG.info("Set OpenStack Credentials ...");
@@ -126,14 +128,40 @@ public final class ValidatorOpenstack extends Validator {
         Map env =  System.getenv();
         OpenStackCredentials openStackCredentials = new OpenStackCredentials();
 
-        for (EnvCredentials credentials : EnvCredentials.values()) {
-            if (!env.containsKey(credentials.name())) {
-                return null;
-            }
+        String project_name = EnvCredentials.OS_PROJECT_NAME.name();
+        if (!env.containsKey(project_name)) {
+            LOG.error("Missing Project name in Environment credentials.");
+            return null;
         }
-        openStackCredentials.setProjectName((String)env.get(EnvCredentials.OS_PROJECT_NAME.name()));
-        openStackCredentials.setDomain((String)env.get(EnvCredentials.OS_USER_DOMAIN_NAME.name()));
-        openStackCredentials.setProjectDomain((String)env.get(EnvCredentials.OS_PROJECT_DOMAIN_ID.name()));
+        openStackCredentials.setProjectName((String)env.get(project_name));
+        String user_domain;
+        if (env.containsKey(EnvCredentials.OS_USER_DOMAIN_NAME.name())) {
+            user_domain = (String)env.get(EnvCredentials.OS_USER_DOMAIN_NAME.name());
+        } else if (env.containsKey(EnvCredentials.OS_USER_DOMAIN_ID.name())) {
+            user_domain = (String)env.get(EnvCredentials.OS_USER_DOMAIN_ID.name());
+        } else {
+            LOG.error("Missing User Domain in Environment credentials.");
+            return null;
+        }
+
+        String project_domain;
+        if (env.containsKey(EnvCredentials.OS_PROJECT_DOMAIN_NAME.name())) {
+            project_domain = (String)env.get(EnvCredentials.OS_PROJECT_DOMAIN_NAME.name());
+        } else if (env.containsKey(EnvCredentials.OS_PROJECT_DOMAIN_ID.name())) {
+           project_domain = (String)env.get(EnvCredentials.OS_PROJECT_DOMAIN_ID.name());
+        } else {
+            LOG.info("Project Domain name not set. Use User Domain instead ...");
+            project_domain = user_domain;
+        }
+        openStackCredentials.setDomain(user_domain);
+        openStackCredentials.setProjectDomain(project_domain);
+
+        if (!(env.containsKey(EnvCredentials.OS_AUTH_URL.name())
+                && env.containsKey(EnvCredentials.OS_PASSWORD.name())
+                && env.containsKey(EnvCredentials.OS_USERNAME.name()))) {
+            LOG.error("Missing Environment credentials.");
+            return null;
+        }
         openStackCredentials.setEndpoint((String)env.get(EnvCredentials.OS_AUTH_URL.name()));
         openStackCredentials.setPassword((String)env.get(EnvCredentials.OS_PASSWORD.name()));
         openStackCredentials.setUsername((String)env.get(EnvCredentials.OS_USERNAME.name()));

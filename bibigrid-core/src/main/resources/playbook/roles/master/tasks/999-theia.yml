@@ -31,15 +31,15 @@
 
 - name: Install nvm
   shell: |
-    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | NVM_DIR={{ nvm_install_dir }} /bin/bash
+    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.5/install.sh | NVM_DIR={{ nvm_install_dir }} /bin/bash
   args:
     creates: "{{ nvm_install_dir }}/nvm.sh"
     warn: false
 
-- name: Install node 8 and yarn
+- name: Install node 10 and yarn
   shell: |
         source {{ nvm_install_dir }}/nvm.sh
-        nvm install 8
+        nvm install 10
         npm install -g yarn
   args:
     executable: bash
