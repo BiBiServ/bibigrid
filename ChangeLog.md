@@ -8,6 +8,7 @@
 - improve error handling (#191)
 - pin theia-ide version (#207)
 - fix credentials handling (#208)
+- fix zabbix with Ubuntu 16.04 (#203)
 
 ## Version 2.0.9 < 2.0.8 (10/01/2019)
 
