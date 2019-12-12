@@ -1,4 +1,4 @@
-## Version 2.0.10 < 2.0.9 (not yet released)
+## Version 2.0.10 < 2.0.9 (12/12/2019)
 
 ### Features
 - added IdeConf parameter to integrate usage of self-assigned port(s) for TheiaIDE forwarding (prevents already bound ports (#180))
@@ -6,6 +6,8 @@
 ### Fixes 
 - update & upgrade entire system (#193)
 - improve error handling (#191)
+- pin theia-ide version (#207)
+- fix credentials handling (#208)
 
 ## Version 2.0.9 < 2.0.8 (10/01/2019)
 
