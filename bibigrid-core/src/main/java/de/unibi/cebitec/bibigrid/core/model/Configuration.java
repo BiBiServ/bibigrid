@@ -328,7 +328,6 @@ public abstract class Configuration {
         return Arrays.copyOf(clusterIds, clusterIds.length);
     }
 
-
     /**
      * Set the id of current
      * @param id
@@ -343,6 +342,7 @@ public abstract class Configuration {
     }
 
     /**
+
      * Set the clusterid for termination intent either as a single cluster "id" or as multiple "id1/id2/id3".
      * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
      *      * necessary for termination intent.

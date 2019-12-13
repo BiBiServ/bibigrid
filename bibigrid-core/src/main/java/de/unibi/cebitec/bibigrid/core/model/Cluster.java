@@ -121,6 +121,7 @@ public class Cluster {
     }
 
     public String getPrivateIp() {
+
         return privateIp;
     }
 

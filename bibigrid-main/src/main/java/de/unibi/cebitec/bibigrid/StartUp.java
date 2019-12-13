@@ -209,7 +209,6 @@ public class StartUp {
                 break;
             case LIST:
                 ListIntent listIntent = module.getListIntent(client, config);
-
                 if (config.getId() == null || config.getId().isEmpty()) {
                     LOG.info(listIntent.toString());
                 } else {
