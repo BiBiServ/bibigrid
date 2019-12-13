@@ -22,7 +22,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 /**
- * Intent for starting and tunneling the cloud9 installation on a cluster.
+ * Intent for starting and tunneling the Web-IDE installation (theia-ide or cloud9) on a cluster.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */

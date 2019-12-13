@@ -421,7 +421,6 @@ public abstract class CreateCluster extends Intent {
             // Write the commons configuration file
             commonConfig.writeCommonFile(channel.put(channel.getHome() + "/"
                     + AnsibleResources.COMMONS_CONFIG_FILE));
-
             // Write custom site file
             commonConfig.writeSiteFile(channel.put(channel.getHome() + "/"
                             + AnsibleResources.SITE_CONFIG_FILE),
