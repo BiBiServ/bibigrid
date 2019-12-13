@@ -262,6 +262,7 @@ public final class AnsibleConfig {
         Configuration.IdeConf ic = config.getIdeConf();
         Map<String, Object> ideConf = new LinkedHashMap<>();
         ideConf.put("ide", ic.isIde());
+        ideConf.put("workspace",ic.getWorkspace());
         ideConf.put("port_start", ic.getPort_start());
         ideConf.put("port_end", ic.getPort_end());
         return ideConf;
