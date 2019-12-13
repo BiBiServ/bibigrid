@@ -14,6 +14,20 @@
     state: latest
   when: "ansible_distribution_file_variety == 'RedHat'"
 
+- name: Create zabbix_agent dropin directory
+  file:
+    path: /etc/zabbix/zabbix_agentd.d/
+    state: directory
+    mode: 0755
+
+- name: Create zabbix_agent log directory
+  file:
+    path: /var/log/zabbix
+    state: directory
+    owner: zabbix
+    group: zabbix
+    mode : 0755
+
 - name: Adjust zabbix agent configuration
   template:
     src: zabbix/zabbix_agentd.conf.j2

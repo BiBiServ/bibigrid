@@ -19,27 +19,27 @@
     theia_ide_user: "{{ ansible_env.SUDO_USER }}"
   when: theia_ide_user is not defined
 
-- name: Set fact 'theia_ide_workspace' when not defined
+- name: Set fact 'ide_workspace' when not defined
   set_fact:
     theia_ide_workspace: "{{ ansible_env.PWD }}"
-  when: theia_ide_workspace is not defined
+  when: ide_workspace is not defined
 
-- name: Set fact 'theia_ide_workspace' when defined
+- name: Set fact 'ide_workspace' when defined
   set_fact:
     theia_ide_workspace: "{{ ide_workspace }}"
-  when: theia_ide_workspace is defined
+  when: ide_workspace is defined
 
 - name: Install nvm
   shell: |
-    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | NVM_DIR={{ nvm_install_dir }} /bin/bash
+    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.5/install.sh | NVM_DIR={{ nvm_install_dir }} /bin/bash
   args:
     creates: "{{ nvm_install_dir }}/nvm.sh"
     warn: false
 
-- name: Install node 8 and yarn
+- name: Install node 10 and yarn
   shell: |
         source {{ nvm_install_dir }}/nvm.sh
-        nvm install 8
+        nvm install 10
         npm install -g yarn
   args:
     executable: bash

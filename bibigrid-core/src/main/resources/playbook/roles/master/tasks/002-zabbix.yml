@@ -15,7 +15,7 @@
         state: latest
         update_cache: yes
 
-  when: "ansible_distribution_file_variety == 'Debian' "
+  when: "ansible_distribution_file_variety == 'Debian' or ansible_distribution == 'Ubuntu'"
 
 - name: REHL based OS
   block:

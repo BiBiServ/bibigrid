@@ -1,25 +1,25 @@
 {
   "private": true,
   "dependencies": {
-    "typescript": "latest",
-    "@theia/typescript": "next",
-    "@theia/navigator": "next",
-    "@theia/terminal": "next",
-    "@theia/outline-view": "next",
-    "@theia/preferences": "next",
-    "@theia/messages": "next",
-    "@theia/git": "next",
-    "@theia/file-search": "next",
-    "@theia/markers": "next",
-    "@theia/preview": "next",
-    "@theia/callhierarchy": "next",
-    "@theia/merge-conflicts": "next",
-    "@theia/search-in-workspace": "next",
-    "@theia/json": "next",
-    "@theia/textmate-grammars": "next",
-    "@theia/mini-browser": "next"
+    "typescript": "3.7.3",
+    "@theia/typescript": "0.13.0",
+    "@theia/navigator": "0.13.0",
+    "@theia/terminal": "0.13.0",
+    "@theia/outline-view": "0.13.0",
+    "@theia/preferences": "0.13.0",
+    "@theia/messages": "0.13.0",
+    "@theia/git": "0.13.0",
+    "@theia/file-search": "0.13.0",
+    "@theia/markers": "0.13.0",
+    "@theia/preview": "0.13.0",
+    "@theia/callhierarchy": "0.13.0",
+    "@theia/merge-conflicts": "0.13.0",
+    "@theia/search-in-workspace": "0.13.0",
+    "@theia/json": "0.13.0",
+    "@theia/textmate-grammars": "0.13.0",
+    "@theia/mini-browser": "0.13.0"
   },
   "devDependencies": {
-    "@theia/cli": "next"
+    "@theia/cli": "0.13.0"
   }
 }

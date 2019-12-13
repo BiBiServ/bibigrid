@@ -109,9 +109,15 @@ ansibleGalaxyRoles:
   - name: ...                                       # Add as many roles as you want
 
 # Web IDE Usage
-theia: boolean [yes, "no"]                          # Enable / Disable Theia Web IDE, Default is no
+IdeConf:
+    ide: boolean [yes, "no"]                        # Enable Theia Web IDE, Default is no
+    port_start: integer                             # Port number to forward from local to remote, Default is 8181
+    port_end: integer                               # If port already binded, try next until port_end
+    workspace: string                               # Set IDE workspace, Default is $HOME
+
+theia: boolean [yes, "no"]                          # deprecated - Enable / Disable Theia Web IDE, Default is no
 cloud9: boolean [yes, "no"]                         # deprecated - Enable / Disable Cloud9 Web IDE, Default is no
-workspace: string                                   # Configure IDE workspace path, Default is "~/"
+workspace: string                                   # deprecated - Configure IDE workspace path, Default is "~/"
 
 # Misc
 debugRequests: boolean [yes, no]                    # Provides debug information. Default is no

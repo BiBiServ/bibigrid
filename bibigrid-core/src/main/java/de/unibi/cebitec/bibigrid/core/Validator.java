@@ -1,10 +1,10 @@
 package de.unibi.cebitec.bibigrid.core;
 
+import de.unibi.cebitec.bibigrid.core.intents.IdeIntent;
 import de.unibi.cebitec.bibigrid.core.model.*;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,8 +54,6 @@ public abstract class Validator {
      * @return true, if file is valid
      */
     private boolean validateSSHKeyFiles() {
-
-
         List<String> keyFiles = new ArrayList<>(config.getSshPublicKeyFiles());
         if (config.getSshPublicKeyFile() != null) {
             keyFiles.add(config.getSshPublicKeyFile());
@@ -79,9 +77,6 @@ public abstract class Validator {
      * @return true, if file(s) found, galaxy, git or url defined and hosts given
      */
     private boolean validateAnsibleRequirements() {
-        if (config.hasCustomAnsibleRoles() || config.hasCustomAnsibleGalaxyRoles()) {
-            LOG.info("Checking Ansible configuration ...");
-        }
         // Check Ansible roles
         for (Configuration.AnsibleRoles role : config.getAnsibleRoles()) {
             if (role.getFile() == null) {
@@ -224,15 +219,27 @@ public abstract class Validator {
      * @return true, if requirements fulfilled
      */
     public boolean validate() {
-        return validateSSHKeyFiles() &&
-                validateAnsibleRequirements() &&
-                validateProviderParameters();
+        boolean validSSHKeyFiles = validateSSHKeyFiles();
+        boolean validProviderParameters = validateProviderParameters();
+        boolean validAnsibleRequirements = true;
+        if (config.hasCustomAnsibleRoles() || config.hasCustomAnsibleGalaxyRoles()) {
+            LOG.info("Checking Ansible configuration ...");
+            validAnsibleRequirements = validateAnsibleRequirements();
+        }
+        return validSSHKeyFiles &&
+                validProviderParameters &&
+                validAnsibleRequirements;
     }
 
     protected abstract List<String> getRequiredOptions();
 
     protected abstract boolean validateProviderParameters();
 
+    /**
+     * Validates master and worker instance(s).
+     * @param client cloud provider client
+     * @return true, if provider instance types could be set successfully
+     */
     public boolean validateProviderTypes(Client client) {
         try {
             InstanceType masterType = providerModule.getInstanceType(client, config, config.getMasterInstance().getType());
