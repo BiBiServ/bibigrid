@@ -109,12 +109,6 @@ public abstract class Configuration {
     private boolean localDNSLookup;
     private String mungeKey;
     private boolean nfs = true;
-    @Deprecated
-    private boolean cloud9;
-    @Deprecated
-    private boolean theia;
-    @Deprecated
-    private String workspace;
     private IdeConf ideConf = new IdeConf();
     private boolean ganglia;
     private boolean zabbix;
@@ -521,7 +515,7 @@ public abstract class Configuration {
 
     @Deprecated
     public String getWorkspace() {
-        return workspace;
+        return ideConf.getWorkspace();
     }
 
     @Deprecated
@@ -798,30 +792,33 @@ public abstract class Configuration {
 
     @Deprecated
     public boolean isCloud9() {
-        return cloud9;
+        return ideConf.isIde();
     }
 
     @Deprecated
     public void setCloud9(boolean cloud9) {
         LOG.warn("cloud9 parameter is deprecated. Please use IdeConf instead.");
         LOG.warn("Cloud9 will not longer be supported and is replaced by the Theia Web IDE.");
-        this.cloud9 = cloud9;
         ideConf.setIde(cloud9);
     }
 
     @Deprecated
     public boolean isTheia() {
-        return theia;
+        return ideConf.isIde();
     }
 
     @Deprecated
     public void setTheia(boolean theia) {
         LOG.warn("theia parameter is deprecated. Please use IdeConf instead.");
-        this.theia = theia;
         ideConf.setIde(theia);
     }
 
-    public boolean isIDE() { return ideConf != null; }
+    public boolean isIDE() {
+        if (ideConf == null) {
+            return false;
+        }
+        return ideConf.ide;
+    }
 
     public IdeConf getIdeConf() {
         return ideConf;
