@@ -22,12 +22,12 @@
 - name: Set fact 'ide_workspace' when not defined
   set_fact:
     theia_ide_workspace: "{{ ansible_env.HOME }}"
-  when: ide_workspace is not defined
+  when: ideConf.workspace is not defined
 
 - name: Set fact 'ide_workspace' when defined
   set_fact:
-    theia_ide_workspace: "{{ ide_workspace }}"
-  when: ide_workspace is defined
+    theia_ide_workspace: "{{ ideConf.workspace }}"
+  when: ideConf.workspace is defined
 
 - name: Install nvm
   shell: |
