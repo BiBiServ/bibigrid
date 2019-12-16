@@ -176,6 +176,7 @@ public abstract class ListIntent extends Intent {
 
     /**
      * Return a String representation of found cluster objects map.
+     * ToDo magic numbers in single ints and new char[ sum ]
      */
     @Override
     public final String toString() {
@@ -270,10 +271,18 @@ public abstract class ListIntent extends Intent {
         return display.toString();
     }
 
+    /**
+     * Displays detailed information about cluster nodes when using '-l <cluster-id>'.
+     * @param display cluster node information String
+     * @param instance cluster node
+     */
     private void addInstanceToDetailString(StringBuilder display, Instance instance) {
         display.append("  id: ").append(instance.getId()).append("\n");
         display.append("  name: ").append(instance.getName()).append("\n");
         display.append("  hostname: ").append(instance.getHostname()).append("\n");
+        if (!instance.isMaster()) {
+            display.append("  worker-batch: ").append(instance.getBatchIndex()).append("\n");
+        }
         display.append("  private-ip: ").append(instance.getPrivateIp()).append("\n");
         display.append("  public-ip: ").append(instance.getPublicIp()).append("\n");
         display.append("  key-name: ").append(instance.getKeyName()).append("\n");

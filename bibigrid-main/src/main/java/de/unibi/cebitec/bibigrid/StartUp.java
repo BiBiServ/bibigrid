@@ -257,7 +257,6 @@ public class StartUp {
                     module.getTerminateIntent(client, config).terminate(parameters);
                     break;
                 case SCALE_UP:
-                case SCALE_DOWN:
                     String clusterId = parameters[0];
                     int workerBatch;
                     int count;
@@ -265,13 +264,25 @@ public class StartUp {
                         workerBatch = Integer.parseInt(parameters[1]);
                         count = Integer.parseInt(parameters[2]);
                     } catch (NumberFormatException nf) {
-                        LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <workerIndex> <Nr> instead.'");
+                        LOG.error("Wrong usage. Please use '-su <cluster-id> <workerBatch> <count> instead.'");
+                        return;
+                    }
+                    // create workers with specified batch from thus type
+                    //module.getTerminateIntent(client, config).terminateInstances(clusterId, workerBatch, count);
+                    break;
+                case SCALE_DOWN:
+                    clusterId = parameters[0];
+                    try {
+                        workerBatch = Integer.parseInt(parameters[1]);
+                        count = Integer.parseInt(parameters[2]);
+                    } catch (NumberFormatException nf) {
+                        LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <count> instead.'");
                         return;
                     }
                     module.getTerminateIntent(client, config).terminateInstances(clusterId, workerBatch, count);
                     break;
                 case CLOUD9:
-                    LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead.");
+                    LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead. Continuing ...");
                 case IDE:
                     try {
                         // Load private key file

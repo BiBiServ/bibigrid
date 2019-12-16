@@ -28,28 +28,22 @@ public abstract class ProviderModule {
     /**
      * Get the configuration implementation for the specified provider, that have provider specific parameters.
      *
-     * @param path
-     * @return
-     * @throws ConfigurationException
+     * @param path String path to config file
+     * @return config loaded
+     * @throws ConfigurationException exception if config is wrong
      */
     public Configuration getConfiguration(String path) throws ConfigurationException {
         return Configuration.loadConfiguration(getConfigurationClass(),path);
     }
 
-
-    /**
-     *
-     * @return
-     */
     public abstract Class<? extends Configuration> getConfigurationClass();
 
     /**
      * Get the validator implementation for the specified provider, that can handle provider specific parameters.
      *
-     * @return
-     * @throws ConfigurationException
+     * @return validator to check cmdline and config
+     * @throws ConfigurationException exception if config is wrong
      */
-
     public abstract Validator getValidator(Configuration config, ProviderModule module) throws ConfigurationException;
 
     public abstract Client getClient(Configuration config) throws ClientConnectionFailedException;
