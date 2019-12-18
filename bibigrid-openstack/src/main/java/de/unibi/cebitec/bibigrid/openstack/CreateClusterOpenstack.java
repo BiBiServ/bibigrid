@@ -233,6 +233,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             for (int i = 0; i < instanceConfiguration.getCount(); i++) {
                 int workerBatch = batchIndex + 1;
                 int workerIndex = i + 1;
+                metadata.put(Instance.TAG_BATCH, String.valueOf(workerBatch));
                 ServerCreateBuilder scb =
                         Builders.server()
                                 .name(buildWorkerInstanceName(workerBatch, workerIndex))

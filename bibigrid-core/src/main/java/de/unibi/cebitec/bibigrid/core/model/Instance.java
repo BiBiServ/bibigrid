@@ -11,6 +11,7 @@ public abstract class Instance {
     public static final String TAG_NAME = "name";
     public static final String TAG_USER = "user";
     public static final String TAG_BIBIGRID_ID = "bibigrid-id";
+    public static final String TAG_BATCH = "worker-batch";
 
     private boolean isMaster = false;
     private int batchIndex;

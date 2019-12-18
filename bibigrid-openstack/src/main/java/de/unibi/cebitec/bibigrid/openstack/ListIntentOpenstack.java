@@ -71,6 +71,8 @@ public class ListIntentOpenstack extends ListIntent {
             } catch (InstanceTypeNotFoundException ignored) {
             }
         }
+        int workerBatch = Integer.parseInt(server.getMetadata().get(Instance.TAG_BATCH));
+        LoggerFactory.getLogger(ListIntentOpenstack.class).warn("workerBatch: " + workerBatch);
         Image image = server.getImage();
         if (image != null) {
             instanceConfiguration.setImage(image.getName());
