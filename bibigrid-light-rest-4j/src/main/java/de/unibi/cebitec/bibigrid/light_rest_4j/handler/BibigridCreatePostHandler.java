@@ -36,6 +36,9 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
      * This method is almost identical to the runCreateIntent method in StartUp.java, but the access to the method in
      * StartUp.java is private and does not give this controller the cluster_id of the to-be-started cluster, hence
      * a second implementation was made.
+     *
+     * TODO -----------------------------------
+     * Must be implemented asynchronously to return cluster id when creating in CreateCluster
      */
     private boolean runCreateIntent(ProviderModule module, Configuration config, Client client,
                                     CreateCluster cluster, boolean prepare) {
@@ -93,6 +96,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                 }
                 ValidateIntent intent  = module.getValidateIntent(client, config);
                 if (intent.validate()) {
+                    // TODO CreateCluster module.getCreateIntent(client, config) may return cluster-id
                     if(runCreateIntent(module, config, client, module.getCreateIntent(client, config), false)){
                         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                         exchange.setStatusCode(200);
