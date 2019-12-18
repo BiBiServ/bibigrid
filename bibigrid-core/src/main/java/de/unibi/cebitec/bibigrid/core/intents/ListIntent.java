@@ -66,6 +66,9 @@ public abstract class ListIntent extends Intent {
         return parts[parts.length - 1];
     }
 
+    /**
+     * Assigns client and cluster values from single servers to internal config.
+     */
     protected void searchClusterIfNecessary() {
         List<Instance> instances = getInstances();
         if (instances != null) {
@@ -104,6 +107,10 @@ public abstract class ListIntent extends Intent {
 
     protected abstract List<Instance> getInstances();
 
+    /**
+     * Loads instance configurations from internal and sets cluster and instance config.
+     * @param instance master or worker
+     */
     protected void checkInstance(Instance instance) {
         // check if instance is a BiBiGrid instance and extract clusterId from it
         String clusterId = getClusterIdForInstance(instance);
@@ -216,7 +223,7 @@ public abstract class ListIntent extends Intent {
     /**
      * Shorten a string to fit a maximum length and possibly add an ellipse at the end.
      *
-     * @param s      string to shorten
+     * @param s string to shorten
      * @param maxLen maximum length for the string to fit into
      * @return shortened string
      */
