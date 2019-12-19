@@ -9,9 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
@@ -537,13 +535,6 @@ public abstract class Configuration {
         this.localDNSLookup = localDNSLookup;
     }
 
-    public boolean isLocalDNSLookup() {
-        return localDNSLookup;
-    }
-
-    public void setLocalDNSLookup(boolean localDNSLookup) {
-        this.localDNSLookup = localDNSLookup;
-    }
 
     public boolean isSlurm() {
         return slurm;
