@@ -218,9 +218,11 @@ public class StartUp {
                 if (!validator.validateProviderTypes(client)) {
                     LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
                 }
-                if (module.getValidateIntent(client, config).validate()) {
+                ValidateIntent validate = module.getValidateIntent(client, config);
+                if (validate.validate()) {
                     LOG.info(I, "You can now start your cluster.");
                 } else {
+                    LOG.error(validate.getValidateResponse());
                     LOG.error("There were one or more errors. Please adjust your configuration.");
                 }
                 break;
