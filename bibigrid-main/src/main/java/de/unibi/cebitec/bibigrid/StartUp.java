@@ -1,11 +1,14 @@
 package de.unibi.cebitec.bibigrid;
 
+import de.unibi.cebitec.bibigrid.core.Constant;
+import de.unibi.cebitec.bibigrid.core.DataBase;
 import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
+import de.unibi.cebitec.bibigrid.core.util.Status;
 import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 
 import java.io.IOException;
@@ -30,12 +33,8 @@ import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class StartUp {
+
     private static final Logger LOG = LoggerFactory.getLogger(StartUp.class);
-    private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
-    private static final String ABORT_WITH_INSTANCES_RUNNING = "Aborting operation. Instances already running. " +
-            "Attempting to shut them down but in case of an error they might remain running. Please verify " +
-            "afterwards.";
-    private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
 
     private static OptionGroup getCMDLineOptionGroup() {
         OptionGroup intentOptions = new OptionGroup();
@@ -131,15 +130,15 @@ public class StartUp {
                 if (validator.validate()) {
                     runIntent(module, validator, config, intentMode);
                 } else {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
+                    LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
                 }
             } catch (ConfigurationException e) {
                 LOG.error(e.getMessage());
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
             }
         } catch (ParseException pe) {
             LOG.error("Error while parsing the commandline arguments: {}", pe.getMessage());
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
+            LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
         }
     }
 
@@ -159,7 +158,7 @@ public class StartUp {
             module = Provider.getInstance().getProviderModule(providerMode);
         }
         if (module == null) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
+            LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
         }
         return module;
     }
@@ -199,7 +198,7 @@ public class StartUp {
             client = module.getClient(config);
         } catch (ClientConnectionFailedException e) {
             LOG.error(e.getMessage());
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
+            LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
             return;
         }
 
@@ -217,7 +216,7 @@ public class StartUp {
                 break;
             case VALIDATE:
                 if (!validator.validateProviderTypes(client)) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
+                    LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
                 }
                 if (module.getValidateIntent(client, config).validate()) {
                     LOG.info(I, "You can now start your cluster.");
@@ -227,25 +226,31 @@ public class StartUp {
                 break;
             case CREATE:
                 if (!validator.validateProviderTypes(client)) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
+                    LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
                 }
                 if (module.getValidateIntent(client, config).validate()) {
-                    runCreateIntent(module, config, client, module.getCreateIntent(client, config), false);
+                    CreateIntent create = new CreateIntent(module, config, client);
+                    create.run();
+                    Status status = DataBase.getDataBase().status.get(create.getClusterId());
+                    if (status.code == Status.CODE.Error) {
+                        LOG.error(status.msg);
+                    }
+
                 } else {
                     LOG.error("There were one or more errors. Please adjust your configuration.");
                 }
                 break;
-            case PREPARE:
-                if (!validator.validateProviderTypes(client)) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-                }
-                CreateCluster cluster = module.getCreateIntent(client, config);
-                if (runCreateIntent(module, config, client, cluster, true)) {
-                    module.getPrepareIntent(client, config).prepare(cluster.getMasterInstance(),
-                            cluster.getWorkerInstances());
-                    module.getTerminateIntent(client, config).terminate();
-                }
-                break;
+//            case PREPARE:
+//                if (!validator.validateProviderTypes(client)) {
+//                    LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
+//                }
+//                CreateCluster cluster = module.getCreateIntent(client, config);
+//                if (runCreateIntent(module, config, client, cluster, true)) {
+//                    module.getPrepareIntent(client, config).prepare(cluster.getMasterInstance(),
+//                            cluster.getWorkerInstances());
+//                    module.getTerminateIntent(client, config).terminate();
+//                }
+//                break;
             case TERMINATE:
                 module.getTerminateIntent(client, config).terminate();
                 break;
@@ -270,55 +275,7 @@ public class StartUp {
         }
     }
 
-    /**
-     * Runs cluster creation and launch processing.
-     *
-     * @param module responsible for provider accessibility
-     * @param config overall configuration
-     * @param client Client
-     * @param cluster CreateCluster implementation
-     * @param prepare true, if still preparation necessary
-     * @return true, if cluster built successfully.
-     */
-    private static boolean runCreateIntent(ProviderModule module, Configuration config, Client client,
-                                           CreateCluster cluster, boolean prepare) {
-        try {
-            // configure environment
-            cluster .createClusterEnvironment()
-                    .createNetwork()
-                    .createSubnet()
-                    .createSecurityGroup()
-                    .createKeyPair()
-                    .createPlacementGroup();
-            // configure cluster
-            boolean success =  cluster
-                    .configureClusterMasterInstance()
-                    .configureClusterWorkerInstance()
-                    .launchClusterInstances(prepare);
-            if (!success) {
-                /*  In DEBUG mode keep partial configured cluster running, otherwise clean it up */
-                if (Configuration.DEBUG) {
-                    LOG.error(StartUp.KEEP);
-                } else {
-                    LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
 
-                    TerminateIntent cleanupIntent = module.getTerminateIntent(client, config);
-
-                    cleanupIntent.terminate();
-                }
-                return false;
-            }
-        } catch (ConfigurationException ex) {
-            // print stacktrace only in verbose mode, otherwise just the message is fine
-            if (VerboseOutputFilter.SHOW_VERBOSE) {
-                LOG.error("Failed to create cluster. {} {}", ex.getMessage(), ex);
-            } else {
-                LOG.error("Failed to create cluster. {}", ex.getMessage());
-            }
-            return false;
-        }
-        return true;
-    }
 
     /**
      * Displays table of different machines (name, cores, ram, disk space, swap, ephemerals.
