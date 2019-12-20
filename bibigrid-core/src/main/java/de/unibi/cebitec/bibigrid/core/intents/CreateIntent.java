@@ -89,6 +89,7 @@ public class CreateIntent implements Runnable{
             // we have to do authenticate again,
             // if authentication was done in a separate thread.
             cluster.client.authenticate();
+            create();
         } catch (ClientConnectionFailedException ex) {
             db.status.put(cluster.clusterId,new Status(Status.CODE.Error,"Client connection failed. "+ex.getMessage()));
             if (VerboseOutputFilter.SHOW_VERBOSE) {
