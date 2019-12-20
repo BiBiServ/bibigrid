@@ -232,7 +232,7 @@ public class StartUp {
                 }
                 if (module.getValidateIntent(client, config).validate()) {
                     CreateIntent create = new CreateIntent(module, config, client);
-                    create.run();
+                    create.create();
                     Status status = DataBase.getDataBase().status.get(create.getClusterId());
                     if (status.code == Status.CODE.Error) {
                         LOG.error(status.msg);
