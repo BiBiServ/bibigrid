@@ -5,7 +5,7 @@
     <artifactId>bibigrid_light_rest_4j</artifactId>
     <packaging>jar</packaging>
     <name>bibigrid-light-rest-4j</name>
-    <version>2.0.10</version>
+    <version>1.0.0</version>
 
     <properties>
         <java.version>11</java.version>
@@ -355,20 +355,6 @@
 
     </build>
 
-
-    <repositories>
-        <repository>
-            <id>sonatype-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>codelds</id>
-            <url>https://code.lds.org/nexus/content/groups/main-repo</url>
-        </repository>                          
-    </repositories>
 
     <profiles>
         <profile>
