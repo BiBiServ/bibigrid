@@ -22,15 +22,28 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ * Implementation of abstract class Client for AWS.
  *
+ * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ * @author jkrueger(at)cebitec.uni-bielefeld.de
  */
 class ClientAWS extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientAWS.class);
 
+    private Configuration config;
     private AmazonEC2 internalClient;
 
     ClientAWS(Configuration config) throws ClientConnectionFailedException {
+        this.config = config;
+        authenticate();
+    }
+
+    AmazonEC2 getInternal() {
+        return internalClient;
+    }
+
+    @Override
+    public void authenticate() throws ClientConnectionFailedException {
         AWSCredentials credentials;
         try {
             credentials = new PropertiesCredentials(Paths.get(config.getCredentialsFile()).toFile());
@@ -47,10 +60,6 @@ class ClientAWS extends Client {
         } catch (Exception e) {
             throw new ClientConnectionFailedException("Failed to connect AWS client.", e);
         }
-    }
-
-    AmazonEC2 getInternal() {
-        return internalClient;
     }
 
     @Override

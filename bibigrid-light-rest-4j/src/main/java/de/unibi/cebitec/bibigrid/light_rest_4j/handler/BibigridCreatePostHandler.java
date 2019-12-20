@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 import com.networknt.handler.LightHttpHandler;
 import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
+import de.unibi.cebitec.bibigrid.core.intents.CreateIntent;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
@@ -96,17 +97,16 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                 }
                 ValidateIntent intent  = module.getValidateIntent(client, config);
                 if (intent.validate()) {
-                    // TODO CreateCluster module.getCreateIntent(client, config) may return cluster-id
-                    if(runCreateIntent(module, config, client, module.getCreateIntent(client, config), false)){
-                        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                        exchange.setStatusCode(200);
-                        exchange.getResponseSender().send("{\"id\":\""+cluster_id+"\"}");
-                    }
-                    else{
-                        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                        exchange.setStatusCode(400);
-                        exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
-                    }
+                    CreateIntent create = new CreateIntent(module, config, client);
+
+                    // run createIntent as background process ..
+                    Thread t = new Thread(create);
+                    t.start();
+                    // ... and return immediately
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.setStatusCode(200);
+                    exchange.getResponseSender().send("{\"id\":\""+create.getClusterId()+"\"}");
+
                 } else {
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                     exchange.setStatusCode(400);

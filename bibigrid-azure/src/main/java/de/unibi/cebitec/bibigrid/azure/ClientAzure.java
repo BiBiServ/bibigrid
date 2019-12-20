@@ -25,21 +25,26 @@ import java.util.stream.Collectors;
 class ClientAzure extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientAzure.class);
 
-    private final Configuration config;
+    private Configuration config;
     private Azure internalClient;
 
     ClientAzure(Configuration config) throws ClientConnectionFailedException {
         this.config = config;
+        authenticate();
+    }
+
+    Azure getInternal() {
+        return internalClient;
+    }
+
+    @Override
+    public void authenticate() throws ClientConnectionFailedException {
         try {
             internalClient = Azure.authenticate(new File(config.getCredentialsFile())).withDefaultSubscription();
             LOG.info("Azure connection established.");
         } catch (IOException e) {
             throw new ClientConnectionFailedException("Failed to connect azure client.", e);
         }
-    }
-
-    Azure getInternal() {
-        return internalClient;
     }
 
     @Override

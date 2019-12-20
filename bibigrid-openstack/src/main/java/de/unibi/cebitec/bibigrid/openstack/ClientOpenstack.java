@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Implementation of abstract class Client.
+ * Implementation of abstract class Client for Openstack cloud framework.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  * @author jkrueger(at)cebitec.uni-bielefeld.de
@@ -25,9 +25,37 @@ import java.util.stream.Collectors;
 class ClientOpenstack extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOpenstack.class);
 
-    private final OSClient internalClient;
+    private OSClient internalClient;
+    private ConfigurationOpenstack config;
 
     ClientOpenstack(ConfigurationOpenstack config) throws ClientConnectionFailedException {
+        this.config = config;
+        authenticate();
+    }
+
+    private OSClient buildOSClientV2(OpenStackCredentials credentials) {
+        return OSFactory.builderV2()
+                .endpoint(credentials.getEndpoint())
+                .credentials(credentials.getUsername(), credentials.getPassword())
+                .tenantName(credentials.getTenantName())
+                .authenticate();
+    }
+
+    private OSClient buildOSClientV3(OpenStackCredentials credentials) {
+        return OSFactory.builderV3()
+                .endpoint(credentials.getEndpoint())
+                .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getDomain()))
+                //.scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getDomain()))
+                .scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getTenantDomain()))
+                .authenticate();
+    }
+
+    OSClient getInternal() {
+        return internalClient;
+    }
+
+    @Override
+    public void authenticate() throws ClientConnectionFailedException {
         OpenStackCredentials credentials = config.getOpenstackCredentials();
         try {
             OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
@@ -50,26 +78,7 @@ class ClientOpenstack extends Client {
         }
     }
 
-    private static OSClient buildOSClientV2(OpenStackCredentials credentials) {
-        return OSFactory.builderV2()
-                .endpoint(credentials.getEndpoint())
-                .credentials(credentials.getUsername(), credentials.getPassword())
-                .tenantName(credentials.getTenantName())
-                .authenticate();
-    }
 
-    private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
-        return OSFactory.builderV3()
-                .endpoint(credentials.getEndpoint())
-                .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getDomain()))
-                //.scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getDomain()))
-                .scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getTenantDomain()))
-                .authenticate();
-    }
-
-    OSClient getInternal() {
-        return internalClient;
-    }
 
     @Override
     public List<Network> getNetworks() {

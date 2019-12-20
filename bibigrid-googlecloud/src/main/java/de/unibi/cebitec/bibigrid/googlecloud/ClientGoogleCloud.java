@@ -31,11 +31,20 @@ import java.util.stream.Collectors;
 class ClientGoogleCloud extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientGoogleCloud.class);
 
-    private final ConfigurationGoogleCloud config;
+    private ConfigurationGoogleCloud config;
     private Compute internalClient;
 
     ClientGoogleCloud(ConfigurationGoogleCloud config) throws ClientConnectionFailedException {
         this.config = config;
+        authenticate();
+    }
+
+    Compute getInternal() {
+        return internalClient;
+    }
+
+    @Override
+    public void authenticate() throws ClientConnectionFailedException {
         try {
             if (config.isDebugRequests()) {
                 HttpRequestLogHandler.attachToCloudHttpTransport();
@@ -56,10 +65,6 @@ class ClientGoogleCloud extends Client {
             throw new ClientConnectionFailedException("Failed to connect google compute client.", e);
         }
         LOG.info("Google compute connection established.");
-    }
-
-    Compute getInternal() {
-        return internalClient;
     }
 
     @Override
