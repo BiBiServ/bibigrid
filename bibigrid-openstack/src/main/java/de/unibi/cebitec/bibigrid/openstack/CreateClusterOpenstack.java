@@ -234,6 +234,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                 int workerBatch = batchIndex + 1;
                 int workerIndex = i + 1;
                 metadata.put(Instance.TAG_BATCH, String.valueOf(workerBatch));
+                LOG.info("Set worker batch to: {}.", workerBatch);
                 ServerCreateBuilder scb =
                         Builders.server()
                                 .name(buildWorkerInstanceName(workerBatch, workerIndex))
@@ -253,9 +254,6 @@ public class CreateClusterOpenstack extends CreateCluster {
                 ServerCreate sc  = scb.build();
                 Server server = os.compute().servers().boot(sc);
                 InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
-                instance.setBatchIndex(workerBatch);
-                instance.setWorkerIndex(workerIndex);
-                LOG.info("Set worker batch to: {} and index to: {}.", workerBatch, workerIndex);
                 workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }

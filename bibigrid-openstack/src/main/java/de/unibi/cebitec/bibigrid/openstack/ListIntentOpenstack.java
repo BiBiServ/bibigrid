@@ -13,6 +13,7 @@ import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.*;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class ListIntentOpenstack extends ListIntent {
+    private static final Logger LOG = LoggerFactory.getLogger(ListIntentOpenstack.class);
     private final OSClient os;
 
     ListIntentOpenstack(final ProviderModule providerModule, Client client, final Configuration config) {
@@ -71,8 +73,16 @@ public class ListIntentOpenstack extends ListIntent {
             } catch (InstanceTypeNotFoundException ignored) {
             }
         }
-        int workerBatch = Integer.parseInt(server.getMetadata().get(Instance.TAG_BATCH));
-        LoggerFactory.getLogger(ListIntentOpenstack.class).warn("workerBatch: " + workerBatch);
+        Map<String, String> metadata = server.getMetadata();
+        String wb = metadata.get(Instance.TAG_BATCH);
+        int workerBatch;
+        if (wb != null) {
+            workerBatch = Integer.parseInt(server.getMetadata().get(Instance.TAG_BATCH));
+            LOG.warn("workerBatch: " + workerBatch);
+            instance.setBatchIndex(workerBatch);
+        } else {
+            LOG.warn("{} - Could not set worker batch. Continuing ...", instance.getName());
+        }
         Image image = server.getImage();
         if (image != null) {
             instanceConfiguration.setImage(image.getName());
