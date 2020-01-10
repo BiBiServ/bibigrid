@@ -57,8 +57,12 @@ public abstract class CreateCluster extends Intent {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
-        this.clusterId = clusterId != null ? clusterId : generateClusterId();
-        LOG.debug("Cluster id set: {}", clusterId);
+        if (clusterId != null) {
+            this.clusterId = clusterId;
+        } else {
+            this.clusterId = generateClusterId();
+            LOG.info("Cluster id set: {}", clusterId);
+        }
         this.interruptionMessageHook = new Thread(() ->
                 LOG.error("Cluster setup was interrupted!\n\n" +
                         "Please clean up the remains using: -t {}\n\n", this.clusterId)
@@ -195,10 +199,11 @@ public abstract class CreateCluster extends Intent {
 
     /**
      * TODO TD #117 manual scale, 07-19
-     * Adds a worker instance to cluster.
-     * @return true, if worker instance created successfully
+     * Adds worker instance(s) with specified batch to cluster.
+     * @return true, if worker instance(s) created successfully
      */
-    public boolean createWorkerInstance() {
+    public boolean createWorkerInstances(int batchIndex, int count) {
+
         return true;
     }
 
@@ -285,6 +290,18 @@ public abstract class CreateCluster extends Intent {
         }
     }
 
+    /**
+     * Uploads ansible scripts via SSH to master and rolls out on specified nodes.
+     * @param masterInstance master
+     * @param workerInstances cluster worker nodes
+     * @param subnetCidr used to allocate IP addresses
+     * @param prepare check if in preparation
+     * @throws ConfigurationException thrown by 'uploadAnsibleToMaster' and 'installAndExecuteAnsible'
+     *    in the case anything failed during the upload or ansible run. The exception is caught by
+     *    'launchClusterInstances'.
+     *    But not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
+     *    ConfigurationException, close the sshSession and throw a new ConfigurationException
+     */
     private void configure(final Instance masterInstance, final List<Instance> workerInstances,
                            final String subnetCidr, final boolean prepare) throws ConfigurationException {
         AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, workerInstances);
@@ -307,15 +324,6 @@ public abstract class CreateCluster extends Intent {
                     // Start connection attempt
                     sshSession.connect();
                     LOG.info("Connected to master!");
-
-                    /*
-                        ConfigurationException is thrown by 'uploadAnsibleToMaster' and 'installAndExecuteAnsible'
-                        in the case anything failed during the upload or ansible run. The exception is caught by
-                        'launchClusterInstances'.
-                        But not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
-                        ConfigurationException, close the sshSession and throw a new ConfigurationException
-
-                     */
                     try {
                         uploadAnsibleToMaster(sshSession, ansibleHostsConfig, ansibleConfig, workerInstances);
                         installAndExecuteAnsible(sshSession, prepare);

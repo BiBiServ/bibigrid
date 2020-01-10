@@ -125,6 +125,11 @@ public abstract class Configuration {
     private String network;
     private String subnet;
 
+    /**
+     * Calculates total amount of worker instances by incrementing batch instances.
+     * @Todo manual scale increase / decrease total amount if not already done automatically
+     * @return total count of worker instances
+     */
     public int getWorkerInstanceCount() {
         if (workerInstances == null) {
             return 0;
@@ -612,7 +617,6 @@ public abstract class Configuration {
         private String type;
         private String image;
         private InstanceType providerType;
-
 
         public String getName() {
             return name;

@@ -17,6 +17,7 @@ public abstract class ListIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntent.class);
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
 
+    // TODO module used to get ListIntent. Probably decouple it here, only used for instanceType
     protected final ProviderModule providerModule;
     protected final Client client;
     protected final Configuration config;
@@ -30,6 +31,8 @@ public abstract class ListIntent extends Intent {
 
     /**
      * Extract cluster from clusterMap or create a new one if not yet existent.
+     * TODO little confusing since the class CreateCluster is not used here.
+     *      Instead ListIntent uses only Cluster as representation
      * @param clusterId Id of cluster
      * @return cluster
      */
@@ -57,7 +60,7 @@ public abstract class ListIntent extends Intent {
 
     /**
      * Extracts cluster Id from name, e.g. bibigrid-worker1-2-jbxoecbvtfu3n5f.
-     * Probably an error source, if names change -> search in clusterMap and getId ?
+     * TODO Probably an error source, if names change -> search in clusterMap and getId ?
      * @param name instance name
      * @return clusterId
      */
@@ -94,7 +97,6 @@ public abstract class ListIntent extends Intent {
                 }
             }
         }
-
         List<String> keypairs = client.getKeypairNames();
         if (keypairs != null) {
             for (String name : keypairs) {

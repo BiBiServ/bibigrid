@@ -268,7 +268,10 @@ public class StartUp {
                         return;
                     }
                     // create workers with specified batch from thus type
-                    //module.getTerminateIntent(client, config).terminateInstances(clusterId, workerBatch, count);
+                    // get specified cluster for cluster-id
+                    CreateCluster createIntent = module.getCreateIntent(client, config, clusterId);
+                    createIntent.createWorkerInstances(workerBatch, count);
+
                     break;
                 case SCALE_DOWN:
                     clusterId = parameters[0];
