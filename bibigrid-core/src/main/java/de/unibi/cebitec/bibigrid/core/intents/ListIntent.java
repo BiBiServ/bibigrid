@@ -9,6 +9,7 @@ import java.util.*;
 
 /**
  * Creates a Map of BiBiGrid cluster instances
+ * TODO clusterMap only accessible via ListIntent ...
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de

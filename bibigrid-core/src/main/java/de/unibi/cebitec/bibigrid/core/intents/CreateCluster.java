@@ -51,22 +51,31 @@ public abstract class CreateCluster extends Intent {
      * @param providerModule Specific cloud provider access
      * @param client Client to communicate with cloud provider
      * @param config Configuration
+     */
+    protected CreateCluster(ProviderModule providerModule, Client client, Configuration config) {
+        this.providerModule = providerModule;
+        this.client = client;
+        this.config = config;
+        this.clusterId = generateClusterId();
+        LOG.info("Cluster id set: {}", clusterId);
+        this.interruptionMessageHook = new Thread(() ->
+                LOG.error("Cluster setup was interrupted!\n\n" +
+                        "Please clean up the remains using: -t {}\n\n", this.clusterId)
+        );
+    }
+
+    /**
+     * Creates a cluster from scratch or uses clusterId to manually / dynamically scale an available cluster.
+     * @param providerModule Specific cloud provider access
+     * @param client Client to communicate with cloud provider
+     * @param config Configuration
      * @param clusterId optional if cluster already started and has to be scaled
      */
     protected CreateCluster(ProviderModule providerModule, Client client, Configuration config, String clusterId) {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
-        if (clusterId != null) {
-            this.clusterId = clusterId;
-        } else {
-            this.clusterId = generateClusterId();
-            LOG.info("Cluster id set: {}", clusterId);
-        }
-        this.interruptionMessageHook = new Thread(() ->
-                LOG.error("Cluster setup was interrupted!\n\n" +
-                        "Please clean up the remains using: -t {}\n\n", this.clusterId)
-        );
+        this.clusterId = clusterId;
     }
 
     /**
@@ -196,14 +205,39 @@ public abstract class CreateCluster extends Intent {
         return true;
     }
 
-
     /**
-     * TODO TD #117 manual scale, 07-19
      * Adds worker instance(s) with specified batch to cluster.
+     * Adopts the configuration from the other worker instances in batch
      * @return true, if worker instance(s) created successfully
      */
     public boolean createWorkerInstances(int batchIndex, int count) {
-
+        ListIntent listIntent = providerModule.getListIntent(client, config);
+        Map<String, Cluster> clusterMap = listIntent.getList();
+        List<Instance> workersBatch = null;
+        for (Cluster cluster : clusterMap.values()) {
+            if (cluster.getClusterId().equals(clusterId)) {
+                workersBatch = cluster.getWorkerInstances(batchIndex);
+            }
+        }
+        if (workersBatch == null) {
+            LOG.error("No workers with specified batch index {} found.", batchIndex);
+            return false;
+        }
+        Instance workerBatchInstance = workersBatch.get(0);
+        listIntent.loadInstanceConfiguration(workerBatchInstance);
+        Configuration.WorkerInstanceConfiguration instanceConfiguration =
+                (Configuration.WorkerInstanceConfiguration) workerBatchInstance.getConfiguration();
+        instanceConfiguration.setCount(count);
+        String workerNameTag = WORKER_NAME_PREFIX + "-" + clusterId;
+        int workerIndex = workersBatch.size();
+        List<Instance> additionalWorkers =
+                launchAdditionalClusterWorkerInstances(batchIndex, workerIndex, instanceConfiguration, workerNameTag);
+        if (additionalWorkers == null) {
+            return false;
+        } else {
+            workersBatch.addAll(additionalWorkers);
+            workerInstances.addAll(workersBatch);
+        }
         return true;
     }
 
@@ -217,10 +251,17 @@ public abstract class CreateCluster extends Intent {
 
     /**
      * Start the batch of cluster worker instances.
-     * @return List of slave Instances
+     * @return List of worker Instances
      */
     protected abstract List<Instance> launchClusterWorkerInstances(
             int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
+
+    /**
+     * Start additional cluster worker instances in scaling up process with specified batch.
+     * @return List of worker Instances
+     */
+    protected abstract List<Instance> launchAdditionalClusterWorkerInstances(
+            int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
 
     protected String buildWorkerInstanceName(int batchIndex, int workerIndex) {
         return WORKER_NAME_PREFIX + "-" + (batchIndex) + "-" + (workerIndex) + "-" + clusterId;

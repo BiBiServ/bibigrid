@@ -257,42 +257,52 @@ public class CreateClusterOpenstack extends CreateCluster {
                 workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }
-            LOG.info("Waiting for worker instances to be ready ...");
-            int active = 0;
-            List<String> ignoreList = new ArrayList<>();
-            while (workers.size() > active + ignoreList.size()) {
-                // wait for some seconds to not overload REST API
-                sleep(2);
-                // get fresh server object for given server id
-                for (InstanceOpenstack worker : workers.values()) {
-                    //ignore if instance is already active ...
-                    if (!(worker.isActive() || worker.hasError())) {
-                        // check server status
-                        checkForServerAndUpdateInstance(worker.getId(), worker);
-                        if (worker.isActive()) {
-                            active++;
-                            LOG.info("[{}/{}] Instance '{}' is active!", active, workers.size(), worker.getHostname());
-                        } else if (worker.hasError()) {
-                            LOG.warn("Ignoring worker instance '{}'.", worker.getHostname());
-                            ignoreList.add(worker.getId());
-                        }
-                    }
-                }
-            }
-            // remove ignored instances from worker map
-            for (String id : ignoreList) {
-                workers.remove(id);
-            }
-            LOG.info(V, "Waiting for worker network configuration completion ...");
-            // wait for worker network finished ... update server instance list
-            for (InstanceOpenstack worker : workers.values()) {
-                worker.setPrivateIp(waitForAddress(worker.getId(), environment.getNetwork().getName()).getAddr());
-                worker.updateNeutronHostname();
-            }
+            waitForWorkers(workers);
             // TODO
             // Mount a volume to worker instance
             // - create (count of worker instances) snapshots
             // - mount each snapshot as volume to an instance
+        } catch (NotYetSupportedException e) {
+            // Should never occur
+        }
+        return new ArrayList<>(workers.values());
+    }
+
+    @Override
+    protected List<Instance> launchAdditionalClusterWorkerInstances(
+            int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
+        Map<String, InstanceOpenstack> workers = new HashMap<>();
+        try {
+            final Map<String, String> metadata = new HashMap<>();
+            metadata.put(Instance.TAG_NAME, workerNameTag);
+            metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
+            metadata.put(Instance.TAG_USER, config.getUser());
+            InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
+            for (int i = workerIndex; i < workerIndex + instanceConfiguration.getCount(); i++) {
+                metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
+                LOG.info("Set worker batch to: {}.", batchIndex);
+                ServerCreateBuilder scb =
+                        Builders.server()
+                                .name(buildWorkerInstanceName(batchIndex, i))
+                                .flavor(workerSpec.getFlavor().getId())
+                                .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
+                                .keypairName(config.getClusterKeyPair().getName())
+                                .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
+                                .availabilityZone(config.getAvailabilityZone())
+                                .userData(ShellScriptCreator.getUserData(config, true))
+                                .addMetadata(metadata)
+                                .configDrive(workerSpec.getConfigDrive() != 0)
+                                .networks(Arrays.asList(environment.getNetwork().getId()));
+                if (config.getServerGroup() != null) {
+                    scb.addSchedulerHint("group", config.getServerGroup());
+                }
+                ServerCreate sc  = scb.build();
+                Server server = os.compute().servers().boot(sc);
+                InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
+                workers.put(server.getId(), instance);
+                LOG.info(V, "Instance request for '{}'.", sc.getName());
+            }
+            waitForWorkers(workers);
         } catch (NotYetSupportedException e) {
             // Should never occur
         }
@@ -327,6 +337,45 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     OSClient getClient() {
         return os;
+    }
+
+    /**
+     * Waiting until worker instances active.
+     * @param workers cluster instances to be online
+     */
+    private void waitForWorkers(Map<String, InstanceOpenstack> workers) {
+        LOG.info("Waiting for worker instances to be ready ...");
+        int active = 0;
+        List<String> ignoreList = new ArrayList<>();
+        while (workers.size() > active + ignoreList.size()) {
+            // wait for some seconds to not overload REST API
+            sleep(2);
+            // get fresh server object for given server id
+            for (InstanceOpenstack worker : workers.values()) {
+                //ignore if instance is already active ...
+                if (!(worker.isActive() || worker.hasError())) {
+                    // check server status
+                    checkForServerAndUpdateInstance(worker.getId(), worker);
+                    if (worker.isActive()) {
+                        active++;
+                        LOG.info("[{}/{}] Instance '{}' is active!", active, workers.size(), worker.getHostname());
+                    } else if (worker.hasError()) {
+                        LOG.warn("Ignoring worker instance '{}'.", worker.getHostname());
+                        ignoreList.add(worker.getId());
+                    }
+                }
+            }
+        }
+        // remove ignored instances from worker map
+        for (String id : ignoreList) {
+            workers.remove(id);
+        }
+        LOG.info(V, "Waiting for worker network configuration completion ...");
+        // wait for worker network finished ... update server instance list
+        for (InstanceOpenstack worker : workers.values()) {
+            worker.setPrivateIp(waitForAddress(worker.getId(), environment.getNetwork().getName()).getAddr());
+            worker.updateNeutronHostname();
+        }
     }
 
     /**
