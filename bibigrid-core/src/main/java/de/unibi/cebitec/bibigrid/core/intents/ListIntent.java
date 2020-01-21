@@ -54,7 +54,7 @@ public abstract class ListIntent extends Intent {
     public final Map<String, Cluster> getList() {
         if (clusterMap == null) {
             clusterMap = new HashMap<>();
-            searchClusterIfNecessary();
+            assignClusterConfigValues();
         }
         return clusterMap;
     }
@@ -73,7 +73,7 @@ public abstract class ListIntent extends Intent {
     /**
      * Assigns client and cluster values from single servers to internal config.
      */
-    protected void searchClusterIfNecessary() {
+    protected void assignClusterConfigValues() {
         List<Instance> instances = getInstances();
         if (instances != null) {
             for (Instance instance : instances) {
@@ -85,6 +85,7 @@ public abstract class ListIntent extends Intent {
             for (Network network : networks) {
                 String name = network.getName();
                 if (name != null && name.startsWith(CreateClusterEnvironment.NETWORK_PREFIX)) {
+
                     getOrCreateCluster(getClusterIdFromName(name)).setNetwork(network);
                 }
             }
@@ -192,7 +193,7 @@ public abstract class ListIntent extends Intent {
     public final String toString() {
         if (clusterMap == null) {
             clusterMap = new HashMap<>();
-            searchClusterIfNecessary();
+            assignClusterConfigValues();
         }
         if (clusterMap.isEmpty()) {
             return "No BiBiGrid cluster found!\n";
@@ -242,17 +243,7 @@ public abstract class ListIntent extends Intent {
     }
 
     public final String toDetailString(String clusterId) {
-        if (clusterMap == null) {
-            clusterMap = new HashMap<>();
-            searchClusterIfNecessary();
-        }
-        if (clusterMap.isEmpty()) {
-            return "No BiBiGrid cluster found!\n";
-        }
-        if (!clusterMap.containsKey(clusterId)) {
-            return "No BiBiGrid cluster with id '" + clusterId + "' found!\n";
-        }
-        Cluster cluster = clusterMap.get(clusterId);
+        Cluster cluster = getCluster(clusterId);
         StringBuilder display = new StringBuilder();
         display.append("cluster-id: ").append(cluster.getClusterId()).append("\n");
         display.append("user: ").append(cluster.getUser()).append("\n");
@@ -279,6 +270,25 @@ public abstract class ListIntent extends Intent {
             }
         }
         return display.toString();
+    }
+
+    /**
+     * Determines clusterMap if not available and gets cluster with specified clusterId.
+     * @param clusterId Id of cluster
+     * @return Cluster initialized or already available in clusterMap
+     */
+    public Cluster getCluster(String clusterId) {
+        if (clusterMap == null) {
+            clusterMap = new HashMap<>();
+            assignClusterConfigValues();
+        }
+        if (clusterMap.isEmpty()) {
+            LOG.error("No BiBiGrid cluster found!\n");
+        }
+        if (!clusterMap.containsKey(clusterId)) {
+            LOG.error("No BiBiGrid cluster with id '" + clusterId + "' found!\n");
+        }
+        return clusterMap.get(clusterId);
     }
 
     /**

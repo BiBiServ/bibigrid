@@ -194,7 +194,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     public CreateClusterEnvironment createKeyPair() throws ConfigurationException {
         OSClient osc = cluster.getClient();
         Configuration.ClusterKeyPair ckp = getConfig().getClusterKeyPair();
-        if (osc.compute().keypairs().create(ckp.getName(),ckp.getPublicKey())  == null) {
+        if (osc.compute().keypairs().create(ckp.getName(),ckp.getPublicKey()) == null) {
             throw new ConfigurationException("Can't create KeyPair");
         }
         LOG.info("KeyPair '{}' created.",ckp.getName());

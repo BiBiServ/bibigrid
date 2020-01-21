@@ -268,7 +268,13 @@ public class StartUp {
                         return;
                     }
                     // create workers with specified batch from thus type
+                    module.getListIntent(client, config).getCluster(clusterId);
                     CreateCluster createIntent = module.getCreateIntent(client, config, clusterId);
+                    try {
+                        createIntent.createClusterEnvironment();
+                    } catch (ConfigurationException e) {
+                        e.printStackTrace();
+                    }
                     if (!createIntent.createWorkerInstances(workerBatch, count)) {
                         LOG.error("Could not create worker instances with specified batch.");
                         return;

@@ -10,11 +10,7 @@ import de.unibi.cebitec.bibigrid.core.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
@@ -272,41 +268,47 @@ public class CreateClusterOpenstack extends CreateCluster {
     protected List<Instance> launchAdditionalClusterWorkerInstances(
             int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
         Map<String, InstanceOpenstack> workers = new HashMap<>();
-        try {
-            final Map<String, String> metadata = new HashMap<>();
-            metadata.put(Instance.TAG_NAME, workerNameTag);
-            metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
-            metadata.put(Instance.TAG_USER, config.getUser());
-            InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
-            for (int i = workerIndex; i < workerIndex + instanceConfiguration.getCount(); i++) {
-                metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
-                LOG.info("Set worker batch to: {}.", batchIndex);
-                ServerCreateBuilder scb =
-                        Builders.server()
-                                .name(buildWorkerInstanceName(batchIndex, i))
-                                .flavor(workerSpec.getFlavor().getId())
-                                .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
-                                .keypairName(config.getClusterKeyPair().getName())
-                                .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
-                                .availabilityZone(config.getAvailabilityZone())
-                                .userData(ShellScriptCreator.getUserData(config, true))
-                                .addMetadata(metadata)
-                                .configDrive(workerSpec.getConfigDrive() != 0)
-                                .networks(Arrays.asList(environment.getNetwork().getId()));
-                if (config.getServerGroup() != null) {
-                    scb.addSchedulerHint("group", config.getServerGroup());
-                }
-                ServerCreate sc  = scb.build();
-                Server server = os.compute().servers().boot(sc);
-                InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
-                workers.put(server.getId(), instance);
-                LOG.info(V, "Instance request for '{}'.", sc.getName());
+        final Map<String, String> metadata = new HashMap<>();
+        metadata.put(Instance.TAG_NAME, workerNameTag);
+        metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
+        metadata.put(Instance.TAG_USER, config.getUser());
+        InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
+        for (int i = workerIndex; i < workerIndex + instanceConfiguration.getCount(); i++) {
+            metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
+            LOG.info("Set worker batch to: {}.", batchIndex);
+            ServerCreateBuilder scb = loadServerConfiguration(batchIndex, i)
+                                                .addMetadata(metadata)
+                                                .configDrive(workerSpec.getConfigDrive() != 0)
+                                                .userData(ShellScriptCreator.getUserData(config, true));
+            if (config.getServerGroup() != null) {
+                scb.addSchedulerHint("group", config.getServerGroup());
             }
-            waitForWorkers(workers);
-        } catch (NotYetSupportedException e) {
-            // Should never occur
+            ServerCreate sc  = scb.build();
+            Server server = os.compute().servers().boot(sc);
+            InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
+            workers.put(server.getId(), instance);
+            LOG.info(V, "Instance request for '{}'.", sc.getName());
         }
+        waitForWorkers(workers);
         return new ArrayList<>(workers.values());
+    }
+
+    /**
+     * TODO Loads server config from OSClient interface.
+     * @param batchIndex index of worker batch
+     * @param workerIndex index of worker in worker batch
+     * @return build up server
+     */
+    private ServerCreateBuilder loadServerConfiguration(int batchIndex, int workerIndex) {
+        LOG.warn("CreateClOS - availabilityZones: {}", );
+        return Builders.server()
+                .name(buildWorkerInstanceName(batchIndex, workerIndex))
+                .flavor(os.compute().flavors().list().get(workerIndex).getId())
+                .image(os.compute().images().list().get(workerIndex).getId())
+                .keypairName(os.compute().keypairs().list().get(workerIndex).getName())
+                .addSecurityGroup(os.compute().securityGroups().list().get(workerIndex).getId())
+                .availabilityZone(os.compute().zones().list().get(workerIndex).getZoneName())
+                .networks(Collections.singletonList(os.networking().network().list().get(workerIndex).getId()));
     }
 
     private NetFloatingIP getFloatingIP(List<String> blacklist) {
@@ -494,23 +496,4 @@ public class CreateClusterOpenstack extends CreateCluster {
             LOG.warn(V, "Status of instance '{}' is not available (== null).", server.getId());
         }
     }
-
-
-//    /**
-//     * Search for  server group by name or by id and return the id or null if server group not found.
-//     *
-//     * @param v - name or id of server group
-//     *
-//     * @return id of the found server group
-//     */
-//    private String getServerGroupByNameOrId(String v){
-//        ServerGroupService sgs = os.compute().serverGroups();
-//        List<? extends ServerGroup> sgl = sgs.list();
-//        for (ServerGroup sg : sgl) {
-//            if (sg.getId() == v || sg.getName() == v) {
-//                return sg.getId();
-//            }
-//        }
-//        return null;
-//    }
 }

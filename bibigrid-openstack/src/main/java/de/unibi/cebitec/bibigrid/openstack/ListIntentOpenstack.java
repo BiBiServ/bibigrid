@@ -32,8 +32,8 @@ public class ListIntentOpenstack extends ListIntent {
     }
 
     @Override
-    protected void searchClusterIfNecessary() {
-        super.searchClusterIfNecessary();
+    protected void assignClusterConfigValues() {
+        super.assignClusterConfigValues();
         searchSecurityGroups();
     }
 
@@ -73,15 +73,17 @@ public class ListIntentOpenstack extends ListIntent {
             } catch (InstanceTypeNotFoundException ignored) {
             }
         }
+        server.getAvailabilityZone()
         Map<String, String> metadata = server.getMetadata();
         String wb = metadata.get(Instance.TAG_BATCH);
         int workerBatch;
         if (wb != null) {
             workerBatch = Integer.parseInt(server.getMetadata().get(Instance.TAG_BATCH));
-            LOG.warn("workerBatch: " + workerBatch);
             instance.setBatchIndex(workerBatch);
         } else {
-            LOG.warn("{} - Could not set worker batch. Continuing ...", instance.getName());
+            if (instance.isMaster()) {
+                LOG.warn("{} - Could not set worker batch. Continuing ...", instance.getId());
+            }
         }
         Image image = server.getImage();
         if (image != null) {

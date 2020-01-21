@@ -32,10 +32,19 @@ public abstract class CreateClusterEnvironment {
     protected CreateClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
         this.client = client;
         this.cluster = cluster;
-        // create a new clusterKeyPair
+        LOG.warn("CreateClEnv - Client keyPair names: {}", client.getKeypairNames());
+        LOG.warn("CreateClEnv - cluster keyPair names: {}", cluster.getConfig().getClusterKeyPair().getName());
+        generateClusterKeyPair();
+    }
+
+    /**
+     * Checks if KeyPair already exists and generates a new one, if not.
+     * @throws ConfigurationException Throws an exception if the generation of the KeyPair failed.
+     */
+    private void generateClusterKeyPair() throws ConfigurationException {
         try {
-            Configuration config = cluster.getConfig();
             Configuration.ClusterKeyPair clusterKeyPair = cluster.getConfig().getClusterKeyPair();
+            LOG.warn("Cluster KeyPairName: {}", clusterKeyPair.getName());
             JSch ssh = new JSch();
             KeyPair keypair = KeyPair.genKeyPair(ssh, KeyPair.RSA,4096);
             ByteArrayOutputStream bao = new ByteArrayOutputStream();
@@ -52,7 +61,6 @@ public abstract class CreateClusterEnvironment {
             }
             throw new ConfigurationException(ex.getMessage());
         }
-
     }
 
     /**
@@ -107,8 +115,7 @@ public abstract class CreateClusterEnvironment {
     /**
      * Api specific implementation of creating or choosing a KeyPair.
      *
-     * @return
-     * @throws ConfigurationException
+     * @throws ConfigurationException Throws an exception if the creation of the SSH KeyPair failed.
      */
     public abstract CreateClusterEnvironment createKeyPair() throws ConfigurationException;
 

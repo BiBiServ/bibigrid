@@ -139,7 +139,6 @@ public class Cluster {
     public List<Instance> getWorkerInstances(int batchIndex) {
         List<Instance> workers = new ArrayList<>();
         for (Instance worker : workerInstances) {
-            LoggerFactory.getLogger(Cluster.class).warn("worker batch: " + worker.getBatchIndex());
             if (worker.getBatchIndex() == batchIndex) {
                 workers.add(worker);
             }

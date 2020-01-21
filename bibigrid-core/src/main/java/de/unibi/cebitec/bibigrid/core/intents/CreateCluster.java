@@ -51,31 +51,16 @@ public abstract class CreateCluster extends Intent {
      * @param providerModule Specific cloud provider access
      * @param client Client to communicate with cloud provider
      * @param config Configuration
-     */
-    protected CreateCluster(ProviderModule providerModule, Client client, Configuration config) {
-        this.providerModule = providerModule;
-        this.client = client;
-        this.config = config;
-        this.clusterId = generateClusterId();
-        LOG.info("Cluster id set: {}", clusterId);
-        this.interruptionMessageHook = new Thread(() ->
-                LOG.error("Cluster setup was interrupted!\n\n" +
-                        "Please clean up the remains using: -t {}\n\n", this.clusterId)
-        );
-    }
-
-    /**
-     * Creates a cluster from scratch or uses clusterId to manually / dynamically scale an available cluster.
-     * @param providerModule Specific cloud provider access
-     * @param client Client to communicate with cloud provider
-     * @param config Configuration
      * @param clusterId optional if cluster already started and has to be scaled
      */
     protected CreateCluster(ProviderModule providerModule, Client client, Configuration config, String clusterId) {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
-        this.clusterId = clusterId;
+        this.clusterId = clusterId != null ? clusterId : generateClusterId();
+        this.interruptionMessageHook = new Thread(() ->
+                LOG.error("Cluster setup was interrupted!\n\n" +
+                        "Please clean up the remains using: -t {}\n\n", this.clusterId));
     }
 
     /**
