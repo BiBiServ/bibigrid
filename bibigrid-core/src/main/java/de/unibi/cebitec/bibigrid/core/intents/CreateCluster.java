@@ -209,7 +209,8 @@ public abstract class CreateCluster extends Intent {
             return false;
         }
         Instance workerBatchInstance = workersBatch.get(0);
-        listIntent.loadInstanceConfiguration(workerBatchInstance);
+        workerBatchInstance.loadConfiguration();
+//        listIntent.loadInstanceConfiguration(workerBatchInstance);
         Configuration.WorkerInstanceConfiguration instanceConfiguration =
                 (Configuration.WorkerInstanceConfiguration) workerBatchInstance.getConfiguration();
         instanceConfiguration.setCount(count);

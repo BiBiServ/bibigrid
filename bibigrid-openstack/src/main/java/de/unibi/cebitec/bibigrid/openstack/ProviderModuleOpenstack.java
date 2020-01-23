@@ -31,8 +31,6 @@ public class ProviderModuleOpenstack extends ProviderModule {
         return new ValidatorOpenstack(config, module);
     }
 
-
-
     @Override
     public Client getClient(Configuration config) throws ClientConnectionFailedException {
         return new ClientOpenstack((ConfigurationOpenstack) config);

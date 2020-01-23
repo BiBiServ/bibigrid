@@ -28,6 +28,8 @@ public class Cluster {
     private String keyName;
     private String user;
 
+    private String availabilityZone;
+
     private String started;
 
     public Cluster(String clusterId) {
@@ -129,6 +131,14 @@ public class Cluster {
 
     public void setPrivateIp(String privateIp) {
         this.privateIp = privateIp;
+    }
+
+    public String getAvailabilityZone() {
+        return availabilityZone;
+    }
+
+    public void setAvailabilityZone(String availabilityZone) {
+        this.availabilityZone = availabilityZone;
     }
 
     /**

@@ -1,8 +1,13 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
+import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
+import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import org.openstack4j.model.compute.Address;
+import org.openstack4j.model.compute.Flavor;
+import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.compute.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,5 +153,37 @@ public final class InstanceOpenstack extends Instance {
     @Override
     public String getKeyName() {
         return server.getKeyName();
+    }
+
+    @Override
+    public void loadConfiguration(ProviderModule providerModule, Client client, Configuration config) {
+        Configuration.InstanceConfiguration instanceConfiguration =
+                isMaster() ? new Configuration.InstanceConfiguration()
+                        : new Configuration.WorkerInstanceConfiguration();
+        Flavor flavor = server.getFlavor();
+        if (flavor != null) {
+            instanceConfiguration.setType(flavor.getName());
+            try {
+                instanceConfiguration.setProviderType(providerModule.getInstanceType(client, config, flavor.getName()));
+            } catch (InstanceTypeNotFoundException ignored) {
+            }
+        }
+        server.getAvailabilityZone();
+        Map<String, String> metadata = server.getMetadata();
+        String wb = metadata.get(Instance.TAG_BATCH);
+        int workerBatch;
+        if (wb != null) {
+            workerBatch = Integer.parseInt(server.getMetadata().get(Instance.TAG_BATCH));
+            setBatchIndex(workerBatch);
+        } else {
+            if (isMaster()) {
+                LOG.warn("{} - Could not set worker batch. Continuing ...", getId());
+            }
+        }
+        Image image = server.getImage();
+        if (image != null) {
+            instanceConfiguration.setImage(image.getName());
+        }
+        setConfiguration(instanceConfiguration);
     }
 }

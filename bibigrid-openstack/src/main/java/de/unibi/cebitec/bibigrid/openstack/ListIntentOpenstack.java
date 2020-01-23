@@ -73,7 +73,7 @@ public class ListIntentOpenstack extends ListIntent {
             } catch (InstanceTypeNotFoundException ignored) {
             }
         }
-        server.getAvailabilityZone()
+        server.getAvailabilityZone();
         Map<String, String> metadata = server.getMetadata();
         String wb = metadata.get(Instance.TAG_BATCH);
         int workerBatch;

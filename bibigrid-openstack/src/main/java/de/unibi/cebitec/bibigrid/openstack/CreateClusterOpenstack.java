@@ -285,6 +285,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             }
             ServerCreate sc  = scb.build();
             Server server = os.compute().servers().boot(sc);
+            LOG.warn("CrClOS availabilityzones: {}", os.networking().availabilityzone().list());
             InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
             workers.put(server.getId(), instance);
             LOG.info(V, "Instance request for '{}'.", sc.getName());

@@ -70,4 +70,12 @@ public abstract class Instance {
     public void setWorkerIndex(int workerIndex) {
         this.workerIndex = workerIndex;
     }
+
+    /**
+     * Loads config of an instance from server.
+     * @param providerModule
+     * @param client
+     * @param config
+     */
+    public abstract void loadConfiguration(ProviderModule providerModule, Client client, Configuration config);
 }
