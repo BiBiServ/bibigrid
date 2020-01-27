@@ -43,7 +43,8 @@ public abstract class TerminateIntent extends Intent {
      * @param parameter user-id or cluster-id
      */
     public void terminate(String parameter) {
-        final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
+        final Map<String, Cluster> clusters =
+                providerModule.getLoadClusterConfigurationIntent(client, config).getClusterMap();
         List<Cluster> toRemove = new ArrayList<>();
         Cluster provided = clusters.get(parameter);
         if (provided != null) {
@@ -81,7 +82,8 @@ public abstract class TerminateIntent extends Intent {
      * @param count nr of worker instances to be terminated
      */
     public void terminateInstances(String clusterId, int workerBatch, int count) {
-        final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
+        final Map<String, Cluster> clusters =
+                providerModule.getLoadClusterConfigurationIntent(client, config).getClusterMap();
         Cluster cluster = clusters.get(clusterId);
         List<Instance> workers = cluster.getWorkerInstances(workerBatch);
         LOG.warn(workers.toString());

@@ -301,7 +301,7 @@ public class CreateClusterOpenstack extends CreateCluster {
      * @return build up server
      */
     private ServerCreateBuilder loadServerConfiguration(int batchIndex, int workerIndex) {
-        LOG.warn("CreateClOS - availabilityZones: {}", );
+        LOG.warn("CreateClOS - availabilityZones: {}", os.networking().availabilityzone());
         return Builders.server()
                 .name(buildWorkerInstanceName(batchIndex, workerIndex))
                 .flavor(os.compute().flavors().list().get(workerIndex).getId())

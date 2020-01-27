@@ -196,8 +196,8 @@ public abstract class CreateCluster extends Intent {
      * @return true, if worker instance(s) created successfully
      */
     public boolean createWorkerInstances(int batchIndex, int count) {
-        ListIntent listIntent = providerModule.getListIntent(client, config);
-        Map<String, Cluster> clusterMap = listIntent.getList();
+        Map<String, Cluster> clusterMap =
+                providerModule.getLoadClusterConfigurationIntent(client, config).getClusterMap();
         List<Instance> workersBatch = null;
         for (Cluster cluster : clusterMap.values()) {
             if (cluster.getClusterId().equals(clusterId)) {
@@ -209,8 +209,6 @@ public abstract class CreateCluster extends Intent {
             return false;
         }
         Instance workerBatchInstance = workersBatch.get(0);
-        workerBatchInstance.loadConfiguration();
-//        listIntent.loadInstanceConfiguration(workerBatchInstance);
         Configuration.WorkerInstanceConfiguration instanceConfiguration =
                 (Configuration.WorkerInstanceConfiguration) workerBatchInstance.getConfiguration();
         instanceConfiguration.setCount(count);

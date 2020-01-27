@@ -37,8 +37,8 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    public ListIntent getListIntent(Client client, Configuration config) {
-        return new ListIntentOpenstack(this, client, config);
+    public ListIntent getListIntent(HashMap<String, Cluster> clusterMap) {
+        return new ListIntentOpenstack(clusterMap);
     }
 
     @Override
@@ -54,6 +54,11 @@ public class ProviderModuleOpenstack extends ProviderModule {
     @Override
     public CreateCluster getCreateIntent(Client client, Configuration config, String clusterId) {
         return new CreateClusterOpenstack(this, client, config, clusterId);
+    }
+
+    @Override
+    public LoadClusterConfigurationIntent getLoadClusterConfigurationIntent(Client client, Configuration config) {
+        return new LoadClusterConfigurationIntentOpenstack(this, client, config);
     }
 
     @Override

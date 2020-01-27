@@ -9,9 +9,6 @@ import java.util.*;
 
 /**
  * Creates a Map of BiBiGrid cluster instances
- * TODO clusterMap only accessible via ListIntent ...
- *      Separate list intent from load config and instance values
- *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
@@ -23,8 +20,6 @@ public abstract class ListIntent extends Intent {
     protected ListIntent(Map<String, Cluster> clusterMap) {
         this.clusterMap = clusterMap;
     }
-
-
 
     /**
      * Return a String representation of found cluster objects map.
@@ -77,7 +72,7 @@ public abstract class ListIntent extends Intent {
     }
 
     public final String toDetailString(String clusterId) {
-        Cluster cluster = getCluster(clusterId);
+        Cluster cluster = clusterMap.get(clusterId);
         StringBuilder display = new StringBuilder();
         display.append("cluster-id: ").append(cluster.getClusterId()).append("\n");
         display.append("user: ").append(cluster.getUser()).append("\n");

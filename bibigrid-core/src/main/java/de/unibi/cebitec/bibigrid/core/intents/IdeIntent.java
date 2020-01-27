@@ -52,7 +52,8 @@ public class IdeIntent extends Intent {
             LOG.error("ClusterId not found. Please provide a valid cluster id.");
             return;
         }
-        final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
+        final Map<String, Cluster> clusters =
+                providerModule.getLoadClusterConfigurationIntent(client, config).getClusterMap();
         if (!clusters.containsKey(clusterId)) {
             LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", clusterId);
             return;

@@ -9,28 +9,30 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Handling of cluster internal configuration loading from server and provider API.
+ *
+ * @author Tim Dilger - tdilger@techfak.uni-bielefeld.de
+ */
 public abstract class LoadClusterConfigurationIntent extends Intent {
-    private static final Logger LOG = LoggerFactory.getLogger(ListIntent.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LoadClusterConfigurationIntent.class);
     static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
 
     protected final ProviderModule providerModule;
     protected final Client client;
     protected final Configuration config;
-    private Map<String, Cluster> clusterMap;
+    protected Map<String, Cluster> clusterMap;
 
     protected LoadClusterConfigurationIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
-
-        if (clusterMap == null) {
-            clusterMap = new HashMap<>();
-            assignClusterConfigValues();
-        }
-        if (clusterMap.isEmpty()) {
-            LOG.error("No BiBiGrid cluster found!\n");
-        }
     }
+
+    /**
+     * Assigns cluster values from single servers to internal config, initializes clusterMap.
+     */
+    public abstract void assignClusterConfigValues();
 
     /**
      * Determines clusterMap if not available and gets cluster with specified clusterId.
@@ -38,10 +40,6 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
      * @return Cluster initialized or already available in clusterMap
      */
     public Cluster getCluster(String clusterId) {
-        if (clusterMap == null) {
-            clusterMap = new HashMap<>();
-            assignClusterConfigValues();
-        }
         if (clusterMap.isEmpty()) {
             LOG.error("No BiBiGrid cluster found!\n");
         }
@@ -52,26 +50,9 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
     }
 
     /**
-     * Extract cluster from clusterMap or create a new one if not yet existent.
-     * TODO little confusing since the class CreateCluster is not used here.
-     *      Instead ListIntent uses only Cluster as representation
-     * @param clusterId Id of cluster
-     * @return cluster
-     */
-    protected final Cluster createCluster(String clusterId) {
-        Cluster cluster = new Cluster(clusterId);
-        clusterMap.put(clusterId, cluster);
-        return cluster;
-    }
-
-    /**
      * Return a Map of Cluster objects within current configuration.
      */
-    public final Map<String, Cluster> getList() {
-        if (clusterMap == null) {
-            clusterMap = new HashMap<>();
-            assignClusterConfigValues();
-        }
+    public final Map<String, Cluster> getClusterMap() {
         return clusterMap;
     }
 
@@ -81,64 +62,22 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
      * @param name instance name
      * @return clusterId
      */
-    protected static String getClusterIdFromName(String name) {
+    private static String getClusterIdFromName(String name) {
         String[] parts = name.split("-");
         return parts[parts.length - 1];
     }
 
-    /**
-     * Assigns cluster values from single servers to internal config.
-     */
-    protected void assignClusterConfigValues() {
-        List<Instance> instances = getInstances();
-        if (instances != null) {
-            for (Instance instance : instances) {
-                checkInstance(instance);
-            }
-        }
-        List<Network> networks = client.getNetworks();
-        if (networks != null) {
-            for (Network network : networks) {
-                String name = network.getName();
-                if (name != null && name.startsWith(CreateClusterEnvironment.NETWORK_PREFIX)) {
-
-                    getOrCreateCluster(getClusterIdFromName(name)).setNetwork(network);
-                }
-            }
-        }
-        List<Subnet> subnets = client.getSubnets();
-        if (subnets != null) {
-            for (Subnet subnet : subnets) {
-                String name = subnet.getName();
-                if (name != null && name.startsWith(CreateClusterEnvironment.SUBNET_PREFIX)) {
-                    getOrCreateCluster(getClusterIdFromName(name)).setSubnet(subnet);
-                }
-            }
-        }
-        List<String> keypairs = client.getKeypairNames();
-        if (keypairs != null) {
-            for (String name : keypairs) {
-                if (name != null && name.startsWith(CreateCluster.PREFIX)) {
-                    getOrCreateCluster(getClusterIdFromName(name)).setKeyName(name);
-                }
-            }
-        }
-
-    }
-
-    protected abstract List<Instance> getInstances();
+    public abstract List<Instance> getInstances();
 
     /**
-     * Loads instance configurations from internal and sets cluster and instance config.
+     * Checks if instance is a BiBiGrid instance and extract clusterId from it
      * @param instance master or worker
      */
-    protected void checkInstance(Instance instance) {
-        // check if instance is a BiBiGrid instance and extract clusterId from it
+    protected void initCluster(Instance instance) {
         String clusterId = getClusterIdForInstance(instance);
         if (clusterId == null)
             return;
-        Cluster cluster = getOrCreateCluster(clusterId);
-        loadInstanceConfiguration(instance);
+        Cluster cluster = getCluster(clusterId);
         // Check whether master or worker instance
         String name = instance.getTag(Instance.TAG_NAME);
         if (name == null) {
@@ -162,8 +101,12 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
         checkInstanceUserTag(instance, cluster);
     }
 
+    /**
+     * Checks, if key name is always the same for all instances of one cluster as should be.
+     * @param instance master or worker
+     * @param cluster
+     */
     private void checkInstanceKeyName(Instance instance, Cluster cluster) {
-        //key name should be always the same for all instances of one cluster
         if (cluster.getKeyName() != null) {
             if (!cluster.getKeyName().equals(instance.getKeyName())) {
                 LOG.error("Detected two different keynames ({},{}) for cluster '{}'.", cluster.getKeyName(),
@@ -200,5 +143,9 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
         return null;
     }
 
+    /**
+     * Loads config of an instance from server.
+     * @param instance master or worker instance
+     */
     protected abstract void loadInstanceConfiguration(Instance instance);
 }

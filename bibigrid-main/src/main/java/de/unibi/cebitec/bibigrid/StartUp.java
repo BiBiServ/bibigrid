@@ -203,7 +203,9 @@ public class StartUp {
                 printInstanceTypeHelp(module, client, config);
                 return;
             } else if (intentMode == LIST) {
-                ListIntent listIntent = module.getListIntent(client, config);
+                Map<String, Cluster> clusterMap =
+                        module.getLoadClusterConfigurationIntent(client, config).getClusterMap();
+                ListIntent listIntent = module.getListIntent((HashMap<String, Cluster>) clusterMap);
                 if (parameters == null) {
                     LOG.info(listIntent.toString());
                 } else {
@@ -267,8 +269,8 @@ public class StartUp {
                         LOG.error("Wrong usage. Please use '-su <cluster-id> <workerBatch> <count> instead.'");
                         return;
                     }
-                    // create workers with specified batch from thus type
-                    module.getListIntent(client, config).getCluster(clusterId);
+                    // TODO --------------------------------------------------------------------------
+                    module.getLoadClusterConfigurationIntent(client, config).getCluster(clusterId);
                     CreateCluster createIntent = module.getCreateIntent(client, config, clusterId);
                     try {
                         createIntent.createClusterEnvironment();

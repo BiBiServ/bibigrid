@@ -7,6 +7,7 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -48,13 +49,15 @@ public abstract class ProviderModule {
 
     public abstract Client getClient(Configuration config) throws ClientConnectionFailedException;
 
-    public abstract ListIntent getListIntent(Client client, Configuration config);
+    public abstract ListIntent getListIntent(HashMap<String, Cluster> clusterMap);
 
     public abstract TerminateIntent getTerminateIntent(Client client, Configuration config);
 
     public abstract PrepareIntent getPrepareIntent(Client client, Configuration config);
 
     public abstract CreateCluster getCreateIntent(Client client, Configuration config, String clusterId);
+
+    public abstract LoadClusterConfigurationIntent getLoadClusterConfigurationIntent(Client client, Configuration config);
 
     public abstract CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster)
             throws ConfigurationException;
