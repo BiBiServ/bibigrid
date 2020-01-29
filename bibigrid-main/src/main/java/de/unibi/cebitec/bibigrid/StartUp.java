@@ -203,8 +203,9 @@ public class StartUp {
                 printInstanceTypeHelp(module, client, config);
                 return;
             } else if (intentMode == LIST) {
-                Map<String, Cluster> clusterMap =
-                        module.getLoadClusterConfigurationIntent(client, config).getClusterMap();
+                LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
+                loadIntent.loadClusterConfiguration();
+                Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
                 ListIntent listIntent = module.getListIntent((HashMap<String, Cluster>) clusterMap);
                 if (parameters == null) {
                     LOG.info(listIntent.toString());
@@ -270,7 +271,8 @@ public class StartUp {
                         return;
                     }
                     // TODO --------------------------------------------------------------------------
-                    module.getLoadClusterConfigurationIntent(client, config).getCluster(clusterId);
+                    LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
+                    loadIntent.loadClusterConfiguration();
                     CreateCluster createIntent = module.getCreateIntent(client, config, clusterId);
                     try {
                         createIntent.createClusterEnvironment();

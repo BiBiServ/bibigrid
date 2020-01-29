@@ -1,13 +1,8 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
-import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import org.openstack4j.model.compute.Address;
-import org.openstack4j.model.compute.Flavor;
-import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.compute.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +35,7 @@ public final class InstanceOpenstack extends Instance {
         return server;
     }
 
-    public void setServer(Server server) {
+    void setServer(Server server) {
         this.server = server;
     }
 

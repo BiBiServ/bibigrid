@@ -43,20 +43,22 @@ public abstract class TerminateIntent extends Intent {
      * @param parameter user-id or cluster-id
      */
     public void terminate(String parameter) {
-        final Map<String, Cluster> clusters =
-                providerModule.getLoadClusterConfigurationIntent(client, config).getClusterMap();
+        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
+        loadIntent.loadClusterConfiguration();
+        final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
         List<Cluster> toRemove = new ArrayList<>();
-        Cluster provided = clusters.get(parameter);
-        if (provided != null) {
+        if (clusterMap.containsKey(parameter)) {
+            Cluster provided = clusterMap.get(parameter);
             toRemove.add(provided);
         } else {
             // check if '-t user-id'
-            for (Cluster cluster : clusters.values()) {
+            for (Cluster cluster : clusterMap.values()) {
                 if (parameter.equals(cluster.getUser())) {
                     toRemove.add(cluster);
                 }
             }
         }
+        LOG.warn("Terminate given parameter {}", parameter);
 
         if (toRemove.isEmpty()) {
             LOG.error("No cluster with ID '{}' found.", parameter);
@@ -82,9 +84,10 @@ public abstract class TerminateIntent extends Intent {
      * @param count nr of worker instances to be terminated
      */
     public void terminateInstances(String clusterId, int workerBatch, int count) {
-        final Map<String, Cluster> clusters =
-                providerModule.getLoadClusterConfigurationIntent(client, config).getClusterMap();
-        Cluster cluster = clusters.get(clusterId);
+        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
+        loadIntent.loadClusterConfiguration();
+        final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
+        Cluster cluster = clusterMap.get(clusterId);
         List<Instance> workers = cluster.getWorkerInstances(workerBatch);
         LOG.warn(workers.toString());
         if (workers.isEmpty() || workers.size() < count) {
