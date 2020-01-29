@@ -1056,7 +1056,7 @@ public abstract class Configuration {
      * Representation of a SSH Cluster KeyPair.
      */
     public static class ClusterKeyPair {
-
+        private static final String KEY_FILE = KEYS_DIR + System.getProperty("file.separator");
         private String privateKey;
         private String publicKey;
         private String name;
@@ -1103,7 +1103,7 @@ public abstract class Configuration {
         public void store() throws IOException {
             // private key
             try {
-                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name);
+                Path p = Paths.get(KEY_FILE + name);
                 Files.createFile(p, KEYS_PERMS);
                 OutputStream fout = Files.newOutputStream(p);
                 fout.write(privateKey.getBytes());
@@ -1113,7 +1113,7 @@ public abstract class Configuration {
             }
             // public key
             try {
-                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name + ".pub");
+                Path p = Paths.get(KEY_FILE + name + ".pub");
                 OutputStream fout = Files.newOutputStream(p);
                 fout.write(publicKey.getBytes());
                 fout.close();
