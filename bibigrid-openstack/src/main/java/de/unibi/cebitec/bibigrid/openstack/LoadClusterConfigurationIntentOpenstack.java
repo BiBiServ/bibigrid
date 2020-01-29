@@ -36,6 +36,12 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
         for (Server server : os.compute().servers().list()) {
             Map<String, String> metadata = server.getMetadata();
             String clusterId = metadata.get(Instance.TAG_BIBIGRID_ID);
+            if (clusterId == null) {
+//                TODO display, iff -l --all
+//                LOG.info("No BiBiGrid instance. Set cluster-id to {}", server.getId());
+//                clusterId = server.getId();
+                continue;
+            }
             InstanceOpenstack instance = new InstanceOpenstack(null, server);
             if (!metadata.containsKey(Instance.TAG_BATCH)) {
                 instance.setMaster(true);

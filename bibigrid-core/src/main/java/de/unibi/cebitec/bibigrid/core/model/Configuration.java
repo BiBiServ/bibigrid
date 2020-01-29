@@ -1057,6 +1057,7 @@ public abstract class Configuration {
      */
     public static class ClusterKeyPair {
         private static final String KEY_FILE = KEYS_DIR + System.getProperty("file.separator");
+
         private String privateKey;
         private String publicKey;
         private String name;
@@ -1098,7 +1099,7 @@ public abstract class Configuration {
         /**
          *  Store public AND private key in Configuration.KEY_DIR as name[.pub].
          *
-         * @throws IOException
+         * @throws IOException failure in writing key file
          */
         public void store() throws IOException {
             // private key
@@ -1125,7 +1126,7 @@ public abstract class Configuration {
         /**
          * Load public and private key from Configuration.KEYS_DIR.
          *
-         * @throws IOException
+         * @throws IOException failure in loading key file
          */
         public void load() throws IOException {
             //private key
