@@ -617,6 +617,7 @@ public abstract class Configuration {
         private String type;
         private String image;
         private InstanceType providerType;
+        private String network;
 
         public String getName() {
             return name;
@@ -648,6 +649,14 @@ public abstract class Configuration {
 
         public void setProviderType(InstanceType providerType) {
             this.providerType = providerType;
+        }
+
+        public String getNetwork() {
+            return network;
+        }
+
+        public void setNetwork(String network) {
+            this.network = network;
         }
     }
 
@@ -1105,19 +1114,27 @@ public abstract class Configuration {
             // private key
             try {
                 Path p = Paths.get(KEY_FILE + name);
-                Files.createFile(p, KEYS_PERMS);
-                OutputStream fout = Files.newOutputStream(p);
-                fout.write(privateKey.getBytes());
-                fout.close();
+                if (!Files.exists(p)) {
+                    Files.createFile(p, KEYS_PERMS);
+                    OutputStream fout = Files.newOutputStream(p);
+                    fout.write(privateKey.getBytes());
+                    fout.close();
+                } else {
+                    LOG.info("Private KeyPair File already exists. Continuing ...");
+                }
             } catch (IOException e){
                 throw new IOException("Error writing private key :"+e.getMessage(),e);
             }
             // public key
             try {
                 Path p = Paths.get(KEY_FILE + name + ".pub");
-                OutputStream fout = Files.newOutputStream(p);
-                fout.write(publicKey.getBytes());
-                fout.close();
+                if (!Files.exists(p)) {
+                    OutputStream fout = Files.newOutputStream(p);
+                    fout.write(publicKey.getBytes());
+                    fout.close();
+                } else {
+                    LOG.info("Public KeyPair File already exists. Continuing ...");
+                }
             } catch (IOException e) {
                 throw new IOException("Error writing public key :"+e.getMessage(),e);
             }

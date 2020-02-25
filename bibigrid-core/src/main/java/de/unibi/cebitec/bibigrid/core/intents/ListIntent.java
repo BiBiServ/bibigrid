@@ -91,10 +91,11 @@ public abstract class ListIntent extends Intent {
             display.append("\nmaster-instance:\n");
             addInstanceToDetailString(display, cluster.getMasterInstance());
         }
-        if (cluster.getWorkerInstances() != null) {
-            for (Instance workerInstance : cluster.getWorkerInstances()) {
-                display.append("\nworker-instance:\n");
-                addInstanceToDetailString(display, workerInstance);
+        List<Instance> workerInstances = cluster.getWorkerInstances();
+        if (workerInstances != null) {
+            for (Instance workerInstance : workerInstances) {
+                    display.append("\nworker-instance:\n");
+                    addInstanceToDetailString(display, workerInstance);
             }
         }
         return display.toString();

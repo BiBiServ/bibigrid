@@ -213,7 +213,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
      * Determine secgroupExt by given name. Returns secgroupext object or null in the
      * case that no suitable secgroupexetension is found.
      */
-    private static SecGroupExtension getSecGroupExtensionByName(OSClient osc, String name) {
+    public static SecGroupExtension getSecGroupExtensionByName(OSClient osc, String name) {
         for (SecGroupExtension sge : osc.compute().securityGroups().list()) {
             if (sge.getName().equals(name)) {
                 return sge;
@@ -238,9 +238,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     /**
      * Determine network by given network id. Returns Network object or null if no network with given id is found.
      */
-    static Network getNetworkByIdOrName(OSClient osc, String n) {
+    static Network getNetworkByIdOrName(OSClient osc, String networkId) {
         for (Network net : osc.networking().network().list()) {
-            if (net.getId().equals(n) || net.getName().equals(n)) {
+            if (net.getId().equals(networkId) || net.getName().equals(networkId)) {
                 return net;
             }
         }
@@ -250,9 +250,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     /**
      * Determine subnet by given subnet name. Returns subnet object or null in the case no suitable subnet is found.
      */
-    private static Subnet getSubnetByIdOrName(OSClient osc, String s) {
+    private static Subnet getSubnetByIdOrName(OSClient osc, String subnetName) {
         for (Subnet subnet : osc.networking().subnet().list()) {
-            if (subnet.getName().equals(s) || subnet.getId().equals(s)) {
+            if (subnet.getName().equals(subnetName) || subnet.getId().equals(subnetName)) {
                 return subnet;
             }
         }

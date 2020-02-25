@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public class Cluster {
+    private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
     private final String clusterId;
 
     private Instance masterInstance;
@@ -74,6 +76,37 @@ public class Cluster {
 
     public List<Instance> getWorkerInstances() {
         return workerInstances;
+    }
+
+    /**
+     * Returns worker instances of given batch.
+     * @param batchIndex idx of worker configuration
+     * @return list of instances of specified worker configuration idx
+     */
+    public List<Instance> getWorkerInstances(int batchIndex) {
+        List<Instance> workers = new ArrayList<>();
+        for (Instance worker : workerInstances) {
+            if (worker.getBatchIndex() == batchIndex) {
+                workers.add(worker);
+            }
+        }
+        return workers;
+    }
+
+    /**
+     * Returns single worker instance with specified worker batch and worker index.
+     * @param batchIndex idx of worker configuration
+     * @param workerIndex idx of worker in batch configuration
+     * @return worker instance
+     */
+    public Instance getWorkerInstance(int batchIndex, int workerIndex) {
+        List<Instance> workers = getWorkerInstances(batchIndex);
+        for (Instance worker : workers) {
+            if (worker.getWorkerIndex() == workerIndex) {
+                return worker;
+            }
+        }
+        return null;
     }
 
     public void setWorkerInstances(List<Instance> workerInstances) {
@@ -139,37 +172,5 @@ public class Cluster {
 
     public void setAvailabilityZone(String availabilityZone) {
         this.availabilityZone = availabilityZone;
-    }
-
-    /**
-     * Returns worker instances of given batch.
-     * @param batchIndex idx of worker configuration
-     * @return list of instances of specified worker configuration idx
-     */
-    public List<Instance> getWorkerInstances(int batchIndex) {
-        List<Instance> workers = new ArrayList<>();
-        for (Instance worker : workerInstances) {
-            if (worker.getBatchIndex() == batchIndex) {
-                workers.add(worker);
-            }
-        }
-        return workers;
-    }
-
-    /**
-     * Returns single worker instance with specified worker batch and worker index.
-     * @param batchIndex idx of worker configuration
-     * @param workerIndex idx of worker in batch configuration
-     * @return worker instance
-     */
-    public Instance getWorkerInstance(int batchIndex, int workerIndex) {
-        Instance worker = null;
-        List<Instance> workers = getWorkerInstances(batchIndex);
-        for (Instance w : workers) {
-            if (w.getWorkerIndex() == workerIndex) {
-                worker = w;
-            }
-        }
-        return worker;
     }
 }

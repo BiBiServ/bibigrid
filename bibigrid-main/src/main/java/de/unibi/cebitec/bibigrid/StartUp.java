@@ -270,15 +270,12 @@ public class StartUp {
                         LOG.error("Wrong usage. Please use '-su <cluster-id> <workerBatch> <count> instead.'");
                         return;
                     }
-                    // TODO --------------------------------------------------------------------------
-                    LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
-                    loadIntent.loadClusterConfiguration();
                     CreateCluster createIntent = module.getCreateIntent(client, config, clusterId);
-                    try {
-                        createIntent.createClusterEnvironment();
-                    } catch (ConfigurationException e) {
-                        e.printStackTrace();
-                    }
+//                    try {
+//                        createIntent.createClusterEnvironment();
+//                    } catch (ConfigurationException e) {
+//                        e.printStackTrace();
+//                    }
                     if (!createIntent.createWorkerInstances(workerBatch, count)) {
                         LOG.error("Could not create worker instances with specified batch.");
                         return;

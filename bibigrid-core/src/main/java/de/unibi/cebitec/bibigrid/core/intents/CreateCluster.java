@@ -191,7 +191,7 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
-     * Adds worker instance(s) with specified batch to cluster.
+     * Adds additional worker instance(s) with specified batch to cluster.
      * Adopts the configuration from the other worker instances in batch
      * @return true, if worker instance(s) created successfully
      */
@@ -199,29 +199,29 @@ public abstract class CreateCluster extends Intent {
         LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
         loadIntent.loadClusterConfiguration();
         final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
-        List<Instance> workersBatch = null;
-        for (Cluster cluster : clusterMap.values()) {
-            if (cluster.getClusterId().equals(clusterId)) {
-                workersBatch = cluster.getWorkerInstances(batchIndex);
-            }
+        Cluster cluster = clusterMap.get(clusterId);
+        if (cluster == null) {
+            LOG.error("No cluster with specified clusterId {} found", clusterId);
+            return false;
         }
-        if (workersBatch == null) {
+        List<Instance> workersBatch = cluster.getWorkerInstances(batchIndex);
+        if (workersBatch == null || workersBatch.isEmpty()) {
             LOG.error("No workers with specified batch index {} found.", batchIndex);
             return false;
         }
+        workerInstances = cluster.getWorkerInstances();
         Instance workerBatchInstance = workersBatch.get(0);
         Configuration.WorkerInstanceConfiguration instanceConfiguration =
                 (Configuration.WorkerInstanceConfiguration) workerBatchInstance.getConfiguration();
         instanceConfiguration.setCount(count);
         String workerNameTag = WORKER_NAME_PREFIX + "-" + clusterId;
-        int workerIndex = workersBatch.size();
+        int workerIndex = workersBatch.size() + 1;
         List<Instance> additionalWorkers =
-                launchAdditionalClusterWorkerInstances(batchIndex, workerIndex, instanceConfiguration, workerNameTag);
+                launchAdditionalClusterWorkerInstances(cluster, batchIndex, workerIndex, instanceConfiguration, workerNameTag);
         if (additionalWorkers == null) {
             return false;
         } else {
-            workersBatch.addAll(additionalWorkers);
-            workerInstances.addAll(workersBatch);
+            workerInstances.addAll(additionalWorkers);
         }
         return true;
     }
@@ -238,15 +238,14 @@ public abstract class CreateCluster extends Intent {
      * Start the batch of cluster worker instances.
      * @return List of worker Instances
      */
-    protected abstract List<Instance> launchClusterWorkerInstances(
-            int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
+    protected abstract List<Instance> launchClusterWorkerInstances(int batchIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
 
     /**
      * Start additional cluster worker instances in scaling up process with specified batch.
      * @return List of worker Instances
      */
     protected abstract List<Instance> launchAdditionalClusterWorkerInstances(
-            int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
+            Cluster cluster, int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
 
     protected String buildWorkerInstanceName(int batchIndex, int workerIndex) {
         return WORKER_NAME_PREFIX + "-" + (batchIndex) + "-" + (workerIndex) + "-" + clusterId;

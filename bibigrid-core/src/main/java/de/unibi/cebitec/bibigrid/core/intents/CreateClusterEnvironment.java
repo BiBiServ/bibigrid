@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Paths;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
@@ -32,8 +34,6 @@ public abstract class CreateClusterEnvironment {
     protected CreateClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
         this.client = client;
         this.cluster = cluster;
-        LOG.warn("CreateClEnv - Client keyPair names: {}", client.getKeypairNames());
-        LOG.warn("CreateClEnv - cluster keyPair names: {}", cluster.getConfig().getClusterKeyPair().getName());
         generateClusterKeyPair();
     }
 
@@ -44,7 +44,7 @@ public abstract class CreateClusterEnvironment {
     private void generateClusterKeyPair() throws ConfigurationException {
         try {
             Configuration.ClusterKeyPair clusterKeyPair = cluster.getConfig().getClusterKeyPair();
-            LOG.warn("Cluster KeyPairName: {}", clusterKeyPair.getName());
+            LOG.warn("CreateClEnv - Cluster KeyPairName: {}", clusterKeyPair.getName());
             JSch ssh = new JSch();
             KeyPair keypair = KeyPair.genKeyPair(ssh, KeyPair.RSA,4096);
             ByteArrayOutputStream bao = new ByteArrayOutputStream();

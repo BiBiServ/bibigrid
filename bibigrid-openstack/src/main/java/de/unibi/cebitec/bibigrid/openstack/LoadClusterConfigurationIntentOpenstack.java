@@ -37,7 +37,7 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
             Map<String, String> metadata = server.getMetadata();
             String clusterId = metadata.get(Instance.TAG_BIBIGRID_ID);
             if (clusterId == null) {
-//                TODO display, iff -l --all
+//                TODO display additional (non-bibigrid) instances, iff -l --all
 //                LOG.info("No BiBiGrid instance. Set cluster-id to {}", server.getId());
 //                clusterId = server.getId();
                 continue;
@@ -73,6 +73,13 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
                 instance.isMaster() ? new Configuration.InstanceConfiguration()
                         : new Configuration.WorkerInstanceConfiguration();
         Server server = os.compute().servers().get(instance.getId());
+        Set<String> networks = server.getAddresses().getAddresses().keySet();
+        // TODO What if actually more than one address?
+        if (!networks.isEmpty()) {
+            instanceConfiguration.setNetwork(networks.toArray()[0].toString());
+        } else {
+            LOG.warn("Network Address could not be determined.");
+        }
         Flavor flavor = server.getFlavor();
         if (flavor != null) {
             instanceConfiguration.setType(flavor.getName());

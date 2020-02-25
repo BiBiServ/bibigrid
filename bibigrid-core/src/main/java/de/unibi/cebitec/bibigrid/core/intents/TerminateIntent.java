@@ -58,7 +58,7 @@ public abstract class TerminateIntent extends Intent {
                 }
             }
         }
-        LOG.warn("Terminate given parameter {}", parameter);
+        LOG.info("Terminate given parameter {}", parameter);
 
         if (toRemove.isEmpty()) {
             LOG.error("No cluster with ID '{}' found.", parameter);

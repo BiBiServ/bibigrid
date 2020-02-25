@@ -4,6 +4,7 @@ import java.time.ZonedDateTime;
 
 /**
  * Class representing information about a single cloud instance.
+ * TODO maybe Comparable to sort after batch and worker indices
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
