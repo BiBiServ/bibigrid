@@ -35,10 +35,10 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
     public void loadClusterConfiguration() {
         LOG.info("Load Cluster Configurations ...");
         Map<String, List<Instance>> instanceMap = createInstanceMap();
+        clusterMap = new HashMap<>();
         if (instanceMap.isEmpty()) {
-            LOG.error("No BiBiGrid cluster found!\n");
+            LOG.warn("No BiBiGrid cluster found!\n");
         } else {
-            clusterMap = new HashMap<>();
             for (String clusterId : instanceMap.keySet()) {
                 List<Instance> clusterInstances = instanceMap.get(clusterId);
                 for (Instance instance : clusterInstances) {

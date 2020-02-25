@@ -32,20 +32,26 @@ public abstract class TerminateIntent extends Intent {
      * Terminates all clusters with the specified ids or from a specified user.
      * @param parameters user-ids or cluster-ids
      */
-    public void terminate(String[] parameters) {
+    public boolean terminate(String[] parameters) {
         for (String clusterId : parameters) {
-            terminate(clusterId);
+            if (!terminate(clusterId)) {
+                return false;
+            }
         }
+        return true;
     }
 
     /**
      * Terminates the clusters with the specified id or specified user.
      * @param parameter user-id or cluster-id
      */
-    public void terminate(String parameter) {
+    public boolean terminate(String parameter) {
         LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
         loadIntent.loadClusterConfiguration();
         final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
+        if (clusterMap.isEmpty()) {
+            return false;
+        }
         List<Cluster> toRemove = new ArrayList<>();
         if (clusterMap.containsKey(parameter)) {
             Cluster provided = clusterMap.get(parameter);
@@ -62,7 +68,7 @@ public abstract class TerminateIntent extends Intent {
 
         if (toRemove.isEmpty()) {
             LOG.error("No cluster with ID '{}' found.", parameter);
-            return;
+            return false;
         }
 
         for (Cluster cluster: toRemove) {
@@ -75,6 +81,7 @@ public abstract class TerminateIntent extends Intent {
                 LOG.error("Cluster '{}' could not be terminated successfully.", clusterId);
             }
         }
+        return true;
     }
 
     /**

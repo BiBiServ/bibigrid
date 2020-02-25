@@ -206,6 +206,9 @@ public class StartUp {
                 LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
                 loadIntent.loadClusterConfiguration();
                 Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
+                if (clusterMap.isEmpty()) {
+                    return;
+                }
                 ListIntent listIntent = module.getListIntent((HashMap<String, Cluster>) clusterMap);
                 if (parameters == null) {
                     LOG.info(listIntent.toString());
@@ -250,14 +253,32 @@ public class StartUp {
                         CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
                         if (runCreateIntent(module, config, client, cluster, true)) {
                             module.getPrepareIntent(client, config).prepare(cluster);
-                            module.getTerminateIntent(client, config).terminate(clusterId);
+                            TerminateIntent terminateIntent = module.getTerminateIntent(client, config);
+                            if (!terminateIntent.terminate(clusterId)) {
+                                LOG.error("Could not terminate instances with given clusterId {}", clusterId);
+                            }
                         }
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case TERMINATE:
-                    module.getTerminateIntent(client, config).terminate(parameters);
+                    TerminateIntent terminateIntent = module.getTerminateIntent(client, config);
+                    if (!terminateIntent.terminate(parameters)) {
+                        if (parameters.length == 1) {
+                            LOG.error("Could not terminate instances with given parameter");
+                        } else {
+                            StringBuilder error = new StringBuilder("Could not terminate instances with given parameters ");
+                            for (int p = 0; p < parameters.length; p++) {
+                                String parameter = parameters[p];
+                                error.append(parameter);
+                                if (p < parameters.length -1) {
+                                    error.append(", ");
+                                }
+                            }
+                            LOG.error(error.toString());
+                        }
+                    }
                     break;
                 case SCALE_UP:
                     String clusterId = parameters[0];
