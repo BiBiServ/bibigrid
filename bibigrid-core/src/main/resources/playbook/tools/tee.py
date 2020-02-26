@@ -36,8 +36,10 @@ f = open(args.outfile,"w")
 for line in iter(q.get, None):
     # print to stdout
     sys.stdout.write(line)
+    sys.stdout.flush()
     # print to file
     f.write(line)
+    f.flush()
 f.close()
 
 # wait until process is finished ...
