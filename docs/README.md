@@ -299,6 +299,25 @@ Example output:
 fkiseokf34ekfeo |   testuser |   20/08/19 09:25:10 |   bibigrid-fkis... |    XXX.XX.XX.XX |       3 | a45b6a63-.. |           - |           -
 ```
 
+### Scaling the cluster manually
+If you want to shut down single worker instances of the cluster or append some new, you may do so in the following way:  
+
+**Upscaling**
+```
+> bibigrid -su <bibigrid-id> <batch-index> <count>
+```
+Use the bibigrid id of the cluster you want to scale up. You than take the batch-index of an existing instance to 
+specify the configuration of the new one(s). You can look it up via `bibigrid -l <cluster-id>`. At last you can specify, 
+with how many instances you want to expand your cluster.  
+
+**Downscaling**  
+
+You can scale down the cluster the same way you scale it up, just replace `-su` or `--scale-up` with `-sd` or `--scale-down`.
+```
+> bibigrid -sd <bibigrid-id> <batch-index> <count>
+```
+Note, that you cannot scale down more instances than contained in the batch.
+
 ### Terminate the cluster
 When you're finished using the cluster, you can terminate it using the following command and the logged cluster-id 
 when the cluster was created. The SSH Key Pair in the *.bibigrid/keys* folder will be deleted since they are only used once per cluster.
