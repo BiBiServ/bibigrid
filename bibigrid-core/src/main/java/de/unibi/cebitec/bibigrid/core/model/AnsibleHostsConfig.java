@@ -12,7 +12,7 @@ import java.util.List;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public class AnsibleHostsConfig {
-    private static final String PYTHON_INTERPRETER = "ansible_python_interpreter=python3";
+    private static final String PYTHON_INTERPRETER = "ansible_python_interpreter=/usr/bin/python3";
     private final Configuration config;
     private final List<String> workerIps;
 
