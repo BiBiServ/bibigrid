@@ -329,7 +329,7 @@ when the cluster was created. The SSH Key Pair in the *.bibigrid/keys* folder wi
 If necessary multiple clusters can be terminated at once:
 
 ```
-> bibigrid -t [id1]/[id2]/[id3] -v -o ~/config.yml
+> bibigrid -t [id1] [id2] [id3] -v -o ~/config.yml
 ```
 There is also the possibility to terminate all clusters of a user at once:
 ```

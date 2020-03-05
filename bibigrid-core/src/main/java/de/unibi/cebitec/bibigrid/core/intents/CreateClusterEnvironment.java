@@ -44,7 +44,6 @@ public abstract class CreateClusterEnvironment {
     private void generateClusterKeyPair() throws ConfigurationException {
         try {
             Configuration.ClusterKeyPair clusterKeyPair = cluster.getConfig().getClusterKeyPair();
-            LOG.warn("CreateClEnv - Cluster KeyPairName: {}", clusterKeyPair.getName());
             JSch ssh = new JSch();
             KeyPair keypair = KeyPair.genKeyPair(ssh, KeyPair.RSA,4096);
             ByteArrayOutputStream bao = new ByteArrayOutputStream();
