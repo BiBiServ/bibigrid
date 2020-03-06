@@ -2,7 +2,6 @@
   debug:
     msg : Using apt to install packages
 
-
 - name: Deactivate auto-update function
   shell: |
         systemctl stop apt-daily.service
@@ -16,6 +15,11 @@
             sleep 1;
           done
         fi
+
+- name: Update
+  apt:
+    update_cache: "yes"
+    upgrade: "yes"
 
 - name: Install common packages
   apt:
@@ -96,7 +100,7 @@
 
 - name: Add zabbix repositories
   apt:
-    deb: 'https://repo.zabbix.com/zabbix/4.0/{{ ansible_distribution | lower }}/pool/main/z/zabbix-release/zabbix-release_4.0-2+{{ ansible_distribution_release }}_all.deb'
+    deb: 'https://repo.zabbix.com/zabbix/4.4/{{ ansible_distribution | lower }}/pool/main/z/zabbix-release/zabbix-release_4.4-1+{{ ansible_distribution_release }}_all.deb'
     state: present
 
 - name: Update apt cache
