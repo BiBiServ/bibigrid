@@ -618,6 +618,8 @@ public abstract class Configuration {
         private String image;
         private InstanceType providerType;
         private String network;
+        private String serverGroup;
+        private String securityGroup;
 
         public String getName() {
             return name;
@@ -658,6 +660,23 @@ public abstract class Configuration {
         public void setNetwork(String network) {
             this.network = network;
         }
+
+        public String getServerGroup() {
+            return serverGroup;
+        }
+
+        public void setServerGroup(String serverGroup) {
+            this.serverGroup = serverGroup;
+        }
+
+        public String getSecurityGroup() {
+            return securityGroup;
+        }
+
+        public void setSecurityGroup(String securityGroup) {
+            this.securityGroup = securityGroup;
+        }
+
     }
 
     @SuppressWarnings("WeakerAccess")

@@ -308,26 +308,27 @@ public class CreateClusterOpenstack extends CreateCluster {
         Configuration.InstanceConfiguration instanceConfiguration = workerInstance.getConfiguration();
         String name = buildWorkerInstanceName(batchIndex, workerIndex);
         String flavorId = ((InstanceTypeOpenstack) instanceConfiguration.getProviderType()).getFlavor().getId();
-        String imageId = client.getImageByIdOrName(instanceConfiguration.getImage()).getId();
+        InstanceImage image = client.getImageByIdOrName(instanceConfiguration.getImage());
+        Network network = client.getNetworkByIdOrName(instanceConfiguration.getNetwork());
         SecGroupExtension secGroupExtension = CreateClusterEnvironmentOpenstack.getSecGroupExtensionByName(os, cluster.getSecurityGroup());
-        String networkId = client.getNetworkByIdOrName(instanceConfiguration.getNetwork()).getId();
         String securityGroupId = secGroupExtension != null ? secGroupExtension.getId() : "";
         LOG.info("Launch additional workerInstance {} with \n" +
                 "name: {}, \n" +
-                "flavor {}, \n" +
-                "image {}, \n" +
-                "keypairname {}, \n" +
-                "network {}, \n" +
-                "securityGroupId {}, \n", workerInstance.getId(), name, flavorId, imageId, workerInstance.getKeyName(), networkId, securityGroupId);
+                "flavor: {}, \n" +
+                "image: {}, \n" +
+                "keypair name: {}, \n" +
+                "network: {}, \n" +
+                "securityGroup: {}, \n",
+                workerInstance.getId(), name, flavorId, image.getName(),
+                workerInstance.getKeyName(), network.getName(), cluster.getSecurityGroup());
         return Builders.server()
                 .name(name)
                 .flavor(flavorId)
-                .image(imageId)
+                .image(image.getId())
                 .keypairName(workerInstance.getKeyName())
-//                .addSecurityGroup(os.compute().securityGroups().list().get(workerIndex).getId())
-//                .addSecurityGroup(cluster.getSecurityGroup())
+                .addSecurityGroup(securityGroupId)
                 .availabilityZone(cluster.getAvailabilityZone())
-                .networks(Collections.singletonList(networkId));
+                .networks(Collections.singletonList(network.getId()));
     }
 
     private NetFloatingIP getFloatingIP(List<String> blacklist) {

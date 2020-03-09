@@ -69,8 +69,10 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
                     cluster.setPublicIp(instance.getPublicIp());
                     cluster.setPrivateIp(instance.getPrivateIp());
                     cluster.setKeyName(instance.getKeyName());
+                    // TODO AvailabilityZone not from config file, since it might be different from expectation
                     cluster.setAvailabilityZone(config.getAvailabilityZone());
                     // TODO add Security Group / Server Group / Subnet ?
+                    cluster.setSecurityGroup(instance.getConfiguration().getSecurityGroup());
                     cluster.setStarted(instance.getCreationTimestamp()
                             .format(DATE_TIME_FORMATTER));
                 } else {

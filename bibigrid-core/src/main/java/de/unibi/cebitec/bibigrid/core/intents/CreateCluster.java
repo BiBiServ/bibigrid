@@ -380,7 +380,6 @@ public abstract class CreateCluster extends Intent {
      */
     private void uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
                                           AnsibleConfig commonConfig, List<Instance> workerInstances) throws JSchException, ConfigurationException {
-
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Uploading Ansible playbook to master instance.");
         LOG.info(V, "Connecting sftp channel...");

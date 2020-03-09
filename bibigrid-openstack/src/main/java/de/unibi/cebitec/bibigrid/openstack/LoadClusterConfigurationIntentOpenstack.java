@@ -43,11 +43,8 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
                 continue;
             }
             InstanceOpenstack instance = new InstanceOpenstack(null, server);
-            if (!metadata.containsKey(Instance.TAG_BATCH)) {
-                instance.setMaster(true);
-            } else {
-                instance.setMaster(false);
-            }
+            boolean isMaster = instance.getName().contains("master");
+            instance.setMaster(isMaster);
             if (instanceList.containsKey(clusterId)) {
                 instanceList.get(clusterId).add(instance);
             } else {
@@ -78,7 +75,7 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
         if (!networks.isEmpty()) {
             instanceConfiguration.setNetwork(networks.toArray()[0].toString());
         } else {
-            LOG.warn("Network Address could not be determined.");
+            LOG.warn("Network Address could not be determined for instance {}.", instance.getName());
         }
         Flavor flavor = server.getFlavor();
         if (flavor != null) {
@@ -88,6 +85,12 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
             } catch (InstanceTypeNotFoundException ignored) {
             }
         }
+        if (server.getSecurityGroups() != null) {
+            String securityGroup = server.getSecurityGroups().get(0).getName();
+            instanceConfiguration.setSecurityGroup(securityGroup);
+        } else {
+            LOG.warn("Could not set security group for instance {}. Continuing ...", instance.getName());
+        }
         Map<String, String> metadata = server.getMetadata();
         String workerBatch = metadata.get(Instance.TAG_BATCH);
         if (workerBatch != null) {
@@ -96,7 +99,7 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
             if (instance.isMaster()) {
                 config.setAvailabilityZone(server.getAvailabilityZone());
             } else {
-                LOG.warn("Could not set worker batch for instance {}. Continuing ...", instance.getId());
+                LOG.warn("Could not set worker batch for instance {}. Continuing ...", instance.getName());
             }
         }
         Image image = server.getImage();

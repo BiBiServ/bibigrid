@@ -96,7 +96,6 @@ public abstract class TerminateIntent extends Intent {
         final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
         Cluster cluster = clusterMap.get(clusterId);
         List<Instance> workers = cluster.getWorkerInstances(workerBatch);
-        LOG.warn(workers.toString());
         if (workers.isEmpty() || workers.size() < count) {
             LOG.error("Could not find {} " + (count == 1 ? "worker" : "workers") + " with specified workerBatch in cluster.", count);
             return;
