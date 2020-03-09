@@ -2,7 +2,6 @@
   debug:
     msg : Using apt to install packages
 
-
 - name: Deactivate auto-update function
   shell: |
         systemctl stop apt-daily.service
@@ -17,6 +16,11 @@
           done
         fi
 
+- name: Update
+  apt:
+    update_cache: "yes"
+    upgrade: "yes"
+
 - name: Install common packages
   apt:
     name: ["apt-transport-https","ca-certificates","curl","software-properties-common","python3-pip"]
@@ -29,52 +33,55 @@
   when: mode == "openstack"
 
 # https://cloud.google.com/storage/docs/gsutil_install?hl=de#deb
-- name: Add Google Compute repository key
-  shell: 'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -'
-  when: mode == "googlecloud"
+- block:
+  - name: Add Google Compute repository key
+    shell: 'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -'
 
-- name: Add Google Compute repositories
-  apt_repository:
-    repo: "deb http://packages.cloud.google.com/apt cloud-sdk-{{ ansible_lsb.codename }} main"
-    state: present
-  when: mode == "googlecloud"
+  - name: Add Google Compute repository
+    apt_repository:
+      repo: "deb http://packages.cloud.google.com/apt cloud-sdk-{{ ansible_lsb.codename }} main"
+      state: present
+    register: google_repo
 
-- name: Update apt cache for Google Compute
-  apt:
-    update_cache: 'yes'
+  - name: Update apt cache for Google Compute
+    apt:
+      update_cache: 'yes'
+    when: google_repo is changed
 
-- name: Install Google Compute object store client
-  apt:
-    name: "google-cloud-sdk"
-    state: "present"
+  - name: Install Google Compute object store client
+    apt:
+      name: "google-cloud-sdk"
+      state: "present"
+
   when: mode == "googlecloud"
 
 # https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest
-- name: Add Azure repository key
-  apt_key:
-    id: 52E16F86FEE04B979B07E28DB02C46DF417A0893
-    keyserver: packages.microsoft.com
-    state: present
-  when: mode == "azure"
+- block:
+  - name: Add Azure repository key
+    apt_key:
+      id: 52E16F86FEE04B979B07E28DB02C46DF417A0893
+      keyserver: packages.microsoft.com
+      state: present
 
-- name: Add new Azure repository key
-  shell: 'curl -L https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -'
-  when: mode == "azure"
+  - name: Add new Azure repository key
+    shell: 'curl -L https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -'
 
-- name: Add Azure repositories
-  apt_repository:
-    repo: "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_lsb.codename }} main"
-    state: present
-  when: mode == "azure"
+  - name: Add Azure repository
+    apt_repository:
+      repo: "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_lsb.codename }} main"
+      state: present
+    register: azure_repo
 
-- name: Update apt cache for Azure
-  apt:
-    update_cache: 'yes'
+  - name: Update apt cache for Azure
+    apt:
+      update_cache: 'yes'
+    when: azure_repo is changed
 
-- name: Install Azure object store client
-  apt:
-    name: "azure-cli"
-    state: "present"
+  - name: Install Azure object store client
+    apt:
+      name: "azure-cli"
+      state: "present"
+
   when: mode == "azure"
 
 # https://docs.aws.amazon.com/cli/latest/userguide/installing.html
@@ -96,7 +103,7 @@
 
 - name: Add zabbix repositories
   apt:
-    deb: 'https://repo.zabbix.com/zabbix/4.0/{{ ansible_distribution | lower }}/pool/main/z/zabbix-release/zabbix-release_4.0-2+{{ ansible_distribution_release }}_all.deb'
+    deb: 'https://repo.zabbix.com/zabbix/4.4/{{ ansible_distribution | lower }}/pool/main/z/zabbix-release/zabbix-release_4.4-1+{{ ansible_distribution_release }}_all.deb'
     state: present
 
 - name: Update apt cache
