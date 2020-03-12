@@ -155,16 +155,18 @@ public class AnsibleConfigTest {
 
             System.out.println(":Master:");
             // print common configuration
-            config.writeCommonFile(new OutputStream() {
+            OutputStream stream = new OutputStream() {
                 @Override
                 public void write(int b) {
                     System.out.write(b);
                 }
-            });
+            };
+            config.writeCommonFiles(stream, stream, stream);
+
             // print worker specific configuration
             for (Instance worker : workerInstances) {
                 System.out.println(":Worker:");
-                config.writeInstanceFile(worker, new OutputStream() {
+                config.writeSpecificInstanceFile(worker, new OutputStream() {
                     @Override
                     public void write(int b) {
                         System.out.write(b);

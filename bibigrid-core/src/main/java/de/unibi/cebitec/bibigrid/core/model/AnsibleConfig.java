@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.SftpException;
 import de.unibi.cebitec.bibigrid.core.model.Configuration.AnsibleRoles;
 import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
@@ -8,6 +10,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.Tag;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +20,7 @@ import java.util.*;
  * Wrapper for the {@link Configuration} class with extra fields.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
- *
+ * TODO Could / Should probably be static, AnsibleResources as well
  */
 public final class AnsibleConfig {
     private static final int BLOCK_DEVICE_START = 98;
@@ -61,14 +64,21 @@ public final class AnsibleConfig {
     public void writeSiteFile(OutputStream stream,
                               Map<String, String> customMasterRoles,
                               Map<String, String> customWorkerRoles) {
-        String COMMON_FILE = AnsibleResources.COMMON_YML;
+//        String COMMON_FILE = AnsibleResources.COMMON_YML;
+        String LOGIN_FILE = AnsibleResources.LOGIN_YML;
+        String INSTANCES_FILE = AnsibleResources.INSTANCES_YML;
+        String CONFIG_FILE = AnsibleResources.CONFIG_YML;
+
         String DEFAULT_IP_FILE = AnsibleResources.VARS_PATH + "{{ ansible_default_ipv4.address }}.yml";
         // master configuration
         Map<String, Object> master = new LinkedHashMap<>();
         master.put("hosts", "master");
         master.put("become", "yes");
         List<String> vars_files = new ArrayList<>();
-        vars_files.add(COMMON_FILE);
+//        vars_files.add(COMMON_FILE);
+        vars_files.add(LOGIN_FILE);
+        vars_files.add(INSTANCES_FILE);
+        vars_files.add(CONFIG_FILE);
         for (String vars_file : customMasterRoles.values()) {
             if (!vars_file.equals("")) {
                 vars_files.add(vars_file);
@@ -85,7 +95,10 @@ public final class AnsibleConfig {
         workers.put("hosts", "workers");
         workers.put("become", "yes");
         vars_files = new ArrayList<>();
-        vars_files.add(COMMON_FILE);
+//        vars_files.add(COMMON_FILE);
+        vars_files.add(LOGIN_FILE);
+        vars_files.add(INSTANCES_FILE);
+        vars_files.add(CONFIG_FILE);
         vars_files.add(DEFAULT_IP_FILE);
         for (String vars_file : customWorkerRoles.values()) {
             if (!vars_file.equals("")) {
@@ -146,22 +159,55 @@ public final class AnsibleConfig {
     /**
      * Write specified instance to stream (in YAML format)
      */
-    public void writeInstanceFile(Instance instance, OutputStream stream) {
+    public void writeSpecificInstanceFile(Instance instance, OutputStream stream) {
         writeToOutputStream(stream, getInstanceMap(instance, true));
     }
 
     /**
-     * Generates common.yml to write into ~/playbook/vars/.
-     * @param stream Write file to remote
+     * Generates cluster_login.yml, cluster_instances.yml and cluster_configuration.yml.
+     * Writes files into ~/playbook/vars/ folder
+     * @param login_stream sftp channel to write login file to remote
+     * @param instances_stream sftp channel to write instances file to remote
+     * @param config_stream sftp channel to write configuration file to remote
      */
-    public void writeCommonFile(OutputStream stream) {
+    public void writeCommonFiles(OutputStream login_stream,
+                                OutputStream instances_stream,
+                                OutputStream config_stream) {
+        writeLoginFile(login_stream);
+        writeInstancesFile(instances_stream, workerInstances);
+        writeConfigFile(config_stream);
+    }
+
+    /**
+     * Writes cluster_login.yml with essential user data.
+     * @param stream write into cluster_login.yml
+     */
+    private void writeLoginFile(OutputStream stream) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("mode", config.getMode());
         map.put("default_user", config.getUser());
         map.put("ssh_user", config.getSshUser());
         map.put("munge_key",config.getMungeKey());
+        writeToOutputStream(stream, map);
+    }
+
+    /**
+     * Writes cluster_instances.yml with instances information.
+     * @param stream write into cluster_instances.yml
+     */
+    public void writeInstancesFile(OutputStream stream, List<Instance> workers) {
+        Map<String, Object> map = new LinkedHashMap<>();
         map.put("master", getMasterMap());
-        map.put("workers", getWorkerMap());
+        map.put("workers", getWorkerMap(workers));
+        writeToOutputStream(stream, map);
+    }
+
+    /**
+     * Writes cluster_config.yml with cluster configuration.
+     * @param stream write into cluster_configuration.yml
+     */
+    private void writeConfigFile(OutputStream stream) {
+        Map<String, Object> map = new LinkedHashMap<>();
         map.put("CIDR", subnetCidr);
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
@@ -191,7 +237,6 @@ public final class AnsibleConfig {
         if (config.hasCustomAnsibleGalaxyRoles()) {
             map.put("ansible_galaxy_roles", getAnsibleGalaxyRoles());
         }
-
         writeToOutputStream(stream, map);
     }
 
@@ -235,6 +280,38 @@ public final class AnsibleConfig {
             masterMap.put("disks", masterMountsMap);
         }
         return masterMap;
+    }
+
+    /**
+     * Provides instance map for all worker instances.
+     * @param workers list of workers
+     * @return list of maps for each worker instance
+     */
+    private List<Map<String, Object>> getWorkerMap(List<Instance> workers) {
+        List<Map<String, Object>> workerList = new ArrayList<>();
+        for (Instance worker : workers) {
+            workerList.add(getInstanceMap(worker, true));
+        }
+        return workerList;
+    }
+
+    /**
+     * Creates map of instance configuration.
+     *
+     * @param instance current remote instance
+     * @param full degree of detail TODO can be removed
+     * @return map of instance configuration
+     */
+    private Map<String, Object> getInstanceMap(Instance instance, boolean full) {
+        Map<String, Object> instanceMap = new LinkedHashMap<>();
+        instanceMap.put("ip", instance.getPrivateIp());
+        instanceMap.put("cores", instance.getConfiguration().getProviderType().getCpuCores());
+        instanceMap.put("memory", instance.getConfiguration().getProviderType().getMaxRam());
+        if (full) {
+            instanceMap.put("hostname", instance.getHostname());
+            instanceMap.put("ephemerals", getEphemeralDevices(instance.getConfiguration().getProviderType().getEphemerals()));
+        }
+        return instanceMap;
     }
 
     private Map<String, Object> getZabbixConf() {
@@ -336,32 +413,5 @@ public final class AnsibleConfig {
             nfsSharesMap.add(shareMap);
         }
         return nfsSharesMap;
-    }
-
-    /**
-     * Creates map of instance configuration.
-     *
-     * @param instance current remote instance
-     * @param full
-     * @return map of instance configuration
-     */
-    private Map<String, Object> getInstanceMap(Instance instance, boolean full) {
-        Map<String, Object> instanceMap = new LinkedHashMap<>();
-        instanceMap.put("ip", instance.getPrivateIp());
-        instanceMap.put("cores", instance.getConfiguration().getProviderType().getCpuCores());
-        instanceMap.put("memory", instance.getConfiguration().getProviderType().getMaxRam());
-        if (full) {
-            instanceMap.put("hostname", instance.getHostname());
-            instanceMap.put("ephemerals", getEphemeralDevices(instance.getConfiguration().getProviderType().getEphemerals()));
-        }
-        return instanceMap;
-    }
-
-    private List<Map<String, Object>> getWorkerMap() {
-        List<Map<String, Object>> l = new ArrayList<>();
-        for (Instance worker : workerInstances) {
-            l.add(getInstanceMap(worker, true));
-        }
-        return l;
     }
 }

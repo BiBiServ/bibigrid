@@ -31,8 +31,8 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public abstract class CreateCluster extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
     public static final String PREFIX = "bibigrid-";
-    static final String MASTER_NAME_PREFIX = PREFIX + "master";
-    static final String WORKER_NAME_PREFIX = PREFIX + "worker";
+    private static final String MASTER_NAME_PREFIX = PREFIX + "master";
+    private static final String WORKER_NAME_PREFIX = PREFIX + "worker";
 
     protected final ProviderModule providerModule;
     protected final Client client;
@@ -467,30 +467,32 @@ public abstract class CreateCluster extends Intent {
                 }
             }
 
-            // Write the hosts configuration file
-            try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
-                    AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
-                writer.write(hostsConfig.toString());
-            }
-            // Write the commons configuration file
-            commonConfig.writeCommonFile(channel.put(channel.getHome() + "/"
-                    + AnsibleResources.COMMONS_CONFIG_FILE));
+            writeHostsFile(channel, hostsConfig);
+
+            String channel_dir = channel.getHome() + "/";
+
+            // Write the commons configuration files
+            OutputStream login_stream = channel.put(channel_dir + AnsibleResources.COMMONS_LOGIN_FILE);
+            OutputStream instances_stream = channel.put(channel_dir + AnsibleResources.COMMONS_INSTANCES_FILE);
+            OutputStream config_stream = channel.put(channel_dir + AnsibleResources.COMMONS_CONFIG_FILE);
+            commonConfig.writeCommonFiles(login_stream, instances_stream, config_stream);
+
             // Write custom site file
-            commonConfig.writeSiteFile(channel.put(channel.getHome() + "/"
+            commonConfig.writeSiteFile(channel.put(channel_dir
                             + AnsibleResources.SITE_CONFIG_FILE),
                      customMasterRoles, customWorkerRoles);
 
             // Write requirements file for ansible-galaxy support
             if (!ansibleGalaxyRoles.isEmpty()) {
-                commonConfig.writeRequirementsFile(channel.put(channel.getHome() + "/"
+                commonConfig.writeRequirementsFile(channel.put(channel_dir
                         + AnsibleResources.REQUIREMENTS_CONFIG_FILE));
             }
 
             // Write worker instance specific configuration file
             for (Instance worker : workerInstances) {
-                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/"
+                String filename = channel_dir + AnsibleResources.CONFIG_ROOT_PATH + "/"
                         + worker.getPrivateIp() + ".yml";
-                commonConfig.writeInstanceFile(worker, channel.put(filename));
+                commonConfig.writeSpecificInstanceFile(worker, channel.put(filename));
             }
 
         } catch (SftpException | IOException e) {
@@ -499,7 +501,20 @@ public abstract class CreateCluster extends Intent {
         } finally {
             channel.disconnect();
         }
+    }
 
+    /**
+     * Write hosts config file to remote master.
+     * @param channel sftp channel to master instance
+     * @param hostsConfig content of hosts config file
+     */
+    public static void writeHostsFile(ChannelSftp channel, AnsibleHostsConfig hostsConfig) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
+                AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
+            writer.write(hostsConfig.toString());
+        } catch (SftpException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

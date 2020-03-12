@@ -318,7 +318,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                 "image: {}, \n" +
                 "keypair name: {}, \n" +
                 "network: {}, \n" +
-                "securityGroup: {}, \n",
+                "securityGroup: {}.\n",
                 workerInstance.getId(), name, flavorId, image.getName(),
                 workerInstance.getKeyName(), network.getName(), cluster.getSecurityGroup());
         return Builders.server()
