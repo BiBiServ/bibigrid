@@ -472,20 +472,23 @@ public abstract class CreateCluster extends Intent {
             String channel_dir = channel.getHome() + "/";
 
             // Write the commons configuration files
-            OutputStream login_stream = channel.put(channel_dir + AnsibleResources.COMMONS_LOGIN_FILE);
-            OutputStream instances_stream = channel.put(channel_dir + AnsibleResources.COMMONS_INSTANCES_FILE);
-            OutputStream config_stream = channel.put(channel_dir + AnsibleResources.COMMONS_CONFIG_FILE);
+            String login_file = channel_dir + AnsibleResources.COMMONS_LOGIN_FILE;
+            String instances_file = channel_dir + AnsibleResources.COMMONS_INSTANCES_FILE;
+            String config_file = channel_dir + AnsibleResources.COMMONS_CONFIG_FILE;
+            OutputStream login_stream = channel.put(login_file);
+            OutputStream instances_stream = channel.put(instances_file);
+            OutputStream config_stream = channel.put(config_file);
             commonConfig.writeCommonFiles(login_stream, instances_stream, config_stream);
 
             // Write custom site file
-            commonConfig.writeSiteFile(channel.put(channel_dir
-                            + AnsibleResources.SITE_CONFIG_FILE),
+            String site_file = channel_dir + AnsibleResources.SITE_CONFIG_FILE;
+            commonConfig.writeSiteFile(channel.put(site_file),
                      customMasterRoles, customWorkerRoles);
 
             // Write requirements file for ansible-galaxy support
             if (!ansibleGalaxyRoles.isEmpty()) {
-                commonConfig.writeRequirementsFile(channel.put(channel_dir
-                        + AnsibleResources.REQUIREMENTS_CONFIG_FILE));
+                String requirements_file = channel_dir + AnsibleResources.REQUIREMENTS_CONFIG_FILE;
+                commonConfig.writeRequirementsFile(channel.put(requirements_file));
             }
 
             // Write worker instance specific configuration file

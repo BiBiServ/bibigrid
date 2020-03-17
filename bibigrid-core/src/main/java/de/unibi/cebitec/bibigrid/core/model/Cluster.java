@@ -117,6 +117,10 @@ public class Cluster {
         workerInstances.add(instance);
     }
 
+    public void removeWorkerInstance(Instance instance) {
+        workerInstances.remove(instance);
+    }
+
     public String getKeyName() {
         return keyName;
     }

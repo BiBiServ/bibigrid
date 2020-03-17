@@ -1,7 +1,5 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.SftpException;
 import de.unibi.cebitec.bibigrid.core.model.Configuration.AnsibleRoles;
 import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
@@ -10,7 +8,6 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.Tag;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
@@ -170,7 +167,7 @@ public final class AnsibleConfig {
      * @param instances_stream sftp channel to write instances file to remote
      * @param config_stream sftp channel to write configuration file to remote
      */
-    public void writeCommonFiles(OutputStream login_stream,
+    public static void writeCommonFiles(OutputStream login_stream,
                                 OutputStream instances_stream,
                                 OutputStream config_stream) {
         writeLoginFile(login_stream);
@@ -195,9 +192,9 @@ public final class AnsibleConfig {
      * Writes cluster_instances.yml with instances information.
      * @param stream write into cluster_instances.yml
      */
-    public void writeInstancesFile(OutputStream stream, List<Instance> workers) {
+    public static void writeInstancesFile(OutputStream stream, Instance master, List<Instance> workers) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("master", getMasterMap());
+        map.put("master", getMasterMap(master));
         map.put("workers", getWorkerMap(workers));
         writeToOutputStream(stream, map);
     }
@@ -246,7 +243,7 @@ public final class AnsibleConfig {
      * @param stream OutputStream to remote instance
      * @param map (yml) file content
      */
-    private void writeToOutputStream(OutputStream stream, Object map) {
+    private static void writeToOutputStream(OutputStream stream, Object map) {
         try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
                 if (map instanceof Map) {
                     writer.write(new Yaml().dumpAsMap(map));
@@ -262,13 +259,14 @@ public final class AnsibleConfig {
         map.put(option, value ? "yes" : "no");
     }
 
-    private Map<String, Object> getMasterMap() {
+    private static Map<String, Object> getMasterMap(Instance masterInstance) {
         Map<String, Object> masterMap = new LinkedHashMap<>();
         masterMap.put("ip", masterInstance.getPrivateIp());
         masterMap.put("hostname", masterInstance.getHostname());
-        masterMap.put("cores", config.getMasterInstance().getProviderType().getCpuCores());
-        masterMap.put("memory", config.getMasterInstance().getProviderType().getMaxRam());
-        masterMap.put("ephemerals", getEphemeralDevices(config.getMasterInstance().getProviderType().getEphemerals()));
+        InstanceType providerType = masterInstance.getConfiguration().getProviderType();
+        masterMap.put("cores", providerType.getCpuCores());
+        masterMap.put("memory", providerType.getMaxRam());
+        masterMap.put("ephemerals", getEphemeralDevices(providerType.getEphemerals()));
         if (masterMounts != null && masterMounts.size() > 0) {
             List<Map<String, String>> masterMountsMap = new ArrayList<>();
             for (Configuration.MountPoint masterMount : masterMounts) {
@@ -287,7 +285,7 @@ public final class AnsibleConfig {
      * @param workers list of workers
      * @return list of maps for each worker instance
      */
-    private List<Map<String, Object>> getWorkerMap(List<Instance> workers) {
+    private static List<Map<String, Object>> getWorkerMap(List<Instance> workers) {
         List<Map<String, Object>> workerList = new ArrayList<>();
         for (Instance worker : workers) {
             workerList.add(getInstanceMap(worker, true));
@@ -302,7 +300,7 @@ public final class AnsibleConfig {
      * @param full degree of detail TODO can be removed
      * @return map of instance configuration
      */
-    private Map<String, Object> getInstanceMap(Instance instance, boolean full) {
+    private static Map<String, Object> getInstanceMap(Instance instance, boolean full) {
         Map<String, Object> instanceMap = new LinkedHashMap<>();
         instanceMap.put("ip", instance.getPrivateIp());
         instanceMap.put("cores", instance.getConfiguration().getProviderType().getCpuCores());
@@ -385,7 +383,7 @@ public final class AnsibleConfig {
         return ansibleGalaxyRoles;
     }
 
-    private List<String> getEphemeralDevices(int count) {
+    private static List<String> getEphemeralDevices(int count) {
         List<String> ephemerals = new ArrayList<>();
         for (int c = BLOCK_DEVICE_START; c < BLOCK_DEVICE_START + count; c++) {
             ephemerals.add(blockDeviceBase + (char) c);

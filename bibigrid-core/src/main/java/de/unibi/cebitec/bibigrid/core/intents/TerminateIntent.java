@@ -101,14 +101,27 @@ public abstract class TerminateIntent extends Intent {
             return;
         }
 
+        List<Instance> terminateList = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            Instance worker = workers.get(workers.size() - 1 - i);
+            terminateList.add(workers.get(workers.size() - 1 - i));
+        }
+
+        for (Instance worker : terminateList) {
             if (terminateWorker(worker)) {
                 LOG.info("Worker '{}' terminated!", worker.getId());
+                cluster.removeWorkerInstance(worker);
             } else {
                 LOG.error("Worker '{}' could not be terminated successfully.", worker.getId());
             }
         }
+        this.updateAnsibleWorkerLists();
+    }
+
+    /**
+     * Rewrite cluster_instances.yml and specific instance IP yaml file.
+     */
+    private void updateAnsibleWorkerLists() {
+        AnsibleConfig.writeInstancesFile();
     }
 
     /**

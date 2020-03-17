@@ -263,8 +263,7 @@ public class StartUp {
                     }
                     break;
                 case TERMINATE:
-                    TerminateIntent terminateIntent = module.getTerminateIntent(client, config);
-                    if (!terminateIntent.terminate(parameters)) {
+                    if (!module.getTerminateIntent(client, config).terminate(parameters)) {
                         if (parameters.length == 1) {
                             LOG.error("Could not terminate instances with given parameter");
                         } else {
@@ -311,7 +310,8 @@ public class StartUp {
                         LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <count> instead.'");
                         return;
                     }
-                    module.getTerminateIntent(client, config).terminateInstances(clusterId, workerBatch, count);
+                    module.getTerminateIntent(client, config)
+                            .terminateInstances(clusterId, workerBatch, count);
                     break;
                 case CLOUD9:
                     LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead. Continuing ...");
