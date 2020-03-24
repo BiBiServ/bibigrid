@@ -65,6 +65,7 @@ public abstract class Configuration {
         }
         if (propertiesFilePath == null) {
             propertiesFilePath = defaultPropertiesFilePath;
+            LOG.info("Using default configuration file ({}).", defaultPropertiesFilePath);
         }
 
         try {
@@ -73,7 +74,8 @@ public abstract class Configuration {
             if (DEBUG) {
                 e.printStackTrace();
             }
-            throw new ConfigurationException("Failed to load properties file.", e);
+            throw new ConfigurationException("Failed to load properties file.\n" +
+                    "You may want to use a default configuration.yml in the .bibigrid folder in your home directory.", e);
         } catch (YAMLException e) {
             throw new ConfigurationException("Failed to parse configuration file. "+e.getMessage(), e);
         }
@@ -127,7 +129,7 @@ public abstract class Configuration {
 
     /**
      * Calculates total amount of worker instances by incrementing batch instances.
-     * @Todo manual scale increase / decrease total amount if not already done automatically
+     * @TODO manual scale increase / decrease total amount if not already done automatically
      * @return total count of worker instances
      */
     public int getWorkerInstanceCount() {

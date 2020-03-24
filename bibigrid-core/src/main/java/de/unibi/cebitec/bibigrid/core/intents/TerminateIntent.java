@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
+import com.jcraft.jsch.JSchException;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 
 /**
  * Intent to process termination of cluster or worker instances.
@@ -106,22 +109,30 @@ public abstract class TerminateIntent extends Intent {
             terminateList.add(workers.get(workers.size() - 1 - i));
         }
 
+        List<Instance> failed = new ArrayList<>();
         for (Instance worker : terminateList) {
             if (terminateWorker(worker)) {
-                LOG.info("Worker '{}' terminated!", worker.getId());
+                LOG.info("Worker '{}' terminated!", worker.getName());
                 cluster.removeWorkerInstance(worker);
             } else {
-                LOG.error("Worker '{}' could not be terminated successfully.", worker.getId());
+                failed.add(worker);
+                LOG.error("Worker '{}' could not be terminated successfully.", worker.getName());
             }
         }
-        this.updateAnsibleWorkerLists();
-    }
-
-    /**
-     * Rewrite cluster_instances.yml and specific instance IP yaml file.
-     */
-    private void updateAnsibleWorkerLists() {
-        AnsibleConfig.writeInstancesFile();
+        try {
+            AnsibleConfig.updateAnsibleWorkerLists(config, cluster, providerModule.getBlockDeviceBase());
+        } catch (JSchException sshError) {
+            failed.addAll(terminateList);
+            LOG.error("Update may not be finished properly due to a connection error.");
+            sshError.printStackTrace();
+        } catch (IOException ioError) {
+            failed.addAll(terminateList);
+            LOG.error("Update may not be finished properly due to a KeyPair error.");
+            ioError.printStackTrace();
+        }
+        if (failed.isEmpty()) {
+            LOG.info(I, "{} instances have been successfully terminated from cluster {}.", terminateList.size(), cluster.getClusterId());
+        }
     }
 
     /**

@@ -164,7 +164,7 @@ public class StartUp {
         ProviderModule module;
         String [] availableProviderModes = Provider.getInstance().getProviderNames();
         if (availableProviderModes.length == 1) {
-            LOG.info("Use {} provider.",availableProviderModes[0]);
+            LOG.info("Use {} provider.", availableProviderModes[0]);
             module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
         } else {
             // ProviderMode only used when other providers possible / supported

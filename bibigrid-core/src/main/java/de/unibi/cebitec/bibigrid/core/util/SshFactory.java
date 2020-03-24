@@ -18,11 +18,12 @@ public class SshFactory {
     private static final Logger LOG = LoggerFactory.getLogger(SshFactory.class);
     private static final int SSH_POLL_ATTEMPTS = 25;
 
-    public static Session createSshSession(Configuration config, String ip) throws JSchException{
+    public static Session createSshSession(String sshUser, Configuration.ClusterKeyPair ckp, String ip) throws JSchException{
         JSch jssh = new JSch();
         JSch.setLogger(new JSchLogger());
-        Session sshSession = jssh.getSession(config.getSshUser(), ip, 22);
-        Configuration.ClusterKeyPair ckp = config.getClusterKeyPair();
+        Session sshSession = jssh.getSession(sshUser, ip, 22);
+        // config.getSshUser()
+        //Configuration.ClusterKeyPair ckp = config.getClusterKeyPair();
         jssh.addIdentity(ckp.getName(),ckp.getPrivateKey().getBytes(),ckp.getPublicKey().getBytes(),null);
         UserInfo userInfo = getConsolePasswordUserInfo();
         sshSession.setUserInfo(userInfo);

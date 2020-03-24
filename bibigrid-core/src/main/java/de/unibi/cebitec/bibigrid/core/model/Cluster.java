@@ -47,6 +47,7 @@ public class Cluster {
     }
 
     public void setMasterInstance(Instance masterInstance) {
+        masterInstance.setMaster(true);
         this.masterInstance = masterInstance;
     }
 

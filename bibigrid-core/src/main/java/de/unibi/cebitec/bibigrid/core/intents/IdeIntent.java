@@ -77,13 +77,14 @@ public class IdeIntent extends Intent {
     /**
      * To use the IDE in a browser locally, ports have to be forwarded to connect to the remote.
      * @param masterIp IP of the master instance
+     * TODO keypair loaded in forehand, but sshUser should probably be loaded without config
      */
     private void startPortForwarding(final String masterIp) {
         try {
             LOG.info("Trying to connect to master ...");
             sleep(4);
             // Create new Session to avoid packet corruption.
-            Session sshSession = SshFactory.createSshSession(config, masterIp);
+            Session sshSession = SshFactory.createSshSession(config.getSshUser(), config.getClusterKeyPair(), masterIp);
             if (sshSession != null) {
                 this.idePort = config.getIdeConf().getPort_start();
                 this.idePortLast = config.getIdeConf().getPort_end();

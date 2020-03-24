@@ -81,7 +81,7 @@ public final class ValidatorOpenstack extends Validator {
         try {
             File credentialsFile = Paths.get(path).toFile();
             OpenStackCredentials openStackCredentials =  new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class);
-            LOG.info("Found valid credentials file.");
+            LOG.info("Found valid credentials file ({}).", credentialsFile.getAbsolutePath());
             if (openStackCredentials.getProjectName() == null) {
                 LOG.error("Openstack credentials : Missing 'projectName' parameter!");
                 return null;

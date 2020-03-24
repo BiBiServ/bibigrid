@@ -21,9 +21,9 @@ public final class AnsibleResources {
     public static final String VARS_PATH = "vars/";
     public static final String ROLES_PATH = "roles/";
 //    public static final String COMMON_YML = VARS_PATH + "common.yml";
-    public static final String LOGIN_YML = VARS_PATH + "cluster_login.yml";
-    public static final String INSTANCES_YML = VARS_PATH + "cluster_instances.yml";
-    public static final String CONFIG_YML = VARS_PATH + "cluster_configuration.yml";
+    public static final String LOGIN_YML = VARS_PATH + "login.yml";
+    public static final String INSTANCES_YML = VARS_PATH + "instances.yml";
+    public static final String CONFIG_YML = VARS_PATH + "common_configuration.yml";
     public static final String SITE_YML = "site.yml";
     public static final String REQUIREMENTS_YML = "requirements.yml";
     public static final String HOSTS_CONFIG_FILE = ROOT_PATH + ANSIBLE_HOSTS;
