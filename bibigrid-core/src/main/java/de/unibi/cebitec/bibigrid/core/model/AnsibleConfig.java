@@ -155,7 +155,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Writes cluster_login.yml with essential user data.
+     * Writes login.yml with essential user data.
      * @param stream write into cluster_login.yml
      */
     public static void writeLoginFile(OutputStream stream, Configuration config) {
@@ -168,7 +168,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Writes cluster_instances.yml with instances information.
+     * Writes instances.yml with instances information.
      * @param stream write into cluster_instances.yml
      */
     public static void writeInstancesFile(
@@ -184,7 +184,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Rewrite cluster_instances.yml and specific instance IP yaml files.
+     * Rewrite instances.yml and specific instance IP yaml files.
      * TODO It is necessary to have the correct ssh user in config
      */
     public static void updateAnsibleWorkerLists(
@@ -202,6 +202,12 @@ public final class AnsibleConfig {
         channel.connect();
         try {
             AnsibleConfig.rewriteInstancesFile(channel, cluster.getWorkerInstances(), blockDeviceBase);
+            // Write worker instance specific configuration file
+            for (Instance worker : cluster.getWorkerInstances()) {
+                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/"
+                        + worker.getPrivateIp() + ".yml";
+                AnsibleConfig.writeSpecificInstanceFile(channel.put(filename), worker, blockDeviceBase);
+            }
         } catch (SftpException e) {
             LOG.error("Update may not be finished properly due to an SFTP error.");
             e.printStackTrace();
@@ -212,7 +218,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Loads cluster_instances.yml file from remote and adds or removes workers.
+     * Loads instances.yml file from remote and adds or removes workers.
      * @param channel sftp channel to exchange files
      * @param workers updated worker list after scaling
      * @throws SftpException catched in elder method
@@ -230,7 +236,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Writes cluster_config.yml with cluster configuration.
+     * Writes common_config.yml with cluster configuration.
      * @param stream write into cluster_configuration.yml
      */
     public static void writeConfigFile(OutputStream stream, Configuration config, String subnetCidr) {
@@ -269,7 +275,6 @@ public final class AnsibleConfig {
 
     /**
      * Uses stream to write map on remote.
-     *
      * @param stream OutputStream to remote instance
      * @param map (yml) file content
      */

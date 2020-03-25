@@ -502,7 +502,6 @@ public abstract class CreateCluster extends Intent {
                         + worker.getPrivateIp() + ".yml";
                 AnsibleConfig.writeSpecificInstanceFile(channel.put(filename), worker, providerModule.getBlockDeviceBase());
             }
-
         } catch (SftpException | IOException e) {
             throw new ConfigurationException(e);
 
