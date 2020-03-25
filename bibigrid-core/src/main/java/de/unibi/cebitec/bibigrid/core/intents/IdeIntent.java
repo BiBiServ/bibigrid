@@ -54,12 +54,10 @@ public class IdeIntent extends Intent {
         }
         LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
         loadIntent.loadClusterConfiguration();
-        final Map<String, Cluster> clusters = loadIntent.getClusterMap();
-        if (!clusters.containsKey(clusterId)) {
-            LOG.error("Cluster with id {} not found. Please provide a valid cluster id.", clusterId);
+        Cluster cluster = loadIntent.getCluster(clusterId);
+        if (cluster == null) {
             return;
         }
-        Cluster cluster = clusters.get(clusterId);
         String masterIp = config.isUseMasterWithPublicIp() ? cluster.getPublicIp() : cluster.getPrivateIp();
 
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);

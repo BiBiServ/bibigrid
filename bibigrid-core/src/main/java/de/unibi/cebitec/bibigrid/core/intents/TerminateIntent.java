@@ -96,8 +96,10 @@ public abstract class TerminateIntent extends Intent {
     public void terminateInstances(String clusterId, int workerBatch, int count) {
         LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
         loadIntent.loadClusterConfiguration();
-        final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
-        Cluster cluster = clusterMap.get(clusterId);
+        Cluster cluster = loadIntent.getCluster(clusterId);
+        if (cluster == null) {
+            return;
+        }
         List<Instance> workers = cluster.getWorkerInstances(workerBatch);
         if (workers.isEmpty() || workers.size() < count) {
             LOG.error("Could not find {} " + (count == 1 ? "worker" : "workers") + " with specified workerBatch in cluster.", count);

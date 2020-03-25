@@ -18,6 +18,8 @@ import org.yaml.snakeyaml.nodes.Tag;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Wrapper for the {@link Configuration} class with extra fields.
@@ -201,13 +203,8 @@ public final class AnsibleConfig {
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         channel.connect();
         try {
-            AnsibleConfig.rewriteInstancesFile(channel, cluster.getWorkerInstances(), blockDeviceBase);
-            // Write worker instance specific configuration file
-            for (Instance worker : cluster.getWorkerInstances()) {
-                String filename = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/"
-                        + worker.getPrivateIp() + ".yml";
-                AnsibleConfig.writeSpecificInstanceFile(channel.put(filename), worker, blockDeviceBase);
-            }
+            rewriteInstancesFile(channel, cluster.getWorkerInstances(), blockDeviceBase);
+            updateSpecificInstanceFiles(channel, cluster.getWorkerInstances(), blockDeviceBase);
         } catch (SftpException e) {
             LOG.error("Update may not be finished properly due to an SFTP error.");
             e.printStackTrace();
@@ -218,19 +215,70 @@ public final class AnsibleConfig {
     }
 
     /**
+     * Updates specific instance files when scaling up / down.
+     * @param channel sftp channel to exchange files
+     * @param workerInstances updated worker list after scaling
+     * @param blockDeviceBase block device base path for the specific provider implementation ("/dev/vd" in OpenStack)
+     * @throws SftpException catched in elder method
+     */
+    private static void updateSpecificInstanceFiles (
+            ChannelSftp channel,
+            List<Instance> workerInstances,
+            String blockDeviceBase) throws SftpException {
+        String vars_dir = channel.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH + "/";
+        // Remove old specific instance files
+        List<String> ip_files = new ArrayList<>();
+        channel.cd(vars_dir);
+        Vector vars_files = channel.ls("*.yml");
+        for(Object file : vars_files) {
+            String filename = ((ChannelSftp.LsEntry) file).getFilename();
+            if (isIPAddressFile(filename)) {
+                ip_files.add(filename);
+            }
+        }
+        LOG.warn("AnsibleConfig - remove ip files: {}", ip_files);
+        for (String ip_file : ip_files) {
+            channel.rm(ip_file);
+        }
+        // Write new specific instance files
+        for (Instance worker : workerInstances) {
+            String filename = vars_dir + worker.getPrivateIp() + ".yml";
+            AnsibleConfig.writeSpecificInstanceFile(channel.put(filename), worker, blockDeviceBase);
+        }
+    }
+
+    /**
+     * Checks with RegEx if ip could be valid address.
+     * @param file name of file to be checked
+     * @return true, if file contains valid ipv4-address
+     */
+    private static boolean isIPAddressFile(String file) {
+        String ip = file.replace(".yml", "");
+        final String IPV4_REGEX =
+                "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+        final Pattern IPV4_PATTERN = Pattern.compile(IPV4_REGEX);
+        Matcher matcher = IPV4_PATTERN.matcher(ip);
+        return matcher.matches();
+    }
+
+    /**
      * Loads instances.yml file from remote and adds or removes workers.
      * @param channel sftp channel to exchange files
-     * @param workers updated worker list after scaling
+     * @param workerInstances updated worker list after scaling
+     * @param blockDeviceBase block device base path for the specific provider implementation ("/dev/vd" in OpenStack)
      * @throws SftpException catched in elder method
      */
     private static void rewriteInstancesFile(
             ChannelSftp channel,
-            List<Instance> workers,
+            List<Instance> workerInstances,
             String blockDeviceBase) throws SftpException {
         String instances_file = channel.getHome() + "/" + AnsibleResources.COMMONS_INSTANCES_FILE;
         InputStream in = channel.get(instances_file);
         Map<String, Object> map = readFromInputStream(in);
-        map.replace("workers", getWorkerMap(workers, blockDeviceBase));
+        map.replace("workers", getWorkerMap(workerInstances, blockDeviceBase));
         OutputStream out = channel.put(instances_file);
         writeToOutputStream(out, map);
     }

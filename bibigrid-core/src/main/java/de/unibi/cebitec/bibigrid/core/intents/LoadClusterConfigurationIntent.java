@@ -86,6 +86,7 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
             checkInstanceKeyName(cluster, instance);
             checkInstanceUserTag(cluster, instance);
         }
+
         clusterMap.put(clusterId, cluster);
     }
 
@@ -97,9 +98,11 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
     public Cluster getCluster(String clusterId) {
         if (clusterMap.isEmpty()) {
             LOG.error("No BiBiGrid cluster found!\n");
+            return null;
         }
         if (!clusterMap.containsKey(clusterId)) {
             LOG.error("No BiBiGrid cluster with id '" + clusterId + "' found!\n");
+            return null;
         }
         return clusterMap.get(clusterId);
     }

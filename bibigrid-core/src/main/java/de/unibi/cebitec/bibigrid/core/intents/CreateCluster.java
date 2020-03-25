@@ -198,10 +198,8 @@ public abstract class CreateCluster extends Intent {
     public boolean createWorkerInstances(int batchIndex, int count) {
         LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
         loadIntent.loadClusterConfiguration();
-        final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
-        Cluster cluster = clusterMap.get(clusterId);
+        Cluster cluster = loadIntent.getCluster(clusterId);
         if (cluster == null) {
-            LOG.error("No cluster with specified clusterId {} found", clusterId);
             return false;
         }
         List<Instance> workersBatch = cluster.getWorkerInstances(batchIndex);
