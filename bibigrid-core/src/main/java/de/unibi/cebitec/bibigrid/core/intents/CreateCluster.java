@@ -335,9 +335,6 @@ public abstract class CreateCluster extends Intent {
      *    ConfigurationException, close the sshSession and throw a new ConfigurationException
      */
     private void configure(final boolean prepare) throws ConfigurationException {
-        AnsibleHostsConfig ansibleHostsConfig = new AnsibleHostsConfig(config, workerInstances);
-        AnsibleConfig.setMasterMounts(masterDeviceMapper);
-
         final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                 masterInstance.getPrivateIp();
         LOG.info("Now configuring...");
@@ -353,7 +350,7 @@ public abstract class CreateCluster extends Intent {
                     sshSession.connect();
                     LOG.info("Connected to master!");
                     try {
-                        uploadAnsibleToMaster(sshSession, ansibleHostsConfig);
+                        uploadAnsibleToMaster(sshSession);
                         installAndExecuteAnsible(sshSession, prepare);
                     } catch (ConfigurationException e) {
                         throw new ConfigurationException(e.getMessage());
@@ -375,12 +372,10 @@ public abstract class CreateCluster extends Intent {
      * Uploads ansible roles to master instance.
      *
      * @param sshSession ssh connection to master
-     * @param hostsConfig Configuration and list of worker IPs
      * @throws JSchException possible SSH connection error
      * @throws ConfigurationException possible upload error
      */
-    private void uploadAnsibleToMaster(Session sshSession,
-                                       AnsibleHostsConfig hostsConfig) throws JSchException, ConfigurationException {
+    private void uploadAnsibleToMaster(Session sshSession) throws JSchException, ConfigurationException {
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Uploading Ansible playbook to master instance.");
         LOG.info(V, "Connecting sftp channel...");
@@ -467,8 +462,7 @@ public abstract class CreateCluster extends Intent {
                         customWorkerRoles.put(roleName, roleVarsFile);
                 }
             }
-
-            writeHostsFile(channel, hostsConfig);
+            AnsibleConfig.writeHostsFile(channel, config.getSshUser(), workerInstances);
 
             String channel_dir = channel.getHome() + "/";
 
@@ -505,20 +499,6 @@ public abstract class CreateCluster extends Intent {
 
         } finally {
             channel.disconnect();
-        }
-    }
-
-    /**
-     * Write hosts config file to remote master.
-     * @param channel sftp channel to master instance
-     * @param hostsConfig content of hosts config file
-     */
-    public static void writeHostsFile(ChannelSftp channel, AnsibleHostsConfig hostsConfig) {
-        try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
-                AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
-            writer.write(hostsConfig.toString());
-        } catch (SftpException | IOException e) {
-            e.printStackTrace();
         }
     }
 

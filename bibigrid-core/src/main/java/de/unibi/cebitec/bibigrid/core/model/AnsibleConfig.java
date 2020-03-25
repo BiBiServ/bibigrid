@@ -25,14 +25,13 @@ import java.util.regex.Pattern;
  * Wrapper for the {@link Configuration} class with extra fields.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
- * TODO Could / Should probably be static, AnsibleResources as well
+ * @author tdilger(at)techfak.uni-bielefeld.de
  */
 public final class AnsibleConfig {
     private static final Logger LOG = LoggerFactory.getLogger(AnsibleConfig.class);
     private static final int BLOCK_DEVICE_START = 98;
 
-    AnsibleConfig() {
-    }
+    AnsibleConfig() {}
 
     public static List<Configuration.MountPoint> setMasterMounts(DeviceMapper masterDeviceMapper) {
         List<Configuration.MountPoint> masterMountMap = masterDeviceMapper.getSnapshotIdToMountPoint();
@@ -46,6 +45,22 @@ public final class AnsibleConfig {
             }
         }
         return masterMounts;
+    }
+
+    /**
+     * Write hosts config file to remote master.
+     * @param channel sftp channel to master instance
+     * @param sshUser user to use as remote ssh user
+     * @param workerInstances list of worker instances
+     */
+    public static void writeHostsFile(ChannelSftp channel, String sshUser, List<Instance> workerInstances) {
+        AnsibleHostsConfig hostsConfig = new AnsibleHostsConfig(sshUser, workerInstances);
+        try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
+                AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
+            writer.write(hostsConfig.toString());
+        } catch (SftpException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -205,6 +220,7 @@ public final class AnsibleConfig {
         try {
             rewriteInstancesFile(channel, cluster.getWorkerInstances(), blockDeviceBase);
             updateSpecificInstanceFiles(channel, cluster.getWorkerInstances(), blockDeviceBase);
+            writeHostsFile(channel, config.getSshUser(), cluster.getWorkerInstances());
         } catch (SftpException e) {
             LOG.error("Update may not be finished properly due to an SFTP error.");
             e.printStackTrace();
@@ -236,7 +252,6 @@ public final class AnsibleConfig {
                 ip_files.add(filename);
             }
         }
-        LOG.warn("AnsibleConfig - remove ip files: {}", ip_files);
         for (String ip_file : ip_files) {
             channel.rm(ip_file);
         }
@@ -406,7 +421,6 @@ public final class AnsibleConfig {
 
     /**
      * Creates map of instance configuration.
-     *
      * @param instance current remote instance
      * @param full degree of detail TODO can be removed
      * @return map of instance configuration
