@@ -8,7 +8,7 @@ import java.time.ZonedDateTime;
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-public abstract class Instance {
+public abstract class Instance implements Comparable<Instance> {
     public static final String TAG_NAME = "name";
     public static final String TAG_USER = "user";
     public static final String TAG_BIBIGRID_ID = "bibigrid-id";
@@ -70,5 +70,15 @@ public abstract class Instance {
 
     public void setWorkerIndex(int workerIndex) {
         this.workerIndex = workerIndex;
+    }
+
+    /**
+     * Sorts instances by name.
+     * @param instance instance to compare with
+     * @return a negative integer, zero, or a positive integer as the name of the instance
+     *          is less than, equal to, or greater than the name of the specified instance
+     */
+    public int compareTo(Instance instance) {
+        return getName().compareTo(instance.getName());
     }
 }

@@ -5,9 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Handling of cluster internal configuration loading from server and provider API.
@@ -86,16 +84,16 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
             checkInstanceKeyName(cluster, instance);
             checkInstanceUserTag(cluster, instance);
         }
-
+        Collections.sort(cluster.getWorkerInstances());
         clusterMap.put(clusterId, cluster);
     }
 
     /**
      * Determines clusterMap if not available and gets cluster with specified clusterId.
      * @param clusterId Id of cluster
-     * @return Cluster initialized or already available in clusterMap
+     * @return Cluster initialized or already available in clusterMap, null if no cluster found
      */
-    public Cluster getCluster(String clusterId) {
+    Cluster getCluster(String clusterId) {
         if (clusterMap.isEmpty()) {
             LOG.error("No BiBiGrid cluster found!\n");
             return null;

@@ -94,22 +94,6 @@ public class Cluster {
         return workers;
     }
 
-    /**
-     * Returns single worker instance with specified worker batch and worker index.
-     * @param batchIndex idx of worker configuration
-     * @param workerIndex idx of worker in batch configuration
-     * @return worker instance
-     */
-    public Instance getWorkerInstance(int batchIndex, int workerIndex) {
-        List<Instance> workers = getWorkerInstances(batchIndex);
-        for (Instance worker : workers) {
-            if (worker.getWorkerIndex() == workerIndex) {
-                return worker;
-            }
-        }
-        return null;
-    }
-
     public void setWorkerInstances(List<Instance> workerInstances) {
         this.workerInstances = workerInstances;
     }
