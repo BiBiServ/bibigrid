@@ -102,7 +102,9 @@ public abstract class TerminateIntent extends Intent {
         }
         List<Instance> workers = cluster.getWorkerInstances(workerBatch);
         if (workers.isEmpty() || workers.size() < count) {
-            LOG.error("Could not find {} " + (count == 1 ? "worker" : "workers") + " with specified workerBatch in cluster.", count);
+            LOG.error("Could not terminate {} " + (count == 1 ? "worker" : "workers")
+                    + " with specified workerBatch in cluster.\n"
+                    + "There are currently {} worker nodes running with workerBatch {}.", count, workers.size(), workerBatch);
             return;
         }
 
