@@ -1,17 +1,15 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.*;
-
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+import de.unibi.cebitec.bibigrid.core.model.Instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -182,6 +180,38 @@ public final class ShellScriptCreator {
         //        .append("\n");
 
         script.append("if [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n");
+        return script.toString();
+    }
+
+    /**
+     * ansible-playbook script to execute slurm task on master.
+     * @return script
+     */
+    public static String executeSlurmTaskOnMaster() {
+        return "cd ~/" + AnsibleResources.ROOT_PATH + "\n" +
+                "ansible-playbook -i ansible_hosts -t slurm -l master " + AnsibleResources.SITE_YML + "\n";
+    }
+
+    /**
+     * ansible-playbook script to execute whole site.yml on specified worker nodes.
+     * @param workers worker nodes the playbook should be rolled out
+     * @return script
+     */
+    public static String executePlaybookOnWorkers(List<Instance> workers) {
+        StringBuilder script = new StringBuilder();
+        script.append("cd ~/" + AnsibleResources.ROOT_PATH + "\n");
+        script.append("mkdir test\n");
+        script.append("ansible-playbook -i ansible_hosts -l ");
+        for (Instance worker : workers) {
+            script.append(worker.getPrivateIp());
+            if (workers.indexOf(worker) != workers.size() - 1) {
+                script.append(",");
+            } else {
+                script.append(" ");
+            }
+        }
+        script.append(AnsibleResources.SITE_YML + "\n");
+        LOG.warn(script.toString());
         return script.toString();
     }
 }

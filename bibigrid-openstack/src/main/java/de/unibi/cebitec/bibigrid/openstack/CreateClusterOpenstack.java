@@ -273,7 +273,6 @@ public class CreateClusterOpenstack extends CreateCluster {
             InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
             for (int i = workerIndex; i < workerIndex + instanceConfiguration.getCount(); i++) {
                 metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
-                LOG.info("Set worker batch to: {}.", batchIndex);
                 ServerCreateBuilder scb = loadServerConfiguration(cluster, batchIndex, i)
                                                 .addMetadata(metadata)
                                                 .configDrive(workerSpec.getConfigDrive() != 0)

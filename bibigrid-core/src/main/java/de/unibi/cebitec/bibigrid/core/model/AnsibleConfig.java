@@ -1,14 +1,9 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
-import com.jcraft.jsch.SftpException;
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
+import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.core.model.Configuration.AnsibleRoles;
 import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
-import de.unibi.cebitec.bibigrid.core.util.SshFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -33,7 +28,7 @@ public final class AnsibleConfig {
 
     AnsibleConfig() {}
 
-    public static List<Configuration.MountPoint> setMasterMounts(DeviceMapper masterDeviceMapper) {
+    private static List<Configuration.MountPoint> setMasterMounts(DeviceMapper masterDeviceMapper) {
         List<Configuration.MountPoint> masterMountMap = masterDeviceMapper.getSnapshotIdToMountPoint();
         List<Configuration.MountPoint> masterMounts = new ArrayList<>();
         if (masterMountMap != null && masterMountMap.size() > 0) {
@@ -205,28 +200,23 @@ public final class AnsibleConfig {
      * TODO It is necessary to have the correct ssh user in config
      */
     public static void updateAnsibleWorkerLists(
+            Session sshSession,
             Configuration config,
             Cluster cluster,
-            String blockDeviceBase) throws IOException, JSchException {
-        config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
-        config.getClusterKeyPair().load();
-        Session sshSession = SshFactory.createSshSession(
-                config.getSshUser(),
-                config.getClusterKeyPair(),
-                cluster.getMasterInstance().getPublicIp());
-        sshSession.connect();
+            String blockDeviceBase) throws JSchException {
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         channel.connect();
+        LOG.info("Upload updated Ansible files ...");
         try {
             rewriteInstancesFile(channel, cluster.getWorkerInstances(), blockDeviceBase);
             updateSpecificInstanceFiles(channel, cluster.getWorkerInstances(), blockDeviceBase);
             writeHostsFile(channel, config.getSshUser(), cluster.getWorkerInstances());
+            LOG.info("Ansible files successfully updated.");
         } catch (SftpException e) {
             LOG.error("Update may not be finished properly due to an SFTP error.");
             e.printStackTrace();
         } finally {
             channel.disconnect();
-            sshSession.disconnect();
         }
     }
 
@@ -375,6 +365,24 @@ public final class AnsibleConfig {
 
     private static void addBooleanOption(Map<String, Object> map, String option, boolean value) {
         map.put(option, value ? "yes" : "no");
+    }
+
+    /**
+     * Executes given scripts via exec channel.
+     * @param sshSession ssh session to remote
+     * @param scripts given ansible-playbook scripts
+     * @throws JSchException possible ssh channel failure
+     */
+    public static void executeAnsiblePlaybookScripts(
+            Session sshSession,
+            List<String> scripts) throws JSchException {
+        ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
+        LOG.info("Execute Ansible scripts ...");
+        for (String command : scripts) {
+            channel.setCommand(command);
+        }
+        channel.connect();
+        channel.disconnect();
     }
 
     /**

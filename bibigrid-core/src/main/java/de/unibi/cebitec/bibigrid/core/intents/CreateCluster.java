@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -200,6 +199,7 @@ public abstract class CreateCluster extends Intent {
         loadIntent.loadClusterConfiguration();
         Cluster cluster = loadIntent.getCluster(clusterId);
         if (cluster == null) {
+            LOG.error("No cluster with specified clusterId {} found", clusterId);
             return false;
         }
         List<Instance> workersBatch = cluster.getWorkerInstances(batchIndex);
@@ -207,6 +207,7 @@ public abstract class CreateCluster extends Intent {
             LOG.error("No workers with specified batch index {} found.", batchIndex);
             return false;
         }
+        LOG.info("Creating {} worker " + (count == 1 ? "instance" : "instances") + " for batch {}.", count, batchIndex);
         workerInstances = cluster.getWorkerInstances();
         Instance workerBatchInstance = workersBatch.get(0);
         Configuration.WorkerInstanceConfiguration instanceConfiguration =
@@ -220,8 +221,23 @@ public abstract class CreateCluster extends Intent {
             return false;
         } else {
             workerInstances.addAll(additionalWorkers);
+            if (!SshFactory.pollSshPortIsAvailable(cluster.getMasterInstance().getPublicIp())) {
+                return false;
+            }
             try {
-                AnsibleConfig.updateAnsibleWorkerLists(config, cluster, providerModule.getBlockDeviceBase());
+                config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
+                config.getClusterKeyPair().load();
+                Session sshSession = SshFactory.createSshSession(
+                        config.getSshUser(),
+                        config.getClusterKeyPair(),
+                        cluster.getMasterInstance().getPublicIp());
+                sshSession.connect();
+                AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
+                List<String> scripts = new ArrayList<>();
+                scripts.add(ShellScriptCreator.executeSlurmTaskOnMaster());
+                scripts.add(ShellScriptCreator.executePlaybookOnWorkers(additionalWorkers));
+                AnsibleConfig.executeAnsiblePlaybookScripts(sshSession, scripts);
+                sshSession.disconnect();
             } catch (JSchException sshError) {
                 LOG.error("Update may not be finished properly due to a connection error.");
                 sshError.printStackTrace();

@@ -45,6 +45,7 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
                 initCluster(clusterId, clusterInstances);
             }
         }
+        LOG.info("Cluster Configuration loaded successfully.");
     }
 
     /**

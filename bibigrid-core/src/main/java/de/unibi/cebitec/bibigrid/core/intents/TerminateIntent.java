@@ -1,7 +1,10 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.util.ShellScriptCreator;
+import de.unibi.cebitec.bibigrid.core.util.SshFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,9 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 
@@ -111,7 +112,7 @@ public abstract class TerminateIntent extends Intent {
             }
             return;
         }
-
+        LOG.info("Terminate {} workers for batch {} ...", count, workerBatch);
         List<Instance> terminateList = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             terminateList.add(workers.get(workers.size() - 1 - i));
@@ -127,8 +128,21 @@ public abstract class TerminateIntent extends Intent {
                 LOG.error("Worker '{}' could not be terminated successfully.", worker.getName());
             }
         }
+        if (!SshFactory.pollSshPortIsAvailable(cluster.getMasterInstance().getPublicIp())) {
+            return;
+        }
         try {
-            AnsibleConfig.updateAnsibleWorkerLists(config, cluster, providerModule.getBlockDeviceBase());
+            config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
+            config.getClusterKeyPair().load();
+            Session sshSession = SshFactory.createSshSession(
+                    config.getSshUser(),
+                    config.getClusterKeyPair(),
+                    cluster.getMasterInstance().getPublicIp());
+            sshSession.connect();
+            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
+            List<String> scripts = Collections.singletonList(ShellScriptCreator.executeSlurmTaskOnMaster());
+            AnsibleConfig.executeAnsiblePlaybookScripts(sshSession, scripts);
+            sshSession.disconnect();
         } catch (JSchException sshError) {
             failed.addAll(terminateList);
             LOG.error("Update may not be finished properly due to a connection error.");
