@@ -10,7 +10,7 @@
   "overwriteHandlerTest": true,
   "overwriteModel": true,
   "httpPort": 8080,
-  "enableHttp": false,
+  "enableHttp": true,
   "httpsPort": 8443,
   "enableHttps": true,
   "enableHttp2": true,
