@@ -76,7 +76,7 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
         if (!networks.isEmpty()) {
             instanceConfiguration.setNetwork(networks.toArray()[0].toString());
         } else {
-            LOG.warn("Network Address could not be determined for instance {}.", instance.getName());
+            LOG.warn("Network Address could not be determined for instance {}. Continuing ...", instance.getName());
         }
         Flavor flavor = server.getFlavor();
         if (flavor != null) {
@@ -95,7 +95,7 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
         Map<String, String> metadata = server.getMetadata();
         String workerBatch = metadata.get(Instance.TAG_BATCH);
         if (workerBatch != null) {
-            instance.setBatchIndex(Integer.parseInt(workerBatch));
+               instance.setBatchIndex(Integer.parseInt(workerBatch));
         } else {
             if (instance.isMaster()) {
                 config.setAvailabilityZone(server.getAvailabilityZone());

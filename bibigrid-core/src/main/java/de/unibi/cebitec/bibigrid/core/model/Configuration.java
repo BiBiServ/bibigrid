@@ -129,7 +129,7 @@ public abstract class Configuration {
 
     /**
      * Calculates total amount of worker instances by incrementing batch instances.
-     * @TODO manual scale increase / decrease total amount if not already done automatically
+     * TODO manual scale increase / decrease total amount if not already done automatically
      * @return total count of worker instances
      */
     public int getWorkerInstanceCount() {
@@ -678,7 +678,6 @@ public abstract class Configuration {
         public void setSecurityGroup(String securityGroup) {
             this.securityGroup = securityGroup;
         }
-
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -1108,20 +1107,10 @@ public abstract class Configuration {
             this.publicKey = publicKey;
         }
 
-        /**
-         * Return the name of the keypair
-         *
-         * @return
-         */
         public String getName() {
             return name;
         }
 
-        /**
-         * Set the name of the keypair.
-         *
-         * @param name
-         */
         public void setName(String name) {
             this.name = name;
         }

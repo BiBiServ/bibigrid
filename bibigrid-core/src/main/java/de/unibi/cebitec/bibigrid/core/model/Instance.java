@@ -3,9 +3,7 @@ package de.unibi.cebitec.bibigrid.core.model;
 import java.time.ZonedDateTime;
 
 /**
- * Class representing information about a single cloud instance.
- * TODO maybe Comparable to sort after batch and worker indices
- *
+ * Class representing information about a single cloud instance. *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public abstract class Instance implements Comparable<Instance> {
@@ -16,7 +14,6 @@ public abstract class Instance implements Comparable<Instance> {
 
     private boolean isMaster = false;
     private int batchIndex;
-    private int workerIndex;
 
     private Configuration.InstanceConfiguration configuration;
 
@@ -62,14 +59,6 @@ public abstract class Instance implements Comparable<Instance> {
 
     public void setBatchIndex(int batchIndex) {
         this.batchIndex = batchIndex;
-    }
-
-    public int getWorkerIndex() {
-        return workerIndex;
-    }
-
-    public void setWorkerIndex(int workerIndex) {
-        this.workerIndex = workerIndex;
     }
 
     /**

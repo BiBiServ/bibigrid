@@ -167,7 +167,7 @@ public abstract class CreateCluster extends Intent {
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
             final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                     masterInstance.getPrivateIp();
-            configure(prepare);
+            configureAnsible(prepare);
             logFinishedInfoMessage(masterIp);
             saveGridPropertiesFile(masterIp);
         } catch (Exception e) {
@@ -350,7 +350,7 @@ public abstract class CreateCluster extends Intent {
      *    But not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
      *    ConfigurationException, close the sshSession and throw a new ConfigurationException
      */
-    private void configure(final boolean prepare) throws ConfigurationException {
+    private void configureAnsible(final boolean prepare) throws ConfigurationException {
         final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                 masterInstance.getPrivateIp();
         LOG.info("Now configuring...");
@@ -407,7 +407,6 @@ public abstract class CreateCluster extends Intent {
 
             // create Role Upload Path on master
             createSFTPFolder(channel,AnsibleResources.UPLOAD_PATH);
-
 
             // Add "extra" Ansible role
             List<Configuration.AnsibleRoles> ansibleRoles = config.getAnsibleRoles();
@@ -482,16 +481,23 @@ public abstract class CreateCluster extends Intent {
 
             String channel_dir = channel.getHome() + "/";
 
-            // Write the commons configuration files
+            // files for common configuration
             String login_file = channel_dir + AnsibleResources.COMMONS_LOGIN_FILE;
             String instances_file = channel_dir + AnsibleResources.COMMONS_INSTANCES_FILE;
             String config_file = channel_dir + AnsibleResources.COMMONS_CONFIG_FILE;
+            String specification_file = channel_dir + AnsibleResources.WORKER_SPECIFICATION_FILE;
+
+            // streams for common configuration
             OutputStream login_stream = channel.put(login_file);
             OutputStream instances_stream = channel.put(instances_file);
             OutputStream config_stream = channel.put(config_file);
+            OutputStream specification_stream = channel.put(specification_file);
+
+            // write files using stream
             AnsibleConfig.writeLoginFile(login_stream, config);
             AnsibleConfig.writeInstancesFile(instances_stream, masterInstance, workerInstances, masterDeviceMapper, providerModule.getBlockDeviceBase());
             AnsibleConfig.writeConfigFile(config_stream, config, environment.getSubnet().getCidr());
+            AnsibleConfig.writeWorkerSpecificationFile(specification_stream, config);
 
             // Write custom site file
             String site_file = channel_dir + AnsibleResources.SITE_CONFIG_FILE;

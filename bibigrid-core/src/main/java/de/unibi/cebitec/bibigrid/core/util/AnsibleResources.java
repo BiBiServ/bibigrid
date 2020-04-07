@@ -24,6 +24,7 @@ public final class AnsibleResources {
     public static final String LOGIN_YML = VARS_PATH + "login.yml";
     public static final String INSTANCES_YML = VARS_PATH + "instances.yml";
     public static final String CONFIG_YML = VARS_PATH + "common_configuration.yml";
+    public static final String WORKER_SPECIFICATION_FILE = VARS_PATH + "worker_specification.yml";
     public static final String SITE_YML = "site.yml";
     public static final String REQUIREMENTS_YML = "requirements.yml";
     public static final String HOSTS_CONFIG_FILE = ROOT_PATH + ANSIBLE_HOSTS;

@@ -111,6 +111,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             // Network configuration
             LOG.info("Master (ID: {}) started", server.getId());
             master = new InstanceOpenstack(config.getMasterInstance(), server);
+            master.setMaster(true);
             master.setPrivateIp(waitForAddress(master.getId(), environment.getNetwork().getName()).getAddr());
 
             master.updateNeutronHostname();
@@ -247,6 +248,8 @@ public class CreateClusterOpenstack extends CreateCluster {
                 ServerCreate sc  = scb.build();
                 Server server = os.compute().servers().boot(sc);
                 InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
+                instance.setMaster(false);
+                instance.setBatchIndex(batchIndex);
                 workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }
@@ -277,13 +280,14 @@ public class CreateClusterOpenstack extends CreateCluster {
                                                 .addMetadata(metadata)
                                                 .configDrive(workerSpec.getConfigDrive() != 0)
                                                 .userData(ShellScriptCreator.getUserData(config, true));
-
                 if (config.getServerGroup() != null) {
                     scb.addSchedulerHint("group", config.getServerGroup());
                 }
                 ServerCreate sc  = scb.build();
                 Server server = os.compute().servers().boot(sc);
                 InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
+                instance.setMaster(false);
+                instance.setBatchIndex(batchIndex);
                 workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }

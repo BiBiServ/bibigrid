@@ -180,8 +180,13 @@ public final class AnsibleConfig {
     }
 
     /**
+     * /**
      * Writes instances.yml with instances information.
      * @param stream write into cluster_instances.yml
+     * @param master master instance of cluster
+     * @param workers list of worker instances of cluster
+     * @param masterDeviceMapper
+     * @param blockDeviceBase Block device base path for ex. "/dev/xvd" in AWS, "/dev/vd" in OpenStack
      */
     public static void writeInstancesFile(
             OutputStream stream,
@@ -193,6 +198,25 @@ public final class AnsibleConfig {
         map.put("master", getMasterMap(master, setMasterMounts(masterDeviceMapper), blockDeviceBase));
         map.put("workers", getWorkerMap(workers, blockDeviceBase));
         writeToOutputStream(stream, map);
+    }
+
+    /**
+     * Writes batch-index, type and image of each worker batch to file.
+     * @param specification_stream write into worker_specification.yml
+     * @param config specified configuration
+     */
+    public static void writeWorkerSpecificationFile(OutputStream specification_stream, Configuration config) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < config.getWorkerInstances().size(); i++) {
+            Configuration.WorkerInstanceConfiguration instanceConfiguration = config.getWorkerInstances().get(i);
+            Map<String, Object> batchMap = new LinkedHashMap<>();
+            batchMap.put("index", String.valueOf(i + 1));
+            batchMap.put("type", instanceConfiguration.getType());
+            batchMap.put("image", instanceConfiguration.getImage());
+            map.put("batch", batchMap);
+            // TODO probably extend to network, securityGroup etc...
+        }
+        writeToOutputStream(specification_stream, map);
     }
 
     /**
@@ -390,7 +414,7 @@ public final class AnsibleConfig {
      * @param masterInstance master
      * @return map of instance specific information
      */
-    private static Map<String, Object>  getMasterMap(
+    private static Map<String, Object> getMasterMap(
             Instance masterInstance,
             List<Configuration.MountPoint> masterMounts,
             String blockDeviceBase) {

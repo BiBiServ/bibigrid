@@ -77,7 +77,7 @@ public abstract class ProviderModule {
     /**
      * Returns the block device base path for the specific provider implementation.
      *
-     * @return Block device base path for ex. "/dev/xvd" in AWS, "/dev/vd" in OpenStack.
+     * @return Block device base path for ex. "/dev/xvd" in AWS, "/dev/vd" in OpenStack
      */
     public abstract String getBlockDeviceBase();
 
