@@ -171,15 +171,6 @@ public final class ShellScriptCreator {
                 append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
                 append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
                 append("\" --outfile /var/log/ansible-playbook.log \n");
-
-        // Execute ansible playbook using tee
-        //script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
-        //        + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
-        //        .append(prepare ? " -t install" : "")
-        //       .append(" | sudo tee -a /var/log/ansible-playbook.log")
-        //        .append("\n");
-
-        script.append("if [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n");
         return script.toString();
     }
 
@@ -188,8 +179,14 @@ public final class ShellScriptCreator {
      * @return script
      */
     public static String executeSlurmTaskOnMaster() {
-        return "cd ~/" + AnsibleResources.ROOT_PATH + "\n" +
-                "ansible-playbook -i ansible_hosts -t slurm -l master " + AnsibleResources.SITE_YML + "\n";
+        StringBuilder script = new StringBuilder();
+        script.append("python3 ${HOME}/playbook/tools/tee.py --cmd \"$(which ansible-playbook)").
+                append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
+                append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
+                append(" -t slurm").
+                append(" -l master").
+                append("\" --outfile /var/log/ansible-playbook.log \n");
+        return script.toString();
     }
 
     /**
@@ -199,19 +196,18 @@ public final class ShellScriptCreator {
      */
     public static String executePlaybookOnWorkers(List<Instance> workers) {
         StringBuilder script = new StringBuilder();
-        script.append("cd ~/" + AnsibleResources.ROOT_PATH + "\n");
-        script.append("mkdir test\n");
-        script.append("ansible-playbook -i ansible_hosts -l ");
+        script.append("sleep 30\n");
+        script.append("python3 ${HOME}/playbook/tools/tee.py --cmd \"$(which ansible-playbook)").
+                append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
+                append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
+                append(" -l ");
         for (Instance worker : workers) {
             script.append(worker.getPrivateIp());
             if (workers.indexOf(worker) != workers.size() - 1) {
                 script.append(",");
-            } else {
-                script.append(" ");
             }
         }
-        script.append(AnsibleResources.SITE_YML + "\n");
-        LOG.warn(script.toString());
+        script.append("\" --outfile /var/log/ansible-playbook.log \n");
         return script.toString();
     }
 }

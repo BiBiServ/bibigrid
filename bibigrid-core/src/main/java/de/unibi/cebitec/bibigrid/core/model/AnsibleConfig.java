@@ -373,17 +373,18 @@ public final class AnsibleConfig {
      * @param scripts given ansible-playbook scripts
      * @throws JSchException possible ssh channel failure
      */
-    public static void executeAnsiblePlaybookScripts(
-            Session sshSession,
-            List<String> scripts) throws JSchException {
-        ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-        LOG.info("Execute Ansible scripts ...");
-        for (String command : scripts) {
-            channel.setCommand(command);
-        }
-        channel.connect();
-        channel.disconnect();
-    }
+//    public static void executeAnsiblePlaybookScripts(
+//            Session sshSession,
+//            List<String> scripts) throws JSchException {
+//        ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
+//        LOG.info("Execute Ansible scripts ...");
+//        for (String command : scripts) {
+//            channel.setCommand(command);
+//            LOG.warn("setCommand : {}",command);
+//        }
+//        channel.connect();
+//        channel.disconnect();
+//    }
 
     /**
      * Initializes instance map for master instance including mounts.
