@@ -127,7 +127,7 @@ public class SshFactory {
 
         // Add line to script to identify if script was run successfully.
         // This is necessary when running e.g. ansible within the script.
-        // Ansible alway terminates with error code 0, even if ansible
+        // Ansible always terminates with error code 0, even if ansible
         // run fails.
         script = script + "\nif [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n";
 
