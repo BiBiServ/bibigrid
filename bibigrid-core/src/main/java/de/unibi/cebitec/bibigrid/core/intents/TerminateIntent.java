@@ -1,10 +1,9 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.util.ShellScriptCreator;
 import de.unibi.cebitec.bibigrid.core.util.SshFactory;
 import org.slf4j.Logger;
@@ -141,12 +140,8 @@ public abstract class TerminateIntent extends Intent {
                     config.getClusterKeyPair(),
                     cluster.getMasterInstance().getPublicIp());
             sshSession.connect();
-            ChannelSftp channelSftp = (ChannelSftp) sshSession.openChannel("sftp");
-            channelSftp.connect();
-            AnsibleConfig.updateAnsibleWorkerLists(channelSftp, config, cluster, providerModule.getBlockDeviceBase());
-            List<String> scripts = Collections.singletonList(ShellScriptCreator.executeSlurmTaskOnMaster());
-            ChannelExec channelExec = (ChannelExec) sshSession.openChannel("exec");
-            AnsibleConfig.executeAnsiblePlaybookScripts(channelExec, scripts);
+            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
+            SshFactory.executeScript(sshSession, ShellScriptCreator.executeSlurmTaskOnMaster());
             sshSession.disconnect();
         } catch (JSchException sshError) {
             failed.addAll(terminateList);
@@ -156,6 +151,10 @@ public abstract class TerminateIntent extends Intent {
             failed.addAll(terminateList);
             LOG.error("Update may not be finished properly due to a KeyPair error.");
             ioError.printStackTrace();
+        } catch (ConfigurationException ce) {
+            failed.addAll(terminateList);
+            LOG.error("Update may not be finished properly due to a Configuration error.");
+            ce.printStackTrace();
         }
         if (failed.isEmpty()) {
             LOG.info(I, "{} instances have been successfully terminated from cluster {}.", terminateList.size(), cluster.getClusterId());

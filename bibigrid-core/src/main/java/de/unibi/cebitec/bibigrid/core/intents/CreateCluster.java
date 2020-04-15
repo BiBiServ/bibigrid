@@ -211,7 +211,8 @@ public abstract class CreateCluster extends Intent {
             io.printStackTrace();
             return false;
         }
-        Session sshSession;
+        Session sshSession = null;
+        boolean success = true;
         try {
             if (!SshFactory.pollSshPortIsAvailable(cluster.getMasterInstance().getPublicIp())) {
                 return false;
@@ -270,25 +271,39 @@ public abstract class CreateCluster extends Intent {
                 workerInstances = cluster.getWorkerInstances();
                 workerInstances.addAll(additionalWorkers);
             }
-            AnsibleConfig.updateAnsibleWorkerLists(channelSftp, config, cluster, providerModule.getBlockDeviceBase());
-            List<String> scripts = new ArrayList<>();
-            scripts.add(ShellScriptCreator.executeSlurmTaskOnMaster());
-            scripts.add(ShellScriptCreator.executePlaybookOnWorkers(additionalWorkers));
-            ChannelExec channelExec = (ChannelExec) sshSession.openChannel("exec");
-            channelExec.connect();
-            AnsibleConfig.executeAnsiblePlaybookScripts(channelExec, scripts);
-            sshSession.disconnect();
-            LOG.info(I, "{} instances have been successfully added to cluster {}.",
-                    additionalWorkers.size(), cluster.getClusterId());
-        } catch (JSchException | SftpException e) {
+            config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
+            config.getClusterKeyPair().load();
+            sshSession = SshFactory.createSshSession(
+                    config.getSshUser(),
+                    config.getClusterKeyPair(),
+                    cluster.getMasterInstance().getPublicIp());
+            sshSession.connect();
+            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
+
+            SshFactory.executeScript(sshSession, ShellScriptCreator.executeSlurmTaskOnMaster().concat(ShellScriptCreator.executePlaybookOnWorkers(additionalWorkers)));
+            LOG.info(I, "{} instances have been successfully added to cluster {}.", additionalWorkers.size(), cluster.getClusterId());
+
+        } catch (JSchException sshError) {
             LOG.error("Update may not be finished properly due to a connection error.");
-            e.printStackTrace();
-            return false;
+
+            success = false;
+        } catch (IOException io) {
+            LOG.error("Update may not be finished properly due to a KeyPair error.");
+            success = false;
+        } catch (ConfigurationException ce) {
+            LOG.error("Update may not be finished properly due to a configuration error.");
+            success = false;
         } catch (InstanceTypeNotFoundException e) {
             e.printStackTrace();
-            return false;
+        } catch (SftpException e) {
+            e.printStackTrace();
+        } finally {
+            // disconnect sshSession if connected
+            if (sshSession != null && sshSession.isConnected()) {
+                sshSession.disconnect();
+            }
         }
-        return true;
+        return success;
     }
 
     /**
@@ -383,10 +398,9 @@ public abstract class CreateCluster extends Intent {
     /**
      * Uploads ansible scripts via SSH to master and rolls out on specified nodes.
      * @param prepare check if in preparation
-     * @throws ConfigurationException thrown by 'uploadAnsibleToMaster' and 'installAndExecuteAnsible'
-     *    in the case anything failed during the upload or ansible run. The exception is caught by
-     *    'launchClusterInstances'.
-     *    But not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
+     * @throws ConfigurationException thrown by 'uploadAnsibleToMaster' and 'executeScript'
+     *    in the case anything failed during the upload or ansible run.
+     *    Not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
      *    ConfigurationException, close the sshSession and throw a new ConfigurationException
      */
     private void configureAnsible(final boolean prepare) throws ConfigurationException {
@@ -406,7 +420,8 @@ public abstract class CreateCluster extends Intent {
                     LOG.info("Connected to master!");
                     try {
                         uploadAnsibleToMaster(sshSession);
-                        installAndExecuteAnsible(sshSession, prepare);
+                        LOG.info("Ansible is now configuring your cloud instances. This might take a while.");
+                        SshFactory.executeScript(sshSession,ShellScriptCreator.getMasterAnsibleExecutionScript(prepare, config));
                     } catch (ConfigurationException e) {
                         throw new ConfigurationException(e.getMessage());
                     } finally {
@@ -648,53 +663,7 @@ public abstract class CreateCluster extends Intent {
         return pathway[pathway.length - 1];
     }
 
-    /**
-     * Installs and executes ansible roles on remote.
-     *
-     * @param sshSession transfer via ssh session
-     * @param prepare true, if still preparation necessary
-     * @throws JSchException ssh openChannel exception
-     * @throws IOException BufferedReader exceptions
-     * @throws ConfigurationException if configuration was unsuccesful
-     */
-    private void installAndExecuteAnsible(final Session sshSession,  final boolean prepare)
-            throws IOException, JSchException, ConfigurationException {
-        LOG.info("Ansible is now configuring your cloud instances. This might take a while.");
 
-        String execCommand = ShellScriptCreator.getMasterAnsibleExecutionScript(prepare, config);
-        ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
-
-        LineReaderRunnable stdout = new LineReaderRunnable(channel.getInputStream(), true);
-        LineReaderRunnable stderr = new LineReaderRunnable(channel.getErrStream(), false);
-
-        // Create threads ...
-        Thread t_stdout = new Thread(stdout);
-        Thread t_stderr = new Thread(stderr);
-
-        // ... start them ...
-        t_stdout.start();
-        t_stderr.start();
-
-        // ... start ansible ...
-        channel.setCommand(execCommand);
-        // ... connect channel
-        channel.connect();
-
-        // ... wait for threads finished ...
-        try {
-            t_stdout.join();
-            t_stderr.join();
-        } catch (InterruptedException e) {
-            throw new ConfigurationException("Exception occurred during evaluation of ansible output!");
-        }
-
-        // and  disconnect channel
-        channel.disconnect();
-
-        if (stdout.getReturnCode() != 0) {
-            throw new ConfigurationException("Cluster configuration failed.\n" + stdout.getReturnMsg());
-        }
-    }
 
     public Configuration getConfig() {
         return config;
@@ -710,85 +679,3 @@ public abstract class CreateCluster extends Intent {
 
 }
 
-/**
- * Watch and parse the stdout and stderr stream at the same time.
- * Since BufferReader.readline() blocks,
- * the only solution I found is to work with separate threads for stdout and stderror of the ssh channel.
- *
- * The following code snipset seems to be more complicated than it should be (in other languages).
- * If you find a better solution feel free to replace it.
- */
-class LineReaderRunnable implements Runnable {
-    private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
-    private static final String LOG_MSG_BG = "\"[BIBIGRID] ";
-
-    private BufferedReader br;
-
-    private boolean regular;
-
-    private int returnCode = -1;
-    private String returnMsg = "";
-
-    /**
-     * Initializes new Runnable with input / error stream.
-     * @param stream InputStream with regular and error Logging
-     * @param regular true, if regular stream, false, if error stream
-     */
-    LineReaderRunnable(InputStream stream, boolean regular) {
-        this.br = new BufferedReader(new InputStreamReader(stream));
-        this.regular = regular;
-    }
-
-    private void work_on_line(String line) {
-        if (regular) {
-            if (line.contains("CONFIGURATION FINISHED")) {
-                returnCode = 0;
-                returnMsg = ""; // clear possible msg
-            } else if (line.contains("failed:")) {
-                returnMsg = line;
-            }
-            if (VerboseOutputFilter.SHOW_VERBOSE) {
-                // in verbose mode show every line generated by ansible
-                LOG.info(V, "{}", line);
-            } else {
-                // otherwise show only ansible msg containing "[BIBIGRID]"
-                int indexOfLogMessage = line.indexOf(LOG_MSG_BG);
-                if (indexOfLogMessage > 0) {
-                    LOG.info("[Ansible] {}",  line.substring(indexOfLogMessage + LOG_MSG_BG.length(), line.length() - 1));
-                }
-            }
-        } else {
-            // Check for real errors and print them to the error log ...
-            if (line.toLowerCase().contains("ERROR".toLowerCase())) {
-                LOG.error("{}", line);
-            } else { // ... and everything else as warning !
-                LOG.warn(V,"{}",line);
-            }
-        }
-    }
-
-    private void work_on_exception(Exception e) {
-        LOG.error("Evaluate stderr : " + e.getMessage());
-        returnCode = 1;
-    }
-
-    @Override
-    public void run() {
-        try {
-            String line;
-            while ((line = br.readLine()) != null ) {
-                work_on_line(line);
-            }
-        } catch (IOException ex) {
-            work_on_exception(ex);
-        }
-    }
-
-    int getReturnCode(){
-        return returnCode;
-    }
-
-    String getReturnMsg(){
-        return returnMsg;
-    }
-}
