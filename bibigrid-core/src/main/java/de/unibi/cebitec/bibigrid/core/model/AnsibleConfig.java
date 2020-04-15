@@ -206,7 +206,7 @@ public final class AnsibleConfig {
             batchMap.put(WorkerSpecification.INDEX.name(), (i + 1));
             batchMap.put(WorkerSpecification.TYPE.name(), instanceConfiguration.getType());
             batchMap.put(WorkerSpecification.IMAGE.name(), instanceConfiguration.getImage());
-            batchMap.put(WorkerSpecification.NETWORK.name(), environment.getNetwork());
+            batchMap.put(WorkerSpecification.NETWORK.name(), environment.getNetwork().getName());
             map.put(WorkerSpecification.BATCH.name() + " " + (i + 1), batchMap);
             // TODO probably extend to network, securityGroup etc...
         }
@@ -240,11 +240,13 @@ public final class AnsibleConfig {
      * TODO It is necessary to have the correct ssh user in config
      */
     public static void updateAnsibleWorkerLists(
-            ChannelSftp channel,
+            Session sshSession,
             Configuration config,
             Cluster cluster,
-            String blockDeviceBase) {
+            String blockDeviceBase) throws JSchException {
         LOG.info("Upload updated Ansible files ...");
+        ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
+        channel.connect();
         try {
             rewriteInstancesFile(channel, cluster.getWorkerInstances(), blockDeviceBase);
             updateSpecificInstanceFiles(channel, cluster.getWorkerInstances(), blockDeviceBase);

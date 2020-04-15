@@ -326,13 +326,13 @@ public class CreateClusterOpenstack extends CreateCluster {
         String securityGroupId = secGroupExtension != null ? secGroupExtension.getId() : "";
         LOG.info("Launch additional workerInstance with \n" +
                 "name: {}, \n" +
-                "batch index: {}, " +
+                "batch index: {}, \n" +
                 "flavor: {}, \n" +
                 "image: {}, \n" +
                 "keypair name: {}, \n" +
                 "network: {}, \n" +
                 "securityGroup: {}.\n",
-                name, batchIndex, flavorId, image.getName(),
+                name, batchIndex, workerSpec.getFlavor().getName(), image.getName(),
                 cluster.getKeyName(), network.getName(), cluster.getSecurityGroup());
         return Builders.server()
                 .name(name)
