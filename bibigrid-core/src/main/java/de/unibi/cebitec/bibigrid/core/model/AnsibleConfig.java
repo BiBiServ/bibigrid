@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
 import com.jcraft.jsch.*;
+import de.unibi.cebitec.bibigrid.core.intents.CreateClusterEnvironment;
 import de.unibi.cebitec.bibigrid.core.model.Configuration.AnsibleRoles;
 import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
@@ -42,6 +43,10 @@ public final class AnsibleConfig {
         return masterMounts;
     }
 
+    private enum WorkerSpecification {
+        BATCH, INDEX, TYPE, IMAGE, PROVIDER_TYPE, NETWORK, SECURITY_GROUP, SERVER_GROUP
+    }
+
     /**
      * Write hosts config file to remote master.
      * @param channel sftp channel to master instance
@@ -68,21 +73,14 @@ public final class AnsibleConfig {
     public static void writeSiteFile(OutputStream stream,
                               Map<String, String> customMasterRoles,
                               Map<String, String> customWorkerRoles) {
-//        String COMMON_FILE = AnsibleResources.COMMON_YML;
-        String LOGIN_FILE = AnsibleResources.LOGIN_YML;
-        String INSTANCES_FILE = AnsibleResources.INSTANCES_YML;
-        String CONFIG_FILE = AnsibleResources.CONFIG_YML;
-
+        List<String> common_vars =
+                Arrays.asList(AnsibleResources.LOGIN_YML, AnsibleResources.INSTANCES_YML, AnsibleResources.CONFIG_YML);
         String DEFAULT_IP_FILE = AnsibleResources.VARS_PATH + "{{ ansible_default_ipv4.address }}.yml";
         // master configuration
         Map<String, Object> master = new LinkedHashMap<>();
         master.put("hosts", "master");
         master.put("become", "yes");
-        List<String> vars_files = new ArrayList<>();
-//        vars_files.add(COMMON_FILE);
-        vars_files.add(LOGIN_FILE);
-        vars_files.add(INSTANCES_FILE);
-        vars_files.add(CONFIG_FILE);
+        List<String> vars_files = new ArrayList<>(common_vars);
         for (String vars_file : customMasterRoles.values()) {
             if (!vars_file.equals("")) {
                 vars_files.add(vars_file);
@@ -98,11 +96,7 @@ public final class AnsibleConfig {
         Map<String, Object> workers = new LinkedHashMap<>();
         workers.put("hosts", "workers");
         workers.put("become", "yes");
-        vars_files = new ArrayList<>();
-//        vars_files.add(COMMON_FILE);
-        vars_files.add(LOGIN_FILE);
-        vars_files.add(INSTANCES_FILE);
-        vars_files.add(CONFIG_FILE);
+        vars_files = new ArrayList<>(common_vars);
         vars_files.add(DEFAULT_IP_FILE);
         for (String vars_file : customWorkerRoles.values()) {
             if (!vars_file.equals("")) {
@@ -120,7 +114,6 @@ public final class AnsibleConfig {
 
     /**
      * Writes file for each ansible role to integrate environment variables.
-     *
      * @param stream write file to remote
      */
     public static void writeAnsibleVarsFile(OutputStream stream, Map<String, Object> vars) {
@@ -205,18 +198,41 @@ public final class AnsibleConfig {
      * @param specification_stream write into worker_specification.yml
      * @param config specified configuration
      */
-    public static void writeWorkerSpecificationFile(OutputStream specification_stream, Configuration config) {
+    public static void writeWorkerSpecificationFile(OutputStream specification_stream, Configuration config, CreateClusterEnvironment environment) {
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < config.getWorkerInstances().size(); i++) {
             Configuration.WorkerInstanceConfiguration instanceConfiguration = config.getWorkerInstances().get(i);
             Map<String, Object> batchMap = new LinkedHashMap<>();
-            batchMap.put("index", String.valueOf(i + 1));
-            batchMap.put("type", instanceConfiguration.getType());
-            batchMap.put("image", instanceConfiguration.getImage());
-            map.put("batch", batchMap);
+            batchMap.put(WorkerSpecification.INDEX.name(), (i + 1));
+            batchMap.put(WorkerSpecification.TYPE.name(), instanceConfiguration.getType());
+            batchMap.put(WorkerSpecification.IMAGE.name(), instanceConfiguration.getImage());
+            batchMap.put(WorkerSpecification.NETWORK.name(), environment.getNetwork());
+            map.put(WorkerSpecification.BATCH.name() + " " + (i + 1), batchMap);
             // TODO probably extend to network, securityGroup etc...
         }
         writeToOutputStream(specification_stream, map);
+    }
+
+    /**
+     * Initialize instanceConfiguration of worker batch.
+     * @param in stream to read from worker_specification.yml
+     * @return configuration for specified batch
+     */
+    public static Configuration.WorkerInstanceConfiguration readWorkerSpecificationFile(InputStream in, int batchIndex) {
+        Configuration.WorkerInstanceConfiguration instanceConfiguration = null;
+        Map<String, Object> map = AnsibleConfig.readFromInputStream(in);
+        for (Object val : map.values()) {
+            Map<String, Object> batchMap = (Map<String, Object>) val;
+            int index = Integer.parseInt(String.valueOf(batchMap.get(WorkerSpecification.INDEX.name())));
+            if (index == batchIndex) {
+                instanceConfiguration = new Configuration.WorkerInstanceConfiguration();
+                instanceConfiguration.setType(String.valueOf(batchMap.get(WorkerSpecification.TYPE.name())));
+                instanceConfiguration.setImage(String.valueOf(batchMap.get(WorkerSpecification.IMAGE.name())));
+                instanceConfiguration.setNetwork(String.valueOf(batchMap.get(WorkerSpecification.NETWORK.name())));
+                break;
+            }
+        }
+        return instanceConfiguration;
     }
 
     /**
@@ -224,12 +240,10 @@ public final class AnsibleConfig {
      * TODO It is necessary to have the correct ssh user in config
      */
     public static void updateAnsibleWorkerLists(
-            Session sshSession,
+            ChannelSftp channel,
             Configuration config,
             Cluster cluster,
-            String blockDeviceBase) throws JSchException {
-        ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
-        channel.connect();
+            String blockDeviceBase) {
         LOG.info("Upload updated Ansible files ...");
         try {
             rewriteInstancesFile(channel, cluster.getWorkerInstances(), blockDeviceBase);
@@ -393,20 +407,18 @@ public final class AnsibleConfig {
 
     /**
      * Executes given scripts via exec channel.
-     * @param sshSession ssh session to remote
+     * @param channel channel to execute on remote master
      * @param scripts given ansible-playbook scripts
      * @throws JSchException possible ssh channel failure
      */
     public static void executeAnsiblePlaybookScripts(
-            Session sshSession,
+            ChannelExec channel,
             List<String> scripts) throws JSchException {
-        ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
         LOG.info("Execute Ansible scripts ...");
         for (String command : scripts) {
             channel.setCommand(command);
         }
         channel.connect();
-        channel.disconnect();
     }
 
     /**

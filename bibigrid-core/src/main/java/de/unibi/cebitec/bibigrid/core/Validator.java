@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Checks, if commandline and configuration input is set correctly.
+ * TODO Could be static
  */
 public abstract class Validator {
     protected static final Logger LOG = LoggerFactory.getLogger(Validator.class);

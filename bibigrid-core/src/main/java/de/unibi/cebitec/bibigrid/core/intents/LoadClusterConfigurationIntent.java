@@ -40,6 +40,7 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
             for (String clusterId : instanceMap.keySet()) {
                 List<Instance> clusterInstances = instanceMap.get(clusterId);
                 for (Instance instance : clusterInstances) {
+                    // TODO !!! Only load for necessary cluster, time-costly
                     loadInstanceConfiguration(instance);
                 }
                 initCluster(clusterId, clusterInstances);
@@ -47,6 +48,8 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
         }
         LOG.info("Cluster Configuration loaded successfully.");
     }
+
+    // TODO loadClusterConfiguration(id)
 
     /**
      * Initializes map of clusterIds and corresponding instances.

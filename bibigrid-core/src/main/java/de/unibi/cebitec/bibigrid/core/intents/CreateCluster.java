@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.core.intents;
 import com.jcraft.jsch.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
 import java.nio.file.Files;
@@ -202,53 +203,91 @@ public abstract class CreateCluster extends Intent {
             LOG.error("No cluster with specified clusterId {} found", clusterId);
             return false;
         }
-        List<Instance> workersBatch = cluster.getWorkerInstances(batchIndex);
-        if (workersBatch == null || workersBatch.isEmpty()) {
-            LOG.error("No workers with specified batch index {} found.", batchIndex);
+        try {
+            config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
+            config.getClusterKeyPair().load();
+        } catch (IOException io) {
+            LOG.error("Update may not be finished properly due to a KeyPair error.");
+            io.printStackTrace();
             return false;
         }
-        LOG.info("Creating {} worker " + (count == 1 ? "instance" : "instances") + " for batch {}.", count, batchIndex);
-        workerInstances = cluster.getWorkerInstances();
-        Instance workerBatchInstance = workersBatch.get(0);
-        Configuration.WorkerInstanceConfiguration instanceConfiguration =
-                (Configuration.WorkerInstanceConfiguration) workerBatchInstance.getConfiguration();
-        instanceConfiguration.setCount(count);
-        String workerNameTag = WORKER_NAME_PREFIX + "-" + clusterId;
-        int workerIndex = workersBatch.size() + 1;
-        List<Instance> additionalWorkers =
-                launchAdditionalClusterWorkerInstances(cluster, batchIndex, workerIndex, instanceConfiguration, workerNameTag);
-        if (additionalWorkers == null) {
-            return false;
-        } else {
-            workerInstances.addAll(additionalWorkers);
+        Session sshSession;
+        try {
             if (!SshFactory.pollSshPortIsAvailable(cluster.getMasterInstance().getPublicIp())) {
                 return false;
             }
-            try {
-                config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
-                config.getClusterKeyPair().load();
-                Session sshSession = SshFactory.createSshSession(
-                        config.getSshUser(),
-                        config.getClusterKeyPair(),
-                        cluster.getMasterInstance().getPublicIp());
-                sshSession.connect();
-                AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
-                List<String> scripts = new ArrayList<>();
-                scripts.add(ShellScriptCreator.executeSlurmTaskOnMaster());
-                scripts.add(ShellScriptCreator.executePlaybookOnWorkers(additionalWorkers));
-                AnsibleConfig.executeAnsiblePlaybookScripts(sshSession, scripts);
-                sshSession.disconnect();
-            } catch (JSchException sshError) {
-                LOG.error("Update may not be finished properly due to a connection error.");
-                sshError.printStackTrace();
-                return false;
-            } catch (IOException io) {
-                LOG.error("Update may not be finished properly due to a KeyPair error.");
-                io.printStackTrace();
-                return false;
+            sshSession = SshFactory.createSshSession(
+                    config.getSshUser(),
+                    config.getClusterKeyPair(),
+                    cluster.getMasterInstance().getPublicIp());
+            sshSession.connect();
+            ChannelSftp channelSftp = (ChannelSftp) sshSession.openChannel("sftp");
+            channelSftp.connect();
+            Configuration.WorkerInstanceConfiguration instanceConfiguration;
+            List<Instance> workersBatch = cluster.getWorkerInstances(batchIndex);
+            if (workersBatch == null || workersBatch.isEmpty()) {
+                // connect to master i.o. to load worker specification file
+                String specification_file = channelSftp.getHome() + "/" + AnsibleResources.WORKER_SPECIFICATION_FILE;
+                String file_path = channelSftp.getHome() + "/" + AnsibleResources.CONFIG_ROOT_PATH;
+                Vector<ChannelSftp.LsEntry> dirEntries = channelSftp.ls(file_path);
+                List<String> dirFiles = new ArrayList<>();
+                for (ChannelSftp.LsEntry file : dirEntries) {
+                    String lsFileAbsolutePath = AnsibleResources.CONFIG_ROOT_PATH + file.getFilename();
+                    dirFiles.add(lsFileAbsolutePath);
+                }
+                if (!dirFiles.contains(AnsibleResources.WORKER_SPECIFICATION_FILE)) {
+                    LOG.error("No workers with specified batch index {} found.", batchIndex);
+                    channelSftp.disconnect();
+                    sshSession.disconnect();
+                    return false;
+                }
+                InputStream in = channelSftp.get(specification_file);
+                instanceConfiguration = AnsibleConfig.readWorkerSpecificationFile(in, batchIndex);
+                if (instanceConfiguration == null) {
+                    LOG.error("No workers with specified batch index {} found.", batchIndex);
+                    channelSftp.disconnect();
+                    sshSession.disconnect();
+                    return false;
+                }
+                instanceConfiguration.setProviderType(providerModule.getInstanceType(client, config, instanceConfiguration.getType()));
+            } else {
+                Instance workerBatchInstance = workersBatch.get(0);
+                instanceConfiguration =
+                        (Configuration.WorkerInstanceConfiguration) workerBatchInstance.getConfiguration();
             }
+            LOG.info("Creating {} worker " + (count == 1 ? "instance" : "instances") + " for batch {}.", count, batchIndex);
+            instanceConfiguration.setCount(count);
+            String workerNameTag = WORKER_NAME_PREFIX + "-" + clusterId;
+            int workerIndex = workersBatch.size() + 1;
+            List<Instance> additionalWorkers =
+                     launchAdditionalClusterWorkerInstances(cluster, batchIndex, workerIndex, instanceConfiguration, workerNameTag);
+            if (additionalWorkers == null) {
+                LOG.error("No additional workers could be launched.");
+                channelSftp.disconnect();
+                sshSession.disconnect();
+                return false;
+            } else {
+                workerInstances = cluster.getWorkerInstances();
+                workerInstances.addAll(additionalWorkers);
+            }
+            AnsibleConfig.updateAnsibleWorkerLists(channelSftp, config, cluster, providerModule.getBlockDeviceBase());
+            List<String> scripts = new ArrayList<>();
+            scripts.add(ShellScriptCreator.executeSlurmTaskOnMaster());
+            scripts.add(ShellScriptCreator.executePlaybookOnWorkers(additionalWorkers));
+            ChannelExec channelExec = (ChannelExec) sshSession.openChannel("exec");
+            channelExec.connect();
+            AnsibleConfig.executeAnsiblePlaybookScripts(channelExec, scripts);
+            sshSession.disconnect();
+            LOG.info(I, "{} instances have been successfully added to cluster {}.",
+                    additionalWorkers.size(), cluster.getClusterId());
+        } catch (JSchException | SftpException e) {
+            LOG.error("Update may not be finished properly due to a connection error.");
+            e.printStackTrace();
+            return false;
+        } catch (InstanceTypeNotFoundException e) {
+            e.printStackTrace();
+            return false;
         }
-        LOG.info(I, "{} instances have been successfully added to cluster {}.", additionalWorkers.size(), cluster.getClusterId());
         return true;
     }
 
@@ -497,7 +536,9 @@ public abstract class CreateCluster extends Intent {
             AnsibleConfig.writeLoginFile(login_stream, config);
             AnsibleConfig.writeInstancesFile(instances_stream, masterInstance, workerInstances, masterDeviceMapper, providerModule.getBlockDeviceBase());
             AnsibleConfig.writeConfigFile(config_stream, config, environment.getSubnet().getCidr());
-            AnsibleConfig.writeWorkerSpecificationFile(specification_stream, config);
+            // TODO network should be written in instance configuration when initializing
+            // security group und server group
+            AnsibleConfig.writeWorkerSpecificationFile(specification_stream, config, environment);
 
             // Write custom site file
             String site_file = channel_dir + AnsibleResources.SITE_CONFIG_FILE;

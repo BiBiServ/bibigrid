@@ -75,7 +75,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
             metadata.put(Instance.TAG_USER, config.getUser());
             InstanceTypeOpenstack masterSpec = (InstanceTypeOpenstack) config.getMasterInstance().getProviderType();
-            ServerCreateBuilder scb = null;
+            ServerCreateBuilder scb;
             scb = Builders.server()
                     .name(masterNameTag)
                     .flavor(masterSpec.getFlavor().getId())
@@ -223,11 +223,11 @@ public class CreateClusterOpenstack extends CreateCluster {
             metadata.put(Instance.TAG_NAME, workerNameTag);
             metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
             metadata.put(Instance.TAG_USER, config.getUser());
+            int workerBatch = batchIndex + 1;
+            metadata.put(Instance.TAG_BATCH, String.valueOf(workerBatch));
             InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
             for (int i = 0; i < instanceConfiguration.getCount(); i++) {
-                int workerBatch = batchIndex + 1;
                 int workerIndex = i + 1;
-                metadata.put(Instance.TAG_BATCH, String.valueOf(workerBatch));
                 LOG.info("Set worker batch to: {}.", workerBatch);
                 ServerCreateBuilder scb =
                         Builders.server()
@@ -266,17 +266,20 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     @Override
     protected List<Instance> launchAdditionalClusterWorkerInstances(
-            Cluster cluster, int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
+            Cluster cluster,
+            int batchIndex, int workerIndex,
+            Configuration.WorkerInstanceConfiguration instanceConfiguration,
+            String workerNameTag) {
         Map<String, InstanceOpenstack> workers = new HashMap<>();
         try {
             final Map<String, String> metadata = new HashMap<>();
             metadata.put(Instance.TAG_NAME, workerNameTag);
             metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
             metadata.put(Instance.TAG_USER, config.getUser());
+            metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
             InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
             for (int i = workerIndex; i < workerIndex + instanceConfiguration.getCount(); i++) {
-                metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
-                ServerCreateBuilder scb = loadServerConfiguration(cluster, batchIndex, i)
+                ServerCreateBuilder scb = loadServerConfiguration(cluster, batchIndex, i, instanceConfiguration)
                                                 .addMetadata(metadata)
                                                 .configDrive(workerSpec.getConfigDrive() != 0)
                                                 .userData(ShellScriptCreator.getUserData(config, true));
@@ -306,29 +309,36 @@ public class CreateClusterOpenstack extends CreateCluster {
      * @param workerIndex index of worker in worker batch
      * @return build up server
      */
-    private ServerCreateBuilder loadServerConfiguration(Cluster cluster, int batchIndex, int workerIndex) throws NotYetSupportedException {
-        Instance workerInstance = cluster.getWorkerInstances(batchIndex).get(0);
-        Configuration.InstanceConfiguration instanceConfiguration = workerInstance.getConfiguration();
+    private ServerCreateBuilder loadServerConfiguration(
+            Cluster cluster,
+            int batchIndex,
+            int workerIndex,
+            Configuration.WorkerInstanceConfiguration instanceConfiguration) throws NotYetSupportedException {
         String name = buildWorkerInstanceName(batchIndex, workerIndex);
-        String flavorId = ((InstanceTypeOpenstack) instanceConfiguration.getProviderType()).getFlavor().getId();
+        InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
+        if (workerSpec == null) {
+            LOG.error("ProviderType could not be determined.");
+        }
+        String flavorId = workerSpec.getFlavor().getId();
         InstanceImage image = client.getImageByIdOrName(instanceConfiguration.getImage());
         Network network = client.getNetworkByIdOrName(instanceConfiguration.getNetwork());
         SecGroupExtension secGroupExtension = CreateClusterEnvironmentOpenstack.getSecGroupExtensionByName(os, cluster.getSecurityGroup());
         String securityGroupId = secGroupExtension != null ? secGroupExtension.getId() : "";
-        LOG.info("Launch additional workerInstance {} with \n" +
+        LOG.info("Launch additional workerInstance with \n" +
                 "name: {}, \n" +
+                "batch index: {}, " +
                 "flavor: {}, \n" +
                 "image: {}, \n" +
                 "keypair name: {}, \n" +
                 "network: {}, \n" +
                 "securityGroup: {}.\n",
-                workerInstance.getId(), name, flavorId, image.getName(),
-                workerInstance.getKeyName(), network.getName(), cluster.getSecurityGroup());
+                name, batchIndex, flavorId, image.getName(),
+                cluster.getKeyName(), network.getName(), cluster.getSecurityGroup());
         return Builders.server()
                 .name(name)
                 .flavor(flavorId)
                 .image(image.getId())
-                .keypairName(workerInstance.getKeyName())
+                .keypairName(cluster.getKeyName())
                 .addSecurityGroup(securityGroupId)
                 .availabilityZone(cluster.getAvailabilityZone())
                 .networks(Collections.singletonList(network.getId()));
@@ -431,8 +441,7 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
     /**
-     * Check if a given floating ip is set for a given server instance.
-     *
+     * Check, if a given floating ip is set for a given server instance.
      * @param server     - Server instance
      * @param floatingIp - floatingIp to be checked
      */
@@ -452,8 +461,7 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
     /**
-     * Return a Snapshot by its name/id or null if no snapshot is found
-     *
+     * Return a Snapshot by its name/id or null if no snapshot is found.
      * @param nameOrId - name or id of snapshot
      */
     private VolumeSnapshot getSnapshotByNameOrId(String nameOrId) {

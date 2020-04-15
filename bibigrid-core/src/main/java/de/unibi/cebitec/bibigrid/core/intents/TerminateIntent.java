@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.core.model.*;
@@ -80,7 +82,7 @@ public abstract class TerminateIntent extends Intent {
             LOG.info("Terminating cluster with ID '{}' ...", clusterId);
             if (terminateCluster(cluster)) {
                 delete_Key(cluster);
-                LOG.info("Cluster '{}' terminated!", clusterId);
+                LOG.info(I, "Cluster '{}' terminated!", clusterId);
             } else {
                 LOG.error("Cluster '{}' could not be terminated successfully.", clusterId);
             }
@@ -139,9 +141,12 @@ public abstract class TerminateIntent extends Intent {
                     config.getClusterKeyPair(),
                     cluster.getMasterInstance().getPublicIp());
             sshSession.connect();
-            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
+            ChannelSftp channelSftp = (ChannelSftp) sshSession.openChannel("sftp");
+            channelSftp.connect();
+            AnsibleConfig.updateAnsibleWorkerLists(channelSftp, config, cluster, providerModule.getBlockDeviceBase());
             List<String> scripts = Collections.singletonList(ShellScriptCreator.executeSlurmTaskOnMaster());
-            AnsibleConfig.executeAnsiblePlaybookScripts(sshSession, scripts);
+            ChannelExec channelExec = (ChannelExec) sshSession.openChannel("exec");
+            AnsibleConfig.executeAnsiblePlaybookScripts(channelExec, scripts);
             sshSession.disconnect();
         } catch (JSchException sshError) {
             failed.addAll(terminateList);
