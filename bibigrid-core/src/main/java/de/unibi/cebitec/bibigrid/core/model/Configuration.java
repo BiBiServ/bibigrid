@@ -313,7 +313,7 @@ public abstract class Configuration {
 
     /**
      * Return a list of cluster id. Currently used for termination intent only.
-     * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     * ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
      *      * necessary for termination intent.
      *
      * @return Return a list of cluster id.
@@ -338,7 +338,7 @@ public abstract class Configuration {
     /**
 
      * Set the clusterid for termination intent either as a single cluster "id" or as multiple "id1/id2/id3".
-     * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     * ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
      *      * necessary for termination intent.
      */
     public void setClusterIds(String clusterIds) {
@@ -347,7 +347,7 @@ public abstract class Configuration {
 
     /**
      * Set the clusterid for termination intent as cluster id list".
-     * @ToDo:  Seems not the right place to store this information, since this is not part of a cluster configuration and only
+     * ToDo:  Seems not the right place to store this information, since this is not part of a cluster configuration and only
      * necessary for termination intent.
      */
     public void setClusterIds(String[] clusterIds) {
@@ -956,12 +956,7 @@ public abstract class Configuration {
                 this.hosts = "worker";
                 return;
             }
-            if (hosts.equals("all") || hosts.equals("worker") || hosts.equals("master")) {
-                this.hosts = hosts;
-                return;
-            }
-            LOG.error("Unsupported value '{}' for ansibleRoles.hosts.",hosts);
-            this.hosts = "unsupported";
+            this.hosts = hosts;
         }
 
         public Map<String, Object> getVars() {

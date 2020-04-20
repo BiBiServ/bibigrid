@@ -77,6 +77,8 @@ public abstract class Validator {
      * @return true, if file(s) found, galaxy, git or url defined and hosts given
      */
     private boolean validateAnsibleRequirements() {
+        final String MISSING_HOST = "hosts parameter not set.";
+        final String HOST_DEFINE = "hosts parameter has to be defined as either 'master', 'worker', 'workers' or 'all'.";
         // Check Ansible roles
         for (Configuration.AnsibleRoles role : config.getAnsibleRoles()) {
             if (role.getFile() == null) {
@@ -94,18 +96,18 @@ public abstract class Validator {
             if (role.getVarsFile() != null) {
                 Path varFilePath = Paths.get(role.getVarsFile());
                 if (!Files.isReadable(varFilePath)){
-                    LOG.error("Ansible: varsFile '{}' does not exist.", varFilePath);
+                    LOG.error("Ansible: vars file '{}' does not exist.", varFilePath);
                     return false;
                 }
             }
             if (role.getHosts() == null) {
-                LOG.error("Ansible: hosts parameter not set.");
+                LOG.error("Ansible: " + MISSING_HOST);
                 return false;
             } else if (!role.getHosts().equals("master") &&
                     !role.getHosts().equals("worker") &&
                     !role.getHosts().equals("workers") &&
                     !role.getHosts().equals("all")) {
-                LOG.error("Ansible: hosts parameter has to be defined as either 'master', 'worker' or 'all'.");
+                LOG.error("Ansible: " + HOST_DEFINE);
                 return false;
             }
         }
@@ -118,18 +120,18 @@ public abstract class Validator {
             if (role.getVarsFile() != null) {
                 Path varFilePath = Paths.get(role.getVarsFile());
                 if (!Files.isReadable(varFilePath)){
-                    LOG.error("Ansible Galaxy: varsFile {} does not exist.", varFilePath);
+                    LOG.error("Ansible Galaxy: vars file {} does not exist.", varFilePath);
                     return false;
                 }
             }
             if (role.getHosts() == null) {
-                LOG.error("Ansible Galaxy: hosts parameter not set.");
+                LOG.error("Ansible Galaxy: " + MISSING_HOST);
                 return false;
             } else if (!role.getHosts().equals("master") &&
                     !role.getHosts().equals("worker") &&
                     !role.getHosts().equals("workers") &&
                     !role.getHosts().equals("all")) {
-                LOG.error("Ansible Galaxy: hosts parameter has to be defined as either 'master', 'worker' or 'all'.");
+                LOG.error("Ansible Galaxy: " + HOST_DEFINE);
                 return false;
             }
             if (role.getUrl() != null) {
