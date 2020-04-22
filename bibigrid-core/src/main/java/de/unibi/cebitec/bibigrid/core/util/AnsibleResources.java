@@ -15,9 +15,15 @@ import java.util.jar.JarFile;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public final class AnsibleResources {
+    // File names
+    public static final String ANSIBLE_HOSTS = "ansible_hosts";
+    public static final String COMMON_YML = "common.yml";
+    public static final String SITE_YML = "site.yml";
+    public static final String REQUIREMENTS_YML = "requirements.yml";
+
+    // Paths
     public static final String UPLOAD_PATH = "/tmp/roles/";
     public static final String ROOT_PATH = "playbook/";
-    public static final String ANSIBLE_HOSTS = "ansible_hosts";
     public static final String VARS_PATH = "vars/";
     public static final String ROLES_PATH = "roles/";
     public static final String LOGIN_YML = VARS_PATH + "login.yml";
@@ -33,6 +39,9 @@ public final class AnsibleResources {
     public static final String COMMONS_INSTANCES_FILE = ROOT_PATH + INSTANCES_YML;
     public static final String COMMONS_CONFIG_FILE = ROOT_PATH + CONFIG_YML;
     public static final String WORKER_SPECIFICATION_FILE = ROOT_PATH + WORKER_SPECIFICATION_YML;
+
+    // Full files
+    public static final String COMMONS_CONFIG_FILE = ROOT_PATH + VARS_PATH + COMMON_YML;
     public static final String SITE_CONFIG_FILE = ROOT_PATH + SITE_YML;
     public static final String REQUIREMENTS_CONFIG_FILE = ROOT_PATH + REQUIREMENTS_YML;
     private final List<String> files = new ArrayList<>();
