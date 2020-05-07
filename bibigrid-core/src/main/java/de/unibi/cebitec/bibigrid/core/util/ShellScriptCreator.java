@@ -1,17 +1,15 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.*;
-
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+import de.unibi.cebitec.bibigrid.core.model.Instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -173,15 +171,43 @@ public final class ShellScriptCreator {
                 append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
                 append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
                 append("\" --outfile /var/log/ansible-playbook.log \n");
+        return script.toString();
+    }
 
-        // Execute ansible playbook using tee
-        //script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
-        //        + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
-        //        .append(prepare ? " -t install" : "")
-        //       .append(" | sudo tee -a /var/log/ansible-playbook.log")
-        //        .append("\n");
+    /**
+     * ansible-playbook script to execute slurm task on master.
+     * @return script
+     */
+    public static String executeSlurmTaskOnMaster() {
+        StringBuilder script = new StringBuilder();
+        script.append("python3 ${HOME}/playbook/tools/tee.py --cmd \"$(which ansible-playbook)").
+                append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
+                append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
+                append(" -t slurm").
+                append(" -l master").
+                append("\" --outfile /var/log/ansible-playbook.log \n");
+        return script.toString();
+    }
 
-        script.append("if [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n");
+    /**
+     * ansible-playbook script to execute whole site.yml on specified worker nodes.
+     * @param workers worker nodes the playbook should be rolled out
+     * @return script
+     */
+    public static String executePlaybookOnWorkers(List<Instance> workers) {
+        StringBuilder script = new StringBuilder();
+        script.append("sleep 30\n");
+        script.append("python3 ${HOME}/playbook/tools/tee.py --cmd \"$(which ansible-playbook)").
+                append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
+                append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
+                append(" -l ");
+        for (Instance worker : workers) {
+            script.append(worker.getPrivateIp());
+            if (workers.indexOf(worker) != workers.size() - 1) {
+                script.append(",");
+            }
+        }
+        script.append("\" --outfile /var/log/ansible-playbook.log \n");
         return script.toString();
     }
 }

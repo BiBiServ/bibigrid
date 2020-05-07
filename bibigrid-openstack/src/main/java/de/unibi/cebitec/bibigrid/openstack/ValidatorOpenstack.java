@@ -36,7 +36,7 @@ public final class ValidatorOpenstack extends Validator {
 
     ValidatorOpenstack(final Configuration config, final ProviderModule providerModule)
             throws ConfigurationException {
-        super( config, providerModule);
+        super(config, providerModule);
         openstackConfig = (ConfigurationOpenstack) config;
     }
 
@@ -50,19 +50,16 @@ public final class ValidatorOpenstack extends Validator {
         return null;
     }
 
-    @Override
-    protected boolean validateProviderParameters() {
-        return loadAndparseCredentialParameters();
-    }
-
     /**
      * Loads credentials.yml or environment variables set via sourced RC file.
      * @return true, if credentials loaded successfully
      */
-    private boolean loadAndparseCredentialParameters() {
+    @Override
+    public boolean validateProviderParameters() {
         OpenStackCredentials openStackCredentials;
-        if (config.getCredentialsFile() != null) {
-            openStackCredentials = loadCredentialsFile();
+        String path = config.getCredentialsFile();
+        if (path != null) {
+            openStackCredentials = loadCredentialsFile(path);
         } else {
             LOG.info("No credentials file provided. Checking environment variables ...");
             openStackCredentials = loadEnvCredentials();
@@ -80,11 +77,11 @@ public final class ValidatorOpenstack extends Validator {
      * Loads credentials file and checks, if every parameter has been set.
      * @return openStackCredentials if parameters given, otherwise null
      */
-    private OpenStackCredentials loadCredentialsFile() {
+    private OpenStackCredentials loadCredentialsFile(String path) {
         try {
-            File credentialsFile = Paths.get(config.getCredentialsFile()).toFile();
+            File credentialsFile = Paths.get(path).toFile();
             OpenStackCredentials openStackCredentials =  new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class);
-            LOG.info("Found valid credentials file.");
+            LOG.info("Found valid credentials file ({}).", credentialsFile.getAbsolutePath());
             if (openStackCredentials.getProjectName() == null) {
                 LOG.error("Openstack credentials : Missing 'projectName' parameter!");
                 return null;

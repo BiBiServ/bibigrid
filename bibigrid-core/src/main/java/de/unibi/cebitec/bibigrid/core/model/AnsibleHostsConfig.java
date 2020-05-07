@@ -13,11 +13,11 @@ import java.util.List;
  */
 public class AnsibleHostsConfig {
     private static final String PYTHON_INTERPRETER = "ansible_python_interpreter=/usr/bin/python3";
-    private final Configuration config;
+    private String sshUser;
     private final List<String> workerIps;
 
-    public AnsibleHostsConfig(Configuration config, List<Instance> workerInstances) {
-        this.config = config;
+    AnsibleHostsConfig(String sshUser, List<Instance> workerInstances) {
+        this.sshUser = sshUser;
         workerIps = new ArrayList<>();
         for (Instance instance : workerInstances) {
             workerIps.add(instance.getPrivateIp());
@@ -37,7 +37,7 @@ public class AnsibleHostsConfig {
         hostsConfig.append("[workers]\n");
         for (String workerIp : workerIps) {
             hostsConfig.append(workerIp).append(" ansible_connection=ssh " + PYTHON_INTERPRETER + " ansible_user=");
-            hostsConfig.append(config.getSshUser()).append("\n");
+            hostsConfig.append(sshUser).append("\n");
         }
         return hostsConfig.toString();
     }

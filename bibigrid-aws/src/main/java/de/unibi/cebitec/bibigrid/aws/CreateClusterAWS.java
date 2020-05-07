@@ -44,7 +44,7 @@ public class CreateClusterAWS extends CreateCluster {
     private final ConfigurationAWS config;
 
     CreateClusterAWS(final ProviderModule providerModule, Client client, final ConfigurationAWS config) {
-        super(providerModule, client, config);
+        super(providerModule, client, config, null);
         this.config = config;
         ec2 = ((ClientAWS) client).getInternal();
         bibigridId = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID).withValue(clusterId);

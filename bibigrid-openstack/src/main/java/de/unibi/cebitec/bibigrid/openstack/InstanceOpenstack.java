@@ -35,7 +35,7 @@ public final class InstanceOpenstack extends Instance {
         return server;
     }
 
-    public void setServer(Server server) {
+    void setServer(Server server) {
         this.server = server;
     }
 

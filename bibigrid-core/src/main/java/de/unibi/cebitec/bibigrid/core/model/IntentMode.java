@@ -4,6 +4,8 @@ public enum IntentMode {
     VERSION("V", "version"),
     HELP("h", "help"),
     TERMINATE("t", "terminate"),
+    SCALE_UP("su", "scale-up"),
+    SCALE_DOWN("sd", "scale-down"),
     CREATE("c", "create"),
     PREPARE("p", "prepare"),
     LIST("l", "list"),
