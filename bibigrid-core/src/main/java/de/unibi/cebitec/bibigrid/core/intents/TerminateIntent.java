@@ -157,7 +157,11 @@ public abstract class TerminateIntent extends Intent {
             ce.printStackTrace();
         }
         if (failed.isEmpty()) {
-            LOG.info(I, "{} instances have been successfully terminated from cluster {}.", terminateList.size(), cluster.getClusterId());
+            if (terminateList.size() == 1) {
+                LOG.info(I, "{} instance has been successfully terminated from cluster {}.", terminateList.size(), cluster.getClusterId());
+            } else {
+                LOG.info(I, "{} instances have been successfully terminated from cluster {}.", terminateList.size(), cluster.getClusterId());
+            }
         }
     }
 

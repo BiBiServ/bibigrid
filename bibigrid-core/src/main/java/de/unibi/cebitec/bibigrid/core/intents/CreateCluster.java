@@ -275,7 +275,11 @@ public abstract class CreateCluster extends Intent {
             config.getClusterKeyPair().load();
             AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
             SshFactory.executeScript(sshSession, ShellScriptCreator.executeSlurmTaskOnMaster().concat(ShellScriptCreator.executePlaybookOnWorkers(additionalWorkers)));
-            LOG.info(I, "{} instances have been successfully added to cluster {}.", additionalWorkers.size(), cluster.getClusterId());
+            if (additionalWorkers.size() == 1) {
+                LOG.info(I, "{} instance has been successfully added to cluster {}.", additionalWorkers.size(), cluster.getClusterId());
+            } else {
+                LOG.info(I, "{} instances have been successfully added to cluster {}.", additionalWorkers.size(), cluster.getClusterId());
+            }
         } catch (JSchException sshError) {
             LOG.error("Update may not be finished properly due to a connection error.");
             success = false;
