@@ -29,14 +29,14 @@ Each cloud provider SDK comes with a set of dependencies which often conflicts w
 (same library, different major version) when building a shaded (fat) jar. The BiBiGrid POM supports Maven profiles 
 to avoid such dependency conflicts.  
 
-At first, clone the repository onto your local machine and change into `bibigrid` directory.
+At first, clone the repository onto your local machine and change into its directory.
 ~~~BASH
 > git clone https://github.com/BiBiServ/bibigrid.git
 > cd bibigrid
 ~~~
 
 ### Default profile (all supported cloud provider)
-*Attention: Building a package supporting all cloud provider is possible but not recommended. 
+*Attention: Building a package supporting all cloud provider is possible, but not recommended. 
 The Maven package action put the first occurance of a library/class into the builded shaded jar. 
 This could lead to an unpredictable behaviour when running BiBiGrid. 
 The default profile is mainly used by IDEs with Maven support.*
