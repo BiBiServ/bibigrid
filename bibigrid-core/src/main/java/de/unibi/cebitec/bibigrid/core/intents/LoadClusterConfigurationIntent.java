@@ -30,21 +30,31 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
     /**
      * Loads cluster and instance configuration(s) from internal config.
      */
-    public void loadClusterConfiguration() {
+    public void loadClusterConfiguration(String clusterId) {
         LOG.info("Load Cluster Configurations ...");
         Map<String, List<Instance>> instanceMap = createInstanceMap();
         clusterMap = new HashMap<>();
         if (instanceMap.isEmpty()) {
             LOG.warn("No BiBiGrid cluster found!\n");
         } else {
-            for (String clusterId : instanceMap.keySet()) {
+            if (instanceMap.get(clusterId) == null) {
+                // Load all clusters
+                for (String cid : instanceMap.keySet()) {
+                    List<Instance> clusterInstances = instanceMap.get(cid);
+                    for (Instance instance : clusterInstances) {
+                        loadInstanceConfiguration(instance);
+                    }
+                    initCluster(cid, clusterInstances);
+                }
+            } else {
+                // Only load necessary cluster configuration
                 List<Instance> clusterInstances = instanceMap.get(clusterId);
                 for (Instance instance : clusterInstances) {
-                    // TODO !!! Only load for necessary cluster, time-costly
                     loadInstanceConfiguration(instance);
                 }
                 initCluster(clusterId, clusterInstances);
             }
+
         }
         LOG.info("Cluster Configuration loaded successfully.");
     }

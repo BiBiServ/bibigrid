@@ -53,7 +53,7 @@ public class IdeIntent extends Intent {
             return;
         }
         LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
-        loadIntent.loadClusterConfiguration();
+        loadIntent.loadClusterConfiguration(clusterId);
         Cluster cluster = loadIntent.getCluster(clusterId);
         if (cluster == null) {
             return;

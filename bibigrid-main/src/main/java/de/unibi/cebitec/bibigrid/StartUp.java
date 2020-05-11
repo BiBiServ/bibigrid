@@ -204,7 +204,7 @@ public class StartUp {
                 return;
             } else if (intentMode == LIST) {
                 LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
-                loadIntent.loadClusterConfiguration();
+                loadIntent.loadClusterConfiguration(null);
                 Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
                 if (clusterMap.isEmpty()) {
                     return;
