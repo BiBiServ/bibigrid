@@ -4,6 +4,7 @@
 ### Features
 - Manual Upscaling via su (scale-up) parameter (#229)
 - Manual Downscaling via sd (scale-down) parameter (#229)
+- Added support for new released Ubuntu 20.04 (Focal Fossa) (#228)
 
 ### Fixes
 - Enhanced Logging
