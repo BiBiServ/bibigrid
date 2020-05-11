@@ -100,6 +100,13 @@
   apt_repository:
     repo: 'deb https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_lsb.codename}} stable'
     state: present
+  when: "ansible_lsb.codename  != 'focal'"
+
+- name: Add Docker repository (switch for Ubuntu 20.04 LTS)
+  apt_repository:
+    repo: 'deb https://download.docker.com/linux/ubuntu bionic stable'
+    state: present
+  when: "ansible_lsb.codename  == 'focal'"
 
 - name: Add zabbix repositories
   apt:
