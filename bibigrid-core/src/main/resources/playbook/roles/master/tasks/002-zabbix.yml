@@ -80,9 +80,11 @@
 
 - name: Debian based OS
   block:
-    - name: Install apache web server
+    - name: Install apache web server and php
       apt:
-        name: apache2
+        name:
+          - apache2
+          - php
         state: latest
 
     - name: Install zabbix web frontend
@@ -140,9 +142,9 @@
     host_groups:
       - 'Linux servers'
     link_templates:
-      - 'Template OS Linux'
+      - 'Template OS Linux Zabbix Agent' # new in Zabbix 4.4
     interfaces:
-      - type: 1 #agent
+      - type: 1 # agent
         main: 1 # default
         ip: "{{ item.ip }}"
         useip: 1 # connect using host IP address
