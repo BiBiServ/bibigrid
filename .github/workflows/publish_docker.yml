@@ -26,4 +26,4 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile:  docker/Dockerfile 
         workdir: bibigrid-light-rest-4j
-        tags: ${{ github.head_ref }}-log
+        tags: bibigrid_rest_http_enabled_log
