@@ -28,8 +28,30 @@
         <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %X{sId} %X{cId} %-5level %logger{36} %M - %msg%n cluster_id=%X{cluster</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %X{cluster} %X{sId} %X{cId} %-5level %logger{36} %M - %msg%n </pattern>
         </encoder>
+    </appender>
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <File>log/test_file.log</File>
+        <Append>false</Append>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>%d{HH:mm:ss.SSS} [%thread] %X{cluster} %X{sId} %X{cId} %-5level %class{36}:%L %M - %msg%n</Pattern>
+        </layout>
+    </appender>
+
+    <appender name="SIFTER" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator>
+            <key>cluster</key>
+            <defaultValue>default</defaultValue>
+        </discriminator>
+        <sift>
+            <appender name="FILE${cluster}" class="ch.qos.logback.core.FileAppender">
+                <file>${user.home}/.bibigrid/logs/cluster_${cluster}.log</file>
+                <layout class="ch.qos.logback.classic.PatternLayout">
+                    <pattern>%d{HH:mm:ss.SSS} [%thread] %X{sId} %X{cId} %-5level %class{36}:%L %M - %msg%n</pattern>
+                </layout>
+            </appender>
+        </sift>
     </appender>
 
     <appender name="log" class="ch.qos.logback.core.FileAppender">
@@ -80,6 +102,9 @@
 
     <root level="error">
         <appender-ref ref="stdout"/>
+        <appender-ref ref="SIFTER"/>
+
+
     </root>
 
     <logger name="com.networknt" level="error" additivity="false">
@@ -96,6 +121,8 @@
 
     <logger name="de.unibi.cebitec.bibigrid" level="debug" additivity="false">
         <appender-ref ref="stdout"/>
+        <appender-ref ref="SIFTER" />
+
     </logger>
 
 </configuration>

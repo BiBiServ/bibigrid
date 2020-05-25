@@ -27,6 +27,7 @@ public abstract class Configuration {
     public static boolean DEBUG = false;
     public static final String CONFIG_DIR = System.getProperty("user.home")+System.getProperty("file.separator")+".bibigrid";
     public static final String KEYS_DIR = CONFIG_DIR + System.getProperty("file.separator")+"keys";
+    public static final String LOG_DIR = CONFIG_DIR  + System.getProperty("file.separator") + "logs";
     public static final FileAttribute KEYS_PERMS = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"));
 
     /* protected const */
