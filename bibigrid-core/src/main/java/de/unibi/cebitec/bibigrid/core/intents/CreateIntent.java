@@ -11,6 +11,7 @@ import de.unibi.cebitec.bibigrid.core.util.Status;
 import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 
 /**
@@ -87,6 +88,7 @@ public class CreateIntent implements Runnable{
         try {
             // we have to do authenticate again,
             // if authentication was done in a separate thread.
+            MDC.put("cluster", getClusterId());
             cluster.client.authenticate();
             create();
         } catch (ClientConnectionFailedException ex) {
