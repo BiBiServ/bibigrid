@@ -11,6 +11,7 @@ import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
@@ -284,7 +285,7 @@ public abstract class CreateCluster extends Intent {
                 LOG.info("Trying to connect to master...");
                 sleep(4);
                 // Create new Session to avoid packet corruption.
-                Session sshSession = SshFactory.createSshSession(config,masterIp);
+                Session sshSession = SshFactory.createSshSession(config, masterIp);
                 if (sshSession != null) {
                     // Start connection attempt
                     sshSession.connect();
@@ -320,15 +321,15 @@ public abstract class CreateCluster extends Intent {
     /**
      * Uploads ansible roles to master instance.
      *
-     * @param sshSession ssh connection to master
-     * @param hostsConfig Configuration and list of worker IPs
-     * @param commonConfig common Configuration
+     * @param sshSession      ssh connection to master
+     * @param hostsConfig     Configuration and list of worker IPs
+     * @param commonConfig    common Configuration
      * @param workerInstances list of worker instances
-     * @throws JSchException possible SSH connection error
+     * @throws JSchException          possible SSH connection error
      * @throws ConfigurationException possible upload error
      */
     private void uploadAnsibleToMaster(Session sshSession, AnsibleHostsConfig hostsConfig,
-                                          AnsibleConfig commonConfig, List<Instance> workerInstances) throws JSchException, ConfigurationException {
+                                       AnsibleConfig commonConfig, List<Instance> workerInstances) throws JSchException, ConfigurationException {
 
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         LOG.info("Uploading Ansible playbook to master instance.");
@@ -344,7 +345,7 @@ public abstract class CreateCluster extends Intent {
             Map<String, String> customWorkerRoles = new LinkedHashMap<>();
 
             // create Role Upload Path on master
-            createSFTPFolder(channel,AnsibleResources.UPLOAD_PATH);
+            createSFTPFolder(channel, AnsibleResources.UPLOAD_PATH);
 
 
             // Add "extra" Ansible role
@@ -428,7 +429,7 @@ public abstract class CreateCluster extends Intent {
             // Write custom site file
             commonConfig.writeSiteFile(channel.put(channel.getHome() + "/"
                             + AnsibleResources.SITE_CONFIG_FILE),
-                     customMasterRoles, customWorkerRoles);
+                    customMasterRoles, customWorkerRoles);
 
             // Write requirements file for ansible-galaxy support
             if (!ansibleGalaxyRoles.isEmpty()) {
@@ -456,7 +457,7 @@ public abstract class CreateCluster extends Intent {
      * Uploads common Ansible Resources files.
      *
      * @param resources ansible configuration
-     * @param channel client side of sftp server channel
+     * @param channel   client side of sftp server channel
      */
     private void uploadResourcesFiles(AnsibleResources resources, ChannelSftp channel) {
         try {
@@ -478,22 +479,23 @@ public abstract class CreateCluster extends Intent {
     /**
      * Creates folders for every directory, given a file structure.
      *
-     * @param channel client side of sftp server channel
+     * @param channel   client side of sftp server channel
      * @param resources ansible configuration
-     * @param files list of files in file structure
+     * @param files     list of files in file structure
      * @throws SftpException possible SFTP failure
      */
     private void createSftpFolders(ChannelSftp channel, AnsibleResources resources, List<String> files) throws SftpException {
         for (String folderPath : resources.getDirectories(files)) {
             String fullPath = channel.getHome() + "/" + folderPath;
-            createSFTPFolder(channel,fullPath);
+            createSFTPFolder(channel, fullPath);
         }
     }
 
-    /** Creates a folder for given (if not already exists
+    /**
+     * Creates a folder for given (if not already exists
      *
      * @param channel client side of sftp server channel
-     * @param path path to be created
+     * @param path    path to be created
      * @throws SftpException possible SFTP failure
      */
     private void createSFTPFolder(ChannelSftp channel, String path) throws SftpException {
@@ -509,23 +511,24 @@ public abstract class CreateCluster extends Intent {
     /**
      * Uploads single ansible role (.tar.gz, .tgz) to remote instance to temporary folder.
      *
-     * @param channel client side of sftp server channel
+     * @param channel  client side of sftp server channel
      * @param roleFile path/to/role on local machine
      * @throws SftpException possible SFTP failure
-     * @throws IOException possible File failure
+     * @throws IOException   possible File failure
      */
     private void uploadAnsibleRole(ChannelSftp channel, String roleFile)
             throws SftpException, IOException {
         String remotePath = AnsibleResources.UPLOAD_PATH + getSingleFileName(roleFile);
         InputStream stream = new FileInputStream(roleFile);
         // target location on master
-        LOG.info(V, "SFTP: Upload file {} to {}", roleFile, remotePath );
+        LOG.info(V, "SFTP: Upload file {} to {}", roleFile, remotePath);
         // Upload the file stream via sftp
-        channel.put(stream, remotePath );
+        channel.put(stream, remotePath);
     }
 
     /**
      * Turns path/to/file.* into file.*.
+     *
      * @param roleFile path/to/file
      * @return fileName
      */
@@ -536,17 +539,16 @@ public abstract class CreateCluster extends Intent {
     }
 
 
-
     /**
      * Installs and executes ansible roles on remote.
      *
      * @param sshSession transfer via ssh session
-     * @param prepare true, if still preparation necessary
-     * @throws JSchException ssh openChannel exception
-     * @throws IOException BufferedReader exceptions
+     * @param prepare    true, if still preparation necessary
+     * @throws JSchException          ssh openChannel exception
+     * @throws IOException            BufferedReader exceptions
      * @throws ConfigurationException if configuration was unsuccesful
      */
-    private void installAndExecuteAnsible(final Session sshSession,  final boolean prepare)
+    private void installAndExecuteAnsible(final Session sshSession, final boolean prepare)
             throws IOException, JSchException, ConfigurationException {
         LOG.info("Ansible is now configuring your cloud instances. This might take a while.");
 
@@ -565,6 +567,7 @@ public abstract class CreateCluster extends Intent {
         LineReaderRunnable stdout = new LineReaderRunnable(new BufferedReader(new InputStreamReader(channel.getInputStream()))) {
             @Override
             public void work_on_line(String lineOut) {
+                MDC.put("cluster", clusterId);
                 if (lineOut.contains("CONFIGURATION FINISHED")) {
                     returnCode = 0;
                     returnMsg = ""; // clear possible msg
@@ -578,14 +581,14 @@ public abstract class CreateCluster extends Intent {
                     // otherwise show only ansible msg containing "[BIBIGRID]"
                     int indexOfLogMessage = lineOut.indexOf("\"[BIBIGRID] ");
                     if (indexOfLogMessage > 0) {
-                        LOG.info("[Ansible] {}",  lineOut.substring(indexOfLogMessage + 12, lineOut.length() - 1));
+                        LOG.info("[Ansible] {}", lineOut.substring(indexOfLogMessage + 12, lineOut.length() - 1));
                     }
                 }
             }
 
             @Override
             public void work_on_exception(Exception e) {
-                LOG.error("Evaluate stderr : "+e.getMessage());
+                LOG.error("Evaluate stderr : " + e.getMessage());
                 returnCode = 1;
             }
         };
@@ -594,17 +597,20 @@ public abstract class CreateCluster extends Intent {
         LineReaderRunnable stderr = new LineReaderRunnable(new BufferedReader(new InputStreamReader(channel.getErrStream()))) {
             @Override
             public void work_on_line(String lineError) {
+                MDC.put("cluster", clusterId);
+
                 // Check for real errors and print them to the error log ...
                 if (lineError.contains("ERROR") || lineError.contains("error") | lineError.contains("Error")) {
                     LOG.error("{}", lineError);
                 } else { // ... and everything else as warning !
-                    LOG.warn(V,"{}",lineError);
+                    LOG.warn(V, "{}", lineError);
                 }
             }
 
             @Override
             public void work_on_exception(Exception e) {
-                LOG.error("Evaluate stderr : "+e.getMessage());
+                MDC.put("cluster", clusterId);
+                LOG.error("Evaluate stderr : " + e.getMessage());
                 returnCode = 1;
             }
 
@@ -636,9 +642,8 @@ public abstract class CreateCluster extends Intent {
         channel.disconnect();
 
 
-
         if (stdout.getReturnCode() != 0) {
-            throw new ConfigurationException("Cluster configuration failed.\n"+stdout.getReturnMsg());
+            throw new ConfigurationException("Cluster configuration failed.\n" + stdout.getReturnMsg());
         }
     }
 
@@ -662,7 +667,7 @@ abstract class LineReaderRunnable implements Runnable {
     protected int returnCode = -1;
     protected String returnMsg = "";
 
-    public LineReaderRunnable(BufferedReader br){
+    public LineReaderRunnable(BufferedReader br) {
         this.br = br;
     }
 
@@ -672,9 +677,10 @@ abstract class LineReaderRunnable implements Runnable {
 
     @Override
     public void run() {
+
         try {
             String line;
-            while ((line = br.readLine()) != null ) {
+            while ((line = br.readLine()) != null) {
                 work_on_line(line);
             }
         } catch (IOException ex) {
@@ -682,11 +688,11 @@ abstract class LineReaderRunnable implements Runnable {
         }
     }
 
-    public int getReturnCode(){
+    public int getReturnCode() {
         return returnCode;
     }
 
-    public String getReturnMsg(){
+    public String getReturnMsg() {
         return returnMsg;
     }
 }
