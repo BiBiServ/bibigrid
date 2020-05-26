@@ -34,11 +34,11 @@ public class BibigridInfoIdGetHandler implements LightHttpHandler {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(200);
 
-            Path path = Paths.get(Configuration.LOG_DIR+ "/cluster_" + clusterId + ".log");
 
             try {
+
+                Path path = Paths.get(Configuration.LOG_DIR+ "/cluster_" + clusterId + ".log");
                 List<String> log = Files.readAllLines(path);
-                log = log.stream().map(line -> line.concat("\n")).collect(Collectors.toList());
                 exchange.getResponseSender().send("{\"info\":\"" + status.code + "\",\"log\":\"" + log + "\"}");
 
             } catch (IOException e) {
