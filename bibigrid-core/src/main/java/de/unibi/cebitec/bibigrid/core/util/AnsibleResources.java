@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,6 +81,7 @@ public final class AnsibleResources {
         File directory = new File(url.getPath());
         File[] directoryFiles = directory.listFiles();
         if (directoryFiles == null) {
+            LoggerFactory.getLogger(AnsibleResources.class).warn("Ansible Resources, dir: " + directory.getName());
             return;
         }
         for (File file : directoryFiles) {
