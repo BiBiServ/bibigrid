@@ -32,8 +32,6 @@ public final class AnsibleResources {
     public static final String INSTANCES_YML = VARS_PATH + "instances.yml";
     public static final String CONFIG_YML = VARS_PATH + "common_configuration.yml";
     public static final String WORKER_SPECIFICATION_YML = VARS_PATH + "worker_specification.yml";
-    public static final String SITE_YML = "site.yml";
-    public static final String REQUIREMENTS_YML = "requirements.yml";
     public static final String HOSTS_CONFIG_FILE = ROOT_PATH + ANSIBLE_HOSTS;
     public static final String ADDITIONAL_ROLES_PATH = "additional/";
     public static final String CONFIG_ROOT_PATH = ROOT_PATH + VARS_PATH;
@@ -45,8 +43,6 @@ public final class AnsibleResources {
     public static final String ADDITIONAL_ROLES_ROOT_PATH = ROLES_ROOT_PATH + ADDITIONAL_ROLES_PATH;
 
     // Full files
-    public static final String HOSTS_CONFIG_FILE = ROOT_PATH + ANSIBLE_HOSTS;
-    public static final String COMMONS_CONFIG_FILE = CONFIG_ROOT_PATH + COMMON_YML;
     public static final String SITE_CONFIG_FILE = ROOT_PATH + SITE_YML;
     public static final String REQUIREMENTS_CONFIG_FILE = ROOT_PATH + REQUIREMENTS_YML;
     private final List<String> files = new ArrayList<>();
