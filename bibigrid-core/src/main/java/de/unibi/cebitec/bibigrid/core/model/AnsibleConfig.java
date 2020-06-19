@@ -76,6 +76,7 @@ public final class AnsibleConfig {
         List<String> common_vars =
                 Arrays.asList(AnsibleResources.LOGIN_YML, AnsibleResources.INSTANCES_YML, AnsibleResources.CONFIG_YML);
         String DEFAULT_IP_FILE = AnsibleResources.VARS_PATH + "{{ ansible_default_ipv4.address }}.yml";
+
         // master configuration
         Map<String, Object> master = new LinkedHashMap<>();
         master.put("hosts", "master");
@@ -90,8 +91,11 @@ public final class AnsibleConfig {
         List<String> roles = new ArrayList<>();
         roles.add("common");
         roles.add("master");
-        roles.addAll(customMasterRoles.keySet());
+        for (String master_role : customMasterRoles.keySet()) {
+            roles.add("{ role: 'additional/" + master_role + "', tags: '" + master_role + "' }");
+        }
         master.put("roles", roles);
+
         // worker configuration
         Map<String, Object> workers = new LinkedHashMap<>();
         workers.put("hosts", "workers");
@@ -108,6 +112,9 @@ public final class AnsibleConfig {
         roles.add("common");
         roles.add("worker");
         roles.addAll(customWorkerRoles.keySet());
+        for (String worker_role : customWorkerRoles.keySet()) {
+            roles.add("{ role: 'additional/" + worker_role + "', tags: '" + worker_role + "' }");
+        }
         workers.put("roles", roles);
         writeToOutputStream(stream, Arrays.asList(master, workers));
     }
