@@ -44,7 +44,7 @@ public final class AnsibleResources {
 
     // Full files
     public static final String SITE_CONFIG_FILE = ROOT_PATH + SITE_YML;
-    public static final String REQUIREMENTS_CONFIG_FILE = ROOT_PATH + REQUIREMENTS_YML;
+    public static final String REQUIREMENTS_CONFIG_FILE = ADDITIONAL_ROLES_ROOT_PATH + REQUIREMENTS_YML;
     private final List<String> files = new ArrayList<>();
 
     public AnsibleResources() {
