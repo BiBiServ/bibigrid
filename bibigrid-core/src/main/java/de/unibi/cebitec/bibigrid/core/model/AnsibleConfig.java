@@ -91,11 +91,10 @@ public final class AnsibleConfig {
         List<String> roles = new ArrayList<>();
         roles.add("common");
         roles.add("master");
-        for (String master_role : customMasterRoles.keySet()) {
-            roles.add("{ role: 'additional/" + master_role + "', tags: '" + master_role + "' }");
+        for (String role_name : customMasterRoles.keySet()) {
+            roles.add("additional/" + role_name);
         }
         master.put("roles", roles);
-
         // worker configuration
         Map<String, Object> workers = new LinkedHashMap<>();
         workers.put("hosts", "workers");
@@ -111,9 +110,8 @@ public final class AnsibleConfig {
         roles = new ArrayList<>();
         roles.add("common");
         roles.add("worker");
-        roles.addAll(customWorkerRoles.keySet());
-        for (String worker_role : customWorkerRoles.keySet()) {
-            roles.add("{ role: 'additional/" + worker_role + "', tags: '" + worker_role + "' }");
+        for (String role_name : customWorkerRoles.keySet()) {
+            roles.add("additional/" + role_name);
         }
         workers.put("roles", roles);
         writeToOutputStream(stream, Arrays.asList(master, workers));
@@ -130,7 +128,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Generates roles/requirements.yml automatically including roles to install via ansible-galaxy.
+     * Generates roles/additional/requirements.yml automatically including roles to install via ansible-galaxy.
      * @param stream write file to remote
      */
     public static void writeRequirementsFile(OutputStream stream, List<Configuration.AnsibleGalaxyRoles> galaxyRoles) {
