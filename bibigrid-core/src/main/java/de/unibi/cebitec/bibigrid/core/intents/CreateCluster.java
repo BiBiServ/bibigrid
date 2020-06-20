@@ -469,6 +469,7 @@ public abstract class CreateCluster extends Intent {
                     Map<String, Object> additionalVars = yaml.load(vars);
                     roleVars.putAll(additionalVars);
                 }
+                // Written in site.yml, has to be 'vars/ROLE_NAME'
                 String roleVarsFile = "";
                 if (roleVars != null && !roleVars.isEmpty()) {
                     roleVarsFile = AnsibleResources.VARS_PATH + roleName + "-vars.yml";
@@ -525,9 +526,14 @@ public abstract class CreateCluster extends Intent {
                         customWorkerRoles.put(roleName, roleVarsFile);
                 }
             }
-            AnsibleConfig.writeHostsFile(channel, config.getSshUser(), workerInstances);
-
             String channel_dir = channel.getHome() + "/";
+
+            // Write custom site file
+            String site_file = channel_dir + AnsibleResources.SITE_CONFIG_FILE;
+            AnsibleConfig.writeSiteFile(channel.put(site_file),
+                    customMasterRoles, customWorkerRoles);
+
+            AnsibleConfig.writeHostsFile(channel, config.getSshUser(), workerInstances);
 
             // files for common configuration
             String login_file = channel_dir + AnsibleResources.COMMONS_LOGIN_FILE;
@@ -548,11 +554,6 @@ public abstract class CreateCluster extends Intent {
             // TODO network should be written in instance configuration when initializing
             // security group und server group
             AnsibleConfig.writeWorkerSpecificationFile(specification_stream, config, environment);
-
-            // Write custom site file
-            String site_file = channel_dir + AnsibleResources.SITE_CONFIG_FILE;
-            AnsibleConfig.writeSiteFile(channel.put(site_file),
-                     customMasterRoles, customWorkerRoles);
 
             // Write requirements file for ansible-galaxy support
             if (!ansibleGalaxyRoles.isEmpty()) {
