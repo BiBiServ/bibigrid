@@ -88,7 +88,9 @@
 
     - name: Install zabbix web frontend
       apt:
-        name: zabbix-frontend-php
+        name:
+          - zabbix-frontend-php
+          - zabbix-apache-conf
         state: latest
   when: "ansible_distribution_file_variety == 'Debian'"
 
@@ -101,7 +103,9 @@
 
     - name: Install zabbix web frontend
       dnf:
-        name: zabbix-frontend-php
+        name:
+          - zabbix-frontend-php
+          - zabbix-apache-conf
         state: latest
   when: "ansible_distribution_file_variety == 'RedHat'"
 
