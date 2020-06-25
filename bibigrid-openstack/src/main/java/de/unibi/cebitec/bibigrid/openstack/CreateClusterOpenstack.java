@@ -434,7 +434,6 @@ public class CreateClusterOpenstack extends CreateCluster {
             if (addressList == null) {
                 LOG.info(V,"Waiting for address ...");
             }
-
         } while (addressList == null || addressList.isEmpty());
         LOG.info(V, "address: {}", addressList);
         return addressList.get(0);
