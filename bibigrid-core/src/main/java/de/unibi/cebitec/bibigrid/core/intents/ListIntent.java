@@ -14,6 +14,19 @@ import java.util.*;
 public abstract class ListIntent extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntent.class);
 
+    private static final int LEN_ID_CLUSTER = 20;
+    private static final int LEN_USER = 13;
+    private static final int LEN_LAUNCH = 19;
+    private static final int LEN_KEY = 14;
+    private static final int LEN_IP_PUB = 15;
+    private static final int LEN_IP_PRIV = 15;
+    private static final int LEN_COUNT = 7;
+    private static final int LEN_ID_GROUP = 18;
+    private static final int LEN_ID_SUBNET = 11;
+    private static final int LEN_ID_NET = 11;
+    private static final int LEN_TOTAL = LEN_ID_CLUSTER + LEN_USER + LEN_LAUNCH + LEN_KEY +
+            LEN_IP_PUB + LEN_IP_PRIV + LEN_COUNT + LEN_ID_GROUP + LEN_ID_SUBNET + LEN_ID_NET;
+
     private Map<String, Cluster> clusterMap;
 
     protected ListIntent(Map<String, Cluster> clusterMap) {
@@ -29,24 +42,33 @@ public abstract class ListIntent extends Intent {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
-        String lineFormat = "%20s | %13s | %19s | %14s | %15s | %15s | %7s | %18s | %11s | %11s%n";
+        String lineFormat = "%" + LEN_ID_CLUSTER + "s" +
+                            " | %" + LEN_USER + "s" +
+                            " | %" + LEN_LAUNCH + "s" +
+                            " | %" + LEN_KEY + "s" +
+                            " | %" + LEN_IP_PUB + "s" +
+                            " | %" + LEN_IP_PRIV + "s" +
+                            " | %" + LEN_COUNT + "s" +
+                            " | %" + LEN_ID_GROUP + "s" +
+                            " | %" + LEN_ID_SUBNET + "s" +
+                            " | %" + LEN_ID_NET +"s%n";
         formatter.format(lineFormat,
-                "cluster-id", "user", "launch date", "key name", "public-ip", "private-ip", "# inst", "group-id", "subnet-id",
-                "network-id");
-        display.append(new String(new char[170]).replace('\0', '-')).append("\n");
+                "cluster-id", "user", "launch date", "key name", "public-ip", "private-ip",
+                "# inst", "group-id", "subnet-id", "network-id");
+        display.append(new String(new char[(3 * 9) + LEN_TOTAL]).replace('\0', '-')).append("\n");
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             Cluster v = entry.getValue();
             formatter.format(lineFormat,
-                    entry.getKey(),
-                    (v.getUser() == null) ? "-" : ellipsize(v.getUser(), 13),
+                    ellipsize(entry.getKey(), LEN_ID_CLUSTER),
+                    (v.getUser() == null) ? "-" : ellipsize(v.getUser(), LEN_USER),
                     (v.getStarted() == null) ? "-" : v.getStarted(),
-                    (v.getKeyName() == null ? "-" : ellipsize(v.getKeyName(), 14)),
+                    (v.getKeyName() == null ? "-" : ellipsize(v.getKeyName(), LEN_KEY)),
                     (v.getPublicIp() == null ? "-" : v.getPublicIp()),
                     (v.getPrivateIp() == null ? "-" : v.getPrivateIp()),
                     ((v.getMasterInstance() != null ? 1 : 0) + v.getWorkerInstances().size()),
-                    (v.getSecurityGroup() == null ? "-" : ellipsize(v.getSecurityGroup(), 18)),
-                    (v.getSubnet() == null ? "-" : ellipsize(v.getSubnet().getId(), 11)),
-                    (v.getNetwork() == null ? "-" : ellipsize(v.getNetwork().getId(), 11)));
+                    (v.getSecurityGroup() == null ? "-" : ellipsize(v.getSecurityGroup(), LEN_ID_GROUP)),
+                    (v.getSubnet() == null ? "-" : ellipsize(v.getSubnet().getId(), LEN_ID_SUBNET)),
+                    (v.getNetwork() == null ? "-" : ellipsize(v.getNetwork().getId(), LEN_ID_NET)));
 
         }
         return display.toString();
