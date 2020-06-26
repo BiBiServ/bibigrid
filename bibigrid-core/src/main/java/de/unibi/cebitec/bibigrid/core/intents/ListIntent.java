@@ -35,7 +35,6 @@ public abstract class ListIntent extends Intent {
 
     /**
      * Return a String representation of found cluster objects map.
-     * ToDo magic numbers in single ints and new char[ sum ]
      */
     @Override
     public final String toString() {
@@ -55,21 +54,21 @@ public abstract class ListIntent extends Intent {
         formatter.format(lineFormat,
                 "cluster-id", "user", "launch date", "key name", "public-ip", "private-ip",
                 "# inst", "group-id", "subnet-id", "network-id");
-        display.append(new String(new char[(3 * 9) + LEN_TOTAL]).replace('\0', '-')).append("\n");
-        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
-            Cluster v = entry.getValue();
+        display.append(new String(new char[(9 * 3) + LEN_TOTAL]).replace('\0', '-')).append("\n");
+        List<Cluster> clusters = new ArrayList(clusterMap.values());
+        Collections.sort(clusters);
+        for (Cluster cluster : clusters) {
             formatter.format(lineFormat,
-                    ellipsize(entry.getKey(), LEN_ID_CLUSTER),
-                    (v.getUser() == null) ? "-" : ellipsize(v.getUser(), LEN_USER),
-                    (v.getStarted() == null) ? "-" : v.getStarted(),
-                    (v.getKeyName() == null ? "-" : ellipsize(v.getKeyName(), LEN_KEY)),
-                    (v.getPublicIp() == null ? "-" : v.getPublicIp()),
-                    (v.getPrivateIp() == null ? "-" : v.getPrivateIp()),
-                    ((v.getMasterInstance() != null ? 1 : 0) + v.getWorkerInstances().size()),
-                    (v.getSecurityGroup() == null ? "-" : ellipsize(v.getSecurityGroup(), LEN_ID_GROUP)),
-                    (v.getSubnet() == null ? "-" : ellipsize(v.getSubnet().getId(), LEN_ID_SUBNET)),
-                    (v.getNetwork() == null ? "-" : ellipsize(v.getNetwork().getId(), LEN_ID_NET)));
-
+                    ellipsize(cluster.getClusterId(), LEN_ID_CLUSTER),
+                    (cluster.getUser() == null) ? "-" : ellipsize(cluster.getUser(), LEN_USER),
+                    (cluster.getStarted() == null) ? "-" : cluster.getStarted(),
+                    (cluster.getKeyName() == null ? "-" : ellipsize(cluster.getKeyName(), LEN_KEY)),
+                    (cluster.getPublicIp() == null ? "-" : cluster.getPublicIp()),
+                    (cluster.getPrivateIp() == null ? "-" : cluster.getPrivateIp()),
+                    ((cluster.getMasterInstance() != null ? 1 : 0) + cluster.getWorkerInstances().size()),
+                    (cluster.getSecurityGroup() == null ? "-" : ellipsize(cluster.getSecurityGroup(), LEN_ID_GROUP)),
+                    (cluster.getSubnet() == null ? "-" : ellipsize(cluster.getSubnet().getId(), LEN_ID_SUBNET)),
+                    (cluster.getNetwork() == null ? "-" : ellipsize(cluster.getNetwork().getId(), LEN_ID_NET)));
         }
         return display.toString();
     }

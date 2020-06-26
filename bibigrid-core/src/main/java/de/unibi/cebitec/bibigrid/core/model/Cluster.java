@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class Cluster {
+public class Cluster implements Comparable<Cluster> {
     private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
     private final String clusterId;
 
@@ -161,5 +161,19 @@ public class Cluster {
 
     public void setAvailabilityZone(String availabilityZone) {
         this.availabilityZone = availabilityZone;
+    }
+
+    /**
+     * Clusters should be sorted by user name, following launch (started).
+     * @param cluster other cluster to compare with this
+     * @return negative, equal or positive when less than, equal to, or greater than the other clusters values
+     */
+    @Override
+    public int compareTo(Cluster cluster) {
+        if (user.equals(cluster.getUser())) {
+            return started.compareTo(cluster.getStarted());
+        } else {
+            return user.compareTo(cluster.getUser());
+        }
     }
 }
