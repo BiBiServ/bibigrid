@@ -143,7 +143,7 @@
     - name: Install zabbix web frontend
       apt:
         name:
-          - zabbix-frontend-php
+          - zabbix-frontend-php-deprecated
         state: latest
 
     - name: Copy zabbix apache conf
@@ -177,6 +177,14 @@
           - zabbix-apache-conf
         state: latest
   when: "ansible_distribution_file_variety == 'RedHat'"
+
+- name: Create Zabbix web dir (if not exists)
+  file:
+    path: /etc/zabbix/web
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Adjust zabbix web frontend configuration
   block:
