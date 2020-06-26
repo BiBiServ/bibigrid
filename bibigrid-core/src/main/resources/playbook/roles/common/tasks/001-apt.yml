@@ -100,18 +100,17 @@
   apt_repository:
     repo: 'deb https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_lsb.codename}} stable'
     state: present
-#  when: "ansible_lsb.codename  != 'focal'"
-
-#- name: Add Docker repository (switch for Ubuntu 20.04 LTS)
-#  apt_repository:
-#    repo: 'deb https://download.docker.com/linux/ubuntu bionic stable'
-#    state: present
-#  when: "ansible_lsb.codename  == 'focal'"
 
 - name: Add zabbix repositories
   apt:
     deb: 'https://repo.zabbix.com/zabbix/5.0/{{ ansible_distribution | lower }}/pool/main/z/zabbix-release/zabbix-release_5.0-1+{{ ansible_distribution_release }}_all.deb'
     state: present
+
+- name: Add ondrej/php repository
+  apt_repository:
+    repo: ppa:ondrej/php
+    state: present
+  when: "ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial'"
 
 - name: Update apt cache
   apt:
