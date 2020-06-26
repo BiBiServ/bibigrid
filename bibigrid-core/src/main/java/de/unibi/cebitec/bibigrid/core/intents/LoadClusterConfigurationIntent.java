@@ -37,7 +37,7 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
         if (instanceMap.isEmpty()) {
             LOG.warn("No BiBiGrid cluster found!\n");
         } else {
-            if (instanceMap.get(clusterId) == null) {
+            if (clusterId == null || instanceMap.get(clusterId) == null) {
                 // Load all clusters
                 for (String cid : instanceMap.keySet()) {
                     List<Instance> clusterInstances = instanceMap.get(cid);
