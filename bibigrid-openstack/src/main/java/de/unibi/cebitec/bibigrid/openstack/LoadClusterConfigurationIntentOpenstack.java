@@ -23,17 +23,18 @@ import java.util.stream.Collectors;
  */
 public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigurationIntent {
     private static final Logger LOG = LoggerFactory.getLogger(LoadClusterConfigurationIntentOpenstack.class);
-    private final OSClient os;
+    private final List<? extends Server> serverList;
 
     LoadClusterConfigurationIntentOpenstack(ProviderModule providerModule, Client client, Configuration config) {
         super(providerModule, client, config);
-        os = ((ClientOpenstack) client).getInternal();
+        OSClient os = ((ClientOpenstack) client).getInternal();
+        serverList = os.compute().servers().list();
     }
 
     @Override
     public Map<String, List<Instance>> createInstanceMap() {
         Map<String, List<Instance>> instanceList = new HashMap<>();
-        for (Server server : os.compute().servers().list()) {
+        for (Server server : serverList) {
             Map<String, String> metadata = server.getMetadata();
             String clusterId = metadata.get(Instance.TAG_BIBIGRID_ID);
             if (clusterId == null) {
@@ -58,7 +59,6 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
 
     @Override
     public List<Instance> getInstances() {
-        List<? extends Server> serverList = os.compute().servers().list();
         List<Instance> list = serverList.stream().map(i -> new InstanceOpenstack(null, i)).collect(Collectors.toList());
         Collections.reverse(list);
         return list;
@@ -69,7 +69,7 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
         Configuration.InstanceConfiguration instanceConfiguration =
                 instance.isMaster() ? new Configuration.InstanceConfiguration()
                         : new Configuration.WorkerInstanceConfiguration();
-        Server server = os.compute().servers().get(instance.getId());
+        Server server = serverList.get(Integer.parseInt(instance.getId()));
         Set<String> networks = server.getAddresses().getAddresses().keySet();
         // TODO What if actually more than one address?
         if (!networks.isEmpty()) {
