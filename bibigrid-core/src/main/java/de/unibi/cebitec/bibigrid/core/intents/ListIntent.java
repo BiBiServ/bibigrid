@@ -38,6 +38,10 @@ public abstract class ListIntent extends Intent {
      */
     @Override
     public final String toString() {
+        if (clusterMap.isEmpty()) {
+            return "No Cluster started.";
+        }
+        LOG.info("Listing Cluster Configurations:\n");
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
@@ -91,9 +95,10 @@ public abstract class ListIntent extends Intent {
         }
     }
 
-    public final String toDetailString(String clusterId) {
+    public String toDetailString(String clusterId) {
         Cluster cluster = clusterMap.get(clusterId);
         StringBuilder display = new StringBuilder();
+        display.append("Listing detailed Cluster Configuration:\n");
         display.append("cluster-id: ").append(cluster.getClusterId()).append("\n");
         display.append("user: ").append(cluster.getUser()).append("\n");
         if (cluster.getNetwork() != null) {

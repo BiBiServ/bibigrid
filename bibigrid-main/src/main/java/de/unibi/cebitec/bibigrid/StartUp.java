@@ -203,24 +203,20 @@ public class StartUp {
                 printInstanceTypeHelp(module, client, config);
                 return;
             } else if (intentMode == LIST) {
+                String param = parameters.length == 0 ? null : parameters[0];
                 LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
-                loadIntent.loadClusterConfiguration(null);
+                loadIntent.loadClusterConfiguration(param);
                 Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
                 if (clusterMap.isEmpty()) {
                     return;
                 }
-                ListIntent listIntent = module.getListIntent((HashMap<String, Cluster>) clusterMap);
-                if (parameters == null) {
+                ListIntent listIntent = module.getListIntent(clusterMap);
+                if (param == null) {
                     LOG.info(listIntent.toString());
                 } else {
-                    String clusterId = parameters[0];
-                    if (clusterId != null) {
-                        LOG.info(listIntent.toDetailString(clusterId));
-                    } else {
-                        LOG.info(listIntent.toString());
-                    }
+                    LOG.info(listIntent.toDetailString(param));
                 }
-                 return;
+                return;
             }
 
             // In order to validate the native instance types, we need a client.
@@ -265,7 +261,7 @@ public class StartUp {
                 case TERMINATE:
                     if (!module.getTerminateIntent(client, config).terminate(parameters)) {
                         if (parameters.length == 1) {
-                            LOG.error("Could not terminate instances with given parameter");
+                            LOG.error("Could not terminate instances with given parameter {}.", parameters[0]);
                         } else {
                             StringBuilder error = new StringBuilder("Could not terminate instances with given parameters ");
                             for (int p = 0; p < parameters.length; p++) {

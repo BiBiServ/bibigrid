@@ -27,45 +27,28 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
+        clusterMap = new HashMap<>();
     }
 
     /**
      * Loads cluster and instance configuration(s) from internal config.
+     * @param clusterId parameter given
      */
     public void loadClusterConfiguration(String clusterId) {
         LOG.info("Load Cluster Configurations ...");
-        Map<String, List<Instance>> instanceMap = createInstanceMap();
-        clusterMap = new HashMap<>();
+        Map<String, List<Instance>> instanceMap = createInstanceMap(clusterId);
         if (instanceMap.isEmpty()) {
-            LOG.warn("No BiBiGrid cluster found!\n");
+            LOG.info("No BiBiGrid cluster found!\n");
+            return;
         } else {
             if (clusterId == null || instanceMap.get(clusterId) == null) {
-                // Load all clusters
                 LOG.info("Loading Configuration for all clusters ...\n");
                 for (String cid : instanceMap.keySet()) {
-                    LOG.info("Loading Configuration for cluster with id {} ...", cid);
-                    List<Instance> clusterInstances = instanceMap.get(cid);
-                    for (Instance instance : clusterInstances) {
-                        LOG.info(V, "Loading Configuration for instance {} ...", instance.getName());
-                        loadInstanceConfiguration(instance);
-                        LOG.info(V, "Configuration for instance {} loaded successfully.", instance.getName());
-                    }
-                    LOG.info(V, "Initialize cluster with id {} ...", cid);
-                    initCluster(cid, clusterInstances);
-                    LOG.info("Cluster with id {} initialized successfully.\n", cid);
+                    loadSingleClusterConfiguration(instanceMap.get(cid), cid);
                 }
             } else {
                 // Only load necessary cluster configuration
-                LOG.info("Loading Configuration for cluster with id {} ...", clusterId);
-                List<Instance> clusterInstances = instanceMap.get(clusterId);
-                for (Instance instance : clusterInstances) {
-                    LOG.info("Loading Configuration for instance {} ...", instance.getName());
-                    loadInstanceConfiguration(instance);
-                    LOG.info("Configuration for instance {} loaded successfully.", instance.getName());
-                }
-                LOG.info("Initialize cluster with id {} ...", clusterId);
-                initCluster(clusterId, clusterInstances);
-                LOG.info("Cluster with id {} initialized successfully.", clusterId);
+                loadSingleClusterConfiguration(instanceMap.get(clusterId), clusterId);
             }
 
         }
@@ -73,10 +56,27 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
     }
 
     /**
+     * Loads configuration of a cluster and initializes Cluster object.
+     * @param clusterInstances instance list of cluster
+     * @param clusterId id of cluster
+     */
+    private void loadSingleClusterConfiguration(List<Instance> clusterInstances, String clusterId) {
+        LOG.info("Loading Configuration for cluster with id {} ...", clusterId);
+        for (Instance instance : clusterInstances) {
+            LOG.info(V, "Loading Configuration for instance {} ...", instance.getName());
+            loadInstanceConfiguration(instance);
+            LOG.info(V, "Configuration for instance {} loaded successfully.", instance.getName());
+        }
+        LOG.info(V, "Initialize cluster with id {} ...", clusterId);
+        initCluster(clusterId, clusterInstances);
+        LOG.info("Cluster with id {} initialized successfully.\n", clusterId);
+    }
+
+    /**
      * Initializes map of clusterIds and corresponding instances.
      * @return instanceMap
      */
-    public abstract Map<String, List<Instance>> createInstanceMap();
+    public abstract Map<String, List<Instance>> createInstanceMap(String clusterId);
 
     /**
      * Initializes a new cluster from specified clusterId and extends clusterMap.

@@ -37,7 +37,7 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    public ListIntent getListIntent(HashMap<String, Cluster> clusterMap) {
+    public ListIntent getListIntent(Map<String, Cluster> clusterMap) {
         return new ListIntentOpenstack(clusterMap);
     }
 
