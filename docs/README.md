@@ -89,7 +89,7 @@ this may take some time.
 ```
 
 ### Starting the Web IDE
-Enable the Theia IDE in the configuration file using `dtheia: yes`. The IDE can be started with the following command:
+Enable the Theia IDE in the configuration file using `theia: yes`. The IDE can be started with the following command:
 ```
 > bibigrid --ide [cluster-id] -v -o ~/config.yml
 ```
@@ -131,7 +131,7 @@ ogeConf:
 The given value(s) will be overwritten in or added to the default configuration. 
 Check `qconf -sconf global` on master to proof the configuration.
 
-## Including Ansible (Galaxy) Roles
+### Including Ansible (Galaxy) Roles
 You can include ansible roles from your local machine (compressed as .tar.gz files) automatically into your cluster setup by defining following configuration settings:
 
 ```
