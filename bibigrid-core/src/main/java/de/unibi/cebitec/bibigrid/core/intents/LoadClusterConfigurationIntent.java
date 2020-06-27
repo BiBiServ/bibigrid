@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
+
 /**
  * Handling of cluster internal configuration loading from server and provider API.
  *
@@ -39,27 +41,36 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
         } else {
             if (clusterId == null || instanceMap.get(clusterId) == null) {
                 // Load all clusters
+                LOG.info("Loading Configuration for all clusters ...\n");
                 for (String cid : instanceMap.keySet()) {
+                    LOG.info("Loading Configuration for cluster with id {} ...", cid);
                     List<Instance> clusterInstances = instanceMap.get(cid);
                     for (Instance instance : clusterInstances) {
+                        LOG.info(V, "Loading Configuration for instance {} ...", instance.getName());
                         loadInstanceConfiguration(instance);
+                        LOG.info(V, "Configuration for instance {} loaded successfully.", instance.getName());
                     }
+                    LOG.info(V, "Initialize cluster with id {} ...", cid);
                     initCluster(cid, clusterInstances);
+                    LOG.info("Cluster with id {} initialized successfully.\n", cid);
                 }
             } else {
                 // Only load necessary cluster configuration
+                LOG.info("Loading Configuration for cluster with id {} ...", clusterId);
                 List<Instance> clusterInstances = instanceMap.get(clusterId);
                 for (Instance instance : clusterInstances) {
+                    LOG.info("Loading Configuration for instance {} ...", instance.getName());
                     loadInstanceConfiguration(instance);
+                    LOG.info("Configuration for instance {} loaded successfully.", instance.getName());
                 }
+                LOG.info("Initialize cluster with id {} ...", clusterId);
                 initCluster(clusterId, clusterInstances);
+                LOG.info("Cluster with id {} initialized successfully.", clusterId);
             }
 
         }
         LOG.info("Cluster Configuration loaded successfully.");
     }
-
-    // TODO loadClusterConfiguration(id)
 
     /**
      * Initializes map of clusterIds and corresponding instances.
