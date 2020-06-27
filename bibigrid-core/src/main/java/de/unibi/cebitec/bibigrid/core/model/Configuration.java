@@ -239,7 +239,7 @@ public abstract class Configuration {
         this.masterInstance = masterInstance;
         if (masterInstance != null) {
             StringBuilder display = new StringBuilder();
-            display.append("[type=").append(masterInstance.getType()).append(", image=")
+            display.append("\n[type=").append(masterInstance.getType()).append(", image=")
                     .append(masterInstance.getImage()).append("] ");
             LOG.info(V, "Master instance configuration set: {}", display);
         }
@@ -267,9 +267,9 @@ public abstract class Configuration {
         if (workerInstances != null && !workerInstances.isEmpty()) {
             StringBuilder display = new StringBuilder();
             for (WorkerInstanceConfiguration instanceConfiguration : workerInstances) {
-                display.append("[type=").append(instanceConfiguration.getType())
+                display.append("\n[type=").append(instanceConfiguration.getType())
                         .append(", image=").append(instanceConfiguration.getImage())
-                        .append(", count=").append(instanceConfiguration.getCount()).append("] ");
+                        .append(", count=").append(instanceConfiguration.getCount()).append("]");
             }
             LOG.info(V, "Worker instance(s) configuration set: {}", display);
         }

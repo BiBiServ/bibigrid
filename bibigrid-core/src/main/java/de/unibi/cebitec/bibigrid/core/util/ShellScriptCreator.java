@@ -152,11 +152,11 @@ public final class ShellScriptCreator {
         // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
         if (config.hasCustomAnsibleGalaxyRoles()) {
             script.append("ansible-galaxy install --roles-path ~/"
-                    + AnsibleResources.ROLES_ROOT_PATH
+                    + AnsibleResources.ADDITIONAL_ROLES_ROOT_PATH
                     + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
         }
         // Extract ansible roles from files (.tar.gz, .tgz)
-        script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
+        script.append("cd ~/" + AnsibleResources.ADDITIONAL_ROLES_ROOT_PATH + "\n");
         script.append("for f in $(find /tmp/roles -type f -regex '.*\\.t\\(ar\\.\\)?gz'); do tar -xzf $f; done\n");
         script.append("cd ~\n");
 

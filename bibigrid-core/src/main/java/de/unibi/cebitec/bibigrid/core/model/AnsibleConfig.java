@@ -76,6 +76,7 @@ public final class AnsibleConfig {
         List<String> common_vars =
                 Arrays.asList(AnsibleResources.LOGIN_YML, AnsibleResources.INSTANCES_YML, AnsibleResources.CONFIG_YML);
         String DEFAULT_IP_FILE = AnsibleResources.VARS_PATH + "{{ ansible_default_ipv4.address }}.yml";
+
         // master configuration
         Map<String, Object> master = new LinkedHashMap<>();
         master.put("hosts", "master");
@@ -90,7 +91,9 @@ public final class AnsibleConfig {
         List<String> roles = new ArrayList<>();
         roles.add("common");
         roles.add("master");
-        roles.addAll(customMasterRoles.keySet());
+        for (String role_name : customMasterRoles.keySet()) {
+            roles.add("additional/" + role_name);
+        }
         master.put("roles", roles);
         // worker configuration
         Map<String, Object> workers = new LinkedHashMap<>();
@@ -107,7 +110,9 @@ public final class AnsibleConfig {
         roles = new ArrayList<>();
         roles.add("common");
         roles.add("worker");
-        roles.addAll(customWorkerRoles.keySet());
+        for (String role_name : customWorkerRoles.keySet()) {
+            roles.add("additional/" + role_name);
+        }
         workers.put("roles", roles);
         writeToOutputStream(stream, Arrays.asList(master, workers));
     }
@@ -123,7 +128,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * Generates roles/requirements.yml automatically including roles to install via ansible-galaxy.
+     * Generates roles/additional/requirements.yml automatically including roles to install via ansible-galaxy.
      * @param stream write file to remote
      */
     public static void writeRequirementsFile(OutputStream stream, List<Configuration.AnsibleGalaxyRoles> galaxyRoles) {
