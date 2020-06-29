@@ -45,7 +45,8 @@ public final class ShellScriptCreator {
         userData.append("fi\n");
         // disableAptDailyService
         userData.append("log \"disable apt-daily.(service|timer)\"\n");
-        appendDisableAptDailyService(userData);
+        // appendDisableAptDailyService(userData);
+        appendDisableUpgrades(userData);
         // configure SSH Config
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData);
@@ -56,18 +57,11 @@ public final class ShellScriptCreator {
     }
 
 
-    private static void appendDisableAptDailyService(StringBuilder userData) {
-        userData.append("systemctl stop apt-daily.service\n" +
-                "systemctl disable apt-daily.service\n" +
-                "systemctl stop apt-daily.timer\n" +
-                "systemctl disable apt-daily.timer\n" +
-                "systemctl kill --kill-who=all apt-daily.service\n" +
-                "if [ $? -eq 0 ]; then \n" +
-                "while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)\n" +
-                "do\n" +
-                "  sleep 1;\n" +
-                "done\n" +
-                "fi\n");
+    private static void appendDisableUpgrades(StringBuilder userData){
+        userData.append("echo > /etc/apt/apt.conf.d/20auto-upgrades << \"END\"\n" +
+                "APT::Periodic::Update-Package-Lists \"0\";\n" +
+                "APT::Periodic::Unattended-Upgrade \"0\";\n" +
+                "END\n");
     }
 
     private static void appendSshConfiguration(Configuration config, StringBuilder userData) {
