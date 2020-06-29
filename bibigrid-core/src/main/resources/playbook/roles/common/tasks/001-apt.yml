@@ -2,6 +2,14 @@
   debug:
     msg : Using apt to install packages
 
+- name: Disable auto-update/upgrade during ansible-run
+  copy:
+    src: disable-auto-upgrades.conf
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Update
   apt:
     update_cache: "yes"
