@@ -9,7 +9,7 @@
 ### Fixes
 - change list order (#237)
 - add ansible role subfolder (#234)
-- fix slurm configuration for Ubuntu 16.04 (#228)
+- fix slurm & oge configuration for Ubuntu 16.04 (#228)
 
 ## Version 2.0.10 < 2.0.9 (13/12/2019)
 
