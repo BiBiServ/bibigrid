@@ -16,12 +16,15 @@ public final class OpenStackCredentials {
     public OpenStackCredentials() {
     }
 
-    private String projectName;
+    private String project;
+    private String projectId;
     private String username;
     private String password;
     private String endpoint;
-    private String domain;
+    private String userDomain;
+    private String userDomainId;
     private String projectDomain;
+    private String projectDomainId;
 
     public String getUsername() {
         return username;
@@ -39,17 +42,6 @@ public final class OpenStackCredentials {
         this.password = password != null ? password.trim() : null;
     }
 
-    @Deprecated
-    public String getTenantName() {
-        return projectName;
-    }
-
-    @Deprecated
-    public void setTenantName(String tenantName) {
-        LOG.warn("Properties \"tenantName\" is deprecated, use \"projectName\" instead.");
-        this.projectName = tenantName != null ? tenantName.trim() : null;
-    }
-
     public String getEndpoint() {
         return endpoint;
     }
@@ -58,49 +50,62 @@ public final class OpenStackCredentials {
         this.endpoint = endpoint != null ? endpoint.trim() : null;
     }
 
-    public String getDomain() {
-        return domain;
+    // project
+
+    public String getProject() { return project; }
+
+    public void setProject(String project) { this.project = project; }
+
+    // project ID
+
+    public String getProjectId() { return projectId; }
+
+    public void setProjectId(String projectId) { this.projectId = projectId; }
+
+    // user domain
+
+    public String getUserDomain() {
+        return userDomain;
     }
 
-    public void setDomain(String domain) {
-        this.domain = domain != null ? domain.trim() : null;
+    public void setUserDomain(String userDomain) {
+        this.userDomain = userDomain != null ? userDomain.trim() : null;
     }
 
-    @Deprecated
-    public String getTenantDomain() {
-        return projectDomain == null ? domain : projectDomain;
-    }
+    // user domain id
 
-    @Deprecated
-    public void setTenantDomain(String tenantDomain) {
-        LOG.warn("Properties \"tenantDomain\" is deprecated, use \"projectDomain\" instead.");
-        this.projectDomain = tenantDomain != null ? tenantDomain.trim() : null;
-    }
+    public String getUserDomainId() { return userDomainId; }
 
-    public String getProjectName() {
-        return projectName;
-    }
+    public void setUserDomainId(String userDomainId) { this.userDomainId = userDomainId; }
 
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
+    // project domain
 
-    public String getProjectDomain() {
-        return projectDomain == null ? domain : projectDomain;
-    }
+    public String getProjectDomain() { return projectDomain; }
 
     public void setProjectDomain(String projectDomain) {
         this.projectDomain = projectDomain;
     }
 
-    public List<String> getCredentials() {
-        List<String> credentials = new ArrayList<>();
-        credentials.add(projectName);
-        credentials.add(username);
-        credentials.add(password);
-        credentials.add(endpoint);
-        credentials.add(domain);
-        credentials.add(projectDomain);
-        return credentials;
+    // project domain id
+
+    public String getProjectDomainId() { return projectDomainId; }
+
+    public void setProjectDomainId(String projectDomainId) {
+        this.projectDomainId = projectDomainId;
+    }
+
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("project         : "+project+"\n");
+        sb.append("projectId       : "+projectId+"\n");
+        sb.append("username        : "+username+"\n");
+        sb.append("password        : XXXXXXXX\n");
+        sb.append("endpoint        : "+endpoint+"\n");
+        sb.append("userdomain      : "+userDomain+"\n");
+        sb.append("userDomainId    : "+userDomainId+"\n");
+        sb.append("projectDomain   : "+projectDomain+"\n");
+        sb.append("projectDomainId : "+projectDomainId+"\n");
+        return sb.toString();
     }
 }
