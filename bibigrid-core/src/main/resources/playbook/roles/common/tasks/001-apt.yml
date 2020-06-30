@@ -2,19 +2,13 @@
   debug:
     msg : Using apt to install packages
 
-- name: Deactivate auto-update function
-  shell: |
-        systemctl stop apt-daily.service
-        systemctl disable apt-daily.service
-        systemctl stop apt-daily.timer
-        systemctl disable apt-daily.timer
-        systemctl kill --kill-who=all apt-daily.service
-        if [ $? -eq 0 ]; then
-          while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)
-          do
-            sleep 1;
-          done
-        fi
+- name: Disable auto-update/upgrade during ansible-run
+  copy:
+    src: disable-auto-upgrades.conf
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: 0644
 
 - name: Update
   apt:
