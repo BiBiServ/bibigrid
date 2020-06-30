@@ -1,3 +1,15 @@
+## Version 2.1 < 2.0.10 (not yet released)
+
+### Features
+- add support for Ubuntu 20.04 LTS (#228)
+- bump Zabbix version to 5.0 (#228)
+- pin Theia-IDE version to 1.3 (#227)
+- manual (up-/down-) scaling (#117)
+
+### Fixes
+- change list order (#237)
+- add ansible role subfolder (#234)
+- fix slurm configuration for Ubuntu 16.04 (#228)
 
 ## Version 2.0.10 < 2.0.9 (13/12/2019)
 
