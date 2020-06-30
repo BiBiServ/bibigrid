@@ -59,7 +59,6 @@
   shell: "zcat /usr/share/doc/zabbix-server-mysql/create.sql.gz | mysql --user={{ zabbix.db_user}} --password={{ zabbix.db_password }} zabbix"
   when: zabbix_schema_exists.rc == 1
 
-
 - name: Update Admin password
   shell: "echo \"update users set passwd=md5('{{ zabbix.admin_password }}') where alias='Admin'\" | mysql --user={{ zabbix.db_user}} --password={{ zabbix.db_password }} zabbix"
 
@@ -78,21 +77,93 @@
 # -- Zabbix Web Frontend --
 # -------------------------
 
-- name: Debian based OS
+- name: Zabbix Web Frontend related packages for Debian (Debian 10, Ubuntu 18.04 and Ubuntu 20.04) based OS
   block:
-    - name: Install apache web server
+    - name: Install apache web server and php
       apt:
-        name: apache2
+        name:
+          - apache2
+          - php
         state: latest
 
     - name: Install zabbix web frontend
       apt:
-        name: zabbix-frontend-php
+        name:
+          - zabbix-frontend-php
+          - zabbix-apache-conf
         state: latest
-  when: "ansible_distribution_file_variety == 'Debian'"
+  when: "ansible_distribution_file_variety == 'Debian' and not ( ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial' )"
 
 
-- name: REHL based OS
+- name: Zabbix Web Frontend related packages for Ubuntu 16.04
+  block:
+    - name: Install apache web server and php 7.4
+      apt:
+        name:
+          - apache2
+          - php7.4
+          - php7.4-bcmath
+          - php7.4-bz2
+          - php7.4-cgi
+          - php7.4-cli
+          - php7.4-common
+          - php7.4-curl
+          - php7.4-dba
+          - php7.4-dev
+          - php7.4-enchant
+          - php7.4-fpm
+          - php7.4-gd
+          - php7.4-gmp
+          - php7.4-imap
+          - php7.4-interbase
+          - php7.4-intl
+          - php7.4-json
+          - php7.4-ldap
+          - php7.4-mbstring
+          - php7.4-mysql
+          - php7.4-odbc
+          - php7.4-opcache
+          - php7.4-pgsql
+          - php7.4-phpdbg
+          - php7.4-pspell
+          - php7.4-readline
+          - php7.4-snmp
+          - php7.4-soap
+          - php7.4-sqlite3
+          - php7.4-sybase
+          - php7.4-tidy
+          - php7.4-xml
+          - php7.4-xmlrpc
+          - php7.4-xsl
+          - php7.4-zip
+          - libapache2-mod-php7.4
+          - libphp7.4-embed
+        state: latest
+
+    - name: Install zabbix web frontend
+      apt:
+        name:
+          - zabbix-frontend-php-deprecated
+        state: latest
+
+    - name: Copy zabbix apache conf
+      copy:
+        src: zabbix/zabbix.conf
+        dest: /etc/apache2/conf-available/zabbix.conf
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Enable zabbix apache conf
+      file:
+        src: /etc/apache2/conf-available/zabbix.conf
+        dest: /etc/apache2/conf-enabled/zabbix.conf
+        owner: root
+        group: root
+        state: link
+  when: "ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial'"
+
+- name: Zabbix Web Frontend related packages for REHL based OS
   block:
     - name: Install apache web server
       dnf:
@@ -101,11 +172,19 @@
 
     - name: Install zabbix web frontend
       dnf:
-        name: zabbix-frontend-php
+        name:
+          - zabbix-frontend-php
+          - zabbix-apache-conf
         state: latest
   when: "ansible_distribution_file_variety == 'RedHat'"
 
-
+- name: Create Zabbix web dir (if not exists)
+  file:
+    path: /etc/zabbix/web
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Adjust zabbix web frontend configuration
   block:
@@ -115,7 +194,6 @@
     - template:
         src: zabbix/zabbix.conf.php.j2
         dest: /etc/zabbix/web/zabbix.conf.php
-
 
 - name: Restart apache web server
   systemd:
@@ -140,9 +218,9 @@
     host_groups:
       - 'Linux servers'
     link_templates:
-      - 'Template OS Linux'
+      - 'Template OS Linux by Zabbix Agent' # new in Zabbix 4.4
     interfaces:
-      - type: 1 #agent
+      - type: 1 # agent
         main: 1 # default
         ip: "{{ item.ip }}"
         useip: 1 # connect using host IP address
