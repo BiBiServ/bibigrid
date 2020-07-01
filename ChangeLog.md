@@ -1,15 +1,19 @@
 
-## Version 3.0.0 < 2.0.10 (06/11/2020)
+## Version 2.1.0 < 2.0.10 (07/01/2020)
 
 ### Features
 - Manual Upscaling via su (scale-up) parameter (#229)
 - Manual Downscaling via sd (scale-down) parameter (#229)
 - Added support for new released Ubuntu 20.04 (Focal Fossa) (#228)
+- Upgrade TheiaIDE to current stable 1.3 Release (#227)
+- Upgrade Zabbix to current stable 5.0 Release (#228)
 
 ### Fixes
 - Enhanced Logging
 - Minor error message fixes
 - Displaying only BiBiGrid clusters with list parameter
+- Sort list option order to enhance usability (#231) 
+- Extend logging for Cluster Configuration Loading Progress (#236)
 
 ### General
 - Added documentation
