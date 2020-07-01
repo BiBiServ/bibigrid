@@ -23,7 +23,9 @@ parameters, a configuration file is easier to maintain and in some cases provide
 more detailed configuration possibilities.
 
 #### Writing and using a configuration file
-The configuration file is a plain text file in YAML format. A short example would be:
+The configuration file is a plain text file in YAML format.  
+  
+*example.yml*
 
 ```
 #configuration.yml
@@ -91,7 +93,7 @@ this may take some time.
 ### Starting the Web IDE
 Enable the Theia IDE in the configuration file using `theia: yes`. The IDE can be started with the following command:
 ```
-> bibigrid --ide [cluster-id] -v -o ~/config.yml
+> bibigrid --ide [cluster-id] -v -o config.yml
 ```
 The process will run until an input is provided or it's terminated. 
 The IDE is available under [http://localhost:8181](http://localhost:8181) and will be started automatically. 
@@ -191,7 +193,7 @@ ansibleGalaxyRoles:
 Be aware of using only one of 'galaxy', 'git' or 'url'.
 
 ### Set up Apache Cassandra on your cluster
-If you want to start Apache Cassandra on your cluster, you may include it as follows:
+Apache Cassandra is a NoSQL database management system which you can use on your cluster. You may include it as follows:
 ```
 ansibleGalaxyRoles:
   - name: Cassandra 
@@ -199,9 +201,9 @@ ansibleGalaxyRoles:
     galaxy: locp.cassandra
     varsFile: cassandra-vars.yml
 ```
-Because Cassandra needs quite a lot additional variables, you may include these via an own Yaml file (e.g. cassandra-vars.yml)
+Cassandra needs quite a lot additional variables, thus you may include these via an own Yaml file (e.g. cassandra-vars.yml)
 to keep your configuration file transparent.
-The author (locp) provides variables for a very [basic configuration](https://galaxy.ansible.com/locp/cassandra):  
+The author of the galaxy role (locp) provides variables for a very [basic configuration](https://galaxy.ansible.com/locp/cassandra):  
 
 *cassandra-vars.yml*
 ```
@@ -248,7 +250,7 @@ cassandra_rack: RACK1
 cassandra_repo_apache_release: 311x
 ```  
 
-To check if your configuration went well you can try to use the Cassandra Query Language Shell:  
+To check if your configuration went well, you can try to use the Cassandra Query Language Shell:  
 
 ```
 > cqlsh
@@ -275,10 +277,11 @@ ansibleGalaxyRoles:
           password: similarly-secure-password
           priv: "example_db.*:ALL"                  # Permission on specified database
 ```
-This ansible galaxy role is from author geerlingguy who provides many useful ansible roles. 
-After cluster setup and login on master you can check, if everything is going right:  
+This ansible galaxy role is from the author geerlingguy who provides many other useful ansible roles, too. 
 
-``` > mysql --user example_user -p ```  
+You can check, if everything went right (after cluster setup and login on master) this way:  
+
+``` > mysql --user <example_user> -p ```  
 
 Replace 'example_user' and type in your password afterwords - You should end up connected to the MySQL Server.
 
@@ -288,7 +291,7 @@ Once a cluster is created, it can be listed with the following command. All clus
 with the selected provider will be listed, including some detail information.
 
 ```
-> bibigrid -l -o ~/config.yml
+> bibigrid -l -o config.yml
 ```
 
 Example output:
@@ -299,14 +302,20 @@ Example output:
 fkiseokf34ekfeo |   testuser |   20/08/19 09:25:10 |   bibigrid-fkis... |    XXX.XX.XX.XX |       3 | a45b6a63-.. |           - |           -
 ```
 
+To get additional information about the nodes a specific cluster, you can add the cluster-id to the previous command:  
+
+`> bibigrid -l <cluster-id> -o config.yml`
+
 ### Scaling the cluster manually
 If you want to shut down single worker instances of the cluster or append some new, you may do so in the following way:  
 
-**Upscaling**
+**Upscaling**  
+
+Append new instances with the configuration of a specified batch in the following way:
 ```
 > bibigrid -su <bibigrid-id> <batch-index> <count>
 ```
-Use the bibigrid id of the cluster you want to scale up. You than take the batch-index of an existing instance to 
+Use the bibigrid id of the cluster you want to scale up. You than take the batch-index of worker-set to 
 specify the configuration of the new one(s). You can look it up via `bibigrid -l <cluster-id>`. At last you can specify, 
 with how many instances you want to expand your cluster.  
 
@@ -316,24 +325,25 @@ You can scale down the cluster the same way you scale it up, just replace `-su` 
 ```
 > bibigrid -sd <bibigrid-id> <batch-index> <count>
 ```
-Note, that you cannot scale down more instances than contained in the batch.
-
 ### Terminate the cluster
 When you're finished using the cluster, you can terminate it using the following command and the logged cluster-id 
 when the cluster was created. The SSH Key Pair in the *.bibigrid/keys* folder will be deleted since they are only used once per cluster.
 
 ```
-> bibigrid -t [cluster-id] -v -o ~/config.yml
+> bibigrid -t <cluster-id> -v -o config.yml
 ```
 
-If necessary multiple clusters can be terminated at once:
+You can also terminate multiple clusters at once:
 
 ```
-> bibigrid -t [id1] [id2] [id3] -v -o ~/config.yml
+> bibigrid -t <id1> <id2> <id3> -v -o config.yml
 ```
-There is also the possibility to terminate all clusters of a user at once:
+
+Additionally, you have the possibility to terminate all clusters of a specific user at once:
+
 ```
-> bibigrid -t [user] -v -o ~/config.yml
+> bibigrid -t <user> -v -o config.yml
 ```
+
 Here you have to insert your username instead of '[user]'. This may save time, 
 if you are absolutely certain you don't need any of your clusters anymore.
