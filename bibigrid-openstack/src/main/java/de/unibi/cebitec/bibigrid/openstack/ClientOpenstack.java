@@ -31,9 +31,7 @@ class ClientOpenstack extends Client {
         OpenStackCredentials credentials = config.getOpenstackCredentials();
         try {
             OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
-            internalClient = credentials.getDomain() != null ?
-                    buildOSClientV3(credentials) :
-                    buildOSClientV2(credentials);
+            internalClient = buildOSClientV3(credentials);
             LOG.info("Openstack connection established.");
         } catch (AuthenticationException e) {
             if (Configuration.DEBUG) {
@@ -50,20 +48,12 @@ class ClientOpenstack extends Client {
         }
     }
 
-    private static OSClient buildOSClientV2(OpenStackCredentials credentials) {
-        return OSFactory.builderV2()
-                .endpoint(credentials.getEndpoint())
-                .credentials(credentials.getUsername(), credentials.getPassword())
-                .tenantName(credentials.getTenantName())
-                .authenticate();
-    }
-
     private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
+        LOG.info(credentials.toString());
         return OSFactory.builderV3()
                 .endpoint(credentials.getEndpoint())
-                .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getDomain()))
-                //.scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getDomain()))
-                .scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getTenantDomain()))
+                .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getUserDomain()))
+                .scopeToProject(Identifier.byName(credentials.getProject()), Identifier.byId(credentials.getProjectDomainId()))
                 .authenticate();
     }
 

@@ -18,17 +18,24 @@
             <artifactId>bibigrid-core</artifactId>
             <version>2.0.10</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.openstack4j.core/openstack4j-core -->
         <dependency>
-            <groupId>org.pacesys</groupId>
-            <artifactId>openstack4j</artifactId>
-            <version>3.2.0</version>
+            <groupId>com.github.openstack4j.core</groupId>
+            <artifactId>openstack4j-core</artifactId>
+            <version>3.6</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.openstack4j.core.connectors/openstack4j-resteasy -->
+        <dependency>
+            <groupId>com.github.openstack4j.core.connectors</groupId>
+            <artifactId>openstack4j-resteasy</artifactId>
+            <version>3.6</version>
+        </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>28.0-jre</version>
         </dependency>
-
 
         <dependency>
             <groupId>junit</groupId>
