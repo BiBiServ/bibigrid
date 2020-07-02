@@ -3,9 +3,6 @@ package de.unibi.cebitec.bibigrid.openstack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de, jkrueger(at)cebitec.uni-bielefeld.de
  */
@@ -69,7 +66,7 @@ public final class OpenStackCredentials {
     }
 
     public void setUserDomain(String userDomain) {
-        this.userDomain = userDomain != null ? userDomain.trim() : null;
+        this.userDomain = (userDomain != null) ? userDomain.trim() : null;
     }
 
     // user domain id
@@ -97,15 +94,15 @@ public final class OpenStackCredentials {
     @Override
     public String toString(){
         StringBuilder sb = new StringBuilder();
-        sb.append("project         : "+project+"\n");
-        sb.append("projectId       : "+projectId+"\n");
-        sb.append("username        : "+username+"\n");
-        sb.append("password        : XXXXXXXX\n");
-        sb.append("endpoint        : "+endpoint+"\n");
-        sb.append("userdomain      : "+userDomain+"\n");
-        sb.append("userDomainId    : "+userDomainId+"\n");
-        sb.append("projectDomain   : "+projectDomain+"\n");
-        sb.append("projectDomainId : "+projectDomainId+"\n");
+        sb.append("\tproject         : "+project+"\n");
+        sb.append("\tprojectId       : "+projectId+"\n");
+        sb.append("\tusername        : "+username+"\n");
+        sb.append("\tpassword        : XXXXXXXX\n");
+        sb.append("\tendpoint        : "+endpoint+"\n");
+        sb.append("\tuserdomain      : "+userDomain+"\n");
+        sb.append("\tuserDomainId    : "+userDomainId+"\n");
+        sb.append("\tprojectDomain   : "+projectDomain+"\n");
+        sb.append("\tprojectDomainId : "+projectDomainId+"\n");
         return sb.toString();
     }
 }

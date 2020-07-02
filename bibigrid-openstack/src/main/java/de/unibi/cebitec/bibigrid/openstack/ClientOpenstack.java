@@ -12,7 +12,6 @@ import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,7 +48,9 @@ class ClientOpenstack extends Client {
     }
 
     private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
-        LOG.debug(credentials.toString());
+        if (Configuration.DEBUG) {
+            LOG.info(credentials.toString());
+        }
         return OSFactory.builderV3()
                 .endpoint(credentials.getEndpoint())
                 .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getUserDomain()))
