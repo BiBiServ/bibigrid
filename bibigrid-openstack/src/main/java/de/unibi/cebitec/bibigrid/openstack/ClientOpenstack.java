@@ -49,7 +49,7 @@ class ClientOpenstack extends Client {
     }
 
     private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
-        LOG.info(credentials.toString());
+        LOG.debug(credentials.toString());
         return OSFactory.builderV3()
                 .endpoint(credentials.getEndpoint())
                 .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getUserDomain()))
