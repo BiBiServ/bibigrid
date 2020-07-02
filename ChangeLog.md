@@ -1,31 +1,19 @@
-## Version 2.1 < 2.0.10 (not yet released)
+## Version 2.1.0 < 2.0.10 (07/02/2020)
 
 ### Features
-- add support for Ubuntu 20.04 LTS (#228)
-- bump Zabbix version to 5.0 (#228)
-- pin Theia-IDE version to 1.3 (#227)
-- manual (up-/down-) scaling (#117)
-
-### Fixes
-- change list order (#237)
-- add ansible role subfolder (#234)
-- fix slurm & oge configuration for Ubuntu 16.04 (#228)
-
-## Version 2.1.0 < 2.0.10 (07/01/2020)
-
-### Features
+- Added support for Ubuntu 20.04 (Focal Fossa) (#228)
 - Manual Upscaling via su (scale-up) parameter (#229)
 - Manual Downscaling via sd (scale-down) parameter (#229)
-- Added support for new released Ubuntu 20.04 (Focal Fossa) (#228)
 - Upgrade TheiaIDE to current stable 1.3 Release (#227)
 - Upgrade Zabbix to current stable 5.0 Release (#228)
 
 ### Fixes
-- Enhanced Logging
-- Minor error message fixes
+- Fix slurm & oge configuration for Ubuntu 16.04 (#228)
 - Displaying only BiBiGrid clusters with list parameter
 - Sort list option order to enhance usability (#231) 
-- Extend logging for Cluster Configuration Loading Progress (#236)
+- Add ansible role subfolder, prevents duplicate host role name (#234)
+- Enhanced Logging, e.g. for Cluster Configuration Loading Progress (#236)
+- Minor error message fixes
 
 ### General
 - Added documentation
