@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
+
 /**
  * Handling of cluster internal configuration loading from server and provider API.
  *
@@ -25,47 +27,56 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
+        clusterMap = new HashMap<>();
     }
 
     /**
      * Loads cluster and instance configuration(s) from internal config.
+     * @param clusterId parameter given
      */
     public void loadClusterConfiguration(String clusterId) {
         LOG.info("Load Cluster Configurations ...");
-        Map<String, List<Instance>> instanceMap = createInstanceMap();
-        clusterMap = new HashMap<>();
+        Map<String, List<Instance>> instanceMap = createInstanceMap(clusterId);
         if (instanceMap.isEmpty()) {
-            LOG.warn("No BiBiGrid cluster found!\n");
+            LOG.info("No BiBiGrid cluster found!\n");
+            return;
         } else {
             if (clusterId == null || instanceMap.get(clusterId) == null) {
-                // Load all clusters
+                LOG.info("Loading Configuration for all clusters ...\n");
                 for (String cid : instanceMap.keySet()) {
-                    List<Instance> clusterInstances = instanceMap.get(cid);
-                    for (Instance instance : clusterInstances) {
-                        loadInstanceConfiguration(instance);
-                    }
-                    initCluster(cid, clusterInstances);
+                    loadSingleClusterConfiguration(instanceMap.get(cid), cid);
                 }
             } else {
                 // Only load necessary cluster configuration
-                List<Instance> clusterInstances = instanceMap.get(clusterId);
-                for (Instance instance : clusterInstances) {
-                    loadInstanceConfiguration(instance);
-                }
-                initCluster(clusterId, clusterInstances);
+                loadSingleClusterConfiguration(instanceMap.get(clusterId), clusterId);
             }
 
         }
         LOG.info("Cluster Configuration loaded successfully.");
     }
 
-    // TODO loadClusterConfiguration(id)
+    /**
+     * Loads configuration of a cluster and initializes Cluster object.
+     * @param clusterInstances instance list of cluster
+     * @param clusterId id of cluster
+     */
+    private void loadSingleClusterConfiguration(List<Instance> clusterInstances, String clusterId) {
+        LOG.info("Loading Configuration for cluster with id {} ...", clusterId);
+        for (Instance instance : clusterInstances) {
+            LOG.info(V, "Loading Configuration for instance {} ...", instance.getName());
+            loadInstanceConfiguration(instance);
+            LOG.info(V, "Configuration for instance {} loaded successfully.", instance.getName());
+        }
+        LOG.info(V, "Initialize cluster with id {} ...", clusterId);
+        initCluster(clusterId, clusterInstances);
+        LOG.info("Cluster with id {} initialized successfully.\n", clusterId);
+    }
 
     /**
      * Initializes map of clusterIds and corresponding instances.
      * @return instanceMap
      */
-    public abstract Map<String, List<Instance>> createInstanceMap();
+    public abstract Map<String, List<Instance>> createInstanceMap(String clusterId);
 
     /**
      * Initializes a new cluster from specified clusterId and extends clusterMap.

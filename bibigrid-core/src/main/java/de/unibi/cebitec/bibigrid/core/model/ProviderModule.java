@@ -49,7 +49,7 @@ public abstract class ProviderModule {
 
     public abstract Client getClient(Configuration config) throws ClientConnectionFailedException;
 
-    public abstract ListIntent getListIntent(HashMap<String, Cluster> clusterMap);
+    public abstract ListIntent getListIntent(Map<String, Cluster> clusterMap);
 
     public abstract TerminateIntent getTerminateIntent(Client client, Configuration config);
 
