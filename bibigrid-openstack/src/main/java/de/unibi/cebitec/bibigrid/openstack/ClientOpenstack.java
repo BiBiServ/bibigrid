@@ -51,11 +51,27 @@ class ClientOpenstack extends Client {
         if (Configuration.DEBUG) {
             LOG.info(credentials.toString());
         }
+        Identifier project = getIdentifier(credentials.getProject(), credentials.getProjectId());
+        Identifier userDomain = getIdentifier(credentials.getUserDomain(), credentials.getUserDomainId());
+        Identifier projectDomain = getIdentifier(credentials.getProjectDomain(), credentials.getProjectDomainId());
         return OSFactory.builderV3()
                 .endpoint(credentials.getEndpoint())
-                .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getUserDomain()))
-                .scopeToProject(Identifier.byName(credentials.getProject()), Identifier.byId(credentials.getProjectDomainId()))
+                .credentials(credentials.getUsername(), credentials.getPassword(), userDomain)
+                .scopeToProject(project, projectDomain)
                 .authenticate();
+    }
+
+    static Identifier getIdentifier(String name, String id) {
+        if (name == null) {
+            if (id == null) {
+                LOG.error("No ProjectDomain provided. Cannot authenticate via Openstack API.");
+            } else {
+                return Identifier.byId(id);
+            }
+        } else {
+            return Identifier.byName(name);
+        }
+        return null;
     }
 
     OSClient getInternal() {
