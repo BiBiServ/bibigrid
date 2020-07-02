@@ -2,7 +2,7 @@
 BiBiGrid is a tool for an easy cluster setup inside a cloud environment.
 It is written in Java and run on any OS a Java runtime is provided - any 
 Java 8 is supported. BiBiGrid and its Cmdline UI based on a general cloud 
-provider api. Currently the implementation is based on OpenStack ([Openstack4j](http://openstack4j.com)).  
+provider api. Currently the implementation is based on OpenStack ([Openstack4j](https://github.com/openstack4j/openstack4j)).  
 There also exists implementations for Google (Compute Engine, using the official Google Cloud SDK), 
 Amazon (AWS EC2 using the official AWS SDK) and Microsoft (Azure using the official Azure SDK) (WIP)
 which are currently not provided tested.
