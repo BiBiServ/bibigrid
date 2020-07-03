@@ -36,7 +36,7 @@ public class StartUp {
     private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
 
     private static final String CID = "cluster-id";
-    private static final String WORKERS = "worker-instances";
+    private static final String SCALE = CID+" worker-Batch count";
     private static final int SCALE_ARGS = 3; // cluster-id, workerBatch, count
 
     private static OptionGroup getCMDLineOptionGroup() {
@@ -49,14 +49,11 @@ public class StartUp {
         Option upscale = new Option(SCALE_UP.getShortParam(), SCALE_UP.getLongParam(),
                 true, "Adds a given amount of workers of a specific instance type");
         upscale.setArgs(SCALE_ARGS);
-        upscale.setArgName(WORKERS);
+        upscale.setArgName(SCALE);
         Option downscale = new Option(SCALE_DOWN.getShortParam(), SCALE_DOWN.getLongParam(),
                 true, "Terminates a given amount of workers of a specific instance type");
         downscale.setArgs(SCALE_ARGS);
-        downscale.setArgName(WORKERS);
-        Option cloud9 = new Option(CLOUD9.getShortParam(), CLOUD9.getLongParam(),
-                true, "Start the cloud9 IDE");
-        cloud9.setArgName(CID);
+        downscale.setArgName(SCALE);
         Option ide = new Option(IDE.getShortParam(), IDE.getLongParam(),
                 true, "Start a Web IDE");
         ide.setArgName(CID);
@@ -71,15 +68,12 @@ public class StartUp {
                         false, "Help"))
                 .addOption(new Option(CREATE.getShortParam(), CREATE.getLongParam(),
                         false, "Create cluster"))
-                .addOption(new Option(PREPARE.getShortParam(), PREPARE.getLongParam(),
-                        false, "Prepare cluster images for faster setup"))
                 .addOption(list)
                 .addOption(new Option(VALIDATE.getShortParam(), VALIDATE.getLongParam(),
                         false, "Validate the configuration file"))
                 .addOption(terminate)
                 .addOption(upscale)
                 .addOption(downscale)
-                .addOption(cloud9)
                 .addOption(ide);
         return intentOptions;
     }
@@ -94,6 +88,8 @@ public class StartUp {
                 .addOption(new Option("d","debug",false,"Don't shut down cluster in the case of a configuration error."))
                 .addOption(new Option("m","mode",true,"One of "+String.join(",",Provider.getInstance().getProviderNames())))
                 .addOptionGroup(intentOptions);
+
+
         try {
             CommandLine cl = cli.parse(cmdLineOptions, args);
 
@@ -107,6 +103,7 @@ public class StartUp {
             // Just to get information faster
             if (intentMode == HELP) {
                 printHelp(cl, cmdLineOptions);
+                return;
             }
 
             // Options
@@ -200,7 +197,8 @@ public class StartUp {
 
             // -h and -l parameters don't need validation
             if (intentMode == HELP) {
-                printInstanceTypeHelp(module, client, config);
+                // printInstanceTypeHelp(module, client, config);
+                // printHelp();
                 return;
             } else if (intentMode == LIST) {
                 String param = parameters.length == 0 ? null : parameters[0];
@@ -239,21 +237,6 @@ public class StartUp {
                         String clusterId = parameters != null ? parameters[0] : null;
                         CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
                         runCreateIntent(module, config, client, cluster, false);
-                    } else {
-                        LOG.error("There were one or more errors. Please adjust your configuration.");
-                    }
-                    break;
-                case PREPARE:
-                    if (module.getValidateIntent(client, config).validate()) {
-                        String clusterId = parameters != null ? parameters[0] : null;
-                        CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
-                        if (runCreateIntent(module, config, client, cluster, true)) {
-                            module.getPrepareIntent(client, config).prepare(cluster);
-                            TerminateIntent terminateIntent = module.getTerminateIntent(client, config);
-                            if (!terminateIntent.terminate(clusterId)) {
-                                LOG.error("Could not terminate instances with given clusterId {}", clusterId);
-                            }
-                        }
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
@@ -303,22 +286,6 @@ public class StartUp {
                     }
                     module.getTerminateIntent(client, config)
                             .terminateInstances(clusterId, workerBatch, count);
-                    break;
-                case CLOUD9:
-                    LOG.warn("Command-line option --cloud9 is deprecated. Please use --ide instead. Continuing ...");
-                case IDE:
-                    try {
-                        // Load private key file
-                        clusterId = parameters.length == 1 ? parameters[0] : null;
-                        config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
-                        config.getClusterKeyPair().load();
-                        new IdeIntent(module, client, clusterId, config).start();
-                    } catch (IOException e) {
-                        LOG.error("Exception occurred loading private key. {}",e.getMessage());
-                        if (Configuration.DEBUG) {
-                            e.printStackTrace();
-                        }
-                    }
                     break;
                 default:
                     LOG.warn("Unknown intent mode.");
@@ -377,17 +344,25 @@ public class StartUp {
      * Prints out version of BiBiGrid with date of build.
      */
     private static void printVersionInfo() {
+        Map m = getVersionInfo();
+            System.out.println(String.format("v%s (Build: %s)",
+                    m.get("version"),
+                    m.get("build")));
+    }
+
+    private static Map getVersionInfo(){
+        Map<String,String> s = new HashMap();
         try {
             URL jarUrl = StartUp.class.getProtectionDomain().getCodeSource().getLocation();
             String jarPath = URLDecoder.decode(jarUrl.getFile(), "UTF-8");
             JarFile jarFile = new JarFile(jarPath);
             Manifest m = jarFile.getManifest();
-            System.out.println(String.format("v%s (Build: %s)",
-                    m.getMainAttributes().getValue("Bibigrid-version"),
-                    m.getMainAttributes().getValue("Bibigrid-build-date")));
+            s.put("version",m.getMainAttributes().getValue("Bibigrid-version"));
+            s.put("build",m.getMainAttributes().getValue("Bibigrid-build-date"));
         } catch (IOException e) {
             LOG.error("Version info could not be read.");
         }
+        return s;
     }
 
     /**
@@ -396,15 +371,19 @@ public class StartUp {
      * @param cmdLineOptions options [-ch -c -v -o ...]
      */
     private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
+        Map map = getVersionInfo();
         HelpFormatter help = new HelpFormatter();
-        String header = "\nDocumentation at https://github.com/BiBiServ/bibigrid/docs\n\n";
-        header += "Loaded provider modules: " + String.join(", ", Provider.getInstance().getProviderNames()) + "\n\n";
-        String footer = "";
+        String footer = "\nDocumentation at https://github.com/BiBiServ/bibigrid/docs\n";
+        footer += "Loaded provider modules: " + String.join(", ", Provider.getInstance().getProviderNames());
+
         String modes = Arrays.stream(IntentMode.values()).map(m -> "--" + m.getLongParam()).collect(Collectors.joining("|"));
-        //help.printHelp("bibigrid " + modes + " [...]", header, cmdLineOptions, footer);
+        System.out.println("BiBiGrid is a tool for an easy cluster setup inside a cloud environment.\n");
+        help.printHelp(100,
+                "java -jar bibigrid-"+String.join(", ", Provider.getInstance().getProviderNames())+"-"+map.get("version")+".jar",
+                "",
+                cmdLineOptions,
+                footer);
         System.out.println('\n');
-        // display instances to create cluster
-        //runIntent(commandLine, IntentMode.HELP);
     }
 
     /**
