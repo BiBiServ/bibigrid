@@ -1,22 +1,24 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
 public enum IntentMode {
-    VERSION("V", "version"),
-    HELP("h", "help"),
-    TERMINATE("t", "terminate"),
-    CREATE("c", "create"),
-    PREPARE("p", "prepare"),
-    LIST("l", "list"),
-    VALIDATE("ch", "check"),
-    CLOUD9("cloud9", "cloud9"),
-    IDE("ide", "ide");
+    VERSION("V", "version","Display version"),
+    HELP("h", "help","Display help message"),
+    TERMINATE("t", "terminate","Terminate cluster"),
+    SCALE_UP("su", "scale-up","Scale up a running cluster"),
+    SCALE_DOWN("sd", "scale-down"," Scale down a running cluster"),
+    CREATE("c", "create", "Create cluster"),
+    LIST("l", "list"," List all started/running cluster"),
+    VALIDATE("ch", "check", "Validate cluster configuration"),
+    IDE("ide", "ide", "Establish a secured connection to specified ide");
 
     private final String shortParam;
     private final String longParam;
+    private final String description;
 
-    IntentMode(String shortParam, String longParam) {
+    IntentMode(String shortParam, String longParam, String description) {
         this.shortParam = shortParam;
         this.longParam = longParam;
+        this.description = description;
     }
 
     public String getShortParam() {
@@ -26,6 +28,8 @@ public enum IntentMode {
     public String getLongParam() {
         return longParam;
     }
+
+    public String getDescription() { return description; }
 
     public static IntentMode fromString(String value) {
         for (IntentMode mode : values()) {

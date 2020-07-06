@@ -1,16 +1,40 @@
-
-## Version 2.0.10 < 2.0.9 (13/12/2019)
+## Version 2.1.0 < 2.0.10 (07/02/2020)
 
 ### Features
-- added IdeConf parameter to integrate usage of self-assigned port(s) for TheiaIDE forwarding (prevents already bound ports (#180))
+- Added support for Ubuntu 20.04 (Focal Fossa) (#228)
+- Manual Upscaling via su (scale-up) parameter (#229)
+- Manual Downscaling via sd (scale-down) parameter (#229)
+- Upgrade TheiaIDE to current stable 1.3 Release (#227)
+- Upgrade Zabbix to current stable 5.0 Release (#228)
 
 ### Fixes
-- various Theia bugs (#211,#213,#214)
-- update & upgrade entire system (#193)
-- improve error handling (#191)
-- pin theia-ide version (#207)
-- fix credentials handling (#208)
-- fix zabbix with Ubuntu 16.04 (#203)
+- Fix slurm & oge configuration for Ubuntu 16.04 (#228)
+- Displaying only BiBiGrid clusters with list parameter
+- Sort list option order to enhance usability (#231) 
+- Add ansible role subfolder, prevents duplicate host role name (#234)
+- Enhanced Logging, e.g. for Cluster Configuration Loading Progress (#236)
+- Minor error message fixes
+
+### General
+- Added documentation
+- Terminate multiple clusters separated by white space instead of ','
+- Split configuration on remote
+- Restructuring of loading cluster configuration
+- Ansible Configuration made static
+
+## Version 2.0.10 < 2.0.9 (12/13/2019)
+
+### Features
+- Added IdeConf parameter to integrate usage of self-assigned port(s) for TheiaIDE forwarding 
+(prevents already bound ports) (#180)
+
+### Fixes
+- Various Theia bugs (#211,#213,#214)
+- Update & upgrade entire system (#193)
+- Improve error handling (#191)
+- Pin theia-ide version (#207)
+- Fix credentials handling (#208)
+- Fix zabbix with Ubuntu 16.04 (#203)
 
 ## Version 2.0.9 < 2.0.8 (10/01/2019)
 
@@ -18,39 +42,39 @@
 - Restructure SSH-Key handling, use One-Time SSH keys (#184, fixes #181)
 
 ### Fixes
-- IDE arg: port forwarding to "private" ips, if property "UseMasterWithPublicIp" unset (#188)
+- IDE arg: Port Forwarding to "private" ips, if property "UseMasterWithPublicIp" unset (#188)
 
 ## Version 2.0.8 < 2.0.7 (09/12/2019)
 
 ### Features
-- show cleanup reminder if user hits ctrl+c during setup (#172)
+- Show cleanup reminder if user hits ctrl+c during setup (#172)
 - Openstack Provider: support Openstack RC File  (Identity API 3)
 
 ### Fixes
-- cluster list: optimize column widths and ellipsize usernames (#173)
+- Cluster list: optimize column widths and ellipsize usernames (#173)
 
 ### General
-- internal restucture  of (cmdline) configuration (#177)
+- Internal restructuring of (cmdline) configuration (#177)
 
 ## Version 2.0.7 < 2.0.6 (08/31/2019)
 
 ### Features
-- add full support for Debian Stretch (9) and Debian Buster (10) (#85)
-- make Slurm workers return to service automatically after reboot (#168)
-- add support for local DNS lookup (#170)
+- Add full support for Debian Stretch (9) and Debian Buster (10) (#85)
+- Make Slurm workers return to service automatically after reboot (#168)
+- Add support for local DNS lookup (#170)
 
 ### Fixes
-- source code documentation & clean up (#151)
-- fixed line ending replacement command corrupts custom ansible role .tar.gz files (#151)
-- documentation (#141)
-- more helpful error message in case of unsupported configuration properties (#141)
-- update naming scheme for worker nodes -> replace slave[s] with worker (#155)
-- upgrade 3rd party lib dependencies
-- improve error handling (#154) - rewrite/restructure CreateCluster functionality
-- bind mount ephemeral disks to prevent filesystem corruption after reboot (#160)
+- Source code documentation & clean up (#151)
+- Fixed line ending replacement command corrupts custom ansible role .tar.gz files (#151)
+- Extend / Adapt documentation (#141)
+- Error message more helpful in case of unsupported configuration properties (#141)
+- Update naming scheme for worker nodes -> replace slave[s] with worker (#155)
+- Upgrade 3rd party lib dependencies
+- Improve error handling (#154) - rewrite/restructure CreateCluster functionality
+- Bind mount ephemeral disks to prevent filesystem corruption after reboot (#160)
 - Openstack : display message in case of auth failure (#165)
 - Slurm : respect useMasterAsCompute setting (#167)
-- improve wording of printed messages (#169)
+- Improve wording of printed messages (#169)
 
 ## Version 2.0.6 < 2.0.5 (08/07/2019)
 
@@ -99,7 +123,7 @@
 ## Version 2.0.1 <- 2.0 (02/22/2019)
 
 - Remove native support for cassandra and mesos (#92,#93)
-- support server groups (#89)
-- tag each single ansible tag for easier debugging (#86)
-- add support for Ubuntu 18.04 (partly #85)
-- fix bug concerning mounting volumes when using config-drives (#84)
+- Support server groups (#89)
+- Tag each single ansible tag for easier debugging (#86)
+- Add support for Ubuntu 18.04 (partly #85)
+- Fix bug concerning mounting volumes when using config-drives (#84)

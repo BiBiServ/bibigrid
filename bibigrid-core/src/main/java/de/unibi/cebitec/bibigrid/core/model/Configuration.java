@@ -65,6 +65,7 @@ public abstract class Configuration {
         }
         if (propertiesFilePath == null) {
             propertiesFilePath = defaultPropertiesFilePath;
+            LOG.info("Using default configuration file ({}).", defaultPropertiesFilePath);
         }
 
         try {
@@ -73,7 +74,8 @@ public abstract class Configuration {
             if (DEBUG) {
                 e.printStackTrace();
             }
-            throw new ConfigurationException("Failed to load properties file.", e);
+            throw new ConfigurationException("Failed to load properties file.\n" +
+                    "You may want to use a default configuration.yml in the .bibigrid folder in your home directory.", e);
         } catch (YAMLException e) {
             throw new ConfigurationException("Failed to parse configuration file. "+e.getMessage(), e);
         }
@@ -125,8 +127,11 @@ public abstract class Configuration {
     private String network;
     private String subnet;
 
-    private String[] clusterIds = new String [0];
-
+    /**
+     * Calculates total amount of worker instances by incrementing batch instances.
+     * TODO manual scale increase / decrease total amount if not already done automatically
+     * @return total count of worker instances
+     */
     public int getWorkerInstanceCount() {
         if (workerInstances == null) {
             return 0;
@@ -234,7 +239,7 @@ public abstract class Configuration {
         this.masterInstance = masterInstance;
         if (masterInstance != null) {
             StringBuilder display = new StringBuilder();
-            display.append("[type=").append(masterInstance.getType()).append(", image=")
+            display.append("\n[type=").append(masterInstance.getType()).append(", image=")
                     .append(masterInstance.getImage()).append("] ");
             LOG.info(V, "Master instance configuration set: {}", display);
         }
@@ -262,9 +267,9 @@ public abstract class Configuration {
         if (workerInstances != null && !workerInstances.isEmpty()) {
             StringBuilder display = new StringBuilder();
             for (WorkerInstanceConfiguration instanceConfiguration : workerInstances) {
-                display.append("[type=").append(instanceConfiguration.getType())
+                display.append("\n[type=").append(instanceConfiguration.getType())
                         .append(", image=").append(instanceConfiguration.getImage())
-                        .append(", count=").append(instanceConfiguration.getCount()).append("] ");
+                        .append(", count=").append(instanceConfiguration.getCount()).append("]");
             }
             LOG.info(V, "Worker instance(s) configuration set: {}", display);
         }
@@ -309,49 +314,6 @@ public abstract class Configuration {
     public void setServerGroup(String serverGroup) {
         this.serverGroup = serverGroup.trim();
         LOG.info(V, "Server group set. ({})", this.serverGroup);
-    }
-
-    /**
-     * Return a list of cluster id. Currently used for termination intent only.
-     * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
-     *      * necessary for termination intent.
-     *
-     * @return Return a list of cluster id.
-     */
-    public String[] getClusterIds() {
-        return Arrays.copyOf(clusterIds, clusterIds.length);
-    }
-
-    /**
-     * Set the id of current
-     * @param id
-     */
-    public void setId(String id) {
-        this.id = id;
-
-    }
-
-    public String getId(){
-        return id;
-    }
-
-    /**
-
-     * Set the clusterid for termination intent either as a single cluster "id" or as multiple "id1/id2/id3".
-     * @ToDo: Seems not the right place to store this information, since this is not part of a cluster configuration and only
-     *      * necessary for termination intent.
-     */
-    public void setClusterIds(String clusterIds) {
-        this.clusterIds = clusterIds == null ? new String[0] : clusterIds.split("[/,]");
-    }
-
-    /**
-     * Set the clusterid for termination intent as cluster id list".
-     * @ToDo:  Seems not the right place to store this information, since this is not part of a cluster configuration and only
-     * necessary for termination intent.
-     */
-    public void setClusterIds(String[] clusterIds) {
-        this.clusterIds = clusterIds == null ? new String[0] : clusterIds;
     }
 
     public List<Port> getPorts() {
@@ -652,10 +614,22 @@ public abstract class Configuration {
     public static class InstanceConfiguration {
         public InstanceConfiguration() {
         }
-
+        // @TODO should be unique
+        private String name;
         private String type;
         private String image;
         private InstanceType providerType;
+        private String network;
+        private String serverGroup;
+        private String securityGroup;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
 
         public String getType() {
             return type;
@@ -679,6 +653,30 @@ public abstract class Configuration {
 
         public void setProviderType(InstanceType providerType) {
             this.providerType = providerType;
+        }
+
+        public String getNetwork() {
+            return network;
+        }
+
+        public void setNetwork(String network) {
+            this.network = network;
+        }
+
+        public String getServerGroup() {
+            return serverGroup;
+        }
+
+        public void setServerGroup(String serverGroup) {
+            this.serverGroup = serverGroup;
+        }
+
+        public String getSecurityGroup() {
+            return securityGroup;
+        }
+
+        public void setSecurityGroup(String securityGroup) {
+            this.securityGroup = securityGroup;
         }
     }
 
@@ -736,7 +734,8 @@ public abstract class Configuration {
     }
 
 
-    /** private helper class that converts a byte array to an Hex String
+    /**
+     * private helper class that converts a byte array to an Hex String.
      *
      * @param hash
      * @return
@@ -956,12 +955,7 @@ public abstract class Configuration {
                 this.hosts = "worker";
                 return;
             }
-            if (hosts.equals("all") || hosts.equals("worker") || hosts.equals("master")) {
-                this.hosts = hosts;
-                return;
-            }
-            LOG.error("Unsupported value '{}' for ansibleRoles.hosts.",hosts);
-            this.hosts = "unsupported";
+            this.hosts = hosts;
         }
 
         public Map<String, Object> getVars() {
@@ -1086,6 +1080,7 @@ public abstract class Configuration {
      * Representation of a SSH Cluster KeyPair.
      */
     public static class ClusterKeyPair {
+        private static final String KEY_FILE = KEYS_DIR + System.getProperty("file.separator");
 
         private String privateKey;
         private String publicKey;
@@ -1107,20 +1102,10 @@ public abstract class Configuration {
             this.publicKey = publicKey;
         }
 
-        /**
-         * Return the name of the keypair
-         *
-         * @return
-         */
         public String getName() {
             return name;
         }
 
-        /**
-         * Set the name of the keypair.
-         *
-         * @param name
-         */
         public void setName(String name) {
             this.name = name;
         }
@@ -1128,25 +1113,33 @@ public abstract class Configuration {
         /**
          *  Store public AND private key in Configuration.KEY_DIR as name[.pub].
          *
-         * @throws IOException
+         * @throws IOException failure in writing key file
          */
         public void store() throws IOException {
             // private key
             try {
-                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name);
-                Files.createFile(p, KEYS_PERMS);
-                OutputStream fout = Files.newOutputStream(p);
-                fout.write(privateKey.getBytes());
-                fout.close();
+                Path p = Paths.get(KEY_FILE + name);
+                if (!Files.exists(p)) {
+                    Files.createFile(p, KEYS_PERMS);
+                    OutputStream fout = Files.newOutputStream(p);
+                    fout.write(privateKey.getBytes());
+                    fout.close();
+                } else {
+                    LOG.info("Private KeyPair File already exists. Continuing ...");
+                }
             } catch (IOException e){
                 throw new IOException("Error writing private key :"+e.getMessage(),e);
             }
             // public key
             try {
-                Path p = Paths.get(KEYS_DIR + System.getProperty("file.separator") + name + ".pub");
-                OutputStream fout = Files.newOutputStream(p);
-                fout.write(publicKey.getBytes());
-                fout.close();
+                Path p = Paths.get(KEY_FILE + name + ".pub");
+                if (!Files.exists(p)) {
+                    OutputStream fout = Files.newOutputStream(p);
+                    fout.write(publicKey.getBytes());
+                    fout.close();
+                } else {
+                    LOG.info("Public KeyPair File already exists. Continuing ...");
+                }
             } catch (IOException e) {
                 throw new IOException("Error writing public key :"+e.getMessage(),e);
             }
@@ -1155,7 +1148,7 @@ public abstract class Configuration {
         /**
          * Load public and private key from Configuration.KEYS_DIR.
          *
-         * @throws IOException
+         * @throws IOException failure in loading key file
          */
         public void load() throws IOException {
             //private key

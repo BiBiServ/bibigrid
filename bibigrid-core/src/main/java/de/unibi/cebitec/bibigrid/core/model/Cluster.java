@@ -1,5 +1,8 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +12,8 @@ import java.util.List;
  *
  * @author Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
-public class Cluster {
+public class Cluster implements Comparable<Cluster> {
+    private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
     private final String clusterId;
 
     private Instance masterInstance;
@@ -26,6 +30,8 @@ public class Cluster {
     private String keyName;
     private String user;
 
+    private String availabilityZone;
+
     private String started;
 
     public Cluster(String clusterId) {
@@ -41,6 +47,7 @@ public class Cluster {
     }
 
     public void setMasterInstance(Instance masterInstance) {
+        masterInstance.setMaster(true);
         this.masterInstance = masterInstance;
     }
 
@@ -72,12 +79,31 @@ public class Cluster {
         return workerInstances;
     }
 
+    /**
+     * Returns worker instances of given batch.
+     * @param batchIndex idx of worker configuration
+     * @return list of instances of specified worker configuration idx
+     */
+    public List<Instance> getWorkerInstances(int batchIndex) {
+        List<Instance> workers = new ArrayList<>();
+        for (Instance worker : workerInstances) {
+            if (worker.getBatchIndex() == batchIndex) {
+                workers.add(worker);
+            }
+        }
+        return workers;
+    }
+
     public void setWorkerInstances(List<Instance> workerInstances) {
         this.workerInstances = workerInstances;
     }
 
     public void addWorkerInstance(Instance instance) {
         workerInstances.add(instance);
+    }
+
+    public void removeWorkerInstance(Instance instance) {
+        workerInstances.remove(instance);
     }
 
     public String getKeyName() {
@@ -127,5 +153,27 @@ public class Cluster {
 
     public void setPrivateIp(String privateIp) {
         this.privateIp = privateIp;
+    }
+
+    public String getAvailabilityZone() {
+        return availabilityZone;
+    }
+
+    public void setAvailabilityZone(String availabilityZone) {
+        this.availabilityZone = availabilityZone;
+    }
+
+    /**
+     * Clusters should be sorted by user name, following launch (started).
+     * @param cluster other cluster to compare with this
+     * @return negative, equal or positive when less than, equal to, or greater than the other clusters values
+     */
+    @Override
+    public int compareTo(Cluster cluster) {
+        if (user.equals(cluster.getUser())) {
+            return started.compareTo(cluster.getStarted());
+        } else {
+            return user.compareTo(cluster.getUser());
+        }
     }
 }

@@ -12,7 +12,6 @@ import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,9 +30,7 @@ class ClientOpenstack extends Client {
         OpenStackCredentials credentials = config.getOpenstackCredentials();
         try {
             OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
-            internalClient = credentials.getDomain() != null ?
-                    buildOSClientV3(credentials) :
-                    buildOSClientV2(credentials);
+            internalClient = buildOSClientV3(credentials);
             LOG.info("Openstack connection established.");
         } catch (AuthenticationException e) {
             if (Configuration.DEBUG) {
@@ -50,21 +47,31 @@ class ClientOpenstack extends Client {
         }
     }
 
-    private static OSClient buildOSClientV2(OpenStackCredentials credentials) {
-        return OSFactory.builderV2()
+    private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
+        if (Configuration.DEBUG) {
+            LOG.info(credentials.toString());
+        }
+        Identifier project = getIdentifier(credentials.getProject(), credentials.getProjectId());
+        Identifier userDomain = getIdentifier(credentials.getUserDomain(), credentials.getUserDomainId());
+        Identifier projectDomain = getIdentifier(credentials.getProjectDomain(), credentials.getProjectDomainId());
+        return OSFactory.builderV3()
                 .endpoint(credentials.getEndpoint())
-                .credentials(credentials.getUsername(), credentials.getPassword())
-                .tenantName(credentials.getTenantName())
+                .credentials(credentials.getUsername(), credentials.getPassword(), userDomain)
+                .scopeToProject(project, projectDomain)
                 .authenticate();
     }
 
-    private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
-        return OSFactory.builderV3()
-                .endpoint(credentials.getEndpoint())
-                .credentials(credentials.getUsername(), credentials.getPassword(), Identifier.byName(credentials.getDomain()))
-                //.scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getDomain()))
-                .scopeToProject(Identifier.byName(credentials.getTenantName()), Identifier.byName(credentials.getTenantDomain()))
-                .authenticate();
+    static Identifier getIdentifier(String name, String id) {
+        if (name == null) {
+            if (id == null) {
+                LOG.error("No ProjectDomain provided. Cannot authenticate via Openstack API.");
+            } else {
+                return Identifier.byId(id);
+            }
+        } else {
+            return Identifier.byName(name);
+        }
+        return null;
     }
 
     OSClient getInternal() {

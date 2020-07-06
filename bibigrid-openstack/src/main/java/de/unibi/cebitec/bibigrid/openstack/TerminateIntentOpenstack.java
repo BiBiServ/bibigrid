@@ -7,6 +7,7 @@ import org.openstack4j.api.OSClient;
 import org.openstack4j.api.exceptions.ClientResponseException;
 import org.openstack4j.api.networking.PortService;
 import org.openstack4j.model.common.ActionResponse;
+import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.network.IP;
 import org.openstack4j.model.network.Port;
 import org.openstack4j.model.network.Router;
@@ -30,6 +31,16 @@ public class TerminateIntentOpenstack extends TerminateIntent {
     }
 
     @Override
+    protected boolean terminateWorker(Instance worker) {
+        ActionResponse response = os.compute().servers().delete(worker.getId());
+        if (!response.isSuccess()) {
+            LOG.error("Failed to delete instance '{}'. {}", worker.getName(), response.getFault());
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     protected boolean terminateCluster(Cluster cluster) {
         // master
         if (cluster.getMasterInstance() != null) {
@@ -50,16 +61,23 @@ public class TerminateIntentOpenstack extends TerminateIntent {
             }
         }
         // security groups
-        if (cluster.getSecurityGroup() != null) {
+        String securityGroup = cluster.getSecurityGroup();
+        if (securityGroup != null) {
             while (true) {
                 sleep(1, false);
-                ActionResponse ar = os.compute().securityGroups().delete(cluster.getSecurityGroup());
+                SecGroupExtension secGroupExtension =
+                        CreateClusterEnvironmentOpenstack.getSecGroupExtensionByName(os, securityGroup);
+                if (secGroupExtension == null) {
+                    LOG.warn("Security group {} could not be found ...", securityGroup);
+                    return false;
+                }
+                ActionResponse ar = os.compute().securityGroups().delete(secGroupExtension.getId());
                 if (ar.isSuccess()) {
                     break;
                 }
                 LOG.warn("{} Trying again ...", ar.getFault());
             }
-            LOG.info("Security group '{}' deleted.", cluster.getSecurityGroup());
+            LOG.info("Security group '{}' deleted.", securityGroup);
         }
         // subnet
         if (cluster.getSubnet() != null) {

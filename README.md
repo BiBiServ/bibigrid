@@ -2,18 +2,18 @@
 BiBiGrid is a tool for an easy cluster setup inside a cloud environment.
 It is written in Java and run on any OS a Java runtime is provided - any 
 Java 8 is supported. BiBiGrid and its Cmdline UI based on a general cloud 
-provider api. Currently the implementation is based on OpenStack ([Openstack4j](http://openstack4j.com)).  
+provider api. Currently the implementation is based on OpenStack ([Openstack4j](https://github.com/openstack4j/openstack4j)).  
 There also exists implementations for Google (Compute Engine, using the official Google Cloud SDK), 
 Amazon (AWS EC2 using the official AWS SDK) and Microsoft (Azure using the official Azure SDK) (WIP)
 which are currently not provided tested.
 BiBiGrid offers an easy configuration and maintenance of a started cluster via command-line.
 
-BiBiGrid uses [Ansible](https://www.ansible.com) to configure standard Ubuntu 16.04/18.04 LTS 
-as well as Debian 9/10 cloud images. Depending on your configuration BiBiGrid can set up
+BiBiGrid uses [Ansible](https://www.ansible.com) to configure standard Ubuntu 16.04/18.04/20.04 LTS 
+as well as Debian 10 cloud images. Depending on your configuration BiBiGrid can set up
 an HCP cluster for grid computing ([Slurm Workload Manager](https://slurm.schedmd.com/documentation.html) 
 as well as [Open Grid Engine](http://gridscheduler.sourceforge.net), provided for Ubuntu 16.04 only), 
 a shared filesystem (on local discs and attached volumes), a cloud IDE for writing, running and debugging 
-([Theia Web IDE](https://github.com/theia-ide/theia) as well as [Cloud9](https://github.com/c9/core), supported for Ubuntu 16.04 only) and many more.
+([Theia Web IDE](https://github.com/theia-ide/theia)) and many more.
 
 During resource instantiation BiBiGrid configures the network, local and network volumes, (network) file systems and 
 also the software for an immediately usage of the started cluster. 
@@ -29,14 +29,14 @@ Each cloud provider SDK comes with a set of dependencies which often conflicts w
 (same library, different major version) when building a shaded (fat) jar. The BiBiGrid POM supports Maven profiles 
 to avoid such dependency conflicts.  
 
-At first, clone the repository onto your local machine and change into `bibigrid` directory.
+At first, clone the repository onto your local machine and change into its directory.
 ~~~BASH
 > git clone https://github.com/BiBiServ/bibigrid.git
 > cd bibigrid
 ~~~
 
 ### Default profile (all supported cloud provider)
-*Attention: Building a package supporting all cloud provider is possible but not recommended. 
+*Attention: Building a package supporting all cloud provider is possible, but not recommended. 
 The Maven package action put the first occurance of a library/class into the builded shaded jar. 
 This could lead to an unpredictable behaviour when running BiBiGrid. 
 The default profile is mainly used by IDEs with Maven support.*

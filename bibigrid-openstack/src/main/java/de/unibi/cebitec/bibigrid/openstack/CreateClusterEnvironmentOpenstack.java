@@ -20,7 +20,6 @@ import org.openstack4j.api.networking.PortService;
 import org.openstack4j.model.compute.IPProtocol;
 import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.compute.builder.SecurityGroupRuleBuilder;
-import org.openstack4j.model.compute.*;
 import org.openstack4j.model.network.AttachInterfaceType;
 import org.openstack4j.model.network.IP;
 import org.openstack4j.model.network.IPVersionType;
@@ -194,7 +193,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     public CreateClusterEnvironment createKeyPair() throws ConfigurationException {
         OSClient osc = cluster.getClient();
         Configuration.ClusterKeyPair ckp = getConfig().getClusterKeyPair();
-        if (osc.compute().keypairs().create(ckp.getName(),ckp.getPublicKey())  == null) {
+        if (osc.compute().keypairs().create(ckp.getName(),ckp.getPublicKey()) == null) {
             throw new ConfigurationException("Can't create KeyPair");
         }
         LOG.info("KeyPair '{}' created.",ckp.getName());
@@ -213,7 +212,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
      * Determine secgroupExt by given name. Returns secgroupext object or null in the
      * case that no suitable secgroupexetension is found.
      */
-    private static SecGroupExtension getSecGroupExtensionByName(OSClient osc, String name) {
+    public static SecGroupExtension getSecGroupExtensionByName(OSClient osc, String name) {
         for (SecGroupExtension sge : osc.compute().securityGroups().list()) {
             if (sge.getName().equals(name)) {
                 return sge;
@@ -238,9 +237,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     /**
      * Determine network by given network id. Returns Network object or null if no network with given id is found.
      */
-    static Network getNetworkByIdOrName(OSClient osc, String n) {
+    static Network getNetworkByIdOrName(OSClient osc, String networkId) {
         for (Network net : osc.networking().network().list()) {
-            if (net.getId().equals(n) || net.getName().equals(n)) {
+            if (net.getId().equals(networkId) || net.getName().equals(networkId)) {
                 return net;
             }
         }
@@ -250,9 +249,9 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     /**
      * Determine subnet by given subnet name. Returns subnet object or null in the case no suitable subnet is found.
      */
-    private static Subnet getSubnetByIdOrName(OSClient osc, String s) {
+    private static Subnet getSubnetByIdOrName(OSClient osc, String subnetName) {
         for (Subnet subnet : osc.networking().subnet().list()) {
-            if (subnet.getName().equals(s) || subnet.getId().equals(s)) {
+            if (subnet.getName().equals(subnetName) || subnet.getId().equals(subnetName)) {
                 return subnet;
             }
         }

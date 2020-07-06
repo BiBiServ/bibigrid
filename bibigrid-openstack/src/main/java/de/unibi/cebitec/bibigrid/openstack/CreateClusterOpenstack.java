@@ -1,24 +1,16 @@
 package de.unibi.cebitec.bibigrid.openstack;
 
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.Instance;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import de.unibi.cebitec.bibigrid.core.util.*;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
-import org.openstack4j.api.compute.ServerGroupService;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.compute.*;
 import org.openstack4j.model.compute.builder.ServerCreateBuilder;
@@ -41,8 +33,8 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     private final OSClient os;
 
-    CreateClusterOpenstack(final ProviderModule providerModule, Client client, final Configuration config) {
-        super(providerModule, client, config);
+    CreateClusterOpenstack(final ProviderModule providerModule, Client client, final Configuration config, final String clusterId) {
+        super(providerModule, client, config, clusterId);
         os = ((ClientOpenstack) client).getInternal();
     }
 
@@ -83,7 +75,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
             metadata.put(Instance.TAG_USER, config.getUser());
             InstanceTypeOpenstack masterSpec = (InstanceTypeOpenstack) config.getMasterInstance().getProviderType();
-            ServerCreateBuilder scb = null;
+            ServerCreateBuilder scb;
             scb = Builders.server()
                     .name(masterNameTag)
                     .flavor(masterSpec.getFlavor().getId())
@@ -119,6 +111,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             // Network configuration
             LOG.info("Master (ID: {}) started", server.getId());
             master = new InstanceOpenstack(config.getMasterInstance(), server);
+            master.setMaster(true);
             master.setPrivateIp(waitForAddress(master.getId(), environment.getNetwork().getName()).getAddr());
 
             master.updateNeutronHostname();
@@ -230,62 +223,37 @@ public class CreateClusterOpenstack extends CreateCluster {
             metadata.put(Instance.TAG_NAME, workerNameTag);
             metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
             metadata.put(Instance.TAG_USER, config.getUser());
+            int workerBatch = batchIndex + 1;
+            metadata.put(Instance.TAG_BATCH, String.valueOf(workerBatch));
             InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
             for (int i = 0; i < instanceConfiguration.getCount(); i++) {
-                ServerCreateBuilder scb = null;
-                    scb = Builders.server()
-                            .name(buildWorkerInstanceName(batchIndex, i))
-                            .flavor(workerSpec.getFlavor().getId())
-                            //.image(instanceConfiguration.getImage())
-                            .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
-                            .keypairName(config.getClusterKeyPair().getName())
-                            .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
-                            .availabilityZone(config.getAvailabilityZone())
-                            .userData(ShellScriptCreator.getUserData(config, true))
-                            .addMetadata(metadata)
-                            .configDrive(instanceConfiguration.getProviderType().getConfigDrive() != 0)
-                            .networks(Arrays.asList(environment.getNetwork().getId()));
+                int workerIndex = i + 1;
+                LOG.info("Set worker batch to: {}.", workerBatch);
+                ServerCreateBuilder scb =
+                        Builders.server()
+                                .name(buildWorkerInstanceName(workerBatch, workerIndex))
+                                .flavor(workerSpec.getFlavor().getId())
+                                //.image(instanceConfiguration.getImage())
+                                .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
+                                .keypairName(config.getClusterKeyPair().getName())
+                                .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
+                                .availabilityZone(config.getAvailabilityZone())
+                                .userData(ShellScriptCreator.getUserData(config, true))
+                                .addMetadata(metadata)
+                                .configDrive(instanceConfiguration.getProviderType().getConfigDrive() != 0)
+                                .networks(Arrays.asList(environment.getNetwork().getId()));
                 if (config.getServerGroup() != null) {
                     scb.addSchedulerHint("group", config.getServerGroup());
                 }
                 ServerCreate sc  = scb.build();
                 Server server = os.compute().servers().boot(sc);
                 InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
+                instance.setMaster(false);
+                instance.setBatchIndex(batchIndex);
                 workers.put(server.getId(), instance);
                 LOG.info(V, "Instance request for '{}'.", sc.getName());
             }
-            LOG.info("Waiting for worker instances to be ready ...");
-            int active = 0;
-            List<String> ignoreList = new ArrayList<>();
-            while (workers.size() > active + ignoreList.size()) {
-                // wait for some seconds to not overload REST API
-                sleep(2);
-                // get fresh server object for given server id
-                for (InstanceOpenstack worker : workers.values()) {
-                    //ignore if instance is already active ...
-                    if (!(worker.isActive() || worker.hasError())) {
-                        // check server status
-                        checkForServerAndUpdateInstance(worker.getId(), worker);
-                        if (worker.isActive()) {
-                            active++;
-                            LOG.info("[{}/{}] Instance '{}' is active!", active, workers.size(), worker.getHostname());
-                        } else if (worker.hasError()) {
-                            LOG.warn("Ignoring worker instance '{}'.", worker.getHostname());
-                            ignoreList.add(worker.getId());
-                        }
-                    }
-                }
-            }
-            // remove ignored instances from worker map
-            for (String id : ignoreList) {
-                workers.remove(id);
-            }
-            LOG.info(V, "Waiting for worker network configuration completion ...");
-            // wait for worker network finished ... update server instance list
-            for (InstanceOpenstack worker : workers.values()) {
-                worker.setPrivateIp(waitForAddress(worker.getId(), environment.getNetwork().getName()).getAddr());
-                worker.updateNeutronHostname();
-            }
+            waitForWorkers(workers);
             // TODO
             // Mount a volume to worker instance
             // - create (count of worker instances) snapshots
@@ -294,6 +262,86 @@ public class CreateClusterOpenstack extends CreateCluster {
             // Should never occur
         }
         return new ArrayList<>(workers.values());
+    }
+
+    @Override
+    protected List<Instance> launchAdditionalClusterWorkerInstances(
+            Cluster cluster,
+            int batchIndex, int workerIndex,
+            Configuration.WorkerInstanceConfiguration instanceConfiguration,
+            String workerNameTag) {
+        Map<String, InstanceOpenstack> workers = new HashMap<>();
+        try {
+            final Map<String, String> metadata = new HashMap<>();
+            metadata.put(Instance.TAG_NAME, workerNameTag);
+            metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
+            metadata.put(Instance.TAG_USER, config.getUser());
+            metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
+            InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
+            for (int i = workerIndex; i < workerIndex + instanceConfiguration.getCount(); i++) {
+                ServerCreateBuilder scb = loadServerConfiguration(cluster, batchIndex, i, instanceConfiguration)
+                                                .addMetadata(metadata)
+                                                .configDrive(workerSpec.getConfigDrive() != 0)
+                                                .userData(ShellScriptCreator.getUserData(config, true));
+                if (config.getServerGroup() != null) {
+                    scb.addSchedulerHint("group", config.getServerGroup());
+                }
+                ServerCreate sc  = scb.build();
+                Server server = os.compute().servers().boot(sc);
+                InstanceOpenstack instance = new InstanceOpenstack(instanceConfiguration, server);
+                instance.setMaster(false);
+                instance.setBatchIndex(batchIndex);
+                workers.put(server.getId(), instance);
+                LOG.info(V, "Instance request for '{}'.", sc.getName());
+            }
+            waitForWorkers(workers);
+        } catch (NotYetSupportedException e) {
+            // Should never occur
+            e.printStackTrace();
+        }
+        return new ArrayList<>(workers.values());
+    }
+
+    /**
+     * Loads server config from OSClient interface.
+     * @param cluster specific cluster configuration
+     * @param batchIndex index of worker batch
+     * @param workerIndex index of worker in worker batch
+     * @return build up server
+     */
+    private ServerCreateBuilder loadServerConfiguration(
+            Cluster cluster,
+            int batchIndex,
+            int workerIndex,
+            Configuration.WorkerInstanceConfiguration instanceConfiguration) throws NotYetSupportedException {
+        String name = buildWorkerInstanceName(batchIndex, workerIndex);
+        InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
+        if (workerSpec == null) {
+            LOG.error("ProviderType could not be determined.");
+        }
+        String flavorId = workerSpec.getFlavor().getId();
+        InstanceImage image = client.getImageByIdOrName(instanceConfiguration.getImage());
+        Network network = client.getNetworkByIdOrName(instanceConfiguration.getNetwork());
+        SecGroupExtension secGroupExtension = CreateClusterEnvironmentOpenstack.getSecGroupExtensionByName(os, cluster.getSecurityGroup());
+        String securityGroupId = secGroupExtension != null ? secGroupExtension.getId() : "";
+        LOG.info("Launch additional workerInstance with \n" +
+                "name: {}, \n" +
+                "batch index: {}, \n" +
+                "flavor: {}, \n" +
+                "image: {}, \n" +
+                "keypair name: {}, \n" +
+                "network: {}, \n" +
+                "securityGroup: {}.\n",
+                name, batchIndex, workerSpec.getFlavor().getName(), image.getName(),
+                cluster.getKeyName(), network.getName(), cluster.getSecurityGroup());
+        return Builders.server()
+                .name(name)
+                .flavor(flavorId)
+                .image(image.getId())
+                .keypairName(cluster.getKeyName())
+                .addSecurityGroup(securityGroupId)
+                .availabilityZone(cluster.getAvailabilityZone())
+                .networks(Collections.singletonList(network.getId()));
     }
 
     private NetFloatingIP getFloatingIP(List<String> blacklist) {
@@ -327,6 +375,51 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
     /**
+     * Waiting until worker instances active.
+     * @param workers cluster instances to be online
+     */
+    private void waitForWorkers(Map<String, InstanceOpenstack> workers) {
+        LOG.info("Waiting for worker instances to be ready ...");
+        int active = 0;
+        List<String> ignoreList = new ArrayList<>();
+        while (workers.size() > active + ignoreList.size()) {
+            // wait for some seconds to not overload REST API
+            sleep(2);
+            // get fresh server object for given server id
+            for (InstanceOpenstack worker : workers.values()) {
+                //ignore if instance is already active ...
+                if (!(worker.isActive() || worker.hasError())) {
+                    // check server status
+                    checkForServerAndUpdateInstance(worker.getId(), worker);
+                    if (worker.isActive()) {
+                        active++;
+                        LOG.info("[{}/{}] Instance '{}' is active!", active, workers.size(), worker.getHostname());
+                    } else if (worker.hasError()) {
+                        LOG.warn("Ignoring worker instance '{}'.", worker.getHostname());
+                        ignoreList.add(worker.getId());
+                    }
+                }
+            }
+        }
+        // remove ignored instances from worker map
+        for (String id : ignoreList) {
+            workers.remove(id);
+        }
+        LOG.info(V, "Waiting for worker network configuration completion ...");
+        // wait for worker network finished ... update server instance list
+        for (InstanceOpenstack worker : workers.values()) {
+            if (environment != null) {
+                worker.setPrivateIp(waitForAddress(worker.getId(), environment.getNetwork().getName()).getAddr());
+            } else {
+                // Scale up procedure
+                String privateIp = waitForAddress(worker.getId(), worker.getConfiguration().getNetwork()).getAddr();
+                worker.setPrivateIp(privateIp);
+            }
+            worker.updateNeutronHostname();
+        }
+    }
+
+    /**
      * Wait until the server has a private ip address.
      * This blocks and polls the server object every second.
      */
@@ -341,15 +434,13 @@ public class CreateClusterOpenstack extends CreateCluster {
             if (addressList == null) {
                 LOG.info(V,"Waiting for address ...");
             }
-
         } while (addressList == null || addressList.isEmpty());
         LOG.info(V, "address: {}", addressList);
         return addressList.get(0);
     }
 
     /**
-     * Check if a given floating ip is set for a given server instance.
-     *
+     * Check, if a given floating ip is set for a given server instance.
      * @param server     - Server instance
      * @param floatingIp - floatingIp to be checked
      */
@@ -369,8 +460,7 @@ public class CreateClusterOpenstack extends CreateCluster {
     }
 
     /**
-     * Return a Snapshot by its name/id or null if no snapshot is found
-     *
+     * Return a Snapshot by its name/id or null if no snapshot is found.
      * @param nameOrId - name or id of snapshot
      */
     private VolumeSnapshot getSnapshotByNameOrId(String nameOrId) {
@@ -442,23 +532,4 @@ public class CreateClusterOpenstack extends CreateCluster {
             LOG.warn(V, "Status of instance '{}' is not available (== null).", server.getId());
         }
     }
-
-
-//    /**
-//     * Search for  server group by name or by id and return the id or null if server group not found.
-//     *
-//     * @param v - name or id of server group
-//     *
-//     * @return id of the found server group
-//     */
-//    private String getServerGroupByNameOrId(String v){
-//        ServerGroupService sgs = os.compute().serverGroups();
-//        List<? extends ServerGroup> sgl = sgs.list();
-//        for (ServerGroup sg : sgl) {
-//            if (sg.getId() == v || sg.getName() == v) {
-//                return sg.getId();
-//            }
-//        }
-//        return null;
-//    }
 }

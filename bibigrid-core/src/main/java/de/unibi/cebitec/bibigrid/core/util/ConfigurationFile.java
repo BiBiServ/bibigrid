@@ -45,6 +45,7 @@ public final class ConfigurationFile {
         }
         if (propertiesFilePath == null) {
             propertiesFilePath = defaultPropertiesFilePath;
+            LOG.info("Using default configuration file ({}).", defaultPropertiesFilePath);
         }
         if (Files.exists(propertiesFilePath)) {
             LOG.info(V, "Reading options from properties file at '{}'.", propertiesFilePath);

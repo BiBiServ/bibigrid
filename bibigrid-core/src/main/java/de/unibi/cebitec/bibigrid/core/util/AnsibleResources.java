@@ -1,5 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,20 +17,34 @@ import java.util.jar.JarFile;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 public final class AnsibleResources {
-    public static final String UPLOAD_PATH = "/tmp/roles/";
-    public static final String ROOT_PATH = "playbook/";
+    // File names
     public static final String ANSIBLE_HOSTS = "ansible_hosts";
-    public static final String VARS_PATH = "vars/";
-    public static final String ROLES_PATH = "roles/";
-    public static final String COMMON_YML = VARS_PATH + "common.yml";
+    public static final String COMMON_YML = "common.yml";
     public static final String SITE_YML = "site.yml";
     public static final String REQUIREMENTS_YML = "requirements.yml";
+
+    // Paths
+    public static final String UPLOAD_PATH = "/tmp/roles/";
+    public static final String ROOT_PATH = "playbook/";
+    public static final String VARS_PATH = "vars/";
+    public static final String ROLES_PATH = "roles/";
+    public static final String LOGIN_YML = VARS_PATH + "login.yml";
+    public static final String INSTANCES_YML = VARS_PATH + "instances.yml";
+    public static final String CONFIG_YML = VARS_PATH + "common_configuration.yml";
+    public static final String WORKER_SPECIFICATION_YML = VARS_PATH + "worker_specification.yml";
     public static final String HOSTS_CONFIG_FILE = ROOT_PATH + ANSIBLE_HOSTS;
+    public static final String ADDITIONAL_ROLES_PATH = "additional/";
     public static final String CONFIG_ROOT_PATH = ROOT_PATH + VARS_PATH;
     public static final String ROLES_ROOT_PATH = ROOT_PATH + ROLES_PATH;
-    public static final String COMMONS_CONFIG_FILE = ROOT_PATH + COMMON_YML;
+    public static final String COMMONS_LOGIN_FILE = ROOT_PATH + LOGIN_YML;
+    public static final String COMMONS_INSTANCES_FILE = ROOT_PATH + INSTANCES_YML;
+    public static final String COMMONS_CONFIG_FILE = ROOT_PATH + CONFIG_YML;
+    public static final String WORKER_SPECIFICATION_FILE = ROOT_PATH + WORKER_SPECIFICATION_YML;
+    public static final String ADDITIONAL_ROLES_ROOT_PATH = ROLES_ROOT_PATH + ADDITIONAL_ROLES_PATH;
+
+    // Full files
     public static final String SITE_CONFIG_FILE = ROOT_PATH + SITE_YML;
-    public static final String REQUIREMENTS_CONFIG_FILE = ROOT_PATH + REQUIREMENTS_YML;
+    public static final String REQUIREMENTS_CONFIG_FILE = ADDITIONAL_ROLES_ROOT_PATH + REQUIREMENTS_YML;
     private final List<String> files = new ArrayList<>();
 
     public AnsibleResources() {
@@ -61,6 +77,7 @@ public final class AnsibleResources {
         File directory = new File(url.getPath());
         File[] directoryFiles = directory.listFiles();
         if (directoryFiles == null) {
+            LoggerFactory.getLogger(AnsibleResources.class).warn("Ansible Resources, dir: " + directory.getName());
             return;
         }
         for (File file : directoryFiles) {

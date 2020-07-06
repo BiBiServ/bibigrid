@@ -1,17 +1,15 @@
 package de.unibi.cebitec.bibigrid.core.util;
 
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.*;
-
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+import de.unibi.cebitec.bibigrid.core.model.Instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +45,8 @@ public final class ShellScriptCreator {
         userData.append("fi\n");
         // disableAptDailyService
         userData.append("log \"disable apt-daily.(service|timer)\"\n");
-        appendDisableAptDailyService(userData);
+        // appendDisableAptDailyService(userData);
+        appendDisableUpgrades(userData);
         // configure SSH Config
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData);
@@ -58,18 +57,11 @@ public final class ShellScriptCreator {
     }
 
 
-    private static void appendDisableAptDailyService(StringBuilder userData) {
-        userData.append("systemctl stop apt-daily.service\n" +
-                "systemctl disable apt-daily.service\n" +
-                "systemctl stop apt-daily.timer\n" +
-                "systemctl disable apt-daily.timer\n" +
-                "systemctl kill --kill-who=all apt-daily.service\n" +
-                "if [ $? -eq 0 ]; then \n" +
-                "while ! (systemctl list-units --all apt-daily.service | fgrep -q dead)\n" +
-                "do\n" +
-                "  sleep 1;\n" +
-                "done\n" +
-                "fi\n");
+    private static void appendDisableUpgrades(StringBuilder userData){
+        userData.append("echo > /etc/apt/apt.conf.d/20auto-upgrades << \"END\"\n" +
+                "APT::Periodic::Update-Package-Lists \"0\";\n" +
+                "APT::Periodic::Unattended-Upgrade \"0\";\n" +
+                "END\n");
     }
 
     private static void appendSshConfiguration(Configuration config, StringBuilder userData) {
@@ -154,11 +146,11 @@ public final class ShellScriptCreator {
         // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
         if (config.hasCustomAnsibleGalaxyRoles()) {
             script.append("ansible-galaxy install --roles-path ~/"
-                    + AnsibleResources.ROLES_ROOT_PATH
+                    + AnsibleResources.ADDITIONAL_ROLES_ROOT_PATH
                     + " -r ~/" + AnsibleResources.REQUIREMENTS_CONFIG_FILE + "\n");
         }
         // Extract ansible roles from files (.tar.gz, .tgz)
-        script.append("cd ~/" + AnsibleResources.ROLES_ROOT_PATH + "\n");
+        script.append("cd ~/" + AnsibleResources.ADDITIONAL_ROLES_ROOT_PATH + "\n");
         script.append("for f in $(find /tmp/roles -type f -regex '.*\\.t\\(ar\\.\\)?gz'); do tar -xzf $f; done\n");
         script.append("cd ~\n");
 
@@ -173,15 +165,43 @@ public final class ShellScriptCreator {
                 append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
                 append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
                 append("\" --outfile /var/log/ansible-playbook.log \n");
+        return script.toString();
+    }
 
-        // Execute ansible playbook using tee
-        //script.append("ansible-playbook ~/" + AnsibleResources.SITE_CONFIG_FILE
-        //        + " -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE)
-        //        .append(prepare ? " -t install" : "")
-        //       .append(" | sudo tee -a /var/log/ansible-playbook.log")
-        //        .append("\n");
+    /**
+     * ansible-playbook script to execute slurm task on master.
+     * @return script
+     */
+    public static String executeSlurmTaskOnMaster() {
+        StringBuilder script = new StringBuilder();
+        script.append("python3 ${HOME}/playbook/tools/tee.py --cmd \"$(which ansible-playbook)").
+                append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
+                append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
+                append(" -t slurm").
+                append(" -l master").
+                append("\" --outfile /var/log/ansible-playbook.log \n");
+        return script.toString();
+    }
 
-        script.append("if [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n");
+    /**
+     * ansible-playbook script to execute whole site.yml on specified worker nodes.
+     * @param workers worker nodes the playbook should be rolled out
+     * @return script
+     */
+    public static String executePlaybookOnWorkers(List<Instance> workers) {
+        StringBuilder script = new StringBuilder();
+        script.append("sleep 30\n");
+        script.append("python3 ${HOME}/playbook/tools/tee.py --cmd \"$(which ansible-playbook)").
+                append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
+                append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
+                append(" -l ");
+        for (Instance worker : workers) {
+            script.append(worker.getPrivateIp());
+            if (workers.indexOf(worker) != workers.size() - 1) {
+                script.append(",");
+            }
+        }
+        script.append("\" --outfile /var/log/ansible-playbook.log \n");
         return script.toString();
     }
 }

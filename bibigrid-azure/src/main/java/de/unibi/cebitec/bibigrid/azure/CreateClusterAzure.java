@@ -33,7 +33,7 @@ public class CreateClusterAzure extends CreateCluster {
     private String masterStartupScript;
 
     CreateClusterAzure(final ProviderModule providerModule, Client client, final Configuration config) {
-        super(providerModule, client, config);
+        super(providerModule, client, config, null);
         compute = ((ClientAzure) client).getInternal();
     }
 
@@ -99,7 +99,7 @@ public class CreateClusterAzure extends CreateCluster {
         InstanceImageAzure image = (InstanceImageAzure) client.getImageById(instanceConfiguration.getImage());
         for (int i = 0; i < instanceConfiguration.getCount(); i++) {
             VirtualMachine workerInstance = compute.virtualMachines()
-                    .define(buildWorkerInstanceName(batchIndex, i))
+                    .define(buildWorkerInstanceName(batchIndex + 1, i + 1))
                     .withRegion(config.getRegion())
                     .withExistingResourceGroup(((CreateClusterEnvironmentAzure) environment).getResourceGroup())
                     .withExistingPrimaryNetwork(((NetworkAzure) environment.getNetwork()).getInternal())
