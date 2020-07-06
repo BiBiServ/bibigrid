@@ -1,8 +1,8 @@
-name: Publish Docker
+name: Publish DEV Docker
 on: 
   push:
     branches: 
-      - 'docker-push-action'
+      - 'dev'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,4 +26,4 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile:  docker/Dockerfile 
         workdir: bibigrid-light-rest-4j
-        tags: ${{ github.head_ref }}
+        tags: dev
