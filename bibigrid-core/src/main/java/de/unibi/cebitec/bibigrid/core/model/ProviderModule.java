@@ -5,10 +5,9 @@ import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
-import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
-import org.apache.commons.cli.CommandLine;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -30,39 +29,35 @@ public abstract class ProviderModule {
     /**
      * Get the configuration implementation for the specified provider, that have provider specific parameters.
      *
-     * @param path
-     * @return
-     * @throws ConfigurationException
+     * @param path String path to config file
+     * @return config loaded
+     * @throws ConfigurationException exception if config is wrong
      */
     public Configuration getConfiguration(String path) throws ConfigurationException {
         return Configuration.loadConfiguration(getConfigurationClass(),path);
     }
 
-
-    /**
-     *
-     * @return
-     */
     public abstract Class<? extends Configuration> getConfigurationClass();
 
     /**
      * Get the validator implementation for the specified provider, that can handle provider specific parameters.
      *
-     * @return
-     * @throws ConfigurationException
+     * @return validator to check cmdline and config
+     * @throws ConfigurationException exception if config is wrong
      */
-
     public abstract Validator getValidator(Configuration config, ProviderModule module) throws ConfigurationException;
 
     public abstract Client getClient(Configuration config) throws ClientConnectionFailedException;
 
-    public abstract ListIntent getListIntent(Client client, Configuration config);
+    public abstract ListIntent getListIntent(Map<String, Cluster> clusterMap);
 
     public abstract TerminateIntent getTerminateIntent(Client client, Configuration config);
 
     public abstract PrepareIntent getPrepareIntent(Client client, Configuration config);
 
-    public abstract CreateCluster getCreateIntent(Client client, Configuration config);
+    public abstract CreateCluster getCreateIntent(Client client, Configuration config, String clusterId);
+
+    public abstract LoadClusterConfigurationIntent getLoadClusterConfigurationIntent(Client client, Configuration config);
 
     public abstract CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster)
             throws ConfigurationException;
@@ -82,7 +77,7 @@ public abstract class ProviderModule {
     /**
      * Returns the block device base path for the specific provider implementation.
      *
-     * @return Block device base path for ex. "/dev/xvd" in AWS.
+     * @return Block device base path for ex. "/dev/xvd" in AWS, "/dev/vd" in OpenStack
      */
     public abstract String getBlockDeviceBase();
 

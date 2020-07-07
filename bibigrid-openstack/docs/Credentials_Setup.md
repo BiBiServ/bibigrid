@@ -28,10 +28,13 @@ credentialsFile: <HOME>/.bibigrid/credentials.yml
 
 *credentials.yml*
 ```
-projectName: XXX
-username: XXX
-password: XXX
-endpoint: XXX
-domain: XXX
-projectDomain: XXX
+username: string                                  # Name of user
+password: string                                  # Password set by user
+endpoint: string                                  # API endpoint
+project: string                                   # project name
+projectId: string                                 # project id
+userDomain: string                                # user domain name
+userDomainId: string                              # user domain id
+projectDomain: string                             # project domain name
+projectDomainId: string                           # project domain id
 ```

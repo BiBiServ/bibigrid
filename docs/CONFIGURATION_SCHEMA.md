@@ -109,7 +109,7 @@ ansibleGalaxyRoles:
   - name: ...                                       # Add as many roles as you want
 
 # Web IDE Usage
-IdeConf:
+ideConf:
     ide: boolean [yes, "no"]                        # Enable Theia Web IDE, Default is no
     port_start: integer                             # Port number to forward from local to remote, Default is 8181
     port_end: integer                               # If port already binded, try next until port_end
@@ -124,24 +124,33 @@ debugRequests: boolean [yes, no]                    # Provides debug information
 ```
 
 "- ..." means, that there can be offered more than one item, for example:
+
 ```
 masterMounts:
   - source: string
     target: string
   - ...
 ```
+
 One could enter more source and target values to provide more volumes to be mounted.
 
 **OpenStack specific schema**
+
 ```
 router: string                                      # Logical component, forwards data packets between networks
 securityGroup: string                               # Like a virtual firewall in network  
 serverGroup: string                                 # Provides a mechanism to group servers according to certain policy
 openstackCredentials:
-  tenantName: string                                # OpenStack project name
   username: string                                  # Name of user
   password: string                                  # Password set by user
   endpoint: string                                  # API endpoint
-  domain: string                                    # Name of ID of user domain
-  tenantDomain: string                              # OpenStack user project domain
+  project: string                                   # project name
+  projectId: string                                 # project id
+  userDomain: string                                # user domain name
+  userDomainId: string                              # user domain id
+  projectDomain: string                             # project domain name
+  projectDomainId: string                           # project domain id
 ```
+
+Either the *name* or *id* variant of project, userDomain or projectDomain must be present.
+

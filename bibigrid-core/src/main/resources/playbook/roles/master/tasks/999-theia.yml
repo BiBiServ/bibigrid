@@ -50,8 +50,8 @@
     state: directory
 
 - name: Copy IDE configuration to IDE build dir
-  copy:
-    src: theia/package.json
+  template:
+    src: theia/package.json.j2
     dest: "{{ theia_ide_install_dir }}/package.json"
     mode: 0644
 
@@ -59,7 +59,7 @@
   shell: |
         source {{ nvm_install_dir }}/nvm.sh
         yarn
-        yarn theia build
+          yarn theia build
   args:
     chdir: "{{ theia_ide_install_dir }}"
     executable: bash

@@ -1,9 +1,11 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.Cluster;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import de.unibi.cebitec.bibigrid.core.model.*;
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
+import de.unibi.cebitec.bibigrid.core.util.ShellScriptCreator;
+import de.unibi.cebitec.bibigrid.core.util.SshFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,11 +13,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 
 /**
+ * Intent to process termination of cluster or worker instances.
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
  */
 public abstract class TerminateIntent extends Intent {
@@ -42,51 +45,152 @@ public abstract class TerminateIntent extends Intent {
     }
 
     /**
-     * Terminate all clusters with the specified ids.
-     * Optional a user can be specified to terminate all of its clusters.
-     *
-     * @return Return true in case of success, false otherwise
+     * Terminates all clusters with the specified ids or from a specified user.
+     * @param parameters user-ids or cluster-ids
      */
-    public boolean terminate() {
-        final Map<String, Cluster> clusters = providerModule.getListIntent(client, config).getList();
-        boolean success = true;
-        List<String> toRemove = new ArrayList<>();
-        for (String clusterId : config.getClusterIds()) {
-            // if '-t user-id'
-            boolean isUser = false;
-            for (Cluster c : clusters.values()) {
-                if (clusterId.equals(c.getUser())) {
-                    toRemove.add(c.getClusterId());
-                    isUser = true;
-                }
-            }
-            if (!isUser) {
-                final Cluster cluster = clusters.get(clusterId);
-                if (cluster == null) {
-                    LOG.warn("No cluster with ID '{}' found.", clusterId);
-                    terminateResponse ="No cluster with ID '"+clusterId+"' found.";
-                    success = false;
-                } else {
-                    toRemove.add(clusterId);
-                }
+    public boolean terminate(String[] parameters) {
+        for (String clusterId : parameters) {
+            if (!terminate(clusterId)) {
+                return false;
             }
         }
-        for (String clusterId : toRemove) {
-            LOG.info("Terminating cluster with ID '{}' ...", clusterId);
-            final Cluster cluster = clusters.get(clusterId);
-            if (terminateCluster(cluster)) {
-                delete_Key(cluster);
-                LOG.info("Cluster '{}' terminated!", clusterId);
-                terminateResponse = "Cluster '"+clusterId+"' terminated!";
-            } else {
-                LOG.info("Failed to terminate cluster '{}'!", clusterId);
-                terminateResponse = "Failed to terminate cluster '"+clusterId+"'!";
-                success = false;
-            }
-        }
-        return success;
+        return true;
     }
 
+    /**
+     * Terminates the clusters with the specified id or specified user.
+     * @param parameter user-id or cluster-id
+     */
+    public boolean terminate(String parameter) {
+        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
+        loadIntent.loadClusterConfiguration(parameter);
+        final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
+        if (clusterMap.isEmpty()) {
+            return false;
+        }
+        List<Cluster> toRemove = new ArrayList<>();
+        if (clusterMap.containsKey(parameter)) {
+            Cluster provided = clusterMap.get(parameter);
+            toRemove.add(provided);
+        } else {
+            // check if '-t user-id'
+            for (Cluster cluster : clusterMap.values()) {
+                if (parameter.equals(cluster.getUser())) {
+                    toRemove.add(cluster);
+                }
+            }
+        }
+        LOG.info("Terminate given parameter {}", parameter);
+
+        if (toRemove.isEmpty()) {
+            terminateResponse ="No cluster with ID '" + clusterId + "' found.";
+            LOG.error("No cluster with ID '{}' found.", parameter);
+            return false;
+        }
+
+        for (Cluster cluster: toRemove) {
+            String clusterId = cluster.getClusterId();
+            LOG.info("Terminating cluster with ID '{}' ...", clusterId);
+            if (terminateCluster(cluster)) {
+                delete_Key(cluster);
+                terminateResponse = "Cluster '" + clusterId + "' terminated!";
+                LOG.info(I, "Cluster '{}' terminated!", clusterId);
+            } else {
+                terminateResponse = "Failed to terminate cluster '" + clusterId + "'!";
+                LOG.error("Cluster '{}' could not be terminated successfully.", clusterId);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Scale down cluster by terminating specified worker instances.
+     * @param clusterId Id of specified cluster
+     * @param workerBatch idx of worker configuration
+     * @param count nr of worker instances to be terminated
+     */
+    public void terminateInstances(String clusterId, int workerBatch, int count) {
+        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
+        loadIntent.loadClusterConfiguration(clusterId);
+        Cluster cluster = loadIntent.getCluster(clusterId);
+        if (cluster == null) {
+            return;
+        }
+        List<Instance> workers = cluster.getWorkerInstances(workerBatch);
+        if (workers.isEmpty() || workers.size() < count) {
+            if (count == 1) {
+                LOG.error("Could not terminate {} worker with specified workerBatch in cluster.\n"
+                        + "There is currently {} worker node running with workerBatch {}.", count, workers.size(), workerBatch);
+            } else {
+                LOG.error("Could not terminate {} workers with specified workerBatch in cluster.\n"
+                        + "There are currently {} worker nodes running with workerBatch {}.", count, workers.size(), workerBatch);
+            }
+            return;
+        }
+        LOG.info("Terminate {} workers for batch {} ...", count, workerBatch);
+        List<Instance> terminateList = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            terminateList.add(workers.get(workers.size() - 1 - i));
+        }
+
+        List<Instance> failed = new ArrayList<>();
+        for (Instance worker : terminateList) {
+            if (terminateWorker(worker)) {
+                LOG.info("Worker '{}' terminated!", worker.getName());
+                cluster.removeWorkerInstance(worker);
+            } else {
+                failed.add(worker);
+                LOG.error("Worker '{}' could not be terminated successfully.", worker.getName());
+            }
+        }
+        if (!SshFactory.pollSshPortIsAvailable(cluster.getMasterInstance().getPublicIp())) {
+            return;
+        }
+        try {
+            config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
+            config.getClusterKeyPair().load();
+            Session sshSession = SshFactory.createSshSession(
+                    config.getSshUser(),
+                    config.getClusterKeyPair(),
+                    cluster.getMasterInstance().getPublicIp());
+            sshSession.connect();
+            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
+            SshFactory.executeScript(sshSession, ShellScriptCreator.executeSlurmTaskOnMaster());
+            sshSession.disconnect();
+        } catch (JSchException sshError) {
+            failed.addAll(terminateList);
+            LOG.error("Update may not be finished properly due to a connection error.");
+            sshError.printStackTrace();
+        } catch (IOException ioError) {
+            failed.addAll(terminateList);
+            LOG.error("Update may not be finished properly due to a KeyPair error.");
+            ioError.printStackTrace();
+        } catch (ConfigurationException ce) {
+            failed.addAll(terminateList);
+            LOG.error("Update may not be finished properly due to a Configuration error.");
+            ce.printStackTrace();
+        }
+        if (failed.isEmpty()) {
+            if (terminateList.size() == 1) {
+                LOG.info(I, "{} instance has been successfully terminated from cluster {}.", terminateList.size(), cluster.getClusterId());
+            } else {
+                LOG.info(I, "{} instances have been successfully terminated from cluster {}.", terminateList.size(), cluster.getClusterId());
+            }
+        }
+    }
+
+    /**
+     * Terminates single worker instance.
+     * @param worker specified worker instance
+     * @return true, if worker instance terminated successfully
+     */
+    protected abstract boolean terminateWorker(Instance worker);
+
+    /**
+     * Terminates the whole cluster.
+     * @param cluster specified cluster
+     * @return true, if terminate successful
+     */
     protected abstract boolean terminateCluster(Cluster cluster);
 
     private void delete_Key(Cluster cluster) {

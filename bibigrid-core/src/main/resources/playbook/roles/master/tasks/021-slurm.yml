@@ -9,6 +9,7 @@
     name: slurmctld
     enabled: True
     state: restarted
+  when: slurm_conf is changed or slurm_cggroup_conf is changed or SLURM_cgroup_allowed_devices_conf is changed
 
 
 # (Re-)start slurmd worker daemon
@@ -19,6 +20,7 @@
     state: restarted
   when:
     - use_master_as_compute == 'yes'
+    - slurm_conf is changed or slurm_cggroup_conf is changed or SLURM_cgroup_allowed_devices_conf is changed
 
 # copy
 - name: Copy GridEngine compatible layer

@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -150,26 +151,28 @@ public class AnsibleConfigTest {
                     new TestInstance(testConfiguration.getWorkerInstances().get(0), "192.168.33.6"),
                     new TestInstance(testConfiguration.getWorkerInstances().get(1), "192.168.33.7"),
                     new TestInstance(testConfiguration.getWorkerInstances().get(1), "192.168.33.8"));
-            AnsibleConfig config = new AnsibleConfig(testConfiguration, "/dev/vd", "192.168.33.0/24", masterInstance,
-                    workerInstances);
 
             System.out.println(":Master:");
             // print common configuration
-            config.writeCommonFile(new OutputStream() {
+            OutputStream stream = new OutputStream() {
                 @Override
                 public void write(int b) {
                     System.out.write(b);
                 }
-            });
+            };
+            AnsibleConfig.writeLoginFile(stream, testConfiguration);
+            //AnsibleConfig.writeInstancesFile(stream, masterInstance, workerInstances, , "/dev/vd");
+            AnsibleConfig.writeConfigFile(stream, testConfiguration, "192.168.33.0/24");
+
             // print worker specific configuration
             for (Instance worker : workerInstances) {
                 System.out.println(":Worker:");
-                config.writeInstanceFile(worker, new OutputStream() {
+                AnsibleConfig.writeSpecificInstanceFile(new OutputStream() {
                     @Override
                     public void write(int b) {
                         System.out.write(b);
                     }
-                });
+                }, worker, "/dev/vd");
             }
         } catch (IOException e) {
             e.printStackTrace();

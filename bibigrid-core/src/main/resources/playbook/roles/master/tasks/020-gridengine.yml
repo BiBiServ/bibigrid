@@ -99,7 +99,7 @@
     mode: 0440
     owner: root
     group: root
-  register: pe.conf
+  register: pe_conf
 
 - name: Generate parallel environment from pe.conf
   shell: 'qconf -Ap /etc/bibigrid/gridengine/pe.conf && touch /etc/bibigrid/gridengine/pe.created'

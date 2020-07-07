@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.KeyPair;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
@@ -33,9 +32,15 @@ public abstract class CreateClusterEnvironment {
     protected CreateClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
         this.client = client;
         this.cluster = cluster;
-        // create a new clusterKeyPair
+        generateClusterKeyPair();
+    }
+
+    /**
+     * Checks if KeyPair already exists and generates a new one, if not.
+     * @throws ConfigurationException Throws an exception if the generation of the KeyPair failed.
+     */
+    private void generateClusterKeyPair() throws ConfigurationException {
         try {
-            Configuration config = cluster.getConfig();
             Configuration.ClusterKeyPair clusterKeyPair = cluster.getConfig().getClusterKeyPair();
             JSch ssh = new JSch();
             KeyPair keypair = KeyPair.genKeyPair(ssh, KeyPair.RSA,4096);
@@ -53,7 +58,6 @@ public abstract class CreateClusterEnvironment {
             }
             throw new ConfigurationException(ex.getMessage());
         }
-
     }
 
     /**
@@ -108,8 +112,7 @@ public abstract class CreateClusterEnvironment {
     /**
      * Api specific implementation of creating or choosing a KeyPair.
      *
-     * @return
-     * @throws ConfigurationException
+     * @throws ConfigurationException Throws an exception if the creation of the SSH KeyPair failed.
      */
     public abstract CreateClusterEnvironment createKeyPair() throws ConfigurationException;
 
