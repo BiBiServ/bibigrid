@@ -43,7 +43,7 @@ public abstract class ListIntent extends Intent {
         ObjectMapper mapper = new ObjectMapper();
         if (clusterMap == null) {
             clusterMap = new HashMap<>();
-            searchClusterIfNecessary();
+            // TODO searchClusterIfNecessary();
         }
         if (clusterMap.isEmpty()) {
             jsonMap.put("info","No BiBiGrid cluster found!");
