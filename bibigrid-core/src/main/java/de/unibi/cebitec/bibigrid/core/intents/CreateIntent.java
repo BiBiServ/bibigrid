@@ -30,12 +30,12 @@ public class CreateIntent implements Runnable{
     private CreateCluster cluster;
     private DataBase db = DataBase.getDataBase();
 
-
     public CreateIntent(ProviderModule module, Configuration config, Client client) {
         this.module = module;
         this.config = config;
         this.client = client;
-        cluster = module.getCreateIntent(client, config);
+        String clusterId = "";
+        cluster = module.getCreateIntent(client, config, clusterId);
         db.status.put(cluster.clusterId,new Status(Status.CODE.Preparing));
     }
 
@@ -69,7 +69,7 @@ public class CreateIntent implements Runnable{
                 } else {
                     db.status.put(cluster.clusterId, new Status(Status.CODE.Error, Constant.ABORT_WITH_INSTANCES_RUNNING));
                     TerminateIntent cleanupIntent = module.getTerminateIntent(client, config);
-                    cleanupIntent.terminate();
+                    cleanupIntent.terminate(cluster.clusterId);
                 }
             }
 
