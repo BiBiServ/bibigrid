@@ -34,7 +34,7 @@ public class CreateIntent implements Runnable{
         this.module = module;
         this.config = config;
         this.client = client;
-        String clusterId = "";
+        String clusterId = null;
         cluster = module.getCreateIntent(client, config, clusterId);
         db.status.put(cluster.clusterId,new Status(Status.CODE.Preparing));
     }
