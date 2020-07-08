@@ -65,7 +65,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
 
                     TerminateIntent cleanupIntent = module.getTerminateIntent(client, config);
 
-                    cleanupIntent.terminate();
+                    cleanupIntent.terminate(cluster_id);
                 }
                 return false;
             }
