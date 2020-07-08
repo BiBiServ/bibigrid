@@ -48,7 +48,7 @@ public class ServiceProviderConnector {
     public void setModule(ProviderModule module) { this.module = module; }
 
     // Logger
-    private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ServiceProviderConnector.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
 
     /**

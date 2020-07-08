@@ -6,17 +6,11 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.util.Status;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
-import org.slf4j.MDC;
-
-import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 public class BibigridInfoIdGetHandler implements LightHttpHandler {
@@ -37,7 +31,7 @@ public class BibigridInfoIdGetHandler implements LightHttpHandler {
 
             try {
 
-                Path path = Paths.get(Configuration.LOG_DIR+ "/cluster_" + clusterId + ".log");
+                Path path = Paths.get(Configuration.LOG_DIR + "/cluster_" + clusterId + ".log");
                 List<String> log = Files.readAllLines(path);
                 exchange.getResponseSender().send("{\"info\":\"" + status.code + "\",\"log\":\"" + log + "\"}");
 

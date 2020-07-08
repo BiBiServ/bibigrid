@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BibigridTerminateIdDeleteHandler.class);
     private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
     private String clusterId;
 
@@ -31,11 +31,10 @@ public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
 
             // set id for termination
             clusterId = exchange.getQueryParameters().get("id").getFirst();
-            config.setClusterIds(clusterId);
             TerminateIntent terminateIntent = module.getTerminateIntent(client, config);
 
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-            if(terminateIntent.terminate()){
+            if(terminateIntent.terminate(clusterId)){
                 try {
                     exchange.setStatusCode(200);
                     Map<String, Object> params = new HashMap<>();
