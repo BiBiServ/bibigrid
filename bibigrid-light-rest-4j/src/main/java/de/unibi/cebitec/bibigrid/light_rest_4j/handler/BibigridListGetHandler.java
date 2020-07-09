@@ -33,6 +33,7 @@ public class BibigridListGetHandler implements LightHttpHandler {
             ConfigurationOpenstack config = serviceProviderConnector.getConfig();
 
             LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
+            loadIntent.loadClusterConfiguration(null);
             Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
             ListIntent listIntent = serviceProviderConnector.getModule().getListIntent(clusterMap);
             exchange.setStatusCode(200);
