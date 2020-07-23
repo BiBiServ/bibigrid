@@ -45,7 +45,7 @@
   - include: 021-slurm.yml
   when:
     - enable_slurm == 'yes'
-  tags: ["master-slurm","slurm"]
+  tags: ["master-slurm","slurm","scale-up","scale-down"]
 
 - debug:
     msg: "[BIBIGRID] Setup Theia"

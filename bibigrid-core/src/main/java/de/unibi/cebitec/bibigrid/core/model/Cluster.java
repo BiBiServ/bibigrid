@@ -18,6 +18,7 @@ public class Cluster implements Comparable<Cluster> {
 
     private Instance masterInstance;
     private List<Instance> workerInstances = new ArrayList<>();
+    private List<Instance> deletedInstances = new ArrayList<>();
 
     private Network network;
     private Subnet subnet;
@@ -104,6 +105,14 @@ public class Cluster implements Comparable<Cluster> {
 
     public void removeWorkerInstance(Instance instance) {
         workerInstances.remove(instance);
+    }
+
+    public List<Instance> getDeletedInstances() {
+        return deletedInstances;
+    }
+
+    public void setDeletedInstances(List<Instance> deletedInstances) {
+        this.deletedInstances = deletedInstances;
     }
 
     public String getKeyName() {

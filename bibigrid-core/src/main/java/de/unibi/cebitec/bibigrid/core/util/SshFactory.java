@@ -131,7 +131,7 @@ public class SshFactory {
         // run fails.
         script = script + "\nif [ $? == 0 ]; then echo CONFIGURATION FINISHED; else echo CONFIGURATION FAILED; fi\n";
 
-        LOG.info("Your cloud instance will be configured now. This might take a while.");
+        LOG.info("Your cloud instance(s) will be configured now. This might take a while.");
 
         ChannelExec channel = (ChannelExec) sshSession.openChannel("exec");
 
