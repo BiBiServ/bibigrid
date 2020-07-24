@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -76,14 +77,19 @@ public class Cluster implements Comparable<Cluster> {
         this.securityGroup = securityGroup;
     }
 
+    /**
+     * Returns a orderd list of worker instances
+     * @return ordered list of worker instances
+     */
     public List<Instance> getWorkerInstances() {
+        Collections.sort(workerInstances);
         return workerInstances;
     }
 
     /**
-     * Returns worker instances of given batch.
+     * Returns a ordered list of worker instances of given batch.
      * @param batchIndex idx of worker configuration
-     * @return list of instances of specified worker configuration idx
+     * @return ordered list of instances of specified worker configuration idx
      */
     public List<Instance> getWorkerInstances(int batchIndex) {
         List<Instance> workers = new ArrayList<>();
@@ -92,6 +98,7 @@ public class Cluster implements Comparable<Cluster> {
                 workers.add(worker);
             }
         }
+        Collections.sort(workerInstances);
         return workers;
     }
 

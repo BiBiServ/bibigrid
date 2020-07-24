@@ -14,6 +14,7 @@ public abstract class Instance implements Comparable<Instance> {
     public static final String TAG_USER = "user";
     public static final String TAG_BIBIGRID_ID = "bibigrid-id";
     public static final String TAG_BATCH = "worker-batch";
+    public static final String TAG_INDEX = "worker-index";
 
     private boolean isMaster = false;
     private String clusterid = "UNSET";
@@ -98,6 +99,11 @@ public abstract class Instance implements Comparable<Instance> {
             }
         }
         return cmp_id;
+    }
+
+    @Override
+    public String toString(){
+        return getName();
     }
 
     /**
