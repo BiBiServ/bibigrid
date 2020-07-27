@@ -31,7 +31,7 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  */
 public abstract class CreateCluster extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
-    public static final String PREFIX = "bibigrid-";
+    public static final String PREFIX = "bibigrid";
     public static final String SEPARATOR = "-";
     private static final String MASTER_NAME_PREFIX = PREFIX + SEPARATOR + "master";
     private static final String WORKER_NAME_PREFIX = PREFIX + SEPARATOR + "worker";
