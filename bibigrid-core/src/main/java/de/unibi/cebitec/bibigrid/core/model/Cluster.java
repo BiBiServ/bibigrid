@@ -93,7 +93,7 @@ public class Cluster implements Comparable<Cluster> {
      */
     public List<Instance> getWorkerInstances(int batchIndex) {
         List<Instance> workers = new ArrayList<>();
-        for (Instance worker : workerInstances) {
+        for (Instance worker : getWorkerInstances()) {
             if (worker.getBatchIndex() == batchIndex) {
                 workers.add(worker);
             }

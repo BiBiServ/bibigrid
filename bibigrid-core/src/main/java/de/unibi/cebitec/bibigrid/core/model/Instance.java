@@ -61,6 +61,9 @@ public abstract class Instance implements Comparable<Instance> {
     }
 
     public int getBatchIndex() {
+        if (batchIndex == -1) {
+            extractInfofromName();
+        }
         return batchIndex;
     }
 
@@ -69,7 +72,7 @@ public abstract class Instance implements Comparable<Instance> {
     }
 
     public String getClusterID() {
-        if (clusterid == null) {
+        if (clusterid == null || clusterid.equalsIgnoreCase("unset")) {
             extractInfofromName();
         }
         return clusterid;
