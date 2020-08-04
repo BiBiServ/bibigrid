@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -18,6 +19,7 @@ public class Cluster implements Comparable<Cluster> {
 
     private Instance masterInstance;
     private List<Instance> workerInstances = new ArrayList<>();
+    private List<Instance> deletedInstances = new ArrayList<>();
 
     private Network network;
     private Subnet subnet;
@@ -75,22 +77,28 @@ public class Cluster implements Comparable<Cluster> {
         this.securityGroup = securityGroup;
     }
 
+    /**
+     * Returns a orderd list of worker instances
+     * @return ordered list of worker instances
+     */
     public List<Instance> getWorkerInstances() {
+        Collections.sort(workerInstances);
         return workerInstances;
     }
 
     /**
-     * Returns worker instances of given batch.
+     * Returns a ordered list of worker instances of given batch.
      * @param batchIndex idx of worker configuration
-     * @return list of instances of specified worker configuration idx
+     * @return ordered list of instances of specified worker configuration idx
      */
     public List<Instance> getWorkerInstances(int batchIndex) {
         List<Instance> workers = new ArrayList<>();
-        for (Instance worker : workerInstances) {
+        for (Instance worker : getWorkerInstances()) {
             if (worker.getBatchIndex() == batchIndex) {
                 workers.add(worker);
             }
         }
+        Collections.sort(workerInstances);
         return workers;
     }
 
@@ -104,6 +112,14 @@ public class Cluster implements Comparable<Cluster> {
 
     public void removeWorkerInstance(Instance instance) {
         workerInstances.remove(instance);
+    }
+
+    public List<Instance> getDeletedInstances() {
+        return deletedInstances;
+    }
+
+    public void setDeletedInstances(List<Instance> deletedInstances) {
+        this.deletedInstances = deletedInstances;
     }
 
     public String getKeyName() {

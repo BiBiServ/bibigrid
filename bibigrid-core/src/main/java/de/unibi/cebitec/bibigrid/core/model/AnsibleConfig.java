@@ -178,8 +178,7 @@ public final class AnsibleConfig {
     }
 
     /**
-     * /**
-     * Writes instances.yml with instances information.
+     * Writes instances.yml with instances information and an empty deleted_worker list.
      * @param stream write into cluster_instances.yml
      * @param master master instance of cluster
      * @param workers list of worker instances of cluster
@@ -192,9 +191,29 @@ public final class AnsibleConfig {
             List<Instance> workers,
             DeviceMapper masterDeviceMapper,
             String blockDeviceBase) {
+            writeInstancesFile(stream,master,workers,new ArrayList<Instance>(),masterDeviceMapper,blockDeviceBase);
+    }
+
+    /**
+     * Write instances.yml with instances informaion.
+     * @param stream write into cluster_instances.yml
+     * @param master master instance of cluster
+     * @param workers list of worker instances of cluster
+     * @param deleted_workers list of deleted instances of cluster
+     * @param masterDeviceMapper
+     * @param blockDeviceBase Block device base path ex. "/dev/xvd" in AWS, "/dev/vd" in Openstack
+     */
+    public static void writeInstancesFile(
+            OutputStream stream,
+            Instance master,
+            List<Instance> workers,
+            List<Instance> deleted_workers,
+            DeviceMapper masterDeviceMapper,
+            String blockDeviceBase) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("master", getMasterMap(master, setMasterMounts(masterDeviceMapper), blockDeviceBase));
         map.put("workers", getWorkerMap(workers, blockDeviceBase));
+        map.put("deletedWorkers",getWorkerMap(deleted_workers,blockDeviceBase));
         writeToOutputStream(stream, map);
     }
 
@@ -241,20 +260,31 @@ public final class AnsibleConfig {
     }
 
     /**
+     *
+     */
+
+    /**
      * Rewrite instances.yml and specific instance IP yaml files.
-     * TODO It is necessary to have the correct ssh user in config
+     * ATTENTION/REMARK:
+     * It is necessary to have the correct ssh user in config
+     *
+     * @param sshSession
+     * @param config
+     * @param cluster
+     * @param blockDeviceBase
+     * @throws JSchException
      */
     public static void updateAnsibleWorkerLists(
             Session sshSession,
             Configuration config,
             Cluster cluster,
-            String blockDeviceBase) throws JSchException {
+            ProviderModule providerModule) throws JSchException {
         LOG.info("Upload updated Ansible files ...");
         ChannelSftp channel = (ChannelSftp) sshSession.openChannel("sftp");
         channel.connect();
         try {
-            rewriteInstancesFile(channel, cluster.getWorkerInstances(), blockDeviceBase);
-            updateSpecificInstanceFiles(channel, cluster.getWorkerInstances(), blockDeviceBase);
+            rewriteInstancesFile(channel, cluster.getWorkerInstances(), cluster.getDeletedInstances(), providerModule.getBlockDeviceBase());
+            updateSpecificInstanceFiles(channel, cluster.getWorkerInstances(), providerModule.getBlockDeviceBase());
             writeHostsFile(channel, config.getSshUser(), cluster.getWorkerInstances());
             LOG.info("Ansible files successfully updated.");
         } catch (SftpException e) {
@@ -324,11 +354,13 @@ public final class AnsibleConfig {
     private static void rewriteInstancesFile(
             ChannelSftp channel,
             List<Instance> workerInstances,
+            List<Instance> deletedInstances,
             String blockDeviceBase) throws SftpException {
         String instances_file = channel.getHome() + "/" + AnsibleResources.COMMONS_INSTANCES_FILE;
         InputStream in = channel.get(instances_file);
         Map<String, Object> map = readFromInputStream(in);
         map.replace("workers", getWorkerMap(workerInstances, blockDeviceBase));
+        map.replace("deletedWorkers",getWorkerMap(deletedInstances,blockDeviceBase));
         OutputStream out = channel.put(instances_file);
         writeToOutputStream(out, map);
     }
