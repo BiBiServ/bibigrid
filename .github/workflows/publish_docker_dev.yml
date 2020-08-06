@@ -13,17 +13,17 @@ jobs:
       with:
         java-version: '11.0.5'
     - name: Build mvn bibigrid
-      run: mvn clean install -DskipTests
+      run: mvn -P openstack  clean package
     - name: Build rest api mvn
       run:  |
           cd bibigrid-light-rest-4j/
-          mvn clean install -Prelease -DskipTests
+          mvn clean install -Prelease
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: bibiserv/bibigrid
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        dockerfile:  docker/Dockerfile 
+        dockerfile:  Dockerfile
         workdir: bibigrid-light-rest-4j
         tags: dev

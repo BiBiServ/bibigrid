@@ -16,7 +16,7 @@ jobs:
       with:
         java-version: '11.0.5'
     - name: Build mvn bibigrid
-      run: mvn clean install -DskipTests
+      run: mvn -P openstack  clean package -DskipTests
     - name: Build rest api mvn
       run:  |
           cd bibigrid-light-rest-4j/
@@ -27,6 +27,6 @@ jobs:
         name: bibiserv/bibigrid
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        dockerfile:  docker/Dockerfile 
+        dockerfile:  Dockerfile
         workdir: bibigrid-light-rest-4j
         tags:  bibigrid-rest-${{ steps.get_version.outputs.VERSION }}
