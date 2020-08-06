@@ -200,3 +200,22 @@
         port: 10050
   with_items:
     - "{{ workers }}"
+  tags: ["scale-up"]
+
+# --------------------------------------
+# -- Remove deleted worker nodes as zabbix hosts --
+# --------------------------------------
+
+- name: Remove deleted worker nodes as zabbix hosts
+  zabbix_host:
+    server_url:  "http://{{ master.ip }}/zabbix/"
+    login_user: Admin
+    login_password: "{{ zabbix.admin_password }}"
+    host_name: "{{ item.hostname }}"
+    visible_name: "{{ item.hostname }}"
+    description: removed by ansible
+    status: disabled
+    state: absent
+  with_items:
+    - "{{ deletedWorkers }}"
+  tags: ["scale-down"]
