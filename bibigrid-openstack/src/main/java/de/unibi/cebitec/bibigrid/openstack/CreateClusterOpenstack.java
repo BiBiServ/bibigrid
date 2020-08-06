@@ -226,14 +226,13 @@ public class CreateClusterOpenstack extends CreateCluster {
             int workerBatch = batchIndex + 1;
             metadata.put(Instance.TAG_BATCH, String.valueOf(workerBatch));
             InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
-            for (int i = 0; i < instanceConfiguration.getCount(); i++) {
-                int workerIndex = i + 1;
+            for (int workerIndex = 1; workerIndex <= instanceConfiguration.getCount(); workerIndex ++) {
                 LOG.info("Set worker batch to: {}.", workerBatch);
+                metadata.put(Instance.TAG_INDEX, String.valueOf(workerIndex));
                 ServerCreateBuilder scb =
                         Builders.server()
                                 .name(buildWorkerInstanceName(workerBatch, workerIndex))
                                 .flavor(workerSpec.getFlavor().getId())
-                                //.image(instanceConfiguration.getImage())
                                 .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
                                 .keypairName(config.getClusterKeyPair().getName())
                                 .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
@@ -279,6 +278,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
             InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
             for (int i = workerIndex; i < workerIndex + instanceConfiguration.getCount(); i++) {
+                metadata.put(Instance.TAG_INDEX, String.valueOf(workerIndex));
                 ServerCreateBuilder scb = loadServerConfiguration(cluster, batchIndex, i, instanceConfiguration)
                                                 .addMetadata(metadata)
                                                 .configDrive(workerSpec.getConfigDrive() != 0)

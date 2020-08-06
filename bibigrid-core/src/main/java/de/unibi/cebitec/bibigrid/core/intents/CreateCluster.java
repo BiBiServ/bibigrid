@@ -28,12 +28,14 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  * master and worker instances and launching the cluster.
  *
  * @author Johannes Steiner - jsteiner(at)cebitec.uni-bielefeld.de
+ *         Jan Krueger - jkrueger(at)cebitec.uni-bielefeld.de
  */
 public abstract class CreateCluster extends Intent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateCluster.class);
-    public static final String PREFIX = "bibigrid-";
-    private static final String MASTER_NAME_PREFIX = PREFIX + "master";
-    private static final String WORKER_NAME_PREFIX = PREFIX + "worker";
+    public static final String PREFIX = "bibigrid";
+    public static final String SEPARATOR = "-";
+    private static final String MASTER_NAME_PREFIX = PREFIX + SEPARATOR + "master";
+    private static final String WORKER_NAME_PREFIX = PREFIX + SEPARATOR + "worker";
 
     protected final ProviderModule providerModule;
     protected final Client client;
@@ -139,7 +141,7 @@ public abstract class CreateCluster extends Intent {
      */
     public boolean launchClusterInstances(final boolean prepare) {
         try {
-            String masterNameTag = MASTER_NAME_PREFIX + "-" + clusterId;
+            String masterNameTag = MASTER_NAME_PREFIX + SEPARATOR + clusterId;
             masterInstance = launchClusterMasterInstance(masterNameTag);
             if (masterInstance == null) {
                 return false;
@@ -154,7 +156,7 @@ public abstract class CreateCluster extends Intent {
                     Configuration.WorkerInstanceConfiguration instanceConfiguration = config.getWorkerInstances().get(i);
                     LOG.info("Requesting {} worker instance(s) with same configuration...",
                             instanceConfiguration.getCount());
-                    String workerNameTag = WORKER_NAME_PREFIX + "-" + clusterId;
+                    String workerNameTag = WORKER_NAME_PREFIX + SEPARATOR + clusterId;
                     List<Instance> workersBatch = launchClusterWorkerInstances(i, instanceConfiguration, workerNameTag);
                     if (workersBatch == null) {
                         return false;
@@ -274,8 +276,8 @@ public abstract class CreateCluster extends Intent {
             }
             config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
             config.getClusterKeyPair().load();
-            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
-            SshFactory.executeScript(sshSession, ShellScriptCreator.executeSlurmTaskOnMaster().concat(ShellScriptCreator.executePlaybookOnWorkers(additionalWorkers)));
+            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule);
+            SshFactory.executeScript(sshSession, ShellScriptCreator.executeScaleTasksOnMaster(Scale.up).concat(ShellScriptCreator.executePlaybookOnWorkers(additionalWorkers)));
             if (additionalWorkers.size() == 1) {
                 LOG.info(I, "{} instance has been successfully added to cluster {}.", additionalWorkers.size(), cluster.getClusterId());
             } else {
@@ -323,7 +325,7 @@ public abstract class CreateCluster extends Intent {
             Cluster cluster, int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
 
     protected String buildWorkerInstanceName(int batchIndex, int workerIndex) {
-        return WORKER_NAME_PREFIX + "-" + (batchIndex) + "-" + (workerIndex) + "-" + clusterId;
+        return WORKER_NAME_PREFIX + SEPARATOR + (batchIndex) + SEPARATOR + (workerIndex) + "-" + clusterId;
     }
 
     private void logFinishedInfoMessage(final String masterPublicIp) {

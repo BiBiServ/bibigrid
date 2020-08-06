@@ -4,6 +4,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
+import de.unibi.cebitec.bibigrid.core.util.Scale;
 import de.unibi.cebitec.bibigrid.core.util.ShellScriptCreator;
 import de.unibi.cebitec.bibigrid.core.util.SshFactory;
 import org.slf4j.Logger;
@@ -132,6 +133,7 @@ public abstract class TerminateIntent extends Intent {
         for (int i = 0; i < count; i++) {
             terminateList.add(workers.get(workers.size() - 1 - i));
         }
+        cluster.setDeletedInstances(terminateList);
 
         List<Instance> failed = new ArrayList<>();
         for (Instance worker : terminateList) {
@@ -154,8 +156,8 @@ public abstract class TerminateIntent extends Intent {
                     config.getClusterKeyPair(),
                     cluster.getMasterInstance().getPublicIp());
             sshSession.connect();
-            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule.getBlockDeviceBase());
-            SshFactory.executeScript(sshSession, ShellScriptCreator.executeSlurmTaskOnMaster());
+            AnsibleConfig.updateAnsibleWorkerLists(sshSession, config, cluster, providerModule);
+            SshFactory.executeScript(sshSession, ShellScriptCreator.executeScaleTasksOnMaster(Scale.down));
             sshSession.disconnect();
         } catch (JSchException sshError) {
             failed.addAll(terminateList);

@@ -169,15 +169,15 @@ public final class ShellScriptCreator {
     }
 
     /**
-     * ansible-playbook script to execute slurm task on master.
+     * ansible-playbook script to execute scale (up or down) tasks on master.
      * @return script
      */
-    public static String executeSlurmTaskOnMaster() {
+    public static String executeScaleTasksOnMaster(Scale scale) {
         StringBuilder script = new StringBuilder();
         script.append("python3 ${HOME}/playbook/tools/tee.py --cmd \"$(which ansible-playbook)").
                 append(" ${HOME}/").append(AnsibleResources.SITE_CONFIG_FILE).
                 append(" -i ${HOME}/").append(AnsibleResources.HOSTS_CONFIG_FILE).
-                append(" -t slurm").
+                append(" -t ").append(scale.toString()).
                 append(" -l master").
                 append("\" --outfile /var/log/ansible-playbook.log \n");
         return script.toString();
