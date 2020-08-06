@@ -3,6 +3,7 @@
 ### Fixes
 - Fix various bugs concerning scale-up/down a cluster (#246,#250)
 - Fix slurm consumable ressources config
+- Adjust documentation
 
 ## Version 2.1.0 < 2.0.10 (07/02/2020)
 
