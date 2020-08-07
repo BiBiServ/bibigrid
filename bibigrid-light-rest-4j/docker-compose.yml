@@ -19,4 +19,5 @@ services:
       - OS_USER_DOMAIN_NAME
       - OS_PROJECT_DOMAIN_ID
       - OS_PROJECT_DOMAIN_NAME
+      - BIBIGRID_TAG
 
