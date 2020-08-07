@@ -6,7 +6,7 @@
 
     ~~~BASH
     git clone https://github.com/BiBiServ/bibigrid.git
-    cd bibigrid-light-rest-4j
+    cd bibigrid/bibigrid-light-rest-4j
     ~~~
 
 2.   To start the API, you must copy the .env.in to .env and set the values.
