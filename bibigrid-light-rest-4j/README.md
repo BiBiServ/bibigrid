@@ -16,7 +16,7 @@
      ~~~
         **You could also use environment variables for the keys in the .env.in ! They will have a higher priority.**
   
-4. ##Makefile
+4. **Makefile**
 
     There are several make commands available, you will find an overview with documentation running:
      ~~~BASH
