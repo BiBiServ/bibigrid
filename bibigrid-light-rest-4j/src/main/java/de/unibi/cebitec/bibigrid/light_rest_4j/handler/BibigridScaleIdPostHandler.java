@@ -1,8 +1,6 @@
 package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 
-import static de.unibi.cebitec.bibigrid.core.model.IntentMode.*;
-
-import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
+import com.networknt.body.BodyHandler;
 import de.unibi.cebitec.bibigrid.core.intents.ScaleWorkerIntent;
 import io.undertow.util.HttpString;
 import com.networknt.handler.LightHttpHandler;
@@ -13,6 +11,9 @@ import io.undertow.server.HttpServerExchange;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.Map;
 
 
 /**
@@ -28,8 +29,17 @@ public class BibigridScaleIdPostHandler implements LightHttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) {
+
         JSONObject response = new JSONObject();
         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+
+        /**
+         * TODO -----------------------------------
+         * If the whole request body is passed the call serviceProviderConnector.connectToServiceProvider(exchange) fails
+         */
+        Map bodyMap = (Map) exchange.getAttachment(BodyHandler.REQUEST_BODY);
+        exchange.putAttachment(BodyHandler.REQUEST_BODY, Collections.singletonMap("mode", bodyMap.get("mode")));
+
         if (serviceProviderConnector.connectToServiceProvider(exchange)) {
 
             ProviderModule module = serviceProviderConnector.getModule();
@@ -37,10 +47,10 @@ public class BibigridScaleIdPostHandler implements LightHttpHandler {
             ConfigurationOpenstack config = serviceProviderConnector.getConfig();
 
             String clusterId = exchange.getQueryParameters().get("id").getFirst();
-            String scaling = exchange.getQueryParameters().get("scaling").getFirst();
+            String scaling = bodyMap.get("scaling").toString();
             try {
-                workerBatch = Integer.parseInt(exchange.getQueryParameters().get("batch").getFirst());
-                count = Integer.parseInt(exchange.getQueryParameters().get("count").getFirst());
+                workerBatch = Integer.parseInt(bodyMap.get("batch").toString());
+                count = Integer.parseInt(bodyMap.get("count").toString());
             } catch (NumberFormatException nf) {
                 exchange.setStatusCode(400);
                 response.put("message", "Malformed request");
@@ -50,7 +60,7 @@ public class BibigridScaleIdPostHandler implements LightHttpHandler {
             Thread t = new Thread(scaleWorkerIntent);
             t.start();
             exchange.setStatusCode(200);
-            response.put("info", "Scaling started!");
+            response.put("info", "Scaling: " + scaling + " started!");
 
             exchange.getResponseSender().send(response.toJSONString());
 

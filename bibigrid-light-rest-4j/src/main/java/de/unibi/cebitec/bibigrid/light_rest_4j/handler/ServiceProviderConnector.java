@@ -90,33 +90,17 @@ public class ServiceProviderConnector {
         // The only supported provider mode of api is openstack
         if (providerMode.equals("openstack")) {
             module = initProviderModule(providerMode);
-            LOG.info("1");
-
             ObjectMapper mapper = new ObjectMapper();
             try {
-                LOG.info("2");
-
                 String requestBody = mapper.writeValueAsString(bodyMap);
-                LOG.info("3");
-
                 // TODO figure out whether parsing can fail
 
                 // get openstack specific specific configuration
-                try{
-                config = new Yaml().loadAs(requestBody, ConfigurationOpenstack.class);}
-                catch (Exception e){
-                    error = e.getMessage();
-                    LOG.error(error);
-
-                }
-
+                config = new Yaml().loadAs(requestBody, ConfigurationOpenstack.class);
 
                 // set openstack credentials
                 ValidatorOpenstack validatorOpenstack = new ValidatorOpenstack(config,module);
-                LOG.info("5");
-
                 config.setOpenstackCredentials(validatorOpenstack.loadEnvCredentials());
-
 
                 // get client
                 try {
