@@ -1,8 +1,17 @@
 
 
 # Handler middleware chain configuration
----
+#----------------------------------------
 enabled: true
+
+# Configuration for the LightHttpHandler. The handler is the base class  for all middleware, server and health handlers
+# set the Status Object in the AUDIT_INFO, for auditing purposes
+# default, if not set:false
+auditOnError: ${handler.auditOnError:false}
+
+# set the StackTrace in the AUDIT_INFO, for auditing purposes
+# default, if not set:false
+auditStackTrace: ${handler.auditStackTrace:false}
 
 #------------------------------------------------------------------------------
 # Support individual handler chains for each separate endpoint. It allows framework
@@ -54,12 +63,11 @@ handlers:
   # - com.networknt.metrics.prometheus.PrometheusGetHandler@getprometheus
   # Business Handlers
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridListGetHandler
+  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridScaleIdPostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridCreatePostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridValidatePostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdGetHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdDeleteHandler
-  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridScaleHandler
-
 
 
 chains:
@@ -82,6 +90,11 @@ paths:
     exec:
       - default
       - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridListGetHandler
+  - path: '/bibigrid/scale/{id}'
+    method: 'POST'
+    exec:
+      - default
+      - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridScaleIdPostHandler
   - path: '/bibigrid/create'
     method: 'POST'
     exec:
@@ -97,18 +110,13 @@ paths:
     exec:
       - default
       - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdGetHandler
-  - path: '/bibigrid/scale/{id}'
-      method: 'POST'
-      exec:
-        - default
-        - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridScaleHandler
   - path: '/bibigrid/terminate/{id}'
     method: 'DELETE'
     exec:
       - default
       - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdDeleteHandler
 
-  - path: '/server/health'
+  - path: '/health/${server.serviceId:de.unibi.cebitec.bibigrid.light_rest_4j.bibigrid_light_rest_4j-1.0.0}'
     method: 'get'
     exec:
       - health
@@ -118,6 +126,11 @@ paths:
     exec:
       - info
 
+
+  - path: '/spec.yaml'
+    method: 'get'
+    exec:
+      - spec
   - path: '/specui.html'
     method: 'get'
     exec:

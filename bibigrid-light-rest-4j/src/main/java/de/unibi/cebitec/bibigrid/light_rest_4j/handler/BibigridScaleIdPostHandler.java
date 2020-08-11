@@ -26,12 +26,6 @@ public class BibigridScaleHandler implements LightHttpHandler {
     private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
 
 
-    /*
-    Attribute that is used to send the cluster_id back to the user
-     */
-    private String cluster_id;
-
-
     @Override
     public void handleRequest(HttpServerExchange exchange) {
         if (serviceProviderConnector.connectToServiceProvider(exchange)) {
@@ -47,14 +41,14 @@ public class BibigridScaleHandler implements LightHttpHandler {
                 count = Integer.parseInt(exchange.getQueryParameters().get("count").getFirst());
             } catch (NumberFormatException nf) {
                 exchange.setStatusCode(400);
-                exchange.getResponseSender().send("{\"error\":\"Malformed request\"}");
+                exchange.getResponseSender().send("{\"message\":\"Malformed request\"}");
             }
 
             switch (scale_request) {
                 case SCALE_DOWN:
                     module.getTerminateIntent(client, config)
                             .terminateInstances(clusterId, workerBatch, count);
-                    exchange.getResponseSender().send("{\"message\":\"" + module.getTerminateIntent(client, config).getTerminateResponse() + "\"}");
+                    exchange.getResponseSender().send("{\"info\":\"" + module.getTerminateIntent(client, config).getTerminateResponse() + "\"}");
             }
             exchange.endExchange();
 
