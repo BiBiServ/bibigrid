@@ -58,6 +58,8 @@ handlers:
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridValidatePostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdGetHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdDeleteHandler
+  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridScaleHandler
+
 
 
 chains:
@@ -95,6 +97,11 @@ paths:
     exec:
       - default
       - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdGetHandler
+  - path: '/bibigrid/scale/{id}'
+      method: 'POST'
+      exec:
+        - default
+        - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridScaleHandler
   - path: '/bibigrid/terminate/{id}'
     method: 'DELETE'
     exec:
