@@ -6,15 +6,8 @@
 # Enable JWT verification flag.
 enableVerifyJwt: ${openapi-security.enableVerifyJwt:false}
 
-# Extract JWT scope token from the X-Scope-Token header and validate the JWT token
-enableExtractScopeToken: ${openapi-security.enableExtractScopeToken:true}
-
 # Enable JWT scope verification. Only valid when enableVerifyJwt is true.
 enableVerifyScope: ${openapi-security.enableVerifyScope:true}
-
-# Enable JWT scope verification. 
-# Only valid when (enableVerifyJwt is true) AND (enableVerifyJWTScopeToken is true)
-enableVerifyJWTScopeToken: ${openapi-security.enableVerifyJWTScopeToken:true}
 
 # User for test only. should be always be false on official environment.
 enableMockJwt: ${openapi-security.enableMockJwt:false}
@@ -25,8 +18,6 @@ jwt:
     '100': primary.crt
     '101': secondary.crt
   clockSkewInSeconds: 60
-  # Key distribution server standard: JsonWebKeySet for other OAuth 2.0 provider| X509Certificate for light-oauth2
-  keyResolver: X509Certificate
 
 # Enable or disable JWT token logging
 logJwtToken: ${openapi-security.logJwtToken:true}

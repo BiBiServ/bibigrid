@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import com.jcraft.jsch.*;
+import de.unibi.cebitec.bibigrid.core.DataBase;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;

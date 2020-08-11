@@ -14,6 +14,7 @@ import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 import de.unibi.cebitec.bibigrid.openstack.ConfigurationOpenstack;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +35,10 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
     private String cluster_id;
 
     /**
-     * This method is almost identical to the runCreateIntent method in StartUp.java, but the access to the method in
+     * This method is almost identical to the runCreateIntent method in Sta     rtUp.java, but the access to the method in
      * StartUp.java is private and does not give this controller the cluster_id of the to-be-started cluster, hence
      * a second implementation was made.
-     *
+     * <p>
      * TODO -----------------------------------
      * Must be implemented asynchronously to return cluster id when creating in CreateCluster
      */
@@ -45,14 +46,14 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                                     CreateCluster cluster, boolean prepare) {
         try {
             // configure environment
-            cluster .createClusterEnvironment()
+            cluster.createClusterEnvironment()
                     .createNetwork()
                     .createSubnet()
                     .createSecurityGroup()
                     .createKeyPair()
                     .createPlacementGroup();
             // configure cluster
-            boolean success =  cluster
+            boolean success = cluster
                     .configureClusterMasterInstance()
                     .configureClusterWorkerInstance()
                     .launchClusterInstances(prepare);
@@ -84,18 +85,23 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
 
 
     @Override
-    public void handleRequest(HttpServerExchange exchange){
-        if(serviceProviderConnector.connectToServiceProvider(exchange)){
+    public void handleRequest(HttpServerExchange exchange) {
+        JSONObject response = new JSONObject();
+        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+        if (serviceProviderConnector.connectToServiceProvider(exchange)) {
             ProviderModule module = serviceProviderConnector.getModule();
             Client client = serviceProviderConnector.getClient();
             ConfigurationOpenstack config = serviceProviderConnector.getConfig();
 
+
             try {
                 Validator validator = module.getValidator(config, module);
+
+
                 if (!validator.validateProviderTypes(client)) {
                     LOG.error(ABORT_WITH_NOTHING_STARTED);
                 }
-                ValidateIntent intent  = module.getValidateIntent(client, config);
+                ValidateIntent intent = module.getValidateIntent(client, config);
                 if (intent.validate()) {
                     CreateIntent create = new CreateIntent(module, config, client);
 
@@ -103,24 +109,27 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                     Thread t = new Thread(create);
                     t.start();
                     // ... and return immediately
-                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                     exchange.setStatusCode(200);
-                    exchange.getResponseSender().send("{\"id\":\""+create.getClusterId()+"\"}");
+                    response.put("id", create.getClusterId());
+                    exchange.getResponseSender().send(response.toJSONString());
 
                 } else {
-                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                     exchange.setStatusCode(400);
-                    exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+intent.getValidateResponse()+"\"}");
+                    response.put("is_valid", intent.getValidateResponse());
+
+                    exchange.getResponseSender().send(response.toJSONString());
                 }
-            } catch(ConfigurationException c) {
-                exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+            } catch (ConfigurationException c) {
                 exchange.setStatusCode(400);
-                exchange.getResponseSender().send("{\"is_valid\":\"false\",\"info\":\""+c.getMessage()+"\"}");
+                response.put("is_valid", false);
+                response.put("info", c.getMessage());
+
+                exchange.getResponseSender().send(response.toJSONString());
             }
         } else {
-            exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(400);
-            exchange.getResponseSender().send("{\"message\":\""+serviceProviderConnector.getError()+"\"}");
+            response.put("message", serviceProviderConnector.getError());
+            exchange.getResponseSender().send(response.toJSONString());
         }
         exchange.endExchange();
     }
