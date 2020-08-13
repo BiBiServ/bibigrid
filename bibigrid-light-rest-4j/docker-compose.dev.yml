@@ -11,6 +11,9 @@ services:
     env_file:
       - .tmp.env
 
+    volumes:
+    -  ${HOME}/.bibigrid:/root/.bibigrid
+
     # Higher priority than values in .env
     environment:
       - OS_AUTH_URL
@@ -21,4 +24,5 @@ services:
       - OS_USER_DOMAIN_NAME
       - OS_PROJECT_DOMAIN_ID
       - OS_PROJECT_DOMAIN_NAME
+
 
