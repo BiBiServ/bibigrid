@@ -1,5 +1,3 @@
-
-
 # Handler middleware chain configuration
 ---
 enabled: true
@@ -58,6 +56,7 @@ handlers:
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridValidatePostHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdGetHandler
   - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridTerminateIdDeleteHandler
+  - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridScaleIdPostHandler
 
 
 chains:
@@ -70,7 +69,7 @@ chains:
     - security
     - body
     - audit
-#    - dump
+    #    - dump
     - sanitizer
     - validator
 
@@ -95,6 +94,11 @@ paths:
     exec:
       - default
       - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridInfoIdGetHandler
+  - path: '/bibigrid/scale/{id}'
+    method: 'POST'
+    exec:
+        - default
+        - de.unibi.cebitec.bibigrid.light_rest_4j.handler.BibigridScaleIdPostHandler
   - path: '/bibigrid/terminate/{id}'
     method: 'DELETE'
     exec:

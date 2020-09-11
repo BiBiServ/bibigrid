@@ -57,6 +57,12 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
+    public ScaleWorkerIntent getScaleWorkerIntent(Client client, Configuration config,String clusterId, int batchIndex, int count,String scaling) {
+        return new ScaleWorkerOpenstack(this, config, client,clusterId, batchIndex, count,scaling);
+
+    }
+
+    @Override
     public LoadClusterConfigurationIntent getLoadClusterConfigurationIntent(Client client, Configuration config) {
         return new LoadClusterConfigurationIntentOpenstack(this, client, config);
     }

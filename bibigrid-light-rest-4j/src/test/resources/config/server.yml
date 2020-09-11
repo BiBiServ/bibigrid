@@ -12,7 +12,7 @@ httpPort: ${server.httpPort:49587}
 # When enableHttp, you must set enableHttps to false, otherwise, this flag will be ignored. There is
 # only one protocol will be used for the server at anytime. If both http and https are true, only
 # https listener will be created and the server will bind to https port only.
-enableHttp: ${server.enableHttp:false}
+enableHttp: ${server.enableHttp:true}
 
 # Https port if enableHttps is true. It will be ignored if dynamicPort is true.
 httpsPort: ${server.httpsPort:49588}
