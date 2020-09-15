@@ -1,0 +1,688 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Bibigrid",
+    "description": "Specification for REST-API of bibigrid cluster management.",
+    "license": {
+      "name": "Apache License 2.0"
+    }
+  },
+  "paths": {
+    "/bibigrid/list": {
+      "get": {
+        "summary": "List all running clusters",
+        "operationId": "listRunningClusters",
+        "requestBody": {
+          "description": "YAML like configuration object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Authorization"
+              }
+            }
+          }
+        },
+        "tags": [
+          "cluster"
+        ],
+        "responses": {
+          "200": {
+            "description": "Expected response to a valid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "info": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bibigrid/scale/{id}": {
+      "post": {
+        "summary": "Scale a cluster up/down",
+        "operationId": "scaleCluster",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The id of cluster to terminate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "YAML like configuration object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScaleCluster"
+              }
+            }
+          }
+        },
+        "tags": [
+          "cluster"
+        ],
+        "responses": {
+          "200": {
+            "description": "Expected response to a valid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "info": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bibigrid/create": {
+      "post": {
+        "summary": "Create a bibigrid cluster",
+        "operationId": "createClusterByConfig",
+        "requestBody": {
+          "description": "YAML like configuration object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClusterConfiguration"
+              }
+            }
+          }
+        },
+        "tags": [
+          "cluster"
+        ],
+        "responses": {
+          "200": {
+            "description": "Expected response to a valid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bibigrid/validate": {
+      "post": {
+        "summary": "Validate a cluster config",
+        "operationId": "validateClusterConfig",
+        "requestBody": {
+          "description": "YAML like configuration object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClusterConfiguration"
+              }
+            }
+          }
+        },
+        "tags": [
+          "cluster"
+        ],
+        "responses": {
+          "200": {
+            "description": "Expected response to a valid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "is_valid": {
+                      "type": "boolean"
+                    },
+                    "info": {
+                      "type": "string"
+                    }
+                  },
+                  "example": {
+                    "is_valid": false,
+                    "info": "missing key"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bibigrid/info/{id}": {
+      "get": {
+        "summary": "Check the status of the cluster creation process",
+        "operationId": "checkClusterCreationStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The id of cluster to get information about",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "YAML like access object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Authorization"
+              }
+            }
+          }
+        },
+        "tags": [
+          "cluster"
+        ],
+        "responses": {
+          "200": {
+            "description": "Expected response to a valid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "info": {
+                      "type": "string",
+                      "example": "Am Hochfahren"
+                    },
+                    "log": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bibigrid/terminate/{id}": {
+      "delete": {
+        "summary": "End a cluster",
+        "operationId": "terminateCluster",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The id of cluster to terminate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "YAML like access object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Authorization"
+              }
+            }
+          }
+        },
+        "tags": [
+          "cluster"
+        ],
+        "responses": {
+          "200": {
+            "description": "Expected response to a valid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "info": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ScaleCluster": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "openstack",
+            "description": "Provider mode [optionally aws, googlecloud, azure]"
+          },
+          "count": {
+            "type": "number",
+            "description": "Counter how many to scale up or down"
+          },
+          "batch": {
+            "type": "number",
+            "description": "Batch-index of worker-set"
+          },
+          "scaling": {
+            "type": "string",
+            "description": "up or down"
+          }
+        }
+      },
+      "ClusterConfiguration": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "openstack",
+            "description": "Provider mode [optionally aws, googlecloud, azure]"
+          },
+          "user": {
+            "type": "string",
+            "description": "SSH user name, default is \"ubuntu\""
+          },
+          "sshUser": {
+            "type": "string",
+            "description": "SSH user name, default is \"ubuntu\""
+          },
+          "sshPublicKeys": {
+            "type": "array",
+            "description": "Optional bare public (!) SSH keys",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subnet": {
+            "type": "string",
+            "example": "internalsub",
+            "description": "name / id of subnet"
+          },
+          "region": {
+            "type": "string",
+            "example": "Bielefeld",
+            "description": "Specific region"
+          },
+          "availabilityZone": {
+            "type": "string",
+            "description": "e.g. default, maintenance, ..."
+          },
+          "network": {
+            "type": "string",
+            "description": "name / id of network (e.g. 0a217b61-4c67-...)"
+          },
+          "ports": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "TCP",
+                  "UDP",
+                  "ICMP"
+                ],
+                "description": "Transmission Protocol, Default is TCP (recommended)"
+              },
+              "number": {
+                "type": "integer",
+                "description": "Port number, (e.g. TCP-Port 80 - HTTP)"
+              },
+              "ipRange": {
+                "type": "string",
+                "description": "\"current\" or CIDR mask to restrict access, (e.g. 129.60.50.0/24)"
+              }
+            }
+          },
+          "localDNSLookup": {
+            "type": "boolean",
+            "description": "Enable local DNS lookup. Creates an entry for and on each host in /etc/hosts. Should only be enabled if no or a malfunction DNS is available."
+          },
+          "masterInstance": {
+            "type": "object",
+            "required": [
+              "type",
+              "image"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Instance Flavor, self-assigned (e.g. m1.small)"
+              },
+              "image": {
+                "type": "string",
+                "description": "Image ID (e.g. 802e0abe-ac6c-...) or Image name"
+              }
+            }
+          },
+          "workerInstances": {
+            "type": "array",
+            "items": {
+              "required": [
+                "type",
+                "image",
+                "count"
+              ],
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Instance Flavor, self-assigned (e.g. m1.small)"
+                },
+                "image": {
+                  "type": "string",
+                  "description": "Image ID (e.g. 802e0abe-ac6c-...) or Image name"
+                },
+                "count": {
+                  "type": "integer",
+                  "description": "Number of Worker Instances"
+                }
+              }
+            }
+          },
+          "useMasterAsCompute": {
+            "type": "boolean",
+            "description": "Use master as compute instance, Default is no"
+          },
+          "useMasterWithPublicIp": {
+            "type": "boolean",
+            "description": "Usage of public IP. Default is yes"
+          },
+          "useSpotInstances": {
+            "type": "boolean",
+            "description": "Only usable with Google Compute and AWS, offered unused Instances"
+          },
+          "slurm": {
+            "type": "boolean",
+            "description": "Enable / Disable SLURM Workload Manager. Default is no"
+          },
+          "oge": {
+            "type": "boolean",
+            "description": "deprecated - supported for Ubuntu 16.04 only. Default is no"
+          },
+          "zabbix": {
+            "type": "boolean",
+            "description": "Use zabbix monitoring tool. Default is no"
+          },
+          "zabbixConf": {
+            "type": "object",
+            "properties": {
+              "db": {
+                "type": "string",
+                "description": "Database name. Default is \"zabbix\""
+              },
+              "db_user": {
+                "type": "string",
+                "description": "User name for Database. Default is \"zabbix\""
+              },
+              "db_password": {
+                "type": "string",
+                "description": "Password of user. Default is \"zabbix\""
+              },
+              "timezone": {
+                "type": "string",
+                "description": "Default is \"Europe/Berlin\""
+              },
+              "server_name": {
+                "type": "string",
+                "description": "Name of Server. Default is \"bibigrid\""
+              },
+              "admin_password": {
+                "type": "string",
+                "description": "Admin password. Default is \"bibigrid\". Change hardly recommended!"
+              }
+            }
+          },
+          "ganglia": {
+            "type": "boolean",
+            "description": "deprecated - supported for Ubuntu 16.04 only. Default is no"
+          },
+          "nfs": {
+            "type": "boolean",
+            "description": "Enable / Disable Network File System, Default is yes"
+          },
+          "nfsShares": {
+            "description": "Shared File Systems",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Path to File System, e.g. \"/vol/spool\" as Default Shared File System"
+            }
+          },
+          "extNfsShares": {
+            "description": "Uses external Shared File Systems",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "description": "IP address of external File System"
+                },
+                "target": {
+                  "type": "string",
+                  "description": "Path to File System, e.g. /path/to/filesystem"
+                }
+              }
+            }
+          },
+          "masterMounts": {
+            "description": "Mount volumes to master node, e.g.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "description": "ec200b48-1b13-4124-... - Volume id"
+                },
+                "target": {
+                  "type": "string",
+                  "description": "/vol/xxx - Volume path (example volume 'xxx' in /vol/ directory)"
+                }
+              }
+            }
+          },
+          "localFS": {
+            "type": "string",
+            "enum": [
+              "EXT2",
+              "EXT3",
+              "EXT4",
+              "XFS"
+            ],
+            "description": "Local FileSystem. Default is XF"
+          },
+          "ansibleRoles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of role, used only as description in config file"
+                },
+                "hosts": {
+                  "type": "string",
+                  "description": "One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts"
+                },
+                "file": {
+                  "type": "string",
+                  "description": "path/to/file.tar.gz - File on local machine"
+                },
+                "vars": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Environment variables, if default configuration is not the preferred option"
+                }
+              }
+            }
+          },
+          "ansibleGalaxyRoles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of role, used to redefine role name"
+                },
+                "hosts": {
+                  "type": "string",
+                  "description": "One of 'master', 'workers' or 'all' to roll out ansible roles to specified hosts"
+                },
+                "galaxy": {
+                  "type": "string",
+                  "description": "Galaxy name of role like 'author.rolename'"
+                },
+                "git": {
+                  "type": "string",
+                  "description": "GitHub role repository like 'https://github.com/bennojoy/nginx'"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Webserver file url like 'https://some.webserver.example.com/files/master.tar.gzpath/to/file.tar.gz'"
+                },
+                "vars": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Environment variables, if default configuration is not the preferred option"
+                }
+              }
+            }
+          },
+          "theia": {
+            "type": "boolean",
+            "description": "Enable / Disable Theia Web IDE, Default is no"
+          },
+          "cloud9": {
+            "type": "boolean",
+            "description": "deprecated - Enable / Disable Cloud9 Web IDE, Default is no"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "Configure IDE workspace path, Default is \"~/\""
+          },
+          "debugRequests": {
+            "type": "boolean",
+            "description": "Provides debug information. Default is no"
+          }
+        }
+      },
+      "Authorization": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "openstack",
+            "description": "Provider mode [optionally aws, googlecloud, azure]"
+          }
+        }
+      }
+    }
+  }
+}

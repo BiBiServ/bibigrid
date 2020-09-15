@@ -1,0 +1,86 @@
+<!--
+Html file for visualizing the openapi specs ins swagger ui.
+You need to start a simple http server which hosts this html file and the openapi.json file to avoid cross-origin resource
+sharing errors.
+
+Step by step guide to view the latest documentation:
+1. Open a terminal inside the same directory as this specui.html file (bibigrid/bibigrid-light-rest-4j)
+2. Start a simple HTTP server, e.g. a python server with:
+   Python 2 users: python -m SimpleHTTPServer 8000
+   Python 3 users: python -m http.server 8000
+3. Visit http://127.0.0.1:8000/documentation.html inside your browser
+
+Note: The normal rest-api server does not need to be running.
+-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OpenAPI Spec</title>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui.css">
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+
+    <div
+      id="md"
+      style="
+        border-radius: 25px;
+        background: #89bf04;
+        padding: 20px;
+        font-size: 12pt;
+        color:#fff;;
+        font-family: sans-serif;"
+    >
+    </div>
+
+    <div
+      id="readme"
+      style="
+        margin-top: 16px;
+        border-radius: 25px;
+        background: rgba(0,0,0,.05);
+        padding: 20px;
+        font-size: 12pt;
+        font-family: sans-serif;
+        color: #3b4151;"
+    >
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/10.0.0/markdown-it.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui-bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.19.3/swagger-ui-standalone-preset.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script>
+      window.onload = function() {
+        const ui = SwaggerUIBundle({
+          url: "http://127.0.0.1:8000/src/main/resources/config/openapi.json",
+          validatorUrl : false,
+          dom_id: '#swagger-ui',
+          deepLinking: true,
+          presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIStandalonePreset
+          ],
+          plugins: [
+            SwaggerUIBundle.plugins.DownloadUrl
+          ],
+          layout: "StandaloneLayout"
+        })
+
+        window.ui = ui
+      }
+
+      //Display markdown
+      md = new markdownit
+      $.get('http://127.0.0.1:8000/DEVELOPMENTGUIDE.md', function(data) {
+        document.getElementById("md").innerHTML = md.render(data);
+      });
+
+      $.get('http://127.0.0.1:8000/README.md', function(data) {
+        document.getElementById("readme").innerHTML = md.render(data);
+      });
+    </script>
+  </body>
+</html>

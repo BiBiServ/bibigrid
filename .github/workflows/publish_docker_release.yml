@@ -1,0 +1,32 @@
+name: Publish DEV Docker
+on: 
+  push:
+    tags:
+      - '*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get the version
+      id: get_version
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+    - uses: actions/checkout@master
+    - name: Set up JDK 1.11
+      uses: actions/setup-java@v1
+      with:
+        java-version: '11.0.5'
+    - name: Build mvn bibigrid
+      run: mvn -P openstack  clean package -DskipTests
+    - name: Build rest api mvn
+      run:  |
+          cd bibigrid-light-rest-4j/
+          mvn clean install -Prelease -DskipTests
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: bibiserv/bibigrid
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        dockerfile:  Dockerfile
+        workdir: bibigrid-light-rest-4j
+        tags:  bibigrid-rest-${{ steps.get_version.outputs.VERSION }}

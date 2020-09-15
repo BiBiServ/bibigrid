@@ -1,0 +1,22 @@
+{
+  "name": "bibigrid-light-rest-4j",
+  "version": "1.0.0",
+  "groupId": "de.unibi.cebitec.bibigrid.light_rest_4j",
+  "artifactId": "bibigrid_light_rest_4j",
+  "rootPackage": "de.unibi.cebitec.bibigrid",
+  "handlerPackage": "de.unibi.cebitec.bibigrid.light_rest_4j.handler",
+  "modelPackage": "de.unibi.cebitec.bibigrid.light_rest_4j.model",
+  "overwriteHandler": true,
+  "overwriteHandlerTest": true,
+  "overwriteModel": true,
+  "httpPort": 8080,
+  "enableHttp": true,
+  "httpsPort": 8443,
+  "enableHttps": true,
+  "enableHttp2": true,
+  "enableRegistry": false,
+  "supportDb": false,
+  "supportH2ForTest": false,
+  "supportClient": false
+}
+

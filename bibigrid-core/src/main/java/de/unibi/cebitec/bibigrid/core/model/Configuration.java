@@ -1,12 +1,13 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.unibi.cebitec.bibigrid.core.intents.IdeIntent;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
-
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -26,6 +27,7 @@ public abstract class Configuration {
     public static boolean DEBUG = false;
     public static final String CONFIG_DIR = System.getProperty("user.home")+System.getProperty("file.separator")+".bibigrid";
     public static final String KEYS_DIR = CONFIG_DIR + System.getProperty("file.separator")+"keys";
+    public static final String LOG_DIR = CONFIG_DIR  + System.getProperty("file.separator") + "logs";
     public static final FileAttribute KEYS_PERMS = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"));
 
     /* protected const */
@@ -83,6 +85,8 @@ public abstract class Configuration {
     }
 
     /* properties */
+//    protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
+//    private static final String DEFAULT_WORKSPACE = "$HOME";
     private String mode;
     private String user = System.getProperty("user.name");
     private String sshUser = "ubuntu";
@@ -219,7 +223,7 @@ public abstract class Configuration {
     public void setSshPrivateKeyFile(String sshPrivateKeyFile) {
         LOG.warn("Deprecation warning: Properties 'sshPrivateKeyFile' is not longer used.");
         this.sshPrivateKeyFile = sshPrivateKeyFile.trim();
-        LOG.info(V, "SSH private key file found. ({})", this.sshPrivateKeyFile);
+        LOG.info(V, "SSH private key file found! ({})", this.sshPrivateKeyFile);
     }
 
     public String getRegion() {
@@ -241,7 +245,7 @@ public abstract class Configuration {
             StringBuilder display = new StringBuilder();
             display.append("\n[type=").append(masterInstance.getType()).append(", image=")
                     .append(masterInstance.getImage()).append("] ");
-            LOG.info(V, "Master instance configuration set: {}", display);
+            LOG.info(V, "Master instances set: {}", display);
         }
     }
 
@@ -271,7 +275,7 @@ public abstract class Configuration {
                         .append(", image=").append(instanceConfiguration.getImage())
                         .append(", count=").append(instanceConfiguration.getCount()).append("]");
             }
-            LOG.info(V, "Worker instance(s) configuration set: {}", display);
+            LOG.info(V, "Worker instances set: {}", display);
         }
     }
 
@@ -493,6 +497,7 @@ public abstract class Configuration {
     public void setLocalDNSLookup(boolean localDNSLookup) {
         this.localDNSLookup = localDNSLookup;
     }
+
 
     public boolean isSlurm() {
         return slurm;

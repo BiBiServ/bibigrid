@@ -15,8 +15,6 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.NotImplementedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,11 +31,20 @@ import java.util.stream.Collectors;
 class ClientGoogleCloud extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientGoogleCloud.class);
 
-    private final ConfigurationGoogleCloud config;
+    private ConfigurationGoogleCloud config;
     private Compute internalClient;
 
     ClientGoogleCloud(ConfigurationGoogleCloud config) throws ClientConnectionFailedException {
         this.config = config;
+        authenticate();
+    }
+
+    Compute getInternal() {
+        return internalClient;
+    }
+
+    @Override
+    public void authenticate() throws ClientConnectionFailedException {
         try {
             if (config.isDebugRequests()) {
                 HttpRequestLogHandler.attachToCloudHttpTransport();
@@ -58,10 +65,6 @@ class ClientGoogleCloud extends Client {
             throw new ClientConnectionFailedException("Failed to connect google compute client.", e);
         }
         LOG.info("Google compute connection established.");
-    }
-
-    Compute getInternal() {
-        return internalClient;
     }
 
     @Override

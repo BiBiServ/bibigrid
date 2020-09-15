@@ -28,10 +28,21 @@ public abstract class TerminateIntent extends Intent {
     protected final Client client;
     private final Configuration config;
 
+    /*
+    The terminateResponse attribute is used to save the response of the terminate intent and make it accessible to other
+    classes such as the terminate Controller of the bibigrid REST API where the terminate response needs to be sent back
+    to the user via json-body and not only printed to console.
+    */
+    private String terminateResponse = "Internal server error!";
+
     protected TerminateIntent(ProviderModule providerModule, Client client, Configuration config) {
         this.providerModule = providerModule;
         this.client = client;
         this.config = config;
+    }
+
+    public String getTerminateResponse() {
+        return terminateResponse;
     }
 
     /**
@@ -73,6 +84,7 @@ public abstract class TerminateIntent extends Intent {
         LOG.info("Terminate given parameter {}", parameter);
 
         if (toRemove.isEmpty()) {
+            terminateResponse ="No cluster with ID '" + parameter + "' found.";
             LOG.error("No cluster with ID '{}' found.", parameter);
             return false;
         }
@@ -82,8 +94,10 @@ public abstract class TerminateIntent extends Intent {
             LOG.info("Terminating cluster with ID '{}' ...", clusterId);
             if (terminateCluster(cluster)) {
                 delete_Key(cluster);
+                terminateResponse = "Cluster '" + clusterId + "' terminated!";
                 LOG.info(I, "Cluster '{}' terminated!", clusterId);
             } else {
+                terminateResponse = "Failed to terminate cluster '" + clusterId + "'!";
                 LOG.error("Cluster '{}' could not be terminated successfully.", clusterId);
             }
         }
