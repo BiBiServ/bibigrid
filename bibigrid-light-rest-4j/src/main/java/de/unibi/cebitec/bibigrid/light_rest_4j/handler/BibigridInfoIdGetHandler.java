@@ -32,7 +32,7 @@ public class BibigridInfoIdGetHandler implements LightHttpHandler {
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(200);
             response.put("info", status.code);
-            response.put("msg", status.msg.toString());
+            response.put("msg", status.msg);
 
 
             try {
