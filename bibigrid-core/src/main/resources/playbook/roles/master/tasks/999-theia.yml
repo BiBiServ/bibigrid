@@ -44,25 +44,32 @@
   args:
     executable: bash
 
-- name: Create IDE build dir
-  file:
-    path: "{{ theia_ide_install_dir }}"
-    state: directory
-
-- name: Copy IDE configuration to IDE build dir
-  template:
-    src: theia/package.json.j2
-    dest: "{{ theia_ide_install_dir }}/package.json"
-    mode: 0644
-
-- name: build ide
+- name: Install prebuild theia
   shell: |
-        source {{ nvm_install_dir }}/nvm.sh
-        yarn
-          yarn theia build
+    curl -o- https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/theia-ide.tar.gz | tar -xzf -
   args:
-    chdir: "{{ theia_ide_install_dir }}"
-    executable: bash
+    chdir: "/opt"
+    creates: "{{ theia_ide_install_dir }}"
+
+#- name: Create IDE build dir
+#  file:
+#    path: "{{ theia_ide_install_dir }}"
+#    state: directory
+#
+#- name: Copy IDE configuration to IDE build dir
+#  template:
+#    src: theia/package.json.j2
+#    dest: "{{ theia_ide_install_dir }}/package.json"
+#    mode: 0644
+#
+#- name: build ide
+#  shell: |
+#        source {{ nvm_install_dir }}/nvm.sh
+#        yarn
+#        yarn theia build
+#  args:
+#    chdir: "{{ theia_ide_install_dir }}"
+#    executable: bash
 
 - name: Generate IDE start skript to /usr/local/bin
   template:
