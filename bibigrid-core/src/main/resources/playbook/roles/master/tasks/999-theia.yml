@@ -50,26 +50,29 @@
   args:
     chdir: "/opt"
     creates: "{{ theia_ide_install_dir }}"
+  when: theia_ide_use_prebuild == "yes"
 
-#- name: Create IDE build dir
-#  file:
-#    path: "{{ theia_ide_install_dir }}"
-#    state: directory
-#
-#- name: Copy IDE configuration to IDE build dir
-#  template:
-#    src: theia/package.json.j2
-#    dest: "{{ theia_ide_install_dir }}/package.json"
-#    mode: 0644
-#
-#- name: build ide
-#  shell: |
-#        source {{ nvm_install_dir }}/nvm.sh
-#        yarn
-#        yarn theia build
-#  args:
-#    chdir: "{{ theia_ide_install_dir }}"
-#    executable: bash
+block:
+  - name: Create IDE build dir
+    file:
+      path: "{{ theia_ide_install_dir }}"
+      state: directory
+
+  - name: Copy IDE configuration to IDE build dir
+    template:
+      src: theia/package.json.j2
+      dest: "{{ theia_ide_install_dir }}/package.json"
+      mode: 0644
+
+  - name: build ide
+    shell: |
+          source {{ nvm_install_dir }}/nvm.sh
+          yarn
+          yarn theia build
+    args:
+      chdir: "{{ theia_ide_install_dir }}"
+      executable: bash
+  when: theia_ide_use_prebuild != "yes"
 
 - name: Generate IDE start skript to /usr/local/bin
   template:
