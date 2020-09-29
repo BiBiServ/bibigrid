@@ -52,7 +52,7 @@
     creates: "{{ theia_ide_install_dir }}"
   when: theia_ide_use_prebuild == "yes"
 
-block:
+- block:
   - name: Create IDE build dir
     file:
       path: "{{ theia_ide_install_dir }}"

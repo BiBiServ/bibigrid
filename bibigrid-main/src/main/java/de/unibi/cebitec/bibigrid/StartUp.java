@@ -291,6 +291,19 @@ public class StartUp {
                     module.getTerminateIntent(client, config)
                             .terminateInstances(clusterId, workerBatch, count);
                     break;
+                case IDE:
+                    try {
+                        // Load private key file
+                        clusterId = parameters.length == 1 ? parameters[0] : null;
+                        config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
+                        config.getClusterKeyPair().load();
+                        new IdeIntent(module, client, clusterId, config).start();
+                    } catch (IOException e) {
+                        LOG.error("Exception occurred loading private key. {}",e.getMessage());
+                        if (Configuration.DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
                 default:
                     LOG.warn("Unknown intent mode.");
                     break;
