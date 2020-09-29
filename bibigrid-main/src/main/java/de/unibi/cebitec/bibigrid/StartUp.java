@@ -304,6 +304,7 @@ public class StartUp {
                             e.printStackTrace();
                         }
                     }
+                    break;
                 default:
                     LOG.warn("Unknown intent mode.");
                     break;
