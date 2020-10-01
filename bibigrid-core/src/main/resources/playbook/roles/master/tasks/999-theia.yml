@@ -36,23 +36,33 @@
     creates: "{{ nvm_install_dir }}/nvm.sh"
     warn: false
 
-- name: Install node 10 and yarn
-  shell: |
-        source {{ nvm_install_dir }}/nvm.sh
-        nvm install 10
-        npm install -g yarn
-  args:
-    executable: bash
-
-- name: Install prebuild theia
-  shell: |
-    curl -o- https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/plugins/theia-ide_node10.tar.gz | tar -xzf -
-  args:
-    chdir: "/opt"
-    creates: "{{ theia_ide_install_dir }}"
-  when: theia_ide_use_prebuild == "yes"
 
 - block:
+  - name: Install node 10 and yarn
+    shell: |
+      source {{ nvm_install_dir }}/nvm.sh
+      nvm install 10
+      npm install -g yarn
+    args:
+      executable: bash
+
+  - name: Install prebuild theia
+    shell: |
+      curl -o- https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/plugins/theia-ide_node10.tar.gz | tar -xzf -
+    args:
+      chdir: "/opt"
+      creates: "{{ theia_ide_install_dir }}"
+    when: theia_ide_use_prebuild == "yes"
+
+- block:
+  - name: Install node 12 and yarn
+    shell: |
+      source {{ nvm_install_dir }}/nvm.sh
+      nvm install 12
+      npm install -g yarn
+    args:
+      executable: bash
+
   - name: Create IDE build dir
     file:
       path: "{{ theia_ide_install_dir }}"
