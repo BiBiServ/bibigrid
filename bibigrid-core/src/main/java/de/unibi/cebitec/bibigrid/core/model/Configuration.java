@@ -842,6 +842,7 @@ public abstract class Configuration {
         private String workspace = IdeIntent.DEFAULT_IDE_WORKSPACE;
         private int port_start = IdeIntent.DEFAULT_IDE_PORT;
         private int port_end = IdeIntent.DEFAULT_IDE_PORT_END;
+        private boolean build = false;
 
         public boolean isIde() {
             return ide;
@@ -877,6 +878,15 @@ public abstract class Configuration {
 
         public void setPort_end(int port_end) {
             this.port_end = port_end;
+        }
+
+        public boolean isBuild() {
+            return build;
+        }
+
+        public void setBuild(boolean build) {
+            this.build = build;
+            LOG.info(V,"build Theia from source : {}", build ? "enabled" : "disabled");
         }
     }
 

@@ -52,7 +52,7 @@
     args:
       chdir: "/opt"
       creates: "{{ theia_ide_install_dir }}"
-    when: theia_ide_use_prebuild == "yes"
+  when: not ideConf.build
 
 - block:
   - name: Install node 12 and yarn
@@ -82,7 +82,7 @@
     args:
       chdir: "{{ theia_ide_install_dir }}"
       executable: bash
-  when: theia_ide_use_prebuild != "yes"
+  when: ideConf.build == true
 
 - name: Generate IDE start skript to /usr/local/bin
   template:
