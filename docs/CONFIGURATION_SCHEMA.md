@@ -114,6 +114,10 @@ ideConf:
     port_start: integer                             # Port number to forward from local to remote, Default is 8181
     port_end: integer                               # If port already binded, try next until port_end
     workspace: string                               # Set IDE workspace, Default is $HOME
+    build: boolean [yes, "no"]	                    # build _latest_ Theia IDE from sources
+                                                    # - unstable, building sometimes fails due to broken dependencies
+                                                    # - not recommend, unless you are know what you are doing
+                                                    # - default is no (install a prebuild _binary_).
 
 theia: boolean [yes, "no"]                          # deprecated - Enable / Disable Theia Web IDE, Default is no
 cloud9: boolean [yes, "no"]                         # deprecated - Enable / Disable Cloud9 Web IDE, Default is no

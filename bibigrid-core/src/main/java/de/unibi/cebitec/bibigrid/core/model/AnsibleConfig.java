@@ -545,6 +545,7 @@ public final class AnsibleConfig {
         ideConf.put("workspace",ic.getWorkspace());
         ideConf.put("port_start", ic.getPort_start());
         ideConf.put("port_end", ic.getPort_end());
+        ideConf.put("build",ic.isBuild());
         return ideConf;
     }
 

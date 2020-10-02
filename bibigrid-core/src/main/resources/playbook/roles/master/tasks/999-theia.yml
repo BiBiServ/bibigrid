@@ -36,33 +36,53 @@
     creates: "{{ nvm_install_dir }}/nvm.sh"
     warn: false
 
-- name: Install node 10 and yarn
-  shell: |
-        source {{ nvm_install_dir }}/nvm.sh
-        nvm install 10
-        npm install -g yarn
-  args:
-    executable: bash
 
-- name: Create IDE build dir
-  file:
-    path: "{{ theia_ide_install_dir }}"
-    state: directory
+- block:
+  - name: Install node 10 and yarn
+    shell: |
+      source {{ nvm_install_dir }}/nvm.sh
+      nvm install 10
+      npm install -g yarn
+    args:
+      executable: bash
 
-- name: Copy IDE configuration to IDE build dir
-  template:
-    src: theia/package.json.j2
-    dest: "{{ theia_ide_install_dir }}/package.json"
-    mode: 0644
+  - name: Install prebuild theia
+    shell: |
+      curl -o- https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/plugins/theia-ide_node10.tar.gz | tar -xzf -
+    args:
+      chdir: "/opt"
+      creates: "{{ theia_ide_install_dir }}"
+  when: not ideConf.build
 
-- name: build ide
-  shell: |
-        source {{ nvm_install_dir }}/nvm.sh
-        yarn
+- block:
+  - name: Install node 12 and yarn
+    shell: |
+      source {{ nvm_install_dir }}/nvm.sh
+      nvm install 12
+      npm install -g yarn
+    args:
+      executable: bash
+
+  - name: Create IDE build dir
+    file:
+      path: "{{ theia_ide_install_dir }}"
+      state: directory
+
+  - name: Copy IDE configuration to IDE build dir
+    template:
+      src: theia/package.json.j2
+      dest: "{{ theia_ide_install_dir }}/package.json"
+      mode: 0644
+
+  - name: build ide
+    shell: |
+          source {{ nvm_install_dir }}/nvm.sh
+          yarn
           yarn theia build
-  args:
-    chdir: "{{ theia_ide_install_dir }}"
-    executable: bash
+    args:
+      chdir: "{{ theia_ide_install_dir }}"
+      executable: bash
+  when: ideConf.build == true
 
 - name: Generate IDE start skript to /usr/local/bin
   template:
