@@ -34,7 +34,7 @@ public abstract class ProviderModule {
      * @throws ConfigurationException exception if config is wrong
      */
     public Configuration getConfiguration(String path) throws ConfigurationException {
-        return Configuration.loadConfiguration(getConfigurationClass(),path);
+        return Configuration.loadConfiguration(getConfigurationClass(), path);
     }
 
     public abstract Class<? extends Configuration> getConfigurationClass();
@@ -56,6 +56,9 @@ public abstract class ProviderModule {
     public abstract PrepareIntent getPrepareIntent(Client client, Configuration config);
 
     public abstract CreateCluster getCreateIntent(Client client, Configuration config, String clusterId);
+
+    public abstract ScaleWorkerIntent getScaleWorkerIntent(Client client, Configuration config, String clusterId, int batchIndex, int count, String scaling);
+
 
     public abstract LoadClusterConfigurationIntent getLoadClusterConfigurationIntent(Client client, Configuration config);
 

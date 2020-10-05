@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import com.jcraft.jsch.*;
+import de.unibi.cebitec.bibigrid.core.DataBase;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
@@ -12,6 +13,7 @@ import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
@@ -611,11 +613,12 @@ public abstract class CreateCluster extends Intent {
     private void createSftpFolders(ChannelSftp channel, AnsibleResources resources, List<String> files) throws SftpException {
         for (String folderPath : resources.getDirectories(files)) {
             String fullPath = channel.getHome() + "/" + folderPath;
-            createSFTPFolder(channel,fullPath);
+            createSFTPFolder(channel, fullPath);
         }
     }
 
-    /** Creates a folder for given (if not already exists
+    /**
+     * Creates a folder for given (if not already exists
      *
      * @param channel client side of sftp server channel
      * @param path path to be created
@@ -634,19 +637,19 @@ public abstract class CreateCluster extends Intent {
     /**
      * Uploads single ansible role (.tar.gz, .tgz) to remote instance to temporary folder.
      *
-     * @param channel client side of sftp server channel
+     * @param channel  client side of sftp server channel
      * @param roleFile path/to/role on local machine
      * @throws SftpException possible SFTP failure
-     * @throws IOException possible File failure
+     * @throws IOException   possible File failure
      */
     private void uploadAnsibleRole(ChannelSftp channel, String roleFile)
             throws SftpException, IOException {
         String remotePath = AnsibleResources.UPLOAD_PATH + getSingleFileName(roleFile);
         InputStream stream = new FileInputStream(roleFile);
         // target location on master
-        LOG.info(V, "SFTP: Upload file {} to {}", roleFile, remotePath );
+        LOG.info(V, "SFTP: Upload file {} to {}", roleFile, remotePath);
         // Upload the file stream via sftp
-        channel.put(stream, remotePath );
+        channel.put(stream, remotePath);
     }
 
     /**

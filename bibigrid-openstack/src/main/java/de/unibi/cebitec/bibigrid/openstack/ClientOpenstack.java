@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Implementation of abstract class Client.
+ * Implementation of abstract class Client for Openstack cloud framework.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  * @author jkrueger(at)cebitec.uni-bielefeld.de
@@ -24,27 +24,12 @@ import java.util.stream.Collectors;
 class ClientOpenstack extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOpenstack.class);
 
-    private final OSClient internalClient;
+    private OSClient internalClient;
+    private ConfigurationOpenstack config;
 
     ClientOpenstack(ConfigurationOpenstack config) throws ClientConnectionFailedException {
-        OpenStackCredentials credentials = config.getOpenstackCredentials();
-        try {
-            OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
-            internalClient = buildOSClientV3(credentials);
-            LOG.info("Openstack connection established.");
-        } catch (AuthenticationException e) {
-            if (Configuration.DEBUG) {
-                e.printStackTrace();
-            }
-            throw new ClientConnectionFailedException(String.format("Connection failed: %s. " +
-                    "Please make sure the supplied OpenStack credentials are valid.", e.getLocalizedMessage()), e);
-        } catch (Exception e) {
-            if (Configuration.DEBUG) {
-                e.printStackTrace();
-            }
-            throw new ClientConnectionFailedException(String.format("Failed to connect openstack " +
-                    "client: %s: %s", e.getClass().getSimpleName(), e.getLocalizedMessage()), e);
-        }
+        this.config = config;
+        authenticate();
     }
 
     private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
@@ -76,6 +61,28 @@ class ClientOpenstack extends Client {
 
     OSClient getInternal() {
         return internalClient;
+    }
+
+    @Override
+    public void authenticate() throws ClientConnectionFailedException {
+        OpenStackCredentials credentials = config.getOpenstackCredentials();
+        try {
+            OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
+            internalClient = buildOSClientV3(credentials);
+            LOG.info("Openstack connection established.");
+        } catch (AuthenticationException e) {
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
+            throw new ClientConnectionFailedException(String.format("Connection failed: %s. " +
+                    "Please make sure the supplied OpenStack credentials are valid.", e.getLocalizedMessage()), e);
+        } catch (Exception e) {
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
+            throw new ClientConnectionFailedException(String.format("Failed to connect openstack " +
+                    "client: %s: %s", e.getClass().getSimpleName(), e.getLocalizedMessage()), e);
+        }
     }
 
     @Override

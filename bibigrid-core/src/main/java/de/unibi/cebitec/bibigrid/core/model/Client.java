@@ -1,5 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
+import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.NotYetSupportedException;
 
 import java.util.List;
@@ -8,8 +9,12 @@ import java.util.List;
  * Abstract client for common cloud provider tasks.
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
+ * @author jkrueger(at)cebitec.uni-bielefeld.de
  */
 public abstract class Client {
+
+    public abstract void authenticate() throws ClientConnectionFailedException;
+
     public abstract List<Network> getNetworks();
 
     @Deprecated

@@ -27,7 +27,6 @@ public abstract class Validator {
     protected static final Logger LOG = LoggerFactory.getLogger(Validator.class);
 
     protected final List<String> req;
-
     private final ProviderModule providerModule;
 
     protected Configuration config;

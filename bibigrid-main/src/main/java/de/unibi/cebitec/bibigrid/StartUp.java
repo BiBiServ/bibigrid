@@ -1,10 +1,14 @@
 package de.unibi.cebitec.bibigrid;
 
+import de.unibi.cebitec.bibigrid.core.Constant;
+import de.unibi.cebitec.bibigrid.core.DataBase;
 import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
+import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
+import de.unibi.cebitec.bibigrid.core.util.Status;
 import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 
 import java.io.IOException;
@@ -140,15 +144,15 @@ public class StartUp {
                 if (validator.validateProviderParameters()) {
                     runIntent(module, validator, clOptions, intentMode, config);
                 } else {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
+                    LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
                 }
             } catch (ConfigurationException e) {
                 LOG.error(e.getMessage());
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
             }
         } catch (ParseException pe) {
             LOG.error("Error while parsing the commandline arguments: {}", pe.getMessage());
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
+            LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
         }
     }
 
@@ -169,7 +173,7 @@ public class StartUp {
             module = Provider.getInstance().getProviderModule(providerMode);
         }
         if (module == null) {
-            LOG.error(ABORT_WITH_NOTHING_STARTED);
+            LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
         }
         return module;
     }
@@ -286,6 +290,20 @@ public class StartUp {
                     }
                     module.getTerminateIntent(client, config)
                             .terminateInstances(clusterId, workerBatch, count);
+                    break;
+                case IDE:
+                    try {
+                        // Load private key file
+                        clusterId = parameters.length == 1 ? parameters[0] : null;
+                        config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
+                        config.getClusterKeyPair().load();
+                        new IdeIntent(module, client, clusterId, config).start();
+                    } catch (IOException e) {
+                        LOG.error("Exception occurred loading private key. {}",e.getMessage());
+                        if (Configuration.DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
                     break;
                 default:
                     LOG.warn("Unknown intent mode.");

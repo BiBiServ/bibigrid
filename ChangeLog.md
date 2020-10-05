@@ -1,8 +1,19 @@
+## Version 2.2 (10/05/2020)
+
+### Fixes
+- Add (correct) RealMemory option to Slurm configuration (#178)
+- Adjust documentation
+- Fix theia-ide build configuration (#260)
+
+### Features
+- Add support to install prebuild theia-ide (#260)
+- Add full REST API Server (experimental) - thanks to Tim Rose / David Weinholz 
+
 ## Version 2.1.1 < 2.1.0 (08/06/2020)
 
 ### Fixes
 - Fix various bugs concerning scale-up/down a cluster (#246,#250)
-- Fix slurm consumable ressources config
+- Fix slurm consumable resources config 
 - Adjust documentation
 
 ## Version 2.1.0 < 2.0.10 (07/02/2020)
@@ -92,6 +103,12 @@
 ### Fixes
 - Update documentation for ansible (#143, #145)
 - Fixed help option (-h or --help)
+
+## Version 2.0.5 < 2.0.4 (04/22/2019)
+
+### Fixes
+- Update documentation (#127,#131)
+- Fix a bug concerning multiple slaves types (#130)
 
 ## Version 2.0.5 < 2.0.4 (04/22/2019)
 

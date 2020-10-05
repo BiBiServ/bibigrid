@@ -1,0 +1,230 @@
+{
+  "info": {
+    "_postman_id": "9999f8f7-fece-47b0-a289-e51b7d081c41",
+    "name": "Bibigrid-API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n     \"mode\": \"openstack\"\n}\t\n"
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/list",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "list"
+          ]
+        },
+        "description": "Lists running clusters"
+      },
+      "response": []
+    },
+    {
+      "name": "Terminate",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n     \"mode\": \"openstack\"\n}\t\n"
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/terminate/id",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "terminate",
+            "id"
+          ]
+        },
+        "description": "Terminate cluster by id"
+      },
+      "response": []
+    },
+    {
+      "name": "Validate",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"mode\": \"openstack\", \"subnet\": \"portalexternalsubnetwork\", \"user\": \"dwein\", \"sshUser\": \"ubuntu\", \"availabilityZone\": \"default\", \"masterInstance\": {\"type\": \"de.NBI tiny\", \"image\": \"3a9437cb-51de-43af-a3ec-349862db940c\"}, \"workerInstances\": [{\"type\": \"de.NBI tiny\", \"image\": \"c01b1f55-a8db-47c7-94a2-6254e2866212\", \"count\": 1}]}\n"
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/validate",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "validate"
+          ]
+        },
+        "description": "Validate cluster config"
+      },
+      "response": []
+    },
+    {
+      "name": "Create",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"mode\": \"openstack\", \n\"subnet\": \"portalexternalsubnetwork\",\n \"user\": \"dwein\",\n  \"sshUser\": \"ubuntu\", \n  \"availabilityZone\": \"default\",\n  \"useMasterWithPublicIp\": true,\n   \"masterInstance\":\n    {\"type\": \"de.NBI tiny\", \"image\": \"89d7371b-08df-4933-afd6-efabea179282\"},\n     \"workerInstances\": \n     [{\"type\": \"de.NBI tiny\", \"image\": \"89d7371b-08df-4933-afd6-efabea179282\", \"count\": 2}]}\n"
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/create",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "create"
+          ]
+        },
+        "description": "Create a cluster"
+      },
+      "response": []
+    },
+    {
+      "name": "Info",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/linfo/",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "linfo",
+            ""
+          ]
+        },
+        "description": "Info"
+      },
+      "response": []
+    },
+    {
+      "name": "Scale Down",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n     \"mode\": \"openstack\",\n     \"batch\": 1,\n     \"count\": 4,\n     \"scaling\": \"scale-down\"\n\n\n}\t\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/scale/id",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "scale",
+            "id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Scale UP",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n     \"mode\": \"openstack\",\n     \"batch\": 1,\n     \"count\": 4,\n     \"scaling\": \"scale-up\"\n\n}\t\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://localhost:8443/bibigrid/scale/id",
+          "protocol": "https",
+          "host": [
+            "localhost"
+          ],
+          "port": "8443",
+          "path": [
+            "bibigrid",
+            "scale",
+            "id"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "protocolProfileBehavior": {}
+}
