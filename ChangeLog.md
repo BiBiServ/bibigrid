@@ -4,6 +4,7 @@
 - Add (correct) RealMemory option to Slurm configuration (#178)
 - Adjust documentation
 - Fix theia-ide build configuration (#260)
+- Bumps [jackson-databind](https://github.com/FasterXML/jackson) from 2.9.9.3 to 2.9.10.5 due to vulnerability issues
 
 ### Features
 - Add support to install prebuild theia-ide (#260)
