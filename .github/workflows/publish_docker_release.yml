@@ -1,4 +1,4 @@
-name: Publish DEV Docker
+name: Publish RELEASE Docker
 on: 
   push:
     tags:
