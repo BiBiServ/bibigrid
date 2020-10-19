@@ -1,3 +1,9 @@
+## Version 2.2.1 (work in progress)
+
+### Fixes 
+- Bumps junit from 4.12 to 4.13.1
+
+
 ## Version 2.2 (10/05/2020)
 
 ### Fixes
