@@ -1,4 +1,4 @@
-name: Publish DEV Docker
+name: Publish RELEASE Docker
 on: 
   push:
     tags:
@@ -18,9 +18,9 @@ jobs:
     - name: Build mvn bibigrid
       run: mvn -P openstack  clean package -DskipTests
     - name: Build rest api mvn
-      run:  |
-          cd bibigrid-light-rest-4j/
-          mvn clean install -Prelease -DskipTests
+      run: |
+           cd bibigrid-light-rest-4j/
+           mvn clean install -Prelease -DskipTests
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       with:

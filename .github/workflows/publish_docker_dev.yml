@@ -15,9 +15,9 @@ jobs:
     - name: Build mvn bibigrid
       run: mvn -P openstack  clean package
     - name: Build rest api mvn
-      run:  |
-          cd bibigrid-light-rest-4j/
-          mvn clean install -Prelease
+      run: |
+           cd bibigrid-light-rest-4j/
+           mvn clean install -Prelease -DskipTests
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
