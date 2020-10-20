@@ -14,7 +14,7 @@ jobs:
         java-version: '11.0.5'
     - name: Build mvn bibigrid
       run: |
-           mvn -P openstack clean install -DskipTests
+           mvn -P openstack clean install
     - name: Build rest api mvn
       run: |
            cd bibigrid-light-rest-4j/

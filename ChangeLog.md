@@ -1,3 +1,11 @@
+## Version 2.2.1 (10/20/2020)
+
+### Fixes 
+- Bumps junit from 4.12 to 4.13.1
+- Adjust RealMemory option of Slurm configuration (#178)
+- Add date to logback configuration
+
+
 ## Version 2.2 (10/05/2020)
 
 ### Fixes
