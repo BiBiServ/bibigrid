@@ -91,7 +91,12 @@ this may take some time.
 ```
 
 ### Starting the Web IDE
-Enable the Theia IDE in the configuration file using `theia: yes`. The IDE can be started with the following command:
+Enable the Theia IDE in the configuration file using the following `ideConf` configuration parameter (visit the [configuration file schema](CONFIGURATION_SCHEMA.md) for optional configuration parameters).  
+```
+ideConf:
+  ide: true
+```
+The IDE can be started with the following command:
 ```
 > bibigrid --ide [cluster-id] -v -o config.yml
 ```
