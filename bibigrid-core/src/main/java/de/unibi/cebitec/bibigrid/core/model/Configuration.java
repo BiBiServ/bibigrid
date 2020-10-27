@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -127,6 +128,7 @@ public abstract class Configuration {
     private Properties ogeConf = OgeConf.initOgeConfProperties();
     private List<AnsibleRoles> ansibleRoles = new ArrayList<>();
     private List<AnsibleGalaxyRoles> ansibleGalaxyRoles = new ArrayList<>();
+    private boolean useHostnames = false;
 
     private String network;
     private String subnet;
@@ -521,7 +523,7 @@ public abstract class Configuration {
                 mungeKey = bytesToHex(digest.digest(randomarray));
             } catch (NoSuchAlgorithmException e){
                 LOG.warn("SHA-256 algorithm not found, proceed with unhashed munge key.");
-                mungeKey = new String(randomarray, Charset.forName("UTF-8"));
+                mungeKey = new String(randomarray, StandardCharsets.UTF_8);
             }
         }
         return mungeKey;
@@ -554,6 +556,14 @@ public abstract class Configuration {
     public ZabbixConf getZabbixConf() { return zabbixConf;}
 
     public void setZabbixConf(ZabbixConf zabbixConf) { this.zabbixConf =  zabbixConf;}
+
+    public boolean useHostnames() {
+        return useHostnames;
+    }
+
+    public void setUseHostnames(boolean useHostnames) {
+        this.useHostnames = useHostnames;
+    }
 
     public static class ZabbixConf {
         public ZabbixConf(){
