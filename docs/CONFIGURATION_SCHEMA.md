@@ -48,9 +48,11 @@ workerInstances:
   - ...
   
 # Services
-useMasterAsCompute: boolean [yes, "no"]               # Use master as compute instance, Default is no
-useMasterWithPublicIp: boolean ["yes", no]            # Usage of public IP. Default is yes
-useHostnames: boolean [yes, "no"]
+useMasterAsCompute: boolean [yes, "no"]             # Use master as compute instance, Default is no
+useMasterWithPublicIp: boolean ["yes", no]          # Usage of public IP. Default is yes
+useHostnames: boolean [yes, "no"]                   # Use hostnames instead of ip adresses for ansible hosts file
+                                                    # Needs a working instance DNS resolution (!)
+
 useSpotInstances: boolean [yes, no]                 # Only usable with Google Compute and AWS, offered unused Instances
 
 # HPC Cluster Software
