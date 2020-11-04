@@ -4,6 +4,7 @@
 - Print possible configuration errors also to STDOUT (#222)
 
 ## Version 2.2.1 (10/20/2020)
+- Add option to overwrite service CIDR mask (#283)
 
 ### Fixes 
 - Bumps junit from 4.12 to 4.13.1
