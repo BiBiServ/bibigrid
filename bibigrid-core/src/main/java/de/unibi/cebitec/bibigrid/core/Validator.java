@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.core;
 import de.unibi.cebitec.bibigrid.core.model.*;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -212,6 +213,9 @@ public abstract class Validator {
         return true;
     }
 
+
+
+
     /**
      * Checks requirements.
      * @return true, if requirements fulfilled
@@ -223,7 +227,11 @@ public abstract class Validator {
             LOG.info("Checking Ansible configuration ...");
             validAnsibleRequirements = validateAnsibleRequirements();
         }
-        return validSSHKeyFiles &&
+
+        boolean valid = config.validateServiceCIDR();
+
+        return valid &&
+                validSSHKeyFiles &&
                 validAnsibleRequirements;
     }
 

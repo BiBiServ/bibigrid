@@ -260,10 +260,6 @@ public final class AnsibleConfig {
     }
 
     /**
-     *
-     */
-
-    /**
      * Rewrite instances.yml and specific instance IP yaml files.
      * ATTENTION/REMARK:
      * It is necessary to have the correct ssh user in config
@@ -271,7 +267,7 @@ public final class AnsibleConfig {
      * @param sshSession
      * @param config
      * @param cluster
-     * @param blockDeviceBase
+     * @param providerModule
      * @throws JSchException
      */
     public static void updateAnsibleWorkerLists(
@@ -371,7 +367,11 @@ public final class AnsibleConfig {
      */
     public static void writeConfigFile(OutputStream stream, Configuration config, String subnetCidr) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("CIDR", subnetCidr);
+        if (config.getServiceCIDR() == null) {
+            map.put("CIDR", subnetCidr);
+        } else {
+            map.put("CIDR",config.getServiceCIDR());
+        }
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
         addBooleanOption(map, "local_dns_lookup", config.isLocalDNSLookup());
