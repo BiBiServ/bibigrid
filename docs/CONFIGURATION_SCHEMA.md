@@ -48,8 +48,11 @@ workerInstances:
   - ...
   
 # Services
-useMasterAsCompute: boolean [yes, no]               # Use master as compute instance, Default is no
-useMasterWithPublicIp: boolean [yes, no]            # Usage of public IP. Default is yes
+useMasterAsCompute: boolean [yes, "no"]             # Use master as compute instance, Default is no
+useMasterWithPublicIp: boolean ["yes", no]          # Usage of public IP. Default is yes
+useHostnames: boolean [yes, "no"]                   # Use hostnames instead of ip adresses for ansible hosts file
+                                                    # Needs a working instance DNS resolution (!)
+
 useSpotInstances: boolean [yes, no]                 # Only usable with Google Compute and AWS, offered unused Instances
 serviceCIDR                                         # Overwrites CIDR mask settings from used subnetwork. This might be
                                                     # a security issue ...
@@ -124,7 +127,7 @@ ideConf:
 workspace: string                                   # deprecated - Configure IDE workspace path, Default is "~/"
 
 # Misc
-debugRequests: boolean [yes, no]                    # Provides debug information. Default is no
+debugRequests: boolean [yes, "no"]                    # Provides debug information. Default is no
 ```
 
 "- ..." means, that there can be offered more than one item, for example:
