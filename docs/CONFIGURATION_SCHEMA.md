@@ -51,6 +51,8 @@ workerInstances:
 useMasterAsCompute: boolean [yes, no]               # Use master as compute instance, Default is no
 useMasterWithPublicIp: boolean [yes, no]            # Usage of public IP. Default is yes
 useSpotInstances: boolean [yes, no]                 # Only usable with Google Compute and AWS, offered unused Instances
+serviceCIDR                                         # Overwrites CIDR mask settings from used subnetwork. This might be
+                                                    # a security issue ...
 
 # HPC Cluster Software
 slurm: boolean [yes, no]                            # Enable / Disable SLURM Workload Manager. Default is no
