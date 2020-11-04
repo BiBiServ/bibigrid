@@ -3,6 +3,9 @@
 ### Fixes
 - Print possible configuration errors also to STDOUT (#222)
 
+### Features
+- Add Support for cloud site regions (#281)
+
 ## Version 2.2.1 (10/20/2020)
 
 ### Fixes 

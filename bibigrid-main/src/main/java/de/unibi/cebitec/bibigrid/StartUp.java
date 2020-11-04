@@ -223,11 +223,18 @@ public class StartUp {
 
             // In order to validate the native instance types, we need a client.
             // So this step is deferred after client connection is established.
-            if (!validator.validateProviderTypes(client) || !validator.validateConfiguration()) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
+            try {
+                if (!validator.validateProviderTypes(client) || !validator.validateConfiguration()) {
+                    LOG.error(ABORT_WITH_NOTHING_STARTED);
+                    return;
+                }
+            } catch (Exception e){
+                LOG.error(e.getMessage());
+                if (Configuration.DEBUG) {
+                    e.printStackTrace();
+                }
                 return;
             }
-
             switch (intentMode) {
                 case VALIDATE:
                     if (module.getValidateIntent(client, config).validate()) {
