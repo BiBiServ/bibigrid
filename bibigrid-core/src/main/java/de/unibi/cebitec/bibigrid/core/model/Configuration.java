@@ -19,6 +19,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
@@ -116,6 +117,7 @@ public abstract class Configuration {
     private boolean localDNSLookup;
     private String mungeKey;
     private boolean nfs = true;
+    private String serviceCIDR;
     private IdeConf ideConf = new IdeConf();
     private boolean ganglia;
     private boolean zabbix;
@@ -399,6 +401,16 @@ public abstract class Configuration {
     public void setNfs(boolean nfs) {
         this.nfs = nfs;
         LOG.info(V, "NFS support {}.", nfs ? "enabled" : "disabled");
+    }
+
+    public String getServiceCIDR() {
+        return serviceCIDR;
+    }
+
+    public void setServiceCIDR(String serviceCIDR) {
+        LOG.warn("Overwriting CIDR mask settings might services be accessible for unauthorized instances/users. " +
+                "Make sure that you are know what are you doing.");
+        this.serviceCIDR = serviceCIDR;
     }
 
     public boolean isOge() {

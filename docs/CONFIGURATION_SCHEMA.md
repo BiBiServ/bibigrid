@@ -54,6 +54,8 @@ useHostnames: boolean [yes, "no"]                   # Use hostnames instead of i
                                                     # Needs a working instance DNS resolution (!)
 
 useSpotInstances: boolean [yes, no]                 # Only usable with Google Compute and AWS, offered unused Instances
+serviceCIDR: string                                 # Overwrites CIDR mask settings from used subnetwork (e.g. 192.168.2.7/24). 
+                                                    # Might lead to a security issue, if not set properly (!)
 
 # HPC Cluster Software
 slurm: boolean [yes, no]                            # Enable / Disable SLURM Workload Manager. Default is no
