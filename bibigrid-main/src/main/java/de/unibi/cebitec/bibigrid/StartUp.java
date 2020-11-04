@@ -227,24 +227,23 @@ public class StartUp {
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
-            ValidateIntent vi = module.getValidateIntent(client, config);
+
             switch (intentMode) {
                 case VALIDATE:
-                    if (vi.validate()) {
-                       LOG.info(I, "You can now start your cluster.");
+                    if (module.getValidateIntent(client, config).validate()) {
+                        LOG.info(I, "You can now start your cluster.");
                     } else {
-                       LOG.error("There were one or more errors:\n{}\nPlease adjust your configuration.",vi.getValidateResponse());
+                        LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case CREATE:
-                    if (vi.validate()) {
+                    if (module.getValidateIntent(client, config).validate()) {
                         String clusterId = parameters != null ? parameters[0] : null;
                         CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
                         runCreateIntent(module, config, client, cluster, false);
                     } else {
-                        LOG.error("There were one or more errors:\n{}\nPlease adjust your configuration.",vi.getValidateResponse());
+                        LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
-                    break;
                 case TERMINATE:
                     if (!module.getTerminateIntent(client, config).terminate(parameters)) {
                         if (parameters.length == 1) {
