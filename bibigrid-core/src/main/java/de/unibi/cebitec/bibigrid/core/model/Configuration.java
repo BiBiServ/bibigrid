@@ -413,18 +413,6 @@ public abstract class Configuration {
         this.serviceCIDR = serviceCIDR;
     }
 
-    public boolean validateServiceCIDR(){
-        String pattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}";
-        if (getServiceCIDR() != null) {
-            if (! getServiceCIDR().matches(pattern)) {
-                LOG.error("Value '{}' of option serviceCIDR does not match pattern '{}'.",getServiceCIDR(),pattern);
-                return false;
-            }
-        }
-        return true;
-    }
-
-
     public boolean isOge() {
         return oge;
     }
