@@ -50,7 +50,7 @@ workerInstances:
 # Services
 useMasterAsCompute: boolean [yes, "no"]               # Use master as compute instance, Default is no
 useMasterWithPublicIp: boolean ["yes", no]            # Usage of public IP. Default is yes
-useHostname: boolean [yes, "no"]
+useHostnames: boolean [yes, "no"]
 useSpotInstances: boolean [yes, no]                 # Only usable with Google Compute and AWS, offered unused Instances
 
 # HPC Cluster Software
