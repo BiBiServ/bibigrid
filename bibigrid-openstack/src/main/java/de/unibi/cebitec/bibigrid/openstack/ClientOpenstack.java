@@ -69,14 +69,23 @@ class ClientOpenstack extends Client {
         try {
             OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
             internalClient = buildOSClientV3(credentials);
+            // select region
+            if (config.getRegion() != null && !config.getRegion().equals(credentials.getRegion())) {
+                LOG.warn("General region option '{}' overwrites Openstack credentials configuration '{}'!",config.getRegion(),credentials.getRegion());
+                internalClient.useRegion(config.getRegion());
+            } else {
+                internalClient.useRegion(credentials.getRegion());
+            }
             LOG.info("Openstack connection established.");
         } catch (AuthenticationException e) {
+            LOG.error(e.getMessage());
             if (Configuration.DEBUG) {
                 e.printStackTrace();
             }
             throw new ClientConnectionFailedException(String.format("Connection failed: %s. " +
                     "Please make sure the supplied OpenStack credentials are valid.", e.getLocalizedMessage()), e);
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             if (Configuration.DEBUG) {
                 e.printStackTrace();
             }

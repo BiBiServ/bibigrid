@@ -5,6 +5,8 @@ import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import java.io.IOException;
 
 /**
+ * Extends general configuration with openstack specific options
+ *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
