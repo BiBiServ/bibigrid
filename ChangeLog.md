@@ -1,13 +1,13 @@
-## Version 2.2.2 (not yet released)
+## Version 2.2.2 (11/7/2020)
 
 ### Fixes
 - Print possible configuration errors also to STDOUT (#222)
+- Add option to overwrite service CIDR mask (#283)
 
 ### Features
 - Add Support for cloud site regions (#281)
 
 ## Version 2.2.1 (10/20/2020)
-- Add option to overwrite service CIDR mask (#283)
 
 ### Fixes 
 - Bumps junit from 4.12 to 4.13.1

@@ -251,6 +251,7 @@ public class StartUp {
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
+                    break;
                 case TERMINATE:
                     if (!module.getTerminateIntent(client, config).terminate(parameters)) {
                         if (parameters.length == 1) {
