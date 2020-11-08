@@ -32,65 +32,86 @@ public class ValidateIntent extends Intent {
     protected final Client client;
     protected final Configuration config;
 
-    /*
-    The validateResponse attribute is used to save the possible causes of a misconfigured configuration and make it accessible to other
-    classes, e.g. the validate- or create-Controller for bibigrid REST API (found in bibigrid-light-rest-4j module)
-    where the cause of a misconfigured configuration needs to be sent back to the user via json-body and not only
-    printed to console.
-     */
-    private StringBuilder validateResponse = new StringBuilder("");
+
+
 
     public ValidateIntent(final Client client, final Configuration config) {
         this.client = client;
         this.config = config;
     }
 
+
+    private StringBuilder validateResponse = new StringBuilder("");
+    /**
+     *  The validateResponse attribute is used to save the possible causes of a misconfigured configuration
+     *  and make it accessible to other classes, e.g. the validate- or create-Controller for bibigrid REST API
+     *  (found in bibigrid-light-rest-4j module where the cause of a misconfigured configuration needs to be
+     *  sent back to the user via json-body and not only printed to console.
+     * @return String containing possible error messages.
+     */
     public String getValidateResponse() {
         return validateResponse.toString();
     }
 
-
+    /**
+     * Validates a given configuration and fills validatesResponse attribute with possible error messages.
+     * @return True in case of successful validation, false otherwise.
+     */
     public boolean validate() {
+        // reset validateResponse attribute
+        validateResponse = new StringBuilder();
         LOG.info("Validating config file...");
         boolean success = true;
         if (!connect()) {
             // If not even the connection can be established, the next steps won't be necessary
-            validateResponse.append("API connection not successful. Please check your configuration.\n");
+            String msg = "API connection not successful. Please check your configuration.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             return false;
         }
         LOG.info("Checking images...");
         if (checkImages()) {
             LOG.info(V, "Image check has been successful.");
         } else {
-            validateResponse.append("Failed to check images.\n");
+            String msg = "Failed to check images.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             success = false;
         }
         LOG.info("Checking instance types...");
         if (checkInstanceTypes()) {
             LOG.info(V, "Instance type check has been successful.");
         } else {
-            validateResponse.append("Failed to check instance types.\n");
+            String msg = "Failed to check instance types.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             success = false;
         }
         LOG.info("Checking snapshots/volumes...");
         if (checkSnapshots()) {
             LOG.info(V, "Snapshot/Volume check has been successful.");
         } else {
-            validateResponse.append("One or more snapshots/volumes could not be found.\n");
+            String msg = "One or more snapshots/volumes could not be found.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             success = false;
         }
         LOG.info("Checking network...");
         if (checkNetwork()) {
             LOG.info(V, "Network check has been successful.");
         } else {
-            validateResponse.append("Failed to check network.\n");
+            String msg = "Failed to check network.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             success = false;
         }
         LOG.info("Checking servergroup...");
         if (checkServerGroup()) {
             LOG.info(V,"Server group check has been successful.");
         } else {
-            validateResponse.append("Failed to check server group.\n");
+            String msg = "Failed to check server group.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             success = false;
         }
 
@@ -110,29 +131,36 @@ public class ValidateIntent extends Intent {
         try {
             InstanceImage masterImage = client.getImageByIdOrName(config.getMasterInstance().getImage());
             if (masterImage == null) {
-
-                validateResponse.append("Failed to find master image: "+config.getMasterInstance().getImage()+"\n");
+                String msg = "Failed to find master image: "+config.getMasterInstance().getImage();
+                LOG.error(msg);
+                validateResponse.append(msg+"\n");
             } else {
                 typeImageMap.put(config.getMasterInstance(), masterImage);
             }
         } catch (NotYetSupportedException e) {
+            LOG.error(e.getMessage());
             validateResponse.append(e.getMessage()+"\n");
         }
         try {
             for (Configuration.InstanceConfiguration instanceConfiguration : config.getWorkerInstances()) {
                 InstanceImage workerImage = client.getImageByIdOrName(instanceConfiguration.getImage());
                 if (workerImage == null) {
-                    validateResponse.append("Failed to find worker image: "+instanceConfiguration.getImage()+"\n");
+                    String msg = "Failed to find worker image: "+instanceConfiguration.getImage();
+                    LOG.error(msg);
+                    validateResponse.append(msg+"\n");
 
                 } else {
                     typeImageMap.put(instanceConfiguration, workerImage);
                 }
             }
         } catch (NotYetSupportedException e) {
+            LOG.error(e.getMessage());
             validateResponse.append(e.getMessage()+"\n");
         }
         if (typeImageMap.size() != config.getWorkerInstances().size() + 1) {
-            validateResponse.append("Master and Worker images could not be found.\n");
+            String msg = "Master and Worker images could not be found.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             return false;
         }
         LOG.info(V, "Master and Worker images have been found.");
@@ -158,11 +186,15 @@ public class ValidateIntent extends Intent {
                                                       InstanceImage image) {
         boolean success = true;
         if (instanceConfiguration.getProviderType().getMaxDiskSpace() < image.getMinDiskSpace()) {
-            validateResponse.append("The image "+instanceConfiguration.getImage()+"needs more disk space than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides.\n");
+            String msg  = "The image "+instanceConfiguration.getImage()+"needs more disk space than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             success = false;
         }
         if (instanceConfiguration.getProviderType().getMaxRam() < image.getMinRam()) {
-            validateResponse.append("The image "+instanceConfiguration.getImage()+"needs more memory than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides.\n");
+            String msg = "The image "+instanceConfiguration.getImage()+"needs more memory than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             success = false;
         }
         return success;
@@ -173,13 +205,16 @@ public class ValidateIntent extends Intent {
                 x -> x.getProviderType().isClusterInstance());
         final InstanceType masterClusterType = config.getMasterInstance().getProviderType();
         if (masterClusterType.isClusterInstance() != allWorkersClusterInstances) {
-
-            validateResponse.append("If cluster instances are used please create a homogeneous group.");
+            String msg = "If cluster instances are used please create a homogeneous group.";
+            LOG.error(msg);
+            validateResponse.append(msg+"\n");
             return false;
         } else if (masterClusterType.isClusterInstance()) {
             // If master instance is a cluster instance check if the types are the same
             if (config.getWorkerInstances().stream().anyMatch(x -> masterClusterType != x.getProviderType())) {
-                validateResponse.append("If cluster instances are used please create a homogeneous group.");
+                String msg = "If cluster instances are used please create a homogeneous group.";
+                LOG.error(msg);
+                validateResponse.append(msg+"\n");
                 return false;
             }
         }
@@ -202,12 +237,15 @@ public class ValidateIntent extends Intent {
             try {
                 Snapshot snapshot = client.getSnapshotByIdOrName(snapshotId);
                 if (snapshot == null) {
-                    validateResponse.append("Snapshot/Volume '"+snapshotId+"' could not be found.\n");
+                    String msg = "Snapshot/Volume '"+snapshotId+"' could not be found.";
+                    LOG.error(msg);
+                    validateResponse.append(msg+"\n");
                     allCheck = false;
                 } else {
                     LOG.info(V, "Snapshot/Volume '{}' found.", snapshotId);
                 }
             } catch (NotYetSupportedException e) {
+                LOG.error(e.getMessage());
                 validateResponse.append(e.getMessage()+"\n");
                 allCheck = false;
             }
@@ -222,13 +260,16 @@ public class ValidateIntent extends Intent {
                 Network network = client.getNetworkByIdOrName(config.getNetwork());
                 // If the network could not be found, try if the user provided a network id instead of the name.
                 if (network == null) {
-                    validateResponse.append("Network '"+config.getNetwork()+"' could not be found.\n");
+                    String msg = "Network '"+config.getNetwork()+"' could not be found.";
+                    LOG.error(msg);
+                    validateResponse.append(msg+"\n");
                     result = false;
                 } else {
                     LOG.info(V, "Network '{}' found.", config.getNetwork());
                     config.setNetwork(network.getId());
                 }
             } catch (NotYetSupportedException e) {
+                LOG.error(e.getMessage());
                 validateResponse.append(e.getMessage());
                 result = false;
             }
@@ -237,13 +278,16 @@ public class ValidateIntent extends Intent {
             try {
                 Subnet subnet = client.getSubnetByIdOrName(config.getSubnet());
                 if (subnet == null) {
-                    validateResponse.append("Subnet '"+config.getSubnet()+"' could not be found.\n");
+                    String msg = "Subnet '"+config.getSubnet()+"' could not be found.";
+                    LOG.error(msg);
+                    validateResponse.append(msg+"\n");
                     result = false;
                 } else {
                     LOG.info(V, "Subnet '{}' found.", config.getSubnet());
                     config.setSubnet(subnet.getId());  // use id
                 }
             } catch (NotYetSupportedException e){
+                LOG.error(e.getMessage());
                 validateResponse.append(e.getMessage());
                 result = false;
             }
@@ -257,8 +301,9 @@ public class ValidateIntent extends Intent {
             try {
                 ServerGroup serverGroup = client.getServerGroupByIdOrName(config.getServerGroup());
                 if (serverGroup == null) {
-
-                    validateResponse.append("ServerGroup '"+config.getServerGroup()+"' could not be found.\n");
+                    String msg = "ServerGroup '"+config.getServerGroup()+"' could not be found.";
+                    LOG.error(msg);
+                    validateResponse.append(msg+"\n");
                     result = false;
                 } else {
                     LOG.info(V, "ServerGroup '{}' found.", config.getServerGroup());

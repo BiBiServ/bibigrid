@@ -22,6 +22,7 @@ public final class OpenStackCredentials {
     private String userDomainId;
     private String projectDomain;
     private String projectDomainId;
+    private String region;
 
     public String getUsername() {
         return username;
@@ -91,6 +92,15 @@ public final class OpenStackCredentials {
         this.projectDomainId = projectDomainId;
     }
 
+    // region
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
     @Override
     public String toString(){
         StringBuilder sb = new StringBuilder();
@@ -103,6 +113,7 @@ public final class OpenStackCredentials {
         sb.append("\tuserDomainId    : "+userDomainId+"\n");
         sb.append("\tprojectDomain   : "+projectDomain+"\n");
         sb.append("\tprojectDomainId : "+projectDomainId+"\n");
+        sb.append("\tregion          : "+region+"\n");
         return sb.toString();
     }
 }

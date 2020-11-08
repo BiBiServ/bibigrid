@@ -32,7 +32,8 @@ public final class ValidatorOpenstack extends Validator {
         OS_PROJECT_DOMAIN_ID,
         OS_AUTH_URL,
         OS_PASSWORD,
-        OS_USERNAME
+        OS_USERNAME,
+        OS_REGION_NAME
     }
 
     public ValidatorOpenstack(final Configuration config, final ProviderModule providerModule)
@@ -131,6 +132,11 @@ public final class ValidatorOpenstack extends Validator {
             openStackCredentials.setProjectDomainId((String)env.get(EnvCredentials.OS_PROJECT_DOMAIN_ID.name()));
         }
 
+        // Region
+        if (env.containsKey(EnvCredentials.OS_REGION_NAME.name())) {
+            openStackCredentials.setRegion((String)env.get(EnvCredentials.OS_REGION_NAME.name()));
+        }
+
         openStackCredentials.setEndpoint((String)env.get(EnvCredentials.OS_AUTH_URL.name()));
         openStackCredentials.setPassword((String)env.get(EnvCredentials.OS_PASSWORD.name()));
         openStackCredentials.setUsername((String)env.get(EnvCredentials.OS_USERNAME.name()));
@@ -161,6 +167,9 @@ public final class ValidatorOpenstack extends Validator {
         if (openStackCredentials.getPassword() == null) {
             LOG.error("Openstack credentials : Missing 'password' parameter!");
             return false;
+        }
+        if (openStackCredentials.getRegion() == null) {
+            LOG.error("Openstack credentials: Missing 'region' parameter");
         }
         return true;
 

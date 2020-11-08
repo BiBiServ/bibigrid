@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -18,6 +19,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
@@ -115,6 +117,7 @@ public abstract class Configuration {
     private boolean localDNSLookup;
     private String mungeKey;
     private boolean nfs = true;
+    private String serviceCIDR;
     private IdeConf ideConf = new IdeConf();
     private boolean ganglia;
     private boolean zabbix;
@@ -127,6 +130,7 @@ public abstract class Configuration {
     private Properties ogeConf = OgeConf.initOgeConfProperties();
     private List<AnsibleRoles> ansibleRoles = new ArrayList<>();
     private List<AnsibleGalaxyRoles> ansibleGalaxyRoles = new ArrayList<>();
+    private boolean useHostnames = false;
 
     private String network;
     private String subnet;
@@ -399,6 +403,16 @@ public abstract class Configuration {
         LOG.info(V, "NFS support {}.", nfs ? "enabled" : "disabled");
     }
 
+    public String getServiceCIDR() {
+        return serviceCIDR;
+    }
+
+    public void setServiceCIDR(String serviceCIDR) {
+        LOG.warn("Overwriting CIDR mask settings might services be accessible for unauthorized instances/users. " +
+                "Make sure that you are know what are you doing.");
+        this.serviceCIDR = serviceCIDR;
+    }
+
     public boolean isOge() {
         return oge;
     }
@@ -521,7 +535,7 @@ public abstract class Configuration {
                 mungeKey = bytesToHex(digest.digest(randomarray));
             } catch (NoSuchAlgorithmException e){
                 LOG.warn("SHA-256 algorithm not found, proceed with unhashed munge key.");
-                mungeKey = new String(randomarray, Charset.forName("UTF-8"));
+                mungeKey = new String(randomarray, StandardCharsets.UTF_8);
             }
         }
         return mungeKey;
@@ -554,6 +568,14 @@ public abstract class Configuration {
     public ZabbixConf getZabbixConf() { return zabbixConf;}
 
     public void setZabbixConf(ZabbixConf zabbixConf) { this.zabbixConf =  zabbixConf;}
+
+    public boolean useHostnames() {
+        return useHostnames;
+    }
+
+    public void setUseHostnames(boolean useHostnames) {
+        this.useHostnames = useHostnames;
+    }
 
     public static class ZabbixConf {
         public ZabbixConf(){

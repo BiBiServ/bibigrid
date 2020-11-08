@@ -537,7 +537,7 @@ public abstract class CreateCluster extends Intent {
             AnsibleConfig.writeSiteFile(channel.put(site_file),
                     customMasterRoles, customWorkerRoles);
 
-            AnsibleConfig.writeHostsFile(channel, config.getSshUser(), workerInstances);
+            AnsibleConfig.writeHostsFile(channel, config.getSshUser(), workerInstances, config.useHostnames());
 
             // files for common configuration
             String login_file = channel_dir + AnsibleResources.COMMONS_LOGIN_FILE;
