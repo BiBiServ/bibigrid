@@ -19,15 +19,23 @@
     theia_ide_user: "{{ ansible_env.SUDO_USER }}"
   when: theia_ide_user is not defined
 
-- name: Set fact 'ide_workspace' when not defined
-  set_fact:
-    theia_ide_workspace: "{{ ansible_env.HOME }}"
-  when: ideConf.workspace is not defined
+- block:
+    - name: Check if given workspace exists
+      stat:
+        path: "{{ ideConf.workspace}}"
+      register: workspace_path
 
-- name: Set fact 'ide_workspace' when defined
+    - name: Set fact 'theia_ide_workspace' when defined workspace exists
+      set_fact:
+        theia_ide_workspace: "{{ ideConf.workspace }}"
+      when: workspace_path.stat.exists and workspace.stat.isDir
+
+  when: ideConf.workspace is defined and ideConf.workspace != "${HOME}"
+
+- name: Set fact 'theia_ide_workspace' to '${HOME}' when not defined
   set_fact:
-    theia_ide_workspace: "{{ ideConf.workspace }}"
-  when: ideConf.workspace is defined
+    theia_ide_workspace: "${HOME}"
+  when: theia_ideConf.workspace is not defined
 
 - name: Install nvm
   shell: |
@@ -35,7 +43,6 @@
   args:
     creates: "{{ nvm_install_dir }}/nvm.sh"
     warn: false
-
 
 - block:
   - name: Install node 10 and yarn
