@@ -39,37 +39,29 @@
 
 - name: Install nvm
   shell: |
-    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.5/install.sh | NVM_DIR={{ nvm_install_dir }} /bin/bash
+    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.37.0/install.sh | NVM_DIR={{ nvm_install_dir }} /bin/bash
   args:
     creates: "{{ nvm_install_dir }}/nvm.sh"
     warn: false
 
-- block:
-  - name: Install node 10 and yarn
-    shell: |
-      source {{ nvm_install_dir }}/nvm.sh
-      nvm install 10
-      npm install -g yarn
-    args:
-      executable: bash
+- name: Install node 12 and yarn
+  shell: |
+    source {{ nvm_install_dir }}/nvm.sh
+    nvm install 12
+    npm install -g yarn
+  args:
+    executable: bash
 
+- block:
   - name: Install prebuild theia
     shell: |
-      curl -o- https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/plugins/theia-ide_node10.tar.gz | tar -xzf -
+      curl -o- https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/plugins/theia-ide_node12.tar.gz | tar -xzf -
     args:
       chdir: "/opt"
       creates: "{{ theia_ide_install_dir }}"
   when: not ideConf.build
 
 - block:
-  - name: Install node 12 and yarn
-    shell: |
-      source {{ nvm_install_dir }}/nvm.sh
-      nvm install 12
-      npm install -g yarn
-    args:
-      executable: bash
-
   - name: Create IDE build dir
     file:
       path: "{{ theia_ide_install_dir }}"
