@@ -26,7 +26,7 @@ public class Port {
     private Protocol type;
 
     public Port() {
-        ipRange = "0.0.0.0/0";
+        ipRange = "current";
         number = 0;
         type = Protocol.TCP;
     }
