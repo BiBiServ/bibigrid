@@ -153,19 +153,6 @@ public abstract class Validator {
         return true;
     }
 
-    /**
-     * Validates CIDR by using regex pattern.
-     * @param serviceCIDR config parameter to
-     * @return true, if serviceCIDR provided in config matches pattern, false, if it does not
-     */
-    private boolean validateServiceCIDR(String serviceCIDR){
-        String pattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}";
-        if (!serviceCIDR.matches(pattern)) {
-            LOG.error("Value '{}' of option serviceCIDR does not match pattern '{}'.", serviceCIDR, pattern);
-            return false;
-        }
-        return true;
-    }
 
     /**
      * Determine validity of URL.
@@ -234,18 +221,11 @@ public abstract class Validator {
     public boolean validateConfiguration() {
         boolean validSSHKeyFiles = validateSSHKeyFiles();
         boolean validAnsibleRequirements = true;
-        boolean validServiceCIDR = true;
         if (config.hasCustomAnsibleRoles() || config.hasCustomAnsibleGalaxyRoles()) {
             LOG.info("Checking Ansible configuration ...");
             validAnsibleRequirements = validateAnsibleRequirements();
         }
-
-        if (config.getServiceCIDR() != null) {
-            validServiceCIDR = validateServiceCIDR(config.getServiceCIDR());
-        }
-
-        return validServiceCIDR &&
-                validSSHKeyFiles &&
+        return validSSHKeyFiles &&
                 validAnsibleRequirements;
     }
 
