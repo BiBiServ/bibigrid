@@ -407,9 +407,15 @@ public abstract class Configuration {
         return serviceCIDR;
     }
 
-    public void setServiceCIDR(String serviceCIDR) {
+    public void setServiceCIDR(String serviceCIDR) throws ConfigurationException{
         LOG.warn("Overwriting CIDR mask settings might services be accessible for unauthorized instances/users. " +
                 "Make sure that you are know what are you doing.");
+        String pattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}";
+        if (!serviceCIDR.matches(pattern)) {
+            String msg = String.format("Value '%s' of option serviceCIDR does not match pattern '%s'.", serviceCIDR, pattern);
+            LOG.error(msg);
+            throw new ConfigurationException(msg);
+        }
         this.serviceCIDR = serviceCIDR;
     }
 
