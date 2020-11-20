@@ -27,6 +27,9 @@ public final class ShellScriptCreator {
         // redirect output
         userData.append("exec > /var/log/userdata.log\n");
         userData.append("exec 2>&1\n");
+        // disableUpgrades
+        // appendDisableAptDailyService(userData);
+        appendDisableUpgrades(userData);
         // source shell configuration
         userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
         // simple log function
@@ -43,10 +46,6 @@ public final class ShellScriptCreator {
         userData.append("log \"set hostname\"\n");
         userData.append("hostname -b $(iplookup $localip)\n");
         userData.append("fi\n");
-        // disableAptDailyService
-        userData.append("log \"disable apt-daily.(service|timer)\"\n");
-        // appendDisableAptDailyService(userData);
-        appendDisableUpgrades(userData);
         // configure SSH Config
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData);
