@@ -53,8 +53,8 @@ public final class AnsibleConfig {
      * @param sshUser user to use as remote ssh user
      * @param workerInstances list of worker instances
      */
-    public static void writeHostsFile(ChannelSftp channel, String sshUser, List<Instance> workerInstances) {
-        AnsibleHostsConfig hostsConfig = new AnsibleHostsConfig(sshUser, workerInstances);
+    public static void writeHostsFile(ChannelSftp channel, String sshUser, List<Instance> workerInstances, boolean useHostnames) {
+        AnsibleHostsConfig hostsConfig = new AnsibleHostsConfig(sshUser, workerInstances, useHostnames);
         try (OutputStreamWriter writer = new OutputStreamWriter(channel.put(channel.getHome() + "/" +
                 AnsibleResources.HOSTS_CONFIG_FILE), StandardCharsets.UTF_8)) {
             writer.write(hostsConfig.toString());
@@ -260,10 +260,6 @@ public final class AnsibleConfig {
     }
 
     /**
-     *
-     */
-
-    /**
      * Rewrite instances.yml and specific instance IP yaml files.
      * ATTENTION/REMARK:
      * It is necessary to have the correct ssh user in config
@@ -271,7 +267,8 @@ public final class AnsibleConfig {
      * @param sshSession
      * @param config
      * @param cluster
-     * @param blockDeviceBase
+     * @param providerModule
+
      * @throws JSchException
      */
     public static void updateAnsibleWorkerLists(
@@ -285,7 +282,7 @@ public final class AnsibleConfig {
         try {
             rewriteInstancesFile(channel, cluster.getWorkerInstances(), cluster.getDeletedInstances(), providerModule.getBlockDeviceBase());
             updateSpecificInstanceFiles(channel, cluster.getWorkerInstances(), providerModule.getBlockDeviceBase());
-            writeHostsFile(channel, config.getSshUser(), cluster.getWorkerInstances());
+            writeHostsFile(channel, config.getSshUser(), cluster.getWorkerInstances(), config.useHostnames());
             LOG.info("Ansible files successfully updated.");
         } catch (SftpException e) {
             LOG.error("Update may not be finished properly due to an SFTP error.");
@@ -371,7 +368,11 @@ public final class AnsibleConfig {
      */
     public static void writeConfigFile(OutputStream stream, Configuration config, String subnetCidr) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("CIDR", subnetCidr);
+        if (config.getServiceCIDR() == null) {
+            map.put("CIDR", subnetCidr);
+        } else {
+            map.put("CIDR",config.getServiceCIDR());
+        }
         map.put("local_fs", config.getLocalFS().name().toLowerCase(Locale.US));
         addBooleanOption(map, "enable_nfs", config.isNfs());
         addBooleanOption(map, "local_dns_lookup", config.isLocalDNSLookup());

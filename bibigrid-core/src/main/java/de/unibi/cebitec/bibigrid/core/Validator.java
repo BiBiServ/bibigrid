@@ -3,6 +3,7 @@ package de.unibi.cebitec.bibigrid.core;
 import de.unibi.cebitec.bibigrid.core.model.*;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Checks, if commandline and configuration input is set correctly.
- * TODO Could be static
  */
 public abstract class Validator {
     protected static final Logger LOG = LoggerFactory.getLogger(Validator.class);
@@ -68,6 +68,7 @@ public abstract class Validator {
         }
         return true;
     }
+
     /**
      * Checks if ansible (galaxy) configuration is valid.
      * @return true, if file(s) found, galaxy, git or url defined and hosts given
@@ -151,6 +152,7 @@ public abstract class Validator {
         }
         return true;
     }
+
 
     /**
      * Determine validity of URL.
