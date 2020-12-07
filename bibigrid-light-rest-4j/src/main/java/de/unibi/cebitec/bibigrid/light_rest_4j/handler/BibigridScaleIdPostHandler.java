@@ -22,7 +22,7 @@ import java.util.Map;
 public class BibigridScaleIdPostHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridScaleIdPostHandler.class);
-    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+    private final ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
     private int workerBatch;
     private int count;
 
@@ -43,7 +43,7 @@ public class BibigridScaleIdPostHandler implements LightHttpHandler {
         if (serviceProviderConnector.connectToServiceProvider(exchange)) {
 
             ProviderModule module = serviceProviderConnector.getModule();
-            Client client = serviceProviderConnector.getClient();
+            Client client = module.getClient();
             ConfigurationOpenstack config = serviceProviderConnector.getConfig();
 
             String clusterId = exchange.getQueryParameters().get("id").getFirst();
@@ -56,7 +56,7 @@ public class BibigridScaleIdPostHandler implements LightHttpHandler {
                 response.put("message", "Malformed request");
                 exchange.getResponseSender().send(response.toJSONString());
             }
-            ScaleWorkerIntent scaleWorkerIntent = module.getScaleWorkerIntent(client, config, clusterId, workerBatch, count, scaling);
+            ScaleWorkerIntent scaleWorkerIntent = module.getScaleWorkerIntent(config, clusterId, workerBatch, count, scaling);
             Thread t = new Thread(scaleWorkerIntent);
             t.start();
             exchange.setStatusCode(200);

@@ -219,6 +219,7 @@ public abstract class Validator {
      * @return true, if requirements fulfilled
      */
     public boolean validateConfiguration() {
+        boolean validProviderTypes = validateProviderTypes();
         boolean validSSHKeyFiles = validateSSHKeyFiles();
         boolean validAnsibleRequirements = true;
         if (config.hasCustomAnsibleRoles() || config.hasCustomAnsibleGalaxyRoles()) {
@@ -239,12 +240,11 @@ public abstract class Validator {
 
     /**
      * Checks master instanceType.
-     * @param client Client
      * @return true, if validation successful, otherwise false
      */
-    public boolean validateProviderTypes(Client client) {
+    public boolean validateProviderTypes() {
         try {
-            InstanceType masterType = providerModule.getInstanceType(client, config, config.getMasterInstance().getType());
+            InstanceType masterType = providerModule.getInstanceType(config, config.getMasterInstance().getType());
             config.getMasterInstance().setProviderType(masterType);
         } catch (InstanceTypeNotFoundException e) {
             LOG.error("Invalid master instance type specified!", e);
@@ -252,7 +252,7 @@ public abstract class Validator {
         }
         try {
             for (Configuration.InstanceConfiguration instanceConfiguration : config.getWorkerInstances()) {
-                InstanceType workerType = providerModule.getInstanceType(client, config, instanceConfiguration.getType());
+                InstanceType workerType = providerModule.getInstanceType(config, instanceConfiguration.getType());
                 instanceConfiguration.setProviderType(workerType);
             }
         } catch (InstanceTypeNotFoundException e) {

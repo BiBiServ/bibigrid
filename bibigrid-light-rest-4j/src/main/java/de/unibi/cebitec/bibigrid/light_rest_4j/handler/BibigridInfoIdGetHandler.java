@@ -17,7 +17,7 @@ import java.util.List;
 
 public class BibigridInfoIdGetHandler implements LightHttpHandler {
 
-    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+    private final ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
 
     @Override
     public void handleRequest(HttpServerExchange exchange) {

@@ -25,9 +25,9 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
     private static final Logger LOG = LoggerFactory.getLogger(LoadClusterConfigurationIntentOpenstack.class);
     private final List<? extends Server> serverList;
 
-    LoadClusterConfigurationIntentOpenstack(ProviderModule providerModule, Client client, Configuration config) {
-        super(providerModule, client, config);
-        OSClient os = ((ClientOpenstack) client).getInternal();
+    LoadClusterConfigurationIntentOpenstack(ProviderModule providerModule, Configuration config) {
+        super(providerModule, config);
+        OSClient os = ((ClientOpenstack) providerModule.client).getInternal();
         serverList = os.compute().servers().list();
     }
 
@@ -94,7 +94,7 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
         if (flavor != null) {
             instanceConfiguration.setType(flavor.getName());
             try {
-                instanceConfiguration.setProviderType(providerModule.getInstanceType(client, config, flavor.getName()));
+                instanceConfiguration.setProviderType(providerModule.getInstanceType(config, flavor.getName()));
             } catch (InstanceTypeNotFoundException ignored) {
             }
         }

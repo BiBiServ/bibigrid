@@ -33,32 +33,32 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
 
 
     @Override
-    public Client getClient(Configuration config) throws ClientConnectionFailedException {
-        return new ClientGoogleCloud((ConfigurationGoogleCloud) config);
+    public void createClient(Configuration config) throws ClientConnectionFailedException {
+        client = new ClientGoogleCloud((ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public ListIntent getListIntent(Client client, Configuration config) {
+    public ListIntent getListIntent(Configuration config) {
         return new ListIntentGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public TerminateIntent getTerminateIntent(Client client, Configuration config) {
+    public TerminateIntent getTerminateIntent(Configuration config) {
         return new TerminateIntentGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public PrepareIntent getPrepareIntent(Client client, Configuration config) {
+    public PrepareIntent getPrepareIntent(Configuration config) {
         return new PrepareIntentGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public CreateCluster getCreateIntent(Client client, Configuration config) {
+    public CreateCluster getCreateIntent(Configuration config, String clusterId) {
         return new CreateClusterGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
     }
 
     @Override
-    public CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
+    public CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
         return new CreateClusterEnvironmentGoogleCloud(client, (CreateClusterGoogleCloud) cluster);
     }
 
@@ -68,7 +68,7 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
     }
 
     @Override
-    protected HashMap<String, InstanceType> getInstanceTypeMap(Client client, Configuration config) {
+    protected HashMap<String, InstanceType> getInstanceTypeMap(Configuration config) {
         Compute compute = ((ClientGoogleCloud) client).getInternal();
         String projectId = ((ConfigurationGoogleCloud) config).getGoogleProjectId();
         String zone = config.getAvailabilityZone();
