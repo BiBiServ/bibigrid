@@ -27,6 +27,9 @@ public final class ShellScriptCreator {
         // redirect output
         userData.append("exec > /var/log/userdata.log\n");
         userData.append("exec 2>&1\n");
+        // disableUpgrades
+        // appendDisableAptDailyService(userData);
+        appendDisableUpgrades(userData);
         // source shell configuration
         userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
         // simple log function
@@ -43,10 +46,6 @@ public final class ShellScriptCreator {
         userData.append("log \"set hostname\"\n");
         userData.append("hostname -b $(iplookup $localip)\n");
         userData.append("fi\n");
-        // disableAptDailyService
-        userData.append("log \"disable apt-daily.(service|timer)\"\n");
-        // appendDisableAptDailyService(userData);
-        appendDisableUpgrades(userData);
         // configure SSH Config
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData);
@@ -124,6 +123,8 @@ public final class ShellScriptCreator {
      */
     public static String getMasterAnsibleExecutionScript(final boolean prepare, final Configuration config) {
         StringBuilder script = new StringBuilder();
+        // wait until /var/lib/dpkg/lock is not locked by apt/dpkg
+        script.append("while sudo lsof /var/lib/dpkg/lock 2> null; do echo \"/var/lib/dpkg/lock locked - wait for 10 seconds\"; sleep 10; done;\n");
         // apt-get update
         script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
         // install python3
