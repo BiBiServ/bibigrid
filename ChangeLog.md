@@ -1,3 +1,14 @@
+## Version 2.3 (not yet released)
+
+## Fixes
+- solves problem with locked dpkg lock file (#297)
+- security: adjust default ip range for opened ports (#285)
+- set to theia ide default workspace if wrong path provided (#217)
+
+## Features
+- restructure: move client to provider module (#300)
+- update theia-ide (#289)
+
 ## Version 2.2.2 (11/7/2020)
 
 ### Fixes
