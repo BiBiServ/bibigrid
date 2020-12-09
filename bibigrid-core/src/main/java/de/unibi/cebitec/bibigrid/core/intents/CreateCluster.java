@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import com.jcraft.jsch.*;
-import de.unibi.cebitec.bibigrid.core.DataBase;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
@@ -39,7 +38,6 @@ public abstract class CreateCluster extends Intent {
     private static final String WORKER_NAME_PREFIX = PREFIX + SEPARATOR + "worker";
 
     protected final ProviderModule providerModule;
-    protected final Client client;
     protected final Configuration config;
     protected final String clusterId;
     protected Instance masterInstance;
@@ -53,14 +51,12 @@ public abstract class CreateCluster extends Intent {
     /**
      * Creates a cluster from scratch or uses clusterId to manually / dynamically scale an available cluster.
      * @param providerModule Specific cloud provider access
-     * @param client Client to communicate with cloud provider
      * @param config Configuration
      * @param clusterId optional if cluster already started and has to be scaled
      */
-    protected CreateCluster(ProviderModule providerModule, Client client, Configuration config, String clusterId) {
+    protected CreateCluster(ProviderModule providerModule, Configuration config, String clusterId) {
         this.clusterId = clusterId != null ? clusterId : generateClusterId();
         this.providerModule = providerModule;
-        this.client = client;
         this.config = config;
         this.interruptionMessageHook = new Thread(() ->
                 LOG.error("Cluster setup was interrupted!\n\n" +
@@ -109,7 +105,7 @@ public abstract class CreateCluster extends Intent {
      */
     public CreateClusterEnvironment createClusterEnvironment() throws ConfigurationException {
         Runtime.getRuntime().addShutdownHook(this.interruptionMessageHook);
-        return environment = providerModule.getClusterEnvironment(client, this);
+        return environment = providerModule.getClusterEnvironment(this);
     }
 
     /**
@@ -200,7 +196,7 @@ public abstract class CreateCluster extends Intent {
      * @return true, if worker instance(s) created successfully
      */
     public boolean createWorkerInstances(int batchIndex, int count) {
-        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
+        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(config);
         loadIntent.loadClusterConfiguration(clusterId);
         Cluster cluster = loadIntent.getCluster(clusterId);
         if (cluster == null) {
@@ -254,7 +250,7 @@ public abstract class CreateCluster extends Intent {
                     sshSession.disconnect();
                     return false;
                 }
-                instanceConfiguration.setProviderType(providerModule.getInstanceType(client, config, instanceConfiguration.getType()));
+                instanceConfiguration.setProviderType(providerModule.getInstanceType(config, instanceConfiguration.getType()));
             } else {
                 Instance workerBatchInstance = workersBatch.get(0);
                 instanceConfiguration =

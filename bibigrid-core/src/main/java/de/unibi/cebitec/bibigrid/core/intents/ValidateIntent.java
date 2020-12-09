@@ -32,16 +32,13 @@ public class ValidateIntent extends Intent {
     protected final Client client;
     protected final Configuration config;
 
-
-
-
     public ValidateIntent(final Client client, final Configuration config) {
         this.client = client;
         this.config = config;
     }
 
-
     private StringBuilder validateResponse = new StringBuilder("");
+
     /**
      *  The validateResponse attribute is used to save the possible causes of a misconfigured configuration
      *  and make it accessible to other classes, e.g. the validate- or create-Controller for bibigrid REST API
