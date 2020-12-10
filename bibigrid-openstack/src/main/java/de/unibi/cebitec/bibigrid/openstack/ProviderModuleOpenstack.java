@@ -5,6 +5,9 @@ import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
+import de.unibi.cebitec.bibigrid.openstack.intents.ListIntentOpenstack;
+import de.unibi.cebitec.bibigrid.openstack.intents.PrepareIntentOpenstack;
+import de.unibi.cebitec.bibigrid.openstack.intents.TerminateIntentOpenstack;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.Flavor;
 

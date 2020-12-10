@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  * @author jkrueger(at)cebitec.uni-bielefeld.de
  */
-class ClientOpenstack extends Client {
+public class ClientOpenstack extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOpenstack.class);
 
     private OSClient internalClient;
@@ -59,7 +59,7 @@ class ClientOpenstack extends Client {
         return null;
     }
 
-    OSClient getInternal() {
+    public OSClient getInternal() {
         return internalClient;
     }
 

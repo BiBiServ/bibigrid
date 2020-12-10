@@ -313,6 +313,13 @@ public class ValidateIntent extends Intent {
         return result;
     }
 
+    /**
+     * Checks, if quotas exceeded before creating instances.
+     * @return true, if quotas exceeded -> No creating instances allowed / possible
+     */
+    public boolean checkQuotasExceeded(){
+        return false;
+    }
 
 
 }
