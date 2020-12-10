@@ -24,15 +24,15 @@ import java.util.stream.Collectors;
 public class ClientOpenstack extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOpenstack.class);
 
-    private OSClient internalClient;
-    private ConfigurationOpenstack config;
+    private OSClient.OSClientV3 internalClient;
+    private final ConfigurationOpenstack config;
 
     ClientOpenstack(ConfigurationOpenstack config) throws ClientConnectionFailedException {
         this.config = config;
         authenticate();
     }
 
-    private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
+    private static OSClient.OSClientV3 buildOSClientV3(OpenStackCredentials credentials) {
         if (Configuration.DEBUG) {
             LOG.info(credentials.toString());
         }
@@ -59,7 +59,7 @@ public class ClientOpenstack extends Client {
         return null;
     }
 
-    public OSClient getInternal() {
+    public OSClient.OSClientV3 getInternal() {
         return internalClient;
     }
 
