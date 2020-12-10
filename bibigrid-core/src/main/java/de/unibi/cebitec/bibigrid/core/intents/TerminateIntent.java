@@ -63,7 +63,7 @@ public abstract class TerminateIntent extends Intent {
      * @param parameter user-id or cluster-id
      */
     public boolean terminate(String parameter) {
-        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
+        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(config);
         loadIntent.loadClusterConfiguration(parameter);
         final Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
         if (clusterMap.isEmpty()) {
@@ -111,7 +111,7 @@ public abstract class TerminateIntent extends Intent {
      * @param count nr of worker instances to be terminated
      */
     public void terminateInstances(String clusterId, int workerBatch, int count) {
-        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
+        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(config);
         loadIntent.loadClusterConfiguration(clusterId);
         Cluster cluster = loadIntent.getCluster(clusterId);
         if (cluster == null) {

@@ -19,13 +19,11 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
     static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
 
     protected final ProviderModule providerModule;
-    protected final Client client;
     protected final Configuration config;
-    private Map<String, Cluster> clusterMap;
+    private final Map<String, Cluster> clusterMap;
 
-    protected LoadClusterConfigurationIntent(ProviderModule providerModule, Client client, Configuration config) {
+    protected LoadClusterConfigurationIntent(ProviderModule providerModule, Configuration config) {
         this.providerModule = providerModule;
-        this.client = client;
         this.config = config;
         clusterMap = new HashMap<>();
     }

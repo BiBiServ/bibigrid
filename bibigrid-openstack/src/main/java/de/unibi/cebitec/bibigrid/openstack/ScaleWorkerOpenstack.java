@@ -7,8 +7,8 @@ import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 
 public class ScaleWorkerOpenstack extends ScaleWorkerIntent {
 
-    ScaleWorkerOpenstack(final ProviderModule providerModule, final Configuration config, Client client, String clusterId, int batchIndex, int count, String scaling) {
-        super(providerModule, config, client, clusterId, batchIndex, count, scaling);
+    ScaleWorkerOpenstack(final ProviderModule providerModule, final Configuration config, String clusterId, int batchIndex, int count, String scaling) {
+        super(providerModule, config, clusterId, batchIndex, count, scaling);
 
     }
 }

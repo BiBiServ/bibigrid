@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.body.BodyHandler;
 import de.unibi.cebitec.bibigrid.Provider;
-import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
@@ -22,7 +21,6 @@ public class ServiceProviderConnector {
     // Attributes
     private ConfigurationOpenstack config;
     private ProviderModule module;
-    private Client client;
 
     /*
     A string is used for custom error messages and to share them with controllers when connection to service provider
@@ -34,10 +32,6 @@ public class ServiceProviderConnector {
     public void setError(String error) { this.error = error; }
 
     public String getError() { return error; }
-
-    public Client getClient() { return client; }
-
-    public void setClient(Client client) { this.client = client; }
 
     public void setConfig(ConfigurationOpenstack config) { this.config = config; }
 
@@ -102,9 +96,9 @@ public class ServiceProviderConnector {
                 ValidatorOpenstack validatorOpenstack = new ValidatorOpenstack(config,module);
                 config.setOpenstackCredentials(validatorOpenstack.loadEnvCredentials());
 
-                // get client
+                // Create client
                 try {
-                    client = module.getClient(config);
+                    module.createClient(config);
                     return true;
                 } catch (ClientConnectionFailedException e) {
                     error = e.getMessage();

@@ -23,7 +23,7 @@ public class BibigridValidatePostHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridValidatePostHandler.class);
     private static final String ABORT_WITH_NOTHING_STARTED = "Aborting operation. No instances started/terminated.";
-    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+    private final ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
 
 
     @Override
@@ -34,13 +34,13 @@ public class BibigridValidatePostHandler implements LightHttpHandler {
         if (serviceProviderConnector.connectToServiceProvider(exchange)) {
 
             ProviderModule module = serviceProviderConnector.getModule();
-            Client client = serviceProviderConnector.getClient();
+            Client client = module.getClient();
             ConfigurationOpenstack config = serviceProviderConnector.getConfig();
 
 
             try {
                 Validator validator = module.getValidator(config, module);
-                if (!validator.validateProviderTypes(client)) {
+                if (!validator.validateProviderTypes()) {
                     LOG.error(ABORT_WITH_NOTHING_STARTED);
                     exchange.setStatusCode(400);
                     response.put("is_valid", false);
@@ -49,7 +49,7 @@ public class BibigridValidatePostHandler implements LightHttpHandler {
                     exchange.getResponseSender().send(response.toJSONString());
                     // Maybe TODO determine whether master of worker instance was invalid
                 }
-                ValidateIntent intent = module.getValidateIntent(client, config);
+                ValidateIntent intent = module.getValidateIntent(config);
                 if (intent.validate()) {
                     LOG.info(I, "You can now start your cluster.");
                     exchange.setStatusCode(200);
