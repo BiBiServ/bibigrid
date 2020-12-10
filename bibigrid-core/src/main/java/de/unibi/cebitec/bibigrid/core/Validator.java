@@ -226,7 +226,8 @@ public abstract class Validator {
             LOG.info("Checking Ansible configuration ...");
             validAnsibleRequirements = validateAnsibleRequirements();
         }
-        return validSSHKeyFiles &&
+        return validProviderTypes &&
+                validSSHKeyFiles &&
                 validAnsibleRequirements;
     }
 

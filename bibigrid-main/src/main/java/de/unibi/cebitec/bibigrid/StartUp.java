@@ -126,7 +126,7 @@ public class StartUp {
             try {
                 // Provider specific configuration and validator
                 Configuration config = module.getConfiguration(configurationFile);
-                Validator validator =  module.getValidator(config,module);
+                Validator validator =  module.getValidator(config, module);
 
                 // Map of IntentMode and clusterIds
                 Map<IntentMode, String[]> clOptions = new HashMap<>();
@@ -185,7 +185,6 @@ public class StartUp {
      */
     private static void runIntent(ProviderModule module, Validator validator, Map<IntentMode, String[]> clOptions, IntentMode intentMode, Configuration config) {
             try {
-                // TODO Move client to provider module?
                 module.createClient(config);
             } catch (ClientConnectionFailedException e) {
                 LOG.error(e.getMessage());
@@ -218,23 +217,11 @@ public class StartUp {
                 return;
             }
 
-            // In order to validate the native instance types, we need a client.
-            // So this step is deferred after client connection is established.
-        // TODO Only check configuration when using it - ONLY VALIDATE AND CREATE
-            try {
-                if (!validator.validateConfiguration()) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-                    return;
-                }
-            } catch (Exception e){
-                LOG.error(e.getMessage());
-                if (Configuration.DEBUG) {
-                    e.printStackTrace();
-                }
-                return;
-            }
             switch (intentMode) {
                 case VALIDATE:
+                    if (!configurationValid(validator)) {
+                        break;
+                    }
                     if (module.getValidateIntent(config).validate()) {
                         LOG.info(I, "You can now start your cluster.");
                     } else {
@@ -242,6 +229,9 @@ public class StartUp {
                     }
                     break;
                 case CREATE:
+                    if (!configurationValid(validator)) {
+                        break;
+                    }
                     if (module.getValidateIntent(config).validate()) {
                         String clusterId = parameters != null ? parameters[0] : null;
                         CreateCluster cluster = module.getCreateIntent(config, clusterId);
@@ -315,6 +305,30 @@ public class StartUp {
                     break;
             }
     }
+
+    /**
+     * Validate native instance types and configuration file when used.
+     * Step is deferred AFTER client connection is established
+     * @param validator validates configuration
+     * @return true, if configuration file is valid
+     */
+    private static boolean configurationValid(Validator validator) {
+        try {
+            if (!validator.validateConfiguration()) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return false;
+            }
+        } catch (Exception e){
+            LOG.error(e.getMessage());
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+        return true;
+    }
+
+
 
     /**
      * Runs cluster creation and launch processing.
