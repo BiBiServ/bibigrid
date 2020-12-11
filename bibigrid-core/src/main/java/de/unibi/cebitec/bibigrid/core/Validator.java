@@ -20,6 +20,8 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static de.unibi.cebitec.bibigrid.core.Constant.ABORT_WITH_NOTHING_STARTED;
+
 /**
  * Checks, if commandline and configuration input is set correctly.
  */
@@ -262,6 +264,27 @@ public abstract class Validator {
         }
         return true;
     }
+    /**
+     * Validate native instance types and configuration file when used.
+     * Step is deferred AFTER client connection is established
+     * @return true, if configuration file is invalid
+     */
+    public boolean configurationInvalid() {
+        try {
+            if (!validateConfiguration()) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return true;
+            }
+        } catch (Exception e){
+            LOG.error(e.getMessage());
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        return false;
+    }
+
 
     protected static boolean isStringNullOrEmpty(final String s) {
         return s == null || s.trim().isEmpty();

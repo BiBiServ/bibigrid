@@ -219,7 +219,7 @@ public class StartUp {
 
             switch (intentMode) {
                 case VALIDATE:
-                    if (!configurationValid(validator)) {
+                    if (validator.configurationInvalid()) {
                         break;
                     }
                     if (module.getValidateIntent(config).validate()) {
@@ -229,7 +229,7 @@ public class StartUp {
                     }
                     break;
                 case CREATE:
-                    if (!configurationValid(validator)) {
+                    if (validator.configurationInvalid()) {
                         break;
                     }
                     if (module.getValidateIntent(config).validate()) {
@@ -305,30 +305,6 @@ public class StartUp {
                     break;
             }
     }
-
-    /**
-     * Validate native instance types and configuration file when used.
-     * Step is deferred AFTER client connection is established
-     * @param validator validates configuration
-     * @return true, if configuration file is valid
-     */
-    private static boolean configurationValid(Validator validator) {
-        try {
-            if (!validator.validateConfiguration()) {
-                LOG.error(ABORT_WITH_NOTHING_STARTED);
-                return false;
-            }
-        } catch (Exception e){
-            LOG.error(e.getMessage());
-            if (Configuration.DEBUG) {
-                e.printStackTrace();
-            }
-            return false;
-        }
-        return true;
-    }
-
-
 
     /**
      * Runs cluster creation and launch processing.
