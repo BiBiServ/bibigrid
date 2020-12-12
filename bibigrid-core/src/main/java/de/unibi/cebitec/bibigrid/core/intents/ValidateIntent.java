@@ -123,12 +123,16 @@ public class ValidateIntent extends Intent {
         return true;
     }
 
+    /**
+     * Checks, if all images can be accessed by client and fulfill resource requirements.
+     * @return true, if images are accessible for all instances and fulfill resource requirements for each
+     */
     private boolean checkImages() {
         Map<Configuration.InstanceConfiguration, InstanceImage> typeImageMap = new HashMap<>();
         try {
             InstanceImage masterImage = client.getImageByIdOrName(config.getMasterInstance().getImage());
             if (masterImage == null) {
-                String msg = "Failed to find master image: "+config.getMasterInstance().getImage();
+                String msg = "Failed to find master image: " + config.getMasterInstance().getImage();
                 LOG.error(msg);
                 validateResponse.append(msg+"\n");
             } else {
@@ -154,6 +158,7 @@ public class ValidateIntent extends Intent {
             LOG.error(e.getMessage());
             validateResponse.append(e.getMessage()+"\n");
         }
+        // Image has to be appended to map for worker instances + master instance
         if (typeImageMap.size() != config.getWorkerInstances().size() + 1) {
             String msg = "Master and Worker images could not be found.";
             LOG.error(msg);
@@ -179,17 +184,21 @@ public class ValidateIntent extends Intent {
         return true;
     }
 
+    /**
+     * Checks, if sufficient resources for the image are provided by instanceType.
+     * @param instanceConfiguration configuration of current checked instance
+     * @param image used image
+     * @return true, if enough resources available
+     */
     private boolean checkInstanceTypeImageCombination(Configuration.InstanceConfiguration instanceConfiguration,
                                                       InstanceImage image) {
         boolean success = true;
-        if (instanceConfiguration.getProviderType().getMaxDiskSpace() < image.getMinDiskSpace()) {
-            String msg  = "The image "+instanceConfiguration.getImage()+"needs more disk space than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides.";
-            LOG.error(msg);
-            validateResponse.append(msg+"\n");
-            success = false;
-        }
-        if (instanceConfiguration.getProviderType().getMaxRam() < image.getMinRam()) {
-            String msg = "The image "+instanceConfiguration.getImage()+"needs more memory than the instance type "+instanceConfiguration.getProviderType().getValue()+"provides.";
+        long instanceMaxDiskSpace = instanceConfiguration.getProviderType().getMaxDiskSpace();
+        long instanceMaxRam = instanceConfiguration.getProviderType().getMaxRam();
+        if (instanceMaxDiskSpace < image.getMinDiskSpace() || instanceMaxRam < image.getMinRam()) {
+            String msg  = "The image " + instanceConfiguration.getImage()
+                    + "needs more disk space than the instance type "
+                    + instanceConfiguration.getProviderType().getValue() + "provides.";
             LOG.error(msg);
             validateResponse.append(msg+"\n");
             success = false;
@@ -197,6 +206,14 @@ public class ValidateIntent extends Intent {
         return success;
     }
 
+    /**
+     * TODO ? clusterInstance seems to be always false, set in e.g. InstanceTypeOpenstack and cannot be reset
+     *
+     * Checks, if master instanceType is cluster instance and if so, if worker instances are the same.
+     * Need to be a homogenous group
+     * @return true, if master is cluster instance and all workers are OR
+     * if master is cluster instance and no worker has the same provider type
+     */
     private boolean checkInstanceTypes() {
         boolean allWorkersClusterInstances = config.getWorkerInstances().stream().allMatch(
                 x -> x.getProviderType().isClusterInstance());
@@ -218,6 +235,10 @@ public class ValidateIntent extends Intent {
         return true;
     }
 
+    /**
+     * Checks volumes / snapshots / -ids given by master mounts in config.
+     * @return true, if all provided snapshots can be accessed and no problems occurred
+     */
     private boolean checkSnapshots() {
         boolean allCheck = true;
         List<String> snapshotIds = new ArrayList<>();
@@ -234,7 +255,7 @@ public class ValidateIntent extends Intent {
             try {
                 Snapshot snapshot = client.getSnapshotByIdOrName(snapshotId);
                 if (snapshot == null) {
-                    String msg = "Snapshot/Volume '"+snapshotId+"' could not be found.";
+                    String msg = "Snapshot/Volume '" + snapshotId + "' could not be found.";
                     LOG.error(msg);
                     validateResponse.append(msg+"\n");
                     allCheck = false;
@@ -250,14 +271,17 @@ public class ValidateIntent extends Intent {
         return allCheck;
     }
 
+    /**
+     * Checks, if accessible network or subnet provided in config.
+     * @return true, if any provided network / subnet in config is accessible by client
+     */
     private boolean checkNetwork() {
         boolean result = true;
         if (config.getNetwork() != null && config.getNetwork().length() > 0) {
             try {
                 Network network = client.getNetworkByIdOrName(config.getNetwork());
-                // If the network could not be found, try if the user provided a network id instead of the name.
                 if (network == null) {
-                    String msg = "Network '"+config.getNetwork()+"' could not be found.";
+                    String msg = "Network '" + config.getNetwork() + "' could not be found.";
                     LOG.error(msg);
                     validateResponse.append(msg+"\n");
                     result = false;
@@ -275,7 +299,7 @@ public class ValidateIntent extends Intent {
             try {
                 Subnet subnet = client.getSubnetByIdOrName(config.getSubnet());
                 if (subnet == null) {
-                    String msg = "Subnet '"+config.getSubnet()+"' could not be found.";
+                    String msg = "Subnet '" + config.getSubnet() + "' could not be found.";
                     LOG.error(msg);
                     validateResponse.append(msg+"\n");
                     result = false;
@@ -292,13 +316,17 @@ public class ValidateIntent extends Intent {
         return result;
     }
 
+    /**
+     * Checks, if accessible server group provided in config.
+     * @return true, if any server group in config is accessible by client
+     */
     private boolean checkServerGroup() {
         boolean result = true;
         if (config.getServerGroup() != null && !config.getServerGroup().isEmpty()) {
             try {
                 ServerGroup serverGroup = client.getServerGroupByIdOrName(config.getServerGroup());
                 if (serverGroup == null) {
-                    String msg = "ServerGroup '"+config.getServerGroup()+"' could not be found.";
+                    String msg = "ServerGroup '" + config.getServerGroup() + "' could not be found.";
                     LOG.error(msg);
                     validateResponse.append(msg+"\n");
                     result = false;
