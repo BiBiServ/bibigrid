@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static de.unibi.cebitec.bibigrid.core.util.ImportantInfoOutputFilter.I;
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
 /**
@@ -343,10 +342,11 @@ public class ValidateIntent extends Intent {
 
     /**
      * Checks, if quotas exceeded before creating instances.
-     * @return true, if quotas exceeded -> No creating instances allowed / possible
+     * @return true, if quotas not exceeded -> Otherwise no creating instances allowed / possible
      */
-    public boolean checkQuotasExceeded(){
-        return false;
+    public boolean checkQuotasNotExceeded(){
+        boolean result = true;
+        return result;
     }
 
 

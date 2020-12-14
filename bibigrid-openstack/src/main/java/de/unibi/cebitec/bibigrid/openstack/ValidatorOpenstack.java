@@ -16,9 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Openstack specific implementation for a validator
+ * Openstack specific implementation for a validator.
  *
- * @author mfriedrichs(at)techfak.uni-bielefeld.de, t.dilger(at)uni-bielefeld.de, jkrueger(at)cebitec.uni-bielefeld.de
+ * @author mfriedrichs(at)techfak.uni-bielefeld.de,
+ * t.dilger(at)uni-bielefeld.de,
+ * jkrueger(at)cebitec.uni-bielefeld.de
  */
 public final class ValidatorOpenstack extends Validator {
     private final ConfigurationOpenstack openstackConfig;
@@ -84,7 +86,7 @@ public final class ValidatorOpenstack extends Validator {
             File credentialsFile = Paths.get(path).toFile();
             OpenStackCredentials openStackCredentials =  new Yaml().loadAs(new FileInputStream(credentialsFile), OpenStackCredentials.class);
             LOG.info("Found valid credentials file ({}).", credentialsFile.getAbsolutePath());
-            return validate(openStackCredentials)?openStackCredentials:null;
+            return validateCredentials(openStackCredentials) ? openStackCredentials : null;
         } catch (FileNotFoundException e) {
             LOG.error("Failed to locate openstack credentials file.", e);
             return null;
@@ -140,10 +142,10 @@ public final class ValidatorOpenstack extends Validator {
         openStackCredentials.setEndpoint((String)env.get(EnvCredentials.OS_AUTH_URL.name()));
         openStackCredentials.setPassword((String)env.get(EnvCredentials.OS_PASSWORD.name()));
         openStackCredentials.setUsername((String)env.get(EnvCredentials.OS_USERNAME.name()));
-        return validate(openStackCredentials)?openStackCredentials:null;
+        return validateCredentials(openStackCredentials) ? openStackCredentials : null;
     }
 
-    private boolean validate(OpenStackCredentials openStackCredentials){
+    private boolean validateCredentials(OpenStackCredentials openStackCredentials){
         if (openStackCredentials.getProject() == null && openStackCredentials.getProjectId() == null) {
             LOG.error("Openstack credentials : Missing 'project' or 'projectId' parameter!");
             return false;
