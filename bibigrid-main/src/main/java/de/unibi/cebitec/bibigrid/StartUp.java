@@ -103,6 +103,7 @@ public class StartUp {
             }
             // Just to get information faster
             if (intentMode == HELP) {
+                // printInstanceTypeHelp(module, client, config);
                 printHelp(cl, cmdLineOptions);
                 return;
             }
@@ -138,6 +139,8 @@ public class StartUp {
                     clOptions.put(im, parameters);
                 }
 
+                // TODO validates by configuration file
+                // Only a valid option for creation and validation parameter
                 if (validator.validateProviderParameters()) {
                     runIntent(module, validator, clOptions, intentMode, config);
                 } else {
@@ -192,27 +195,23 @@ public class StartUp {
                 return;
             }
 
-            // Usually parameters equals clusterId(s) or null
+            // Usually parameters[0] equals clusterId(s) or null
             String[] parameters = clOptions.get(intentMode);
+            String clusterId = parameters.length == 0 ? null : parameters[0];
 
             // -h and -l parameters don't need validation
-            if (intentMode == HELP) {
-                // printInstanceTypeHelp(module, client, config);
-                // printHelp();
-                return;
-            } else if (intentMode == LIST) {
-                String param = parameters.length == 0 ? null : parameters[0];
+            if (intentMode == LIST) {
                 LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
-                loadIntent.loadClusterConfiguration(param);
+                loadIntent.loadClusterConfiguration(clusterId);
                 Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
                 if (clusterMap.isEmpty()) {
                     return;
                 }
                 ListIntent listIntent = module.getListIntent(clusterMap);
-                if (param == null) {
+                if (clusterId == null) {
                     LOG.info(listIntent.toString());
                 } else {
-                    LOG.info(listIntent.toDetailString(param));
+                    LOG.info(listIntent.toDetailString(clusterId));
                 }
                 return;
             }
@@ -233,7 +232,6 @@ public class StartUp {
                         break;
                     }
                     if (module.getValidateIntent(config).validate()) {
-                        String clusterId = parameters != null ? parameters[0] : null;
                         CreateCluster cluster = module.getCreateIntent(config, clusterId);
                         runCreateIntent(module, config, cluster, false);
                     } else {
@@ -245,6 +243,7 @@ public class StartUp {
                         if (parameters.length == 1) {
                             LOG.error("Could not terminate instances with given parameter {}.", parameters[0]);
                         } else {
+                            // LOG.warn("StartUp, given parameters: {}", Arrays.stream(parameters));
                             StringBuilder error = new StringBuilder("Could not terminate instances with given parameters ");
                             for (int p = 0; p < parameters.length; p++) {
                                 String parameter = parameters[p];
@@ -258,7 +257,6 @@ public class StartUp {
                     }
                     break;
                 case SCALE_UP:
-                    String clusterId = parameters[0];
                     int workerBatch;
                     int count;
                     try {
@@ -269,13 +267,12 @@ public class StartUp {
                         return;
                     }
                     CreateCluster createIntent = module.getCreateIntent(config, clusterId);
-                    if (!createIntent.createWorkerInstances(workerBatch, count)) {
+                    if (!createIntent.createAdditionalWorkerInstances(workerBatch, count)) {
                         LOG.error("Could not create worker instances with specified batch.");
                         return;
                     }
                     break;
                 case SCALE_DOWN:
-                    clusterId = parameters[0];
                     try {
                         workerBatch = Integer.parseInt(parameters[1]);
                         count = Integer.parseInt(parameters[2]);
@@ -289,7 +286,6 @@ public class StartUp {
                 case IDE:
                     try {
                         // Load private key file
-                        clusterId = parameters.length == 1 ? parameters[0] : null;
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
                         new IdeIntent(module, clusterId, config).start();

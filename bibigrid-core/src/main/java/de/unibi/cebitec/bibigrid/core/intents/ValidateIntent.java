@@ -342,12 +342,8 @@ public abstract class ValidateIntent extends Intent {
 
     /**
      * Checks, if quotas exceeded before creating instances.
-     * @return true, if quotas not exceeded -> Otherwise no creating instances allowed / possible
+     * @param instanceTypes instanceType and no. of required instances to calculate quota limits
+     * @return true, if quotas exceeded -> No creating instances allowed / possible
      */
-    public boolean checkQuotasNotExceeded(){
-        boolean result = true;
-        return result;
-    }
-
-
+    public abstract boolean checkQuotasExceeded(List<Map.Entry<InstanceType, Integer>> instanceTypes);
 }

@@ -12,7 +12,6 @@ import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
@@ -191,11 +190,12 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
+     * TODO Should not rely on config, since configurationFile might not be valid for current cluster, keypair + ssh user?
      * Adds additional worker instance(s) with specified batch to cluster.
      * Adopts the configuration from the other worker instances in batch
      * @return true, if worker instance(s) created successfully
      */
-    public boolean createWorkerInstances(int batchIndex, int count) {
+    public boolean createAdditionalWorkerInstances(int batchIndex, int count) {
         LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(config);
         loadIntent.loadClusterConfiguration(clusterId);
         Cluster cluster = loadIntent.getCluster(clusterId);
@@ -255,6 +255,13 @@ public abstract class CreateCluster extends Intent {
                 Instance workerBatchInstance = workersBatch.get(0);
                 instanceConfiguration =
                         (Configuration.WorkerInstanceConfiguration) workerBatchInstance.getConfiguration();
+            }
+            Map.Entry<InstanceType, Integer> instanceTypes =
+                    new AbstractMap.SimpleEntry<>(instanceConfiguration.getProviderType(), count);
+            if (providerModule.getValidateIntent(config).
+                    checkQuotasExceeded(Collections.singletonList(instanceTypes))) {
+                LOG.error("Quotas exceeded. No additional workers could be launched.");
+                return false;
             }
             LOG.info("Creating {} worker " + (count == 1 ? "instance" : "instances") + " for batch {}.", count, batchIndex);
             instanceConfiguration.setCount(count);
