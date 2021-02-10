@@ -31,13 +31,16 @@ public class ValidateIntentOpenstack extends ValidateIntent {
         LOG.info("Checking quotas...");
         AbsoluteLimit quotaLimits = os.compute().quotaSets().limits().getAbsolute();
         int available_instances = quotaLimits.getMaxTotalInstances() - quotaLimits.getTotalInstancesUsed();
+        LOG.info("Available instances: {}", available_instances);
         int available_cores = quotaLimits.getMaxTotalCores() - quotaLimits.getTotalCoresUsed();
+        LOG.info("Available cores: {}", available_cores);
         int available_ram = quotaLimits.getMaxTotalRAMSize() - quotaLimits.getTotalRAMUsed();
+        LOG.info("Available RAM: {}", available_ram);
         for (Map.Entry<InstanceType, Integer> instanceType : instanceTypes.entrySet()) {
             int instances_usage = instanceType.getValue();
-            int cores_usage = instanceType.getKey().getCpuCores() * instanceType.getValue();
-            int ram_usage = instanceType.getKey().getMaxRam() * instanceType.getValue();
-            LOG.debug("InstanceType {} uses {} additional instances with {} cores and {} RAM in total…", instanceType.getKey(), instances_usage, cores_usage, ram_usage);
+            int cores_usage = instanceType.getKey().getCpuCores() * instances_usage;
+            int ram_usage = instanceType.getKey().getMaxRam() * instances_usage;
+            LOG.info("InstanceType {} uses {} additional instances with {} cores and {} RAM in total…", instanceType.getKey(), instances_usage, cores_usage, ram_usage);
             // Decreasing available quotas for each type...
             available_instances -= instances_usage;
             available_cores -= cores_usage;
@@ -58,6 +61,7 @@ public class ValidateIntentOpenstack extends ValidateIntent {
             LOG.error("Too many RAM would be used. {} of {}.", computed_total_usage, quotaLimits.getMaxTotalRAMSize());
             return true;
         }
+        LOG.info("Quotas sufficient. Continuing ...");
         return false;
     }
 }
