@@ -36,7 +36,7 @@ public abstract class ValidateIntent extends Intent {
         this.config = config;
     }
 
-    private StringBuilder validateResponse = new StringBuilder("");
+    private StringBuilder validateResponse = new StringBuilder();
 
     /**
      *  The validateResponse attribute is used to save the possible causes of a misconfigured configuration
@@ -62,7 +62,7 @@ public abstract class ValidateIntent extends Intent {
             // If not even the connection can be established, the next steps won't be necessary
             String msg = "API connection not successful. Please check your configuration.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             return false;
         }
         LOG.info("Checking images...");
@@ -71,7 +71,7 @@ public abstract class ValidateIntent extends Intent {
         } else {
             String msg = "Failed to check images.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             success = false;
         }
         LOG.info("Checking instance types...");
@@ -80,7 +80,7 @@ public abstract class ValidateIntent extends Intent {
         } else {
             String msg = "Failed to check instance types.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             success = false;
         }
         LOG.info("Checking snapshots/volumes...");
@@ -89,7 +89,7 @@ public abstract class ValidateIntent extends Intent {
         } else {
             String msg = "One or more snapshots/volumes could not be found.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             success = false;
         }
         LOG.info("Checking network...");
@@ -98,7 +98,7 @@ public abstract class ValidateIntent extends Intent {
         } else {
             String msg = "Failed to check network.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             success = false;
         }
         LOG.info("Checking servergroup...");
@@ -107,7 +107,7 @@ public abstract class ValidateIntent extends Intent {
         } else {
             String msg = "Failed to check server group.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             success = false;
         }
 
@@ -133,13 +133,13 @@ public abstract class ValidateIntent extends Intent {
             if (masterImage == null) {
                 String msg = "Failed to find master image: " + config.getMasterInstance().getImage();
                 LOG.error(msg);
-                validateResponse.append(msg+"\n");
+                validateResponse.append(msg).append("\n");
             } else {
                 typeImageMap.put(config.getMasterInstance(), masterImage);
             }
         } catch (NotYetSupportedException e) {
             LOG.error(e.getMessage());
-            validateResponse.append(e.getMessage()+"\n");
+            validateResponse.append(e.getMessage()).append("\n");
         }
         try {
             for (Configuration.InstanceConfiguration instanceConfiguration : config.getWorkerInstances()) {
@@ -147,7 +147,7 @@ public abstract class ValidateIntent extends Intent {
                 if (workerImage == null) {
                     String msg = "Failed to find worker image: "+instanceConfiguration.getImage();
                     LOG.error(msg);
-                    validateResponse.append(msg+"\n");
+                    validateResponse.append(msg).append("\n");
 
                 } else {
                     typeImageMap.put(instanceConfiguration, workerImage);
@@ -155,13 +155,13 @@ public abstract class ValidateIntent extends Intent {
             }
         } catch (NotYetSupportedException e) {
             LOG.error(e.getMessage());
-            validateResponse.append(e.getMessage()+"\n");
+            validateResponse.append(e.getMessage()).append("\n");
         }
         // Image has to be appended to map for worker instances + master instance
         if (typeImageMap.size() != config.getWorkerInstances().size() + 1) {
             String msg = "Master and Worker images could not be found.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             return false;
         }
         LOG.info(V, "Master and Worker images have been found.");
@@ -199,7 +199,7 @@ public abstract class ValidateIntent extends Intent {
                     + "needs more disk space than the instance type "
                     + instanceConfiguration.getProviderType().getValue() + "provides.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             success = false;
         }
         return success;
@@ -220,14 +220,14 @@ public abstract class ValidateIntent extends Intent {
         if (masterClusterType.isClusterInstance() != allWorkersClusterInstances) {
             String msg = "If cluster instances are used please create a homogeneous group.";
             LOG.error(msg);
-            validateResponse.append(msg+"\n");
+            validateResponse.append(msg).append("\n");
             return false;
         } else if (masterClusterType.isClusterInstance()) {
             // If master instance is a cluster instance check if the types are the same
             if (config.getWorkerInstances().stream().anyMatch(x -> masterClusterType != x.getProviderType())) {
                 String msg = "If cluster instances are used please create a homogeneous group.";
                 LOG.error(msg);
-                validateResponse.append(msg+"\n");
+                validateResponse.append(msg).append("\n");
                 return false;
             }
         }
@@ -256,14 +256,14 @@ public abstract class ValidateIntent extends Intent {
                 if (snapshot == null) {
                     String msg = "Snapshot/Volume '" + snapshotId + "' could not be found.";
                     LOG.error(msg);
-                    validateResponse.append(msg+"\n");
+                    validateResponse.append(msg).append("\n");
                     allCheck = false;
                 } else {
                     LOG.info(V, "Snapshot/Volume '{}' found.", snapshotId);
                 }
             } catch (NotYetSupportedException e) {
                 LOG.error(e.getMessage());
-                validateResponse.append(e.getMessage()+"\n");
+                validateResponse.append(e.getMessage()).append("\n");
                 allCheck = false;
             }
         }
@@ -282,7 +282,7 @@ public abstract class ValidateIntent extends Intent {
                 if (network == null) {
                     String msg = "Network '" + config.getNetwork() + "' could not be found.";
                     LOG.error(msg);
-                    validateResponse.append(msg+"\n");
+                    validateResponse.append(msg).append("\n");
                     result = false;
                 } else {
                     LOG.info(V, "Network '{}' found.", config.getNetwork());
@@ -300,7 +300,7 @@ public abstract class ValidateIntent extends Intent {
                 if (subnet == null) {
                     String msg = "Subnet '" + config.getSubnet() + "' could not be found.";
                     LOG.error(msg);
-                    validateResponse.append(msg+"\n");
+                    validateResponse.append(msg).append("\n");
                     result = false;
                 } else {
                     LOG.info(V, "Subnet '{}' found.", config.getSubnet());
@@ -327,7 +327,7 @@ public abstract class ValidateIntent extends Intent {
                 if (serverGroup == null) {
                     String msg = "ServerGroup '" + config.getServerGroup() + "' could not be found.";
                     LOG.error(msg);
-                    validateResponse.append(msg+"\n");
+                    validateResponse.append(msg).append("\n");
                     result = false;
                 } else {
                     LOG.info(V, "ServerGroup '{}' found.", config.getServerGroup());
@@ -345,5 +345,5 @@ public abstract class ValidateIntent extends Intent {
      * @param instanceTypes instanceType and no. of required instances to calculate quota limits
      * @return true, if quotas exceeded -> No creating instances allowed / possible
      */
-    public abstract boolean checkQuotasExceeded(List<Map.Entry<InstanceType, Integer>> instanceTypes);
+    public abstract boolean checkQuotasExceeded(Map<InstanceType, Integer> instanceTypes);
 }

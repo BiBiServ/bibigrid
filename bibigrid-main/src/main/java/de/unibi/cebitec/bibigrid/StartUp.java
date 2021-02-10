@@ -233,7 +233,7 @@ public class StartUp {
                     }
                     if (module.getValidateIntent(config).validate()) {
                         CreateCluster cluster = module.getCreateIntent(config, clusterId);
-                        runCreateIntent(module, config, cluster, false);
+                        runCreateIntent(module, config, cluster);
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
@@ -303,16 +303,16 @@ public class StartUp {
     }
 
     /**
+     * ToDo Make void or use return value
      * Runs cluster creation and launch processing.
      *
      * @param module responsible for provider accessibility
      * @param config overall configuration
      * @param cluster CreateCluster implementation
-     * @param prepare true, if in prepare mode
      * @return true, if cluster built successfully
      */
     private static boolean runCreateIntent(ProviderModule module, Configuration config,
-                                           CreateCluster cluster, boolean prepare) {
+                                           CreateCluster cluster) {
         try {
             // configure environment
             cluster .createClusterEnvironment()
@@ -322,10 +322,7 @@ public class StartUp {
                     .createKeyPair()
                     .createPlacementGroup();
             // configure cluster
-            boolean success =  cluster
-                    .configureClusterMasterInstance()
-                    .configureClusterWorkerInstance()
-                    .launchClusterInstances(prepare);
+            boolean success = cluster.configureClusterInstances() && cluster.launchClusterInstances();
             if (!success) {
                 //  In DEBUG mode keep partial configured cluster running, otherwise clean it up
                 if (Configuration.DEBUG) {

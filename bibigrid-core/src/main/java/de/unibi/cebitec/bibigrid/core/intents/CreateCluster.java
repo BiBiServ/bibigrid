@@ -108,23 +108,42 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
+     * Configure and manage Master- and Worker-instance(s) to launch.
+     *
+     * @return true, if configuration successful
+     */
+    public boolean configureClusterInstances() {
+        Map<InstanceType, Integer> instanceTypes = new HashMap<>();
+        instanceTypes.put(config.getMasterInstance().getProviderType(), 1);
+        for (Configuration.WorkerInstanceConfiguration worker : config.getWorkerInstances()) {
+            instanceTypes.put(worker.getProviderType(), worker.getCount());
+        }
+        if (providerModule.getValidateIntent(config).
+                checkQuotasExceeded(instanceTypes)) {
+            LOG.error("Quotas exceeded. No additional workers could be launched.");
+            return false;
+        }
+        this.configureClusterMasterInstance();
+        this.configureClusterWorkerInstance();
+        return true;
+    }
+
+    /**
      * Configure and manage Master-instance to launch.
      */
-    public CreateCluster configureClusterMasterInstance() {
+    public void configureClusterMasterInstance() {
         List<Configuration.MountPoint> masterVolumeToMountPointMap = resolveMountSources(config.getMasterMounts());
         InstanceType masterSpec = config.getMasterInstance().getProviderType();
         int deviceOffset = masterSpec.getEphemerals() + masterSpec.getSwap();
         masterDeviceMapper = new DeviceMapper(providerModule, masterVolumeToMountPointMap, deviceOffset);
         LOG.info("Master instance configured.");
-        return this;
     }
 
     /**
      * Configure and manage Worker-instances to launch.
      */
-    public CreateCluster configureClusterWorkerInstance() {
+    public void configureClusterWorkerInstance() {
         LOG.info("Worker instance(s) configured.");
-        return this;
     }
 
     /**
@@ -135,7 +154,7 @@ public abstract class CreateCluster extends Intent {
     /**
      * Start the configured cluster now.
      */
-    public boolean launchClusterInstances(final boolean prepare) {
+    public boolean launchClusterInstances() {
         try {
             String masterNameTag = MASTER_NAME_PREFIX + SEPARATOR + clusterId;
             masterInstance = launchClusterMasterInstance(masterNameTag);
@@ -167,7 +186,7 @@ public abstract class CreateCluster extends Intent {
             LOG.info("Cluster (ID: {}) successfully created!", clusterId);
             final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                     masterInstance.getPrivateIp();
-            configureAnsible(prepare);
+            configureAnsible();
             logFinishedInfoMessage(masterIp);
             saveGridPropertiesFile(masterIp);
         } catch (Exception e) {
@@ -256,10 +275,10 @@ public abstract class CreateCluster extends Intent {
                 instanceConfiguration =
                         (Configuration.WorkerInstanceConfiguration) workerBatchInstance.getConfiguration();
             }
-            Map.Entry<InstanceType, Integer> instanceTypes =
-                    new AbstractMap.SimpleEntry<>(instanceConfiguration.getProviderType(), count);
+            Map<InstanceType, Integer> instanceTypes = new HashMap<>();
+            instanceTypes.put(instanceConfiguration.getProviderType(), count);
             if (providerModule.getValidateIntent(config).
-                    checkQuotasExceeded(Collections.singletonList(instanceTypes))) {
+                    checkQuotasExceeded(instanceTypes)) {
                 LOG.error("Quotas exceeded. No additional workers could be launched.");
                 return false;
             }
@@ -398,13 +417,12 @@ public abstract class CreateCluster extends Intent {
 
     /**
      * Uploads ansible scripts via SSH to master and rolls out on specified nodes.
-     * @param prepare check if in preparation
      * @throws ConfigurationException thrown by 'uploadAnsibleToMaster' and 'executeScript'
      *    in the case anything failed during the upload or ansible run.
      *    Not closing the sshSession blocks the JVM to exit(). Therefore we have to catch the
      *    ConfigurationException, close the sshSession and throw a new ConfigurationException
      */
-    private void configureAnsible(final boolean prepare) throws ConfigurationException {
+    private void configureAnsible() throws ConfigurationException {
         final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                 masterInstance.getPrivateIp();
         LOG.info("Now configuring...");
@@ -422,7 +440,7 @@ public abstract class CreateCluster extends Intent {
                     try {
                         uploadAnsibleToMaster(sshSession);
                         LOG.info("Ansible is now configuring your cloud instances. This might take a while.");
-                        SshFactory.executeScript(sshSession, ShellScriptCreator.getMasterAnsibleExecutionScript(prepare, config));
+                        SshFactory.executeScript(sshSession, ShellScriptCreator.getMasterAnsibleExecutionScript(config));
                     } catch (ConfigurationException e) {
                         throw new ConfigurationException(e.getMessage());
                     } finally {
