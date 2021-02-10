@@ -11,7 +11,6 @@ import org.openstack4j.model.compute.AbsoluteLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 
 public class ValidateIntentOpenstack extends ValidateIntent {
@@ -28,13 +27,13 @@ public class ValidateIntentOpenstack extends ValidateIntent {
      * Checked parameters are the openstack compute parameters instances, cores (VCPUs) and RAM
      * @return true, if quotas not exceeded -> Otherwise no creating instances allowed / possible
      */
-    public boolean checkQuotasExceeded(List<Map.Entry<InstanceType, Integer>> instanceTypes) {
+    public boolean checkQuotasExceeded(Map<InstanceType, Integer> instanceTypes) {
         LOG.info("Checking quotas...");
         AbsoluteLimit quotaLimits = os.compute().quotaSets().limits().getAbsolute();
         int available_instances = quotaLimits.getMaxTotalInstances() - quotaLimits.getTotalInstancesUsed();
         int available_cores = quotaLimits.getMaxTotalCores() - quotaLimits.getTotalCoresUsed();
         int available_ram = quotaLimits.getMaxTotalRAMSize() - quotaLimits.getTotalRAMUsed();
-        for (Map.Entry<InstanceType, Integer> instanceType : instanceTypes) {
+        for (Map.Entry<InstanceType, Integer> instanceType : instanceTypes.entrySet()) {
             int instances_usage = instanceType.getValue();
             int cores_usage = instanceType.getKey().getCpuCores() * instanceType.getValue();
             int ram_usage = instanceType.getKey().getMaxRam() * instanceType.getValue();
