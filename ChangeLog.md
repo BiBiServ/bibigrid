@@ -10,7 +10,6 @@
 - restructure: move client to provider module (#300)
 - update theia-ide (#289)
 - determine project quotas (#257)
-
 ## Version 2.2.2 (11/7/2020)
 
 ### Fixes

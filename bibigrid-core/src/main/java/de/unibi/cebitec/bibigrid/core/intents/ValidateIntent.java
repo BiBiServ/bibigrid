@@ -148,7 +148,6 @@ public abstract class ValidateIntent extends Intent {
                     String msg = "Failed to find worker image: "+instanceConfiguration.getImage();
                     LOG.error(msg);
                     validateResponse.append(msg).append("\n");
-
                 } else {
                     typeImageMap.put(instanceConfiguration, workerImage);
                 }

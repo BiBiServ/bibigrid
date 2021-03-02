@@ -6,7 +6,6 @@
     <groupId>de.unibi.cebitec.bibigrid</groupId>
     <artifactId>bibigrid</artifactId>
     <version>2.3</version>
-
     <profiles>
         <profile>
             <id>default</id>
