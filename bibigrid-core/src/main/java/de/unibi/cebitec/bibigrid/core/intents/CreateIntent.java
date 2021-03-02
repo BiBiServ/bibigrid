@@ -52,12 +52,10 @@ public class CreateIntent implements Runnable{
                     .createKeyPair()
                     .createPlacementGroup();
             db.status.put(cluster.clusterId, new Status(Status.CODE.Configuring, "Configuring instances."));
-            cluster.configureClusterMasterInstance()
-                    .configureClusterWorkerInstance();
+            boolean success = cluster.configureClusterInstances();
             db.status.put(cluster.clusterId, new Status(Status.CODE.Creating));
             // configure cluster
-            boolean success = cluster
-                    .launchClusterInstances(false); //ToDo: Remove prepare flag permanently
+            success = success && cluster.launchClusterInstances();
             if (success) {
                 db.status.put(cluster.clusterId, new Status(Status.CODE.Running));
             } else {

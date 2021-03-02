@@ -21,18 +21,18 @@ import java.util.stream.Collectors;
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  * @author jkrueger(at)cebitec.uni-bielefeld.de
  */
-class ClientOpenstack extends Client {
+public class ClientOpenstack extends Client {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOpenstack.class);
 
-    private OSClient internalClient;
-    private ConfigurationOpenstack config;
+    private OSClient.OSClientV3 internalClient;
+    private final ConfigurationOpenstack config;
 
     ClientOpenstack(ConfigurationOpenstack config) throws ClientConnectionFailedException {
         this.config = config;
         authenticate();
     }
 
-    private static OSClient buildOSClientV3(OpenStackCredentials credentials) {
+    private static OSClient.OSClientV3 buildOSClientV3(OpenStackCredentials credentials) {
         if (Configuration.DEBUG) {
             LOG.info(credentials.toString());
         }
@@ -59,7 +59,7 @@ class ClientOpenstack extends Client {
         return null;
     }
 
-    OSClient getInternal() {
+    public OSClient.OSClientV3 getInternal() {
         return internalClient;
     }
 

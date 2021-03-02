@@ -72,9 +72,7 @@ public abstract class ProviderModule {
     public abstract CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster)
             throws ConfigurationException;
 
-    public ValidateIntent getValidateIntent(Configuration config) {
-        return new ValidateIntent(client, config);
-    }
+    public abstract ValidateIntent getValidateIntent(Configuration config);
 
     public final InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
         getInstanceTypes(config);

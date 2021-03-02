@@ -1,10 +1,12 @@
-package de.unibi.cebitec.bibigrid.openstack;
+package de.unibi.cebitec.bibigrid.openstack.intents;
 
 import de.unibi.cebitec.bibigrid.core.intents.PrepareIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.Instance;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
+import de.unibi.cebitec.bibigrid.openstack.ClientOpenstack;
+import de.unibi.cebitec.bibigrid.openstack.InstanceOpenstack;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.compute.Action;
@@ -27,12 +29,12 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
  *
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
  */
-class PrepareIntentOpenstack extends PrepareIntent {
+public class PrepareIntentOpenstack extends PrepareIntent {
     private static final Logger LOG = LoggerFactory.getLogger(PrepareIntentOpenstack.class);
 
     private final OSClient os;
 
-    PrepareIntentOpenstack(ProviderModule providerModule, Client client, Configuration config) {
+    public PrepareIntentOpenstack(ProviderModule providerModule, Client client, Configuration config) {
         super(providerModule, client, config);
         os = ((ClientOpenstack) client).getInternal();
     }

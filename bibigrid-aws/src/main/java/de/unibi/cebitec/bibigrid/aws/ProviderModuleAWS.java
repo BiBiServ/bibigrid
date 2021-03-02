@@ -51,7 +51,7 @@ public class ProviderModuleAWS extends ProviderModule {
 
     @Override
     public CreateCluster getCreateIntent(Configuration config) {
-        return new CreateClusterAWS(this, client, (ConfigurationAWS) config);
+        return new CreateClusterAWS(this, (ConfigurationAWS) config, clusterId);
     }
 
     @Override

@@ -31,11 +31,11 @@ public final class InstanceOpenstack extends Instance {
         this.server = server;
     }
 
-    Server getInternal() {
+    public Server getInternal() {
         return server;
     }
 
-    void setServer(Server server) {
+    public void setServer(Server server) {
         this.server = server;
     }
 

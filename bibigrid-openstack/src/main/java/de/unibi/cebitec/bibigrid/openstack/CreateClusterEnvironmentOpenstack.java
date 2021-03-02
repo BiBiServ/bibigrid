@@ -268,7 +268,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
     /**
      * Determine Router by given network and subnet.
      */
-    static Router getRouterByNetwork(OSClient osc, String networkId, String subnetId) {
+    public static Router getRouterByNetwork(OSClient osc, String networkId, String subnetId) {
         PortService ps = osc.networking().port();
         PortListOptions portListOptions = PortListOptions.create();
         portListOptions.networkId(networkId);

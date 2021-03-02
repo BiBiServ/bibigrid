@@ -1,4 +1,4 @@
-package de.unibi.cebitec.bibigrid.openstack;
+package de.unibi.cebitec.bibigrid.openstack.intents;
 
 import de.unibi.cebitec.bibigrid.core.intents.ListIntent;
 
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class ListIntentOpenstack extends ListIntent {
     private static final Logger LOG = LoggerFactory.getLogger(ListIntentOpenstack.class);
 
-    ListIntentOpenstack(Map<String, Cluster> clusterMap) {
+    public ListIntentOpenstack(Map<String, Cluster> clusterMap) {
         super(clusterMap);
     }
 }

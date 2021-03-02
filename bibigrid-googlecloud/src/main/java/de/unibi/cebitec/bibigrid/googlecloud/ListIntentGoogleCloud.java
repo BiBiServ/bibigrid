@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -25,10 +26,9 @@ public class ListIntentGoogleCloud extends ListIntent {
     private final ConfigurationGoogleCloud config;
     private final Compute compute;
 
-    ListIntentGoogleCloud(final ProviderModule providerModule, Client client, final ConfigurationGoogleCloud config) {
-        super(providerModule, client, config);
-        this.config = config;
-        compute = ((ClientGoogleCloud) client).getInternal();
+    ListIntentGoogleCloud(ProviderModule providerModule, Map<String, Cluster> clusterMap) {
+        super(clusterMap);
+        compute = ((ClientGoogleCloud) providerModule.getClient()).getInternal();
     }
 
     @Override
@@ -41,7 +41,7 @@ public class ListIntentGoogleCloud extends ListIntent {
                     getInstancesWithZone(compute, config.getAvailabilityZone()) :
                     getInstancesWithoutZone(compute);
         } catch (IOException e) {
-            LOG.error("Failed to load instances. {}", e);
+            LOG.error("Failed to load instances.", e);
         }
         return null;
     }

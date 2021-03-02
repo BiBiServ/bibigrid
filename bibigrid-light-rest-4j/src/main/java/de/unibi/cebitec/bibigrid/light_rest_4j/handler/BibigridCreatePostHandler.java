@@ -43,7 +43,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
      * Must be implemented asynchronously to return cluster id when creating in CreateCluster
      */
     private boolean runCreateIntent(ProviderModule module, Configuration config, Client client,
-                                    CreateCluster cluster, boolean prepare) {
+                                    CreateCluster cluster) {
         try {
             // configure environment
             cluster.createClusterEnvironment()
@@ -53,10 +53,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                     .createKeyPair()
                     .createPlacementGroup();
             // configure cluster
-            boolean success = cluster
-                    .configureClusterMasterInstance()
-                    .configureClusterWorkerInstance()
-                    .launchClusterInstances(prepare);
+            boolean success = cluster.configureClusterInstances() && cluster.launchClusterInstances();
             if (!success) {
                 /*  In DEBUG mode keep partial configured cluster running, otherwise clean it up */
                 if (Configuration.DEBUG) {
