@@ -26,16 +26,14 @@ public class CreateIntent implements Runnable{
 
     private ProviderModule module;
     private Configuration config;
-    private Client client;
     private CreateCluster cluster;
     private DataBase db = DataBase.getDataBase();
 
-    public CreateIntent(ProviderModule module, Configuration config, Client client) {
+    public CreateIntent(ProviderModule module, Configuration config) {
         this.module = module;
         this.config = config;
-        this.client = client;
         String clusterId = null;
-        cluster = module.getCreateIntent(client, config, clusterId);
+        cluster = module.getCreateIntent(config, clusterId);
         db.status.put(cluster.clusterId,new Status(Status.CODE.Preparing));
     }
 
@@ -54,12 +52,10 @@ public class CreateIntent implements Runnable{
                     .createKeyPair()
                     .createPlacementGroup();
             db.status.put(cluster.clusterId, new Status(Status.CODE.Configuring, "Configuring instances."));
-            cluster.configureClusterMasterInstance()
-                    .configureClusterWorkerInstance();
+            boolean success = cluster.configureClusterInstances();
             db.status.put(cluster.clusterId, new Status(Status.CODE.Creating));
             // configure cluster
-            boolean success = cluster
-                    .launchClusterInstances(false); //ToDo: Remove prepare flag permanently
+            success = success && cluster.launchClusterInstances();
             if (success) {
                 db.status.put(cluster.clusterId, new Status(Status.CODE.Running));
             } else {
@@ -68,7 +64,7 @@ public class CreateIntent implements Runnable{
                     db.status.put(cluster.clusterId, new Status(Status.CODE.Error, Constant.KEEP));
                 } else {
                     db.status.put(cluster.clusterId, new Status(Status.CODE.Error, Constant.ABORT_WITH_INSTANCES_RUNNING));
-                    TerminateIntent cleanupIntent = module.getTerminateIntent(client, config);
+                    TerminateIntent cleanupIntent = module.getTerminateIntent(config);
                     cleanupIntent.terminate(cluster.clusterId);
                 }
             }
@@ -89,7 +85,7 @@ public class CreateIntent implements Runnable{
             // we have to do authenticate again,
             // if authentication was done in a separate thread.
             MDC.put("cluster", getClusterId());
-            cluster.client.authenticate();
+            module.client.authenticate();
             create();
         } catch (ClientConnectionFailedException ex) {
             db.status.put(cluster.clusterId,new Status(Status.CODE.Error,"Client connection failed. "+ex.getMessage()));

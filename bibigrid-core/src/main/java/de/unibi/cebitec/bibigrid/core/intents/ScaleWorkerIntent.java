@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import de.unibi.cebitec.bibigrid.core.DataBase;
-import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
@@ -18,24 +17,22 @@ import static de.unibi.cebitec.bibigrid.core.model.IntentMode.SCALE_UP;
 public class ScaleWorkerIntent implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(CreateIntent.class);
 
-    private CreateCluster cluster;
-    private int batchIndex;
-    private int count;
-    private ProviderModule module;
-    private Configuration config;
-    private Client client;
-    private String scaling;
-    private DataBase db = DataBase.getDataBase();
+    private final CreateCluster cluster;
+    private final int batchIndex;
+    private final int count;
+    private final ProviderModule module;
+    private final Configuration config;
+    private final String scaling;
+    private final DataBase db = DataBase.getDataBase();
 
 
-    public ScaleWorkerIntent(ProviderModule module, Configuration config, Client client, String clusterId, int batchIndex, int count, String scaling) {
+    public ScaleWorkerIntent(ProviderModule module, Configuration config, String clusterId, int batchIndex, int count, String scaling) {
         this.batchIndex = batchIndex;
         this.module = module;
         this.count = count;
         this.config = config;
         this.scaling = scaling;
-        this.client = client;
-        cluster = module.getCreateIntent(client, config, clusterId);
+        cluster = module.getCreateIntent(config, clusterId);
 
     }
 
@@ -45,7 +42,7 @@ public class ScaleWorkerIntent implements Runnable {
 
     private void scaleDown() {
         db.status.put(cluster.clusterId, new Status(Status.CODE.Scale_Down, "Scaling down the cluster by " + count + " worker!"));
-        module.getTerminateIntent(client, config)
+        module.getTerminateIntent(config)
                 .terminateInstances(cluster.clusterId, batchIndex, count);
         db.status.put(cluster.clusterId, new Status(Status.CODE.Running));
 
@@ -53,7 +50,7 @@ public class ScaleWorkerIntent implements Runnable {
 
     private void scaleUp() {
         db.status.put(cluster.clusterId, new Status(Status.CODE.Scale_Up, "Scaling up the cluster by " + count + " worker!"));
-        cluster.createWorkerInstances(batchIndex, count);
+        cluster.createAdditionalWorkerInstances(batchIndex, count);
         db.status.put(cluster.clusterId, new Status(Status.CODE.Running));
     }
 
@@ -64,7 +61,7 @@ public class ScaleWorkerIntent implements Runnable {
             // we have to do authenticate again,
             // if authentication was done in a separate thread.
             MDC.put("cluster", getClusterId());
-            cluster.client.authenticate();
+            module.client.authenticate();
             if (scaling.equals(SCALE_DOWN.getShortParam()) || scaling.equals(SCALE_DOWN.getLongParam())) {
                 scaleDown();
             } else if (scaling.equals(SCALE_UP.getShortParam()) || scaling.equals(SCALE_UP.getLongParam())) {

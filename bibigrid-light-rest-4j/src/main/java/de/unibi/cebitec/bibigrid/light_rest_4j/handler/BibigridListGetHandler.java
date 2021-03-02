@@ -21,7 +21,7 @@ import java.util.Map;
 public class BibigridListGetHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridListGetHandler.class);
-    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+    private final ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
 
     @Override
     public void handleRequest(HttpServerExchange exchange){
@@ -29,10 +29,9 @@ public class BibigridListGetHandler implements LightHttpHandler {
         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
         if (serviceProviderConnector.connectToServiceProvider(exchange)) {
             ProviderModule module = serviceProviderConnector.getModule();
-            Client client = serviceProviderConnector.getClient();
             ConfigurationOpenstack config = serviceProviderConnector.getConfig();
 
-            LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
+            LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
             loadIntent.loadClusterConfiguration(null);
             Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
             ListIntent listIntent = serviceProviderConnector.getModule().getListIntent(clusterMap);

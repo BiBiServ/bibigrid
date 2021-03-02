@@ -33,9 +33,9 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     private final OSClient os;
 
-    CreateClusterOpenstack(final ProviderModule providerModule, Client client, final Configuration config, final String clusterId) {
-        super(providerModule, client, config, clusterId);
-        os = ((ClientOpenstack) client).getInternal();
+    CreateClusterOpenstack(final ProviderModule providerModule, final Configuration config, final String clusterId) {
+        super(providerModule, config, clusterId);
+        os = ((ClientOpenstack) providerModule.getClient()).getInternal();
     }
 
     @Override
@@ -80,7 +80,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                     .name(masterNameTag)
                     .flavor(masterSpec.getFlavor().getId())
                     // .image(config.getMasterInstance().getImage())
-                    .image((client.getImageByIdOrName(config.getMasterInstance().getImage())).getId())
+                    .image((providerModule.client.getImageByIdOrName(config.getMasterInstance().getImage())).getId())
                     .keypairName(config.getClusterKeyPair().getName())
                     .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
                     .availabilityZone(config.getAvailabilityZone())
@@ -233,7 +233,7 @@ public class CreateClusterOpenstack extends CreateCluster {
                         Builders.server()
                                 .name(buildWorkerInstanceName(workerBatch, workerIndex))
                                 .flavor(workerSpec.getFlavor().getId())
-                                .image((client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
+                                .image((providerModule.client.getImageByIdOrName(instanceConfiguration.getImage())).getId())
                                 .keypairName(config.getClusterKeyPair().getName())
                                 .addSecurityGroup(((CreateClusterEnvironmentOpenstack) environment).getSecGroupExtension().getId())
                                 .availabilityZone(config.getAvailabilityZone())
@@ -320,8 +320,8 @@ public class CreateClusterOpenstack extends CreateCluster {
             LOG.error("ProviderType could not be determined.");
         }
         String flavorId = workerSpec.getFlavor().getId();
-        InstanceImage image = client.getImageByIdOrName(instanceConfiguration.getImage());
-        Network network = client.getNetworkByIdOrName(instanceConfiguration.getNetwork());
+        InstanceImage image = providerModule.client.getImageByIdOrName(instanceConfiguration.getImage());
+        Network network = providerModule.client.getNetworkByIdOrName(instanceConfiguration.getNetwork());
         SecGroupExtension secGroupExtension = CreateClusterEnvironmentOpenstack.getSecGroupExtensionByName(os, cluster.getSecurityGroup());
         String securityGroupId = secGroupExtension != null ? secGroupExtension.getId() : "";
         LOG.info("Launch additional workerInstance with \n" +

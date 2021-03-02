@@ -43,22 +43,21 @@ public class CreateClusterAWS extends CreateCluster {
 
     private final ConfigurationAWS config;
 
-    CreateClusterAWS(final ProviderModule providerModule, Client client, final ConfigurationAWS config) {
-        super(providerModule, client, config, null);
+    CreateClusterAWS(final ProviderModule providerModule, final ConfigurationAWS config, String clusterId) {
+        super(providerModule, config, clusterId);
         this.config = config;
-        ec2 = ((ClientAWS) client).getInternal();
+        ec2 = ((ClientAWS) providerModule.getClient()).getInternal();
         bibigridId = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_BIBIGRID_ID).withValue(clusterId);
         username = new Tag().withKey(de.unibi.cebitec.bibigrid.core.model.Instance.TAG_USER).withValue(config.getUser());
     }
 
     @Override
-    public CreateCluster configureClusterMasterInstance() {
+    public void configureClusterMasterInstance() {
         super.configureClusterMasterInstance();
         buildMasterDeviceMappings();
         base64MasterUserData = ShellScriptCreator.getUserData(config, true);
         buildMasterPlacementGroup();
         buildMasterNetworkInterface();
-        return this;
     }
 
     private void buildMasterDeviceMappings() {
@@ -110,10 +109,9 @@ public class CreateClusterAWS extends CreateCluster {
     }
 
     @Override
-    public CreateClusterAWS configureClusterWorkerInstance() {
+    public void configureClusterWorkerInstance() {
         buildClientsNetworkInterface();
         buildClientsDeviceMappings();
-        return this;
     }
 
     private void buildClientsNetworkInterface() {
@@ -313,6 +311,11 @@ public class CreateClusterAWS extends CreateCluster {
                     .withTags(bibigridId, username, workerNameTag));
         }
         return workerInstances.stream().map(i -> new InstanceAWS(instanceConfiguration, i)).collect(Collectors.toList());
+    }
+
+    @Override
+    protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchAdditionalClusterWorkerInstances(Cluster cluster, int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
+        return null;
     }
 
     /**

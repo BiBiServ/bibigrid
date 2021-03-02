@@ -27,7 +27,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
             "afterwards.";
     private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
     // Establish connection to service provider
-    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+    private final ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
 
     /*
     Attribute that is used to send the cluster_id back to the user
@@ -43,7 +43,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
      * Must be implemented asynchronously to return cluster id when creating in CreateCluster
      */
     private boolean runCreateIntent(ProviderModule module, Configuration config, Client client,
-                                    CreateCluster cluster, boolean prepare) {
+                                    CreateCluster cluster) {
         try {
             // configure environment
             cluster.createClusterEnvironment()
@@ -53,10 +53,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                     .createKeyPair()
                     .createPlacementGroup();
             // configure cluster
-            boolean success = cluster
-                    .configureClusterMasterInstance()
-                    .configureClusterWorkerInstance()
-                    .launchClusterInstances(prepare);
+            boolean success = cluster.configureClusterInstances() && cluster.launchClusterInstances();
             if (!success) {
                 /*  In DEBUG mode keep partial configured cluster running, otherwise clean it up */
                 if (Configuration.DEBUG) {
@@ -64,7 +61,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                 } else {
                     LOG.error(BibigridCreatePostHandler.ABORT_WITH_INSTANCES_RUNNING);
 
-                    TerminateIntent cleanupIntent = module.getTerminateIntent(client, config);
+                    TerminateIntent cleanupIntent = module.getTerminateIntent(config);
 
                     cleanupIntent.terminate(cluster_id);
                 }
@@ -90,7 +87,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
         if (serviceProviderConnector.connectToServiceProvider(exchange)) {
             ProviderModule module = serviceProviderConnector.getModule();
-            Client client = serviceProviderConnector.getClient();
+            Client client = module.getClient();
             ConfigurationOpenstack config = serviceProviderConnector.getConfig();
 
 
@@ -98,12 +95,12 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                 Validator validator = module.getValidator(config, module);
 
 
-                if (!validator.validateProviderTypes(client)) {
+                if (!validator.validateProviderTypes()) {
                     LOG.error(ABORT_WITH_NOTHING_STARTED);
                 }
-                ValidateIntent intent = module.getValidateIntent(client, config);
+                ValidateIntent intent = module.getValidateIntent(config);
                 if (intent.validate()) {
-                    CreateIntent create = new CreateIntent(module, config, client);
+                    CreateIntent create = new CreateIntent(module, config);
 
                     // run createIntent as background process ..
                     Thread t = new Thread(create);

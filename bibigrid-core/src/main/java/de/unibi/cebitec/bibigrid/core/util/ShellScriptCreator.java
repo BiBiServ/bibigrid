@@ -27,6 +27,9 @@ public final class ShellScriptCreator {
         // redirect output
         userData.append("exec > /var/log/userdata.log\n");
         userData.append("exec 2>&1\n");
+        // disableUpgrades
+        // appendDisableAptDailyService(userData);
+        appendDisableUpgrades(userData);
         // source shell configuration
         userData.append("source /home/").append(config.getSshUser()).append("/.bashrc\n");
         // simple log function
@@ -43,10 +46,6 @@ public final class ShellScriptCreator {
         userData.append("log \"set hostname\"\n");
         userData.append("hostname -b $(iplookup $localip)\n");
         userData.append("fi\n");
-        // disableAptDailyService
-        userData.append("log \"disable apt-daily.(service|timer)\"\n");
-        // appendDisableAptDailyService(userData);
-        appendDisableUpgrades(userData);
         // configure SSH Config
         userData.append("log \"configure ssh\"\n");
         appendSshConfiguration(config, userData);
@@ -73,9 +72,8 @@ public final class ShellScriptCreator {
         userData.append("chmod 600 ").append(userSshPath).append("id_rsa\n");
 
         // place *all* additional public keys within authorized keys
-        List<String> pks = new ArrayList<>();
-               // public keys
-        pks.addAll(config.getSshPublicKeys());
+        // public keys
+        List<String> pks = new ArrayList<>(config.getSshPublicKeys());
         // public key files
         List<String> pkfs = new ArrayList<>(config.getSshPublicKeyFiles());
         if (config.getSshPublicKeyFile() != null) {
@@ -118,12 +116,13 @@ public final class ShellScriptCreator {
 
     /**
      * Builds script to configure ansible and execute ansible commands to install (galaxy) roles / playbooks.
-     * @param prepare true, if still preparation necessary
      * @param config Configuration
      * @return script String to execute in CreateCluster
      */
-    public static String getMasterAnsibleExecutionScript(final boolean prepare, final Configuration config) {
+    public static String getMasterAnsibleExecutionScript(final Configuration config) {
         StringBuilder script = new StringBuilder();
+        // wait until /var/lib/dpkg/lock is not locked by apt/dpkg
+        script.append("while sudo lsof /var/lib/dpkg/lock 2> null; do echo \"/var/lib/dpkg/lock locked - wait for 10 seconds\"; sleep 10; done;\n");
         // apt-get update
         script.append("sudo apt-get update | sudo tee -a /var/log/ssh_exec.log\n");
         // install python3

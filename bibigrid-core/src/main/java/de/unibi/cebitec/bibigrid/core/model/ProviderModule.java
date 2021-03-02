@@ -7,7 +7,6 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.InstanceTypeNotFoundException;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -24,6 +23,11 @@ public abstract class ProviderModule {
      * @return The name of the provider.
      */
     public abstract String getName();
+
+    /**
+     * Assigned during the createClient() implementation of the inheritors.
+     */
+    public Client client;
 
 
     /**
@@ -47,30 +51,31 @@ public abstract class ProviderModule {
      */
     public abstract Validator getValidator(Configuration config, ProviderModule module) throws ConfigurationException;
 
-    public abstract Client getClient(Configuration config) throws ClientConnectionFailedException;
+    public abstract void createClient(Configuration config) throws ClientConnectionFailedException;
+
+    public Client getClient() {
+        return client;
+    }
 
     public abstract ListIntent getListIntent(Map<String, Cluster> clusterMap);
 
-    public abstract TerminateIntent getTerminateIntent(Client client, Configuration config);
+    public abstract TerminateIntent getTerminateIntent(Configuration config);
 
-    public abstract PrepareIntent getPrepareIntent(Client client, Configuration config);
+    public abstract PrepareIntent getPrepareIntent(Configuration config);
 
-    public abstract CreateCluster getCreateIntent(Client client, Configuration config, String clusterId);
+    public abstract CreateCluster getCreateIntent(Configuration config, String clusterId);
 
-    public abstract ScaleWorkerIntent getScaleWorkerIntent(Client client, Configuration config, String clusterId, int batchIndex, int count, String scaling);
+    public abstract ScaleWorkerIntent getScaleWorkerIntent(Configuration config, String clusterId, int batchIndex, int count, String scaling);
 
+    public abstract LoadClusterConfigurationIntent getLoadClusterConfigurationIntent(Configuration config);
 
-    public abstract LoadClusterConfigurationIntent getLoadClusterConfigurationIntent(Client client, Configuration config);
-
-    public abstract CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster)
+    public abstract CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster)
             throws ConfigurationException;
 
-    public ValidateIntent getValidateIntent(Client client, Configuration config) {
-        return new ValidateIntent(client, config);
-    }
+    public abstract ValidateIntent getValidateIntent(Configuration config);
 
-    public final InstanceType getInstanceType(Client client, Configuration config, String type) throws InstanceTypeNotFoundException {
-        getInstanceTypes(client, config);
+    public final InstanceType getInstanceType(Configuration config, String type) throws InstanceTypeNotFoundException {
+        getInstanceTypes(config);
         if (instanceTypes == null || !instanceTypes.containsKey(type)) {
             throw new InstanceTypeNotFoundException("Invalid instance type " + type);
         }
@@ -84,12 +89,12 @@ public abstract class ProviderModule {
      */
     public abstract String getBlockDeviceBase();
 
-    public final Collection<InstanceType> getInstanceTypes(Client client, Configuration config) {
+    public final Collection<InstanceType> getInstanceTypes(Configuration config) {
         if (instanceTypes == null) {
-            instanceTypes = getInstanceTypeMap(client, config);
+            instanceTypes = getInstanceTypeMap(config);
         }
         return instanceTypes.values();
     }
 
-    protected abstract Map<String, InstanceType> getInstanceTypeMap(Client client, Configuration config);
+    protected abstract Map<String, InstanceType> getInstanceTypeMap(Configuration config);
 }

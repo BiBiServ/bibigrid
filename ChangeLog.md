@@ -1,3 +1,15 @@
+## Version 2.3 (3/2/2021)
+
+## Fixes
+- solves problem with locked dpkg lock file (#297)
+- security: adjust default ip range for opened ports (#285)
+- set to theia ide default workspace if wrong path provided (#217)
+- bumps [jackson-databind](https://github.com/FasterXML/jackson) from 2.9.9.3 to 2.9.10.5 due to vulnerability issues
+
+## Features
+- restructure: move client to provider module (#300)
+- update theia-ide (#289)
+- determine project quotas (#257)
 ## Version 2.2.2 (11/7/2020)
 
 ### Fixes

@@ -30,38 +30,38 @@ public class ProviderModuleAWS extends ProviderModule {
     }
 
     @Override
-    public Client getClient(Configuration config) throws ClientConnectionFailedException {
-        return new ClientAWS(config);
+    public void createClient(Configuration config) throws ClientConnectionFailedException {
+        client = new ClientAWS(config);
     }
 
     @Override
-    public ListIntent getListIntent(Client client, Configuration config) {
+    public ListIntent getListIntent(Configuration config) {
         return new ListIntentAWS(this, client, config);
     }
 
     @Override
-    public TerminateIntent getTerminateIntent(Client client, Configuration config) {
-        return new TerminateIntentAWS(this, client, config);
+    public TerminateIntent getTerminateIntent(Configuration config) {
+        return new TerminateIntentAWS(this, config);
     }
 
     @Override
-    public PrepareIntent getPrepareIntent(Client client, Configuration config) {
+    public PrepareIntent getPrepareIntent(Configuration config) {
         return new PrepareIntentAWS(this, client, config);
     }
 
     @Override
-    public CreateCluster getCreateIntent(Client client, Configuration config) {
-        return new CreateClusterAWS(this, client, (ConfigurationAWS) config);
+    public CreateCluster getCreateIntent(Configuration config) {
+        return new CreateClusterAWS(this, (ConfigurationAWS) config, clusterId);
     }
 
     @Override
-    public CreateClusterEnvironment getClusterEnvironment(Client client, CreateCluster cluster) throws ConfigurationException {
+    public CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
         return new CreateClusterEnvironmentAWS(client, (CreateClusterAWS) cluster);
     }
 
     @Override
-    public ValidateIntent getValidateIntent(Client client, Configuration config) {
-        return new ValidateIntentAWS(client, config);
+    public ValidateIntent getValidateIntent(Configuration config) {
+        return new ValidateIntentAWS(config);
     }
 
     @Override

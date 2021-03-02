@@ -33,16 +33,14 @@ public class IdeIntent extends Intent {
     public static final int DEFAULT_IDE_PORT_END = 8383;
 
     private final ProviderModule providerModule;
-    private final Client client;
     private final String clusterId;
     private final Configuration config;
 
     private int idePort = DEFAULT_IDE_PORT;
     private int idePortLast = DEFAULT_IDE_PORT_END;
 
-    public IdeIntent(ProviderModule providerModule, Client client, String clusterId, Configuration config) {
+    public IdeIntent(ProviderModule providerModule, String clusterId, Configuration config) {
         this.providerModule = providerModule;
-        this.client = client;
         this.clusterId = clusterId;
         this.config = config;
     }
@@ -52,7 +50,7 @@ public class IdeIntent extends Intent {
             LOG.error("ClusterId not found. Please provide a valid cluster id.");
             return;
         }
-        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(client, config);
+        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(config);
         loadIntent.loadClusterConfiguration(clusterId);
         Cluster cluster = loadIntent.getCluster(clusterId);
         if (cluster == null) {

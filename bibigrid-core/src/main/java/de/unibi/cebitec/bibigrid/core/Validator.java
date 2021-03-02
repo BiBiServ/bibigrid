@@ -20,6 +20,8 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static de.unibi.cebitec.bibigrid.core.Constant.ABORT_WITH_NOTHING_STARTED;
+
 /**
  * Checks, if commandline and configuration input is set correctly.
  */
@@ -153,6 +155,7 @@ public abstract class Validator {
         return true;
     }
 
+
     /**
      * Validates CIDR by using regex pattern.
      * @param serviceCIDR config parameter to
@@ -232,6 +235,7 @@ public abstract class Validator {
      * @return true, if requirements fulfilled
      */
     public boolean validateConfiguration() {
+        boolean validProviderTypes = validateProviderTypes();
         boolean validSSHKeyFiles = validateSSHKeyFiles();
         boolean validAnsibleRequirements = true;
         boolean validServiceCIDR = true;
@@ -239,12 +243,7 @@ public abstract class Validator {
             LOG.info("Checking Ansible configuration ...");
             validAnsibleRequirements = validateAnsibleRequirements();
         }
-
-        if (config.getServiceCIDR() != null) {
-            validServiceCIDR = validateServiceCIDR(config.getServiceCIDR());
-        }
-
-        return validServiceCIDR &&
+        return validProviderTypes &&
                 validSSHKeyFiles &&
                 validAnsibleRequirements;
     }
@@ -259,12 +258,11 @@ public abstract class Validator {
 
     /**
      * Checks master instanceType.
-     * @param client Client
      * @return true, if validation successful, otherwise false
      */
-    public boolean validateProviderTypes(Client client) {
+    public boolean validateProviderTypes() {
         try {
-            InstanceType masterType = providerModule.getInstanceType(client, config, config.getMasterInstance().getType());
+            InstanceType masterType = providerModule.getInstanceType(config, config.getMasterInstance().getType());
             config.getMasterInstance().setProviderType(masterType);
         } catch (InstanceTypeNotFoundException e) {
             LOG.error("Invalid master instance type specified!", e);
@@ -272,7 +270,7 @@ public abstract class Validator {
         }
         try {
             for (Configuration.InstanceConfiguration instanceConfiguration : config.getWorkerInstances()) {
-                InstanceType workerType = providerModule.getInstanceType(client, config, instanceConfiguration.getType());
+                InstanceType workerType = providerModule.getInstanceType(config, instanceConfiguration.getType());
                 instanceConfiguration.setProviderType(workerType);
             }
         } catch (InstanceTypeNotFoundException e) {
@@ -281,6 +279,27 @@ public abstract class Validator {
         }
         return true;
     }
+    /**
+     * Validate native instance types and configuration file when used.
+     * Step is deferred AFTER client connection is established
+     * @return true, if configuration file is invalid
+     */
+    public boolean configurationInvalid() {
+        try {
+            if (!validateConfiguration()) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return true;
+            }
+        } catch (Exception e){
+            LOG.error(e.getMessage());
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        return false;
+    }
+
 
     protected static boolean isStringNullOrEmpty(final String s) {
         return s == null || s.trim().isEmpty();

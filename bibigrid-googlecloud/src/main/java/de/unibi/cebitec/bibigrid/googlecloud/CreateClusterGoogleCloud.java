@@ -27,18 +27,18 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     private Metadata.Items instanceStartupScript;
     private NetworkInterface masterNetworkInterface;
 
-    CreateClusterGoogleCloud(final ProviderModule providerModule, Client client, final ConfigurationGoogleCloud config) {
-        super(providerModule, client, config, null);
+    CreateClusterGoogleCloud(final ProviderModule providerModule, final ConfigurationGoogleCloud config, final String clusterId) {
+        super(providerModule, config, clusterId);
         this.config = config;
-        compute = ((ClientGoogleCloud) client).getInternal();
+        compute = ((ClientGoogleCloud) providerModule.getClient()).getInternal();
     }
 
     @Override
-    public CreateCluster configureClusterMasterInstance() {
+    public void configureClusterMasterInstance() {
         String startupScript = ShellScriptCreator.getUserData(config, false);
         instanceStartupScript = new Metadata.Items().setKey("startup-script").setValue(startupScript);
         masterNetworkInterface = buildExternalNetworkInterface();
-        return super.configureClusterMasterInstance();
+        super.configureClusterMasterInstance();
     }
 
     private NetworkInterface buildExternalNetworkInterface() {
@@ -79,7 +79,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                     .insert(config.getGoogleProjectId(), zone, masterInstance).execute();
             masterInstance = waitForInstances(new Instance[]{masterInstance}, new Operation[]{createMasterOperation}).get(0);
         } catch (Exception e) {
-            LOG.error("Failed to start master instance. {}", e);
+            LOG.error("Failed to start master instance.", e);
             return null;
         }
         LOG.info(I, "Master instance is now running!");
@@ -121,7 +121,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
                         .insert(config.getGoogleProjectId(), zone, workerBuilder).execute();
                 workerInstanceBuilders[i] = workerBuilder;
             } catch (Exception e) {
-                LOG.error("Failed to start worker instance. {}", e);
+                LOG.error("Failed to start worker instance.", e);
                 return null;
             }
         }
@@ -130,6 +130,11 @@ public class CreateClusterGoogleCloud extends CreateCluster {
         LOG.info(I, "Worker instance(s) is now running!");
         waitForInstancesStatusCheck(workerInstances);
         return workerInstances.stream().map(i -> new InstanceGoogleCloud(instanceConfiguration, i)).collect(Collectors.toList());
+    }
+
+    @Override
+    protected List<de.unibi.cebitec.bibigrid.core.model.Instance> launchAdditionalClusterWorkerInstances(Cluster cluster, int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
+        return null;
     }
 
     private void waitForInstancesStatusCheck(List<Instance> instances) {
@@ -153,7 +158,7 @@ public class CreateClusterGoogleCloud extends CreateCluster {
     }
 
     private List<Instance> waitForInstances(Instance[] instances, Operation[] operations) {
-        if (instances.length == 0 || operations.length == 0 || instances.length != operations.length) {
+        if (operations.length == 0 || instances.length != operations.length) {
             LOG.error("No instances found");
             return new ArrayList<>();
         }

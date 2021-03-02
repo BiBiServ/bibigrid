@@ -3,11 +3,8 @@ package de.unibi.cebitec.bibigrid.azure;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
-import de.unibi.cebitec.bibigrid.core.model.Client;
-import de.unibi.cebitec.bibigrid.core.model.Configuration;
-import de.unibi.cebitec.bibigrid.core.model.Instance;
+import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.intents.CreateCluster;
-import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,17 +27,19 @@ import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 public class CreateClusterAzure extends CreateCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CreateClusterAzure.class);
     private final Azure compute;
+    private final ClientAzure client;
     private String masterStartupScript;
 
-    CreateClusterAzure(final ProviderModule providerModule, Client client, final Configuration config) {
-        super(providerModule, client, config, null);
-        compute = ((ClientAzure) client).getInternal();
+    CreateClusterAzure(final ProviderModule providerModule, final Configuration config) {
+        super(providerModule, config, null);
+        client = (ClientAzure) providerModule.getClient();
+        compute = client.getInternal();
     }
 
     @Override
-    public CreateCluster configureClusterMasterInstance() {
+    public void configureClusterMasterInstance() {
         masterStartupScript = ShellScriptCreator.getUserData(config, true);
-        return super.configureClusterMasterInstance();
+        super.configureClusterMasterInstance();
     }
 
     @Override
@@ -124,6 +123,11 @@ public class CreateClusterAzure extends CreateCluster {
         waitForInstancesStatusCheck(workerInstances);
         LOG.info(I, "Worker instance(s) is now running!");
         return workerInstances.stream().map(i -> new InstanceAzure(instanceConfiguration, i)).collect(Collectors.toList());
+    }
+
+    @Override
+    protected List<Instance> launchAdditionalClusterWorkerInstances(Cluster cluster, int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag) {
+        return null;
     }
 
     private void waitForInstancesStatusCheck(List<VirtualMachine> instances) {

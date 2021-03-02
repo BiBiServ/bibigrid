@@ -1,14 +1,11 @@
 package de.unibi.cebitec.bibigrid;
 
 import de.unibi.cebitec.bibigrid.core.Constant;
-import de.unibi.cebitec.bibigrid.core.DataBase;
 import de.unibi.cebitec.bibigrid.core.Validator;
 import de.unibi.cebitec.bibigrid.core.intents.*;
 import de.unibi.cebitec.bibigrid.core.model.*;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
-import de.unibi.cebitec.bibigrid.core.util.ConfigurationFile;
-import de.unibi.cebitec.bibigrid.core.util.Status;
 import de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter;
 
 import java.io.IOException;
@@ -106,6 +103,7 @@ public class StartUp {
             }
             // Just to get information faster
             if (intentMode == HELP) {
+                // printInstanceTypeHelp(module, client, config);
                 printHelp(cl, cmdLineOptions);
                 return;
             }
@@ -129,7 +127,7 @@ public class StartUp {
             try {
                 // Provider specific configuration and validator
                 Configuration config = module.getConfiguration(configurationFile);
-                Validator validator =  module.getValidator(config,module);
+                Validator validator =  module.getValidator(config, module);
 
                 // Map of IntentMode and clusterIds
                 Map<IntentMode, String[]> clOptions = new HashMap<>();
@@ -141,6 +139,8 @@ public class StartUp {
                     clOptions.put(im, parameters);
                 }
 
+                // TODO validates by configuration file
+                // Only a valid option for creation and validation parameter
                 if (validator.validateProviderParameters()) {
                     runIntent(module, validator, clOptions, intentMode, config);
                 } else {
@@ -187,76 +187,63 @@ public class StartUp {
      * @param config Configuration
      */
     private static void runIntent(ProviderModule module, Validator validator, Map<IntentMode, String[]> clOptions, IntentMode intentMode, Configuration config) {
-            Client client;
             try {
-                client = module.getClient(config);
+                module.createClient(config);
             } catch (ClientConnectionFailedException e) {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
             }
 
-            // Usually parameters equals clusterId(s) or null
+            // Usually parameters[0] equals clusterId(s) or null
             String[] parameters = clOptions.get(intentMode);
+            String clusterId = parameters.length == 0 ? null : parameters[0];
 
             // -h and -l parameters don't need validation
-            if (intentMode == HELP) {
-                // printInstanceTypeHelp(module, client, config);
-                // printHelp();
-                return;
-            } else if (intentMode == LIST) {
-                String param = parameters.length == 0 ? null : parameters[0];
-                LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(client, config);
-                loadIntent.loadClusterConfiguration(param);
+            if (intentMode == LIST) {
+                LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
+                loadIntent.loadClusterConfiguration(clusterId);
                 Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
                 if (clusterMap.isEmpty()) {
                     return;
                 }
                 ListIntent listIntent = module.getListIntent(clusterMap);
-                if (param == null) {
+                if (clusterId == null) {
                     LOG.info(listIntent.toString());
                 } else {
-                    LOG.info(listIntent.toDetailString(param));
+                    LOG.info(listIntent.toDetailString(clusterId));
                 }
                 return;
             }
 
-            // In order to validate the native instance types, we need a client.
-            // So this step is deferred after client connection is established.
-            try {
-                if (!validator.validateProviderTypes(client) || !validator.validateConfiguration()) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-                    return;
-                }
-            } catch (Exception e){
-                LOG.error(e.getMessage());
-                if (Configuration.DEBUG) {
-                    e.printStackTrace();
-                }
-                return;
-            }
             switch (intentMode) {
                 case VALIDATE:
-                    if (module.getValidateIntent(client, config).validate()) {
+                    if (validator.configurationInvalid()) {
+                        break;
+                    }
+                    if (module.getValidateIntent(config).validate()) {
                         LOG.info(I, "You can now start your cluster.");
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case CREATE:
-                    if (module.getValidateIntent(client, config).validate()) {
-                        String clusterId = parameters != null ? parameters[0] : null;
-                        CreateCluster cluster = module.getCreateIntent(client, config, clusterId);
-                        runCreateIntent(module, config, client, cluster, false);
+                    if (validator.configurationInvalid()) {
+                        break;
+                    }
+                    if (module.getValidateIntent(config).validate()) {
+                        CreateCluster cluster = module.getCreateIntent(config, clusterId);
+                        runCreateIntent(module, config, cluster);
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
                     break;
                 case TERMINATE:
-                    if (!module.getTerminateIntent(client, config).terminate(parameters)) {
+                    if (!module.getTerminateIntent(config).terminate(parameters)) {
                         if (parameters.length == 1) {
                             LOG.error("Could not terminate instances with given parameter {}.", parameters[0]);
                         } else {
+                            // LOG.warn("StartUp, given parameters: {}", Arrays.stream(parameters));
                             StringBuilder error = new StringBuilder("Could not terminate instances with given parameters ");
                             for (int p = 0; p < parameters.length; p++) {
                                 String parameter = parameters[p];
@@ -270,7 +257,6 @@ public class StartUp {
                     }
                     break;
                 case SCALE_UP:
-                    String clusterId = parameters[0];
                     int workerBatch;
                     int count;
                     try {
@@ -280,14 +266,13 @@ public class StartUp {
                         LOG.error("Wrong usage. Please use '-su <cluster-id> <workerBatch> <count> instead.'");
                         return;
                     }
-                    CreateCluster createIntent = module.getCreateIntent(client, config, clusterId);
-                    if (!createIntent.createWorkerInstances(workerBatch, count)) {
+                    CreateCluster createIntent = module.getCreateIntent(config, clusterId);
+                    if (!createIntent.createAdditionalWorkerInstances(workerBatch, count)) {
                         LOG.error("Could not create worker instances with specified batch.");
                         return;
                     }
                     break;
                 case SCALE_DOWN:
-                    clusterId = parameters[0];
                     try {
                         workerBatch = Integer.parseInt(parameters[1]);
                         count = Integer.parseInt(parameters[2]);
@@ -295,16 +280,15 @@ public class StartUp {
                         LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <count> instead.'");
                         return;
                     }
-                    module.getTerminateIntent(client, config)
+                    module.getTerminateIntent(config)
                             .terminateInstances(clusterId, workerBatch, count);
                     break;
                 case IDE:
                     try {
                         // Load private key file
-                        clusterId = parameters.length == 1 ? parameters[0] : null;
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
-                        new IdeIntent(module, client, clusterId, config).start();
+                        new IdeIntent(module, clusterId, config).start();
                     } catch (IOException e) {
                         LOG.error("Exception occurred loading private key. {}",e.getMessage());
                         if (Configuration.DEBUG) {
@@ -319,17 +303,16 @@ public class StartUp {
     }
 
     /**
+     * ToDo Make void or use return value
      * Runs cluster creation and launch processing.
      *
      * @param module responsible for provider accessibility
      * @param config overall configuration
-     * @param client Client
      * @param cluster CreateCluster implementation
-     * @param prepare true, if in prepare mode
      * @return true, if cluster built successfully
      */
-    private static boolean runCreateIntent(ProviderModule module, Configuration config, Client client,
-                                           CreateCluster cluster, boolean prepare) {
+    private static boolean runCreateIntent(ProviderModule module, Configuration config,
+                                           CreateCluster cluster) {
         try {
             // configure environment
             cluster .createClusterEnvironment()
@@ -339,17 +322,14 @@ public class StartUp {
                     .createKeyPair()
                     .createPlacementGroup();
             // configure cluster
-            boolean success =  cluster
-                    .configureClusterMasterInstance()
-                    .configureClusterWorkerInstance()
-                    .launchClusterInstances(prepare);
+            boolean success = cluster.configureClusterInstances() && cluster.launchClusterInstances();
             if (!success) {
                 //  In DEBUG mode keep partial configured cluster running, otherwise clean it up
                 if (Configuration.DEBUG) {
                     LOG.error(StartUp.KEEP);
                 } else {
                     LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-                    module.getTerminateIntent(client, config).terminate(cluster.getClusterId());
+                    module.getTerminateIntent(config).terminate(cluster.getClusterId());
                 }
                 return false;
             }
@@ -415,17 +395,16 @@ public class StartUp {
      * Displays table of different machines (name, cores, ram, disk space, swap, ephemerals.
      *
      * @param module responsible for provider accessibility
-     * @param client Provider client user to connect to cluster
      * @param config Configuration to get instance type
      */
-    private static void printInstanceTypeHelp(ProviderModule module, Client client, Configuration config) {
+    private static void printInstanceTypeHelp(ProviderModule module, Configuration config) {
         StringBuilder display = new StringBuilder();
         Formatter formatter = new Formatter(display, Locale.US);
         display.append("\n");
         formatter.format("%30s | %7s | %14s | %14s | %4s | %10s%n", "name", "cores", "ram Mb", "disk size Mb", "swap",
                 "ephemerals");
         display.append(new String(new char[89]).replace('\0', '-')).append("\n");
-        for (InstanceType type : module.getInstanceTypes(client, config)) {
+        for (InstanceType type : module.getInstanceTypes(config)) {
             formatter.format("%30s | %7s | %14s | %14s | %4s | %10s%n", type.getValue(), type.getCpuCores(),
                     type.getMaxRam(), type.getMaxDiskSpace(), type.getSwap(), type.getEphemerals());
         }

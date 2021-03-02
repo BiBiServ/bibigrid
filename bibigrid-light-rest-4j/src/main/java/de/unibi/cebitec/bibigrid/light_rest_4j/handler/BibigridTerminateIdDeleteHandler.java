@@ -19,7 +19,7 @@ import java.util.Map;
 public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(BibigridTerminateIdDeleteHandler.class);
-    private ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
+    private final ServiceProviderConnector serviceProviderConnector = new ServiceProviderConnector();
     private String clusterId;
 
     @Override
@@ -29,12 +29,12 @@ public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
         if (serviceProviderConnector.connectToServiceProvider(exchange)) {
             ProviderModule module = serviceProviderConnector.getModule();
-            Client client = serviceProviderConnector.getClient();
+            Client client = module.getClient();
             ConfigurationOpenstack config = serviceProviderConnector.getConfig();
 
             // set id for termination
             clusterId = exchange.getQueryParameters().get("id").getFirst();
-            TerminateIntent terminateIntent = module.getTerminateIntent(client, config);
+            TerminateIntent terminateIntent = module.getTerminateIntent(config);
 
             if (terminateIntent.terminate(clusterId)) {
                 try {
