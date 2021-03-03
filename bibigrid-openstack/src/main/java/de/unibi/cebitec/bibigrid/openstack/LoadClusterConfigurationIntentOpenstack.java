@@ -69,6 +69,7 @@ public class LoadClusterConfigurationIntentOpenstack extends LoadClusterConfigur
         return list;
     }
 
+    // TODO config parameters removable?
     @Override
     public void loadInstanceConfiguration(Instance instance) {
         Configuration.InstanceConfiguration instanceConfiguration =

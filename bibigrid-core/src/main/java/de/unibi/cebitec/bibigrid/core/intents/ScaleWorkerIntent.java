@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import de.unibi.cebitec.bibigrid.core.DataBase;
-import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
@@ -51,7 +50,7 @@ public class ScaleWorkerIntent implements Runnable {
 
     private void scaleUp() {
         db.status.put(cluster.clusterId, new Status(Status.CODE.Scale_Up, "Scaling up the cluster by " + count + " worker!"));
-        cluster.createWorkerInstances(batchIndex, count);
+        cluster.createAdditionalWorkerInstances(batchIndex, count);
         db.status.put(cluster.clusterId, new Status(Status.CODE.Running));
     }
 

@@ -103,6 +103,7 @@ public class StartUp {
             }
             // Just to get information faster
             if (intentMode == HELP) {
+                // printInstanceTypeHelp(module, client, config);
                 printHelp(cl, cmdLineOptions);
                 return;
             }
@@ -126,7 +127,7 @@ public class StartUp {
             try {
                 // Provider specific configuration and validator
                 Configuration config = module.getConfiguration(configurationFile);
-                Validator validator =  module.getValidator(config,module);
+                Validator validator =  module.getValidator(config, module);
 
                 // Map of IntentMode and clusterIds
                 Map<IntentMode, String[]> clOptions = new HashMap<>();
@@ -138,6 +139,8 @@ public class StartUp {
                     clOptions.put(im, parameters);
                 }
 
+                // TODO validates by configuration file
+                // Only a valid option for creation and validation parameter
                 if (validator.validateProviderParameters()) {
                     runIntent(module, validator, clOptions, intentMode, config);
                 } else {
@@ -185,7 +188,6 @@ public class StartUp {
      */
     private static void runIntent(ProviderModule module, Validator validator, Map<IntentMode, String[]> clOptions, IntentMode intentMode, Configuration config) {
             try {
-                // TODO Move client to provider module?
                 module.createClient(config);
             } catch (ClientConnectionFailedException e) {
                 LOG.error(e.getMessage());
@@ -193,48 +195,32 @@ public class StartUp {
                 return;
             }
 
-            // Usually parameters equals clusterId(s) or null
+            // Usually parameters[0] equals clusterId(s) or null
             String[] parameters = clOptions.get(intentMode);
+            String clusterId = parameters.length == 0 ? null : parameters[0];
 
             // -h and -l parameters don't need validation
-            if (intentMode == HELP) {
-                // printInstanceTypeHelp(module, client, config);
-                // printHelp();
-                return;
-            } else if (intentMode == LIST) {
-                String param = parameters.length == 0 ? null : parameters[0];
+            if (intentMode == LIST) {
                 LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
-                loadIntent.loadClusterConfiguration(param);
+                loadIntent.loadClusterConfiguration(clusterId);
                 Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
                 if (clusterMap.isEmpty()) {
                     return;
                 }
                 ListIntent listIntent = module.getListIntent(clusterMap);
-                if (param == null) {
+                if (clusterId == null) {
                     LOG.info(listIntent.toString());
                 } else {
-                    LOG.info(listIntent.toDetailString(param));
+                    LOG.info(listIntent.toDetailString(clusterId));
                 }
                 return;
             }
 
-            // In order to validate the native instance types, we need a client.
-            // So this step is deferred after client connection is established.
-        // TODO Only check configuration when using it - ONLY VALIDATE AND CREATE
-            try {
-                if (!validator.validateConfiguration()) {
-                    LOG.error(ABORT_WITH_NOTHING_STARTED);
-                    return;
-                }
-            } catch (Exception e){
-                LOG.error(e.getMessage());
-                if (Configuration.DEBUG) {
-                    e.printStackTrace();
-                }
-                return;
-            }
             switch (intentMode) {
                 case VALIDATE:
+                    if (validator.configurationInvalid()) {
+                        break;
+                    }
                     if (module.getValidateIntent(config).validate()) {
                         LOG.info(I, "You can now start your cluster.");
                     } else {
@@ -242,10 +228,12 @@ public class StartUp {
                     }
                     break;
                 case CREATE:
+                    if (validator.configurationInvalid()) {
+                        break;
+                    }
                     if (module.getValidateIntent(config).validate()) {
-                        String clusterId = parameters != null ? parameters[0] : null;
                         CreateCluster cluster = module.getCreateIntent(config, clusterId);
-                        runCreateIntent(module, config, cluster, false);
+                        runCreateIntent(module, config, cluster);
                     } else {
                         LOG.error("There were one or more errors. Please adjust your configuration.");
                     }
@@ -255,6 +243,7 @@ public class StartUp {
                         if (parameters.length == 1) {
                             LOG.error("Could not terminate instances with given parameter {}.", parameters[0]);
                         } else {
+                            // LOG.warn("StartUp, given parameters: {}", Arrays.stream(parameters));
                             StringBuilder error = new StringBuilder("Could not terminate instances with given parameters ");
                             for (int p = 0; p < parameters.length; p++) {
                                 String parameter = parameters[p];
@@ -268,7 +257,6 @@ public class StartUp {
                     }
                     break;
                 case SCALE_UP:
-                    String clusterId = parameters[0];
                     int workerBatch;
                     int count;
                     try {
@@ -279,13 +267,12 @@ public class StartUp {
                         return;
                     }
                     CreateCluster createIntent = module.getCreateIntent(config, clusterId);
-                    if (!createIntent.createWorkerInstances(workerBatch, count)) {
+                    if (!createIntent.createAdditionalWorkerInstances(workerBatch, count)) {
                         LOG.error("Could not create worker instances with specified batch.");
                         return;
                     }
                     break;
                 case SCALE_DOWN:
-                    clusterId = parameters[0];
                     try {
                         workerBatch = Integer.parseInt(parameters[1]);
                         count = Integer.parseInt(parameters[2]);
@@ -299,7 +286,6 @@ public class StartUp {
                 case IDE:
                     try {
                         // Load private key file
-                        clusterId = parameters.length == 1 ? parameters[0] : null;
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
                         new IdeIntent(module, clusterId, config).start();
@@ -317,16 +303,16 @@ public class StartUp {
     }
 
     /**
+     * ToDo Make void or use return value
      * Runs cluster creation and launch processing.
      *
      * @param module responsible for provider accessibility
      * @param config overall configuration
      * @param cluster CreateCluster implementation
-     * @param prepare true, if in prepare mode
      * @return true, if cluster built successfully
      */
     private static boolean runCreateIntent(ProviderModule module, Configuration config,
-                                           CreateCluster cluster, boolean prepare) {
+                                           CreateCluster cluster) {
         try {
             // configure environment
             cluster .createClusterEnvironment()
@@ -336,10 +322,7 @@ public class StartUp {
                     .createKeyPair()
                     .createPlacementGroup();
             // configure cluster
-            boolean success =  cluster
-                    .configureClusterMasterInstance()
-                    .configureClusterWorkerInstance()
-                    .launchClusterInstances(prepare);
+            boolean success = cluster.configureClusterInstances() && cluster.launchClusterInstances();
             if (!success) {
                 //  In DEBUG mode keep partial configured cluster running, otherwise clean it up
                 if (Configuration.DEBUG) {

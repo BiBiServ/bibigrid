@@ -10,6 +10,7 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedExc
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author mfriedrichs(at)techfak.uni-bielefeld.de
@@ -38,8 +39,8 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
     }
 
     @Override
-    public ListIntent getListIntent(Configuration config) {
-        return new ListIntentGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
+    public ListIntent getListIntent(Map<String, Cluster> clusterMap) {
+        return new ListIntentGoogleCloud(this, clusterMap);
     }
 
     @Override
@@ -54,12 +55,27 @@ public class ProviderModuleGoogleCloud extends ProviderModule {
 
     @Override
     public CreateCluster getCreateIntent(Configuration config, String clusterId) {
-        return new CreateClusterGoogleCloud(this, client, (ConfigurationGoogleCloud) config);
+        return new CreateClusterGoogleCloud(this, (ConfigurationGoogleCloud) config, clusterId);
+    }
+
+    @Override
+    public ScaleWorkerIntent getScaleWorkerIntent(Configuration config, String clusterId, int batchIndex, int count, String scaling) {
+        return null;
+    }
+
+    @Override
+    public LoadClusterConfigurationIntent getLoadClusterConfigurationIntent(Configuration config) {
+        return null;
     }
 
     @Override
     public CreateClusterEnvironment getClusterEnvironment(CreateCluster cluster) throws ConfigurationException {
         return new CreateClusterEnvironmentGoogleCloud(client, (CreateClusterGoogleCloud) cluster);
+    }
+
+    @Override
+    public ValidateIntent getValidateIntent(Configuration config) {
+        return null;
     }
 
     @Override

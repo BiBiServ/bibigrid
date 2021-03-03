@@ -116,7 +116,7 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
      * @param clusterId Id of cluster
      * @return Cluster initialized or already available in clusterMap, null if no cluster found
      */
-    Cluster getCluster(String clusterId) {
+    public Cluster getCluster(String clusterId) {
         if (clusterMap.isEmpty()) {
             LOG.error("No BiBiGrid cluster found!\n");
             return null;

@@ -20,6 +20,8 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static de.unibi.cebitec.bibigrid.core.Constant.ABORT_WITH_NOTHING_STARTED;
+
 /**
  * Checks, if commandline and configuration input is set correctly.
  */
@@ -155,6 +157,20 @@ public abstract class Validator {
 
 
     /**
+     * Validates CIDR by using regex pattern.
+     * @param serviceCIDR config parameter to
+     * @return true, if serviceCIDR provided in config matches pattern, false, if it does not
+     */
+    private boolean validateServiceCIDR(String serviceCIDR){
+        String pattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}";
+        if (!serviceCIDR.matches(pattern)) {
+            LOG.error("Value '{}' of option serviceCIDR does not match pattern '{}'.", serviceCIDR, pattern);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Determine validity of URL.
      * @param url url / galaxy url
      * @return true, if url is valid
@@ -222,11 +238,13 @@ public abstract class Validator {
         boolean validProviderTypes = validateProviderTypes();
         boolean validSSHKeyFiles = validateSSHKeyFiles();
         boolean validAnsibleRequirements = true;
+        boolean validServiceCIDR = true;
         if (config.hasCustomAnsibleRoles() || config.hasCustomAnsibleGalaxyRoles()) {
             LOG.info("Checking Ansible configuration ...");
             validAnsibleRequirements = validateAnsibleRequirements();
         }
-        return validSSHKeyFiles &&
+        return validProviderTypes &&
+                validSSHKeyFiles &&
                 validAnsibleRequirements;
     }
 
@@ -261,6 +279,27 @@ public abstract class Validator {
         }
         return true;
     }
+    /**
+     * Validate native instance types and configuration file when used.
+     * Step is deferred AFTER client connection is established
+     * @return true, if configuration file is invalid
+     */
+    public boolean configurationInvalid() {
+        try {
+            if (!validateConfiguration()) {
+                LOG.error(ABORT_WITH_NOTHING_STARTED);
+                return true;
+            }
+        } catch (Exception e){
+            LOG.error(e.getMessage());
+            if (Configuration.DEBUG) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        return false;
+    }
+
 
     protected static boolean isStringNullOrEmpty(final String s) {
         return s == null || s.trim().isEmpty();
