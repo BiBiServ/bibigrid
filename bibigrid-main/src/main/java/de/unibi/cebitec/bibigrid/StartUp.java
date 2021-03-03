@@ -243,7 +243,6 @@ public class StartUp {
                         if (parameters.length == 1) {
                             LOG.error("Could not terminate instances with given parameter {}.", parameters[0]);
                         } else {
-                            // LOG.warn("StartUp, given parameters: {}", Arrays.stream(parameters));
                             StringBuilder error = new StringBuilder("Could not terminate instances with given parameters ");
                             for (int p = 0; p < parameters.length; p++) {
                                 String parameter = parameters[p];
@@ -349,14 +348,12 @@ public class StartUp {
      * Prints out version of BiBiGrid with date of build.
      */
     private static void printVersionInfo() {
-        Map m = getVersionInfo();
-            System.out.println(String.format("v%s (Build: %s)",
-                    m.get("version"),
-                    m.get("build")));
+        Map<String, String> m = getVersionInfo();
+        LOG.info(String.format("v%s (Build: %s)", m.get("version"), m.get("build")));
     }
 
-    private static Map getVersionInfo(){
-        Map<String,String> s = new HashMap();
+    private static Map<String, String> getVersionInfo(){
+        Map<String,String> s = new HashMap<>();
         try {
             URL jarUrl = StartUp.class.getProtectionDomain().getCodeSource().getLocation();
             String jarPath = URLDecoder.decode(jarUrl.getFile(), "UTF-8");
@@ -372,11 +369,10 @@ public class StartUp {
 
     /**
      * Prints out terminal help.
-     * @param commandLine given cl input arguments
      * @param cmdLineOptions options [-ch -c -v -o ...]
      */
-    private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
-        Map map = getVersionInfo();
+    private static void printHelp(Options cmdLineOptions) {
+        Map<String, String> map = getVersionInfo();
         HelpFormatter help = new HelpFormatter();
         String footer = "\nDocumentation at https://github.com/BiBiServ/bibigrid/docs\n";
         footer += "Loaded provider modules: " + String.join(", ", Provider.getInstance().getProviderNames());
