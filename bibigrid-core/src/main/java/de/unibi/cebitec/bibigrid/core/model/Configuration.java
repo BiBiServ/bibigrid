@@ -53,6 +53,13 @@ public abstract class Configuration {
             }
     }
 
+    /**
+     * Loads configuration from config yaml file.
+     * @param configurationClass provider dependent configuration class
+     * @param path path to config file
+     * @return loaded configuration
+     * @throws ConfigurationException error in config
+     */
     public static Configuration loadConfiguration(Class<? extends Configuration> configurationClass, String path) throws ConfigurationException{
         Path propertiesFilePath = null;
 
