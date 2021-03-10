@@ -127,6 +127,7 @@ public abstract class Configuration {
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
     private boolean debugRequests;
+    @Deprecated
     private Properties ogeConf = OgeConf.initOgeConfProperties();
     private List<AnsibleRoles> ansibleRoles = new ArrayList<>();
     private List<AnsibleGalaxyRoles> ansibleGalaxyRoles = new ArrayList<>();
@@ -191,8 +192,6 @@ public abstract class Configuration {
         return clusterKeyPair;
     }
 
-
-
     public String getSshPublicKeyFile() {
         return sshPublicKeyFile;
     }
@@ -252,19 +251,6 @@ public abstract class Configuration {
             LOG.info(V, "Master instances set: {}", display);
         }
     }
-
-    @Deprecated
-    public List<WorkerInstanceConfiguration> getSlaveInstances() {
-        LOG.warn("Property 'slaveInstances' is deprecated and will be removed in next major release. It is replaced 1:1 by 'workerInstances'.");
-        return getWorkerInstances();
-    }
-
-    @Deprecated
-    public void setSlaveInstances(List<WorkerInstanceConfiguration> workerInstances) {
-            LOG.warn("Property 'slaveInstances' is deprecated and will be removed in next major release. It is replaced 1:1 by 'workerInstances'.");
-            setWorkerInstances(workerInstances);
-    }
-
 
     public List<WorkerInstanceConfiguration> getWorkerInstances() {
         return workerInstances;
@@ -800,6 +786,7 @@ public abstract class Configuration {
     /**
      * Provides support for GridEngine global configuration.
      */
+    @Deprecated
     public static class OgeConf extends Properties {
         public static final String GRIDENGINE_FILES = "/playbook/roles/master/files/gridengine/";
         public static final String GLOBAL_OGE_CONF = GRIDENGINE_FILES + "global.conf";
