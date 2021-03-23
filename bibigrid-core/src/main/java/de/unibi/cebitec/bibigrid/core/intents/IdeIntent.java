@@ -1,13 +1,10 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.util.JSchLogger;
 import de.unibi.cebitec.bibigrid.core.util.SshFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +15,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URL;
-import java.nio.file.Paths;
-import java.util.Map;
+import java.util.Scanner;
 
 /**
  * Intent for starting and tunneling the Web-IDE installation (theia-ide or cloud9) on a cluster.
@@ -63,9 +59,26 @@ public class IdeIntent extends Intent {
             LOG.error("Failed to poll master ssh port.");
             return;
         }
-        if (!config.isIDE()) {
-            LOG.error("IDE not set in configuration.");
-            return;
+
+        boolean ideEnabled = config.isIDE();
+
+        if (!ideEnabled) {
+            // Ask to install WebIDE subsequently
+            String install_ide = "";
+            String INSTALL = "yes";
+            String NOT_INSTALL = "no";
+            while (!(install_ide.equals(INSTALL) || install_ide.equals(NOT_INSTALL))) {
+                LOG.info("IDE not set in configuration. Should it be installed subsequently? [yes, NO]");
+                Scanner in = new Scanner(System.in);
+                install_ide = in.nextLine();
+                if (install_ide.equals("")) {
+                    install_ide = NOT_INSTALL;
+                }
+            }
+            if (!install_ide.equals("yes")) {
+                LOG.error("IDE cannot be started. Aborting ...");
+                return;
+            }
         }
         startPortForwarding(masterIp);
     }

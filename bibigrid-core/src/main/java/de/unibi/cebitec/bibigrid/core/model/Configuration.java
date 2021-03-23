@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.unibi.cebitec.bibigrid.core.intents.IdeIntent;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
@@ -10,7 +9,6 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
@@ -19,11 +17,10 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
-@SuppressWarnings({"WeakerAccess", "unused"})
+@SuppressWarnings({"WeakerAccess"})
 public abstract class Configuration {
     /* public const */
     public static boolean DEBUG = false;
@@ -105,7 +102,7 @@ public abstract class Configuration {
     private List<String> sshPublicKeyFiles = new ArrayList<>();
     private List<String> sshPublicKeys = new ArrayList<>();
     private String id;
-    private ClusterKeyPair clusterKeyPair = new ClusterKeyPair();
+    private final ClusterKeyPair clusterKeyPair = new ClusterKeyPair();
     @Deprecated
     private String sshPrivateKeyFile;
     private String alternativeConfigPath;
@@ -129,7 +126,7 @@ public abstract class Configuration {
     private boolean ganglia;
     private boolean zabbix;
     private ZabbixConf zabbixConf = new ZabbixConf();
-    private List<String> nfsShares = new ArrayList<>(Arrays.asList("/vol/spool"));
+    private List<String> nfsShares = new ArrayList<>(Collections.singletonList("/vol/spool"));
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;

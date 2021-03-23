@@ -70,7 +70,7 @@ public class StartUp {
         try {
             // Provider specific configuration and validator
             Configuration config = module.getConfiguration(configurationFile);
-            Validator validator =  module.getValidator(config,module);
+            Validator validator =  module.getValidator(config, module);
 
             // Map of IntentMode and clusterIds
             Map<IntentMode, String[]> clOptions = new HashMap<>();
@@ -135,6 +135,15 @@ public class StartUp {
                 LOG.error(e.getMessage());
                 LOG.error(ABORT_WITH_NOTHING_STARTED);
                 return;
+            }
+
+            // Load cluster configuration for various intentModes
+            if (    intentMode == LIST ||
+                    intentMode == SCALE_DOWN ||
+                    intentMode == SCALE_UP ||
+                    intentMode == IDE ||
+                    intentMode == TERMINATE) {
+
             }
 
             // Usually parameters equals clusterId(s) or null

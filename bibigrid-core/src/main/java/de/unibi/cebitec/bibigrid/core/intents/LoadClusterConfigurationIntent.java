@@ -66,7 +66,7 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
             LOG.info(V, "Configuration for instance {} loaded successfully.", instance.getName());
         }
         LOG.info(V, "Initialize cluster with id {} ...", clusterId);
-        initCluster(clusterId, clusterInstances);
+        this.initCluster(clusterId, clusterInstances);
         LOG.info("Cluster with id {} initialized successfully.\n", clusterId);
     }
 
