@@ -46,7 +46,7 @@ public class ProviderModuleOpenstack extends ProviderModule {
     }
 
     @Override
-    public TerminateIntent getTerminateIntent(Configuration config) {
+    public TerminateIntent getTerminateIntent(Configuration config, Map<String, Cluster> clusterMap) {
         return new TerminateIntentOpenstack(this, client, config);
     }
 

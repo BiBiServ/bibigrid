@@ -357,7 +357,7 @@ public final class AnsibleConfig {
         InputStream in = channel.get(instances_file);
         Map<String, Object> map = readFromInputStream(in);
         map.replace("workers", getWorkerMap(workerInstances, blockDeviceBase));
-        map.replace("deletedWorkers",getWorkerMap(deletedInstances,blockDeviceBase));
+        map.replace("deletedWorkers",getWorkerMap(deletedInstances, blockDeviceBase));
         OutputStream out = channel.put(instances_file);
         writeToOutputStream(out, map);
     }

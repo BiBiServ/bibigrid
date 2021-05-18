@@ -1,6 +1,7 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
 import de.unibi.cebitec.bibigrid.core.DataBase;
+import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedException;
@@ -11,13 +12,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static de.unibi.cebitec.bibigrid.core.model.IntentMode.SCALE_DOWN;
 import static de.unibi.cebitec.bibigrid.core.model.IntentMode.SCALE_UP;
 
 public class ScaleWorkerIntent implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(CreateIntent.class);
 
-    private final CreateCluster cluster;
+    private final CreateCluster createCluster;
     private final int batchIndex;
     private final int count;
     private final ProviderModule module;
@@ -32,26 +36,28 @@ public class ScaleWorkerIntent implements Runnable {
         this.count = count;
         this.config = config;
         this.scaling = scaling;
-        cluster = module.getCreateIntent(config, clusterId);
+        createCluster = module.getCreateIntent(config, clusterId);
 
     }
 
     public String getClusterId() {
-        return cluster.clusterId;
+        return createCluster.cluster.getClusterId();
     }
 
     private void scaleDown() {
-        db.status.put(cluster.clusterId, new Status(Status.CODE.Scale_Down, "Scaling down the cluster by " + count + " worker!"));
-        module.getTerminateIntent(config)
-                .terminateInstances(cluster.clusterId, batchIndex, count);
-        db.status.put(cluster.clusterId, new Status(Status.CODE.Running));
+        db.status.put(createCluster.cluster.getClusterId(), new Status(Status.CODE.Scale_Down, "Scaling down the cluster by " + count + " worker!"));
+        Map<String, Cluster> clusterMap = new HashMap<>();
+        clusterMap.put(createCluster.cluster.getClusterId(), createCluster.cluster);
+        module.getTerminateIntent(config, clusterMap)
+                .terminateInstances(createCluster.cluster.getClusterId(), batchIndex, count);
+        db.status.put(createCluster.cluster.getClusterId(), new Status(Status.CODE.Running));
 
     }
 
     private void scaleUp() {
-        db.status.put(cluster.clusterId, new Status(Status.CODE.Scale_Up, "Scaling up the cluster by " + count + " worker!"));
-        cluster.createAdditionalWorkerInstances(batchIndex, count);
-        db.status.put(cluster.clusterId, new Status(Status.CODE.Running));
+        db.status.put(createCluster.cluster.getClusterId(), new Status(Status.CODE.Scale_Up, "Scaling up the cluster by " + count + " worker!"));
+        createCluster.createWorkerInstances(batchIndex, count);
+        db.status.put(createCluster.cluster.getClusterId(), new Status(Status.CODE.Running));
     }
 
 

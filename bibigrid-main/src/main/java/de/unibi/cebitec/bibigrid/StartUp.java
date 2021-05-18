@@ -46,6 +46,8 @@ public class StartUp {
             return;
         }
         // Just to get information faster
+        // TODO verbose mode print table of different machines?
+
         if (intentMode == HELP) {
             printHelp(cli.getCmdLineOptions());
             return;
@@ -100,7 +102,7 @@ public class StartUp {
      */
     private static ProviderModule loadProviderModule(String providerMode) {
         ProviderModule module;
-        String [] availableProviderModes = Provider.getInstance().getProviderNames();
+        String[] availableProviderModes = Provider.getInstance().getProviderNames();
         if (availableProviderModes.length == 1) {
             LOG.info("Use {} provider.", availableProviderModes[0]);
             module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
@@ -137,81 +139,62 @@ public class StartUp {
                 return;
             }
 
-            // Load cluster configuration for various intentModes
-            if (    intentMode == LIST ||
-                    intentMode == SCALE_DOWN ||
-                    intentMode == SCALE_UP ||
-                    intentMode == IDE ||
-                    intentMode == TERMINATE) {
-
+            // In order to validate the native instance types, we need a client.
+            // So validating configuration is deferred after client connection is established.
+            // Config validation in validate and create intentMode only
+            if (intentMode == VALIDATE || intentMode == CREATE) {
+                try {
+                    if (!validator.validateConfiguration()) {
+                        LOG.error(ABORT_WITH_NOTHING_STARTED);
+                        return;
+                    }
+                } catch (Exception e){
+                    LOG.error(e.getMessage());
+                    if (Configuration.DEBUG) {
+                        e.printStackTrace();
+                    }
+                    return;
+                }
+                if (module.getValidateIntent(config).validate()) {
+                    if (intentMode == VALIDATE) LOG.info(I, "You can now start your cluster.");
+                    else {
+                        // intentMode CREATE - Start cluster creation
+                        CreateCluster cluster = module.getCreateIntent(config, null);
+                        runCreateIntent(module, config, cluster);
+                    }
+                } else {
+                    LOG.error("There were one or more errors. Please adjust your configuration.");
+                }
+                return;
             }
 
             // Usually parameters equals clusterId(s) or null
             String[] parameters = clOptions.get(intentMode);
 
-            // -l parameter doesn't need validation
-            if (intentMode == LIST) {
-                String param = parameters.length == 0 ? null : parameters[0];
-                LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
-                loadIntent.loadClusterConfiguration(param);
-                Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
-                if (clusterMap.isEmpty()) {
-                    return;
-                }
-                ListIntent listIntent = module.getListIntent(clusterMap);
-                if (param == null) {
-                    LOG.info(listIntent.toString());
-                } else {
-                    LOG.info(listIntent.toDetailString(param));
-                }
+            // If parameter given, parameter[0] is clusterId
+            String clusterId = parameters.length == 0 ? null : parameters[0];
+
+            // Load cluster config from cloud provider -> clusterMap for specific intentModes
+            LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
+            loadIntent.loadClusterConfiguration(clusterId);
+            Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
+            if (clusterMap == null || clusterMap.isEmpty()) {
+                // if there is no cluster, none action possible
                 return;
             }
 
-            // In order to validate the native instance types, we need a client.
-            // So validating configuration is deferred after client connection is established.
             switch (intentMode) {
-                case VALIDATE:
-                    try {
-                        if (!validator.validateConfiguration()) {
-                            LOG.error(ABORT_WITH_NOTHING_STARTED);
-                            return;
-                        }
-                    } catch (Exception e){
-                        LOG.error(e.getMessage());
-                        if (Configuration.DEBUG) {
-                            e.printStackTrace();
-                        }
-                        return;
-                    }
-                    if (module.getValidateIntent(config).validate()) {
-                        LOG.info(I, "You can now start your cluster.");
+                case LIST:
+                    ListIntent listIntent = module.getListIntent(clusterMap);
+                    if (clusterId == null) {
+                        LOG.info(listIntent.toString());
                     } else {
-                        LOG.error("There were one or more errors. Please adjust your configuration.");
-                    }
-                    break;
-                case CREATE:
-                    try {
-                        if (!validator.validateConfiguration()) {
-                            LOG.error(ABORT_WITH_NOTHING_STARTED);
-                            return;
-                        }
-                    } catch (Exception e){
-                        LOG.error(e.getMessage());
-                        if (Configuration.DEBUG) {
-                            e.printStackTrace();
-                        }
-                        return;
-                    }
-                    if (module.getValidateIntent(config).validate()) {
-                        String clusterId = parameters != null ? parameters[0] : null;
-                        CreateCluster cluster = module.getCreateIntent(config, clusterId);
-                        runCreateIntent(module, config, cluster, false);
-                    } else {
-                        LOG.error("There were one or more errors. Please adjust your configuration.");
+                        // TODO list of more than one cluster optional?
+                        LOG.info(listIntent.toDetailString(clusterId));
                     }
                     break;
                 case TERMINATE:
-                    if (!module.getTerminateIntent(config).terminate(parameters)) {
+                    if (!module.getTerminateIntent(config, clusterMap).terminate(parameters)) {
                         if (parameters.length == 1) {
                             LOG.error("Could not terminate instances with given parameter {}.", parameters[0]);
                         } else {
@@ -228,7 +211,6 @@ public class StartUp {
                     }
                     break;
                 case SCALE_UP:
-                    String clusterId = parameters[0];
                     int workerBatch;
                     int count;
                     try {
@@ -253,13 +235,11 @@ public class StartUp {
                         LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <count> instead.'");
                         return;
                     }
-                    module.getTerminateIntent(config)
-                            .terminateInstances(clusterId, workerBatch, count);
+                    module.getTerminateIntent(config, clusterMap).terminateInstances(clusterId, workerBatch, count);
                     break;
                 case IDE:
                     try {
                         // Load private key file
-                        clusterId = parameters.length == 1 ? parameters[0] : null;
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
                         new IdeIntent(module, clusterId, config).start();
@@ -282,11 +262,9 @@ public class StartUp {
      * @param module responsible for provider accessibility
      * @param config overall configuration
      * @param cluster CreateCluster implementation
-     * @param prepare true, if in prepare mode
      * @return true, if cluster built successfully
      */
-    private static boolean runCreateIntent(ProviderModule module, Configuration config,
-                                           CreateCluster cluster, boolean prepare) {
+    private static boolean runCreateIntent(ProviderModule module, Configuration config, CreateCluster cluster) {
         try {
             // configure environment
             cluster .createClusterEnvironment()
@@ -296,17 +274,16 @@ public class StartUp {
                     .createKeyPair()
                     .createPlacementGroup();
             // configure cluster
-            boolean success =  cluster
-                    .configureClusterMasterInstance()
-                    .configureClusterWorkerInstance()
-                    .launchClusterInstances(prepare);
+            boolean success =  cluster.configureClusterInstances() && cluster.launchClusterInstances();
             if (!success) {
                 //  In DEBUG mode keep partial configured cluster running, otherwise clean it up
                 if (Configuration.DEBUG) {
                     LOG.error(StartUp.KEEP);
                 } else {
                     LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-                    module.getTerminateIntent(config).terminate(cluster.getClusterId());
+                    Map<String, Cluster> clusterMap = new HashMap<>();
+                    clusterMap.put(cluster.getCluster().getClusterId(), cluster.getCluster());
+                    module.getTerminateIntent(config, clusterMap).terminate(cluster.getCluster());
                 }
                 return false;
             }
@@ -358,10 +335,9 @@ public class StartUp {
         String modes = Arrays.stream(IntentMode.values()).map(m -> "--" + m.getLongParam()).collect(Collectors.joining("|"));
         System.out.println("BiBiGrid is a tool for an easy cluster setup inside a cloud environment.\n");
         help.printHelp(100,
-                "java -jar bibigrid-"+String.join(", ", Provider.getInstance().getProviderNames())+"-"+map.get("version")+".jar",
-                "",
-                cmdLineOptions,
-                footer);
+                "java -jar bibigrid-"
+                        + String.join(", ", Provider.getInstance().getProviderNames())
+                        + "-" + map.get("version")+".jar","", cmdLineOptions, footer);
         System.out.println('\n');
     }
 

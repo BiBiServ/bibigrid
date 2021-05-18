@@ -38,9 +38,7 @@ public abstract class CreateCluster extends Intent {
 
     protected final ProviderModule providerModule;
     protected final Configuration config;
-    protected final String clusterId;
-    protected Instance masterInstance;
-    protected List<Instance> workerInstances;
+    protected Cluster cluster;
     protected CreateClusterEnvironment environment;
 
     protected DeviceMapper masterDeviceMapper;
@@ -54,12 +52,13 @@ public abstract class CreateCluster extends Intent {
      * @param clusterId optional if cluster already started and has to be scaled
      */
     protected CreateCluster(ProviderModule providerModule, Configuration config, String clusterId) {
-        this.clusterId = clusterId != null ? clusterId : generateClusterId();
+        String cid = clusterId != null ? clusterId : generateClusterId();
+        cluster = new Cluster(cid);
         this.providerModule = providerModule;
         this.config = config;
         this.interruptionMessageHook = new Thread(() ->
                 LOG.error("Cluster setup was interrupted!\n\n" +
-                        "Please clean up the remains using: -t {}\n\n", this.clusterId));
+                        "Please clean up the remains using: -t {}\n\n", cluster.getClusterId()));
     }
 
     /**
@@ -76,10 +75,6 @@ public abstract class CreateCluster extends Intent {
         int len = Math.min(clusterIdBase64.length(), 15);
         // All resource ids must be lower case in google cloud!
         return clusterIdBase64.substring(0, len).toLowerCase(Locale.US);
-    }
-
-    public String getClusterId() {
-        return clusterId;
     }
 
     /**
@@ -163,12 +158,12 @@ public abstract class CreateCluster extends Intent {
      */
     public boolean launchClusterInstances() {
         try {
-            String masterNameTag = MASTER_NAME_PREFIX + SEPARATOR + clusterId;
-            masterInstance = launchClusterMasterInstance(masterNameTag);
+            String masterNameTag = MASTER_NAME_PREFIX + SEPARATOR + cluster.getClusterId();
+            Instance masterInstance = launchClusterMasterInstance(masterNameTag);
             if (masterInstance == null) {
                 return false;
             }
-            workerInstances = new ArrayList<>();
+            List<Instance> workerInstances = new ArrayList<>();
             int totalWorkerInstanceCount = config.getWorkerInstanceCount();
             if (totalWorkerInstanceCount > 0) {
                 LOG.info("Requesting {} worker instance(s) with {} different configurations...",
@@ -178,7 +173,7 @@ public abstract class CreateCluster extends Intent {
                     Configuration.WorkerInstanceConfiguration instanceConfiguration = config.getWorkerInstances().get(i);
                     LOG.info("Requesting {} worker instance(s) with same configuration...",
                             instanceConfiguration.getCount());
-                    String workerNameTag = WORKER_NAME_PREFIX + SEPARATOR + clusterId;
+                    String workerNameTag = WORKER_NAME_PREFIX + SEPARATOR + cluster.getClusterId();
                     List<Instance> workersBatch = launchClusterWorkerInstances(i, instanceConfiguration, workerNameTag);
                     if (workersBatch == null) {
                         return false;
@@ -188,9 +183,14 @@ public abstract class CreateCluster extends Intent {
             } else {
                 LOG.info("No Worker instance(s) requested!");
             }
+            // set cluster initialization values
+            cluster.setMasterInstance(masterInstance);
+            cluster.setWorkerInstances(workerInstances);
+            cluster.setPublicIp(masterInstance.getPublicIp());
+            cluster.setPrivateIp(masterInstance.getPrivateIp());
             // just to be sure, everything is present, wait x seconds
             sleep(4);
-            LOG.info("Cluster (ID: {}) successfully created!", clusterId);
+            LOG.info("Cluster (ID: {}) successfully created!", cluster.getClusterId());
             final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
                     masterInstance.getPrivateIp();
             configureAnsible();
@@ -205,7 +205,8 @@ public abstract class CreateCluster extends Intent {
             }
             if (Configuration.DEBUG) {
                 logFinishedInfoMessage(
-                        config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() : masterInstance.getPrivateIp());
+                        config.isUseMasterWithPublicIp() ?
+                                cluster.getMasterInstance().getPublicIp() : cluster.getMasterInstance().getPrivateIp());
             }
 
             Runtime.getRuntime().removeShutdownHook(this.interruptionMessageHook);
@@ -216,17 +217,13 @@ public abstract class CreateCluster extends Intent {
     }
 
     /**
-     * TODO Should not rely on config, since configurationFile might not be valid for current cluster, keypair + ssh user?
      * Adds additional worker instance(s) with specified batch to cluster.
      * Adopts the configuration from the other worker instances in batch
      * @return true, if worker instance(s) created successfully
      */
-    public boolean createAdditionalWorkerInstances(int batchIndex, int count) {
-        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(config);
-        loadIntent.loadClusterConfiguration(clusterId);
-        Cluster cluster = loadIntent.getCluster(clusterId);
+    public boolean createWorkerInstances(int batchIndex, int count) {
         if (cluster == null) {
-            LOG.error("No cluster with specified clusterId {} found", clusterId);
+            LOG.error("No cluster with specified clusterId {} found", cluster.getClusterId());
             return false;
         }
         try {
@@ -291,18 +288,20 @@ public abstract class CreateCluster extends Intent {
             }
             LOG.info("Creating {} worker " + (count == 1 ? "instance" : "instances") + " for batch {}.", count, batchIndex);
             instanceConfiguration.setCount(count);
-            String workerNameTag = WORKER_NAME_PREFIX + "-" + clusterId;
+            String workerNameTag = WORKER_NAME_PREFIX + "-" + cluster.getClusterId();
             int workerIndex = workersBatch.size() + 1;
             List<Instance> additionalWorkers =
-                     launchAdditionalClusterWorkerInstances(cluster, batchIndex, workerIndex, instanceConfiguration, workerNameTag);
+                     launchAdditionalClusterWorkerInstances(batchIndex, workerIndex, instanceConfiguration, workerNameTag);
             if (additionalWorkers == null) {
                 LOG.error("No additional workers could be launched.");
                 channelSftp.disconnect();
                 sshSession.disconnect();
                 return false;
             } else {
-                workerInstances = cluster.getWorkerInstances();
-                workerInstances.addAll(additionalWorkers);
+                // loadIntent cluster ...
+                // workerInstances = cluster.getWorkerInstances();
+                // workerInstances.addAll(additionalWorkers);
+                cluster.addWorkerInstances(additionalWorkers);
             }
             config.getClusterKeyPair().setName(CreateCluster.PREFIX + cluster.getClusterId());
             config.getClusterKeyPair().load();
@@ -352,10 +351,11 @@ public abstract class CreateCluster extends Intent {
      * @return List of worker Instances
      */
     protected abstract List<Instance> launchAdditionalClusterWorkerInstances(
-            Cluster cluster, int batchIndex, int workerIndex, Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
+            int batchIndex, int workerIndex,
+            Configuration.WorkerInstanceConfiguration instanceConfiguration, String workerNameTag);
 
     protected String buildWorkerInstanceName(int batchIndex, int workerIndex) {
-        return WORKER_NAME_PREFIX + SEPARATOR + (batchIndex) + SEPARATOR + (workerIndex) + "-" + clusterId;
+        return WORKER_NAME_PREFIX + SEPARATOR + (batchIndex) + SEPARATOR + (workerIndex) + "-" + cluster.getClusterId();
     }
 
     private void logFinishedInfoMessage(final String masterPublicIp) {
@@ -376,9 +376,9 @@ public abstract class CreateCluster extends Intent {
                 .append("putty -i ")
                 .append(Configuration.KEYS_DIR).append("\\").append(config.getClusterKeyPair().getName())
                 .append(" ").append(config.getSshUser()).append("@%BIBIGRID_MASTER%\n\n");
-        sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
+        sb.append("The cluster id of your started cluster is: ").append(cluster.getClusterId()).append("\n\n");
         sb.append("You can easily terminate the cluster at any time with:\n")
-                .append("./bibigrid -t ").append(clusterId).append(" ");
+                .append("./bibigrid -t ").append(cluster.getClusterId()).append(" ");
         if (config.isAlternativeConfigFile()) {
             sb.append("-o ").append(config.getAlternativeConfigPath()).append(" ");
         }
@@ -394,9 +394,9 @@ public abstract class CreateCluster extends Intent {
                 .append("ssh -i ")
                 .append(Configuration.KEYS_DIR).append("/").append(config.getClusterKeyPair().getName())
                 .append(" ").append(config.getSshUser()).append("@$BIBIGRID_MASTER\n\n");
-        sb.append("The cluster id of your started cluster is: ").append(clusterId).append("\n\n");
+        sb.append("The cluster id of your started cluster is: ").append(cluster.getClusterId()).append("\n\n");
         sb.append("You can easily terminate the cluster at any time with:\n")
-                .append("./bibigrid -t ").append(clusterId).append(" ");
+                .append("./bibigrid -t ").append(cluster.getClusterId()).append(" ");
         if (config.isAlternativeConfigFile()) {
             sb.append("-o ").append(config.getAlternativeConfigPath()).append(" ");
         }
@@ -410,7 +410,7 @@ public abstract class CreateCluster extends Intent {
             gp.setProperty("BIBIGRID_MASTER", masterPublicIp);
             gp.setProperty("SSHPublicKeyFile", config.getSshPublicKeyFile());
             gp.setProperty("SSHPrivateKeyFile", config.getSshPrivateKeyFile());
-            gp.setProperty("clusterId", clusterId);
+            gp.setProperty("clusterId", cluster.getClusterId());
             if (config.isAlternativeConfigFile()) {
                 gp.setProperty("AlternativeConfigFile", config.getAlternativeConfigPath());
             }
@@ -430,8 +430,8 @@ public abstract class CreateCluster extends Intent {
      *    ConfigurationException, close the sshSession and throw a new ConfigurationException
      */
     private void configureAnsible() throws ConfigurationException {
-        final String masterIp = config.isUseMasterWithPublicIp() ? masterInstance.getPublicIp() :
-                masterInstance.getPrivateIp();
+        final String masterIp = config.isUseMasterWithPublicIp() ? cluster.getPublicIp() :
+                cluster.getPrivateIp();
         LOG.info("Now configuring...");
         boolean sshPortIsReady = SshFactory.pollSshPortIsAvailable(masterIp);
         if (sshPortIsReady) {
@@ -565,7 +565,7 @@ public abstract class CreateCluster extends Intent {
             AnsibleConfig.writeSiteFile(channel.put(site_file),
                     customMasterRoles, customWorkerRoles);
 
-            AnsibleConfig.writeHostsFile(channel, config.getSshUser(), workerInstances, config.useHostnames());
+            AnsibleConfig.writeHostsFile(channel, config.getSshUser(), cluster.getWorkerInstances(), config.useHostnames());
 
             // files for common configuration
             String login_file = channel_dir + AnsibleResources.COMMONS_LOGIN_FILE;
@@ -581,7 +581,7 @@ public abstract class CreateCluster extends Intent {
 
             // write files using stream
             AnsibleConfig.writeLoginFile(login_stream, config);
-            AnsibleConfig.writeInstancesFile(instances_stream, masterInstance, workerInstances, masterDeviceMapper, providerModule.getBlockDeviceBase());
+            AnsibleConfig.writeInstancesFile(instances_stream, cluster.getMasterInstance(), cluster.getWorkerInstances(), masterDeviceMapper, providerModule.getBlockDeviceBase());
             AnsibleConfig.writeConfigFile(config_stream, config, environment.getSubnet().getCidr());
             // TODO network should be written in instance configuration when initializing
             // security group und server group
@@ -594,7 +594,7 @@ public abstract class CreateCluster extends Intent {
             }
 
             // Write worker instance specific configuration file
-            for (Instance worker : workerInstances) {
+            for (Instance worker : cluster.getWorkerInstances()) {
                 String filename = channel_dir + AnsibleResources.CONFIG_ROOT_PATH + "/"
                         + worker.getPrivateIp() + ".yml";
                 AnsibleConfig.writeSpecificInstanceFile(channel.put(filename), worker, providerModule.getBlockDeviceBase());
@@ -691,19 +691,16 @@ public abstract class CreateCluster extends Intent {
         return pathway[pathway.length - 1];
     }
 
-
-
     public Configuration getConfig() {
         return config;
     }
 
-    public Instance getMasterInstance() {
-        return masterInstance;
+    public Cluster getCluster() {
+        return cluster;
     }
 
-    public List<Instance> getWorkerInstances() {
-        return workerInstances;
+    public void setCluster(Cluster cluster) {
+        this.cluster = cluster;
     }
-
 }
 
