@@ -87,7 +87,6 @@ public abstract class Configuration {
         } catch (YAMLException e) {
             throw new ConfigurationException("Failed to parse configuration file. "+e.getMessage(), e);
         }
-
     }
 
     /* properties */

@@ -71,6 +71,7 @@ public class StartUp {
 
         try {
             // Provider specific configuration and validator
+            // TODO add another module -> loadConfiguration with ssh .. from config file / source, but else loaded from remote
             Configuration config = module.getConfiguration(configurationFile);
             Validator validator =  module.getValidator(config, module);
 
@@ -194,9 +195,10 @@ public class StartUp {
                     }
                     break;
                 case TERMINATE:
-                    if (!module.getTerminateIntent(config, clusterMap).terminate(parameters)) {
+                    boolean terminate_success = module.getTerminateIntent(config, clusterMap).terminate(parameters);
+                    if (!terminate_success) {
                         if (parameters.length == 1) {
-                            LOG.error("Could not terminate instances with given parameter {}.", parameters[0]);
+                            LOG.error("Could not terminate instances with given parameter {}.", clusterId);
                         } else {
                             StringBuilder error = new StringBuilder("Could not terminate instances with given parameters ");
                             for (int p = 0; p < parameters.length; p++) {
@@ -217,22 +219,22 @@ public class StartUp {
                         workerBatch = Integer.parseInt(parameters[1]);
                         count = Integer.parseInt(parameters[2]);
                     } catch (NumberFormatException nf) {
-                        LOG.error("Wrong usage. Please use '-su <cluster-id> <workerBatch> <count> instead.'");
+                        LOG.error("Wrong usage. Please use '-su <cluster-id> <workerBatch> <count>' instead.");
                         return;
                     }
                     CreateCluster createIntent = module.getCreateIntent(config, clusterId);
-                    if (!createIntent.createWorkerInstances(workerBatch, count)) {
-                        LOG.error("Could not create worker instances with specified batch.");
+                    boolean create_success = createIntent.createWorkerInstances(workerBatch, count);
+                    if (!create_success) {
+                        LOG.error("Could not create {} worker instances with specified batch {}.", count, workerBatch);
                         return;
                     }
                     break;
                 case SCALE_DOWN:
-                    clusterId = parameters[0];
                     try {
                         workerBatch = Integer.parseInt(parameters[1]);
                         count = Integer.parseInt(parameters[2]);
                     } catch (NumberFormatException nf) {
-                        LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <count> instead.'");
+                        LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <count>' instead.");
                         return;
                     }
                     module.getTerminateIntent(config, clusterMap).terminateInstances(clusterId, workerBatch, count);
@@ -242,7 +244,8 @@ public class StartUp {
                         // Load private key file
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
-                        new IdeIntent(module, clusterId, config).start();
+                        Cluster cluster = clusterMap.get(clusterId);
+                        new IdeIntent(cluster, config).start();
                     } catch (IOException e) {
                         LOG.error("Exception occurred loading private key. {}",e.getMessage());
                         if (Configuration.DEBUG) {
