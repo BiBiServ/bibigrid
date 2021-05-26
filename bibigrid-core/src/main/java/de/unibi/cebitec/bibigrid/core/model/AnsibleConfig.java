@@ -114,7 +114,7 @@ public final class AnsibleConfig {
             roles.add("additional/" + role_name);
         }
         workers.put("roles", roles);
-        writeToOutputStream(stream, Arrays.asList(master, workers));
+        YamlInterpreter.writeToOutputStream(stream, Arrays.asList(master, workers));
     }
 
     /**
@@ -123,7 +123,7 @@ public final class AnsibleConfig {
      */
     public static void writeAnsibleVarsFile(OutputStream stream, Map<String, Object> vars) {
         if (vars != null && !vars.isEmpty()) {
-            writeToOutputStream(stream, vars);
+            YamlInterpreter.writeToOutputStream(stream, vars);
         }
     }
 
@@ -154,14 +154,14 @@ public final class AnsibleConfig {
         roles.addAll(galaxy_roles);
         roles.addAll(git_roles);
         roles.addAll(url_roles);
-        writeToOutputStream(stream, roles);
+        YamlInterpreter.writeToOutputStream(stream, roles);
     }
 
     /**
      * Write specified instance to stream (in YAML format)
      */
     public static void writeSpecificInstanceFile(OutputStream stream, Instance instance, String blockDeviceBase) {
-        writeToOutputStream(stream, getInstanceMap(instance, blockDeviceBase, true));
+        YamlInterpreter.writeToOutputStream(stream, getInstanceMap(instance, blockDeviceBase, true));
     }
 
     /**
@@ -174,7 +174,7 @@ public final class AnsibleConfig {
         map.put("default_user", config.getUser());
         map.put("ssh_user", config.getSshUser());
         map.put("munge_key",config.getMungeKey());
-        writeToOutputStream(stream, map);
+        YamlInterpreter.writeToOutputStream(stream, map);
     }
 
     /**
@@ -214,7 +214,7 @@ public final class AnsibleConfig {
         map.put("master", getMasterMap(master, setMasterMounts(masterDeviceMapper), blockDeviceBase));
         map.put("workers", getWorkerMap(workers, blockDeviceBase));
         map.put("deletedWorkers",getWorkerMap(deleted_workers,blockDeviceBase));
-        writeToOutputStream(stream, map);
+        YamlInterpreter.writeToOutputStream(stream, map);
     }
 
     /**
@@ -234,7 +234,7 @@ public final class AnsibleConfig {
             map.put(WorkerSpecification.BATCH.name() + " " + (i + 1), batchMap);
             // TODO probably extend to network, securityGroup etc...
         }
-        writeToOutputStream(specification_stream, map);
+        YamlInterpreter.writeToOutputStream(specification_stream, map);
     }
 
     /**
@@ -244,7 +244,7 @@ public final class AnsibleConfig {
      */
     public static Configuration.WorkerInstanceConfiguration readWorkerSpecificationFile(InputStream in, int batchIndex) {
         Configuration.WorkerInstanceConfiguration instanceConfiguration = null;
-        Map<String, Object> map = AnsibleConfig.readFromInputStream(in);
+        Map<String, Object> map = YamlInterpreter.readFromInputStream(in);
         for (Object val : map.values()) {
             Map<String, Object> batchMap = (Map<String, Object>) val;
             int index = Integer.parseInt(String.valueOf(batchMap.get(WorkerSpecification.INDEX.name())));
@@ -355,11 +355,11 @@ public final class AnsibleConfig {
             String blockDeviceBase) throws SftpException {
         String instances_file = channel.getHome() + "/" + AnsibleResources.COMMONS_INSTANCES_FILE;
         InputStream in = channel.get(instances_file);
-        Map<String, Object> map = readFromInputStream(in);
+        Map<String, Object> map = YamlInterpreter.readFromInputStream(in);
         map.replace("workers", getWorkerMap(workerInstances, blockDeviceBase));
         map.replace("deletedWorkers",getWorkerMap(deletedInstances, blockDeviceBase));
         OutputStream out = channel.put(instances_file);
-        writeToOutputStream(out, map);
+        YamlInterpreter.writeToOutputStream(out, map);
     }
 
     /**
@@ -401,44 +401,7 @@ public final class AnsibleConfig {
         if (config.hasCustomAnsibleGalaxyRoles()) {
             map.put("ansible_galaxy_roles", getAnsibleGalaxyRoles(config.getAnsibleGalaxyRoles()));
         }
-        writeToOutputStream(stream, map);
-    }
-
-    /**
-     * Uses stream to write map on remote.
-     * @param stream OutputStream to remote instance
-     * @param map (yml) file content
-     */
-    private static void writeToOutputStream(OutputStream stream, Object map) {
-        try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
-                if (map instanceof Map) {
-                    writer.write(new Yaml().dumpAsMap(map));
-                } else {
-                    writer.write(new Yaml().dumpAs(map, Tag.SEQ, DumperOptions.FlowStyle.BLOCK));
-                }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Parses yaml file from remote into map.
-     * @param stream InputStream
-     * @return map of Yaml syntax
-     */
-    private static Map<String, Object> readFromInputStream(InputStream stream) {
-        StringBuilder yamlContent = new StringBuilder();
-        try (Reader reader = new BufferedReader(new InputStreamReader(stream))) {
-            int c;
-            while ((c = reader.read()) != -1) {
-                yamlContent.append((char) c);
-            }
-        } catch (IOException e) {
-            LOG.error("Could not read instances file from remote.");
-            e.printStackTrace();
-        }
-        Yaml yaml = new Yaml();
-        return yaml.load(yamlContent.toString());
+        YamlInterpreter.writeToOutputStream(stream, map);
     }
 
     private static void addBooleanOption(Map<String, Object> map, String option, boolean value) {
