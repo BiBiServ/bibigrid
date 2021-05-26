@@ -25,6 +25,7 @@ public class YamlInterpreter {
                 writer.write(new Yaml().dumpAs(map, Tag.SEQ, DumperOptions.FlowStyle.BLOCK));
             }
         } catch (IOException e) {
+            LOG.error("Could not successfully write to remote.");
             e.printStackTrace();
         }
     }
@@ -42,7 +43,7 @@ public class YamlInterpreter {
                 yamlContent.append((char) c);
             }
         } catch (IOException e) {
-            LOG.error("Could not read instances file from remote.");
+            LOG.error("Could not successfully read from remote.");
             e.printStackTrace();
         }
         Yaml yaml = new Yaml();
