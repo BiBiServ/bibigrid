@@ -9,6 +9,8 @@ import org.yaml.snakeyaml.nodes.Tag;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class YamlInterpreter {
     private static final Logger LOG = LoggerFactory.getLogger(YamlInterpreter.class);
@@ -48,5 +50,22 @@ public class YamlInterpreter {
         }
         Yaml yaml = new Yaml();
         return yaml.load(yamlContent.toString());
+    }
+
+    /**
+     * Checks with RegEx if ip could be valid address.
+     * @param file name of file to be checked
+     * @return true, if file contains valid ipv4-address
+     */
+    public static boolean isIPAddressFile(String file) {
+        String ip = file.replace(".yml", "");
+        final String IPV4_REGEX =
+                "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+        final Pattern IPV4_PATTERN = Pattern.compile(IPV4_REGEX);
+        Matcher matcher = IPV4_PATTERN.matcher(ip);
+        return matcher.matches();
     }
 }

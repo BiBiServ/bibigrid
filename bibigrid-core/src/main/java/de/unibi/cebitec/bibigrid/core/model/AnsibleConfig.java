@@ -310,7 +310,7 @@ public final class AnsibleConfig {
         Vector vars_files = channel.ls("*.yml");
         for(Object file : vars_files) {
             String filename = ((ChannelSftp.LsEntry) file).getFilename();
-            if (isIPAddressFile(filename)) {
+            if (YamlInterpreter.isIPAddressFile(filename)) {
                 ip_files.add(filename);
             }
         }
@@ -322,23 +322,6 @@ public final class AnsibleConfig {
             String filename = vars_dir + worker.getPrivateIp() + ".yml";
             AnsibleConfig.writeSpecificInstanceFile(channel.put(filename), worker, blockDeviceBase);
         }
-    }
-
-    /**
-     * Checks with RegEx if ip could be valid address.
-     * @param file name of file to be checked
-     * @return true, if file contains valid ipv4-address
-     */
-    private static boolean isIPAddressFile(String file) {
-        String ip = file.replace(".yml", "");
-        final String IPV4_REGEX =
-                "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
-                "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
-                "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
-                "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
-        final Pattern IPV4_PATTERN = Pattern.compile(IPV4_REGEX);
-        Matcher matcher = IPV4_PATTERN.matcher(ip);
-        return matcher.matches();
     }
 
     /**
