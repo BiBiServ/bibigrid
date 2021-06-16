@@ -7,15 +7,10 @@ import de.unibi.cebitec.bibigrid.core.util.AnsibleResources;
 import de.unibi.cebitec.bibigrid.core.util.DeviceMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.nodes.Tag;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Wrapper for the {@link Configuration} class with extra fields.

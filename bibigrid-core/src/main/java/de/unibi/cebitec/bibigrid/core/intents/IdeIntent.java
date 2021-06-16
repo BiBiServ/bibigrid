@@ -68,9 +68,11 @@ public class IdeIntent extends Intent {
                     install_ide = NOT_INSTALL;
                 }
             }
-            if (!install_ide.equals("yes")) {
+            if (!install_ide.equals(INSTALL)) {
                 LOG.error("IDE cannot be started. Aborting ...");
                 return;
+            } else {
+                // TODO Install IDE subsequently
             }
         }
         startPortForwarding(masterIp);
