@@ -96,6 +96,10 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
             InputStream in = channel.get(common_config_file);
             Map<String, Object> configMap = YamlInterpreter.readFromInputStream(in);
             Map<String, Object> ideConfigMap = (Map<String, Object>) configMap.get("ideConf");
+            if (!configMap.containsKey("ideConf") || ideConfigMap == null) {
+                LOG.error("ideConf not set in cluster configuration.");
+                if (!IdeIntent.installSubsequently()) return;
+            }
             ideConf.setIde((Boolean) ideConfigMap.get("ide"));
             ideConf.setWorkspace((String) ideConfigMap.get("workspace"));
             ideConf.setPort_start((Integer) ideConfigMap.get("port_start"));

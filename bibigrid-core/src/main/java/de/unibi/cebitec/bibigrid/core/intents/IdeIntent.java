@@ -57,25 +57,38 @@ public class IdeIntent extends Intent {
 
         if (!ideEnabled) {
             // Ask to install WebIDE subsequently
-            String install_ide = "";
-            String INSTALL = "yes";
-            String NOT_INSTALL = "no";
-            while (!(install_ide.equals(INSTALL) || install_ide.equals(NOT_INSTALL))) {
-                LOG.info("IDE not set in configuration. Should it be installed subsequently? [yes, NO]");
-                Scanner in = new Scanner(System.in);
-                install_ide = in.nextLine();
-                if (install_ide.equals("")) {
-                    install_ide = NOT_INSTALL;
-                }
-            }
-            if (!install_ide.equals(INSTALL)) {
-                LOG.error("IDE cannot be started. Aborting ...");
-                return;
-            } else {
-                // TODO Install IDE subsequently
-            }
+            if (!installSubsequently()) return;
         }
         startPortForwarding(masterIp);
+    }
+
+    /**
+     * Asks to install IDE subsequently, if not yet enabled.
+     * Installs afterwards.
+     * @return true, if successfully installed subsequently
+     * TODO implement installation afterwards
+     */
+    public static boolean installSubsequently() {
+        boolean install_successful;
+        String install_ide = "";
+        String INSTALL = "yes";
+        String NOT_INSTALL = "no";
+        while (!(install_ide.equals(INSTALL) || install_ide.equals(NOT_INSTALL))) {
+            LOG.info("IDE not set in configuration. Should it be installed subsequently? [yes, NO]");
+            Scanner in = new Scanner(System.in);
+            install_ide = in.nextLine();
+            if (install_ide.equals("")) {
+                install_ide = NOT_INSTALL;
+            }
+        }
+        if (!install_ide.equals(INSTALL)) {
+            LOG.error("IDE cannot be started. Aborting ...");
+            install_successful = false;
+        } else {
+            // TODO Install IDE subsequently
+            install_successful = false;
+        }
+        return install_successful;
     }
 
     /**
