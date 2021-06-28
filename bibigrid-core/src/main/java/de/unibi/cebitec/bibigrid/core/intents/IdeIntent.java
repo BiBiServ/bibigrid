@@ -86,6 +86,7 @@ public class IdeIntent extends Intent {
             install_successful = false;
         } else {
             // TODO Install IDE subsequently
+            LOG.error("Install IDE subsequently not implemented, yet.");
             install_successful = false;
         }
         return install_successful;

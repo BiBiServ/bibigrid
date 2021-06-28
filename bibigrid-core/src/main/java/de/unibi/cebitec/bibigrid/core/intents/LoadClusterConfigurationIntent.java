@@ -79,9 +79,10 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
 
     /**
      * Loads IdeConf from remote common_configuration.yml file into current configuration.
+     * @return true, if IDE configuration loaded successfully and IDE can be started
      * TODO Replace strings in this method and AnsibleConfig -> getIdeConfMap()
      */
-    public void loadIdeConfiguration(String clusterIP) {
+    public boolean loadIdeConfiguration(String clusterIP) {
         LOG.info("Loading IdeConfiguration from master instance ...");
         Configuration.IdeConf ideConf = new Configuration.IdeConf();
         try {
@@ -98,7 +99,11 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
             Map<String, Object> ideConfigMap = (Map<String, Object>) configMap.get("ideConf");
             if (!configMap.containsKey("ideConf") || ideConfigMap == null) {
                 LOG.error("ideConf not set in cluster configuration.");
-                if (!IdeIntent.installSubsequently()) return;
+                if (!IdeIntent.installSubsequently()) {
+                    channel.disconnect();
+                    sshSession.disconnect();
+                    return false;
+                }
             }
             ideConf.setIde((Boolean) ideConfigMap.get("ide"));
             ideConf.setWorkspace((String) ideConfigMap.get("workspace"));
@@ -107,9 +112,11 @@ public abstract class LoadClusterConfigurationIntent extends Intent {
             ideConf.setBuild((Boolean) ideConfigMap.get("build"));
             config.setIdeConf(ideConf);
             LOG.info("IdeConfiguration loaded successfully.");
+            return true;
         } catch (JSchException | SftpException e) {
             LOG.error("Could not load IdeConfiguration successfully.");
             e.printStackTrace();
+            return false;
         }
     }
 

@@ -245,8 +245,9 @@ public class StartUp {
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
                         Cluster cluster = clusterMap.get(clusterId);
-                        loadIntent.loadIdeConfiguration(cluster.getPublicIp());
-                        new IdeIntent(cluster, config).start();
+                        if (loadIntent.loadIdeConfiguration(cluster.getPublicIp())) {
+                            new IdeIntent(cluster, config).start();
+                        }
                     } catch (IOException e) {
                         LOG.error("Exception occurred loading private key. {}",e.getMessage());
                         if (Configuration.DEBUG) {
