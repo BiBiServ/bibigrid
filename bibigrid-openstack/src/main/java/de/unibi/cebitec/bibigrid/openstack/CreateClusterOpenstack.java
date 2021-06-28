@@ -48,7 +48,7 @@ public class CreateClusterOpenstack extends CreateCluster {
             if (volume == null) {
                 VolumeSnapshot snapshot = getSnapshotByNameOrId(mountPoint.getSource());
                 if (snapshot != null) {
-                    volume = createVolumeFromSnapshot(snapshot, mountPoint.getSource() + "-" + clusterId);
+                    volume = createVolumeFromSnapshot(snapshot, mountPoint.getSource() + "-" + cluster.getClusterId());
                     LOG.info(V, "Create volume '{}' from snapshot '{}'.", volume.getName(), mountPoint.getSource());
                 }
             }
@@ -72,7 +72,7 @@ public class CreateClusterOpenstack extends CreateCluster {
         try {
             final Map<String, String> metadata = new HashMap<>();
             metadata.put(Instance.TAG_NAME, masterNameTag);
-            metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
+            metadata.put(Instance.TAG_BIBIGRID_ID, cluster.getClusterId());
             metadata.put(Instance.TAG_USER, config.getUser());
             InstanceTypeOpenstack masterSpec = (InstanceTypeOpenstack) config.getMasterInstance().getProviderType();
             ServerCreateBuilder scb;
@@ -221,7 +221,7 @@ public class CreateClusterOpenstack extends CreateCluster {
         try {
             final Map<String, String> metadata = new HashMap<>();
             metadata.put(Instance.TAG_NAME, workerNameTag);
-            metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
+            metadata.put(Instance.TAG_BIBIGRID_ID, cluster.getClusterId());
             metadata.put(Instance.TAG_USER, config.getUser());
             int workerBatch = batchIndex + 1;
             metadata.put(Instance.TAG_BATCH, String.valueOf(workerBatch));
@@ -265,7 +265,6 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     @Override
     protected List<Instance> launchAdditionalClusterWorkerInstances(
-            Cluster cluster,
             int batchIndex, int workerIndex,
             Configuration.WorkerInstanceConfiguration instanceConfiguration,
             String workerNameTag) {
@@ -273,13 +272,13 @@ public class CreateClusterOpenstack extends CreateCluster {
         try {
             final Map<String, String> metadata = new HashMap<>();
             metadata.put(Instance.TAG_NAME, workerNameTag);
-            metadata.put(Instance.TAG_BIBIGRID_ID, clusterId);
+            metadata.put(Instance.TAG_BIBIGRID_ID, cluster.getClusterId());
             metadata.put(Instance.TAG_USER, config.getUser());
             metadata.put(Instance.TAG_BATCH, String.valueOf(batchIndex));
             InstanceTypeOpenstack workerSpec = (InstanceTypeOpenstack) instanceConfiguration.getProviderType();
             for (int i = workerIndex; i < workerIndex + instanceConfiguration.getCount(); i++) {
                 metadata.put(Instance.TAG_INDEX, String.valueOf(workerIndex));
-                ServerCreateBuilder scb = loadServerConfiguration(cluster, batchIndex, i, instanceConfiguration)
+                ServerCreateBuilder scb = loadServerConfiguration(batchIndex, i, instanceConfiguration)
                                                 .addMetadata(metadata)
                                                 .configDrive(workerSpec.getConfigDrive() != 0)
                                                 .userData(ShellScriptCreator.getUserData(config, true));
@@ -304,13 +303,11 @@ public class CreateClusterOpenstack extends CreateCluster {
 
     /**
      * Loads server config from OSClient interface.
-     * @param cluster specific cluster configuration
      * @param batchIndex index of worker batch
      * @param workerIndex index of worker in worker batch
      * @return build up server
      */
     private ServerCreateBuilder loadServerConfiguration(
-            Cluster cluster,
             int batchIndex,
             int workerIndex,
             Configuration.WorkerInstanceConfiguration instanceConfiguration) throws NotYetSupportedException {

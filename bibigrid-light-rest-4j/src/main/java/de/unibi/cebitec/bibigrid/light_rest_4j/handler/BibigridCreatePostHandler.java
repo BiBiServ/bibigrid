@@ -7,6 +7,7 @@ import de.unibi.cebitec.bibigrid.core.intents.CreateIntent;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.intents.ValidateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
@@ -17,6 +18,9 @@ import io.undertow.util.HttpString;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class BibigridCreatePostHandler implements LightHttpHandler {
@@ -60,8 +64,9 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
                     LOG.error(BibigridCreatePostHandler.KEEP);
                 } else {
                     LOG.error(BibigridCreatePostHandler.ABORT_WITH_INSTANCES_RUNNING);
-
-                    TerminateIntent cleanupIntent = module.getTerminateIntent(config);
+                    Map<String, Cluster> clusterMap = new HashMap<>();
+                    clusterMap.put(cluster.getCluster().getClusterId(), cluster.getCluster());
+                    TerminateIntent cleanupIntent = module.getTerminateIntent(config, clusterMap);
 
                     cleanupIntent.terminate(cluster_id);
                 }
@@ -76,7 +81,7 @@ public class BibigridCreatePostHandler implements LightHttpHandler {
             }
             return false;
         }
-        cluster_id = cluster.getClusterId();
+        cluster_id = cluster.getCluster().getClusterId();
         return true;
     }
 

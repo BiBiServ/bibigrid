@@ -36,122 +36,62 @@ public class StartUp {
             "afterwards.";
     private static final String KEEP = "Keeping the partly configured cluster for debug purposes. Please remember to shut it down afterwards.";
 
-    private static final String CID = "cluster-id";
-    private static final String SCALE = CID+" worker-Batch count";
-    private static final int SCALE_ARGS = 3; // cluster-id, workerBatch, count
-
-    private static OptionGroup getCMDLineOptionGroup() {
-        OptionGroup intentOptions = new OptionGroup();
-        intentOptions.setRequired(true);
-        Option terminate = new Option(TERMINATE.getShortParam(), TERMINATE.getLongParam(),
-                true, "Terminate running cluster");
-        terminate.setArgs(Option.UNLIMITED_VALUES);
-        terminate.setArgName(CID);
-        Option upscale = new Option(SCALE_UP.getShortParam(), SCALE_UP.getLongParam(),
-                true, "Adds a given amount of workers of a specific instance type");
-        upscale.setArgs(SCALE_ARGS);
-        upscale.setArgName(SCALE);
-        Option downscale = new Option(SCALE_DOWN.getShortParam(), SCALE_DOWN.getLongParam(),
-                true, "Terminates a given amount of workers of a specific instance type");
-        downscale.setArgs(SCALE_ARGS);
-        downscale.setArgName(SCALE);
-        Option ide = new Option(IDE.getShortParam(), IDE.getLongParam(),
-                true, "Start a Web IDE");
-        ide.setArgName(CID);
-        Option list = new Option(LIST.getShortParam(), LIST.getLongParam(),
-                true, "List running clusters");
-        list.setOptionalArg(true);
-        list.setArgName(CID);
-        intentOptions
-                .addOption(new Option(VERSION.getShortParam(), VERSION.getLongParam(),
-                        false, "Version"))
-                .addOption(new Option(HELP.getShortParam(), HELP.getLongParam(),
-                        false, "Help"))
-                .addOption(new Option(CREATE.getShortParam(), CREATE.getLongParam(),
-                        false, "Create cluster"))
-                .addOption(list)
-                .addOption(new Option(VALIDATE.getShortParam(), VALIDATE.getLongParam(),
-                        false, "Validate the configuration file"))
-                .addOption(terminate)
-                .addOption(upscale)
-                .addOption(downscale)
-                .addOption(ide);
-        return intentOptions;
-    }
-
     public static void main(String[] args) {
-        CommandLineParser cli = new DefaultParser();
-        OptionGroup intentOptions = getCMDLineOptionGroup();
-        Options cmdLineOptions = new Options()
-                .addOption(new Option("h","help",false,"Get some online help"))
-                .addOption(new Option("v","verbose", false,"More verbose output"))
-                .addOption(new Option("o","config",true,"Path to JSON configuration file"))
-                .addOption(new Option("d","debug",false,"Don't shut down cluster in the case of a configuration error."))
-                .addOption(new Option("m","mode",true,"One of "+String.join(",",Provider.getInstance().getProviderNames())))
-                .addOptionGroup(intentOptions);
+        CommandLineInterpreter cli = CommandLineInterpreter.parseCommandLine(args);
+        IntentMode intentMode = cli.getIntentMode();
 
+        // Only version info print necessary
+        if (intentMode == VERSION) {
+            printVersionInfo();
+            return;
+        }
+        // Just to get information faster
+        // TODO verbose mode print table of different machines?
+
+        if (intentMode == HELP) {
+            printHelp(cli.getCmdLineOptions());
+            return;
+        }
+
+        // Options
+        if (cli.isMode("verbose")) {
+            VerboseOutputFilter.SHOW_VERBOSE = true;
+            LOG.info("Enable verbose mode for more detailed output.");
+        }
+
+        if (cli.isMode("debug")) {
+            Configuration.DEBUG = true;
+            LOG.info("Enable debug mode to keep cluster in case of a configuration error.");
+        }
+
+        String providerMode = cli.getOptionValue("mode");
+        String configurationFile = cli.getOptionValue("config");
+
+        ProviderModule module = loadProviderModule(providerMode);
 
         try {
-            CommandLine cl = cli.parse(cmdLineOptions, args);
+            // Provider specific configuration and validator
+            // TODO add another module -> loadConfiguration with ssh .. from config file / source, but else loaded from remote
+            Configuration config = module.getConfiguration(configurationFile);
+            Validator validator =  module.getValidator(config, module);
 
-            IntentMode intentMode = IntentMode.fromString(intentOptions.getSelected());
-
-            // Only version info print necessary
-            if (intentMode == VERSION) {
-                printVersionInfo();
-                return;
-            }
-            // Just to get information faster
-            if (intentMode == HELP) {
-                // printInstanceTypeHelp(module, client, config);
-                printHelp(cl, cmdLineOptions);
-                return;
-            }
-
-            // Options
-            if (cl.hasOption("verbose")) {
-                VerboseOutputFilter.SHOW_VERBOSE = true;
-                LOG.info("Enable verbose mode for more detailed output.");
-            }
-
-            if (cl.hasOption("debug")) {
-                Configuration.DEBUG = true;
-                LOG.info("Enable debug mode to keep cluster in case of a configuration error.");
-            }
-
-            String providerMode = cl.getOptionValue("mode");
-            String configurationFile = cl.getOptionValue("config");
-
-            ProviderModule module = loadProviderModule(providerMode);
-
-            try {
-                // Provider specific configuration and validator
-                Configuration config = module.getConfiguration(configurationFile);
-                Validator validator =  module.getValidator(config, module);
-
-                // Map of IntentMode and clusterIds
-                Map<IntentMode, String[]> clOptions = new HashMap<>();
-                for (IntentMode im : IntentMode.values()) {
-                    String[] parameters = cl.getOptionValues(im.getShortParam());
-                    if (parameters == null) {
-                        parameters = new String[] {cl.getOptionValue(im.getShortParam())};
-                    }
-                    clOptions.put(im, parameters);
+            // Map of IntentMode and clusterIds
+            Map<IntentMode, String[]> clOptions = new HashMap<>();
+            for (IntentMode im : IntentMode.values()) {
+                String[] parameters = cli.getOptionValues(im.getShortParam());
+                if (parameters == null) {
+                    parameters = new String[] {cli.getOptionValue(im.getShortParam())};
                 }
+                clOptions.put(im, parameters);
+            }
 
-                // TODO validates by configuration file
-                // Only a valid option for creation and validation parameter
-                if (validator.validateProviderParameters()) {
-                    runIntent(module, validator, clOptions, intentMode, config);
-                } else {
-                    LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
-                }
-            } catch (ConfigurationException e) {
-                LOG.error(e.getMessage());
+            if (validator.validateProviderParameters()) {
+                runIntent(module, validator, clOptions, intentMode, config);
+            } else {
                 LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
             }
-        } catch (ParseException pe) {
-            LOG.error("Error while parsing the commandline arguments: {}", pe.getMessage());
+        } catch (ConfigurationException e) {
+            LOG.error(e.getMessage());
             LOG.error(Constant.ABORT_WITH_NOTHING_STARTED);
         }
     }
@@ -163,7 +103,7 @@ public class StartUp {
      */
     private static ProviderModule loadProviderModule(String providerMode) {
         ProviderModule module;
-        String [] availableProviderModes = Provider.getInstance().getProviderNames();
+        String[] availableProviderModes = Provider.getInstance().getProviderNames();
         if (availableProviderModes.length == 1) {
             LOG.info("Use {} provider.", availableProviderModes[0]);
             module = Provider.getInstance().getProviderModule(availableProviderModes[0]);
@@ -186,7 +126,12 @@ public class StartUp {
      * @param intentMode Current IntentMode
      * @param config Configuration
      */
-    private static void runIntent(ProviderModule module, Validator validator, Map<IntentMode, String[]> clOptions, IntentMode intentMode, Configuration config) {
+    private static void runIntent(
+            ProviderModule module,
+            Validator validator,
+            Map<IntentMode, String[]> clOptions,
+            IntentMode intentMode,
+            Configuration config) {
             try {
                 module.createClient(config);
             } catch (ClientConnectionFailedException e) {
@@ -195,55 +140,66 @@ public class StartUp {
                 return;
             }
 
-            // Usually parameters[0] equals clusterId(s) or null
-            String[] parameters = clOptions.get(intentMode);
-            String clusterId = parameters.length == 0 ? null : parameters[0];
-
-            // -h and -l parameters don't need validation
-            if (intentMode == LIST) {
-                LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
-                loadIntent.loadClusterConfiguration(clusterId);
-                Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
-                if (clusterMap.isEmpty()) {
+            // In order to validate the native instance types, we need a client.
+            // So validating configuration is deferred after client connection is established.
+            // Config validation in validate and create intentMode only
+            if (intentMode == VALIDATE || intentMode == CREATE) {
+                try {
+                    if (!validator.validateConfiguration()) {
+                        LOG.error(ABORT_WITH_NOTHING_STARTED);
+                        return;
+                    }
+                } catch (Exception e){
+                    LOG.error(e.getMessage());
+                    if (Configuration.DEBUG) {
+                        e.printStackTrace();
+                    }
                     return;
                 }
-                ListIntent listIntent = module.getListIntent(clusterMap);
-                if (clusterId == null) {
-                    LOG.info(listIntent.toString());
+                if (module.getValidateIntent(config).validate()) {
+                    if (intentMode == VALIDATE) LOG.info(I, "You can now start your cluster.");
+                    else {
+                        // intentMode CREATE - Start cluster creation
+                        CreateCluster cluster = module.getCreateIntent(config, null);
+                        runCreateIntent(module, config, cluster);
+                    }
                 } else {
-                    LOG.info(listIntent.toDetailString(clusterId));
+                    LOG.error("There were one or more errors. Please adjust your configuration.");
                 }
                 return;
             }
 
+            // Usually parameters equals clusterId(s) or null
+            String[] parameters = clOptions.get(intentMode);
+
+            // If parameter given, parameter[0] is clusterId
+            String clusterId = parameters.length == 0 ? null : parameters[0];
+
+            // Load cluster config from cloud provider -> clusterMap for specific intentModes
+            LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
+            loadIntent.loadClusterConfiguration(clusterId);
+            Map<String, Cluster> clusterMap = loadIntent.getClusterMap();
+            if (clusterMap == null || clusterMap.isEmpty()) {
+                // if there is no cluster, none action possible
+                return;
+            }
+
             switch (intentMode) {
-                case VALIDATE:
-                    if (validator.configurationInvalid()) {
-                        break;
-                    }
-                    if (module.getValidateIntent(config).validate()) {
-                        LOG.info(I, "You can now start your cluster.");
+                case LIST:
+                    ListIntent listIntent = module.getListIntent(clusterMap);
+                    if (clusterId == null) {
+                        LOG.info(listIntent.toString());
                     } else {
-                        LOG.error("There were one or more errors. Please adjust your configuration.");
-                    }
-                    break;
-                case CREATE:
-                    if (validator.configurationInvalid()) {
-                        break;
-                    }
-                    if (module.getValidateIntent(config).validate()) {
-                        CreateCluster cluster = module.getCreateIntent(config, clusterId);
-                        runCreateIntent(module, config, cluster);
-                    } else {
-                        LOG.error("There were one or more errors. Please adjust your configuration.");
+                        // TODO list of more than one cluster optional?
+                        LOG.info(listIntent.toDetailString(clusterId));
                     }
                     break;
                 case TERMINATE:
-                    if (!module.getTerminateIntent(config).terminate(parameters)) {
+                    boolean terminate_success = module.getTerminateIntent(config, clusterMap).terminate(parameters);
+                    if (!terminate_success) {
                         if (parameters.length == 1) {
-                            LOG.error("Could not terminate instances with given parameter {}.", parameters[0]);
+                            LOG.error("Could not terminate instances with given parameter {}.", clusterId);
                         } else {
-                            // LOG.warn("StartUp, given parameters: {}", Arrays.stream(parameters));
                             StringBuilder error = new StringBuilder("Could not terminate instances with given parameters ");
                             for (int p = 0; p < parameters.length; p++) {
                                 String parameter = parameters[p];
@@ -263,12 +219,13 @@ public class StartUp {
                         workerBatch = Integer.parseInt(parameters[1]);
                         count = Integer.parseInt(parameters[2]);
                     } catch (NumberFormatException nf) {
-                        LOG.error("Wrong usage. Please use '-su <cluster-id> <workerBatch> <count> instead.'");
+                        LOG.error("Wrong usage. Please use '-su <cluster-id> <workerBatch> <count>' instead.");
                         return;
                     }
                     CreateCluster createIntent = module.getCreateIntent(config, clusterId);
-                    if (!createIntent.createAdditionalWorkerInstances(workerBatch, count)) {
-                        LOG.error("Could not create worker instances with specified batch.");
+                    boolean create_success = createIntent.createWorkerInstances(workerBatch, count);
+                    if (!create_success) {
+                        LOG.error("Could not create {} worker instances with specified batch {}.", count, workerBatch);
                         return;
                     }
                     break;
@@ -277,18 +234,20 @@ public class StartUp {
                         workerBatch = Integer.parseInt(parameters[1]);
                         count = Integer.parseInt(parameters[2]);
                     } catch (NumberFormatException nf) {
-                        LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <count> instead.'");
+                        LOG.error("Wrong usage. Please use '-sd <cluster-id> <workerBatch> <count>' instead.");
                         return;
                     }
-                    module.getTerminateIntent(config)
-                            .terminateInstances(clusterId, workerBatch, count);
+                    module.getTerminateIntent(config, clusterMap).terminateInstances(clusterId, workerBatch, count);
                     break;
                 case IDE:
                     try {
                         // Load private key file
                         config.getClusterKeyPair().setName(CreateCluster.PREFIX + clusterId);
                         config.getClusterKeyPair().load();
-                        new IdeIntent(module, clusterId, config).start();
+                        Cluster cluster = clusterMap.get(clusterId);
+                        if (loadIntent.loadIdeConfiguration(cluster.getPublicIp())) {
+                            new IdeIntent(cluster, config).start();
+                        }
                     } catch (IOException e) {
                         LOG.error("Exception occurred loading private key. {}",e.getMessage());
                         if (Configuration.DEBUG) {
@@ -303,7 +262,6 @@ public class StartUp {
     }
 
     /**
-     * ToDo Make void or use return value
      * Runs cluster creation and launch processing.
      *
      * @param module responsible for provider accessibility
@@ -311,8 +269,7 @@ public class StartUp {
      * @param cluster CreateCluster implementation
      * @return true, if cluster built successfully
      */
-    private static boolean runCreateIntent(ProviderModule module, Configuration config,
-                                           CreateCluster cluster) {
+    private static boolean runCreateIntent(ProviderModule module, Configuration config, CreateCluster cluster) {
         try {
             // configure environment
             cluster .createClusterEnvironment()
@@ -322,14 +279,16 @@ public class StartUp {
                     .createKeyPair()
                     .createPlacementGroup();
             // configure cluster
-            boolean success = cluster.configureClusterInstances() && cluster.launchClusterInstances();
+            boolean success =  cluster.configureClusterInstances() && cluster.launchClusterInstances();
             if (!success) {
                 //  In DEBUG mode keep partial configured cluster running, otherwise clean it up
                 if (Configuration.DEBUG) {
                     LOG.error(StartUp.KEEP);
                 } else {
                     LOG.error(StartUp.ABORT_WITH_INSTANCES_RUNNING);
-                    module.getTerminateIntent(config).terminate(cluster.getClusterId());
+                    Map<String, Cluster> clusterMap = new HashMap<>();
+                    clusterMap.put(cluster.getCluster().getClusterId(), cluster.getCluster());
+                    module.getTerminateIntent(config, clusterMap).terminate(cluster.getCluster());
                 }
                 return false;
             }
@@ -349,14 +308,12 @@ public class StartUp {
      * Prints out version of BiBiGrid with date of build.
      */
     private static void printVersionInfo() {
-        Map m = getVersionInfo();
-            System.out.println(String.format("v%s (Build: %s)",
-                    m.get("version"),
-                    m.get("build")));
+        Map<String, String> m = getVersionInfo();
+        LOG.info(String.format("v%s (Build: %s)", m.get("version"), m.get("build")));
     }
 
-    private static Map getVersionInfo(){
-        Map<String,String> s = new HashMap();
+    private static Map<String, String> getVersionInfo(){
+        Map<String,String> s = new HashMap<>();
         try {
             URL jarUrl = StartUp.class.getProtectionDomain().getCodeSource().getLocation();
             String jarPath = URLDecoder.decode(jarUrl.getFile(), "UTF-8");
@@ -372,11 +329,10 @@ public class StartUp {
 
     /**
      * Prints out terminal help.
-     * @param commandLine given cl input arguments
      * @param cmdLineOptions options [-ch -c -v -o ...]
      */
-    private static void printHelp(CommandLine commandLine, Options cmdLineOptions) {
-        Map map = getVersionInfo();
+    private static void printHelp(Options cmdLineOptions) {
+        Map<String, String> map = getVersionInfo();
         HelpFormatter help = new HelpFormatter();
         String footer = "\nDocumentation at https://github.com/BiBiServ/bibigrid/docs\n";
         footer += "Loaded provider modules: " + String.join(", ", Provider.getInstance().getProviderNames());
@@ -384,10 +340,9 @@ public class StartUp {
         String modes = Arrays.stream(IntentMode.values()).map(m -> "--" + m.getLongParam()).collect(Collectors.joining("|"));
         System.out.println("BiBiGrid is a tool for an easy cluster setup inside a cloud environment.\n");
         help.printHelp(100,
-                "java -jar bibigrid-"+String.join(", ", Provider.getInstance().getProviderNames())+"-"+map.get("version")+".jar",
-                "",
-                cmdLineOptions,
-                footer);
+                "java -jar bibigrid-"
+                        + String.join(", ", Provider.getInstance().getProviderNames())
+                        + "-" + map.get("version")+".jar","", cmdLineOptions, footer);
         System.out.println('\n');
     }
 

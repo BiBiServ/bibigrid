@@ -1,13 +1,10 @@
 package de.unibi.cebitec.bibigrid.core.intents;
 
-import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import de.unibi.cebitec.bibigrid.core.model.Client;
 import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.Configuration;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
-import de.unibi.cebitec.bibigrid.core.util.JSchLogger;
 import de.unibi.cebitec.bibigrid.core.util.SshFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +15,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URL;
-import java.nio.file.Paths;
-import java.util.Map;
+import java.util.Scanner;
 
 /**
  * Intent for starting and tunneling the Web-IDE installation (theia-ide or cloud9) on a cluster.
@@ -32,28 +28,20 @@ public class IdeIntent extends Intent {
     public static final int DEFAULT_IDE_PORT = 8181;
     public static final int DEFAULT_IDE_PORT_END = 8383;
 
-    private final ProviderModule providerModule;
-    private final String clusterId;
+    private final Cluster cluster;
     private final Configuration config;
 
     private int idePort = DEFAULT_IDE_PORT;
     private int idePortLast = DEFAULT_IDE_PORT_END;
 
-    public IdeIntent(ProviderModule providerModule, String clusterId, Configuration config) {
-        this.providerModule = providerModule;
-        this.clusterId = clusterId;
+    public IdeIntent(Cluster cluster, Configuration config) {
+        this.cluster = cluster;
         this.config = config;
     }
 
     public void start() {
-        if (clusterId == null) {
+        if (cluster == null || cluster.getClusterId() == null) {
             LOG.error("ClusterId not found. Please provide a valid cluster id.");
-            return;
-        }
-        LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(config);
-        loadIntent.loadClusterConfiguration(clusterId);
-        Cluster cluster = loadIntent.getCluster(clusterId);
-        if (cluster == null) {
             return;
         }
         String masterIp = config.isUseMasterWithPublicIp() ? cluster.getPublicIp() : cluster.getPrivateIp();
@@ -63,11 +51,45 @@ public class IdeIntent extends Intent {
             LOG.error("Failed to poll master ssh port.");
             return;
         }
-        if (!config.isIDE()) {
-            LOG.error("IDE not set in configuration.");
-            return;
+
+        // TODO Write in config when loaded from remote
+        boolean ideEnabled = config.isIDE();
+
+        if (!ideEnabled) {
+            // Ask to install WebIDE subsequently
+            if (!installSubsequently()) return;
         }
         startPortForwarding(masterIp);
+    }
+
+    /**
+     * Asks to install IDE subsequently, if not yet enabled.
+     * Installs afterwards.
+     * @return true, if successfully installed subsequently
+     * TODO implement installation afterwards
+     */
+    public static boolean installSubsequently() {
+        boolean install_successful;
+        String install_ide = "";
+        String INSTALL = "yes";
+        String NOT_INSTALL = "no";
+        while (!(install_ide.equals(INSTALL) || install_ide.equals(NOT_INSTALL))) {
+            LOG.info("IDE not set in configuration. Should it be installed subsequently? [yes, NO]");
+            Scanner in = new Scanner(System.in);
+            install_ide = in.nextLine();
+            if (install_ide.equals("")) {
+                install_ide = NOT_INSTALL;
+            }
+        }
+        if (!install_ide.equals(INSTALL)) {
+            LOG.error("IDE cannot be started. Aborting ...");
+            install_successful = false;
+        } else {
+            // TODO Install IDE subsequently
+            LOG.error("Install IDE subsequently not implemented, yet.");
+            install_successful = false;
+        }
+        return install_successful;
     }
 
     /**

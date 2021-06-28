@@ -23,13 +23,14 @@ public abstract class PrepareIntent extends Intent {
 
     /**
      * Prepare cluster images for the cluster with id in configuration.
+     * TODO No usage?
      *
      * @return Return true in case of success, false otherwise
      */
     public boolean prepare(final CreateCluster cluster) {
-        Instance masterInstance = cluster.getMasterInstance();
-        List<Instance> workerInstances = cluster.getWorkerInstances();
-        String clusterId = cluster.getClusterId();
+        Instance masterInstance = cluster.cluster.getMasterInstance();
+        List<Instance> workerInstances = cluster.cluster.getWorkerInstances();
+        String clusterId = cluster.cluster.getClusterId();
         LOG.info("Stopping {} instances...", workerInstances.size());
         stopInstance(masterInstance);
         for (Instance instance : workerInstances) {

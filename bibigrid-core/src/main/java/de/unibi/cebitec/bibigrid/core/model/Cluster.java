@@ -102,14 +102,32 @@ public class Cluster implements Comparable<Cluster> {
         return workers;
     }
 
-    public void setWorkerInstances(List<Instance> workerInstances) {
-        this.workerInstances = workerInstances;
+    public void setWorkerInstances(List<Instance> instances) {
+        this.workerInstances = instances;
     }
 
+    /**
+     * Todo doc
+     * @param instances
+     */
+    public void addWorkerInstances(List<Instance> instances) {
+        for (Instance instance : instances) {
+            this.addWorkerInstance(instance);
+        }
+    }
+
+    /**
+     * Todo doc
+     * @param instance
+     */
     public void addWorkerInstance(Instance instance) {
         workerInstances.add(instance);
     }
 
+    /**
+     * Todo doc
+     * @param instance
+     */
     public void removeWorkerInstance(Instance instance) {
         workerInstances.remove(instance);
     }
