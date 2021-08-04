@@ -106,7 +106,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
                 }
                 // create a new network
                 network = osc.networking().network().create(Builders.network()
-                        .name(NETWORK_PREFIX + cluster.getClusterId())
+                        .name(NETWORK_PREFIX + cluster.getCluster().getClusterId())
                         .adminStateUp(true)
                         .build());
                 cfg.setNetwork(network.getName());
@@ -129,7 +129,7 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
             }
             // now we can create a new subnet
             subnet = osc.networking().subnet().create(Builders.subnet()
-                    .name(SUBNET_PREFIX + cluster.getClusterId())
+                    .name(SUBNET_PREFIX + cluster.getCluster().getClusterId())
                     .network(network)
                     .ipVersion(IPVersionType.V4)
                     .enableDHCP(true)
@@ -168,8 +168,8 @@ public class CreateClusterEnvironmentOpenstack extends CreateClusterEnvironment 
         }
         try {
             ComputeSecurityGroupService csgs = cluster.getClient().compute().securityGroups();
-            sge = csgs.create(SECURITY_GROUP_PREFIX + cluster.getClusterId(),
-                    "Security group for cluster: " + cluster.getClusterId());
+            sge = csgs.create(SECURITY_GROUP_PREFIX + cluster.getCluster().getClusterId(),
+                    "Security group for cluster: " + cluster.getCluster().getClusterId());
             // allow ssh access (TCP:22) from everywhere
             csgs.createRule(getPortBuilder(sge.getId(), IPProtocol.TCP, 22, 22).cidr("0.0.0.0/0").build());
             // no restriction within the security group

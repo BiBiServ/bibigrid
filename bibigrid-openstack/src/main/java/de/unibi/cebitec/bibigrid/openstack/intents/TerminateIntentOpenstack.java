@@ -17,6 +17,8 @@ import org.openstack4j.model.network.options.PortListOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 /**
  * Implements TerminateIntent for Openstack.
  *
@@ -27,8 +29,11 @@ public class TerminateIntentOpenstack extends TerminateIntent {
     private static final Logger LOG = LoggerFactory.getLogger(TerminateIntentOpenstack.class);
     private final OSClient os;
 
-    public TerminateIntentOpenstack(ProviderModule providerModule, Client client, Configuration config) {
-        super(providerModule, client, config);
+    public TerminateIntentOpenstack(ProviderModule providerModule,
+                                    Client client,
+                                    Configuration config,
+                                    Map<String, Cluster> clusterMap) {
+        super(providerModule, client, config, clusterMap);
         os = ((ClientOpenstack) client).getInternal();
     }
 
