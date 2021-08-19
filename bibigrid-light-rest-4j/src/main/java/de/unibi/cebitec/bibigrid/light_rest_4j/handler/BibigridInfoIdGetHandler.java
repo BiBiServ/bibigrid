@@ -27,7 +27,7 @@ public class BibigridInfoIdGetHandler implements LightHttpHandler {
             String clusterId = exchange.getQueryParameters().get("id").getFirst();
             Status status = DataBase.getDataBase().status.get(clusterId);
             if (status == null) {
-                status = new Status(Status.CODE.Error, "Unknown cluster id" + clusterId + "!");
+                status = new Status(Status.CODE.Error, "Unknown cluster id " + clusterId + "!");
             }
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
             exchange.setStatusCode(200);
