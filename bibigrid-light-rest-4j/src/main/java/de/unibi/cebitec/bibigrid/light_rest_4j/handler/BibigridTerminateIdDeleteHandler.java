@@ -3,8 +3,10 @@ package de.unibi.cebitec.bibigrid.light_rest_4j.handler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.handler.LightHttpHandler;
+import de.unibi.cebitec.bibigrid.core.intents.LoadClusterConfigurationIntent;
 import de.unibi.cebitec.bibigrid.core.intents.TerminateIntent;
 import de.unibi.cebitec.bibigrid.core.model.Client;
+import de.unibi.cebitec.bibigrid.core.model.Cluster;
 import de.unibi.cebitec.bibigrid.core.model.ProviderModule;
 import de.unibi.cebitec.bibigrid.openstack.ConfigurationOpenstack;
 import io.undertow.server.HttpServerExchange;
@@ -34,7 +36,15 @@ public class BibigridTerminateIdDeleteHandler implements LightHttpHandler {
 
             // set id for termination
             clusterId = exchange.getQueryParameters().get("id").getFirst();
-            TerminateIntent terminateIntent = module.getTerminateIntent(config);
+
+            // Load cluster config from cloud provider -> clusterMap for specific intentModes
+            LoadClusterConfigurationIntent loadIntent = module.getLoadClusterConfigurationIntent(config);
+            loadIntent.loadClusterConfiguration(clusterId);
+            // Load specific cluster to put into clusterMap
+            Cluster cluster = loadIntent.getCluster(clusterId);
+            Map<String, Cluster> clusterMap = new HashMap<>();
+            clusterMap.put(clusterId, cluster);
+            TerminateIntent terminateIntent = module.getTerminateIntent(config, clusterMap);
 
             if (terminateIntent.terminate(clusterId)) {
                 try {
