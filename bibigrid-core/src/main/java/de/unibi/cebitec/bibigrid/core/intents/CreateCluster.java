@@ -110,7 +110,6 @@ public abstract class CreateCluster extends Intent {
     public boolean configureClusterInstances() {
         Map<InstanceType, Integer> instanceTypes = new HashMap<>();
         instanceTypes.put(config.getMasterInstance().getProviderType(), 1);
-        LOG.warn("Put master instance type {} into quotas map.", config.getMasterInstance().getProviderType());
         for (Configuration.WorkerInstanceConfiguration worker : config.getWorkerInstances()) {
             InstanceType providerType = worker.getProviderType();
             if (instanceTypes.containsKey(providerType)) {
@@ -118,7 +117,6 @@ public abstract class CreateCluster extends Intent {
             } else {
                 instanceTypes.put(worker.getProviderType(), worker.getCount());
             }
-            LOG.warn("Put worker instance type {} into quotas map.", worker.getProviderType());
         }
         if (providerModule.getValidateIntent(config).
                 checkQuotasExceeded(instanceTypes)) {

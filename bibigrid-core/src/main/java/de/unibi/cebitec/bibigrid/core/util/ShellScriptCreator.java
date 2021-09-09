@@ -142,6 +142,12 @@ public final class ShellScriptCreator {
         script.append("ansible workers -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE
                 + " --become -m raw -a \"apt-get update && apt-get --yes install python3\" | sudo tee -a /var/log/ansible.log\n");
 
+        // Test ansible
+        script.append("echo \"Testing Ansible...\n\";");
+        script.append("ansible -i ~/" + AnsibleResources.HOSTS_CONFIG_FILE + " all -m ping | sudo tee -a /var/log/ansible.log \n");
+        script.append("if [ $? -eq 0 ]; then echo \"Ansible configuration seems to work properly.\"; else echo\"Ansible hosts not reachable. " +
+                "There seems to be a misconfiguration.\"; fi\n");
+
         // Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
         if (config.hasCustomAnsibleGalaxyRoles()) {
             script.append("ansible-galaxy install --roles-path ~/"
