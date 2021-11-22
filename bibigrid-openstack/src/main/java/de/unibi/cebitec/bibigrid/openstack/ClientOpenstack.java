@@ -5,6 +5,7 @@ import de.unibi.cebitec.bibigrid.core.model.exceptions.ClientConnectionFailedExc
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.compute.ServerGroupService;
 import org.openstack4j.api.exceptions.AuthenticationException;
+import org.openstack4j.api.exceptions.ClientResponseException;
 import org.openstack4j.model.common.Identifier;
 import org.openstack4j.model.compute.Image;
 import org.openstack4j.model.storage.block.Volume;
@@ -68,7 +69,19 @@ public class ClientOpenstack extends Client {
         OpenStackCredentials credentials = config.getOpenstackCredentials();
         try {
             OSFactory.enableHttpLoggingFilter(config.isDebugRequests());
-            internalClient = buildOSClientV3(credentials);
+            /* openstack4j can't follow "redirect" responses, therefore
+               we try to redirect to identity version 3 manually */
+            try {
+                internalClient = buildOSClientV3(credentials);
+            } catch (ClientResponseException e) {
+                if (!credentials.getEndpoint().endsWith("/v3")){
+                    credentials.setEndpoint(credentials.getEndpoint()+"/v3");
+                    LOG.warn("AUTH endpoint seems not to point to identity api v3. Try again with"+ credentials.getEndpoint());
+                    internalClient = buildOSClientV3(credentials);
+                } else {
+                    throw new ClientResponseException(e.getMessage(),e.getStatus());
+                }
+            }
             // select region
             if (config.getRegion() != null && !config.getRegion().equals(credentials.getRegion())) {
                 LOG.warn("General region option '{}' overwrites Openstack credentials configuration '{}'!",config.getRegion(),credentials.getRegion());
