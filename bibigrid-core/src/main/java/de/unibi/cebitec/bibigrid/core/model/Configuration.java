@@ -1,7 +1,6 @@
 package de.unibi.cebitec.bibigrid.core.model;
 
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.unibi.cebitec.bibigrid.core.intents.IdeIntent;
 import de.unibi.cebitec.bibigrid.core.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
@@ -10,7 +9,6 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
@@ -19,11 +17,10 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import static de.unibi.cebitec.bibigrid.core.util.VerboseOutputFilter.V;
 
-@SuppressWarnings({"WeakerAccess", "unused"})
+@SuppressWarnings({"WeakerAccess"})
 public abstract class Configuration {
     /* public const */
     public static boolean DEBUG = false;
@@ -53,6 +50,13 @@ public abstract class Configuration {
             }
     }
 
+    /**
+     * Loads configuration from config yaml file.
+     * @param configurationClass provider dependent configuration class
+     * @param path path to config file
+     * @return loaded configuration
+     * @throws ConfigurationException error in config
+     */
     public static Configuration loadConfiguration(Class<? extends Configuration> configurationClass, String path) throws ConfigurationException{
         Path propertiesFilePath = null;
 
@@ -83,11 +87,9 @@ public abstract class Configuration {
         } catch (YAMLException e) {
             throw new ConfigurationException("Failed to parse configuration file. "+e.getMessage(), e);
         }
-
     }
 
     /* properties */
-//    protected static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 //    private static final String DEFAULT_WORKSPACE = "$HOME";
     private String mode;
     private String user = System.getProperty("user.name");
@@ -98,7 +100,7 @@ public abstract class Configuration {
     private List<String> sshPublicKeyFiles = new ArrayList<>();
     private List<String> sshPublicKeys = new ArrayList<>();
     private String id;
-    private ClusterKeyPair clusterKeyPair = new ClusterKeyPair();
+    private final ClusterKeyPair clusterKeyPair = new ClusterKeyPair();
     @Deprecated
     private String sshPrivateKeyFile;
     private String alternativeConfigPath;
@@ -122,11 +124,12 @@ public abstract class Configuration {
     private boolean ganglia;
     private boolean zabbix;
     private ZabbixConf zabbixConf = new ZabbixConf();
-    private List<String> nfsShares = new ArrayList<>(Arrays.asList("/vol/spool"));
+    private List<String> nfsShares = new ArrayList<>(Collections.singletonList("/vol/spool"));
     private List<MountPoint> masterMounts = new ArrayList<>();
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
     private boolean debugRequests;
+    @Deprecated
     private Properties ogeConf = OgeConf.initOgeConfProperties();
     private List<AnsibleRoles> ansibleRoles = new ArrayList<>();
     private List<AnsibleGalaxyRoles> ansibleGalaxyRoles = new ArrayList<>();
@@ -191,8 +194,6 @@ public abstract class Configuration {
         return clusterKeyPair;
     }
 
-
-
     public String getSshPublicKeyFile() {
         return sshPublicKeyFile;
     }
@@ -252,19 +253,6 @@ public abstract class Configuration {
             LOG.info(V, "Master instances set: {}", display);
         }
     }
-
-    @Deprecated
-    public List<WorkerInstanceConfiguration> getSlaveInstances() {
-        LOG.warn("Property 'slaveInstances' is deprecated and will be removed in next major release. It is replaced 1:1 by 'workerInstances'.");
-        return getWorkerInstances();
-    }
-
-    @Deprecated
-    public void setSlaveInstances(List<WorkerInstanceConfiguration> workerInstances) {
-            LOG.warn("Property 'slaveInstances' is deprecated and will be removed in next major release. It is replaced 1:1 by 'workerInstances'.");
-            setWorkerInstances(workerInstances);
-    }
-
 
     public List<WorkerInstanceConfiguration> getWorkerInstances() {
         return workerInstances;
@@ -800,6 +788,7 @@ public abstract class Configuration {
     /**
      * Provides support for GridEngine global configuration.
      */
+    @Deprecated
     public static class OgeConf extends Properties {
         public static final String GRIDENGINE_FILES = "/playbook/roles/master/files/gridengine/";
         public static final String GLOBAL_OGE_CONF = GRIDENGINE_FILES + "global.conf";

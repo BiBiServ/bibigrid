@@ -1,0 +1,393 @@
+141  [main] INFO  de.unibi.cebitec.bibigrid.Provider - Registered provider module: openstack
+160  [main] INFO  de.unibi.cebitec.bibigrid.Provider - Registered provider module: openstack
+163  [main] INFO  de.unibi.cebitec.bibigrid.StartUp - Use openstack provider.
+166  [main] INFO  d.u.c.b.core.model.Configuration - Using default configuration file (/home/tim/.bibigrid/configuration.yml).
+217  [main] INFO  d.u.c.b.core.model.Configuration - SSH public key file found. (/home/tim/.ssh/id_rsa.pub)
+217  [main] INFO  d.u.c.b.core.model.Configuration - Region set. (Bielefeld)
+217  [main] INFO  d.u.c.b.core.model.Configuration - Availability zone set. (default)
+218  [main] INFO  d.u.c.b.core.model.Configuration - Master instances set: 
+[type=de.NBI tiny, image=3df3af5c-83ce-491e-a8a2-da3345d04b6b] 
+219  [main] INFO  d.u.c.b.core.model.Configuration - Worker instances set: 
+[type=de.NBI tiny, image=Ubuntu 16.04 LTS (2020-01-21), count=2]
+[type=de.NBI small, image=Ubuntu 16.04 LTS (2020-01-21), count=1]
+220  [main] INFO  d.u.c.b.core.model.Configuration - Additional open ports set: 0.0.0.0/0:80 (TCP) 
+220  [main] INFO  d.u.c.b.core.model.Configuration - NFS support enabled.
+221  [main] INFO  d.u.c.b.core.model.Configuration - Theia support disabled.
+223  [main] INFO  d.u.cebitec.bibigrid.core.Validator - Found valid credentials file (/home/tim/.bibigrid/credentials.yml).
+223  [main] INFO  d.u.cebitec.bibigrid.core.Validator - Set OpenStack Credentials ...
+229  [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:5000/v3/ -> /auth/tokens
+427  [main] DEBUG org.jboss.logging - Logging Provider: org.jboss.logging.Slf4jLoggerProvider
+428  [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientWriterInterceptorContext,  Method : proceed
+428  [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyWriter: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+428  [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyWriter: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+1248 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+1248 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+1248 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+1292 [main] INFO  d.u.c.b.openstack.ClientOpenstack - Openstack connection established.
+1327 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/detail
+2765 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+2765 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+2765 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+2791 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Load Cluster Configurations ...
+2791 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for all clusters ...
+
+2791 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for cluster with id 7cenl89btqxwddz ...
+2791 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-2-1-7cenl89btqxwddz ...
+2791 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/df0ebd94-a4ab-46a1-ab3f-71c50c742349
+2964 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+2964 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+2964 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+2967 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/detail
+3191 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+3191 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+3192 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+3196 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+3649 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+3649 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+3649 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+3655 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-2-1-7cenl89btqxwddz loaded successfully.
+3655 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-2-7cenl89btqxwddz ...
+3655 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+3811 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+3811 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+3811 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+3812 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+4344 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+4345 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+4345 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+4345 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-2-7cenl89btqxwddz loaded successfully.
+4345 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-1-7cenl89btqxwddz ...
+4346 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+4501 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+4501 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+4502 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+4502 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+4961 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+4961 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+4962 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+4962 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-1-7cenl89btqxwddz loaded successfully.
+4962 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-master-7cenl89btqxwddz ...
+4962 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+5127 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+5127 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+5127 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+5127 [main] INFO  d.u.c.b.core.model.Configuration - Availability zone set. (default)
+5127 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+5545 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+5545 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+5545 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+5546 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-master-7cenl89btqxwddz loaded successfully.
+5546 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Initialize cluster with id 7cenl89btqxwddz ...
+5551 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster with id 7cenl89btqxwddz initialized successfully.
+
+5551 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for cluster with id q6miiaur9svfpyi ...
+5551 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-3-q6miiaur9svfpyi ...
+5551 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/0549db89-697a-4829-b45a-b7a79a5f2dbd
+5722 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+5722 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+5722 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+5723 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+6280 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+6280 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+6281 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+6281 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-3-q6miiaur9svfpyi loaded successfully.
+6281 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-2-q6miiaur9svfpyi ...
+6281 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/0549db89-697a-4829-b45a-b7a79a5f2dbd
+6447 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+6447 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+6447 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+6448 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+7289 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+7290 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+7290 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+7290 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-2-q6miiaur9svfpyi loaded successfully.
+7290 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-1-q6miiaur9svfpyi ...
+7291 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/0549db89-697a-4829-b45a-b7a79a5f2dbd
+7450 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+7451 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+7451 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+7451 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+7944 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+7944 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+7944 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+7945 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-1-q6miiaur9svfpyi loaded successfully.
+7945 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-master-q6miiaur9svfpyi ...
+7945 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/1ed1fc00-3352-4ffd-a5de-0a2bf0d117a7
+8121 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+8121 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+8121 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+8122 [main] INFO  d.u.c.b.core.model.Configuration - Availability zone set. (default)
+8122 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+8705 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+8705 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+8705 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+8706 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-master-q6miiaur9svfpyi loaded successfully.
+8706 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Initialize cluster with id q6miiaur9svfpyi ...
+8706 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster with id q6miiaur9svfpyi initialized successfully.
+
+8706 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for cluster with id vs75zjltogluzpb ...
+8706 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-2-1-vs75zjltogluzpb ...
+8706 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/df0ebd94-a4ab-46a1-ab3f-71c50c742349
+8865 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+8865 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+8865 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+8866 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+9060 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+9060 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+9061 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+9061 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-2-1-vs75zjltogluzpb loaded successfully.
+9061 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-2-vs75zjltogluzpb ...
+9061 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+9217 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+9217 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+9217 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+9217 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+9383 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+9383 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+9383 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+9384 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-2-vs75zjltogluzpb loaded successfully.
+9384 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-1-vs75zjltogluzpb ...
+9384 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+9537 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+9537 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+9537 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+9537 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+9998 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+9998 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+9998 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+9999 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-1-vs75zjltogluzpb loaded successfully.
+9999 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-master-vs75zjltogluzpb ...
+9999 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+10168 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10168 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10168 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10168 [main] INFO  d.u.c.b.core.model.Configuration - Availability zone set. (default)
+10169 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+10351 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10352 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10352 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10352 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-master-vs75zjltogluzpb loaded successfully.
+10352 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Initialize cluster with id vs75zjltogluzpb ...
+10352 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster with id vs75zjltogluzpb initialized successfully.
+
+10352 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for cluster with id xrqkuitvyvkqyju ...
+10352 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-2-1-xrqkuitvyvkqyju ...
+10353 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/df0ebd94-a4ab-46a1-ab3f-71c50c742349
+10506 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10506 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10507 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10507 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+10696 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10696 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10696 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10696 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-2-1-xrqkuitvyvkqyju loaded successfully.
+10696 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-2-xrqkuitvyvkqyju ...
+10697 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+10863 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10864 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10864 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10864 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+11322 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+11322 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+11322 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+11323 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-2-xrqkuitvyvkqyju loaded successfully.
+11323 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-1-xrqkuitvyvkqyju ...
+11323 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+11481 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+11481 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+11482 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+11482 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+11839 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+11839 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+11839 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+11840 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-1-xrqkuitvyvkqyju loaded successfully.
+11840 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-master-xrqkuitvyvkqyju ...
+11840 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+11996 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+11997 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+11997 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+11997 [main] INFO  d.u.c.b.core.model.Configuration - Availability zone set. (default)
+11997 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+12179 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+12179 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+12179 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+12180 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-master-xrqkuitvyvkqyju loaded successfully.
+12180 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Initialize cluster with id xrqkuitvyvkqyju ...
+12180 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster with id xrqkuitvyvkqyju initialized successfully.
+
+12180 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster Configuration loaded successfully.
+12180 [main] INFO  d.u.c.b.core.intents.ListIntent - Listing Cluster Configurations:
+
+12181 [main] INFO  de.unibi.cebitec.bibigrid.StartUp - 
+          cluster-id |          user |         launch date |       key name |       public-ip |      private-ip |  # inst |           group-id |   subnet-id |  network-id
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+     q6miiaur9svfpyi |      awalende |   02/10/20 13:40:13 | bibigridq6mii… |    129.70.51.12 |   192.168.20.82 |       4 | bibigridsg-q6miia… |           - |           -
+     7cenl89btqxwddz |      jkrueger |   02/10/20 12:24:46 | bibigrid7cenl… |   129.70.51.152 |  192.168.20.126 |       4 | bibigridsg-7cenl8… |           - |           -
+     xrqkuitvyvkqyju |           tim |   02/10/20 09:56:53 | bibigridxrqku… |    129.70.51.20 |   192.168.20.61 |       4 | bibigridsg-xrqkui… |           - |           -
+     vs75zjltogluzpb |           tim |   02/10/20 11:41:34 | bibigridvs75z… |    129.70.51.41 |  192.168.20.152 |       4 | bibigridsg-vs75zj… |           - |           -
+
+140  [main] INFO  de.unibi.cebitec.bibigrid.Provider - Registered provider module: openstack
+141  [main] INFO  de.unibi.cebitec.bibigrid.StartUp - Use openstack provider.
+142  [main] INFO  d.u.c.b.core.model.Configuration - Using default configuration file (/home/tim/.bibigrid/configuration.yml).
+187  [main] INFO  d.u.c.b.core.model.Configuration - SSH public key file found. (/home/tim/.ssh/id_rsa.pub)
+188  [main] INFO  d.u.c.b.core.model.Configuration - Region set. (Bielefeld)
+188  [main] INFO  d.u.c.b.core.model.Configuration - Availability zone set. (default)
+189  [main] INFO  d.u.c.b.core.model.Configuration - Master instances set: 
+[type=de.NBI tiny, image=3df3af5c-83ce-491e-a8a2-da3345d04b6b] 
+189  [main] INFO  d.u.c.b.core.model.Configuration - Worker instances set: 
+[type=de.NBI tiny, image=Ubuntu 16.04 LTS (2020-01-21), count=2]
+[type=de.NBI small, image=Ubuntu 16.04 LTS (2020-01-21), count=1]
+190  [main] INFO  d.u.c.b.core.model.Configuration - Additional open ports set: 0.0.0.0/0:80 (TCP) 
+191  [main] INFO  d.u.c.b.core.model.Configuration - NFS support enabled.
+191  [main] INFO  d.u.c.b.core.model.Configuration - Theia support disabled.
+193  [main] INFO  d.u.cebitec.bibigrid.core.Validator - Found valid credentials file (/home/tim/.bibigrid/credentials.yml).
+193  [main] INFO  d.u.cebitec.bibigrid.core.Validator - Set OpenStack Credentials ...
+199  [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:5000/v3/ -> /auth/tokens
+394  [main] DEBUG org.jboss.logging - Logging Provider: org.jboss.logging.Slf4jLoggerProvider
+394  [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientWriterInterceptorContext,  Method : proceed
+394  [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyWriter: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+394  [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyWriter: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+1164 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+1164 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+1164 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+1207 [main] INFO  d.u.c.b.openstack.ClientOpenstack - Openstack connection established.
+1248 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/detail
+1774 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+1774 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+1775 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+1789 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/detail
+3077 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+3077 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+3077 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+3096 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Load Cluster Configurations ...
+3096 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for cluster with id xrqkuitvyvkqyju ...
+3096 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-2-1-xrqkuitvyvkqyju ...
+3096 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/df0ebd94-a4ab-46a1-ab3f-71c50c742349
+3255 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+3255 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+3256 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+3260 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+3759 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+3760 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+3760 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+3765 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-2-1-xrqkuitvyvkqyju loaded successfully.
+3765 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-2-xrqkuitvyvkqyju ...
+3766 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+3920 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+3920 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+3921 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+3921 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+4482 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+4482 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+4482 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+4483 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-2-xrqkuitvyvkqyju loaded successfully.
+4483 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-1-xrqkuitvyvkqyju ...
+4483 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+4639 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+4639 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+4639 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+4640 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+5117 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+5117 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+5117 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+5118 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-1-xrqkuitvyvkqyju loaded successfully.
+5118 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-master-xrqkuitvyvkqyju ...
+5118 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+5265 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+5266 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+5266 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+5266 [main] INFO  d.u.c.b.core.model.Configuration - Availability zone set. (default)
+5266 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+5784 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+5784 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+5784 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+5785 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-master-xrqkuitvyvkqyju loaded successfully.
+5785 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Initialize cluster with id xrqkuitvyvkqyju ...
+5790 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster with id xrqkuitvyvkqyju initialized successfully.
+
+5790 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster Configuration loaded successfully.
+5790 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Terminate given parameter xrqkuitvyvkqyju
+5790 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Terminating cluster with ID 'xrqkuitvyvkqyju' ...
+5791 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/6ea218be-344e-4c43-91f7-728259d2dc05
+6201 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/2f57258e-41ad-43df-9ff6-f05326fae12b
+6496 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/3bbba287-8962-4cab-bd56-3ab06a157300
+6767 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/eef1f114-49a6-406c-b0f2-e45893772248
+8039 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /os-security-groups
+8810 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+8811 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+8811 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+8819 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /os-security-groups/d59a6abb-2a32-481f-bbb0-aaf65809c374
+9158 [main] INFO  d.u.c.b.o.TerminateIntentOpenstack - Security group 'bibigridsg-xrqkuitvyvkqyju' deleted.
+9158 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /os-keypairs/bibigridxrqkuitvyvkqyju
+9327 [main] INFO  d.u.c.b.o.TerminateIntentOpenstack - Keypair 'bibigridxrqkuitvyvkqyju' deleted!
+9327 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Private key /home/tim/.bibigrid/keys/bibigridxrqkuitvyvkqyju deleted.
+9328 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Public key /home/tim/.bibigrid/keys/bibigridxrqkuitvyvkqyju.pub deleted.
+9328 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Cluster 'xrqkuitvyvkqyju' terminated!
+9328 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/detail
+10177 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10177 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10177 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10183 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Load Cluster Configurations ...
+10183 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for cluster with id vs75zjltogluzpb ...
+10183 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-2-1-vs75zjltogluzpb ...
+10183 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/df0ebd94-a4ab-46a1-ab3f-71c50c742349
+10340 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10341 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10341 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10341 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+10827 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10827 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10827 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10828 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-2-1-vs75zjltogluzpb loaded successfully.
+10828 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-2-vs75zjltogluzpb ...
+10828 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+10986 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+10987 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+10987 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+10987 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+11180 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+11180 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+11180 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+11180 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-2-vs75zjltogluzpb loaded successfully.
+11180 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-worker-1-1-vs75zjltogluzpb ...
+11181 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+11342 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+11342 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+11342 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+11342 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+11529 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+11529 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+11529 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+11530 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-worker-1-1-vs75zjltogluzpb loaded successfully.
+11530 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Loading Configuration for instance bibigrid-master-vs75zjltogluzpb ...
+11530 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /flavors/7a27d96c-db45-4fe8-b9ff-29e1b4bd695e
+11674 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+11674 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+11674 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+11675 [main] INFO  d.u.c.b.core.model.Configuration - Availability zone set. (default)
+11675 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /images/e4ff922e-7681-411c-aa9b-6784390a904e
+12124 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+12125 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+12125 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+12125 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Configuration for instance bibigrid-master-vs75zjltogluzpb loaded successfully.
+12125 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Initialize cluster with id vs75zjltogluzpb ...
+12125 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster with id vs75zjltogluzpb initialized successfully.
+
+12125 [main] INFO  d.u.c.b.c.i.LoadClusterConfigurationIntent - Cluster Configuration loaded successfully.
+12125 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Terminate given parameter vs75zjltogluzpb
+12125 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Terminating cluster with ID 'vs75zjltogluzpb' ...
+12126 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/431774ed-715f-4110-97cf-8edb51777eab
+12402 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/fac4f084-410f-41b7-af7c-8b027ce3c827
+12683 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/22f36ac2-c96a-4ccf-bef3-0d4de0bd9faa
+12997 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /servers/b02457b1-c6f4-44e0-a154-dd8d293db920
+14284 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /os-security-groups
+15409 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - Interceptor Context: org.jboss.resteasy.core.interception.jaxrs.ClientReaderInterceptorContext,  Method : proceed
+15409 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: org.jboss.resteasy.spi.ResteasyProviderFactory$SortedKey
+15409 [main] DEBUG o.j.resteasy.resteasy_jaxrs.i18n - MessageBodyReader: com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider
+15410 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /os-security-groups/e00e5f50-49ac-4fd8-815f-3d2acbac168f
+15781 [main] INFO  d.u.c.b.o.TerminateIntentOpenstack - Security group 'bibigridsg-vs75zjltogluzpb' deleted.
+15781 [main] DEBUG o.o.c.t.internal.HttpExecutor - Executing Request: https://openstack.cebitec.uni-bielefeld.de:8774/v2.1/3727bc448db74d748e72a03c5cdbcd72 -> /os-keypairs/bibigridvs75zjltogluzpb
+15957 [main] INFO  d.u.c.b.o.TerminateIntentOpenstack - Keypair 'bibigridvs75zjltogluzpb' deleted!
+15957 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Private key /home/tim/.bibigrid/keys/bibigridvs75zjltogluzpb deleted.
+15957 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Public key /home/tim/.bibigrid/keys/bibigridvs75zjltogluzpb.pub deleted.
+15957 [main] INFO  d.u.c.b.c.intents.TerminateIntent - Cluster 'vs75zjltogluzpb' terminated!

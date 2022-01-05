@@ -29,7 +29,6 @@ public abstract class ProviderModule {
      */
     public Client client;
 
-
     /**
      * Get the configuration implementation for the specified provider, that have provider specific parameters.
      *
@@ -59,7 +58,7 @@ public abstract class ProviderModule {
 
     public abstract ListIntent getListIntent(Map<String, Cluster> clusterMap);
 
-    public abstract TerminateIntent getTerminateIntent(Configuration config);
+    public abstract TerminateIntent getTerminateIntent(Configuration config, Map<String, Cluster> clusterMap);
 
     public abstract PrepareIntent getPrepareIntent(Configuration config);
 
