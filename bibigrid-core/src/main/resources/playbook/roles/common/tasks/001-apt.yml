@@ -106,6 +106,15 @@
     state: present
   when: "ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial'"
 
+- name: Add apt.bi.denbi.de repository key
+  apt_key:
+    url: 'https://apt.bi.denbi.de/repo_key.key'
+    state: present
+
+- name: Add apt.bi.denbi.de repository
+  apt_repository:
+    repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} bionic main'
+
 - name: Update apt cache
   apt:
     upgrade: 'yes'
