@@ -1,6 +1,6 @@
 - name: Create SLURM configuration directory
   file:
-    path: /etc/slurm-llnl
+    path: /etc/slurm
     state: directory
     owner: root
     group: root
@@ -10,7 +10,7 @@
 - name: SLURM configuration
   template:
     src: slurm/slurm.conf
-    dest: /etc/slurm-llnl/slurm.conf
+    dest: /etc/slurm/slurm.conf
     owner: root
     group: root
     mode: 0444
@@ -20,7 +20,7 @@
 - name: SLURM cgroup configuration
   copy:
     src: slurm/cgroup.conf
-    dest: /etc/slurm-llnl/cgroup.conf
+    dest: /etc/slurm/cgroup.conf
     owner: root
     group: root
     mode: 0444
@@ -29,7 +29,7 @@
 - name: SLURM cgroup allowed devices conf
   copy:
     src: slurm/cgroup_allowed_devices_file.conf
-    dest: /etc/slurm-llnl/cgroup_allowed_devices_file.conf
+    dest: /etc/slurm/cgroup_allowed_devices_file.conf
     owner: root
     group: root
     mode: 0444
