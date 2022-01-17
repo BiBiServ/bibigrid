@@ -1,30 +1,30 @@
-- name: Create SLURM configuration directory
-  file:
-    path: /etc/slurm
-    state: directory
-    owner: root
-    group: root
-    mode: 0755
-
+- name: Install Slurm base packages
+  apt:
+    name:
+      - slurm-wlm
+    state: latest
 
 - name: SLURM configuration
   template:
     src: slurm/slurm.conf
     dest: /etc/slurm/slurm.conf
-    owner: root
+    owner: slurm
     group: root
-    mode: 0444
-  register: slurm_conf
-
+    mode: 0440
+  notify:
+    - slurmctl
+    - slurmd
 
 - name: SLURM cgroup configuration
   copy:
     src: slurm/cgroup.conf
     dest: /etc/slurm/cgroup.conf
-    owner: root
+    owner: slurm
     group: root
-    mode: 0444
-  register: slurm_cggroup_conf
+    mode: 0440
+  notify:
+    - slurmctl
+    - slurmd
 
 - name: SLURM cgroup allowed devices conf
   copy:
@@ -33,4 +33,6 @@
     owner: root
     group: root
     mode: 0444
-  register: SLURM_cgroup_allowed_devices_conf
+  notify:
+    - slurmctl
+    - slurmd

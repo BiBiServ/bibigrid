@@ -1,39 +1,72 @@
-- name: Install Slurm packages
+- name: Install Slurm packages (needs at least SLURM 20.2 or newer)
   apt:
-    name: [slurm-wlm]
+    name:
+      - slurmdbd
+      - slurmrestd
     state: latest
 
-# (Re-)start slurmctl master daemon
-- name: (Re-)start slurmctld master
-  systemd:
-    name: slurmctld
-    enabled: True
-    state: restarted
-  when: slurm_conf is changed or slurm_cggroup_conf is changed or SLURM_cgroup_allowed_devices_conf is changed
+- name: Create Slurm Database
+  community.mysql.mysql_db:
+    name: "{{ slurmConf.database }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
 
+- name: Create Database User slurm
+  community.mysql.mysql_user:
+    name: "{{ slurmConf.database_user }}"
+    password: "{{ slurmConf.database_password }}"
+    priv: "{{ slurmConf.database }}.*:ALL,GRANT"
+    state: present
+    update_password: always
+    login_unix_socket: /var/run/mysqld/mysqld.sock
 
-# (Re-)start slurmd worker daemon
-- name: (Re-)start slurmd worker daemon
-  systemd:
-    name: slurmctld
-    enabled: True
-    state: restarted
-  when:
-    - use_master_as_compute == 'yes'
-    - slurm_conf is changed or slurm_cggroup_conf is changed or SLURM_cgroup_allowed_devices_conf is changed
+- name: Create slurmdb configuration file
+  template:
+    src: slurm/slurmdbd.conf
+    dest: /etc/slurm/slurmdbd.conf
+    owner: slurm
+    group: root
+    mode: 0600
+  notify:
+    - slurmdbd
 
-# copy
-- name: Copy GridEngine compatible layer
+- name: Generate random JWT Secret
+  command:
+    cmd: "dd if=/dev/random of=/etc/slurm/jwt-secret.key bs=32 count=1"
+    creates: "/etc/slurm/jwt-secret.key" # only run the command when file is not present
+
+- name: Change file Properties of JWT Secret file
+  file:
+    path: /etc/slurm/jwt-secret.key
+    owner: slurm
+    group: slurm
+    mode: 0600
+
+- name: Copy env file for configuration of slurmrestd
   copy:
-    src: slurm/qsub
-    dest: /usr/local/bin/qsub
-    mode: 0755
+    src: slurm/slurmrestd_default
+    dest: /etc/default/slurmrestd
     owner: root
     group: root
+    mode: 0644
+  notify:
+    - slurmdbd
+    - slurmrestd
 
-- copy:
-    src: slurm/gridengine-rc
-    dest: /home/ubuntu/.gridengine-rc
-    mode: 0600
-    owner: ubuntu
-    group: ubuntu
+- name: Create Service Directory
+  file:
+    path: /etc/systemd/system/slurmrestd.service.d
+    group: root
+    owner: root
+    mode: 0755
+    state: directory
+
+- name: Copy systemd Service override file
+  copy:
+    src: slurm/slurmrestd_override.conf
+    dest: /etc/systemd/system/slurmrestd.service.d/override.conf
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - slurmrestd
