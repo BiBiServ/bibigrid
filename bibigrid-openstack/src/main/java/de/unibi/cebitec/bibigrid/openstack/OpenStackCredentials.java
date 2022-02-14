@@ -107,7 +107,7 @@ public final class OpenStackCredentials {
         sb.append("\tproject         : "+project+"\n");
         sb.append("\tprojectId       : "+projectId+"\n");
         sb.append("\tusername        : "+username+"\n");
-        sb.append("\tpassword        : XXXXXXXX\n");
+        sb.append("\tpassword        : *********\n");
         sb.append("\tendpoint        : "+endpoint+"\n");
         sb.append("\tuserDomain      : "+userDomain+"\n");
         sb.append("\tuserDomainId    : "+userDomainId+"\n");
