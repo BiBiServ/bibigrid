@@ -1,24 +1,9 @@
-- name: Install Slurm packages (needs at least SLURM 20.2 or newer)
+- name: Install Slurm database and RestAPI packages
   apt:
     name:
       - slurmdbd
       - slurmrestd
     state: latest
-
-- name: Create Slurm Database
-  community.mysql.mysql_db:
-    name: "{{ slurmConf.database }}"
-    state: present
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-
-- name: Create Database User slurm
-  community.mysql.mysql_user:
-    name: "{{ slurmConf.database_user }}"
-    password: "{{ slurmConf.database_password }}"
-    priv: "{{ slurmConf.database }}.*:ALL,GRANT"
-    state: present
-    update_password: always
-    login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Create slurmdb configuration file
   template:

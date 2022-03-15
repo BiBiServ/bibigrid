@@ -1,0 +1,8 @@
+- name: Install maria-db-server
+  apt:
+    name: "mariadb-server"
+
+- name: Install PyMySQL via pip
+  pip:
+    name: pymysql
+

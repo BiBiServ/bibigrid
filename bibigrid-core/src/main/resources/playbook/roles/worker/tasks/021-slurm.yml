@@ -1,13 +1,12 @@
-- name: Install SLURM worker packages
-  apt:
-    name: [slurmd]
-    state: latest
-    update_cache: 'yes'
-
-# (Re-)start slurmd worker daemon
-- name: (Re-)start slurmd worker daemon
-  systemd:
-    name: slurmd
-    enabled: True
-    state: restarted
-  when: slurm_conf is changed or slurm_cggroup_conf is changed or SLURM_cgroup_allowed_devices_conf is changed
+#- name: Install SLURM worker packages
+#  apt:
+#    name: [slurmd]
+#    state: latest
+#    update_cache: 'yes'
+#
+## (Re-)start slurmd worker daemon
+#- name: Enable and slurmd worker daemon
+#  systemd:
+#    name: slurmd
+#    enabled: True
+#    state: started

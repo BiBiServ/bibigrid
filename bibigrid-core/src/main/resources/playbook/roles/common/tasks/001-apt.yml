@@ -100,12 +100,6 @@
     deb: 'https://repo.zabbix.com/zabbix/5.0/{{ ansible_distribution | lower }}/pool/main/z/zabbix-release/zabbix-release_5.0-1+{{ ansible_distribution_release }}_all.deb'
     state: present
 
-- name: Add ondrej/php repository
-  apt_repository:
-    repo: ppa:ondrej/php
-    state: present
-  when: "ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial'"
-
 - name: Add apt.bi.denbi.de repository key
   apt_key:
     url: 'https://apt.bi.denbi.de/repo_key.key'
@@ -113,7 +107,7 @@
 
 - name: Add apt.bi.denbi.de repository
   apt_repository:
-    repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} bionic main'
+    repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
 
 - name: Update apt cache
   apt:

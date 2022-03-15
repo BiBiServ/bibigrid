@@ -1,12 +1,1 @@
-- name: slurmctl
-  systemd:
-    name: slurmctld
-    state: restarted
-    daemon_reload: yes
-
-- name: slurmd
-  systemd:
-    name: slurmd
-    state: restarted
-    daemon_reload: yes
 

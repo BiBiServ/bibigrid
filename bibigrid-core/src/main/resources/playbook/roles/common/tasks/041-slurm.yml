@@ -1,4 +1,4 @@
-- name: Install Slurm base packages
+- name: Install Slurm base packages (includes slurmd, slurmctld, slurm-client)
   apt:
     name:
       - slurm-wlm
@@ -10,10 +10,8 @@
     dest: /etc/slurm/slurm.conf
     owner: slurm
     group: root
-    mode: 0440
-  notify:
-    - slurmctl
-    - slurmd
+    mode: 0444
+  register: slurm_conf
 
 - name: SLURM cgroup configuration
   copy:
@@ -21,10 +19,8 @@
     dest: /etc/slurm/cgroup.conf
     owner: slurm
     group: root
-    mode: 0440
-  notify:
-    - slurmctl
-    - slurmd
+    mode: 0444
+  register: slurm_cgroup
 
 - name: SLURM cgroup allowed devices conf
   copy:
@@ -33,6 +29,5 @@
     owner: root
     group: root
     mode: 0444
-  notify:
-    - slurmctl
-    - slurmd
+  register: slurm_cgroup_allowed_devices
+

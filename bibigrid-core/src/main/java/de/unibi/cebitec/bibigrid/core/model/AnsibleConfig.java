@@ -59,6 +59,19 @@ public final class AnsibleConfig {
     }
 
     /**
+     * Helper methods that create a role data structure
+     * @param name role name
+     * @param tags a list of tags bound to role
+     * @return role hashmap
+     */
+    private static HashMap createRole(String name, List tags) {
+        HashMap role = new LinkedHashMap<String,Object>();
+        role.put("role",name);
+        role.put("tags",tags);
+        return role;
+    }
+
+    /**
      * Generates site.yml automatically including custom ansible roles.
      *
      * @param stream write file to remote
@@ -68,6 +81,7 @@ public final class AnsibleConfig {
     public static void writeSiteFile(OutputStream stream,
                               Map<String, String> customMasterRoles,
                               Map<String, String> customWorkerRoles) {
+
         List<String> common_vars =
                 Arrays.asList(AnsibleResources.LOGIN_YML, AnsibleResources.INSTANCES_YML, AnsibleResources.CONFIG_YML);
         String DEFAULT_IP_FILE = AnsibleResources.VARS_PATH + "{{ ansible_default_ipv4.address }}.yml";
@@ -83,9 +97,10 @@ public final class AnsibleConfig {
             }
         }
         master.put("vars_files", vars_files);
-        List<String> roles = new ArrayList<>();
+        List roles = new ArrayList<>();
         roles.add("common");
         roles.add("master");
+        roles.add(createRole("slurm",Arrays.asList("slurm","scale-up","scale-down")));
         for (String role_name : customMasterRoles.keySet()) {
             roles.add("additional/" + role_name);
         }
@@ -105,6 +120,7 @@ public final class AnsibleConfig {
         roles = new ArrayList<>();
         roles.add("common");
         roles.add("worker");
+        roles.add(createRole("slurm",Arrays.asList("slurm","scale-up","scale-down")));
         for (String role_name : customWorkerRoles.keySet()) {
             roles.add("additional/" + role_name);
         }
@@ -367,6 +383,9 @@ public final class AnsibleConfig {
         if (config.isIDE()) {
             map.put("ideConf", getIdeConfMap(config.getIdeConf()));
         }
+        if (config.isSlurm()) {
+            map.put("slurmConf",getSlurmConfMap(config.getSlurmConf()));
+        }
         if (config.isZabbix()) {
             map.put("zabbix", getZabbixConfMap(config.getZabbixConf()));
         }
@@ -471,6 +490,14 @@ public final class AnsibleConfig {
         zabbixConf.put("server_name",zc.getServer_name());
         zabbixConf.put("admin_password",zc.getAdmin_password());
         return zabbixConf;
+    }
+
+    private static Map<String, Object> getSlurmConfMap(Configuration.SlurmConf sc) {
+        Map<String, Object> slurmConf = new LinkedHashMap<>();
+        slurmConf.put("db",sc.getDatabase());
+        slurmConf.put("db_user",sc.getDb_user());
+        slurmConf.put("db_password",sc.getDb_password());
+        return slurmConf;
     }
 
     private static Map<String, String> getOgeConfMap(Properties oc) {

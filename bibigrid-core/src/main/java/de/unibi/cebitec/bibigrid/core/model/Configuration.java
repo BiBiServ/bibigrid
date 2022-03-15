@@ -116,6 +116,7 @@ public abstract class Configuration {
     private List<WorkerInstanceConfiguration> workerInstances = new ArrayList<>();
     private boolean oge;
     private boolean slurm;
+    private SlurmConf slurmConf = new SlurmConf();
     private boolean localDNSLookup;
     private String mungeKey;
     private boolean nfs = true;
@@ -515,6 +516,14 @@ public abstract class Configuration {
         this.slurm = slurm;
     }
 
+    public SlurmConf getSlurmConf() {
+        return slurmConf;
+    }
+
+    public void setSlurmConf(SlurmConf slurmConf) {
+        this.slurmConf = slurmConf;
+    }
+
     public String getMungeKey() {
         if (mungeKey == null) {
             // create a unique hash
@@ -904,6 +913,45 @@ public abstract class Configuration {
         public void setBuild(boolean build) {
             this.build = build;
             LOG.info(V,"build Theia from source : {}", build ? "enabled" : "disabled");
+        }
+    }
+
+    /**
+     * Configuration of Slurm.
+     * Currently, all values are hard-coded.
+     */
+    public static class SlurmConf {
+        private boolean slurm = true;
+        private String database = "slurm";
+        private String db_user = "slurm";
+        private String db_password = "changeme";
+
+        public boolean isSlurm() {
+            return slurm;
+        }
+
+        public String getDatabase() {
+            return database;
+        }
+
+        public void setDatabase(String database) {
+            this.database = database;
+        }
+
+        public String getDb_user() {
+            return db_user;
+        }
+
+        public void setDb_user(String db_user) {
+            this.db_user = db_user;
+        }
+
+        public String getDb_password() {
+            return db_password;
+        }
+
+        public void setDb_password(String db_password) {
+            this.db_password = db_password;
         }
     }
 
