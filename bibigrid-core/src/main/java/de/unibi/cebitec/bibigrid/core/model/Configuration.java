@@ -122,7 +122,6 @@ public abstract class Configuration {
     private boolean nfs = true;
     private String serviceCIDR;
     private IdeConf ideConf = new IdeConf();
-    private boolean ganglia;
     private boolean zabbix;
     private ZabbixConf zabbixConf = new ZabbixConf();
     private List<String> nfsShares = new ArrayList<>(Collections.singletonList("/vol/spool"));
@@ -130,8 +129,6 @@ public abstract class Configuration {
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
     private boolean debugRequests;
-    @Deprecated
-    private Properties ogeConf = OgeConf.initOgeConfProperties();
     private List<AnsibleRoles> ansibleRoles = new ArrayList<>();
     private List<AnsibleGalaxyRoles> ansibleGalaxyRoles = new ArrayList<>();
     private boolean useHostnames = false;
@@ -548,18 +545,6 @@ public abstract class Configuration {
         this.mungeKey = mungeKey;
     }
 
-    public boolean isGanglia() {
-        return ganglia;
-    }
-
-    public void setGanglia(boolean ganglia) {
-        this.ganglia = ganglia;
-        if (ganglia) {
-            LOG.warn("Ganglia (oge) support is deprecated (only supported using Ubuntu 16.04.) " +
-                     "and will be removed in the near future. Please use Zabbix instead.");
-        }
-    }
-
     public boolean isZabbix() {
         return zabbix;
     }
@@ -780,20 +765,6 @@ public abstract class Configuration {
         return hexString.toString();
     }
 
-    public Properties getOgeConf() {
-        return ogeConf;
-    }
-
-    /**
-     * Saves given values to ogeConf Properties.
-     * @param ogeConf Properties
-     */
-    public void setOgeConf(Properties ogeConf) {
-        for (String key : ogeConf.stringPropertyNames()) {
-            this.ogeConf.setProperty(key, ogeConf.getProperty(key));
-        }
-    }
-
     /**
      * Provides support for GridEngine global configuration.
      */
@@ -818,29 +789,6 @@ public abstract class Configuration {
                 return null;
             }
         }
-    }
-
-    @Deprecated
-    public boolean isCloud9() {
-        return ideConf.isIde();
-    }
-
-    @Deprecated
-    public void setCloud9(boolean cloud9) {
-        LOG.warn("cloud9 parameter is deprecated. Please use IdeConf instead.");
-        LOG.warn("Cloud9 will not longer be supported and is replaced by the Theia Web IDE.");
-        ideConf.setIde(cloud9);
-    }
-
-    @Deprecated
-    public boolean isTheia() {
-        return ideConf.isIde();
-    }
-
-    @Deprecated
-    public void setTheia(boolean theia) {
-        LOG.warn("theia parameter is deprecated. Please use IdeConf instead.");
-        ideConf.setIde(theia);
     }
 
     public boolean isIDE() {

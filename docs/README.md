@@ -58,7 +58,6 @@ ports:
     number: 443
 
 nfs: yes
-theia: yes
 slurm: yes
 ```
 
@@ -123,20 +122,6 @@ After starting the cluster you can visit the Zabbix Web Frontend by opening in a
 http://ip.of.your.master/zabbix
 ```
 The 'Username' to enter is `admin`, the following 'Password' is the previously specified admin password.
-
-### GridEngine Configuration
-If you decide to enable GridEngine (deprecated, supported for Ubuntu 16.04 only - you may use SLURM instead)
-you have to use the `oge` configuration parameter. 
-See the [sge_conf(5) man page](http://gridscheduler.sourceforge.net/htmlman/htmlman5/sge_conf.html) to get 
-an overview as well as a description of the possible parameters.  
-
-As an example you can set the max number of dynamic event clients (jobs submitted via qsub sync):
-```
-ogeConf:
-    qmaster_params: MAX_DYN_EC=1000
-```
-The given value(s) will be overwritten in or added to the default configuration. 
-Check `qconf -sconf global` on master to proof the configuration.
 
 ### Including Ansible (Galaxy) Roles
 You can include ansible roles from your local machine (compressed as .tar.gz files) automatically into your cluster setup by defining following configuration settings:

@@ -59,7 +59,6 @@ serviceCIDR: string                                 # Overwrites CIDR mask setti
 
 # HPC Cluster Software
 slurm: boolean [yes, no]                            # Enable / Disable SLURM Workload Manager. Default is no
-oge: boolean [yes, no]                              # deprecated - supported for Ubuntu 16.04 only. Default is no
 
 # Monitoring
 zabbix: boolean [yes, "no"]                         # Use zabbix monitoring tool. Default is no
@@ -70,7 +69,6 @@ zabbixConf:
     timezone: string                                # Default is "Europe/Berlin"
     server_name: string                             # Name of Server. Default is "bibigrid"
     admin_password: string                          # Admin password. Default is "bibigrid". Change hardly recommended!
-ganglia: boolean [yes, "no"]                        # deprecated - supported for Ubuntu 16.04 only. Default is no
     
 # Network FileSystem
 nfs: boolean ["yes", no]                            # Enable / Disable Network File System, Default is yes
