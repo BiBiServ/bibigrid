@@ -129,4 +129,9 @@
     notify:
       - slurmrestd
 
+  - name: start slurm explicity after all dependencies are configured
+    systemd:
+      name: slurmctld
+      state: started
+
   when: "'master' in group_names"

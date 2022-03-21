@@ -20,14 +20,6 @@
   when:
     - local_dns_lookup == 'yes'
 
-- block:
-    - debug:
-        msg: "[BIBIGRID] Setup Ganglia monitor"
-    - include: 010-ganglia.yml
-  tags: ['ganglia','common-ganglia']
-  when:
-   - enable_ganglia == 'yes'
-   - ansible_distribution_release == 'xenial'
 
 - block:
     - debug:

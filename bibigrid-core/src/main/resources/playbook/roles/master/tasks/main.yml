@@ -1,13 +1,4 @@
 - block:
-  - debug:
-      msg: "[BIBIGRID] Setup Ganglia monitor"
-  - include: 001-ganglia.yml
-  tags: ["master-ganglia","ganglia"]
-  when:
-    - enable_ganglia == 'yes'
-    - ansible_distribution_release == 'xenial'
-
-- block:
     - debug:
         msg: "[BIBIGRID] Setup Zabbix Server"
     - include: 002-zabbix.yml
@@ -33,24 +24,6 @@
   when:
     - enable_nfs == 'yes'
   tags: ["master-nfs","nfs"]
-
-#- debug:
-#    msg: "[BIBIGRID] Setup GridEngine"
-#  when:
-#    - enable_gridengine == 'yes'
-#- include: 020-gridengine.yml
-#  when:
-#    - enable_gridengine == 'yes'
-#  tags: ["master-gridengine","gridengine"]
-#
-#- block:
-#  - debug:
-#      msg: "[BIBIGRID] Setup Slurm master"
-#
-#  - include: 021-slurm.yml
-#  when:
-#    - enable_slurm == 'yes'
-#  tags: ["master-slurm","slurm","scale-up","scale-down"]
 
 - debug:
     msg: "[BIBIGRID] Setup Theia"
