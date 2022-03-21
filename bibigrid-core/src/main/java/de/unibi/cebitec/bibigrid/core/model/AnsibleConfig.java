@@ -373,7 +373,6 @@ public final class AnsibleConfig {
         addBooleanOption(map, "enable_gridengine", config.isOge());
         addBooleanOption(map, "enable_slurm",config.isSlurm());
         addBooleanOption(map, "use_master_as_compute", config.isUseMasterAsCompute());
-        addBooleanOption(map, "enable_ganglia",config.isGanglia());
         addBooleanOption(map, "enable_zabbix", config.isZabbix());
         addBooleanOption(map, "enable_ide", config.isIDE());
         if (config.isNfs()) {
@@ -388,9 +387,6 @@ public final class AnsibleConfig {
         }
         if (config.isZabbix()) {
             map.put("zabbix", getZabbixConfMap(config.getZabbixConf()));
-        }
-        if (config.isOge()) {
-            map.put("oge", getOgeConfMap(config.getOgeConf()));
         }
         if (config.hasCustomAnsibleRoles()) {
             map.put("ansible_roles", getAnsibleRoles(config.getAnsibleRoles()));
