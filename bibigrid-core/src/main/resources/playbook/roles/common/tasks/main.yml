@@ -20,7 +20,6 @@
   when:
     - local_dns_lookup == 'yes'
 
-
 - block:
     - debug:
         msg: "[BIBIGRID] Setup Zabbix Agent"
@@ -38,17 +37,6 @@
     msg: "[BIBIGRID] Setup Docker"
 - import_tasks: 030-docker.yml
   tags: ["docker","common-docker"]
-
-#- block:
-#  - debug:
-#      msg: "[BIBIGRID] Munge"
-#  - include: 040-munge.yml
-#  - debug:
-#      msg: "[BIBIGRID] SLURM Config"
-#  - include: 041-slurm.yml
-#  when:
-#    - enable_slurm == 'yes'
-#  tags: ['slurm',"common-slurm","scale-up","scale-down"]
 
 - debug:
     msg: "[BIBIGRID] Measure cluster performance"
