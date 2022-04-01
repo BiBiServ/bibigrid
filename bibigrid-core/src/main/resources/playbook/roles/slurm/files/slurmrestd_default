@@ -1,0 +1,9 @@
+# /etc/default/slurmrestd
+# Additional options that are passed to the slurmrestd daemon
+#SLURMRESTD_OPTIONS=""
+SLURM_CONF="/etc/slurm/slurm.conf"
+#SLURMRESTD_DEBUG="8"
+SLURM_JWT=""
+SLURMRESTD_LISTEN=":6820"
+SLURMRESTD_AUTH_TYPES="rest_auth/jwt"
+SLURMRESTD_OPENAPI_PLUGINS="openapi/v0.0.36"

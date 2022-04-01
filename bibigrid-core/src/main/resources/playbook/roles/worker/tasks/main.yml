@@ -11,20 +11,20 @@
   when: enable_nfs == 'yes'
   tags: ['nfs','worker-nfs']
 
-- debug:
-    msg: "[BIBIGRID] Setup GridEngine"
-  when:
-    - enable_gridengine == 'yes'
-- include: 020-gridengine.yml
-  when:
-    - enable_gridengine == 'yes'
-  tags: ['gridengine','worker-gridengine']
+#- debug:
+#    msg: "[BIBIGRID] Setup GridEngine"
+#  when:
+#    - enable_gridengine == 'yes'
+#- include: 020-gridengine.yml
+#  when:
+#    - enable_gridengine == 'yes'
+#  tags: ['gridengine','worker-gridengine']
 
-- debug:
-    msg: "[BIBIGRID] Setup Slurm Worker"
-  when: enable_slurm == 'yes'
-- include: 021-slurm.yml
-  tags: ['slurm','worker-slurm']
-  when: enable_slurm == 'yes'
+#- debug:
+#    msg: "[BIBIGRID] Setup Slurm Worker"
+#  when: enable_slurm == 'yes'
+#- include: 021-slurm.yml
+#  tags: ['slurm','worker-slurm']
+#  when: enable_slurm == 'yes'
 
 

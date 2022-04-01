@@ -116,12 +116,12 @@ public abstract class Configuration {
     private List<WorkerInstanceConfiguration> workerInstances = new ArrayList<>();
     private boolean oge;
     private boolean slurm;
+    private SlurmConf slurmConf = new SlurmConf();
     private boolean localDNSLookup;
     private String mungeKey;
     private boolean nfs = true;
     private String serviceCIDR;
     private IdeConf ideConf = new IdeConf();
-    private boolean ganglia;
     private boolean zabbix;
     private ZabbixConf zabbixConf = new ZabbixConf();
     private List<String> nfsShares = new ArrayList<>(Collections.singletonList("/vol/spool"));
@@ -129,8 +129,6 @@ public abstract class Configuration {
     private List<MountPoint> extNfsShares = new ArrayList<>();
     private FS localFS = FS.XFS;
     private boolean debugRequests;
-    @Deprecated
-    private Properties ogeConf = OgeConf.initOgeConfProperties();
     private List<AnsibleRoles> ansibleRoles = new ArrayList<>();
     private List<AnsibleGalaxyRoles> ansibleGalaxyRoles = new ArrayList<>();
     private boolean useHostnames = false;
@@ -515,6 +513,14 @@ public abstract class Configuration {
         this.slurm = slurm;
     }
 
+    public SlurmConf getSlurmConf() {
+        return slurmConf;
+    }
+
+    public void setSlurmConf(SlurmConf slurmConf) {
+        this.slurmConf = slurmConf;
+    }
+
     public String getMungeKey() {
         if (mungeKey == null) {
             // create a unique hash
@@ -537,18 +543,6 @@ public abstract class Configuration {
 
     public void setMungeKey(String mungeKey) {
         this.mungeKey = mungeKey;
-    }
-
-    public boolean isGanglia() {
-        return ganglia;
-    }
-
-    public void setGanglia(boolean ganglia) {
-        this.ganglia = ganglia;
-        if (ganglia) {
-            LOG.warn("Ganglia (oge) support is deprecated (only supported using Ubuntu 16.04.) " +
-                     "and will be removed in the near future. Please use Zabbix instead.");
-        }
     }
 
     public boolean isZabbix() {
@@ -771,20 +765,6 @@ public abstract class Configuration {
         return hexString.toString();
     }
 
-    public Properties getOgeConf() {
-        return ogeConf;
-    }
-
-    /**
-     * Saves given values to ogeConf Properties.
-     * @param ogeConf Properties
-     */
-    public void setOgeConf(Properties ogeConf) {
-        for (String key : ogeConf.stringPropertyNames()) {
-            this.ogeConf.setProperty(key, ogeConf.getProperty(key));
-        }
-    }
-
     /**
      * Provides support for GridEngine global configuration.
      */
@@ -809,29 +789,6 @@ public abstract class Configuration {
                 return null;
             }
         }
-    }
-
-    @Deprecated
-    public boolean isCloud9() {
-        return ideConf.isIde();
-    }
-
-    @Deprecated
-    public void setCloud9(boolean cloud9) {
-        LOG.warn("cloud9 parameter is deprecated. Please use IdeConf instead.");
-        LOG.warn("Cloud9 will not longer be supported and is replaced by the Theia Web IDE.");
-        ideConf.setIde(cloud9);
-    }
-
-    @Deprecated
-    public boolean isTheia() {
-        return ideConf.isIde();
-    }
-
-    @Deprecated
-    public void setTheia(boolean theia) {
-        LOG.warn("theia parameter is deprecated. Please use IdeConf instead.");
-        ideConf.setIde(theia);
     }
 
     public boolean isIDE() {
@@ -904,6 +861,45 @@ public abstract class Configuration {
         public void setBuild(boolean build) {
             this.build = build;
             LOG.info(V,"build Theia from source : {}", build ? "enabled" : "disabled");
+        }
+    }
+
+    /**
+     * Configuration of Slurm.
+     * Currently, all values are hard-coded.
+     */
+    public static class SlurmConf {
+        private boolean slurm = true;
+        private String database = "slurm";
+        private String db_user = "slurm";
+        private String db_password = "changeme";
+
+        public boolean isSlurm() {
+            return slurm;
+        }
+
+        public String getDatabase() {
+            return database;
+        }
+
+        public void setDatabase(String database) {
+            this.database = database;
+        }
+
+        public String getDb_user() {
+            return db_user;
+        }
+
+        public void setDb_user(String db_user) {
+            this.db_user = db_user;
+        }
+
+        public String getDb_password() {
+            return db_password;
+        }
+
+        public void setDb_password(String db_password) {
+            this.db_password = db_password;
         }
     }
 
