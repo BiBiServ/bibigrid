@@ -54,8 +54,10 @@ workerInstances:
 ports:
   - type: TCP
     number: 80
+    ipRange: current
   - type: TCP
     number: 443
+    ipRange: current
 
 nfs: yes
 slurm: yes
