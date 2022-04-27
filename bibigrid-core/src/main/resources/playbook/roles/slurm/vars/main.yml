@@ -1,0 +1,14 @@
+
+scheduler_config:
+  accounting_settings: |
+    AccountingStorageType=accounting_storage/slurmdbd
+    AccountingStoreJobComment=YES
+  storage_root: mysql_root_pw
+  storage_pass: slurm_db_pw
+  cluster_name: bibigrid
+  priority_settings: |           # do not change setting names - delete lower lines for default
+    PriorityType=priority/multifactor
+    PriorityFavorSmall=NO
+    PriorityWeightJobSize=100000
+    AccountingStorageTRES=cpu,mem,gres/gpu
+    PriorityWeightTRES=cpu=1000,mem=2000,gres/gpu=3000
