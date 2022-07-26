@@ -10,6 +10,16 @@
     group: root
     mode: 0644
 
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Wait till Apt_Mirror de.NBI Bielefeld Service is done
+  ansible.builtin.service_facts:
+  until: services['de.NBI_Bielefeld_environment.service'].state == 'stopped'
+  retries: 35
+  delay: 10
+  when: services['de.NBI_Bielefeld_environment.service'] is defined
+
 - name: Update
   apt:
     update_cache: "yes"
