@@ -87,6 +87,7 @@
       mode: 0600
     notify:
       - slurmdbd
+      - slurmctld
 
   - name: Generate random JWT Secret
     command:
