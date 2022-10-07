@@ -232,6 +232,13 @@ public abstract class CreateCluster extends Intent {
             io.printStackTrace();
             return false;
         }
+
+        if (cluster.getMasterInstance() == null) {
+            LoadClusterConfigurationIntent loadIntent = providerModule.getLoadClusterConfigurationIntent(config);
+            loadIntent.loadClusterConfiguration(cluster.getClusterId());
+            cluster = loadIntent.getCluster(cluster.getClusterId());
+        }
+        
         Session sshSession = null;
         boolean success = true;
         try {
