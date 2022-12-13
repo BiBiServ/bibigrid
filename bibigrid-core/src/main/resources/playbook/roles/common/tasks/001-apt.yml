@@ -10,6 +10,16 @@
     group: root
     mode: 0644
 
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Wait till Apt_Mirror de.NBI Bielefeld Service is done
+  ansible.builtin.service_facts:
+  until: services['de.NBI_Bielefeld_environment.service'].state == 'stopped'
+  retries: 35
+  delay: 10
+  when: services['de.NBI_Bielefeld_environment.service'] is defined
+
 - name: Update
   apt:
     update_cache: "yes"
@@ -100,11 +110,14 @@
     deb: 'https://repo.zabbix.com/zabbix/5.0/{{ ansible_distribution | lower }}/pool/main/z/zabbix-release/zabbix-release_5.0-1+{{ ansible_distribution_release }}_all.deb'
     state: present
 
-- name: Add ondrej/php repository
-  apt_repository:
-    repo: ppa:ondrej/php
+- name: Add apt.bi.denbi.de repository key
+  apt_key:
+    url: 'https://apt.bi.denbi.de/repo_key.key'
     state: present
-  when: "ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial'"
+
+- name: Add apt.bi.denbi.de repository
+  apt_repository:
+    repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
 
 - name: Update apt cache
   apt:

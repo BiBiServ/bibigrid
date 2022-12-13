@@ -1,0 +1,138 @@
+- debug:
+    msg: "[BIBIGRID] Setup Slurm"
+
+- name: Install Slurm base packages and dependencies
+  apt:
+    name:
+      - slurm-wlm
+      - munge
+    state: latest
+
+- name: Create new secret
+  copy:
+    content: '{{ munge_key }}'
+    dest: /etc/munge/munge.key
+    owner: munge
+    group: munge
+    mode: 0600
+  register: munge_key
+
+- name: Restart Munge (on key change)
+  systemd:
+    name: munge
+    state: restarted
+  when: munge_key is changed
+
+- name: SLURM configuration
+  template:
+    src: slurm.conf
+    dest: /etc/slurm/slurm.conf
+    owner: slurm
+    group: root
+    mode: 0444
+  notify:
+    - slurmctld
+    - slurmd
+
+- name: SLURM cgroup configuration
+  copy:
+    src: cgroup.conf
+    dest: /etc/slurm/cgroup.conf
+    owner: slurm
+    group: root
+    mode: 0444
+  notify:
+    - slurmctld
+    - slurmd
+
+- name: SLURM cgroup allowed devices conf
+  copy:
+    src: cgroup_allowed_devices_file.conf
+    dest: /etc/slurm/cgroup_allowed_devices_file.conf
+    owner: root
+    group: root
+    mode: 0444
+  notify:
+    - slurmctld
+    - slurmd
+
+- block:
+  - name: Create slurm db
+    mysql_db:
+      name: "{{slurmConf.db}}"
+      state: present
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+
+  - name: Create slurm db user
+    mysql_user:
+      name: "{{slurmConf.db_user}}"
+      password: "{{slurmConf.db_password}}"
+      priv: '*.*:ALL'
+      state: present
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+
+  - name: Install Slurm database and RestAPI packages
+    apt:
+      name:
+        - slurmdbd
+        - slurmrestd
+      state: latest
+
+  - name: Create slurmdb configuration file
+    template:
+      src: slurmdbd.conf
+      dest: /etc/slurm/slurmdbd.conf
+      owner: slurm
+      group: root
+      mode: 0600
+    notify:
+      - slurmdbd
+      - slurmctld
+
+  - name: Generate random JWT Secret
+    command:
+      cmd: "dd if=/dev/random of=/etc/slurm/jwt-secret.key bs=32 count=1"
+      creates: "/etc/slurm/jwt-secret.key" # only run the command when file is not present
+
+  - name: Change file Properties of JWT Secret file
+    file:
+      path: /etc/slurm/jwt-secret.key
+      owner: slurm
+      group: slurm
+      mode: 0600
+
+  - name: Copy env file for configuration of slurmrestd
+    copy:
+      src: slurmrestd_default
+      dest: /etc/default/slurmrestd
+      owner: root
+      group: root
+      mode: 0644
+    notify:
+      - slurmdbd
+      - slurmrestd
+
+  - name: Create Service Directory
+    file:
+      path: /etc/systemd/system/slurmrestd.service.d
+      group: root
+      owner: root
+      mode: 0755
+      state: directory
+
+  - name: Copy systemd Service override file
+    copy:
+      src: slurmrestd_override.conf
+      dest: /etc/systemd/system/slurmrestd.service.d/override.conf
+      mode: 0644
+      owner: root
+      group: root
+    notify:
+      - slurmrestd
+
+  - name: start slurm explicity after all dependencies are configured
+    systemd:
+      name: slurmctld
+      state: started
+
+  when: "'master' in group_names"

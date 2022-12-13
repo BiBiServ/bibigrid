@@ -198,6 +198,9 @@ class LineReaderRunnable implements Runnable {
     }
 
     private void work_on_line(String line) {
+        if (line.isEmpty()) {
+            return;
+        }
         if (regular) {
             if (line.contains("CONFIGURATION FINISHED")) {
                 returnCode = 0;

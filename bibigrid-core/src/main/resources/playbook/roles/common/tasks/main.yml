@@ -22,15 +22,6 @@
 
 - block:
     - debug:
-        msg: "[BIBIGRID] Setup Ganglia monitor"
-    - include: 010-ganglia.yml
-  tags: ['ganglia','common-ganglia']
-  when:
-   - enable_ganglia == 'yes'
-   - ansible_distribution_release == 'xenial'
-
-- block:
-    - debug:
         msg: "[BIBIGRID] Setup Zabbix Agent"
     - include: 011-zabbix.yml
   tags: ["zabbix","common-zabbix"]
@@ -46,17 +37,6 @@
     msg: "[BIBIGRID] Setup Docker"
 - import_tasks: 030-docker.yml
   tags: ["docker","common-docker"]
-
-- block:
-  - debug:
-      msg: "[BIBIGRID] Munge"
-  - include: 040-munge.yml
-  - debug:
-      msg: "[BIBIGRID] SLURM Config"
-  - include: 041-slurm.yml
-  when:
-    - enable_slurm == 'yes'
-  tags: ['slurm',"common-slurm","scale-up","scale-down"]
 
 - debug:
     msg: "[BIBIGRID] Measure cluster performance"

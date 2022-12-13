@@ -1,3 +1,14 @@
+## Version 2.3.1 (3/8/2021)
+
+This will probably the latest version of BiBigrid depended on Java.   We are currently working on a complete 
+reimplementation: BiBiGrid2.
+
+## Fixes
+- minor ansible configuration cleanup
+
+## Features
+- (#327)
+
 ## Version 2.3 (3/2/2021)
 
 ## Fixes

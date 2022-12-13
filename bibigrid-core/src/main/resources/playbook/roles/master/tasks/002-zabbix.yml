@@ -190,7 +190,7 @@
     host_groups:
       - 'Linux servers'
     link_templates:
-      - 'Template OS Linux by Zabbix Agent' # new in Zabbix 4.4
+      - 'Linux by Zabbix agent'
     interfaces:
       - type: 1 # agent
         main: 1 # default
