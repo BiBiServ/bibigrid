@@ -1,8 +1,14 @@
 # BiBiGrid
+
+> **Note**
+> The Java-based version of BiBiGrid was discontinued. The latest release is version 2.3.1.
+> Since this version isn't maintained any longer you should consider using its successor.
+
+
 BiBiGrid is a tool for an easy cluster setup inside a cloud environment.
 It is written in Java and run on any OS a Java runtime is provided - any 
 Java 8 is supported. BiBiGrid and its Cmdline UI based on a general cloud 
-provider api. Currently the implementation is based on OpenStack ([Openstack4j](https://github.com/openstack4j/openstack4j)).  
+provider api. Currently, the implementation is based on OpenStack ([Openstack4j](https://github.com/openstack4j/openstack4j)).  
 There also exists implementations for Google (Compute Engine, using the official Google Cloud SDK), 
 Amazon (AWS EC2 using the official AWS SDK) and Microsoft (Azure using the official Azure SDK) (WIP)
 which are currently not provided tested.
@@ -16,7 +22,7 @@ a shared filesystem (on local discs and attached volumes), a cloud IDE for writi
 ([Theia Web IDE](https://github.com/theia-ide/theia)) and many more.
 
 During resource instantiation BiBiGrid configures the network, local and network volumes, (network) file systems and 
-also the software for an immediately usage of the started cluster. 
+also the software for an immediate usage of the started cluster. 
 
 When using preinstalled images a full configured and ready to use cluster is available within a few minutes.
 
