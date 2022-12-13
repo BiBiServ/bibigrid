@@ -1,3 +1,0 @@
-- name: RHEL based system
-  debug:
-    msg : Using yum to install packages
