@@ -1,0 +1,50 @@
+- name: nfs-server
+  systemd:
+    name: nfs-kernel-server
+    state: restarted
+
+- name: docker
+  systemd:
+    name: docker
+    state: restarted
+
+- name: munge
+  systemd:
+    name: munge
+    state: restarted
+
+- name: slurmdbd
+  systemd:
+    name: slurmdbd
+    state: restarted
+
+- name: slurmrestd
+  systemd:
+    name: slurmrestd
+    state: restarted
+    daemon_reload: true
+
+- name: slurmctld
+  systemd:
+    name: slurmctld
+    state: restarted
+
+- name: slurmd
+  systemd:
+    name: slurmd
+    state: restarted
+
+- name: zabbix-agent
+  systemd:
+    name: zabbix-agent
+    state: restarted
+
+- name: zabbix-server
+  systemd:
+    name: zabbix-server
+    state: restarted
+
+- name: apache2
+  systemd:
+    name: apache2
+    state: restarted

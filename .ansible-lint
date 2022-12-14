@@ -1,0 +1,5 @@
+skip_list:
+  - 'fqcn-builtins'
+  - 'fqcn'
+  - 'name[missing]'
+  - 'name[template]'

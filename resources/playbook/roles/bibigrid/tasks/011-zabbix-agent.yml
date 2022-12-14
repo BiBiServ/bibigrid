@@ -1,0 +1,103 @@
+- name: Install zabbix python-api
+  pip:
+    name: zabbix-api
+
+- name: Install zabbix agent
+  apt:
+    name: zabbix-agent
+    state: present
+  when: "ansible_distribution_file_variety == 'Debian'"
+
+- name: Install zabbix agent
+  dnf:
+    name: zabbix-agent
+    state: present
+  when: "ansible_distribution_file_variety == 'RedHat'"
+
+- name: Create zabbix_agent dropin directory
+  file:
+    path: /etc/zabbix/zabbix_agentd.d/
+    state: directory
+    mode: 0755
+
+- name: Create zabbix_agent log directory
+  file:
+    path: /var/log/zabbix
+    state: directory
+    owner: zabbix
+    group: zabbix
+    mode: 0755
+
+- name: Adjust zabbix agent configuration
+  template:
+    src: zabbix/zabbix_agentd.conf.j2
+    dest: /etc/zabbix/zabbix_agentd.conf
+    mode: 0644
+  notify: zabbix-agent
+
+- name: Start and Enable zabbix-agent
+  systemd:
+    name: zabbix-agent
+    state: started
+    enabled: true
+
+- name: Install zabbix python-api
+  pip:
+    name: zabbix-api
+
+- name: Copy Zabbix Host delete script
+  copy:
+    src: zabbix/zabbix_host_delete.py
+    dest: /usr/local/bin/zabbix_host_delete.py
+    mode: 0755
+
+# --------------------------------------
+# -- Add worker node as zabbix hosts --
+# --------------------------------------
+
+- name: Add worker node to zabbix hosts
+  zabbix_host:
+    server_url: "http://127.0.0.1/zabbix/"
+    login_user: Admin
+    login_password: "{{ zabbix_conf.admin_password }}"
+    host_name: "{{ ansible_hostname }}"
+    visible_name: "{{ ansible_hostname }}"
+    description: add by ansible
+    status: enabled
+    state: present
+    host_groups:
+      - 'Linux servers'
+    link_templates:
+      - 'Linux by Zabbix Agent'
+    interfaces:
+      - type: 1 # agent
+        main: 1 # default
+        ip: "{{ ansible_default_ipv4.address }}"
+        useip: 1 # connect using host IP address
+        port: 10050
+  become: false
+  when: "'master' not in group_names"
+  delegate_to: localhost
+
+- name: Add master node to zabbix hosts
+  zabbix_host:
+    server_url: "http://127.0.0.1/zabbix/"
+    login_user: Admin
+    login_password: "{{ zabbix_conf.admin_password }}"
+    host_name: "{{ ansible_hostname }}"
+    visible_name: "{{ ansible_hostname }}"
+    description: add by ansible
+    status: enabled
+    state: present
+    host_groups:
+      - 'Linux servers'
+    link_templates:
+      - 'Linux by Zabbix Agent'
+    interfaces:
+      - type: 1 # agent
+        main: 1 # default
+        ip: "127.0.0.1"
+        useip: 1 # connect using host IP address
+        port: 10050
+  become: false
+  when: "'master' in group_names"

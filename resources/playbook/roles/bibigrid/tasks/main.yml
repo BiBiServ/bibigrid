@@ -1,0 +1,124 @@
+# - name: 'YUM - async task'
+#  yum:
+#    name: docker-io
+#    state: installed
+#  async: 1000
+#  poll: 0
+#  register: yum_sleeper
+#
+# - name: 'YUM - check on async task'
+#  async_status:
+#    jid: "{{ yum_sleeper.ansible_job_id }}"
+#  register: job_result
+#  until: job_result.finished
+#  retries: 30
+
+- name: Setup common software and dependencies - server rights
+  when: "'master' in group_names"
+  block:
+    - name: Running 000-playbook-rights-server.yml
+      debug:
+        msg: "[BIBIGRID] Update permissions"
+    - import_tasks: 000-playbook-rights-server.yml
+
+- name: Setup common software and dependencies for Debian
+  when: "ansible_distribution_file_variety == 'Debian'"
+  tags: ["pkg"]
+  block:
+    - name: Running 001-apt.yml
+      debug:
+        msg: "[BIBIGRID] Setup common software and dependencies"
+    - import_tasks: 001-apt.yml
+
+- name: Setup common software and dependencies for RedHat
+  when: "ansible_distribution_file_variety == 'RedHat'"
+  tags: ["pkg"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Setup common software and dependencies"
+    - import_tasks: 001-yum.yml
+
+- name: Add all hosts (IP/AC_NAME) to /etc/hosts for local DNS lockup.
+  when: local_dns_lookup|default(false)|bool
+  tags: ['hosts']
+  block:
+    - debug:
+        msg: "[BIBIGRID] Add all hosts (IP/AC_NAME) to /etc/hosts for local DNS lockup."
+    - import_tasks: 004-hosts.yml
+
+- name: Configure database
+  when: "'master' in group_names"
+  tags: ["database", "slurm"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Configure database"
+    - import_tasks: 006-database.yml
+
+- name: Setup additional binary executables /usr/local/bin/
+  when:
+    - "'master' in group_names"
+  tags: ["bin"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Setup additional binary executables /usr/local/bin/"
+    - import_tasks: 010-bin-server.yml
+
+- name: Setup Zabbix Agent
+  when:
+    - enable_zabbix|default(false)|bool
+  tags: ["zabbix"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Setup Zabbix Agent"
+    - import_tasks: 011-zabbix-server.yml
+      when: "'master' in group_names"
+    - import_tasks: 011-zabbix-agent.yml
+
+- debug:
+    msg: "[BIBIGRID] Generate directory structure available on all hosts"
+- name: Generate general directory structure available on all hosts
+  import_tasks: 020-disk.yml
+- name: Generate server directory structure available on all hosts
+  import_tasks: 020-disk-server.yml
+  when: "'master' in group_names"
+- name: Generate worker directory structure available on all hosts
+  import_tasks: 020-disk-worker.yml
+  when: "'master' not in group_names"
+  tags: ["disk"]
+
+- name: Setup NFS
+  when:
+    - enable_nfs|default(false)|bool
+  tags: ["nfs"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Setup NFS"
+    - import_tasks: 025-nfs-server.yml
+      when: "'master' in group_names"
+    - import_tasks: 025-nfs-worker.yml
+      when: "'master' not in group_names"
+
+- name: Setup Docker
+  debug:
+    msg: "[BIBIGRID] Setup Docker"
+- import_tasks: 030-docker.yml
+  tags: ["docker"]
+
+- name: Setup Slurm
+  tags: ["slurm"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Setup Slurm"
+    - import_tasks: 042-slurm.yml
+    - import_tasks: 042-slurm-server.yml
+      when: "'master' in group_names"
+
+- name: Setup Theia
+  when:
+    - enable_ide|default(false)|bool
+    - "'master' in group_names"
+  tags: ["theia"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Setup Theia"
+    - import_tasks: 999-theia.yml

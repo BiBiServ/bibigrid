@@ -1,0 +1,3 @@
+#!/bin/bash
+# allows for an easier execution of the ansible playbook no matter where you are
+ansible-playbook /opt/playbook/site.yml -i /opt/playbook/ansible_hosts "$@"

@@ -1,0 +1,214 @@
+- name: Create slurm db
+  mysql_db:
+    name: "{{ slurm_conf.db }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create slurm db user
+  mysql_user:
+    name: "{{ slurm_conf.db_user }}"
+    password: "{{ slurm_conf.db_password }}"
+    priv: '*.*:ALL'
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Install Slurm database and RestAPI packages
+  apt:
+    name:
+      - slurmdbd
+      - slurmrestd
+
+- name: Create slurmdb configuration file
+  template:
+    src: slurm/slurmdbd.conf
+    dest: /etc/slurm/slurmdbd.conf
+    owner: slurm
+    group: root
+    mode: "0600"
+  notify:
+    - slurmdbd
+    - slurmctld
+
+- name: Generate random JWT Secret
+  command:
+    cmd: "dd if=/dev/random of=/etc/slurm/jwt-secret.key bs=32 count=1"
+    creates: "/etc/slurm/jwt-secret.key" # only run the command when file is not present
+
+- name: Change file Properties of JWT Secret file
+  file:
+    path: /etc/slurm/jwt-secret.key
+    owner: slurm
+    group: slurm
+    mode: "0600"
+
+- name: Copy env file for configuration of slurmrestd
+  copy:
+    src: slurm/slurmrestd_default
+    dest: /etc/default/slurmrestd
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - slurmdbd
+    - slurmrestd
+
+- name: Create Service Directory
+  file:
+    path: /etc/systemd/system/slurmrestd.service.d
+    group: root
+    owner: root
+    mode: "0755"
+    state: directory
+
+- name: Copy systemd Service override file
+  copy:
+    src: slurm/slurmrestd_override.conf
+    dest: /etc/systemd/system/slurmrestd.service.d/override.conf
+    mode: "0644"
+    owner: root
+    group: root
+  notify:
+    - slurmrestd
+
+- name: Start slurm explicit after all dependencies are configured
+  systemd:
+    name: slurmctld
+    state: started
+
+- name: Register Slurm users home dir
+  shell: "set -o pipefail &&  grep slurm /etc/passwd | cut -d ':' -f 6"
+  register: slurm_home
+  changed_when: false
+  args:
+    executable: bash
+
+# - name: Install python3-virtualenv
+#   apt:
+#     name: python3-virtualenv
+#     state: present
+
+- name: Change mode of /opt/slurm directory
+  file:
+    owner: slurm
+    group: ansible
+    path: /opt/slurm/
+    state: directory
+    mode: "0770"
+
+# - name: Create slurm venv in opt
+#   command:
+#     cmd: virtualenv /opt/slurm/venv -p python3.10
+#     creates: "/opt/slurm/venv"
+
+- name: Ensures /etc/slurm dir exists
+  file:
+    path: /etc/slurm/
+    state: directory
+    mode: 0755
+
+- name: Ensures /opt/slurm/.ssh/ dir exists
+  file:
+    path: /opt/slurm/.ssh/
+    group: slurm
+    owner: slurm
+    state: directory
+    mode: 0700
+
+- name: Copy private key (openstack keypair)
+  copy:
+    src: ~/.ssh/id_ecdsa
+    dest: /opt/slurm/.ssh/id_ecdsa
+    owner: slurm
+    group: slurm
+    mode: "0600"
+
+- name: Copy create program script (power)
+  copy:
+    src: slurm/create.sh
+    dest: /opt/slurm/create.sh
+    owner: slurm
+    group: ansible
+    mode: "0550"
+
+- name: Copy terminate program script (power)
+  copy:
+    src: slurm/terminate.sh
+    dest: /opt/slurm/terminate.sh
+    owner: slurm
+    group: ansible
+    mode: "0550"
+
+- name: Copy fail program script (power)
+  copy:
+    src: slurm/fail.sh
+    dest: /opt/slurm/fail.sh
+    owner: slurm
+    group: ansible
+    mode: "0550"
+
+- name: Copy "create_server.py" script
+  copy:
+    src: slurm/create_server.py
+    dest: /usr/local/bin/create_server.py
+    owner: slurm
+    group: ansible
+    mode: "0750"
+
+
+# - name: Copy requirements to correct location
+#  copy:
+#    src: slurm/requirements.txt
+#    dest: /opt/slurm/requirements.txt
+#    #owner: slurm
+#    group: ansible
+#    mode: "0550"
+
+# - name: Install requirements
+#  pip: requirements=/opt/slurm/requirements.txt
+#    virtualenv=/opt/slurm/venv
+
+- name: Install python dependencies
+  pip:
+    name:
+      - python-openstackclient==6.0.0
+      - os_client_config
+      - paramiko
+      - ansible-runner
+
+- name: 'Add default user to ansible group'
+  user:
+    name: '{{ ssh_user }}'
+    append: true
+    groups:
+      - ansible
+
+
+- when: slurm_home.stdout != '/opt/slurm'
+  block:
+    - name: Stop Slurm Services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      with_items:
+        - slurmctld
+        - slurmd
+        - slurmdbd
+        - slurmrestd
+    - name: Add slurm user to ansible and give slurm user a home
+      user:
+        name: slurm
+        append: true
+        create_home: true
+        groups:
+          - ansible
+        home: /opt/slurm
+        shell: /bin/false
+    - name: Start Slurm Services
+      systemd:
+        name: "{{ item }}"
+        state: started
+      with_items:
+        - slurmctld
+        - slurmd
+        - slurmdbd
+        - slurmrestd

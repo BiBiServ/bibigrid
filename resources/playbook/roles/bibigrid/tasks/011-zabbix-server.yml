@@ -1,0 +1,151 @@
+# -------------------
+# -- Zabbix Server --
+# -------------------
+
+- name: Debian based OS (Install database & Zabbix server)
+  apt:
+    name:
+      - mariadb-server
+      - zabbix-server-mysql
+      - zabbix-sql-scripts
+    state: present
+    update_cache: true
+  when: "ansible_distribution_file_variety == 'Debian' or ansible_distribution == 'Ubuntu'"
+
+- name: REHL based OS (Install database & Zabbix server)
+  dnf:
+    name:
+      - mariadb
+      - zabbix-server-mysql
+      - zabbix-sql-scripts
+    state: present
+  when: "ansible_distribution_file_variety == 'RedHat' "
+
+- name: Install python modul 'PyMySQL'
+  pip:
+    name: PyMySQL
+
+- name: Create zabbix database
+  mysql_db:
+    name: "{{ zabbix_conf.db }}"
+    encoding: 'utf8'
+    state: present
+    login_user: root
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Create zabbix database user
+  mysql_user:
+    name: "{{ zabbix_conf.db_user }}"
+    password: "{{ zabbix_conf.db_password }}"
+    priv: '{{ zabbix_conf.db }}.*:ALL'
+    login_user: root
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Check if zabbix schema exists
+  shell: "echo describe users | mysql --user={{ zabbix_conf.db_user }} --password={{ zabbix_conf.db_password }} zabbix"
+  ignore_errors: true
+  changed_when: false
+  register: zabbix_schema_exists
+
+- name: Import initial db schema
+  shell: "set -o pipefail && zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | \
+  mysql --user={{ zabbix_conf.db_user }} --password={{ zabbix_conf.db_password }} zabbix"
+  when: zabbix_schema_exists.rc == 1
+  args:
+    executable: bash
+  tags:
+    - skip_ansible_lint
+
+- name: Update Admin password
+  mysql_query:
+    login_db: "{{ zabbix_conf.db }}"
+    login_user: "{{ zabbix_conf.db_user }}"
+    login_password: "{{ zabbix_conf.db_password }}"
+    query: update users set passwd='{{ zabbix_conf.admin_password | password_hash("bcrypt") }}' where username='Admin'
+
+- name: Adjust zabbix server configuration
+  template:
+    src: zabbix/zabbix_server.conf.j2
+    dest: /etc/zabbix/zabbix_server.conf
+    mode: 0644
+  notify: zabbix-server
+
+- name: Start and Enable zabbix-server
+  systemd:
+    name: zabbix-server
+    state: started
+    enabled: true
+
+# -------------------------
+# -- Zabbix Web Frontend --
+# -------------------------
+
+- name: Zabbix Web Frontend related packages for Debian based OS
+  when: "ansible_distribution_file_variety == 'Debian'"
+  block:
+    - name: Install apache web server and php
+      apt:
+        name:
+          - apache2
+          - php
+        state: present
+
+    - name: Install zabbix web frontend
+      apt:
+        name:
+          - zabbix-frontend-php
+          - zabbix-apache-conf
+        state: present
+
+- name: Zabbix Web Frontend related packages for REHL based OS
+  when: "ansible_distribution_file_variety == 'RedHat'"
+  block:
+    - name: Install apache web server
+      dnf:
+        name: apache2
+        state: present
+
+    - name: Install zabbix web frontend
+      dnf:
+        name:
+          - zabbix-frontend-php
+          - zabbix-apache-conf
+        state: present
+
+
+- name: Create Zabbix web dir (if not exists)
+  file:
+    path: /etc/zabbix/web
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Adjust zabbix web frontend configuration
+  notify: apache2
+  block:
+    - name: Adjust apache.conf
+      template:
+        src: zabbix/apache.conf.j2
+        dest: /etc/zabbix/apache.conf
+        mode: 0644
+    - name: Adjust zabbix.conf
+      template:
+        src: zabbix/zabbix.conf.php.j2
+        dest: /etc/zabbix/web/zabbix.conf.php
+        mode: 0644
+
+- name: Start and enable apache web server
+  systemd:
+    name: apache2
+    state: started
+    enabled: true
+
+- name: Change default page of apache
+  copy:
+    src: zabbix/index.html
+    dest: /var/www/html/index.html
+    mode: 0644
+
+- name: Force all notified handlers to run at this point
+  meta: flush_handlers

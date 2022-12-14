@@ -1,0 +1,6 @@
+nvm_install_dir: /opt/nvm
+
+theia_version: "next"
+theia_ide_install_dir: /opt/theia-ide
+theia_ide_bind_address: localhost
+theia_ide_bind_port: 8181

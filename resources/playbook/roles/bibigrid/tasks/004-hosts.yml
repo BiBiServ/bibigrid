@@ -1,0 +1,12 @@
+- name: Update the /etc/hosts file with master/worker informations
+  lineinfile:
+    path: "/etc/hosts"
+    regexp: "{{ item.private_v4 }}\t{{ item.name }}"
+    line: "{{ item.private_v4 }}\t{{ item.name }}"
+    state: present
+    backup: true
+  with_items:
+    - "{{ master }}"
+    - "{{ workers }}"
+  tags:
+    - skip_ansible_lint

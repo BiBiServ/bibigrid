@@ -1,0 +1,5 @@
+python-openstackclient==6.0.0
+ipython
+os_client_config
+paramiko
+ansible-runner

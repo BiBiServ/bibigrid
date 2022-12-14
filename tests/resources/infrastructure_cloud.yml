@@ -1,0 +1,10 @@
+  # See https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/ (after update)
+
+- infrastructure: openstack # former mode.
+  cloud: openstack # name of clouds.yaml entry
+  image: 2e61eb1b-dbd2-4ed8-b62b-5ee9fe0510e6
+  flavor: de.NBI tiny
+  network: network0
+  snapshot_image: test
+
+#- [next configurations]

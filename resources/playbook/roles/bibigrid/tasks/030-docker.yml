@@ -1,0 +1,40 @@
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+  tags: install
+
+- name: Configure Docker
+  copy:
+    content: |-
+             {
+                "mtu":{{ ansible_default_ipv4.mtu }}
+             }
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    docker
+
+- name: Create docker group and change GID
+  group:
+    name: docker
+    gid: 1234
+    state: present
+
+- name: Append ubuntu user to group docker
+  user:
+    name: ubuntu
+    append: true
+    groups: docker
+    # Add when condition in case of debian
+
+- name: Install docker-api via PIP
+  pip:
+    name: ['docker', 'docker-compose'] # reevaluate
+
+- name: (Re-)start docker socket
+  systemd:
+    name: docker.socket
+    state: restarted

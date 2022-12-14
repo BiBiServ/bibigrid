@@ -1,0 +1,53 @@
+- name: Debian based system
+  debug:
+    msg: Using apt to install packages
+
+- name: Disable auto-update/upgrade during ansible-run
+  copy:
+    src: disable-auto-upgrades.conf
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Wait for post-launch services to stop
+  service_facts:
+  register: result
+  until: result.ansible_facts.services['{{ item }}'].state == 'stopped'
+  retries: 12
+  delay: 30
+  with_items:
+    - "{{ wait_for_services }}"
+  when: wait_for_services is defined
+
+- name: Update
+  apt:
+    update_cache: "yes"
+    upgrade: "yes"
+
+- name: Install common packages
+  apt:
+    name:
+      - "apt-transport-https"
+      - "ca-certificates"
+      - "curl"
+      - "software-properties-common"
+      - "python3-pip"
+      - "python3-setuptools"
+    state: "present"
+
+- name: Add zabbix repositories
+  apt:
+    deb: "https://repo.zabbix.com/zabbix/6.2/{{ ansible_distribution | lower }}\
+    /pool/main/z/zabbix-release/zabbix-release_6.2-1%2B{{ ansible_distribution | lower }}\
+    {{ ansible_distribution_version }}_all.deb"
+    state: present
+    force: true
+  tags:
+    - skip_ansible_lint
+
+- name: Update apt cache
+  apt:
+    upgrade: 'yes'
+    update_cache: 'yes'
+    cache_valid_time: 86400 # One day

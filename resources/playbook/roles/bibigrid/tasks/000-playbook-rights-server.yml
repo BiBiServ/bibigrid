@@ -1,0 +1,13 @@
+- name: Assure existence of ansible group
+  group:
+    name: ansible
+    state: present
+
+- name: Change mode of /opt/slurm directory
+  file:
+    owner: ubuntu
+    group: ansible
+    path: /opt/playbook/
+    state: directory
+    recurse: true
+    mode: "0770"

@@ -1,0 +1,25 @@
+- name: Install NFS server package
+  apt:
+    name: "nfs-kernel-server"
+    state: present
+
+- name: Create export directories
+  file:
+    path: "{{ item.src }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0777
+  with_items:
+    - "{{ nfs_mounts }}"
+
+- name: Configure nfs exports
+  lineinfile:
+    path: /etc/exports
+    state: present
+    regexp: '^{{ item.src }}'
+    line: '{{ item.src }} {{ cluster_cidrs[0].provider_cidrs[0] }}(rw,nohide,insecure,no_subtree_check,async)'
+  with_items:
+    - "{{ nfs_mounts }}"
+  notify:
+    - nfs-server
