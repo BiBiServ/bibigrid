@@ -4,7 +4,6 @@
 > The Java-based version of BiBiGrid was discontinued. The latest release is version 2.3.1.
 > Since this version isn't maintained any longer you should consider using its successor.
 
-
 BiBiGrid is a tool for an easy cluster setup inside a cloud environment.
 It is written in Java and run on any OS a Java runtime is provided - any 
 Java 8 is supported. BiBiGrid and its Cmdline UI based on a general cloud 
