@@ -12,7 +12,7 @@ import time
 import webbrowser
 import sshtunnel
 
-from bibigrid2.core.utility.handler import cluster_ssh_handler
+from bibigrid.core.utility.handler import cluster_ssh_handler
 
 DEFAULT_IDE_WORKSPACE = "${HOME}"
 REMOTE_BIND_ADDRESS = 8181

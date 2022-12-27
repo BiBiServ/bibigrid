@@ -4,7 +4,7 @@ Paths that are used by Ansible. Especially playbook, vars files and Co.
 
 import os
 
-import bibigrid2.core.utility.paths.basic_path as bP
+import bibigrid.core.utility.paths.basic_path as bP
 
 # UNIVERSAL
 ANSIBLE_HOSTS: str = "ansible_hosts"

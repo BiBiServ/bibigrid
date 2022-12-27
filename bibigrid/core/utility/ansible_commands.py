@@ -3,7 +3,7 @@ Module containing a bunch of useful commands to be used by sshHandler.py for clu
 """
 
 import os
-import bibigrid2.core.utility.paths.ansible_resources_path as aRP
+import bibigrid.core.utility.paths.ansible_resources_path as aRP
 
 #TO_LOG = "| sudo tee -a /var/log/ansible.log"
 #AIY = "apt-get -y install"

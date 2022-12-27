@@ -1,14 +1,14 @@
 """
-Module that acts as a wrapper and uses validateConfiguration to validate given configuration
+Module that acts as a wrapper and uses validate_configuration to validate given configuration
 """
 import logging
-from bibigrid2.core.utility import validate_configuration
+from bibigrid.core.utility import validate_configuration
 
 LOG = logging.getLogger("bibigrid")
 
 def check(configurations, providers):
     """
-    Uses validateConfiguration to validate given configuration.
+    Uses validate_configuration to validate given configuration.
     :param configurations: list of configurations (dicts)
     :param providers: list of providers
     :return:

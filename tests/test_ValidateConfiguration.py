@@ -2,10 +2,11 @@ import os
 from unittest import TestCase
 from unittest.mock import Mock, patch, MagicMock, call
 
-import bibigrid2.core.utility.validate_configuration as validateConfiguration
+import bibigrid.core.utility.validate_configuration as validateConfiguration
 
 
 class TestValidateConfiguration(TestCase):
+    # pylint: disable=R0904
     def test_check_provider_data_count(self):
         provider_data_1 = {"PROJECT_ID": "abcd", "PROJECT_NAME": "1234"}
         provider_data_2 = {"PROJECT_ID": "9999", "PROJECT_NAME": "9999"}
@@ -90,9 +91,9 @@ class TestValidateConfiguration(TestCase):
         for i in range(3):
             vc = validateConfiguration.ValidateConfiguration(providers=["31"] * i,
                                                              configurations=[{"masterInstance": "42"}] * i)
-            with patch.object(vc, "check_instance") as mock:
-                vc.check_instances()
-                self.assertTrue(vc.required_resources_dict["floating_ips"] == i)
+            # with patch.object(vc, "check_instance") as mock:
+            vc.check_instances()
+            self.assertTrue(vc.required_resources_dict["floating_ips"] == i)
 
     def test_check_instance_image_not_found(self):
         vc = validateConfiguration.ValidateConfiguration(providers=None, configurations=None)
@@ -130,8 +131,8 @@ class TestValidateConfiguration(TestCase):
         with patch.object(vc, "has_enough") as mock:
             vc.check_instance_type_image_combination(instance_image=None, instance_type="de.NBI tiny",
                                                      provider=provider)
-            self.assertEquals(call(42, 22, "Type de.NBI tiny", "disk space"), mock.call_args_list[0])
-            self.assertEquals(call(32, 12, "Type de.NBI tiny", "ram"), mock.call_args_list[1])
+            self.assertEqual(call(42, 22, "Type de.NBI tiny", "disk space"), mock.call_args_list[0])
+            self.assertEqual(call(32, 12, "Type de.NBI tiny", "ram"), mock.call_args_list[1])
 
     def test_check_instance_type_image_combination_result(self):
         provider = MagicMock()
@@ -162,8 +163,8 @@ class TestValidateConfiguration(TestCase):
             with patch.object(vc, "has_enough") as mock:
                 vc.check_instance_type_image_combination(instance_image=None, instance_type="de.NBI tiny",
                                                          provider=provider)
-                self.assertEquals(32 * i, vc.required_resources_dict["total_ram"])
-                self.assertEquals(10 * i, vc.required_resources_dict["total_cores"])
+                self.assertEqual(32 * i, vc.required_resources_dict["total_ram"])
+                self.assertEqual(10 * i, vc.required_resources_dict["total_cores"])
                 mock.assert_called_with(32 * i, 12, 'Type de.NBI tiny', 'ram')
 
     def test_check_volumes_none(self):
@@ -291,7 +292,7 @@ class TestValidateConfiguration(TestCase):
             provider.get_free_resources.assert_called()
             for key in vc.required_resources_dict.keys():
                 self.assertTrue(call(test_dict[key], vc.required_resources_dict[key],
-                                     f"Project identifier", key) in mock.call_args_list)
+                                     "Project identifier", key) in mock.call_args_list)
 
     def test_check_quotas_false(self):
         provider = MagicMock()

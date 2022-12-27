@@ -7,13 +7,13 @@ import logging
 import mergedeep
 import yaml
 
-from bibigrid2.core.actions import create
-from bibigrid2.core.actions import ide
-from bibigrid2.core.actions import list_clusters
-from bibigrid2.core.utility.handler import configuration_handler
-from bibigrid2.core.utility import id_generation
-from bibigrid2.core.utility.paths import ansible_resources_path as aRP
-from bibigrid2.core.utility import yaml_dumper
+from bibigrid.core.actions import create
+from bibigrid.core.actions import ide
+from bibigrid.core.actions import list_clusters
+from bibigrid.core.utility.handler import configuration_handler
+from bibigrid.core.utility import id_generation
+from bibigrid.core.utility.paths import ansible_resources_path as aRP
+from bibigrid.core.utility import yaml_dumper
 
 DEFAULT_NFS_SHARES = ["/vol/spool"]
 ADDITIONAL_PATH = "additional/"

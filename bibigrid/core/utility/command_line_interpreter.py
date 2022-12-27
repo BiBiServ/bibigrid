@@ -14,7 +14,7 @@ def interpret_command_line():
     Interprets commandline. Used in startup.py
     :return:
     """
-    parser = argparse.ArgumentParser(description='Bibigrid2 sets up cluster easily inside a cloud environment')
+    parser = argparse.ArgumentParser(description='Bibigrid sets up cluster easily inside a cloud environment')
     parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Increases logging verbosity. `-v` adds more info to the logfile, "
                              "`-vv` adds debug information to the logfile.")

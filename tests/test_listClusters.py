@@ -1,8 +1,8 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-import bibigrid2.core.actions.create as create
-import bibigrid2.core.actions.list_clusters as listClusters
+from bibigrid.core.actions import create
+from bibigrid.core.actions import list_clusters
 
 
 class TestDictClusters(TestCase):
@@ -14,8 +14,8 @@ class TestDictClusters(TestCase):
             cluster_dict = {}
             server = {"name": identifier + create.SEPARATOR + str(cluster_id)}
             self.assertEqual(str(cluster_id),
-                             listClusters.setup(server,
-                                                identifier, cluster_dict, test_provider))
+                             list_clusters.setup(server,
+                                                 identifier, cluster_dict, test_provider))
             self.assertEqual({str(cluster_id): {'worker': [], 'vpnwkr': []}}, cluster_dict)
             self.assertEqual(test_provider, server["provider"])
 
@@ -27,8 +27,8 @@ class TestDictClusters(TestCase):
             cluster_dict = {str(cluster_id): {'worker': ["some"], 'vpnwkr': ["some"]}}
             server = {"name": identifier + create.SEPARATOR + str(cluster_id)}
             self.assertEqual(str(cluster_id),
-                             listClusters.setup(server,
-                                                identifier, cluster_dict, test_provider))
+                             list_clusters.setup(server,
+                                                 identifier, cluster_dict, test_provider))
             self.assertEqual({str(cluster_id): {'worker': ["some"], 'vpnwkr': ["some"]}}, cluster_dict)
             self.assertEqual(test_provider, server["provider"])
 
@@ -43,4 +43,4 @@ class TestDictClusters(TestCase):
                                               in
                                               [create.WORKER_IDENTIFIER, create.VPN_WORKER_IDENTIFIER,
                                                create.MASTER_IDENTIFIER]]
-        self.assertEqual(expected, listClusters.dict_clusters([provider]))
+        self.assertEqual(expected, list_clusters.dict_clusters([provider]))

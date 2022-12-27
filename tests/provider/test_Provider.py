@@ -1,9 +1,9 @@
 import os
 import unittest
 
-import bibigrid2.core.utility.handler.provider_handler as providerHandler
-import bibigrid2.core.utility.handler.configuration_handler as configurationHandler
-import bibigrid2.core.utility.paths.basic_path as bP
+import bibigrid.core.utility.handler.configuration_handler as configurationHandler
+import bibigrid.core.utility.handler.provider_handler as providerHandler
+import bibigrid.core.utility.paths.basic_path as bP
 
 SERVER_KEYS = {'id', 'name', 'flavor', 'image', 'block_device_mapping', 'location', 'volumes',
                'has_config_drive', 'host_id', 'progress', 'disk_config', 'power_state', 'task_state',
@@ -62,7 +62,7 @@ CONFIGURATIONS = configurationHandler.read_configuration(os.path.join(bP.ROOT_PA
 PROVIDERS = providerHandler.get_providers(CONFIGURATIONS)
 
 
-class ProviderServer(object):
+class ProviderServer:
     def __init__(self, provider, name, configuration, key_name=None):
         self.provider = provider
         self.name = name
@@ -73,7 +73,7 @@ class ProviderServer(object):
     def __enter__(self):
         return self.server_dict
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, not_type, value, traceback):  # type
         self.provider.delete_server(name_or_id=self.name)
 
 
@@ -120,26 +120,26 @@ class TestProvider(unittest.TestCase):
     def test_create_keypair_create_delete_false_delete(self):
         for provider in PROVIDERS:
             with self.subTest(provider.NAME):
-                provider.create_keypair("bibigrid2_test_keypair", KEYPAIR)
-                self.assertTrue(provider.delete_keypair("bibigrid2_test_keypair"))
-                self.assertFalse(provider.delete_keypair("bibigrid2_test_keypair"))
+                provider.create_keypair("bibigrid_test_keypair", KEYPAIR)
+                self.assertTrue(provider.delete_keypair("bibigrid_test_keypair"))
+                self.assertFalse(provider.delete_keypair("bibigrid_test_keypair"))
 
     def test_active_server_methods(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
-            provider.create_keypair("bibigrid2_test_keypair", KEYPAIR)
+            provider.create_keypair("bibigrid_test_keypair", KEYPAIR)
             with self.subTest(provider.NAME):
-                with ProviderServer(provider, "bibigrid2_test_server", configuration, "bibigrid2_test_keypair") as ps:
+                with ProviderServer(provider, "bibigrid_test_server", configuration, "bibigrid_test_keypair") as ps:
                     floating_ip = provider.create_floating_ip(provider.get_external_network(configuration["network"]),
                                                               ps)
                     server_list = provider.list_servers()
                 self.assertEqual(SERVER_KEYS,
                                  set(ps.keys()))
-                self.assertEqual("bibigrid2_test_keypair", ps["key_name"])
+                self.assertEqual("bibigrid_test_keypair", ps["key_name"])
                 self.assertEqual(FLOATING_IP_KEYS,
                                  set(floating_ip.keys()))
-                self.assertTrue([server for server in server_list if server["name"] == "bibigrid2_test_server" and
+                self.assertTrue([server for server in server_list if server["name"] == "bibigrid_test_server" and
                                  server["public_v4"] == floating_ip.floating_ip_address])
-            provider.delete_keypair("bibigrid2_test_keypair")
+            provider.delete_keypair("bibigrid_test_keypair")
 
     def test_get_external_network(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
@@ -191,7 +191,7 @@ class TestProvider(unittest.TestCase):
                 self.assertEqual(FLAVOR_KEYS, set(provider.get_flavor(configuration["flavor"]).keys()))
 
     def test_get_image(self):
-        for provider,configuration in zip(PROVIDERS, CONFIGURATIONS):
+        for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
                 self.assertEqual(IMAGE_KEYS, set(provider.get_image_by_id_or_name(configuration["image"]).keys()))
 
@@ -205,7 +205,8 @@ class TestProvider(unittest.TestCase):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):
                     self.assertEqual(SNAPSHOT_KEYS,
-                                     set(provider.get_volume_snapshot_by_id_or_name(configuration["snapshot_image"]).keys()))
+                                     set(provider.get_volume_snapshot_by_id_or_name(
+                                         configuration["snapshot_image"]).keys()))
 
         def test_create_volume_from_snapshot(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):

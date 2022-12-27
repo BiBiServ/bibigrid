@@ -5,7 +5,7 @@ Validates configuration and cloud_specification
 import logging
 import os
 
-from bibigrid2.core.utility.handler import configuration_handler
+from bibigrid.core.utility.handler import configuration_handler
 
 ACCEPTED_KEY_IDENTIFIERS = {"RSA": 4096, "ECDSA": 521, "ED25519": 256}
 LOG = logging.getLogger("bibigrid")
@@ -69,7 +69,7 @@ def evaluate_ssh_public_key_file_security(ssh_public_key_file):
     minimum_size = ACCEPTED_KEY_IDENTIFIERS.get(identifier_clean)
 
     if not minimum_size:
-        LOG.warning("sshPublicKey '%s' is %s. Which secure length is unknown to bibigrid2.\n"
+        LOG.warning("sshPublicKey '%s' is %s. Which secure length is unknown to bibigrid.\n"
                         "Known encryptions are (with minimum size): %s",
                         ssh_public_key_file, identifier_clean, ACCEPTED_KEY_IDENTIFIERS)
     else:
