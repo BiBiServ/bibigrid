@@ -6,7 +6,6 @@ from bibigrid.core.utility import validate_configuration
 
 
 class TestValidateConfiguration(TestCase):
-    # pylint: disable=R0904
     def test_check_provider_data_count(self):
         provider_data_1 = {"PROJECT_ID": "abcd", "PROJECT_NAME": "1234"}
         provider_data_2 = {"PROJECT_ID": "9999", "PROJECT_NAME": "9999"}
