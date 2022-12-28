@@ -21,3 +21,54 @@ additional NFS shares manually, because they will not be automatically registere
 
 ### NFS commands
 See [nfs' manpage](https://man7.org/linux/man-pages/man5/nfs.5.html).
+
+## How To Share an Attached Volume
+By mounting a volume into a shared directory, volumes can be shared.
+
+### Configuration
+Let's assume our configuration holds (among others) the keys:
+```yml
+nfs: True
+masterMounts:
+    - testMount
+
+nfsShares:
+    - testShare
+```
+
+Where `testMount` is an existing, formatted volume with a filesystem type (for example: ext4, ext3, ntfs, ...).
+
+During cluster creation...
+1. BiBiGrid sets up the nfsShare `/testShare`.
+2. BiBiGrid attached the volume `testMount` to our master instance. The volume is not mounted yet.
+
+3. We call the cluster `bibigrid-master-ournfsclusterid` in the following.
+
+### Mounting a Volume Into a Shared Directory
+In order to mount a volume into a shared directory, we first need to identify where our volume was attached.
+
+#### Find Where Volume was attached
+Executing this openstack client command will give us a list of volumes.
+Most likely it is best run from your local machine.
+```sh
+openstack volume list --os-cloud=openstack
+```
+Result:
+
+|                  ID                  |          Name |  Status   | Size |                       Attached to                       |
+|:------------------------------------:|--------------:|:---------:|:----:|:-------------------------------------------------------:|
+| 42424242-4242-4242-4242-424242424242 | notTestVolume | available |  X   |                                                         |
+| 42424242-4242-4242-4242-424242424221 |     testMount |  in-use   |  Y   | Attached to bibigrid-master-ournfsclusterid on /dev/vdd |
+
+As you can see, the volume `testMount` was attached to `/dev/vdd`.
+We can double-check whether `/dev/vdd` really exists by executing `lsblk` or `lsblk | grep /dev/vdd` on the master. 
+
+#### Mount Volume into Share
+As our NFS share is `/testShare`, we now need to mount `dev/vdd` into `testShare`:
+
+```sh
+sudo mount -t auto /dev/vdd /testShare
+```
+
+The volume `testMount` is now successfully shared using NFS.
+Workers can access the volume now by using `/testShare`, too.
