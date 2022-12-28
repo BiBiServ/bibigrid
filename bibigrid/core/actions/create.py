@@ -12,15 +12,15 @@ from functools import partial
 import paramiko
 import yaml
 
-from bibigrid2.core.actions import terminate_cluster
-from bibigrid2.core.utility import ansible_configurator
-from bibigrid2.core.utility import id_generation
-from bibigrid2.core.utility.handler import ssh_handler
-from bibigrid2.core.utility.paths import ansible_resources_path as aRP
-from bibigrid2.core.utility.paths import bin_path as biRP
-from bibigrid2.models import exceptions
-from bibigrid2.models import return_threading
-from bibigrid2.models.exceptions import ExecutionException
+from bibigrid.core.actions import terminate_cluster
+from bibigrid.core.utility import ansible_configurator
+from bibigrid.core.utility import id_generation
+from bibigrid.core.utility.handler import ssh_handler
+from bibigrid.core.utility.paths import ansible_resources_path as aRP
+from bibigrid.core.utility.paths import bin_path as biRP
+from bibigrid.models import exceptions
+from bibigrid.models import return_threading
+from bibigrid.models.exceptions import ExecutionException
 
 PREFIX = "bibigrid"
 SEPARATOR = "-"
@@ -350,7 +350,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Prints helpful cluster-info:
         SSH: How to connect to master via SSH
-        Terminate: What bibigrid2 command is needed to terminate the created cluster
+        Terminate: What bibigrid command is needed to terminate the created cluster
         Detailed cluster info: How to print detailed info about the created cluster
         :return:
         """

@@ -5,7 +5,7 @@ This module gets information about ssh connection.
 import logging
 import os
 
-from bibigrid2.core.actions import create, list_clusters
+from bibigrid.core.actions import create, list_clusters
 
 LOG = logging.getLogger("bibigrid")
 def get_ssh_connection_info(cluster_id, master_provider, master_configuration):

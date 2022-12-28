@@ -11,10 +11,10 @@ from keystoneauth1 import session
 from keystoneauth1.exceptions.http import NotFound
 from keystoneauth1.identity import v3
 
-from bibigrid2.core import provider
-from bibigrid2.core.actions import create
-from bibigrid2.core.actions import version
-from bibigrid2.models.exceptions import ExecutionException
+from bibigrid.core import provider
+from bibigrid.core.actions import create
+from bibigrid.core.actions import version
+from bibigrid.models.exceptions import ExecutionException
 
 LOG = logging.getLogger("bibigrid")
 

@@ -1,5 +1,6 @@
 # complete idea
 .idea/
+.run/
 
 # variable resources
 resources/playbook/site.yml

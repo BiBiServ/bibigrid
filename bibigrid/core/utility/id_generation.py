@@ -4,7 +4,7 @@ Generates ids and munge keys
 
 import shortuuid
 
-from bibigrid2.core.actions import create
+from bibigrid.core.actions import create
 
 MAX_ID_LENGTH = 15
 CLUSTER_UUID_ALPHABET = '0123456789abcdefghijkmnopqrstuvwxyz'

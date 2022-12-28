@@ -4,8 +4,8 @@ This module contains different selectors to pick and create a connection to the 
 
 import logging
 
-from bibigrid2.core.utility.handler import configuration_handler
-from bibigrid2.openstack import openstack_provider
+from bibigrid.core.utility.handler import configuration_handler
+from bibigrid.openstack import openstack_provider
 
 PROVIDER_NAME_DICT = {"openstack": openstack_provider.OpenstackProvider}
 PROVIDER_CLASS_DICT = {provider.__name__: provider for provider in PROVIDER_NAME_DICT.values()}

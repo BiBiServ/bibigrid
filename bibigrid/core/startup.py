@@ -10,11 +10,11 @@ import traceback
 
 import yaml
 
-from bibigrid2.core.actions import check, create, ide, list_clusters, terminate_cluster, update, version
-from bibigrid2.core.utility import command_line_interpreter
-from bibigrid2.core.utility.handler import configuration_handler, provider_handler
+from bibigrid.core.actions import check, create, ide, list_clusters, terminate_cluster, update, version
+from bibigrid.core.utility import command_line_interpreter
+from bibigrid.core.utility.handler import configuration_handler, provider_handler
 
-LOGGING_HANDLER_LIST = [logging.StreamHandler(), logging.FileHandler("bibigrid2.log")]  # stdout and to file
+LOGGING_HANDLER_LIST = [logging.StreamHandler(), logging.FileHandler("bibigrid.log")]  # stdout and to file
 VERBOSITY_LIST = [logging.WARNING, logging.INFO, logging.DEBUG]
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 

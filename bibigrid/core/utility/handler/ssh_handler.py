@@ -10,8 +10,8 @@ import socket
 import paramiko
 import yaml
 
-from bibigrid2.models.exceptions import ConnectionException, ExecutionException
-from bibigrid2.core.utility import ansible_commands as aC
+from bibigrid.models.exceptions import ConnectionException, ExecutionException
+from bibigrid.core.utility import ansible_commands as aC
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
 ANSIBLE_SETUP = [aC.NO_UPDATE, aC.UPDATE,

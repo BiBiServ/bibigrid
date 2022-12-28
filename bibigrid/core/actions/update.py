@@ -4,11 +4,11 @@ Module that contains methods to update the master playbook
 
 import logging
 
-from bibigrid2.core.utility import ansible_commands as aC
-from bibigrid2.core.utility.handler import ssh_handler
-from bibigrid2.core.utility.paths import ansible_resources_path as aRP
-from bibigrid2.core.utility.paths import bin_path as biRP
-from bibigrid2.core.utility.handler import cluster_ssh_handler
+from bibigrid.core.utility import ansible_commands as aC
+from bibigrid.core.utility.handler import ssh_handler
+from bibigrid.core.utility.paths import ansible_resources_path as aRP
+from bibigrid.core.utility.paths import bin_path as biRP
+from bibigrid.core.utility.handler import cluster_ssh_handler
 
 LOG = logging.getLogger("bibigrid")
 

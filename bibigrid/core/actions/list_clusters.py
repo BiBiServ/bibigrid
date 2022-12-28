@@ -7,7 +7,7 @@ import logging
 import pprint
 import re
 
-from bibigrid2.core.actions import create
+from bibigrid.core.actions import create
 
 SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpnwkr)\d+-([a-zA-Z0-9]+)-\d+)$")
 LOG = logging.getLogger("bibigrid")

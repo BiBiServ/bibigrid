@@ -7,7 +7,7 @@ import logging
 import os
 import re
 
-from bibigrid2.core.actions import create
+from bibigrid.core.actions import create
 LOG = logging.getLogger("bibigrid")
 
 def terminate_cluster(cluster_id, providers, debug=False):
@@ -83,7 +83,7 @@ def delete_keypairs(provider, tmp_keyname):
     """
     Deletes keypairs from all provider
     @param provider: provider to delete keypair from
-    @param tmp_keyname: BiBiGrid2 keyname
+    @param tmp_keyname: BiBiGrid keyname
     @return: True if keypair was deleted
     """
     LOG.info("Deleting Keypair on provider %s...", provider.cloud_specification['identifier'])
@@ -98,7 +98,7 @@ def delete_keypairs(provider, tmp_keyname):
 def delete_local_keypairs(tmp_keyname):
     """
     Deletes local keypairs of a cluster
-    @param tmp_keyname: BiBiGrid2 keyname
+    @param tmp_keyname: BiBiGrid keyname
     @return: Returns true if at least one local keyfile (pub or private) was found
     """
     success = False
