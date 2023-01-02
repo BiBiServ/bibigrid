@@ -191,12 +191,12 @@ class ValidateConfiguration:
         """
         success = bool(self.providers)
         LOG.info("Validating config file...")
-        success = check_provider_data(
-            configuration_handler.get_list_by_key(self.configurations, "infrastructure"),
-            len(self.configurations)) and success
-        if not success:
-            LOG.warning("Providers not set correctly in configuration file. Check log for more detail.")
-            return success
+        # success = check_provider_data(
+        #     configuration_handler.get_list_by_key(self.configurations, "cloud"),
+        #     len(self.configurations)) and success
+        # if not success:
+        #     LOG.warning("Providers not set correctly in configuration file. Check log for more detail.")
+        #     return success
         checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),
                   ("instances", self.check_instances), ("volumes", self.check_volumes),
                   ("network", self.check_network), ("quotas", self.check_quotas),
