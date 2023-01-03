@@ -2,5 +2,7 @@
 [Unit]
 After=slurmdbd.service
 [Service]
+User=slurm
+Group=slurm
 ExecStart=
 ExecStart=/usr/sbin/slurmrestd $SLURMRESTD_OPTIONS

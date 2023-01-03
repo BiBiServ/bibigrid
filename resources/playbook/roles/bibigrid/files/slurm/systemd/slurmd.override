@@ -1,0 +1,3 @@
+# Override systemd service to set conditional path
+[Unit]
+ConditionPathExists=/etc/slurm/slurm.conf
