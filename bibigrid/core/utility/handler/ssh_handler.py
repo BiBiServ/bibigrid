@@ -221,10 +221,13 @@ def execute_ssh(floating_ip, private_key, username, commands=None, filepaths=Non
             LOG.error(f"Couldn't connect to floating ip {floating_ip} using private key {private_key}.")
             raise exc
         else:
+            LOG.debug(f"Setting up {floating_ip}")
             if filepaths:
+                LOG.debug(f"Setting up filepaths for {floating_ip}")
                 sftp = client.open_sftp()
                 for localpath, remotepath in filepaths:
                     copy_to_server(sftp=sftp, localpath=localpath, remotepath=remotepath)
                 LOG.debug("SFTP: Files %s copied.", filepaths)
             if commands:
+                LOG.debug(f"Setting up commands for {floating_ip}")
                 execute_ssh_cml_commands(client, commands)
