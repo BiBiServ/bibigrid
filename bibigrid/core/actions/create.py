@@ -130,13 +130,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         :return:
         """
         # potentially weird counting due to master
+        print(identifier)
         with self.thread_lock:
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(cluster_id=self.cluster_id)
             elif identifier == WORKER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(number=self.instance_counter, cluster_id=self.cluster_id)
-            # else:
-            #     name = identifier(number=self.instance_counter, cluster_id=self.cluster_id)
+            else:
+                name = identifier(cluster_id=self.cluster_id)
             self.instance_counter += 1
         LOG.info("Starting instance/server %s", name)
         flavor = instance_type["type"]
@@ -228,7 +229,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                             username=self.ssh_user,
                                             commands=self.ssh_add_public_key_commands)
         elif configuration.get("vpnInstance"):
-            ssh_handler.execute_ssh(floating_ip=self.master_ip,
+            ssh_handler.execute_ssh(floating_ip=vpn_or_m_floating_ip_address,
                                     private_key=KEY_FOLDER + self.key_name,
                                     username=self.ssh_user,
                                     commands=ssh_handler.VPN_SETUP)
@@ -322,14 +323,24 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers,
                                                     debug=self.debug)
         except exceptions.ConnectionException:
+            if self.debug:
+                LOG.error(traceback.format_exc())
             LOG.error("Connection couldn't be established. Check Provider connection.")
         except paramiko.ssh_exception.NoValidConnectionsError:
+            if self.debug:
+                LOG.error(traceback.format_exc())
             LOG.error("SSH connection couldn't be established. Check keypair.")
         except KeyError as exc:
+            if self.debug:
+                LOG.error(traceback.format_exc())
             LOG.error(f"Tried to access dictionary key {str(exc)}, but couldn't. Please check your configurations.")
         except FileNotFoundError as exc:
+            if self.debug:
+                LOG.error(traceback.format_exc())
             LOG.error(f"Tried to access resource files but couldn't. No such file or directory: {str(exc)}")
         except TimeoutError as exc:
+            if self.debug:
+                LOG.error(traceback.format_exc())
             LOG.error(f"Timeout while connecting to master. Maybe you are trying to create a master without "
                       f"public ip "
                       f"while not being in the same network: {str(exc)}")
