@@ -16,13 +16,13 @@ from bibigrid.core.utility import ansible_commands as aC
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
 ANSIBLE_SETUP = [aC.NO_UPDATE, aC.UPDATE,
                  aC.PYTHON3_PIP, aC.ANSIBLE_PASSLIB,
-                 (f"chmod 600 {PRIVATE_KEY_FILE}","Adjust private key permissions."),
+                 (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."),
                  aC.PLAYBOOK_HOME,
                  aC.PLAYBOOK_HOME_RIGHTS,
                  aC.ADD_PLAYBOOK_TO_LINUX_HOME]
 # ANSIBLE_START = [aC.WAIT_READY, aC.UPDATE, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]  # another UPDATE seems to not necessary.
 ANSIBLE_START = [aC.WAIT_READY, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]
-VPN_SETUP = ["echo Example"]
+VPN_SETUP = [("echo Example", "Echos an Example")]
 LOG = logging.getLogger("bibigrid")
 
 
@@ -106,6 +106,7 @@ def is_active(client, floating_ip_address, private_key, username, timeout=5):
         try:
             client.connect(hostname=floating_ip_address, username=username, pkey=private_key, timeout=5, auth_timeout=5)
             establishing_connection = False
+            LOG.info(f"Successfully connected to {floating_ip_address}")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
             LOG.info(f"Attempting to connect to {floating_ip_address}... This might take a while", )
             if attempts < timeout:
