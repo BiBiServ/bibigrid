@@ -10,6 +10,7 @@ from bibigrid.core.utility.handler import configuration_handler
 ACCEPTED_KEY_IDENTIFIERS = {"RSA": 4096, "ECDSA": 521, "ED25519": 256}
 LOG = logging.getLogger("bibigrid")
 
+
 def evaluate(check_name, check_result):
     """
     Logs check_resul as warning if failed and as success if succeeded.
@@ -43,7 +44,7 @@ def check_provider_data(provider_data_list, provider_count):
             seen.append(elem)
     if duplicates:
         LOG.warning("Duplicate provider(s) %s. For each provider you can only create one configuration. "
-                        "Please check your configurations.", duplicates)
+                    "Please check your configurations.", duplicates)
         success = False
     else:
         LOG.info("All providers are unique.")
@@ -70,13 +71,13 @@ def evaluate_ssh_public_key_file_security(ssh_public_key_file):
 
     if not minimum_size:
         LOG.warning("sshPublicKey '%s' is %s. Which secure length is unknown to bibigrid.\n"
-                        "Known encryptions are (with minimum size): %s",
-                        ssh_public_key_file, identifier_clean, ACCEPTED_KEY_IDENTIFIERS)
+                    "Known encryptions are (with minimum size): %s",
+                    ssh_public_key_file, identifier_clean, ACCEPTED_KEY_IDENTIFIERS)
     else:
         LOG.info("sshPublicKey '%s' is a known encryption.", ssh_public_key_file)
         if minimum_size > int(length):
             LOG.warning("sshPublicKey '%s' is not long enough! %s should be >= %s, but is %s",
-                            ssh_public_key_file, identifier_clean, minimum_size, int(length))
+                        ssh_public_key_file, identifier_clean, minimum_size, int(length))
         else:
             LOG.info("sshPublicKey '%s' is long enough (%s/%s)!", ssh_public_key_file, int(length), minimum_size)
     return success
@@ -109,12 +110,12 @@ def check_clouds_yaml_security():
     """
     success = True
     LOG.info("Checking validity of entire clouds.yaml and clouds-public.yaml")
-    clouds, clouds_public = configuration_handler.get_clouds_files() # pylint: disable=unused-variable
+    clouds, clouds_public = configuration_handler.get_clouds_files()  # pylint: disable=unused-variable
     if clouds_public:
         for cloud in clouds_public:
             if clouds_public[cloud].get("profile"):
                 LOG.warning(f"{cloud}: Profiles should be placed in clouds.yaml not clouds-public.yaml! "
-                                f"Key ignored.")
+                            f"Key ignored.")
                 success = False
             if clouds_public[cloud].get("auth"):
                 for key in ["password", "username", "application_credential_id", "application_credential_secret"]:
@@ -140,8 +141,8 @@ def check_cloud_yaml(cloud_specification):
                     and not ("auth_type" in keys and "application_credential_id" in auth_keys and
                              "application_credential_secret" in auth_keys):
                 LOG.warning("Insufficient authentication information. Needs either password and username or "
-                                "if using application credentials: "
-                                "auth_type, application_credential_id and application_credential_secret.")
+                            "if using application credentials: "
+                            "auth_type, application_credential_id and application_credential_secret.")
                 success = False
             if "auth_url" not in auth_keys:
                 LOG.warning("Authentification URL auth_url is missing.")
@@ -200,7 +201,8 @@ class ValidateConfiguration:
         checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),
                   ("instances", self.check_instances), ("volumes", self.check_volumes),
                   ("network", self.check_network), ("quotas", self.check_quotas),
-                  ("sshPublicKeyFiles", self.check_ssh_public_key_files), ("cloudYamls", self.check_clouds_yamls)]
+                  ("sshPublicKeyFiles", self.check_ssh_public_key_files), ("cloudYamls", self.check_clouds_yamls),
+                  ("nfs", self.check_nfs)]
         if success:
             for check_name, check_function in checks:
                 success = evaluate(check_name, check_function()) and success
@@ -234,7 +236,7 @@ class ValidateConfiguration:
                 providers_unconnectable.append(provider.name)
         if providers_unconnectable:
             LOG.warning("API connection to %s not successful. Please check your configuration.",
-                            providers_unconnectable)
+                        providers_unconnectable)
             success = False
         return success
 
@@ -436,4 +438,21 @@ class ValidateConfiguration:
                 success = False
                 LOG.warning("Cloud specification %s is faulty. BiBiGrid understood %s.", index, cloud_specification)
             success = check_clouds_yaml_security() and success
+        return success
+
+    def check_nfs(self):
+        """
+        Checks whether nfsshares => nfs holds and logs if failed. Returns True in every case as it is not fatale.
+        @return: True
+        """
+        LOG.info("Checking nfs...")
+        success = True
+        master_configuration = self.configurations[0]
+        nfs_shares = master_configuration.get("nfsShares")
+        nfs = master_configuration.get("nfs")
+        if nfs_shares and not nfs:
+            success = True
+            LOG.warning("nfsShares exist, but nfs is False. nfsShares will be ignored!")
+        else:
+            success = True
         return success
