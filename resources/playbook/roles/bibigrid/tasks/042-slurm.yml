@@ -9,11 +9,12 @@
     uid: 64030
     group: slurm
 
-- name: Install Slurm packages
+- name: Install Slurm package (and dependencies)
   apt:
     name:
       - slurm-full
       - munge
+      - libjwt0
     state: latest
 
 - name: Create new secret (Munge)
@@ -26,11 +27,17 @@
   notify:
     - munge
 
-- name: Ensures /etc/slurm dir exists
+- name: Ensures slurm directories exists
   file:
-    path: /etc/slurm/
+    path: "{{ item }}"
     state: directory
-    mode: 0755
+    mode: 0775
+    owner: root
+    group: slurm
+  with_items:
+    - /etc/slurm
+    - /var/lib/slurm
+    - /var/log/slurm
 
 - name: Create system overrides directories (slurmd, slurmctld)
   file:
