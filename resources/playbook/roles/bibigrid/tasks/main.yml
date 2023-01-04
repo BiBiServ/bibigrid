@@ -38,6 +38,14 @@
         msg: "[BIBIGRID] Setup common software and dependencies"
     - import_tasks: 001-yum.yml
 
+- name: Configure Wireguard for VPNs
+  when: "'master' in group_names or 'vpn' in group_names" # needs condition for whether vpn is used at all
+  tags: ["vpn"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Configure Wireguard for VPNs"
+    - import_tasks: 002-wireguard-vpn.yml
+
 - name: Add all hosts (IP/AC_NAME) to /etc/hosts for local DNS lockup.
   when: local_dns_lookup|default(false)|bool
   tags: ['hosts']

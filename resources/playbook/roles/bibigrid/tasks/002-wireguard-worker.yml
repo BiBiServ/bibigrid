@@ -1,0 +1,7 @@
+- name: Add ip route to masters subnet
+  shell:
+    cmd: sudo ip route add {{ other_subnet }}/24 via {{ MY-VPN-IP }}
+
+- name: Add ip route to virtual subnet
+  shell:
+    cmd: sudo ip route add 10.0.0.0/24 via {{ MY-VPN-IP }}
