@@ -23,6 +23,28 @@
     - slurmdbd
     - slurmctld
 
+- name: Generate random JWT Secret
+  command:
+    cmd: "dd if=/dev/random of=/etc/slurm/jwt-secret.key bs=32 count=1"
+    creates: "/etc/slurm/jwt-secret.key" # only run the command when file is not present
+
+- name: Change file Properties of JWT Secret file
+  file:
+    path: /etc/slurm/jwt-secret.key
+    owner: slurm
+    group: slurm
+    mode: "0600"
+
+- name: Copy env file for configuration of slurmrestd
+  copy:
+    src: slurm/default/slurmrestd
+    dest: /etc/default/slurmrestd
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - slurmrestd
+
 - name: Create system overrides directories (slurmdbdm slurmrestd)
   file:
     path: "/etc/systemd/system/{{item}}.service.d"
@@ -59,32 +81,6 @@
   - slurmdbd
   - slurmrestd
 
-
-
-- name: Generate random JWT Secret
-  command:
-    cmd: "dd if=/dev/random of=/etc/slurm/jwt-secret.key bs=32 count=1"
-    creates: "/etc/slurm/jwt-secret.key" # only run the command when file is not present
-
-- name: Change file Properties of JWT Secret file
-  file:
-    path: /etc/slurm/jwt-secret.key
-    owner: slurm
-    group: slurm
-    mode: "0600"
-
-- name: Copy env file for configuration of slurmrestd
-  copy:
-    src: slurm/default/slurmrestd
-    dest: /etc/default/slurmrestd
-    owner: root
-    group: root
-    mode: "0644"
-  notify:
-    - slurmdbd
-    - slurmrestd
-
-
 - name: Start slurm explicit after all dependencies are configured
   systemd:
     name: slurmctld
@@ -96,7 +92,6 @@
   changed_when: false
   args:
     executable: bash
-
 
 - name: Change mode of /opt/slurm directory
   file:
