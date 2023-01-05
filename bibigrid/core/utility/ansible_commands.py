@@ -45,7 +45,9 @@ ADD_PLAYBOOK_TO_LINUX_HOME = ("ln -s /opt/playbook ~/playbook", "Link /opt/playb
 
 # Execute
 PLAYBOOK_HOME = ("sudo mkdir -p /opt/playbook", "Create playbook home.")
-PLAYBOOK_HOME_RIGHTS = ("sudo chown ubuntu:ubuntu /opt/playbook", "Adjust playbook home permission.")
+# PLAYBOOK_HOME_RIGHTS = ("sudo chown ubuntu:ubuntu /opt/playbook", "Adjust playbook home permission.")
+PLAYBOOK_HOME_RIGHTS = ("uid=$(id -u); gid=$(id -g); sudo chown ${uid}:${gid} /opt/playbook",
+                        "Adjust playbook home permission.")
 MV_ANSIBLE_CONFIG = (
     "sudo install -D /opt/playbook/ansible.cfg /etc/ansible/ansible.cfg", "Move ansible configuration.")
 EXECUTE = (f"ansible-playbook {os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.SITE_YML)} -i "
