@@ -20,16 +20,42 @@ For more options see [slurm client's manpage](https://manpages.debian.org/testin
 | [NODE STATE CODES](https://slurm.schedmd.com/sinfo.html#SECTION_NODE-STATE-CODES) | Very helpful to interpret `sinfo` correctly. |
 
 
-### Slurm Packages
+## REST API
+
+BiBiGrids configures Slurm's REST API Daemon listening on `0.0.0.0:6420`. 
+
+Get token for user slurm
+```shell
+$ scontrol token -u slurm
+SLURM_JWT=eyJhbGc...
+```
+
+Get openapi specification
+```shell
+$ token=eyJhbGc...
+$ user=slurm
+$ curl -H "X-SLURM-USER-NAME: $user" -H "X-SLURM-USER-TOKEN: $token" localhost:6820/openapi
+...
+```
+
+### Read more
+
+|                                  Summary                                   |             Explanation              |
+|:--------------------------------------------------------------------------:|:------------------------------------:|
+|           [Slurm REST API](https://slurm.schedmd.com/rest.html)            |    Slurm REST API documentation      |
+| [JSON Web Tokens (JWT) Authentication](https://slurm.schedmd.com/jwt.html) | Helpful to understand JWT/SlurmRestD |
+
+
+## Slurm Packages
 
 You may have noticed that BiBiGrid doesn't use Slurm packages provided by supported operating systems.
 To be independent of the distributions release cycle we decided to build Slurm by ourselves. For those
 who want to run a specified Slurm version the following documentation might be helpful.
 
-# Prepare build system
+### Prepare build system
 
-As time of writing Slurm 22.05.7 was the latest version available. Debian 11, Ubuntu 20.04/22.04 were
-successfully tested.
+As time of writing Slurm 22.05.7 was the latest version available. Debian 11, Ubuntu 20.04/22.04 
+as build systen were successfully tested.
 
 ```
 $ apt install tmux git build-essential vim curl
@@ -41,7 +67,7 @@ $ curl https://download.schedmd.com/slurm/slurm-22.05.7.tar.bz2 --output slurm-2
 $ tar -xjf slurm-22.05.7.tar.bz2
 ```
 
-## Install build dependencies
+### Install build dependencies
 
 To enable source code repositories uncomment the lines starting with deb-src running :
 ```shell
@@ -49,20 +75,26 @@ $ sed -i.bak 's/^# *deb-src/deb-src/g' /etc/apt/sources.list && \
 apt-get update
 ```
 
-With source repositories enabled we can install build dependencies of slurm-wlm.
+With source repositories enabled install build dependencies of slurm-wlm.
 
 ```shell
 $ apt build-dep -y slurm-wlm
 ```
 
+and for Ubuntu 20.04 only additionally
+
+```shell
+$ apt install libyaml-dev libjson-c-dev libhttp-parser-dev libjwt-dev
+```
+
 To make use of [Control Group v2](https://slurm.schedmd.com/cgroup_v2.html) the development 
-files from dBus API must be installed.
+files from dBus API must be installed addional
 
 ```shell
 apt install libdbus-1-dev
 ```
 
-## Build slurm
+### Build slurm
 
 Building slurm is now an easy job.
 
@@ -73,18 +105,18 @@ $ make -j 8
 ```
 
 
-## Create deb package
+### Create deb package
 
-### Determine dependencies
+#### Determine dependencies
 
 ```shell
 $ python3 get_deb_dependencies.py --checkinstall --substr slurm slurm-wlm
 libc6 \(\>= 2.29\), libhwloc15 \(\>= 2.1.0+dfsg\), liblz4-1 \(\>= 0.0~r130\), ...
 ```
 
+#### Run Checkinstall
 
-### Run Checkinstall
-Checkinstall helps to create a debian package:
+Checkinstall makes it easy to create a debian package:
 
 ```shell
 $ checkinstall --type=debian --install=no --fstrans=no \
@@ -98,3 +130,9 @@ $ checkinstall --type=debian --install=no --fstrans=no \
 --replaces="slurm-client, slurm-wlm, slurm-wlm-basic-plugins, slurmctld, slurmd, slurmdbd, slurmrestd" \
 --conflicts="slurm-client, slurm-wlm, slurm-wlm-basic-plugins, slurmctld, slurmd, slurmdbd, slurmrestd"
 ```
+
+### Read more
+
+|                                              Summary                                               |                 Explanation                 |
+|:--------------------------------------------------------------------------------------------------:|:-------------------------------------------:|
+| [Woongbin's blog](https://wbk.one/%2Farticle%2F42a272c3%2Fapt-get-build-dep-to-install-build-deps) | Exhausted example for building deb packages |
