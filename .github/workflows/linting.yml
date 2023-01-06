@@ -6,6 +6,10 @@ jobs:
     container:
       image: quay.io/cmg/pylint-ansiblelint:2.14.5_6.8.0
     steps:
+      - name: list repo
+        run: ls -al /github/home
+      - name: list home
+        run: ls -al
       - name: ansible_lint
         run: ansible-lint resources/playbook/roles/bibigrid/tasks/main.yml
       - name: pylint_lint
