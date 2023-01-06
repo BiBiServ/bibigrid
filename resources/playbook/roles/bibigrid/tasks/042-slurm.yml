@@ -14,7 +14,6 @@
     name:
       - slurm-full
       - munge
-    state: latest
 
 - name: Create new secret (Munge)
   copy:
@@ -65,14 +64,14 @@
 
 - name: Enable slurmctld and slurmd services
   systemd:
-    name: "{{item}}"
+    name: "{{ item }}"
     enabled: true
-    masked: no
+    masked: false
     state: started
     daemon_reload: true
   with_items:
-  - slurmctld
-  - slurmd
+    - slurmctld
+    - slurmd
 
 - name: Create Slurm configuration
   template:
