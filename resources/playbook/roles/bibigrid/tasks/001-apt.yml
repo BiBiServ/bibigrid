@@ -46,6 +46,26 @@
   tags:
     - skip_ansible_lint
 
+- name: Add apt.bi.denbi.de repository key
+  apt_key:
+    url: 'https://apt.bi.denbi.de/repo_key.key'
+    state: present
+
+- name: Add apt.bi.denbi.de repository
+  apt_repository:
+    repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
+
+- when: ansible_distribution_release == 'focal'
+  block:
+    - name: Add mariadb.org repository key
+      apt_key:
+        url: 'https://mariadb.org/mariadb_release_signing_key.asc'
+        state: present
+
+    - name: Add mariadb.org repository
+      apt_repository:
+        repo: 'deb https://mirror.netcologne.de/mariadb/repo/10.5/ubuntu focal main'
+
 - name: Update apt cache
   apt:
     upgrade: 'yes'

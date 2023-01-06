@@ -14,9 +14,7 @@
       copy:
         src: ~/bin
         dest: /usr/local
-        owner: ubuntu
-        group: ubuntu
-        mode: '0774'
+        mode: '0775'
     - name: Delete origin folder
       file:
         path: ~{{ ansible_facts.env.SUDO_USER }}/bin

@@ -1,5 +1,13 @@
 # BiBiGrid
-BiBiGrid is a cloud cluster creation and management framework for OpenStack (and more providers in the future).
+BiBiGrid is a cloud cluster creation and management framework for OpenStack
+(and more providers in the future).
+
+BiBiGrid uses Ansible to configure standard Ubuntu 20.04/22.04 LTS as 
+well as Debian 11 cloud images. Depending on your configuration BiBiGrid
+can set up an HCP cluster for grid computing (Slurm Workload Manager, 
+a shared filesystem (on local discs and attached volumes), 
+a cloud IDE for writing, running and debugging (Theia Web IDE) and many more.
+
 
 > **Note**
 > The latest version is currently work in progress. Future changes are likely.

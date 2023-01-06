@@ -2,5 +2,9 @@
 [Unit]
 After=slurmdbd.service
 [Service]
+EnvironmentFile=
+EnvironmentFile=/etc/default/slurmrestd
+User=nobody
+Group=nogroup
 ExecStart=
 ExecStart=/usr/sbin/slurmrestd $SLURMRESTD_OPTIONS
