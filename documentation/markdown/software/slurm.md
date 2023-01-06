@@ -48,14 +48,14 @@ $ curl -H "X-SLURM-USER-NAME: $user" -H "X-SLURM-USER-TOKEN: $token" localhost:6
 
 ## Slurm Packages
 
-You may have noticed that BiBiGrid doesn't use Slurm packages provided by supported operating systems.
+You may have noticed that BiBiGrid doesn't use Slurm packages provided by the supported operating systems.
 To be independent of the distributions release cycle we decided to build Slurm by ourselves. For those
-who want to run a specified Slurm version the following documentation might be helpful.
+who want to run a specific Slurm version the following documentation might be helpful.
 
 ### Prepare build system
 
-As time of writing Slurm 22.05.7 was the latest version available. Debian 11, Ubuntu 20.04/22.04 
-as build systen were successfully tested.
+At time of writing Slurm, 22.05.7 was the latest version available. Debian 11, Ubuntu 20.04/22.04 
+as build system were successfully tested.
 
 ```
 $ apt install tmux git build-essential vim curl
@@ -88,7 +88,7 @@ $ apt install libyaml-dev libjson-c-dev libhttp-parser-dev libjwt-dev
 ```
 
 To make use of [Control Group v2](https://slurm.schedmd.com/cgroup_v2.html) the development 
-files from dBus API must be installed addional
+files from dBus API must be installed additionally.
 
 ```shell
 apt install libdbus-1-dev
