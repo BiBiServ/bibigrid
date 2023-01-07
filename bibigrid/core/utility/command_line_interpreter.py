@@ -17,7 +17,7 @@ def check_cid(cid):
         LOG.info("-cid %s is not a cid, but probably the entire master name. Using '%s' as "
                     "cid instead.", cid, new_cid)
         return new_cid
-    elif "." in cid:
+    if "." in cid:
         LOG.info("-cid %s is not a cid, but probably the master's ip. "
                     "Using the master ip instead of cid only works if a cluster key is in your systems default ssh key "
                     "location (~/.ssh/). Otherwise bibigrid can't identify the cluster key.")
