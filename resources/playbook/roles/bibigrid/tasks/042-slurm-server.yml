@@ -47,7 +47,7 @@
 
 - name: Create system overrides directories (slurmdbdm slurmrestd)
   file:
-    path: "/etc/systemd/system/{{item}}.service.d"
+    path: "/etc/systemd/system/{{ item }}.service.d"
     group: root
     owner: root
     mode: "0755"
@@ -58,8 +58,8 @@
 
 - name: Copy system overrides (slurmdbdm slurmrestd)
   copy:
-    src: "slurm/systemd/{{item}}.override"
-    dest: "/etc/systemd/system/{{item}}.service.d/override.conf"
+    src: "slurm/systemd/{{ item }}.override"
+    dest: "/etc/systemd/system/{{ item }}.service.d/override.conf"
     mode: "0644"
     owner: root
     group: root
@@ -72,14 +72,14 @@
 
 - name: Enable slurmdbd and slurmrestd services
   systemd:
-    name: "{{item}}"
+    name: "{{ item }}"
     enabled: true
-    masked: no
+    masked: false
     state: started
     daemon_reload: true
   with_items:
-  - slurmdbd
-  - slurmrestd
+    - slurmdbd
+    - slurmrestd
 
 - name: Start slurm explicit after all dependencies are configured
   systemd:

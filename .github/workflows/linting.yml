@@ -1,0 +1,20 @@
+name: linting
+on: [push]
+jobs:
+  linting-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: ansible_lint
+        run: ansible-lint resources/playbook/roles/bibigrid/tasks/main.yml
+      - name: pylint_lint
+        run: pylint bibigrid

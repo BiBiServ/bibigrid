@@ -46,6 +46,8 @@
   ignore_errors: true
   changed_when: false
   register: zabbix_schema_exists
+  tags:
+    - skip_ansible_lint
 
 - name: Import initial db schema
   shell: "set -o pipefail && zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | \
