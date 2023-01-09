@@ -1,9 +1,9 @@
 # Config Master node Bielefeld
-# Master node ipv4: {{ public_ip.ansible_facts.ipify_public_ip }}
+# This node's ipv4: {{ public_ip.ansible_facts.ipify_public_ip }}
 
 [Interface]
 Address = 10.0.0.1/24
-PrivateKey = {{ wireguard["private_key"] }}
+PrivateKey = {{ wireguard.private_key }}
 ListenPort = 51820
 
 # For every vpn but self
