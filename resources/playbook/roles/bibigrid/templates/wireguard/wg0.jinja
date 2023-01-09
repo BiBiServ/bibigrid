@@ -1,0 +1,19 @@
+# Config Master node Bielefeld
+# Master node ipv4: {{ public_ip.ansible_facts.ipify_public_ip }}
+
+[Interface]
+Address = 10.0.0.1/24
+PrivateKey = {{ wireguard["private_key"] }}
+ListenPort = 51820
+
+# For every vpn but self
+{% for peer in wireguard.peers %}
+{% if peer.remote_vpn_ip != public_ip.ansible_facts.ipify_public_ip %}
+[Peer]  # {{ peer.name }}
+PublicKey = {{ wireguard.public_key }}
+AllowedIPs = 10.0.0.0/24, {{peer.subnet}}
+Endpoint = {{ peer.remote_vpn_ip }}:51820
+{% endif %}
+{% endfor %}
+
+PersistentKeepalive = 25

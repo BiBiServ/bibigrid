@@ -3,16 +3,20 @@
     name: wireguard
     state: present
 
+- name: Get my public IP
+  community.general.ipify_facts:
+  register: public_ip
+
 - name: Create wg0.conf file
   template:
-    src: wireguard/wg0.conf
+    src: wireguard/wg0.jinja
     dest: /etc/wireguard/wg0.conf
     owner: ubuntu
     group: ubuntu
 
-- name: Up WireGuard
-  shell:
-    cmd: wg-quick up wg0
+#- name: Up WireGuard
+#  shell:
+#    cmd: wg-quick up wg0
 
 # Currently automatically done by wireguard
 # - name: Allow ip forwarding
