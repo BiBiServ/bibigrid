@@ -39,7 +39,7 @@
     - import_tasks: 001-yum.yml
 
 - name: Configure Wireguard for VPNs
-  when: "'master' in group_names or 'vpnwkrs' in group_names" # needs condition for whether vpn is used at all
+  when: "'master' in group_names or 'vpnwkrs' in group_names"
   tags: ["vpn"]
   block:
     - debug:
