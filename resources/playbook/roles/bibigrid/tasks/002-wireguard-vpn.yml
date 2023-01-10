@@ -14,9 +14,17 @@
     owner: ubuntu
     group: ubuntu
 
-#- name: Up WireGuard
-#  shell:
-#    cmd: wg-quick up wg0
+- name: Reload WireGuard Configuration
+  when: "'wg0' in ansible_interfaces"
+  become: yes
+  shell:
+    cmd: "wg syncconf wg0 <(wg-quick strip wg0)"
+
+- name: Up WireGuard
+  when: "'wg0' not in ansible_interfaces"
+  shell:
+    cmd: wg-quick up wg0
+  ignore_errors: true
 
 # Currently automatically done by wireguard
 # - name: Allow ip forwarding
