@@ -48,3 +48,10 @@
   systemd:
     name: apache2
     state: restarted
+
+- name: systemd-networkd restart
+  service:
+    name: systemd-networkd
+    state: restarted
+    enabled: yes
+  become: yes

@@ -13,12 +13,9 @@
     dest: /etc/wireguard/wg0.conf
     owner: ubuntu
     group: ubuntu
-
-- name: Reload WireGuard Configuration
-  when: "'wg0' in ansible_interfaces"
-  become: yes
-  shell:
-    cmd: "wg syncconf wg0 <(wg-quick strip wg0)"
+  notify:
+    - systemd-networkd restart
+    - reload wireguard configuration
 
 - name: Up WireGuard
   when: "'wg0' not in ansible_interfaces"
