@@ -55,3 +55,9 @@
     state: restarted
     enabled: yes
   become: yes
+
+- name: reload wireguard configuration
+  when: "'wg0' in ansible_interfaces"
+  become: yes
+  shell:
+    cmd: "bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'"
