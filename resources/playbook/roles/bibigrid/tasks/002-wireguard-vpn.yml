@@ -7,28 +7,23 @@
   community.general.ipify_facts:
   register: public_ip
 
-- name: Create wg0.conf file
+- name: Setup wg0 device
   template:
-    src: wireguard/wg0.jinja
-    dest: /etc/wireguard/wg0.conf
-    owner: ubuntu
-    group: ubuntu
+    src: wireguard/device.jinja
+    dest: /etc/systemd/network/wg0.netdev
+    owner: root
+    group: systemd-network
+    mode: 0640
+  become: yes
   notify:
     - systemd-networkd restart
-    - reload wireguard configuration
 
-- name: Up WireGuard
-  when: "'wg0' not in ansible_interfaces"
-  shell:
-    cmd: wg-quick up wg0
-  ignore_errors: true
-
-# Currently automatically done by wireguard
-# - name: Allow ip forwarding
-#   sysctl:
-#     name: net.ipv4.ip_forward
-#     value: 1
-#     sysctl_set: true
-#     state: present
-#     reload: true
-#   when: "ansible_distribution_file_variety == 'Debian'"
+- name: Setup wg0 network
+  template:
+    src: wireguard/network.jinja
+    dest: /etc/systemd/network/wg0.network
+    owner: root
+    group: systemd-network
+    mode: 0640
+  become: yes
+  notify: systemd-networkd restart
