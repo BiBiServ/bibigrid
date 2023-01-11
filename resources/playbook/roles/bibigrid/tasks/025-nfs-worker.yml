@@ -5,7 +5,7 @@
 
 - name: Wait for nfs-server available
   wait_for:
-    host: "{{ master.private_v4 }}"
+    host: "{{ '10.0.0.1' if wireguard is defined else master.private_v4 }}"
     port: 2049
     delay: 2
     state: started
@@ -23,7 +23,7 @@
 - name: Mount shares
   mount:
     path: "{{ item.dst }}"
-    src: "{{ master.private_v4 }}:{{ item.src }}"
+    src: "{{ '10.0.0.1' if wireguard is defined else master.private_v4 }}:{{ item.src }}"
     fstype: nfs4
     state: mounted
   with_items:
