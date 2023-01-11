@@ -9,7 +9,7 @@ Description=WireGuard tunnel wg0
 # This node's ipv4: {{ this_peer.ip }}
 
 PrivateKey = {{ this_peer.private_key }}
-ListenPort = {{ wireguard.listen_port }}
+ListenPort = {{ wireguard.listen_port|default(51820) }}
 
 # For every vpn but self
 {% for peer in wireguard.peers %}
