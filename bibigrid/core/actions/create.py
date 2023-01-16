@@ -38,7 +38,7 @@ def get_identifier(identifier, cluster_id, worker_group="", additional=""):
     @return: the generated string
     """
     general = PREFIX_WITH_SEP + identifier + str(worker_group) + SEPARATOR + cluster_id
-    if additional:
+    if additional or additional == 0:
         return general + SEPARATOR + str(additional)
     return general
 
@@ -138,12 +138,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             #    name = identifier(number=self.worker_counter, cluster_id=self.cluster_id)
             #    self.worker_counter += 1
             else:
-                print("TEST")
                 name = identifier(cluster_id=self.cluster_id, additional=self.vpn_counter)
-                print(name)
-                print(identifier(cluster_id="123", additional="456"))
                 self.vpn_counter += 1
-                raise Exception()
         LOG.info("Starting instance/server %s", name)
         flavor = instance_type["type"]
         image = instance_type["image"]
