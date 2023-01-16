@@ -134,9 +134,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         with self.thread_lock:
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(cluster_id=self.cluster_id)
-            elif identifier == WORKER_IDENTIFIER:  # pylint: disable=comparison-with-callable
-                name = identifier(number=self.worker_counter, cluster_id=self.cluster_id)
-                self.worker_counter += 1
+            #elif identifier == WORKER_IDENTIFIER:  # pylint: disable=comparison-with-callable
+            #    name = identifier(number=self.worker_counter, cluster_id=self.cluster_id)
+            #    self.worker_counter += 1
             else:
                 print("TEST")
                 name = identifier(cluster_id=self.cluster_id, additional=self.vpn_counter)
