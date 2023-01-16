@@ -83,7 +83,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         LOG.debug("Cluster-ID: %s", self.cluster_id)
         self.name = AC_NAME.format(cluster_id=self.cluster_id)
         self.key_name = KEY_NAME.format(cluster_id=self.cluster_id)
-        self.instance_counter = 0
+        self.worker_counter = 0
+        self.vpn_counter = 0
         self.thread_lock = threading.Lock()
         self.use_master_with_public_ip = configurations[0].get("useMasterWithPublicIp", True)
         LOG.debug("Keyname: %s", self.key_name)
@@ -134,10 +135,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(cluster_id=self.cluster_id)
             elif identifier == WORKER_IDENTIFIER:  # pylint: disable=comparison-with-callable
-                name = identifier(number=self.instance_counter, cluster_id=self.cluster_id)
+                name = identifier(number=self.worker_counter, cluster_id=self.cluster_id)
+                self.worker_counter += 1
             else:
-                name = identifier(cluster_id=self.cluster_id)
-            self.instance_counter += 1
+                name = identifier(number=self.vpn_counter, cluster_id=self.cluster_id)
+                self.vpn_counter += 1
         LOG.info("Starting instance/server %s", name)
         flavor = instance_type["type"]
         image = instance_type["image"]
