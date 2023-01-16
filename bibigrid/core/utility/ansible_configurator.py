@@ -140,6 +140,17 @@ def generate_common_configuration_yaml(cidrs, configuration, cluster_id, ssh_use
     for from_key, to_key in [("waitForServices", "wait_for_services"), ("ansibleRoles", "ansible_roles"),
                              ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
         pass_through(configuration, common_configuration_yaml, from_key, to_key)
+
+    # for configuration in configurations:
+    #   generate_private_key
+    #   generate_public_key
+    #   public_ip
+    #   private_ip
+    #   subnet
+    #   name
+    # common_configuration_yaml["wireguard"] = {"peers": list_of_peers}
+
+
     return common_configuration_yaml
 
 
@@ -157,17 +168,23 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
                           }
     # vpnwkr are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
+
+    worker_count = 0
+    vpn_count = 0
     for configuration in configurations:
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                            additional=f"[0:{worker.get('count', 1) - 1}]")
+                                            additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
+            worker_count += worker.get('count', 1)
             worker_dict = to_instance_host_dict(ssh_user, ip="", local=False)
             if "ephemeral" in worker["type"]:
                 workers["children"]["ephemeral"]["hosts"][name] = worker_dict
             else:
                 workers["hosts"][name] = worker_dict
+
             if configuration.get("vpnInstance"):
-                name = create.VPN_WORKER_IDENTIFIER(cluster_id)
+                name = create.VPN_WORKER_IDENTIFIER(cluster_id,
+                                                    additional=vpn_count)
                 vpn_dict = to_instance_host_dict(ssh_user, ip="", local=False)
                 workers["children"]["vpnwkrs"]["hosts"][name] = vpn_dict
     return ansible_hosts_yaml
