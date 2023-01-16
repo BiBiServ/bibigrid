@@ -130,7 +130,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         :return:
         """
         # potentially weird counting due to master
-        print(identifier)
         with self.thread_lock:
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(cluster_id=self.cluster_id)

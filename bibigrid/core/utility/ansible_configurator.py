@@ -305,7 +305,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
                                                                      default_user=default_user)),
         (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(cluster_dict, configurations[0],
                                                              providers[0], cluster_id)),
-        (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurationsW,
+        (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations,
                                                             cluster_id)),
         (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(ansible_roles))]:
         write_yaml(path, generated_yaml, alias)
