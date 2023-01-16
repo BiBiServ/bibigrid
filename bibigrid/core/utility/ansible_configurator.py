@@ -183,7 +183,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
                 workers["hosts"][name] = worker_dict
 
             if configuration.get("vpnInstance"):
-                name = create.VPN_WORKER_IDENTIFIER(cluster_id,
+                name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id,
                                                     additional=vpn_count)
                 vpn_dict = to_instance_host_dict(ssh_user, ip="", local=False)
                 workers["children"]["vpnwkrs"]["hosts"][name] = vpn_dict
