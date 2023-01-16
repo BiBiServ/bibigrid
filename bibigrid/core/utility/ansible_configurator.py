@@ -10,10 +10,10 @@ import yaml
 from bibigrid.core.actions import create
 from bibigrid.core.actions import ide
 from bibigrid.core.actions import list_clusters
-from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility import id_generation
-from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility import yaml_dumper
+from bibigrid.core.utility.handler import configuration_handler
+from bibigrid.core.utility.paths import ansible_resources_path as aRP
 
 DEFAULT_NFS_SHARES = ["/vol/spool"]
 ADDITIONAL_PATH = "additional/"
@@ -29,6 +29,7 @@ SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "munge_key": id_generation.generate_munge_key(),
               "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 900, "TreeWidth": 128}}
 LOG = logging.getLogger("bibigrid")
+
 
 def generate_site_file_yaml(custom_roles):
     """
@@ -51,7 +52,7 @@ def generate_site_file_yaml(custom_roles):
     return site_yaml
 
 
-def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id): # pylint: disable=too-many-locals
+def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id):  # pylint: disable=too-many-locals
     """
     ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
@@ -130,7 +131,7 @@ def generate_common_configuration_yaml(cidrs, configuration, cluster_id, ssh_use
                                                        ext_nfs_share in (configuration.get("extNfsShares", []))]
 
     if configuration.get("ide"):
-        common_configuration_yaml["ide_conf"] = mergedeep.merge({}, IDE_CONF,  configuration.get("ideConf", {}),
+        common_configuration_yaml["ide_conf"] = mergedeep.merge({}, IDE_CONF, configuration.get("ideConf", {}),
                                                                 strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
     if configuration.get("zabbix"):
         common_configuration_yaml["zabbix_conf"] = mergedeep.merge({}, ZABBIX_CONF, configuration.get("zabbixConf", {}),
@@ -142,7 +143,7 @@ def generate_common_configuration_yaml(cidrs, configuration, cluster_id, ssh_use
     return common_configuration_yaml
 
 
-def generate_ansible_hosts_yaml(ssh_user, configuration, cluster_id):
+def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
     """
     Generates ansible_hosts_yaml (inventory file).
     :param ssh_user: str global SSH-username
@@ -152,22 +153,27 @@ def generate_ansible_hosts_yaml(ssh_user, configuration, cluster_id):
     """
     LOG.info("Generating ansible hosts file...")
     ansible_hosts_yaml = {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
-                          "workers": {"hosts": {}, "children": {"ephemeral": {"hosts": {}}}}
+                          "workers": {"hosts": {}, "children": {"ephemeral": {"hosts": {}}, "vpnwkrs": {"hosts": {}}}}
                           }
     # vpnwkr are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
-    for index, worker in enumerate(configuration.get("workerInstances", [])):
-        name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                        additional=f"[0:{worker.get('count', 1) - 1}]")
-        worker_dict = to_instance_host_dict(ssh_user, ip="", local=False)
-        if "ephemeral" in worker["type"]:
-            workers["children"]["ephemeral"]["hosts"][name] = worker_dict
-        else:
-            workers["hosts"][name] = worker_dict
+    for configuration in configurations:
+        for index, worker in enumerate(configuration.get("workerInstances", [])):
+            name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+                                            additional=f"[0:{worker.get('count', 1) - 1}]")
+            worker_dict = to_instance_host_dict(ssh_user, ip="", local=False)
+            if "ephemeral" in worker["type"]:
+                workers["children"]["ephemeral"]["hosts"][name] = worker_dict
+            else:
+                workers["hosts"][name] = worker_dict
+            if configuration.get("vpnInstance"):
+                name = create.VPN_WORKER_IDENTIFIER(cluster_id)
+                vpn_dict = to_instance_host_dict(ssh_user, ip="", local=False)
+                workers["children"]["vpnwkrs"]["hosts"][name] = vpn_dict
     return ansible_hosts_yaml
 
 
-def to_instance_host_dict(ssh_user, ip="localhost", local=True): # pylint: disable=invalid-name
+def to_instance_host_dict(ssh_user, ip="localhost", local=True):  # pylint: disable=invalid-name
     """
     Generates host entry
     :param ssh_user: str global SSH-username
@@ -299,7 +305,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
                                                                      default_user=default_user)),
         (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(cluster_dict, configurations[0],
                                                              providers[0], cluster_id)),
-        (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations[0],
+        (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurationsW,
                                                             cluster_id)),
         (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(ansible_roles))]:
         write_yaml(path, generated_yaml, alias)
