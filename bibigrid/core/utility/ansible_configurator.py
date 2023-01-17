@@ -53,21 +53,22 @@ def generate_site_file_yaml(custom_roles):
     return site_yaml
 
 
-def generate_instances_yaml(cluster_dict, configurations, provider, cluster_id):  # pylint: disable=too-many-locals
+def generate_instances_yaml(cluster_dict, configurations, providers, cluster_id):  # pylint: disable=too-many-locals
     """
     ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
     :param cluster_dict: cluster_dict to get the information from
-    :param configuration: configuration of master cloud ToDo needs to be list in the future
-    :param provider: provider of master cloud ToDo needs to be list in the future
+    :param configurations: configurations
+    :param providers: providers
     :param cluster_id: To get proper naming
     :return: filtered information (dict)
     """
     LOG.info("Generating instances file...")
-    workers = []
+    workers = {}
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
     worker_count = 0
-    for configuration in configurations:
+    for configuration, provider in zip(configurations, providers):
+        workers[configuration["identifier"]] = []
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
@@ -78,7 +79,8 @@ def generate_instances_yaml(cluster_dict, configurations, provider, cluster_id):
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                               additional=r"\d+")
-            workers.append({"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict})
+            workers[configuration["identifier"]].append({"name": name, "regexp": regexp, "image": image,
+                                                         "network": network, "flavor": flavor_dict})
     master = {key: cluster_dict["master"][key] for key in
               ["name", "private_v4", "public_v4", "public_v6", "cloud_specification"]}
     master["flavor"] = {key: cluster_dict["master"]["flavor"][key] for key in flavor_keys}
@@ -163,7 +165,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
     """
     Generates ansible_hosts_yaml (inventory file).
     :param ssh_user: str global SSH-username
-    :param configuration: dict
+    :param configurations: dict
     :param cluster_id: id of cluster
     :return: ansible_hosts yaml (dict)
     """
@@ -220,15 +222,8 @@ def get_cidrs(configurations):
     """
     all_cidrs = []
     for configuration in configurations:
-        provider_cidrs = {"provider": "identifier", "provider_cidrs": []}
-        if isinstance(configuration["subnet"], list):
-            for subnet_id_or_name in configuration["subnet"]:
-                subnet = configuration["subnet_cidrs"]
-                provider_cidrs["provider_cidrs"].append(subnet["cidr"])  # check key again
-        else:
-            subnet = configuration["subnet_cidrs"]
-            provider_cidrs["provider_cidrs"].append(subnet["cidr"])
-        all_cidrs.append(provider_cidrs)
+        subnet = configuration["subnet_cidrs"]
+        provider_cidrs = {"provider": configuration["identifier"], "provider_cidrs": subnet["cidr"]}
     return all_cidrs
 
 
@@ -326,7 +321,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
                                                                      ssh_user=configurations[0]["sshUser"],
                                                                      default_user=default_user)),
         (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(cluster_dict, configurations,
-                                                             providers[0], cluster_id)),
+                                                             providers, cluster_id)),
         (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations,
                                                             cluster_id)),
         (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(ansible_roles))]:
