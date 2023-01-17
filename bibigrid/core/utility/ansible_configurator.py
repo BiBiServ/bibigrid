@@ -154,7 +154,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
             peers.append({"name": "Test", "private_key": private_key, "public_key": public_key,
                           "ip":configuration["floating_ip"], "subnet": ""}) # configuration["subnet_cidr"]
             #subnet
-        common_configuration_yaml["wirepuard"] = {"peers": peers}
+        common_configuration_yaml["wireguard"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
 
     return common_configuration_yaml
 
@@ -320,7 +320,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
     for path, generated_yaml in [
         (aRP.WORKER_SPECIFICATION_FILE, generate_worker_specification_file_yaml(configurations)),
-        (aRP.COMMONS_CONFIG_FILE, generate_common_configuration_yaml(cidrs=get_cidrs(configurations, providers),
+        (aRP.COMMONS_CONFIG_FILE, generate_common_configuration_yaml(cidrs=get_cidrs(configurations),
                                                                      configurations=configurations,
                                                                      cluster_id=cluster_id,
                                                                      ssh_user=configurations[0]["sshUser"],
