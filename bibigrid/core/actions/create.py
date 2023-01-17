@@ -273,7 +273,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 configuration["network"] = provider.get_network_id_by_subnet(configuration["subnet"])
             elif not configuration.get("subnet"):
                 configuration["subnet"] = provider.get_subnet_ids_by_network(configuration["network"])
-            print("TEST", provider.get_subnet_ids_by_network(configuration["network"]))
+            configuration["subnet_cidrs"] = provider.get_subnet_by_id_or_name(configuration["subnet"])
+            print(configuration["subnet_cidrs"])
             configuration["sshUser"] = self.ssh_user  # is used in ansibleConfigurator
 
     def upload_data(self):

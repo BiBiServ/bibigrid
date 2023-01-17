@@ -211,7 +211,7 @@ def to_instance_host_dict(ssh_user, ip="localhost", local=True):  # pylint: disa
     return host_yaml
 
 
-def get_cidrs(configurations, providers):
+def get_cidrs(configurations):
     """
     Gets cidrs of all subnets in all providers
     :param configurations: list of configurations (dict)
@@ -219,14 +219,14 @@ def get_cidrs(configurations, providers):
     :return:
     """
     all_cidrs = []
-    for provider, configuration in zip(providers, configurations):
-        provider_cidrs = {"provider": type(provider).__name__, "provider_cidrs": []}
+    for configuration in configurations:
+        provider_cidrs = {"provider": "identifier", "provider_cidrs": []}
         if isinstance(configuration["subnet"], list):
             for subnet_id_or_name in configuration["subnet"]:
-                subnet = provider.get_subnet_by_id_or_name(subnet_id_or_name)
+                subnet = configuration["subnet_cidrs"]
                 provider_cidrs["provider_cidrs"].append(subnet["cidr"])  # check key again
         else:
-            subnet = provider.get_subnet_by_id_or_name(configuration["subnet"])
+            subnet = configuration["subnet_cidrs"]
             provider_cidrs["provider_cidrs"].append(subnet["cidr"])
         all_cidrs.append(provider_cidrs)
     return all_cidrs
