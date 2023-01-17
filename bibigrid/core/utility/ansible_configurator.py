@@ -52,7 +52,7 @@ def generate_site_file_yaml(custom_roles):
     return site_yaml
 
 
-def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id):  # pylint: disable=too-many-locals
+def generate_instances_yaml(cluster_dict, configurations, provider, cluster_id):  # pylint: disable=too-many-locals
     """
     ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
@@ -65,17 +65,19 @@ def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id): 
     LOG.info("Generating instances file...")
     workers = []
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
-    for index, worker in enumerate(configuration.get("workerInstances", [])):
-        flavor = provider.get_flavor(worker["type"])
-        flavor_dict = {key: flavor[key] for key in flavor_keys}
-        image = worker["image"]
-        network = configuration["network"]
-        worker_range = "[0-{}]"
-        name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                        additional=worker_range.format(worker.get('count', 1) - 1))
-        regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                          additional=r"\d+")
-        workers.append({"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict})
+    worker_count = 0
+    for configuration in configurations:
+        for index, worker in enumerate(configuration.get("workerInstances", [])):
+            name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+                                            additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
+            worker_count += worker.get('count', 1)
+            flavor = provider.get_flavor(worker["type"])
+            flavor_dict = {key: flavor[key] for key in flavor_keys}
+            image = worker["image"]
+            network = configuration["network"]
+            regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+                                              additional=r"\d+")
+            workers.append({"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict})
     master = {key: cluster_dict["master"][key] for key in
               ["name", "private_v4", "public_v4", "public_v6", "cloud_specification"]}
     master["flavor"] = {key: cluster_dict["master"]["flavor"][key] for key in flavor_keys}
@@ -320,7 +322,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
                                                                      cluster_id=cluster_id,
                                                                      ssh_user=configurations[0]["sshUser"],
                                                                      default_user=default_user)),
-        (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(cluster_dict, configurations[0],
+        (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(cluster_dict, configurations,
                                                              providers[0], cluster_id)),
         (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations,
                                                             cluster_id)),
