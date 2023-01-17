@@ -3,7 +3,7 @@ Holds the abstract class Provider
 """
 
 
-class Provider: # pylint: disable=too-many-public-methods
+class Provider:  # pylint: disable=too-many-public-methods
     """
     See in detailed return value information in tests>provider>test_Provider.
     Make sure to register your newly implemented provider in provider_handler: name:class
@@ -22,8 +22,10 @@ class Provider: # pylint: disable=too-many-public-methods
         """
         self.cloud_specification = cloud_specification  # contains sensitive information!
         self.cloud_specification["identifier"] = self.cloud_specification.get('identifier') or \
-                                                 self.cloud_specification.get('profile') or self.cloud_specification[
-            'auth'].get('project_id') or self.cloud_specification["auth"].get('application_credential_id') or "Unknown"
+                                                 self.cloud_specification.get('profile') or \
+                                                 self.cloud_specification['auth'].get('project_id') or \
+                                                 self.cloud_specification["auth"].get(
+                                                     'application_credential_id')
 
     def create_application_credential(self, name=None):
         """
@@ -81,7 +83,8 @@ class Provider: # pylint: disable=too-many-public-methods
         :return: said list of servers or empty list if none found
         """
 
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None): # pylint: disable=too-many-arguments
+    def create_server(self, name, flavor, image, network, key_name=None, wait=True,
+                      volumes=None):  # pylint: disable=too-many-arguments
         """
         Creates a new server and waits for it to be accessible if wait=True. If volumes are given, they are attached.
         Returns said server (dict)
