@@ -192,6 +192,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         #         threads.append(worker_thread)
         LOG.info("Waiting for servers to start-up on cloud %s", provider.cloud_specification['identifier'])
         vpn_or_m_floating_ip_address = vpn_or_master_thread.join()
+        configuration["floating_ip"] = vpn_or_m_floating_ip_address
         self.setup_reachable_servers(configuration, vpn_or_m_floating_ip_address)
         # for thread in threads:
         #     thread.join()
@@ -272,6 +273,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 configuration["network"] = provider.get_network_id_by_subnet(configuration["subnet"])
             elif not configuration.get("subnet"):
                 configuration["subnet"] = provider.get_subnet_ids_by_network(configuration["network"])
+            print("TEST", provider.get_subnet_ids_by_network(configuration["network"]))
             configuration["sshUser"] = self.ssh_user  # is used in ansibleConfigurator
 
     def upload_data(self):

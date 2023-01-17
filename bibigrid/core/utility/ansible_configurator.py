@@ -14,6 +14,7 @@ from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
+from bibigrid.core.utility.wireguard import wireguard_keys
 
 DEFAULT_NFS_SHARES = ["/vol/spool"]
 ADDITIONAL_PATH = "additional/"
@@ -99,59 +100,61 @@ def pass_through(dict_from, dict_to, key_from, key_to=None):
         dict_to[key_to] = dict_from[key_from]
 
 
-def generate_common_configuration_yaml(cidrs, configuration, cluster_id, ssh_user, default_user):
+def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user):
     """
     Generates common_configuration yaml (dict)
     :param cidrs: str subnet cidrs (provider generated)
-    :param configuration: master configuration (first in file)
+    :param configurations: master configuration (first in file)
     :param cluster_id: Id of cluster
     :param ssh_user: user for ssh connections
     :param default_user: Given default user
     :return: common_configuration_yaml (dict)
     """
+    master_configuration = configurations[0]
     LOG.info("Generating common configuration file...")
     # print(configuration.get("slurmConf", {}))
     common_configuration_yaml = {"cluster_id": cluster_id, "cluster_cidrs": cidrs,
                                  "default_user": default_user,
-                                 "local_fs": configuration.get("localFS", False),
-                                 "local_dns_lookup": configuration.get("localDNSlookup", False),
-                                 "use_master_as_compute": configuration.get("useMasterAsCompute", True),
-                                 "enable_slurm": configuration.get("slurm", False),
-                                 "enable_zabbix": configuration.get("zabbix", False),
-                                 "enable_nfs": configuration.get("nfs", False),
-                                 "enable_ide": configuration.get("ide", False),
-                                 "slurm": configuration.get("slurm", True), "ssh_user": ssh_user,
-                                 "slurm_conf": mergedeep.merge({}, SLURM_CONF, configuration.get("slurmConf", {}),
+                                 "local_fs": master_configuration.get("localFS", False),
+                                 "local_dns_lookup": master_configuration.get("localDNSlookup", False),
+                                 "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
+                                 "enable_slurm": master_configuration.get("slurm", False),
+                                 "enable_zabbix": master_configuration.get("zabbix", False),
+                                 "enable_nfs": master_configuration.get("nfs", False),
+                                 "enable_ide": master_configuration.get("ide", False),
+                                 "slurm": master_configuration.get("slurm", True), "ssh_user": ssh_user,
+                                 "slurm_conf": mergedeep.merge({}, SLURM_CONF,
+                                                               master_configuration.get("slurmConf", {}),
                                                                strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
                                  }
-    if configuration.get("nfs"):
-        nfs_shares = configuration.get("nfsShares", [])
+    if master_configuration.get("nfs"):
+        nfs_shares = master_configuration.get("nfsShares", [])
         nfs_shares = nfs_shares + DEFAULT_NFS_SHARES
         common_configuration_yaml["nfs_mounts"] = [{"src": "/" + nfs_share, "dst": "/" + nfs_share}
                                                    for nfs_share in nfs_shares]
         common_configuration_yaml["ext_nfs_mounts"] = [{"src": ext_nfs_share, "dst": ext_nfs_share} for
-                                                       ext_nfs_share in (configuration.get("extNfsShares", []))]
+                                                       ext_nfs_share in (master_configuration.get("extNfsShares", []))]
 
-    if configuration.get("ide"):
-        common_configuration_yaml["ide_conf"] = mergedeep.merge({}, IDE_CONF, configuration.get("ideConf", {}),
+    if master_configuration.get("ide"):
+        common_configuration_yaml["ide_conf"] = mergedeep.merge({}, IDE_CONF, master_configuration.get("ideConf", {}),
                                                                 strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
-    if configuration.get("zabbix"):
-        common_configuration_yaml["zabbix_conf"] = mergedeep.merge({}, ZABBIX_CONF, configuration.get("zabbixConf", {}),
+    if master_configuration.get("zabbix"):
+        common_configuration_yaml["zabbix_conf"] = mergedeep.merge({}, ZABBIX_CONF,
+                                                                   master_configuration.get("zabbixConf", {}),
                                                                    strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
 
     for from_key, to_key in [("waitForServices", "wait_for_services"), ("ansibleRoles", "ansible_roles"),
                              ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
-        pass_through(configuration, common_configuration_yaml, from_key, to_key)
+        pass_through(master_configuration, common_configuration_yaml, from_key, to_key)
 
-    # for configuration in configurations:
-    #   generate_private_key
-    #   generate_public_key
-    #   public_ip
-    #   private_ip
-    #   subnet
-    #   name
-    # common_configuration_yaml["wireguard"] = {"peers": list_of_peers}
-
+    if len(configurations) > 1:
+        peers = []
+        for configuration in configurations:
+            public_key, private_key = wireguard_keys.generate()
+            peers.append({"name": "Test", "private_key": private_key, "public_key": public_key,
+                          "ip":configuration["floating_ip"], "subnet": ""}) # configuration["subnet_cidr"]
+            #subnet
+        common_configuration_yaml["wirepuard"] = {"peers": peers}
 
     return common_configuration_yaml
 
@@ -318,7 +321,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
     for path, generated_yaml in [
         (aRP.WORKER_SPECIFICATION_FILE, generate_worker_specification_file_yaml(configurations)),
         (aRP.COMMONS_CONFIG_FILE, generate_common_configuration_yaml(cidrs=get_cidrs(configurations, providers),
-                                                                     configuration=configurations[0],
+                                                                     configurations=configurations,
                                                                      cluster_id=cluster_id,
                                                                      ssh_user=configurations[0]["sshUser"],
                                                                      default_user=default_user)),

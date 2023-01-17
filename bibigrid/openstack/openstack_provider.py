@@ -1,4 +1,4 @@
-"""
+f"""
 Concrete implementation of provider.py for openstack
 """
 
