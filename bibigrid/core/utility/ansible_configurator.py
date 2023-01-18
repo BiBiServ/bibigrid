@@ -82,8 +82,9 @@ def generate_instances_yaml(cluster_dict, configurations, providers, cluster_id)
             image = worker["image"]
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
-            instances[configuration["identifier"]]["workers"].append({"name": name, "regexp": regexp, "image": image,
-                                                                      "network": network, "flavor": flavor_dict})
+            instances[configuration["cloud_specification"]]["workers"].append(
+                {"name": name, "regexp": regexp, "image": image,
+                 "network": network, "flavor": flavor_dict})
         vpnwkr = configuration.get("vpnInstance")
         if vpnwkr:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id,
@@ -94,10 +95,10 @@ def generate_instances_yaml(cluster_dict, configurations, providers, cluster_id)
             image = vpnwkr["image"]
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            instances[configuration["identifier"]]["vpnwkrs"].append({"name": name, "regexp": regexp, "image": image,
-                                                                      "network": network,
-                                                                      "floating_ip": vpnwkr["floating_ip"],
-                                                                      "flavor": flavor_dict})
+            instances[configuration["cloud_specification"]]["vpnwkrs"].append({"name": name, "regexp": regexp,
+                                                                               "image": image, "network": network,
+                                                                               "floating_ip": vpnwkr["floating_ip"],
+                                                                               "flavor": flavor_dict})
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
@@ -107,7 +108,7 @@ def generate_instances_yaml(cluster_dict, configurations, providers, cluster_id)
             network = configuration["network"]
             instances["master"] = {"name": name, "image": image, "network": network,
                                    "floating_ip": master["floating_ip"], "flavor": flavor_dict,
-                                   "cloud_specification": configuration["identifier"]}
+                                   "cloud_specification": configuration["cloud_specification"]}
     return instances
 
 
@@ -177,8 +178,9 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
         peers = []
         for configuration in configurations:
             private_key, public_key = wireguard_keys.generate()
-            peers.append({"name": configuration["identifier"], "private_key": private_key, "public_key": public_key,
-                          "ip": configuration["floating_ip"], "subnet": configuration["subnet_cidrs"]})
+            peers.append({"name": configuration["cloud_specification"], "private_key": private_key,
+                          "public_key": public_key, "ip": configuration["floating_ip"],
+                          "subnet": configuration["subnet_cidrs"]})
             # subnet
         common_configuration_yaml["wireguard"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
 
@@ -248,7 +250,7 @@ def get_cidrs(configurations):
     all_cidrs = []
     for configuration in configurations:
         subnet = configuration["subnet_cidrs"]
-        provider_cidrs = {"provider": configuration["identifier"], "provider_cidrs": subnet}
+        provider_cidrs = {"provider": configuration["cloud_specification"], "provider_cidrs": subnet}
     return all_cidrs
 
 
