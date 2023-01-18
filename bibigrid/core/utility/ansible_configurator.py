@@ -153,9 +153,9 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
         peers = []
         for configuration in configurations:
             public_key, private_key = wireguard_keys.generate()
-            peers.append({"name": "Test", "private_key": private_key, "public_key": public_key,
-                          "ip":configuration["floating_ip"], "subnet": ""}) # configuration["subnet_cidr"]
-            #subnet
+            peers.append({"name": configuration["identifier"], "private_key": private_key, "public_key": public_key,
+                          "ip": configuration["floating_ip"], "subnet": ""})  # configuration["subnet_cidr"]
+            # subnet
         common_configuration_yaml["wireguard"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
 
     return common_configuration_yaml
