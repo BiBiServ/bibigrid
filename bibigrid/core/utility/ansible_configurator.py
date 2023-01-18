@@ -97,7 +97,8 @@ def generate_instances_yaml(cluster_dict, configurations, providers, cluster_id)
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
             instances[configuration["cloud_specification"]]["vpnwkrs"].append({"name": name, "regexp": regexp,
                                                                                "image": image, "network": network,
-                                                                               "floating_ip": vpnwkr["floating_ip"],
+                                                                               "floating_ip": configuration[
+                                                                                   "floating_ip"],
                                                                                "flavor": flavor_dict})
         else:
             master = configuration["masterInstance"]
@@ -107,7 +108,7 @@ def generate_instances_yaml(cluster_dict, configurations, providers, cluster_id)
             image = master["image"]
             network = configuration["network"]
             instances["master"] = {"name": name, "image": image, "network": network,
-                                   "floating_ip": master["floating_ip"], "flavor": flavor_dict,
+                                   "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
                                    "cloud_specification": configuration["cloud_specification"]}
     return instances
 
