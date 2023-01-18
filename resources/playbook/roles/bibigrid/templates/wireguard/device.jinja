@@ -14,7 +14,7 @@ ListenPort = {{ wireguard.listen_port|default(51820) }}
 # For every vpn but self
 {% for peer in wireguard.peers %}
 {% if peer.ip != this_peer.ip %}
- # {{ peer.name }}
+# {{ peer.name }}
 [WireGuardPeer]
 PublicKey = {{ peer.public_key }}
 AllowedIPs = 10.0.0.0/{{ wireguard.mask_bits|default(24) }}, {{peer.subnet}}
