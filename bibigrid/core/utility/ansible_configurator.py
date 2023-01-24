@@ -94,11 +94,11 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             image = vpnwkr["image"]
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            instances[configuration["cloud_specification"]]["vpnwkrs"].append({"name": name, "regexp": regexp,
+            instances[configuration["cloud_specification"]]["vpnwkr"] = {"name": name, "regexp": regexp,
                                                                                "image": image, "network": network,
                                                                                "floating_ip": configuration[
                                                                                    "floating_ip"],
-                                                                               "flavor": flavor_dict})
+                                                                               "flavor": flavor_dict}
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
@@ -109,7 +109,8 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             instances["master"] = {"name": name, "image": image, "network": network,
                                    "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
                                    "cloud_specification": configuration["cloud_specification"]}
-    return instances
+    instances_yml = {"instances": instances}
+    return instances_yml
 
 
 def pass_through(dict_from, dict_to, key_from, key_to=None):
