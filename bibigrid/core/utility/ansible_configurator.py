@@ -71,7 +71,6 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
         if not instances.get(configuration["cloud_specification"]):
             instances[configuration["cloud_specification"]] = {}
             instances[configuration["cloud_specification"]]["workers"] = []
-            instances[configuration["cloud_specification"]]["vpnwkrs"] = []
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
