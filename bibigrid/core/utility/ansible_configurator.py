@@ -53,11 +53,10 @@ def generate_site_file_yaml(custom_roles):
     return site_yaml
 
 
-def generate_instances_yaml(cluster_dict, configurations, providers, cluster_id):  # pylint: disable=too-many-locals
+def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: disable=too-many-locals
     """
     ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
-    :param cluster_dict: cluster_dict to get the information from
     :param configurations: configurations
     :param providers: providers
     :param cluster_id: To get proper naming
@@ -338,7 +337,6 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
     """
     LOG.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
-    cluster_dict = list_clusters.dict_clusters(providers)[cluster_id]
     ansible_roles = get_ansible_roles(configurations[0].get("ansibleRoles"))
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
     for path, generated_yaml in [
@@ -348,8 +346,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
                                                                      cluster_id=cluster_id,
                                                                      ssh_user=configurations[0]["sshUser"],
                                                                      default_user=default_user)),
-        (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(cluster_dict, configurations,
-                                                             providers, cluster_id)),
+        (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(configurations, providers, cluster_id)),
         (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations,
                                                             cluster_id)),
         (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(ansible_roles))]:
