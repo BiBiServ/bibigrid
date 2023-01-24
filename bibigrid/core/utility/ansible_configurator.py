@@ -9,7 +9,6 @@ import yaml
 
 from bibigrid.core.actions import create
 from bibigrid.core.actions import ide
-from bibigrid.core.actions import list_clusters
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.handler import configuration_handler
