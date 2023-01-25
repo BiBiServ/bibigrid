@@ -19,7 +19,7 @@
     state: present
     regexp: '^{{ item.src }}'
 
-    line: '{{ item.src }} {{ "10.0.0.1/"+wireguard.mask_bits|default(24)|string if wireguard is defined else cluster_cidrs[0].provider_cidrs[0]}} (rw,nohide,insecure,no_subtree_check,async)'
+    line: '{{ item.src }} {{ "10.0.0.0/"+wireguard.mask_bits|default(24)|string if wireguard is defined else cluster_cidrs[0].provider_cidrs[0]}} (rw,nohide,insecure,no_subtree_check,async)'
   with_items:
     - "{{ nfs_mounts }}"
   notify:
