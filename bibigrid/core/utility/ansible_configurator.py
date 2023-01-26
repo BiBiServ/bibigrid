@@ -250,6 +250,7 @@ def get_cidrs(configurations):
     for configuration in configurations:
         subnet = configuration["subnet_cidrs"]
         provider_cidrs = {"provider": configuration["cloud_specification"], "provider_cidrs": subnet}
+        all_cidrs.append(provider_cidrs)
     return all_cidrs
 
 
