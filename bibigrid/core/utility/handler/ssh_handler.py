@@ -5,13 +5,14 @@ setup the Cluster.
 
 import logging
 import os
-import time
 import socket
+import time
+
 import paramiko
 import yaml
 
-from bibigrid.models.exceptions import ConnectionException, ExecutionException
 from bibigrid.core.utility import ansible_commands as aC
+from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
 ANSIBLE_SETUP = [aC.NO_UPDATE, aC.UPDATE,
@@ -39,19 +40,22 @@ def get_ac_command(providers, name):
         ac_clouds_yaml = {"clouds": {"master": None}}
         if auth.get("application_credential_id") and auth.get("application_credential_secret"):
             wanted_keys = ["auth", "region_name", "interface", "identity_api_version", "auth_type"]
-            ac_cloud_specification = {k: cloud_specification[k] for k in wanted_keys if k in
+            ac_cloud_specification = {wanted_key: cloud_specification[wanted_key] for wanted_key in wanted_keys if
+                                      wanted_key in
                                       cloud_specification}
         else:
             wanted_keys = ["region_name", "interface", "identity_api_version"]
             ac = provider.create_application_credential(name=name)  # pylint: disable=invalid-name
             ac_dict = {"application_credential_id": ac["id"], "application_credential_secret": ac["secret"],
                        "auth_type": "v3applicationcredential", "auth_url": auth["auth_url"]}
-            ac_cloud_specification = {k: cloud_specification[k] for k in wanted_keys if k in
+            ac_cloud_specification = {wanted_key: cloud_specification[wanted_key] for wanted_key in wanted_keys if
+                                      wanted_key in
                                       cloud_specification}
             ac_cloud_specification.update(ac_dict)
-        ac_clouds_yaml["clouds"][cloud_specification] = ac_cloud_specification
-    return (f"echo '{yaml.safe_dump(ac_clouds_yaml)}' | sudo install -D /dev/stdin /etc/openstack/clouds.yaml "
-            f"Copy application credentials.")
+        ac_clouds_yaml["clouds"][cloud_specification["identifier"]] = ac_cloud_specification
+    print("Test", ac_clouds_yaml)
+    return (f"echo '{yaml.safe_dump(ac_clouds_yaml)}' | sudo install -D /dev/stdin /etc/openstack/clouds.yaml",
+            "Copy application credentials.")
 
 
 def get_add_ssh_public_key_commands(ssh_public_key_files):
@@ -125,7 +129,7 @@ def is_active(client, floating_ip_address, private_key, username, timeout=5):
                 raise ConnectionException(exc) from exc
         except TimeoutError as exc:  # pylint: disable=duplicate-except
             LOG.error("The attempt to connect to %s failed. Possible known reasons:"
-                          "\n\t-Your network's security group doesn't allow SSH.", floating_ip_address)
+                      "\n\t-Your network's security group doesn't allow SSH.", floating_ip_address)
             raise ConnectionException(exc) from exc
 
 
