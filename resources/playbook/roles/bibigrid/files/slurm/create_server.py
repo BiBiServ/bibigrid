@@ -21,6 +21,13 @@ logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/create_server
 logging.info("create_server.py started")
 start_time = time.time()
 
+if len(sys.argv) < 2:
+    logging.warning("usage:  $0 instance1_name[,instance2_name,...]")
+    logging.info("Your input % with length %s", sys.argv, len(sys.argv))
+    sys.exit(1)
+start_instances = sys.argv[1].split("\n")
+logging.info("Instances: %s", start_instances)
+
 
 def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", username="ubuntu", timeout=5):
     """
@@ -74,69 +81,64 @@ def run_playbook(run_instances):
     return runner, runner_response, runner_error, runner.rc
 
 
-if len(sys.argv) < 2:
-    logging.warning("usage:  $0 instance1_name[,instance2_name,...]")
-    logging.info("Your input % with length %s", sys.argv, len(sys.argv))
-    sys.exit(1)
-
-sdk = os_client_config.make_sdk(cloud="master")
-
 # read instances configuration
 with open("/opt/playbook/vars/instances.yml", mode="r") as f:
-    worker_types = yaml.safe_load(f)
+    instances = yaml.safe_load(f)["instances"]
 
 # read common configuration
 with open("/opt/playbook/vars/common_configuration.yml", mode="r") as f:
     common_config = yaml.safe_load(f)
 
-instances = sys.argv[1].split("\n")
-logging.info("Instances: %s", instances)
+# read clouds.yaml
+with open("/etc/openstack/clouds.yml", mode="r") as f:
+    clouds = yaml.safe_load(f)["clouds"]
 
+connections = {}
+for cloud in clouds:
+    connections[cloud] = os_client_config.make_sdk(cloud=cloud)
+
+# Iterate over all names and search for a fitting ...
 server_list = []
 openstack_exception_list = []
-# Iterate over all names and search for a fitting ...
-for worker in instances:
-    # ... worker_type
-    for worker_type in worker_types["workers"]:
-        if re.match(worker_type["regexp"], worker):
-            try:
-                logging.info("Create server %s.", worker)
-                # create server and ...
-                server = sdk.create_server(
-                    name=worker,
-                    flavor=worker_type["flavor"]["name"],
-                    image=worker_type["image"],
-                    network=worker_type["network"],
-                    key_name=f"tempKey_bibi-{common_config['cluster_id']}",
-                    wait=False)
-                # ... add it to server
-                server_list.append(server)
-                # ToDo Better handling, Check edge cases, ...
-            except OpenStackCloudException as exc:
-                logging.warning("While creating %s the OpenStackCloudException %s occurred. Worker ignored.",
-                                worker, exc)
-                openstack_exception_list.append(worker)
-
-# ToDo implement better error handling
 no_ssh_list = []
 return_list = []
 openstack_wait_exception_list = []
-for server in server_list:
-    try:
-        sdk.wait_for_server(server, auto_ip=False, timeout=600)
-        server = sdk.get_server(server["id"])
-    except OpenStackCloudException as exc:
-        logging.warning("While creating %s the OpenStackCloudException %s occurred.", worker, exc)
-        openstack_wait_exception_list.append(server.name)
-        continue
-    logging.info("%s is active. Checking ssh", server.name)
-    try:
-        check_ssh_active(server.private_v4)
-        logging.info(f"Server {server.name} is {server.status}.")
-        return_list.append(server.name)
-    except ConnectionError as exc:
-        logging.warning(f"{exc}: Couldn't connect to {server.name}.")
-        no_ssh_list.append(server.name)
+# ... worker_type
+for cloud in instances:
+    for worker_type in cloud["workers"]:
+        for worker in start_instances:
+            if re.match(worker_type["regexp"], worker):
+                try:
+                    logging.info("Create server %s.", worker)
+                    # create server and ...
+                    server = connections[cloud].create_server(
+                        name=worker,
+                        flavor=worker_type["flavor"]["name"],
+                        image=worker_type["image"],
+                        network=worker_type["network"],
+                        key_name=f"tempKey_bibi-{common_config['cluster_id']}",
+                        wait=False)
+                    # ... add it to server
+                    server_list.append(server)
+                    try:
+                        connections[cloud].wait_for_server(server, auto_ip=False, timeout=600)
+                        server = sdk.get_server(server["id"])
+                    except OpenStackCloudException as exc:
+                        logging.warning("While creating %s the OpenStackCloudException %s occurred.", worker, exc)
+                        openstack_wait_exception_list.append(server.name)
+                        continue
+                    logging.info("%s is active. Checking ssh", server.name)
+                    try:
+                        check_ssh_active(server.private_v4)
+                        logging.info(f"Server {server.name} is {server.status}.")
+                        return_list.append(server.name)
+                    except ConnectionError as exc:
+                        logging.warning(f"{exc}: Couldn't connect to {server.name}.")
+                        no_ssh_list.append(server.name)
+                except OpenStackCloudException as exc:
+                    logging.warning("While creating %s the OpenStackCloudException %s occurred. Worker ignored.",
+                                    worker, exc)
+                    openstack_exception_list.append(worker)
 
 # If no suitable server can be started: abort
 if len(return_list) == 0:
@@ -160,7 +162,7 @@ if overall_failed_list or openstack_exception_list:
     logging.warning(f"Failed list: {failed_list}")
     logging.warning(f"Return code: {rc}")
     for server_name in overall_failed_list:
-        logging.warning(f"Deleting server {server_name}: {sdk.delete_server(server_name)}")
+        logging.warning(f"Deleting server {server_name}") # {sdk.delete_server(server_name)}
     logging.warning("Exit Code 1")
     exit(1)
 logging.info("Successful create_server.py execution!")
