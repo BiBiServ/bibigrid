@@ -90,7 +90,7 @@ with open("/opt/playbook/vars/common_configuration.yml", mode="r") as f:
     common_config = yaml.safe_load(f)
 
 # read clouds.yaml
-with open("/etc/openstack/clouds.yml", mode="r") as f:
+with open("/etc/openstack/clouds.yaml", mode="r") as f:
     clouds = yaml.safe_load(f)["clouds"]
 
 connections = {}
@@ -104,14 +104,14 @@ no_ssh_list = []
 return_list = []
 openstack_wait_exception_list = []
 # ... worker_type
-for cloud in instances:
+for cloud_name,cloud in [(key,value) for key, value in instances.items() if key != 'master']:
     for worker_type in cloud["workers"]:
         for worker in start_instances:
             if re.match(worker_type["regexp"], worker):
                 try:
                     logging.info("Create server %s.", worker)
                     # create server and ...
-                    server = connections[cloud].create_server(
+                    server = connections[cloud_name].create_server(
                         name=worker,
                         flavor=worker_type["flavor"]["name"],
                         image=worker_type["image"],
@@ -121,8 +121,8 @@ for cloud in instances:
                     # ... add it to server
                     server_list.append(server)
                     try:
-                        connections[cloud].wait_for_server(server, auto_ip=False, timeout=600)
-                        server = sdk.get_server(server["id"])
+                        connections[cloud_name].wait_for_server(server, auto_ip=False, timeout=600)
+                        server = connections[cloud_name].get_server(server["id"])
                     except OpenStackCloudException as exc:
                         logging.warning("While creating %s the OpenStackCloudException %s occurred.", worker, exc)
                         openstack_wait_exception_list.append(server.name)
