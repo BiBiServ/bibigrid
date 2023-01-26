@@ -293,7 +293,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                 filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
                                            (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
                                 commands=ssh_handler.ANSIBLE_START +
-                                         [ssh_handler.get_ac_command(self.providers[0], AC_NAME.format(
+                                         [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
                                              cluster_id=self.cluster_id))])
 
     def start_start_instances_threads(self):
