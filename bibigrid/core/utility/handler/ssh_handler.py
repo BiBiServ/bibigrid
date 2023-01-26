@@ -37,7 +37,7 @@ def get_ac_command(providers, name):
     for provider in providers:
         cloud_specification = provider.cloud_specification
         auth = cloud_specification["auth"]
-        ac_clouds_yaml = {"clouds": {"master": None}}
+        ac_clouds_yaml = {"clouds": {}}
         if auth.get("application_credential_id") and auth.get("application_credential_secret"):
             wanted_keys = ["auth", "region_name", "interface", "identity_api_version", "auth_type"]
             ac_cloud_specification = {wanted_key: cloud_specification[wanted_key] for wanted_key in wanted_keys if
