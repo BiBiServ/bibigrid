@@ -26,31 +26,32 @@ VPN_SETUP = [("echo Example", "Echos an Example")]
 LOG = logging.getLogger("bibigrid")
 
 
-def get_ac_command(master_provider, name):
+def get_ac_command(providers, name):
     """
     Get command to write application credentials to remote (
-    @param master_provider: provider that holds the master
+    @param providers: providers
     @param name: how the application credential shall be called
     @return: command to execute on remote to create application credential
     """
-    master_cloud_specification = master_provider.cloud_specification
-    auth = master_cloud_specification["auth"]
-    ac_clouds_yaml = {"clouds": {"master": None}}
-    if auth.get("application_credential_id") and auth.get("application_credential_secret"):
-        wanted_keys = ["auth", "region_name", "interface", "identity_api_version", "auth_type"]
-        ac_cloud_specification = {k: master_cloud_specification[k] for k in wanted_keys if k in
-                                  master_cloud_specification}
-    else:
-        wanted_keys = ["region_name", "interface", "identity_api_version"]
-        ac = master_provider.create_application_credential(name=name)  # pylint: disable=invalid-name
-        ac_dict = {"application_credential_id": ac["id"], "application_credential_secret": ac["secret"],
-                   "auth_type": "v3applicationcredential", "auth_url": auth["auth_url"]}
-        ac_cloud_specification = {k: master_cloud_specification[k] for k in wanted_keys if k in
-                                  master_cloud_specification}
-        ac_cloud_specification.update(ac_dict)
-    ac_clouds_yaml["clouds"]["master"] = ac_cloud_specification
-    return (f"echo '{yaml.safe_dump(ac_clouds_yaml)}' | sudo install -D /dev/stdin /etc/openstack/clouds.yaml",
-            "Copy application credentials.")
+    for provider in providers:
+        cloud_specification = provider.cloud_specification
+        auth = cloud_specification["auth"]
+        ac_clouds_yaml = {"clouds": {"master": None}}
+        if auth.get("application_credential_id") and auth.get("application_credential_secret"):
+            wanted_keys = ["auth", "region_name", "interface", "identity_api_version", "auth_type"]
+            ac_cloud_specification = {k: cloud_specification[k] for k in wanted_keys if k in
+                                      cloud_specification}
+        else:
+            wanted_keys = ["region_name", "interface", "identity_api_version"]
+            ac = provider.create_application_credential(name=name)  # pylint: disable=invalid-name
+            ac_dict = {"application_credential_id": ac["id"], "application_credential_secret": ac["secret"],
+                       "auth_type": "v3applicationcredential", "auth_url": auth["auth_url"]}
+            ac_cloud_specification = {k: cloud_specification[k] for k in wanted_keys if k in
+                                      cloud_specification}
+            ac_cloud_specification.update(ac_dict)
+        ac_clouds_yaml["clouds"][cloud_specification] = ac_cloud_specification
+    return (f"echo '{yaml.safe_dump(ac_clouds_yaml)}' | sudo install -D /dev/stdin /etc/openstack/clouds.yaml "
+            f"Copy application credentials.")
 
 
 def get_add_ssh_public_key_commands(ssh_public_key_files):
