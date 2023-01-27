@@ -1,0 +1,50 @@
+# ToDo: The following task only works in an openstack environment and if dns is provided by the Openstack setup
+# It should be run before systemd-resolved is stopped, because it needs a running dns.
+# ToDo: --os-cloud should be templated
+- name: get available dns server (openstack only)
+  shell:
+    cmd: openstack --os-cloud bielefeld port list --long | grep network:dhcp | sed "s/^.*ip_address='\(.*\)',.*$/\1/"
+  register: dnsserverlist
+  changed_when: false
+
+#- name: print dns server list (for debug purpose)
+#  debug:
+#    msg: "{{ dnsserverlist.stdout_lines }}"
+
+- name: Disable and Stop systemd-resolve
+  systemd:
+    name: systemd-resolved
+    state: stopped
+    enabled: false
+
+- name: Remove /etc/resolv.conf
+  file:
+    path: /etc/resolv.conf
+    state: absent
+
+- name: Install dnsmasq
+  apt:
+    name: dnsmasq
+    state: present
+
+- name: Touch /etc/dnsmasq.hosts
+  file:
+    path: /etc/dnsmasq.hosts
+    owner: root
+    group: root
+    mode: '0644'
+    state: touch
+  changed_when: false
+
+- name: Adjust dnsmasq.resolv.conf
+  template:
+    src: dns/resolv.conf.j2
+    dest: /etc/dnsmasq.resolv.conf
+  notify: dnsmasq
+
+- name: Adjust dnsmasq conf
+  template:
+    src: dns/dnsmasq.conf.j2
+    dest: /etc/dnsmasq.conf
+  notify: dnsmasq
+
