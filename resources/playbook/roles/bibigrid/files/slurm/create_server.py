@@ -68,7 +68,7 @@ def run_playbook(run_instances):
     logging.info("run_playbook with \ninstances: %s", run_instances)
 
     # cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-vvvv', '-l', instances]
-    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', ",".join(instances)]
+    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', ",".join(start_instances)]
     executable_cmd = '/usr/local/bin/ansible-playbook'
     logging.info(f"run_command...\nexecutable_cmd: {executable_cmd}\ncmdline_args: {cmdline_args}")
 
