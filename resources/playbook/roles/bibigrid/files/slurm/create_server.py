@@ -9,6 +9,7 @@ from openstack.exceptions import OpenStackCloudException
 import re
 import sys
 import time
+import subprocess
 
 import ansible_runner
 import os_client_config
@@ -107,7 +108,10 @@ openstack_wait_exception_list = []
 for cloud_name,cloud in [(key,value) for key, value in instances.items() if key != 'master']:
     for worker_type in cloud["workers"]:
         for worker in start_instances:
-            if re.match(worker_type["regexp"], worker):
+            # check if worker is described in instances.yml
+            result = subprocess.run(["scontrol", "show", "hostname", worker_type["name"]], stdout=subprocess.PIPE)
+            possible_workers = result.stdout.decode("utf-8").strip().split("\n")
+            if worker in possible_workers:
                 try:
                     logging.info("Create server %s.", worker)
                     # create server and ...
