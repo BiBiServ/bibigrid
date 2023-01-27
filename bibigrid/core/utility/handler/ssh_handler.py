@@ -34,10 +34,10 @@ def get_ac_command(providers, name):
     @param name: how the application credential shall be called
     @return: command to execute on remote to create application credential
     """
+    ac_clouds_yaml = {"clouds": {}}
     for provider in providers:
         cloud_specification = provider.cloud_specification
         auth = cloud_specification["auth"]
-        ac_clouds_yaml = {"clouds": {}}
         if auth.get("application_credential_id") and auth.get("application_credential_secret"):
             wanted_keys = ["auth", "region_name", "interface", "identity_api_version", "auth_type"]
             ac_cloud_specification = {wanted_key: cloud_specification[wanted_key] for wanted_key in wanted_keys if
@@ -53,7 +53,6 @@ def get_ac_command(providers, name):
                                       cloud_specification}
             ac_cloud_specification.update(ac_dict)
         ac_clouds_yaml["clouds"][cloud_specification["identifier"]] = ac_cloud_specification
-    print("Test", ac_clouds_yaml)
     return (f"echo '{yaml.safe_dump(ac_clouds_yaml)}' | sudo install -D /dev/stdin /etc/openstack/clouds.yaml",
             "Copy application credentials.")
 
