@@ -19,6 +19,7 @@
   with_items:
     - "{{ wait_for_services }}"
   when: wait_for_services is defined
+  ignore_errors: true
 
 - name: Update
   apt:
