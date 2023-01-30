@@ -30,6 +30,40 @@ start_instances = sys.argv[1].split("\n")
 logging.info("Starting instances %s", start_instances)
 
 
+def start_server(worker, connection, server_start_data):
+    try:
+        logging.info("Create server %s.", worker)
+        # create server and ...
+        server = connection.create_server(
+            name=worker,
+            flavor=worker_type["flavor"]["name"],
+            image=worker_type["image"],
+            network=worker_type["network"],
+            key_name=f"tempKey_bibi-{common_config['cluster_id']}",
+            wait=False)
+        # ... add it to server
+        server_start_data["started_servers"].append(server)
+        try:
+            connection.wait_for_server(server, auto_ip=False, timeout=600)
+            server = connection.get_server(server["id"])
+        except OpenStackCloudException as exc:
+            logging.warning("While creating %s the OpenStackCloudException %s occurred.", worker, exc)
+            server_start_data["openstack_wait_exceptions"].append(server.name)
+            return
+        logging.info("%s is active. Checking ssh", server.name)
+        try:
+            check_ssh_active(server.private_v4)
+            logging.info(f"Server {server.name} is {server.status}.")
+            server_start_data["available_servers"].append(server.name)
+        except ConnectionError as exc:
+            logging.warning(f"{exc}: Couldn't connect to {server.name}.")
+            server_start_data["connection_exceptions"].append(server.name)
+    except OpenStackCloudException as exc:
+        logging.warning("While creating %s the OpenStackCloudException %s occurred. Worker ignored.",
+                        worker, exc)
+        server_start_data["other_openstack_exception"].append(worker)
+
+
 def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", username="ubuntu", timeout=5):
     """
     Waits until SSH connects successful. This guarantees that the node can be reached via Ansible.
@@ -81,6 +115,7 @@ def run_playbook(run_instances):
     runner_error = runner.stderr.read()
     return runner, runner_response, runner_error, runner.rc
 
+server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [], "available_servers": [], "openstack_wait_exceptions": []}
 
 # read instances configuration
 with open("/opt/playbook/vars/instances.yml", mode="r") as f:
@@ -98,82 +133,45 @@ connections = {}  # connections to cloud providers
 for cloud in clouds:
     connections[cloud] = os_client_config.make_sdk(cloud=cloud)
 
-# these lists are only used for logging
-server_list = []
-openstack_exception_list = []
-no_ssh_list = []
-return_list = []
-openstack_wait_exception_list = []
-
-
-instances_by_cloud_dict = [(key,value) for key, value in instances.items() if key != 'master']
+instances_by_cloud_dict = [(key, value) for key, value in instances.items() if key != 'master']
 
 for cloud_name, instances_of_cloud in instances_by_cloud_dict:
     for worker_type in instances_of_cloud["workers"]:
         for worker in start_instances:
             # check if worker in instance is described in instances.yml as part of a worker_type
-            result = subprocess.run(["scontrol", "show", "hostname", worker_type["name"]], stdout=subprocess.PIPE)  # get all workers in worker_type
+            result = subprocess.run(["scontrol", "show", "hostname", worker_type["name"]],
+                                    stdout=subprocess.PIPE)  # get all workers in worker_type
             possible_workers = result.stdout.decode("utf-8").strip().split("\n")
             if worker in possible_workers:
-                try:
-                    logging.info("Create server %s.", worker)
-                    # create server and ...
-                    server = connections[cloud_name].create_server(
-                        name=worker,
-                        flavor=worker_type["flavor"]["name"],
-                        image=worker_type["image"],
-                        network=worker_type["network"],
-                        key_name=f"tempKey_bibi-{common_config['cluster_id']}",
-                        wait=False)
-                    # ... add it to server
-                    server_list.append(server)
-                    try:
-                        connections[cloud_name].wait_for_server(server, auto_ip=False, timeout=600)
-                        server = connections[cloud_name].get_server(server["id"])
-                    except OpenStackCloudException as exc:
-                        logging.warning("While creating %s the OpenStackCloudException %s occurred.", worker, exc)
-                        openstack_wait_exception_list.append(server.name)
-                        continue
-                    logging.info("%s is active. Checking ssh", server.name)
-                    try:
-                        check_ssh_active(server.private_v4)
-                        logging.info(f"Server {server.name} is {server.status}.")
-                        return_list.append(server.name)
-                    except ConnectionError as exc:
-                        logging.warning(f"{exc}: Couldn't connect to {server.name}.")
-                        no_ssh_list.append(server.name)
-                except OpenStackCloudException as exc:
-                    logging.warning("While creating %s the OpenStackCloudException %s occurred. Worker ignored.",
-                                    worker, exc)
-                    openstack_exception_list.append(worker)
-
-# the rest of this code is only concerned with logging errors
+                start_server(worker, connections[cloud_name], server_start_data)
 
 # If no suitable server can be started: abort
-if len(return_list) == 0:
+if len(server_start_data["available_servers"]) == 0:
     logging.warning("No suitable server found! Abort!")
     exit(1)
 
+# run ansible on started nodes
 logging.info("Call Ansible to configure instances.")
-# run ansible
-# ToDo: use https://ansible-runner.readthedocs.io/en/latest/ instead of subprocess
-runnable_instances = ",".join(return_list)
-
+runnable_instances = ",".join(server_start_data["available_servers"])
 r, response, error, rc = run_playbook(runnable_instances)
 logging.info("Ansible executed!")
+
+# the rest of this code is only concerned with logging errors
 unreachable_list = list(r.stats["dark"].keys())
 failed_list = list(r.stats["failures"].keys())
-overall_failed_list = unreachable_list + failed_list + no_ssh_list + openstack_wait_exception_list
-if overall_failed_list or openstack_exception_list:
-    logging.warning(f"Openstack exception list: {openstack_exception_list}")
-    logging.warning(f"Unable to connect via ssh list: {no_ssh_list}")
-    logging.warning(f"Unreachable list: {unreachable_list}")
-    logging.warning(f"Failed list: {failed_list}")
-    logging.warning(f"Return code: {rc}")
-    for server_name in overall_failed_list:
-        logging.warning(f"Deleting server {server_name}") # {sdk.delete_server(server_name)}
-    logging.warning("Exit Code 1")
+ansible_execution_data = {"unreachable_list":unreachable_list, "failed_list": failed_list}
+if failed_list or unreachable_list:
+    logging.warning(ansible_execution_data)
     exit(1)
+else:
+    logging.info(ansible_execution_data)
+server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [], "available_servers": [], "openstack_wait_exceptions": []}
+if [key for key in server_start_data if "exception" in key]:
+    logging.warning(server_start_data)
+    exit(1)
+else:
+    logging.info(server_start_data)
+
 logging.info("Successful create_server.py execution!")
 time_in_s = time.time() - start_time
 logging.info(f"--- %s minutes and %s seconds ---", math.floor(time_in_s / 60), time_in_s % 60)
