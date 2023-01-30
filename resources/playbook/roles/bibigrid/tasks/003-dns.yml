@@ -16,18 +16,9 @@
 
 - name: Create /etc/hosts
   template:
-    src: dns/host.conf.j2
-    dest: /etc/host.conf
+    src: dns/hosts.j2
+    dest: /etc/dnsmasq.hosts
   notify: dnsmasq
-
-- name: Touch /etc/dnsmasq.hosts
-  file:
-    path: /etc/dnsmasq.hosts
-    owner: root
-    group: root
-    mode: '0644'
-    state: touch
-  changed_when: false
 
 - name: Adjust dnsmasq.resolv.conf
   template:

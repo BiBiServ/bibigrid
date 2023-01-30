@@ -12,7 +12,7 @@ LOG = logging.getLogger("bibigrid")
 
 def evaluate(check_name, check_result):
     """
-    Logs check_resul as warning if failed and as success if succeeded.
+    Logs check_result as warning if failed and as success if succeeded.
     :param check_name:
     :param check_result:
     :return:
