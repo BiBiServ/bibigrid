@@ -18,7 +18,9 @@
   delay: 30
   with_items:
     - "{{ wait_for_services }}"
-  when: wait_for_services is defined
+  when:
+    - wait_for_services is defined
+    - "{{ item }}" in result.ansible_facts.services
 
 - name: Update
   apt:
