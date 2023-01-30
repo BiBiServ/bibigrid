@@ -146,6 +146,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name,
                                         image=image, network=network, volumes=volumes)
         floating_ip = None
+        private_v4 = server["private_v4"]
         # pylint: disable=comparison-with-callable
         if identifier == VPN_WORKER_IDENTIFIER or (
                 identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
@@ -155,7 +156,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         elif identifier == MASTER_IDENTIFIER:
             floating_ip = provider.conn.get_server(server["id"])["private_v4"]
         # pylint: enable=comparison-with-callable
-        return floating_ip
+        return floating_ip, private_v4
 
     def start_instances(self, configuration, provider):
         """
@@ -191,8 +192,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         #         worker_thread.start()
         #         threads.append(worker_thread)
         LOG.info("Waiting for servers to start-up on cloud %s", provider.cloud_specification['identifier'])
-        vpn_or_m_floating_ip_address = vpn_or_master_thread.join()
+        vpn_or_m_floating_ip_address, vpn_or_m_private_v4 = vpn_or_master_thread.join()
         configuration["floating_ip"] = vpn_or_m_floating_ip_address
+        configuration["private_v4"] = vpn_or_m_private_v4
         self.setup_reachable_servers(configuration, vpn_or_m_floating_ip_address)
         # for thread in threads:
         #     thread.join()

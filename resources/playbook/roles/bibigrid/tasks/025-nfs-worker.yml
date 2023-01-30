@@ -5,7 +5,7 @@
 
 - name: Wait for nfs-server available
   wait_for:
-    host: "{{ '10.0.0.1' if wireguard is defined else instances.master.floating_ip }}"
+    host: "{{ instances.master.private_v4 }}"
     port: 2049
     delay: 2
     state: started
@@ -23,7 +23,7 @@
 - name: Mount shares
   mount:
     path: "{{ item.dst }}"
-    src: "{{ '10.0.0.1' if wireguard is defined else instances.master.floating_ip }}:{{ item.src }}"
+    src: "{{ instances.master.private_v4 }}:{{ item.src }}"
     fstype: nfs4
     state: mounted
   with_items:
