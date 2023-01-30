@@ -27,7 +27,7 @@ if len(sys.argv) < 2:
     logging.info("Your input % with length %s", sys.argv, len(sys.argv))
     sys.exit(1)
 start_instances = sys.argv[1].split("\n")
-logging.info("Instances: %s", start_instances)
+logging.info("Starting instances %s", start_instances)
 
 
 def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", username="ubuntu", timeout=5):
@@ -94,22 +94,25 @@ with open("/opt/playbook/vars/common_configuration.yml", mode="r") as f:
 with open("/etc/openstack/clouds.yaml", mode="r") as f:
     clouds = yaml.safe_load(f)["clouds"]
 
-connections = {}
+connections = {}  # connections to cloud providers
 for cloud in clouds:
     connections[cloud] = os_client_config.make_sdk(cloud=cloud)
 
-# Iterate over all names and search for a fitting ...
+# these lists are only used for logging
 server_list = []
 openstack_exception_list = []
 no_ssh_list = []
 return_list = []
 openstack_wait_exception_list = []
-# ... worker_type
-for cloud_name,cloud in [(key,value) for key, value in instances.items() if key != 'master']:
-    for worker_type in cloud["workers"]:
+
+
+instances_by_cloud_dict = [(key,value) for key, value in instances.items() if key != 'master']
+
+for cloud_name, instances_of_cloud in instances_by_cloud_dict:
+    for worker_type in instances_of_cloud["workers"]:
         for worker in start_instances:
-            # check if worker is described in instances.yml
-            result = subprocess.run(["scontrol", "show", "hostname", worker_type["name"]], stdout=subprocess.PIPE)
+            # check if worker in instance is described in instances.yml as part of a worker_type
+            result = subprocess.run(["scontrol", "show", "hostname", worker_type["name"]], stdout=subprocess.PIPE)  # get all workers in worker_type
             possible_workers = result.stdout.decode("utf-8").strip().split("\n")
             if worker in possible_workers:
                 try:
@@ -143,6 +146,8 @@ for cloud_name,cloud in [(key,value) for key, value in instances.items() if key 
                     logging.warning("While creating %s the OpenStackCloudException %s occurred. Worker ignored.",
                                     worker, exc)
                     openstack_exception_list.append(worker)
+
+# the rest of this code is only concerned with logging errors
 
 # If no suitable server can be started: abort
 if len(return_list) == 0:
