@@ -61,3 +61,8 @@
   become: yes
   shell:
     cmd: "bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'"
+
+- name: dnsmasq
+  systemd:
+    name: dnsmasq
+    state: restarted

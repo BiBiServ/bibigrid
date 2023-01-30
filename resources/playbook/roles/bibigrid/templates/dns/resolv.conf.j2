@@ -1,0 +1,4 @@
+nameserver 127.0.0.1
+{% for ip in dns_server_list %}
+nameserver {{ ip }}
+{% endfor %}

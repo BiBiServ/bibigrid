@@ -144,11 +144,13 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
+                                 "dns_server_list": master_configuration.get("dns_server_list",["8.8.8.8"]),
                                  "enable_slurm": master_configuration.get("slurm", False),
                                  "enable_zabbix": master_configuration.get("zabbix", False),
                                  "enable_nfs": master_configuration.get("nfs", False),
                                  "enable_ide": master_configuration.get("ide", False),
-                                 "slurm": master_configuration.get("slurm", True), "ssh_user": ssh_user,
+                                 "slurm": master_configuration.get("slurm", True),
+                                 "ssh_user": ssh_user,
                                  "slurm_conf": mergedeep.merge({}, SLURM_CONF,
                                                                master_configuration.get("slurmConf", {}),
                                                                strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
@@ -177,8 +179,10 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
         peers = []
         for configuration in configurations:
             private_key, public_key = wireguard_keys.generate()
-            peers.append({"name": configuration["cloud_specification"], "private_key": private_key,
-                          "public_key": public_key, "ip": configuration["floating_ip"],
+            peers.append({"name": configuration["cloud_specification"],
+                          "private_key": private_key,
+                          "public_key": public_key,
+                          "ip": configuration["floating_ip"],
                           "subnet": configuration["subnet_cidrs"]})
             # subnet
         common_configuration_yaml["wireguard"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
