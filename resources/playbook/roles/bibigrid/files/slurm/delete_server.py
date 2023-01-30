@@ -16,9 +16,9 @@ import os_client_config
 import yaml
 
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
-logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/create_server.log", level=logging.INFO)
+logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/delete_server.log", level=logging.INFO)
 
-logging.info("create_server.py started")
+logging.info("delete_server.py started")
 start_time = time.time()
 
 if len(sys.argv) < 2:
@@ -26,7 +26,7 @@ if len(sys.argv) < 2:
     logging.info("Your input % with length %s", sys.argv, len(sys.argv))
     sys.exit(1)
 start_instances = sys.argv[1].split("\n")
-logging.info("Starting instances %s", start_instances)
+logging.info("Deleting instances %s", start_instances)
 
 # read instances configuration
 with open("/opt/playbook/vars/instances.yml", mode="r") as f:
@@ -54,9 +54,9 @@ for cloud_name, instances_of_cloud in instances_by_cloud_dict:
                                     stdout=subprocess.PIPE)  # get all workers in worker_type
             possible_workers = result.stdout.decode("utf-8").strip().split("\n")
             if worker in possible_workers:
-                result = connections["cloud_name"].delete_server(worker)
+                result = connections[cloud_name].delete_server(worker)
             if not result:
-                logging.warning(f"Couldn't delete worker {worker}"
+                logging.warning(f"Couldn't delete worker {worker}")
             else:
                 logging.info(f"Deleted {worker}")
 logging.info("Successful delete_server.py execution!")
