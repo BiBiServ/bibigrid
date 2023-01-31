@@ -87,18 +87,20 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id,
                                                 additional=f"{vpn_count}")
             vpn_count += 1
+            wireguard_ip = f"10.0.0.{vpn_count}"  # intentionally after vpn_count+=1
             flavor = provider.get_flavor(vpnwkr["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
             image = vpnwkr["image"]
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
             instances[configuration["cloud_specification"]]["vpnwkr"] = {"name": name, "regexp": regexp,
-                                                                               "image": image, "network": network,
-                                                                               "floating_ip": configuration[
-                                                                                   "floating_ip"],
-                                                                               "private_v4": configuration[
-                                                                                   "private_v4"],
-                                                                               "flavor": flavor_dict}
+                                                                         "image": image, "network": network,
+                                                                         "floating_ip": configuration[
+                                                                             "floating_ip"],
+                                                                         "private_v4": configuration[
+                                                                             "private_v4"],
+                                                                         "flavor": flavor_dict,
+                                                                         "wireguard_ip": wireguard_ip}
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
@@ -137,7 +139,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     Generates common_configuration yaml (dict)
     :param cidrs: str subnet cidrs (provider generated)
     :param configurations: master configuration (first in file)
-    :param cluster_id: Id of cluster
+    :param cluster_id: id of cluster
     :param ssh_user: user for ssh connections
     :param default_user: Given default user
     :return: common_configuration_yaml (dict)
@@ -150,7 +152,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
-                                 "dns_server_list": master_configuration.get("dns_server_list",["8.8.8.8"]),
+                                 "dns_server_list": master_configuration.get("dns_server_list", ["8.8.8.8"]),
                                  "enable_slurm": master_configuration.get("slurm", False),
                                  "enable_zabbix": master_configuration.get("zabbix", False),
                                  "enable_nfs": master_configuration.get("nfs", False),
@@ -253,7 +255,6 @@ def get_cidrs(configurations):
     """
     Gets cidrs of all subnets in all providers
     :param configurations: list of configurations (dict)
-    :param providers: list of providers
     :return:
     """
     all_cidrs = []
