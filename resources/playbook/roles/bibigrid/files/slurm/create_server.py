@@ -46,6 +46,7 @@ def start_server(worker, connection, server_start_data):
         try:
             connection.wait_for_server(server, auto_ip=False, timeout=600)
             server = connection.get_server(server["id"])
+            print(server["private_v4"])
         except OpenStackCloudException as exc:
             logging.warning("While creating %s the OpenStackCloudException %s occurred.", worker, exc)
             server_start_data["openstack_wait_exceptions"].append(server.name)
