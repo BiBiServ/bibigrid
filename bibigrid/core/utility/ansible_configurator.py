@@ -96,6 +96,8 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
                                                                                "image": image, "network": network,
                                                                                "floating_ip": configuration[
                                                                                    "floating_ip"],
+                                                                               "private_v4": configuration[
+                                                                                   "private_v4"],
                                                                                "flavor": flavor_dict}
         else:
             master = configuration["masterInstance"]
@@ -104,8 +106,12 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             flavor_dict = {key: flavor[key] for key in flavor_keys}
             image = master["image"]
             network = configuration["network"]
-            instances["master"] = {"name": name, "image": image, "network": network,
-                                   "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
+            instances["master"] = {"name": name,
+                                   "image": image,
+                                   "network": network,
+                                   "floating_ip": configuration["floating_ip"],
+                                   "flavor": flavor_dict,
+                                   "private_v4": configuration["private_v4"],
                                    "cloud_specification": configuration["cloud_specification"]}
     instances_yml = {"instances": instances}
     return instances_yml

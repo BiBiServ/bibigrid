@@ -1,4 +1,8 @@
 # Master node
-{{ ansible_hostname }} {{ ansible_default_ipv4.address }}
-# todo: add all vpn-workers here
-# name localip
+{{ ansible_default_ipv4.address }} {{ ansible_hostname }}
+{% for cloud in instances.keys() if cloud != "master" %}
+# VPN worker for {{cloud}}
+{% if "vpnwkr" in instances[cloud].keys() %}
+{{ instances[cloud].vpnwkr.private_v4 }} {{ instances[cloud].vpnwkr.name }}
+{% endif %}
+{% endfor %}

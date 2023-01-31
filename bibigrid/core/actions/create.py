@@ -294,9 +294,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                 username=self.ssh_user,
                                 filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
                                            (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
-                                commands=ssh_handler.ANSIBLE_START +
-                                         [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
-                                             cluster_id=self.cluster_id))])
+                                commands= [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
+                                             cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
 
     def start_start_instances_threads(self):
         """
