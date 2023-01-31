@@ -86,8 +86,8 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
         if vpnwkr:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id,
                                                 additional=f"{vpn_count}")
+            wireguard_ip = f"10.0.0.{vpn_count+2}"  # skipping 0 and 1 (master)
             vpn_count += 1
-            wireguard_ip = f"10.0.0.{vpn_count}"  # intentionally after vpn_count+=1
             flavor = provider.get_flavor(vpnwkr["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
             image = vpnwkr["image"]
