@@ -1,8 +1,14 @@
 # Master node
 {{ ansible_default_ipv4.address }} {{ ansible_hostname }}
 {% for cloud in instances.keys() if cloud != "master" %}
-# VPN worker for {{cloud}}
 {% if "vpnwkr" in instances[cloud].keys() %}
+# VPN worker for {{cloud}}
 {{ instances[cloud].vpnwkr.private_v4 }} {{ instances[cloud].vpnwkr.name }}
 {% endif %}
 {% endfor %}
+# List of worker
+{% if host_entries is defined %}
+{% for entry in host_entries.keys() %}
+{{ host_entries[entry] }} {{ entry }}
+{% endfor %}
+{% endif %}

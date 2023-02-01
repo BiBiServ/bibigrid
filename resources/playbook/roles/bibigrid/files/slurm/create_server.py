@@ -6,6 +6,7 @@ Is called automatically by create.sh (called by slurm user automatically) which 
 import logging
 import math
 from openstack.exceptions import OpenStackCloudException
+import os
 import re
 import sys
 import time
@@ -46,7 +47,6 @@ def start_server(worker, connection, server_start_data):
         try:
             connection.wait_for_server(server, auto_ip=False, timeout=600)
             server = connection.get_server(server["id"])
-            print(server["private_v4"])
         except OpenStackCloudException as exc:
             logging.warning("While creating %s the OpenStackCloudException %s occurred.", worker, exc)
             server_start_data["openstack_wait_exceptions"].append(server.name)
@@ -59,6 +59,9 @@ def start_server(worker, connection, server_start_data):
         except ConnectionError as exc:
             logging.warning(f"{exc}: Couldn't connect to {server.name}.")
             server_start_data["connection_exceptions"].append(server.name)
+        logging.info("Update hosts.yml")
+        update_hosts(server.name,server.private_v4)
+
     except OpenStackCloudException as exc:
         logging.warning("While creating %s the OpenStackCloudException %s occurred. Worker ignored.",
                         worker, exc)
@@ -93,20 +96,54 @@ def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", usernam
                     logging.warning("Attempt to connect to %s failed.", private_ip)
                     raise ConnectionError from exc
 
-
-def run_playbook(run_instances):
+def update_hosts(name,ip):
     """
-    Runs the BiBiGrid playbook for run_instances
-    @param run_instances: instances to run the playbook for
+    Update hosts.yml
+    @param name: hostname
+    @param ip: ip address
     @return:
     """
-    logging.info("run_playbook with \ninstances: %s", run_instances)
+    hosts = {"hosts_entries":{}}
 
-    # cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-vvvv', '-l', instances]
-    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', ",".join(start_instances)]
+    fname = "/opt/playbook/vars/hosts.yml"
+    if os.path.isfile(fname):
+        with open(fname, mode="r") as f:
+            hosts = yaml.safe_load(f)
+            f.close()
+
+    hosts["host_entries"][name] = ip
+
+    with open(fname, mode="w") as f:
+        yaml.dump(hosts, f)
+        f.close()
+
+def configure_dns():
+    """
+    Reconfigure DNS (dnsmasq)
+    @return:
+    """
+    logging.info("configure_dns")
+    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', "master", "-t", "dns"]
+    return _run_playbook(cmdline_args)
+
+def configure_worker(instances):
+    """
+    Cnfigure worker nodes.
+    @param instances: worker node to be configured
+    @return:
+    """
+    logging.info("configure_worker \nworker: %s", instances)
+    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', instances]
+    return _run_playbook(cmdline_args)
+
+def _run_playbook(cmdline_args):
+    """
+    Running BiBiGrid playbook with given cmdline arguments.
+    @param cmdline_args:
+    @return
+    """
     executable_cmd = '/usr/local/bin/ansible-playbook'
     logging.info(f"run_command...\nexecutable_cmd: {executable_cmd}\ncmdline_args: {cmdline_args}")
-
     runner = ansible_runner.interface.init_command_config(
         executable_cmd=executable_cmd,
         cmdline_args=cmdline_args)
@@ -115,6 +152,7 @@ def run_playbook(run_instances):
     runner_response = runner.stdout.read()
     runner_error = runner.stderr.read()
     return runner, runner_response, runner_error, runner.rc
+
 
 server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [], "available_servers": [], "openstack_wait_exceptions": []}
 
@@ -151,11 +189,16 @@ if len(server_start_data["available_servers"]) == 0:
     logging.warning("No suitable server found! Abort!")
     exit(1)
 
-# run ansible on started nodes
-logging.info("Call Ansible to configure instances.")
+# run ansible on master node to configure dns
+logging.info("Call Ansible to configure dns.")
+r, response, error, rc = configure_dns()
+logging.info("DNS was configure by Ansible!")
+
+# run ansible on started worker nodes
+logging.info("Call Ansible to configure worker.")
 runnable_instances = ",".join(server_start_data["available_servers"])
-r, response, error, rc = run_playbook(runnable_instances)
-logging.info("Ansible executed!")
+r, response, error, rc = configure_worker(runnable_instances)
+logging.info("Worker were configured by Ansible!")
 
 # the rest of this code is only concerned with logging errors
 unreachable_list = list(r.stats["dark"].keys())

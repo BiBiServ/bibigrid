@@ -20,7 +20,7 @@ ADDITIONAL_PATH = "additional/"
 PYTHON_INTERPRETER = "/usr/bin/python3"
 MASTER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-master"]}]
 WORKER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-worker"]}]
-VARS_FILES = [aRP.INSTANCES_YML, aRP.CONFIG_YML]
+VARS_FILES = [aRP.INSTANCES_YML, aRP.CONFIG_YML, aRP.HOSTS_YML]
 IDE_CONF = {"ide": False, "workspace": ide.DEFAULT_IDE_WORKSPACE, "port_start": ide.REMOTE_BIND_ADDRESS,
             "port_end": ide.DEFAULT_IDE_PORT_END, "build": False}
 ZABBIX_CONF = {"db": "zabbix", "db_user": "zabbix", "db_password": "zabbix", "timezone": "Europe/Berlin",
