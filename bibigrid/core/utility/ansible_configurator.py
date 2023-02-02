@@ -76,12 +76,13 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             worker_count += worker.get('count', 1)
             flavor = provider.get_flavor(worker["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
-            image = worker["image"]
-            network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
             instances[configuration["cloud_specification"]]["workers"].append(
-                {"name": name, "regexp": regexp, "image": image,
-                 "network": network, "flavor": flavor_dict})
+                {"name": name,
+                 "regexp": regexp,
+                 "image":  worker["image"],
+                 "network": configuration["network"],
+                 "flavor": flavor_dict})
         vpnwkr = configuration.get("vpnInstance")
         if vpnwkr:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id,
@@ -93,12 +94,13 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             image = vpnwkr["image"]
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            instances[configuration["cloud_specification"]]["vpnwkr"] = {"name": name, "regexp": regexp,
-                                                                         "image": image, "network": network,
-                                                                         "floating_ip": configuration[
-                                                                             "floating_ip"],
-                                                                         "private_v4": configuration[
-                                                                             "private_v4"],
+            instances[configuration["cloud_specification"]]["vpnwkr"] = {"name": name,
+                                                                         "regexp": regexp,
+                                                                         "image": image,
+                                                                         "network": network,
+                                                                         "network_cidr": configuration["subnet_cidrs"],
+                                                                         "floating_ip": configuration["floating_ip"],
+                                                                         "private_v4": configuration["private_v4"],
                                                                          "flavor": flavor_dict,
                                                                          "wireguard_ip": wireguard_ip}
         else:
@@ -106,14 +108,14 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
             flavor = provider.get_flavor(master["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
-            image = master["image"]
-            network = configuration["network"]
             instances["master"] = {"name": name,
-                                   "image": image,
-                                   "network": network,
+                                   "image": master["image"],
+                                   "network": configuration["network"],
+                                   "network_cidr": configuration["subnet_cidrs"],
                                    "floating_ip": configuration["floating_ip"],
                                    "flavor": flavor_dict,
                                    "private_v4": configuration["private_v4"],
+                                   "wireguard_ip": "10.0.0.1",
                                    "cloud_specification": configuration["cloud_specification"]}
     instances_yml = {"instances": instances}
     return instances_yml
@@ -207,7 +209,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
     :return: ansible_hosts yaml (dict)
     """
     LOG.info("Generating ansible hosts file...")
-    ansible_hosts_yaml = {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
+    ansible_hosts_yaml = {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user,local=False)}},
                           "workers": {"hosts": {}, "children": {"ephemeral": {"hosts": {}}, "vpnwkrs": {"hosts": {}}}}
                           }
     # vpnwkr are handled like workers on this level

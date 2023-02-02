@@ -82,11 +82,6 @@
   args:
     executable: bash
 
-# - name: Install python3-virtualenv
-#   apt:
-#     name: python3-virtualenv
-#     state: present
-
 - name: Change mode of /opt/slurm directory
   file:
     owner: slurm
@@ -94,11 +89,6 @@
     path: /opt/slurm/
     state: directory
     mode: "0770"
-
-# - name: Create slurm venv in opt
-#   command:
-#     cmd: virtualenv /opt/slurm/venv -p python3.10
-#     creates: "/opt/slurm/venv"
 
 - name: Ensures /etc/slurm dir exists
   file:
@@ -154,19 +144,6 @@
     group: ansible
     mode: "0750"
 
-
-# - name: Copy requirements to correct location
-#  copy:
-#    src: slurm/requirements.txt
-#    dest: /opt/slurm/requirements.txt
-#    #owner: slurm
-#    group: ansible
-#    mode: "0550"
-
-# - name: Install requirements
-#  pip: requirements=/opt/slurm/requirements.txt
-#    virtualenv=/opt/slurm/venv
-
 - name: Install python dependencies
   pip:
     name:
@@ -212,3 +189,12 @@
         - slurmd
         - slurmdbd
         - slurmrestd
+
+- name: generate location specific worker userdata
+  template:
+    src : slurm/worker_userdata.j2
+    dest :  "/opt/slurm/userdata_{{ item }}.txt"
+    owner: slurm
+    group: ansible
+    mode: "0640"
+  with_items: "{{ instances.keys() }}"

@@ -1,0 +1,19 @@
+#cloud-config
+{% if item != 'master' %}
+bootcmd:
+{% if "vpnwkr" in instances[item].keys() %}
+{% set gw = instances[item]["vpnwkr"]["private_v4"] %}
+{% else %}
+{% set gw = instances["master"]["private_v4"] %}
+{% endif %}
+  - /usr/bin/ip route add 10.0.0.0/24 via {{ gw }} dev ens3
+{% for i in instances.keys() %}
+{% if i != item and i != "master" %}
+{% if "vpnwkr" in instances[i].keys() %}
+  - /usr/bin/ip route add {{ instances[i]["vpnwkr"]["network_cidr"] }} via {{ gw }} dev ens3
+{% else %}
+  - /usr/bin/ip route add {{ instances["master"]["network_cidr"] }} via {{ gw }} dev ens3
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
