@@ -3,7 +3,8 @@
     name: wireguard
     state: present
 
-- name: Get my public IP
+# ToDo: use vars
+- name: Get my public IP (ToDo -> use vars)
   community.general.ipify_facts:
   register: public_ip
 
@@ -27,3 +28,19 @@
     mode: 0640
   become: yes
   notify: systemd-networkd restart
+
+- name: Enable ip forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Enable tcp mtu probing
+  sysctl:
+    name: net.ipv4.tcp_mtu_probing
+    value: 1
+    sysctl_set: true
+    state: present
+    reload: true

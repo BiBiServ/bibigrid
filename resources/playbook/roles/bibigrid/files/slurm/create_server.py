@@ -31,9 +31,14 @@ start_instances = sys.argv[1].split("\n")
 logging.info("Starting instances %s", start_instances)
 
 
-def start_server(worker, connection, server_start_data):
+def start_server(worker, connection, cloudname, server_start_data):
     try:
         logging.info("Create server %s.", worker)
+        # check for userdata
+        userdata = ""
+        fname = f"/opt/slurm/userdata_{cloudname}.txt"
+        if os.path.isfile(fname):
+            userdata = open(fname, mode="r")
         # create server and ...
         server = connection.create_server(
             name=worker,
@@ -41,6 +46,7 @@ def start_server(worker, connection, server_start_data):
             image=worker_type["image"],
             network=worker_type["network"],
             key_name=f"tempKey_bibi-{common_config['cluster_id']}",
+            userdata=userdata,
             wait=False)
         # ... add it to server
         server_start_data["started_servers"].append(server)
@@ -100,16 +106,18 @@ def update_hosts(name,ip):
     """
     Update hosts.yml
     @param name: hostname
-    @param ip: ip address
+    @param ip: ibibigrid-worker0-3k1eeysgetmg4vb-3p address
     @return:
     """
-    hosts = {"hosts_entries":{}}
+    hosts = {"host_entries":{}}
 
     fname = "/opt/playbook/vars/hosts.yml"
     if os.path.isfile(fname):
         with open(fname, mode="r") as f:
             hosts = yaml.safe_load(f)
             f.close()
+        if hosts == None or "host_entries" not in hosts.keys():
+            hosts = {"host_entries":{}}
 
     hosts["host_entries"][name] = ip
 
@@ -182,7 +190,7 @@ for cloud_name, instances_of_cloud in instances_by_cloud_dict:
                                     stdout=subprocess.PIPE)  # get all workers in worker_type
             possible_workers = result.stdout.decode("utf-8").strip().split("\n")
             if worker in possible_workers:
-                start_server(worker, connections[cloud_name], server_start_data)
+                start_server(worker, connections[cloud_name], cloud_name, server_start_data)
 
 # If no suitable server can be started: abort
 if len(server_start_data["available_servers"]) == 0:
