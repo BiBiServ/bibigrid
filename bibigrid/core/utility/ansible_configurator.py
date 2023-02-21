@@ -95,7 +95,7 @@ def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id): 
     master = {key: cluster_dict["master"][key] for key in
               ["name", "private_v4", "public_v4", "public_v6", "cloud_specification"]}
     master["flavor"] = {key: cluster_dict["master"]["flavor"][key] for key in flavor_keys}
-    write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, master["name"]), master)
+    write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, "localhost.yml"), master)
     return {"master": master, "workers": workers}
 
 
