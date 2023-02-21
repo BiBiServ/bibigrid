@@ -5,7 +5,7 @@
     fstype: none
     opts: bind,auto
     state: mounted
-  when: master.flavor.ephemeral > 0
+  when: flavor.ephemeral > 0
 
 - name: Mount disks
   mount:

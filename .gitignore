@@ -9,6 +9,7 @@ resources/playbook/vars/instances.yml
 resources/playbook/vars/login.yml
 resources/playbook/vars/worker_specification.yml
 resources/playbook/vars/common_configuration.yml
+resources/playbook/host_vars/
 
 # any log files
 *.log

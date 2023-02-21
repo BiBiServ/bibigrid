@@ -3,6 +3,7 @@ Prepares ansible files (vars, common_configuration, ...)
 """
 
 import logging
+import os
 
 import mergedeep
 import yaml
@@ -30,6 +31,16 @@ SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 900, "TreeWidth": 128}}
 LOG = logging.getLogger("bibigrid")
 
+
+def delete_old_host_vars():
+    for file_name in os.listdir(aRP.HOST_VARS_FOLDER):
+        # construct full file path
+        file = os.path.join(aRP.HOST_VARS_FOLDER, file_name)
+        if os.path.isfile(file):
+            logging.debug('Deleting file: %s', file)
+            os.remove(file)
+
+
 def generate_site_file_yaml(custom_roles):
     """
     Generates site_yaml (dict).
@@ -51,7 +62,7 @@ def generate_site_file_yaml(custom_roles):
     return site_yaml
 
 
-def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id): # pylint: disable=too-many-locals
+def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id):  # pylint: disable=too-many-locals
     """
     ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
@@ -74,10 +85,17 @@ def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id): 
                                         additional=worker_range.format(worker.get('count', 1) - 1))
         regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                           additional=r"\d+")
-        workers.append({"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict})
+        worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict}
+        workers.append(worker_dict)
+        for worker_number in range(worker.get('count', 1)):
+            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER,
+                                    create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+                                                             additional=worker_number)),
+                       worker_dict)
     master = {key: cluster_dict["master"][key] for key in
               ["name", "private_v4", "public_v4", "public_v6", "cloud_specification"]}
     master["flavor"] = {key: cluster_dict["master"]["flavor"][key] for key in flavor_keys}
+    write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, master["name"]), master)
     return {"master": master, "workers": workers}
 
 
@@ -130,7 +148,7 @@ def generate_common_configuration_yaml(cidrs, configuration, cluster_id, ssh_use
                                                        ext_nfs_share in (configuration.get("extNfsShares", []))]
 
     if configuration.get("ide"):
-        common_configuration_yaml["ide_conf"] = mergedeep.merge({}, IDE_CONF,  configuration.get("ideConf", {}),
+        common_configuration_yaml["ide_conf"] = mergedeep.merge({}, IDE_CONF, configuration.get("ideConf", {}),
                                                                 strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
     if configuration.get("zabbix"):
         common_configuration_yaml["zabbix_conf"] = mergedeep.merge({}, ZABBIX_CONF, configuration.get("zabbixConf", {}),
@@ -167,7 +185,7 @@ def generate_ansible_hosts_yaml(ssh_user, configuration, cluster_id):
     return ansible_hosts_yaml
 
 
-def to_instance_host_dict(ssh_user, ip="localhost", local=True): # pylint: disable=invalid-name
+def to_instance_host_dict(ssh_user, ip="localhost", local=True):  # pylint: disable=invalid-name
     """
     Generates host entry
     :param ssh_user: str global SSH-username
@@ -285,6 +303,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
     :param cluster_id: id of cluster to create
     :return:
     """
+    delete_old_host_vars()
     LOG.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
     cluster_dict = list_clusters.dict_clusters(providers)[cluster_id]
