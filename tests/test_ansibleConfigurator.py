@@ -1,12 +1,13 @@
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch, call, mock_open, ANY
 
-import bibigrid2.core.utility.ansible_configurator as ansibleConfigurator
-import bibigrid2.core.utility.paths.ansible_resources_path as aRP
-import bibigrid2.core.utility.yaml_dumper as yamlDumper
+import bibigrid.core.utility.ansible_configurator as ansibleConfigurator
+import bibigrid.core.utility.paths.ansible_resources_path as aRP
+import bibigrid.core.utility.yaml_dumper as yamlDumper
 
 
 class TestAnsibleConfigurator(TestCase):
+    # pylint: disable=R0904
     def test_generate_site_file_yaml_empty(self):
         site_yaml = [{'hosts': 'master', "become": "yes",
                       "vars_files": ansibleConfigurator.VARS_FILES, "roles": ["common", "master"]},
@@ -121,7 +122,7 @@ class TestAnsibleConfigurator(TestCase):
         self.assertEqual(common_configuration_yaml,
                          ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration))
 
-    @patch("bibigrid2.core.utility.ansibleConfigurator.get_ansible_roles")
+    @patch("bibigrid.core.utility.ansibleConfigurator.get_ansible_roles")
     def test_generate_common_configuration_ansible_roles_mock(self, mock_ansible_roles):
         cidrs = 42
         ansible_roles = [{elem: elem for elem in ["file", "hosts", "name", "vars", "vars_file"]}]
@@ -131,7 +132,7 @@ class TestAnsibleConfigurator(TestCase):
                          ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration)["ansible_roles"])
         mock_ansible_roles.assert_called_with(ansible_roles)
 
-    @patch("bibigrid2.core.utility.ansibleConfigurator.get_ansible_galaxy_roles")
+    @patch("bibigrid.core.utility.ansibleConfigurator.get_ansible_galaxy_roles")
     def test_generate_common_configuration_ansible_galaxy_roles(self, mock_galaxy_roles):
         cidrs = 42
         galaxy_roles = [{elem: elem for elem in ["hosts", "name", "galaxy", "git", "url", "vars", "vars_file"]}]
@@ -142,7 +143,7 @@ class TestAnsibleConfigurator(TestCase):
                              "ansible_galaxy_roles"])
         mock_galaxy_roles.assert_called_with(galaxy_roles)
 
-    @patch("bibigrid2.core.utility.ansibleConfigurator.to_instance_host_dict")
+    @patch("bibigrid.core.utility.ansibleConfigurator.to_instance_host_dict")
     def test_generate_ansible_hosts(self, mock_instance_host_dict):
         mock_instance_host_dict.side_effect = [0, 1, 2]
         cluster_dict = {"workers": [{"private_v4": 21}], "vpnwkrs": [{"private_v4": 32}]}
@@ -268,17 +269,17 @@ class TestAnsibleConfigurator(TestCase):
             output_mock.assert_called_once_with("here", "w+")
             mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY)
 
-    @patch("bibigrid2.core.utility.idGeneration.generate_munge_key")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.generate_worker_specification_file_yaml")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.generate_login_file_yaml")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.generate_common_configuration_yaml")
-    @patch("bibigrid2.core.actions.listClusters.dict_clusters")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.generate_instances_yaml")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.generate_ansible_hosts_yaml")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.get_ansible_roles")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.generate_site_file_yaml")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.write_yaml")
-    @patch("bibigrid2.core.utility.ansibleConfigurator.get_cidrs")
+    @patch("bibigrid.core.utility.id_generation.generate_munge_key")
+    @patch("bibigrid.core.utility.ansibleConfigurator.generate_worker_specification_file_yaml")
+    @patch("bibigrid.core.utility.ansibleConfigurator.generate_login_file_yaml")
+    @patch("bibigrid.core.utility.ansibleConfigurator.generate_common_configuration_yaml")
+    @patch("bibigrid.core.actions.list_clusters.dict_clusters")
+    @patch("bibigrid.core.utility.ansibleConfigurator.generate_instances_yaml")
+    @patch("bibigrid.core.utility.ansibleConfigurator.generate_ansible_hosts_yaml")
+    @patch("bibigrid.core.utility.ansibleConfigurator.get_ansible_roles")
+    @patch("bibigrid.core.utility.ansibleConfigurator.generate_site_file_yaml")
+    @patch("bibigrid.core.utility.ansibleConfigurator.write_yaml")
+    @patch("bibigrid.core.utility.ansibleConfigurator.get_cidrs")
     def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_roles, mock_hosts,
                                     mock_instances, mock_list, mock_common, mock_login, mock_worker, mock_munge):
         mock_munge.return_value = 420

@@ -1,5 +1,13 @@
 # BiBiGrid
-BiBiGrid is a cloud cluster creation and management framework for OpenStack (and more providers in the future).
+BiBiGrid is a cloud cluster creation and management framework for OpenStack
+(and more providers in the future).
+
+BiBiGrid uses Ansible to configure standard Ubuntu 20.04/22.04 LTS as 
+well as Debian 11 cloud images. Depending on your configuration BiBiGrid
+can set up an HCP cluster for grid computing (Slurm Workload Manager, 
+a shared filesystem (on local discs and attached volumes), 
+a cloud IDE for writing, running and debugging (Theia Web IDE) and many more.
+
 
 > **Note**
 > The latest version is currently work in progress. Future changes are likely.
@@ -15,7 +23,7 @@ However, if you are already quite experienced with *OpenStack* and the previous 
 might be just what you need.
 
 <details>
-<summary> Brief, technical BiBiGrid2 overview </summary>
+<summary> Brief, technical BiBiGrid overview </summary>
 
 ### How to configure a cluster?
 #### Configuration File: bibigrid.yml
@@ -33,7 +41,7 @@ The configuration template [bibigrid.yml](bibigrid.yml) contains many helpful co
 To access the cloud, authentication information is required.
 You can download your `clouds.yaml` from OpenStack.
 
-Your `clouds.yaml` is to be placed in `~/.config/bibigrid/` and will be loaded by BiBiGrid2 on execution.
+Your `clouds.yaml` is to be placed in `~/.config/bibigrid/` and will be loaded by BiBiGrid on execution.
 
 [You need more details?](documentation/markdown/features/cloud_specification_data.md)
 
@@ -49,30 +57,30 @@ a region, an availability zone, an sshUser (most likely ubuntu) and a subnet.
 You probably also want at least one worker with a valid type, image and count.
 4. If your cloud provider runs post-launch services, you need to set the `waitForServices` 
 key appropriately which expects a list of services to wait for.
-5. Create a virtual environment from `bibigrid2/requirements.txt`. 
+5. Create a virtual environment from `bibigrid/requirements.txt`. 
 See [here](https://www.akamai.com/blog/developers/how-building-virtual-python-environment) for more detailed info. 
 6. Take a look at [First execution](#first-execution)
 
 #### First execution
 Before follow the steps described at [Preparation](#preparation).
 
-After cloning the repository navigate to `bibigrid2`.
-In order to execute BiBiGrid2 source the virtual environment created during [preparation](#preparation).
-Take a look at BiBiGrid2's [Command Line Interface](documentation/markdown/features/CLI.md) 
+After cloning the repository navigate to `bibigrid`.
+In order to execute BiBiGrid source the virtual environment created during [preparation](#preparation).
+Take a look at BiBiGrid's [Command Line Interface](documentation/markdown/features/CLI.md) 
 if you want to explore for yourself.
 
 A first execution run through could be:
 1. `./bibigrid.sh -i [path-to-bibigrid.yml] -ch`: checks the configuration
 2. `./bibigrid.sh -i 'bibigrid.yml -i [path-to-bibigrid.yml] -c'`: creates the cluster (execute only if check was successful)
-3. Use **BiBiGrid2's create output** to investigate the created cluster further. Especially connecting to the ide might be helpful. 
+3. Use **BiBiGrid's create output** to investigate the created cluster further. Especially connecting to the ide might be helpful. 
 Otherwise, connect using ssh.
 4. While in ssh try `sinfo` to printing node info
 5. Run `srun -x $(hostname) hostname` to power up a worker and get its hostname.
 6. Run `sinfo` again to see the node powering up. After a while it will be terminated again.
-7. Use the terminate command from **BiBiGrid2's create output** to shut down the cluster again. 
+7. Use the terminate command from **BiBiGrid's create output** to shut down the cluster again. 
 All floating-ips used will be released.
 
-Great! You've just started and terminated your first cluster using BiBiGrid2!
+Great! You've just started and terminated your first cluster using BiBiGrid!
 
 </details>
 
@@ -87,21 +95,21 @@ Some quotas can currently not be checked by bibigrid.
 **Whenever you contact a developer, please send your logfile along.**
 
 # Documentation
-If you would like to learn more about BiBiGrid2 please follow a fitting link:
-- [BiBiGrid2 Features](documentation/markdown/bibigrid_feature_list.md)
-- [Software used by BiBiGrid2](documentation/markdown/bibigrid_software_list.md)
+If you would like to learn more about BiBiGrid please follow a fitting link:
+- [BiBiGrid Features](documentation/markdown/bibigrid_feature_list.md)
+- [Software used by BiBiGrid](documentation/markdown/bibigrid_software_list.md)
 
 <details>
-<summary> Differences to BiBiGrid1 </summary>
+<summary> Differences to old Java BiBiGrid</summary>
 
-* BiBiGrid2 no longer uses RC- but cloud.yaml-files for cloud-specification data. Environment variables are no longer used (or supported).
+* BiBiGrid no longer uses RC- but cloud.yaml-files for cloud-specification data. Environment variables are no longer used (or supported).
 See [Cloud Specification Data](documentation/markdown/features/cloud_specification_data.md).
-* BiBiGrid2 has a largely reworked configurations file, because BiBiGrid2 core supports multiple providers this step was necessary.
+* BiBiGrid has a largely reworked configurations file, because BiBiGrid core supports multiple providers this step was necessary.
 See [Configuration](documentation/markdown/features/configuration.md)
-* BiBiGrid2 currently only implements the provider OpenStack.
-* BiBiGrid2 only starts the master and will dynamically start workers using slurm when they are needed. 
+* BiBiGrid currently only implements the provider OpenStack.
+* BiBiGrid only starts the master and will dynamically start workers using slurm when they are needed. 
 Workers are powered down once they are not used for a longer period.
-* BiBiGrid2 lays the foundation for clusters that are spread over multiple providers, but Hybrid Clouds aren't fully implemented yet.
+* BiBiGrid lays the foundation for clusters that are spread over multiple providers, but Hybrid Clouds aren't fully implemented yet.
 </details>
 
 # Development
@@ -112,5 +120,5 @@ Workers are powered down once they are not used for a longer period.
 ## On implementing concrete providers
 New concrete providers can be implemented very easily. Just copy the `provider.py` file and implement all methods for
 your cloud-provider. Also inherit from the `provider` class. After that add your provider to the providerHandler lists; giving it a associated name for the
-configuration files. By that, your provider is automatically added to BiBiGrid2's tests and regular execution. By testing
+configuration files. By that, your provider is automatically added to BiBiGrid's tests and regular execution. By testing
 your provider first, you will see whether all provider methods are implemented as expected.

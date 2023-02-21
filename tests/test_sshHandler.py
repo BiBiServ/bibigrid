@@ -4,7 +4,7 @@ from unittest.mock import mock_open, Mock, MagicMock, patch, call
 
 from paramiko.ssh_exception import NoValidConnectionsError
 
-import bibigrid2.core.utility.handler.ssh_handler as sshHandler
+import bibigrid.core.utility.handler.ssh_handler as sshHandler
 
 
 class TestSshHandler(TestCase):
@@ -62,7 +62,7 @@ class TestSshHandler(TestCase):
         client.connect.assert_called_with(hostname=42, username=22, pkey=32)
         mock_log.assert_called()
 
-    @patch("bibigrid2.core.utility.handler.sshHandler.execute_ssh_cml_commands")
+    @patch("bibigrid.core.utility.handler.sshHandler.execute_ssh_cml_commands")
     @patch("paramiko.ECDSAKey.from_private_key_file")
     @patch("paramiko.SSHClient")
     def test_execute_ssh(self, mock_client, mock_paramiko_key, mock_exec):
@@ -72,19 +72,19 @@ class TestSshHandler(TestCase):
         mock_client.return_value = mock
         mock.__enter__ = client
         mock.__exit__ = Mock(return_value=None)
-        with patch("bibigrid2.core.utility.handler.sshHandler.is_active") as mock_active:
+        with patch("bibigrid.core.utility.handler.sshHandler.is_active") as mock_active:
             sshHandler.execute_ssh(42, 32, 22, [12], None)
             mock_client.assert_called_with()
             mock_active.assert_called_with(client=client(), floating_ip_address=42, username=22, private_key=2)
             mock_exec.assert_called_with(client(), [12])
             mock_paramiko_key.assert_called_with(32)
 
-    @patch("bibigrid2.core.utility.handler.sshHandler.execute_ssh")
+    @patch("bibigrid.core.utility.handler.sshHandler.execute_ssh")
     def test_ansible_preparation(self, mock_execute):
         sshHandler.ansible_preparation(1, 2, 3, [], [])
         mock_execute.assert_called_with(1, 2, 3, [] + sshHandler.ANSIBLE_SETUP, [(2, sshHandler.PRIVATE_KEY_FILE)])
 
-    @patch("bibigrid2.core.utility.handler.sshHandler.execute_ssh")
+    @patch("bibigrid.core.utility.handler.sshHandler.execute_ssh")
     def test_ansible_preparation_elem(self, mock_execute):
         sshHandler.ansible_preparation(1, 2, 3, [42], [42])
         mock_execute.assert_called_with(1, 2, 3, sshHandler.ANSIBLE_SETUP + [42],

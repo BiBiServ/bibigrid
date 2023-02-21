@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-import bibigrid2.models.return_threading as returnThreading
+import bibigrid.models.return_threading as returnThreading
 
 
 def test_method(x):

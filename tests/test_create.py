@@ -2,12 +2,13 @@ import os
 from unittest import TestCase
 from unittest.mock import patch, Mock, MagicMock, mock_open
 
-import bibigrid2.core.actions.create as create
+from bibigrid.core.actions import create
 
 
 class TestCreate(TestCase):
-    @patch("bibigrid2.core.utility.handler.sshHandler.get_add_ssh_public_key_commands")
-    @patch("bibigrid2.core.utility.idGeneration.generate_safe_cluster_id")
+    # pylint: disable=R0904
+    @patch("bibigrid.core.utility.handler.sshHandler.get_add_ssh_public_key_commands")
+    @patch("bibigrid.core.utility.id_generation.generate_safe_cluster_id")
     def test_init(self, mock_id, mock_ssh):
         unique_id = 21
         provider = MagicMock()
@@ -23,8 +24,8 @@ class TestCreate(TestCase):
         self.assertEqual(c.key_name, key_name)
         mock_id.assert_called_with([provider])
 
-    @patch("bibigrid2.core.utility.handler.sshHandler.get_add_ssh_public_key_commands")
-    @patch("bibigrid2.core.utility.idGeneration.generate_safe_cluster_id")
+    @patch("bibigrid.core.utility.handler.sshHandler.get_add_ssh_public_key_commands")
+    @patch("bibigrid.core.utility.id_generation.generate_safe_cluster_id")
     def test_init_username(self, mock_id, mock_ssh):
         unique_id = 21
         mock_id.return_value = str(unique_id)
@@ -71,14 +72,15 @@ class TestCreate(TestCase):
         network = 21
         c.start_instance(provider, create.WORKER_IDENTIFIER, server_type, network, worker=True, volumes=None,
                          external_network=None)
-        provider.create_server.assert_called_with(name=create.WORKER_IDENTIFIER.format(0) + create.SEPARATOR + c.cluster_id,
-                                                  flavor=server_type["type"],
-                                                  key_name=c.key_name,
-                                                  image=server_type["image"],
-                                                  network=network, volumes=None)
+        provider.create_server.assert_called_with(
+            name=create.WORKER_IDENTIFIER.format(0) + create.SEPARATOR + c.cluster_id,
+            flavor=server_type["type"],
+            key_name=c.key_name,
+            image=server_type["image"],
+            network=network, volumes=None)
         provider.create_floating_ip.assert_not_called()
 
-    @patch("bibigrid2.models.returnThreading.ReturnThread")
+    @patch("bibigrid.models.returnThreading.ReturnThread")
     def test_start_instances(self, return_mock):
         provider = MagicMock()
         provider.list_servers.return_value = []
@@ -96,7 +98,7 @@ class TestCreate(TestCase):
                                        args=[provider, 0, 1, configuration["network"], False, 2, 32])
 
     @patch("threading.Thread")
-    @patch("bibigrid2.models.returnThreading.ReturnThread")
+    @patch("bibigrid.models.returnThreading.ReturnThread")
     def test_start_instances_workers(self, return_mock, thread_mock):
         provider = MagicMock()
         provider.list_servers.return_value = []
@@ -153,7 +155,7 @@ class TestCreate(TestCase):
                                  c.prepare_vpn_or_master_args(configuration, provider))
             prepare_mock.assert_not_called()
 
-    @patch("bibigrid2.core.utility.handler.sshHandler.ansible_preparation")
+    @patch("bibigrid.core.utility.handler.sshHandler.ansible_preparation")
     def test_setup_reachable_servers_master(self, mock_ansible):
         provider = MagicMock()
         provider.list_servers.return_value = []
@@ -237,8 +239,8 @@ class TestCreate(TestCase):
         with self.assertRaises(KeyError):
             c.prepare_configurations()
 
-    @patch("bibigrid2.core.utility.ansibleConfigurator.configure_ansible_yaml")
-    @patch("bibigrid2.core.utility.handler.sshHandler.execute_ssh")
+    @patch("bibigrid.core.utility.ansibleConfigurator.configure_ansible_yaml")
+    @patch("bibigrid.core.utility.handler.sshHandler.execute_ssh")
     def test_upload_playbooks(self, mock_ssh, mock_configure_ansible):
         provider = MagicMock()
         provider.list_servers.return_value = []
@@ -250,8 +252,9 @@ class TestCreate(TestCase):
                                                   configurations=c.configurations,
                                                   cluster_id=c.cluster_id)
         mock_ssh.assert_called_with(floating_ip=c.master_ip, private_key=create.KEY_FOLDER + c.key_name,
-                                    username=c.ssh_user, filepaths=[(os.path.expanduser("/Documents/Repos/bibigrid2/"
-                                                                     "resources/playbook/"), "playbook")],
+                                    username=c.ssh_user, filepaths=[(os.path.expanduser("/Documents/Repos/bibigrid/"
+                                                                                        "resources/playbook/"),
+                                                                     "playbook")],
                                     commands=['echo ansible_start'])
 
     @patch("threading.Thread")
@@ -272,7 +275,7 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "start_start_instances_threads")
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "print_cluster_start_info")
-    @patch("bibigrid2.core.actions.terminateCluster.terminate_cluster")
+    @patch("bibigrid.core.actions.terminateCluster.terminate_cluster")
     def test_create_non_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
@@ -288,7 +291,7 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "start_start_instances_threads")
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "print_cluster_start_info")
-    @patch("bibigrid2.core.actions.terminateCluster.terminate_cluster")
+    @patch("bibigrid.core.actions.terminateCluster.terminate_cluster")
     def test_create_non_debug_upload_raise(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
@@ -307,7 +310,7 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "start_start_instances_threads")
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "print_cluster_start_info")
-    @patch("bibigrid2.core.actions.terminateCluster.terminate_cluster")
+    @patch("bibigrid.core.actions.terminateCluster.terminate_cluster")
     def test_create_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []

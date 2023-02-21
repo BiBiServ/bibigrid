@@ -12,12 +12,6 @@
     state: present
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
-- name: Install Slurm database and RestAPI packages
-  apt:
-    name:
-      - slurmdbd
-      - slurmrestd
-
 - name: Create slurmdb configuration file
   template:
     src: slurm/slurmdbd.conf
@@ -43,31 +37,48 @@
 
 - name: Copy env file for configuration of slurmrestd
   copy:
-    src: slurm/slurmrestd_default
+    src: slurm/default/slurmrestd
     dest: /etc/default/slurmrestd
     owner: root
     group: root
     mode: "0644"
   notify:
-    - slurmdbd
     - slurmrestd
 
-- name: Create Service Directory
+- name: Create system overrides directories (slurmdbdm slurmrestd)
   file:
-    path: /etc/systemd/system/slurmrestd.service.d
+    path: "/etc/systemd/system/{{ item }}.service.d"
     group: root
     owner: root
     mode: "0755"
     state: directory
+  with_items:
+    - slurmdbd
+    - slurmrestd
 
-- name: Copy systemd Service override file
+- name: Copy system overrides (slurmdbdm slurmrestd)
   copy:
-    src: slurm/slurmrestd_override.conf
-    dest: /etc/systemd/system/slurmrestd.service.d/override.conf
+    src: "slurm/systemd/{{ item }}.override"
+    dest: "/etc/systemd/system/{{ item }}.service.d/override.conf"
     mode: "0644"
     owner: root
     group: root
+  with_items:
+    - slurmdbd
+    - slurmrestd
   notify:
+    - slurmdbd
+    - slurmrestd
+
+- name: Enable slurmdbd and slurmrestd services
+  systemd:
+    name: "{{ item }}"
+    enabled: true
+    masked: false
+    state: started
+    daemon_reload: true
+  with_items:
+    - slurmdbd
     - slurmrestd
 
 - name: Start slurm explicit after all dependencies are configured
@@ -82,11 +93,6 @@
   args:
     executable: bash
 
-# - name: Install python3-virtualenv
-#   apt:
-#     name: python3-virtualenv
-#     state: present
-
 - name: Change mode of /opt/slurm directory
   file:
     owner: slurm
@@ -94,17 +100,6 @@
     path: /opt/slurm/
     state: directory
     mode: "0770"
-
-# - name: Create slurm venv in opt
-#   command:
-#     cmd: virtualenv /opt/slurm/venv -p python3.10
-#     creates: "/opt/slurm/venv"
-
-- name: Ensures /etc/slurm dir exists
-  file:
-    path: /etc/slurm/
-    state: directory
-    mode: 0755
 
 - name: Ensures /opt/slurm/.ssh/ dir exists
   file:
@@ -154,18 +149,6 @@
     group: ansible
     mode: "0750"
 
-
-# - name: Copy requirements to correct location
-#  copy:
-#    src: slurm/requirements.txt
-#    dest: /opt/slurm/requirements.txt
-#    #owner: slurm
-#    group: ansible
-#    mode: "0550"
-
-# - name: Install requirements
-#  pip: requirements=/opt/slurm/requirements.txt
-#    virtualenv=/opt/slurm/venv
 
 - name: Install python dependencies
   pip:

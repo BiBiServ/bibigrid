@@ -30,9 +30,11 @@ created clusters to the owners of the private keyfile. For example, you can add 
 him to access your started cluster later on to debug it.
 
 #### masterMounts (optional)
-`masterMounts` expects a list of volumes or snapshots that will then be mounted to the master. If any snapshots are
+`masterMounts` expects a list of volumes or snapshots that will then be attached to the master. If any snapshots are
 given, the related volumes are first created and then those volumes are used by BiBiGrid. Those volumes are not deleted
 after Cluster termination.
+
+[[Link to mounting infomation]] #ToDo
 
 <details>
 <summary>
@@ -47,7 +49,7 @@ after Cluster termination.
 
 #### nfsShares (optional)
 `nfsShares` expects a list of folder paths to share using nfs. In every case, `/vol/spool/` is always an nfsShare.
-This key only makes sense if the [nfs key](#nfs) is set `True`.
+This key is only relevant if the [nfs key](#nfs--optional-) is set `True`.
 
 <details>
 <summary>
@@ -139,6 +141,8 @@ Find your active `images`:
 ```
 openstack image list --os-cloud=openstack | grep active
 ```
+
+Currently, images based on Ubuntu 20.04/22.04 (Focal/Jammy) and Debian 11(Bullseye) are supported. 
 
 Find your active `flavors`:
 

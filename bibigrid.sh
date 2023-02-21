@@ -1,1 +1,1 @@
-python3 -m bibigrid2.core.startup "$@"
+python3 -m bibigrid.core.startup "$@"

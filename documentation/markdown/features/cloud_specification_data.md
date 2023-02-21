@@ -1,6 +1,6 @@
 # Cloud Specification Data
-To access the cloud, authentication information is required. The BiBiGrid2 no longer uses environment variables, but a two file system instead.
-`clouds.yaml` and `clouds-public.yaml` can be placed in `~/.config/bibigrid/` or `/etc/bibigrid/` and will be loaded by BiBiGrid2 on execution.
+To access the cloud, authentication information is required. The BiBiGrid no longer uses environment variables, but a two file system instead.
+`clouds.yaml` and `clouds-public.yaml` can be placed in `~/.config/bibigrid/` or `/etc/bibigrid/` and will be loaded by BiBiGrid on execution.
 While you store your password and username in `clouds.yaml` (private), you can store all other information ready to share in `clouds-public.yaml` (shareable).
 However, all information can just be stored in `clouds.yaml`.
 
