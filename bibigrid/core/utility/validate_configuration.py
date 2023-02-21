@@ -282,7 +282,7 @@ class ValidateConfiguration:
         if instance_image["status"] != "active":
             LOG.warning("Instance %s image: %s not active", instance_name, instance_image_id_or_name)
             print("Available active images:")
-            print("\n".join(provider.get_active_images))
+            print("\n".join(provider.get_active_images()))
             return False
         LOG.info("Instance %s image: %s found", instance_name, instance_image_id_or_name)
         instance_type = instance["type"]
