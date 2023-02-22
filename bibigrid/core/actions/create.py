@@ -38,7 +38,7 @@ def get_identifier(identifier, cluster_id, worker_group="", additional=""):
     @return: the generated string
     """
     general = PREFIX_WITH_SEP + identifier + str(worker_group) + SEPARATOR + cluster_id
-    if additional:
+    if additional or additional == 0:
         return general + SEPARATOR + str(additional)
     return general
 
