@@ -32,10 +32,10 @@ SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
 LOG = logging.getLogger("bibigrid")
 
 
-def delete_old_host_vars():
-    for file_name in os.listdir(aRP.HOST_VARS_FOLDER):
+def delete_old_group_vars():
+    for file_name in os.listdir(aRP.GROUP_VARS_FOLDER):
         # construct full file path
-        file = os.path.join(aRP.HOST_VARS_FOLDER, file_name)
+        file = os.path.join(aRP.GROUP_VARS_FOLDER, file_name)
         if os.path.isfile(file):
             logging.debug('Deleting file: %s', file)
             os.remove(file)
@@ -87,15 +87,13 @@ def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id): 
                                           additional=r"\d+")
         worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict}
         workers.append(worker_dict)
-        for worker_number in range(worker.get('count', 1)):
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER,
-                                    create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                                             additional=worker_number)),
-                       worker_dict)
+        write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER,
+                                name),
+                   worker_dict)
     master = {key: cluster_dict["master"][key] for key in
               ["name", "private_v4", "public_v4", "public_v6", "cloud_specification"]}
     master["flavor"] = {key: cluster_dict["master"]["flavor"][key] for key in flavor_keys}
-    write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, "localhost.yml"), master)
+    write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master)
     return {"master": master, "workers": workers}
 
 
@@ -170,7 +168,7 @@ def generate_ansible_hosts_yaml(ssh_user, configuration, cluster_id):
     """
     LOG.info("Generating ansible hosts file...")
     ansible_hosts_yaml = {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
-                          "workers": {"hosts": {}, "children": {"ephemeral": {"hosts": {}}}}
+                          "workers": {"hosts": {}, "children": {}}
                           }
     # vpnwkr are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
@@ -178,10 +176,12 @@ def generate_ansible_hosts_yaml(ssh_user, configuration, cluster_id):
         name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                         additional=f"[0:{worker.get('count', 1) - 1}]")
         worker_dict = to_instance_host_dict(ssh_user, ip="", local=False)
-        if "ephemeral" in worker["type"]:
-            workers["children"]["ephemeral"]["hosts"][name] = worker_dict
-        else:
-            workers["hosts"][name] = worker_dict
+        worker_range = "[0-{}]"
+        group_name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+                                              additional=worker_range.format(worker.get('count', 1) - 1))
+        # if not workers["children"].get(group_name): # in the current setup this is not needed
+        workers["children"][group_name] = {"hosts": {}}
+        workers["children"][group_name]["hosts"][name] = worker_dict
     return ansible_hosts_yaml
 
 
@@ -303,7 +303,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
     :param cluster_id: id of cluster to create
     :return:
     """
-    delete_old_host_vars()
+    delete_old_group_vars()
     LOG.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
     cluster_dict = list_clusters.dict_clusters(providers)[cluster_id]
