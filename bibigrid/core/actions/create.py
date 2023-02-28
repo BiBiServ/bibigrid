@@ -20,7 +20,7 @@ from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.paths import bin_path as biRP
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
-from bibigrid.models.exceptions import ExecutionException
+from bibigrid.models.exceptions import ExecutionException, ConfigurationException
 
 PREFIX = "bibigrid"
 SEPARATOR = "-"
@@ -68,7 +68,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         :param providers: List of providers (provider)
         :param configurations: List of configurations (dict)
         :param config_path: string that is the path to config-file
-        :param debug: Bool. If True Cluster will offer shut-down after create and
+        :param debug: Bool. If True Cluster offer shut-down after create and
         will ask before shutting down on errors
         """
         self.providers = providers
@@ -116,88 +116,52 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
             yaml.safe_dump(data={"cluster_id": self.cluster_id}, stream=cluster_memory_file)
 
-    def start_instance(self, provider, identifier, instance_type, network, volumes=None,
-                       external_network=None):
-        """
-        Starts any (master,worker,vpn) single server/instance in given network on given provider
-        with floating-ip if master or vpn and with volume if master.
-        :param provider: provider server will be started on
-        :param identifier: string MASTER/WORKER/VPN_IDENTIFIER
-        :param instance_type: dict from configuration containing server type, image and count (but count is not needed)
-        :param network: string network where server will be started in.
-        All server of a provider are started in the same network
-        :param volumes: list of volumes that are to be attached to the server. Currently only relevant for master
-        :param external_network: string only needed if worker=False to create floating_ip
-        :return:
-        """
-        # potentially weird counting due to master
-        with self.thread_lock:
-            if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
-                name = identifier(cluster_id=self.cluster_id)
-            #elif identifier == WORKER_IDENTIFIER:  # pylint: disable=comparison-with-callable
-            #    name = identifier(number=self.worker_counter, cluster_id=self.cluster_id)
-            #    self.worker_counter += 1
-            else:
-                name = identifier(cluster_id=self.cluster_id, additional=self.vpn_counter)
-                self.vpn_counter += 1
-        LOG.info("Starting instance/server %s", name)
-        flavor = instance_type["type"]
-        image = instance_type["image"]
-        server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name,
-                                        image=image, network=network, volumes=volumes)
-        floating_ip = None
-        private_v4 = server["private_v4"]
-        # pylint: disable=comparison-with-callable
-        if identifier == VPN_WORKER_IDENTIFIER or (
-                identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
-            # wait seems to be included. Not in documentation
-            floating_ip = provider.attach_available_floating_ip(network=external_network,
-                                                                server=server)["floating_ip_address"]
-        elif identifier == MASTER_IDENTIFIER:
-            floating_ip = provider.conn.get_server(server["id"])["private_v4"]
-        # pylint: enable=comparison-with-callable
-        return floating_ip, private_v4
 
-    def start_instances(self, configuration, provider):
+    def start_vpn_or_master_instance(self, configuration, provider):
         """
-        Starts all instances of a provider using multithreading
+        Start master/vpn-worker of a provider
         :param configuration: dict configuration of said provider
         :param provider: provider
         :return:
         """
-        LOG.info("Starting instances on %s", provider.NAME)
-        # threads = []
         identifier, instance_type, volumes = self.prepare_vpn_or_master_args(configuration, provider)
         external_network = provider.get_external_network(configuration["network"])
+        with self.thread_lock:
+            if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
+                name = identifier(cluster_id=self.cluster_id)
+            else:
+                name = identifier(cluster_id=self.cluster_id, additional=self.vpn_counter)
+                self.vpn_counter += 1
+        LOG.info(f"Starting instance/server {name} on {provider.NAME}")
+        flavor = instance_type["type"]
+        image = instance_type["image"]
+        network = configuration["network"]
+        # create a server and block until it is up and running
+        server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name,
+                                        image=image, network=network, volumes=volumes,
+                                        wait=True)
+        configuration["private_v4"] = server["private_v4"]
 
-        # Starts master/vpn. Uses return threading to get floating_ip of master/vpn
-        vpn_or_master_thread = return_threading.ReturnThread(target=self.start_instance,
-                                                             args=[provider,
-                                                                   identifier,
-                                                                   instance_type,
-                                                                   configuration["network"],
-                                                                   volumes,
-                                                                   external_network])
-        vpn_or_master_thread.start()
+        # get mac address for given private address
+        # Attention: The following source code works with Openstack and IPV4 only
+        configuration["mac_addr"] =  -1
+        for elem in server['addresses']:
+            for network in server['addresses'][elem]:
+                if network['addr'] == configuration["private_v4"]:
+                    configuration["mac_addr"] = network['OS-EXT-IPS-MAC:mac_addr']
+        if configuration["mac_addr"] == -1:
+            raise ConfigurationException(f"MAC address for ip {configuration['private_v4']} not found.")
 
-        # Starts all workers
-        # for worker_instance_type in configuration.get("workerInstances") or []:
-        #     for worker in range(worker_instance_type["count"]):
-        #         worker_thread = threading.Thread(target=self.start_instance,
-        #                                          args=[provider,
-        #                                                WORKER_IDENTIFIER,
-        #                                                worker_instance_type,
-        #                                                configuration["network"],
-        #                                                True])
-        #         worker_thread.start()
-        #         threads.append(worker_thread)
-        LOG.info("Waiting for servers to start-up on cloud %s", provider.cloud_specification['identifier'])
-        vpn_or_m_floating_ip_address, vpn_or_m_private_v4 = vpn_or_master_thread.join()
-        configuration["floating_ip"] = vpn_or_m_floating_ip_address
-        configuration["private_v4"] = vpn_or_m_private_v4
-        self.setup_reachable_servers(configuration, vpn_or_m_floating_ip_address)
-        # for thread in threads:
-        #     thread.join()
+        # pylint: disable=comparison-with-callable
+        if identifier == VPN_WORKER_IDENTIFIER or (
+                identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
+            configuration["floating_ip"] = provider.attach_available_floating_ip(network=external_network,
+                                                                server=server)["floating_ip_address"]
+        elif identifier == MASTER_IDENTIFIER:
+            configuration["floating_ip"] = server["private_v4"]
+        # pylint: enable=comparison-with-callable
+        self.setup_reachable_servers(configuration)
+
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
@@ -220,20 +184,19 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             raise KeyError
         return identifier, instance_type, volumes
 
-    def setup_reachable_servers(self, configuration, vpn_or_m_floating_ip_address):
+    def setup_reachable_servers(self, configuration):
         """
         Executes necessary commands on master or vpnwkr
         :param configuration: said configuration
-        :param vpn_or_m_floating_ip_address: floating_ip to master or vpnwkr
         """
         if configuration.get("masterInstance"):
-            self.master_ip = vpn_or_m_floating_ip_address
-            ssh_handler.ansible_preparation(floating_ip=vpn_or_m_floating_ip_address,
+            self.master_ip = configuration["floating_ip"]
+            ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
                                             private_key=KEY_FOLDER + self.key_name,
                                             username=self.ssh_user,
                                             commands=self.ssh_add_public_key_commands)
         elif configuration.get("vpnInstance"):
-            ssh_handler.execute_ssh(floating_ip=vpn_or_m_floating_ip_address,
+            ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
                                     private_key=KEY_FOLDER + self.key_name,
                                     username=self.ssh_user,
                                     commands=ssh_handler.VPN_SETUP)
@@ -304,12 +267,30 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         start_instances_threads = []
         for configuration, provider in zip(self.configurations, self.providers):
-            start_instances_thread = return_threading.ReturnThread(target=self.start_instances,
+            start_instances_thread = return_threading.ReturnThread(target=self.start_vpn_or_master_instance,
                                                                    args=[configuration, provider])
             start_instances_thread.start()
             start_instances_threads.append(start_instances_thread)
         for start_instance_thread in start_instances_threads:
             start_instance_thread.join()
+
+    def extended_network_configuration(self):
+        """
+            Configure master/vpn-worker network for a multi/hybrid cloud
+        :return:
+        """
+        if len(self.providers) == 1:
+            return
+
+        for provider_a,configuration_a in zip(self.providers,self.configurations):
+            for configuration_b in self.configurations:
+                if configuration_a != configuration_b:
+                    LOG.info(f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},{configuration_b['subnet_cidrs']})")
+                    provider_a.set_allowed_address(
+                        configuration_a['private_v4'],
+                        {'ip_address' : configuration_b["subnet_cidrs"],
+                         'mac_address' : configuration_a["mac_addr"]})
+
 
     def create(self):
         """
@@ -321,6 +302,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         try:
             self.prepare_configurations()
             self.start_start_instances_threads()
+            self.extended_network_configuration()
             self.upload_data()
             self.print_cluster_start_info()
             if self.debug:
