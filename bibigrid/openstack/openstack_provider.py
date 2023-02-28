@@ -15,9 +15,14 @@ from bibigrid.core import provider
 from bibigrid.core.actions import create
 from bibigrid.core.actions import version
 from bibigrid.models.exceptions import ExecutionException
+from openstack.exceptions import ConflictException
+
+import re
 
 LOG = logging.getLogger("bibigrid")
 
+
+PATTERN_IPV4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
 class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-methods
     """
@@ -161,7 +166,12 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         return self.conn.close()
 
     def create_keypair(self, name, public_key):
-        return self.conn.create_keypair(name=name, public_key=public_key)
+        # When running a multicloud approach on the same provider and same account,
+        # make sure that the keypair is only created ones.
+        try:
+            return self.conn.create_keypair(name=name, public_key=public_key)
+        except ConflictException:
+            return self.conn.get_keypair(name)
 
     def get_network_id_by_subnet(self, subnet):
         subnet = self.conn.get_subnet(subnet)
@@ -258,3 +268,24 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @return: A generator able ot generate all flavors
         """
         return self.conn.compute.flavors()
+
+    def set_allowed_address(self, id_or_ip, allowed_address_pair):
+        """
+        Set allowed address (or CIDR) for the given network interface/port
+        :param id_or_ip: id or ip-address of the port/interfac
+        :param allowed_address: an allowed address pair. For example:
+                {
+                    "ip_address": "23.23.23.1",
+                    "mac_address": "fa:16:3e:c4:cd:3f"
+                }
+        :return updated port:
+        """
+        # get port id if ip address is given
+        if re.match(PATTERN_IPV4,id_or_ip):
+            for port in self.conn.list_ports():
+                for fixed_ip in port["fixed_ips"]:
+                    if fixed_ip["ip_address"] == id_or_ip:
+                        id_or_ip = port["id"]
+                        break
+
+        return self.conn.update_port(id_or_ip,allowed_address_pairs=[allowed_address_pair])

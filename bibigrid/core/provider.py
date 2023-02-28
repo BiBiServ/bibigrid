@@ -207,8 +207,24 @@ class Provider:  # pylint: disable=too-many-public-methods
         """
 
     def get_active_images(self):
+        """
+        Return a list of active images.
+        :return: A list of active images.
+        """
         return [image["name"] for image in self.get_images() if image["status"].lower() == "active"]
 
     def get_active_flavors(self):
         return [flavor["name"] for flavor in self.get_flavors()
                 if "legacy" not in flavor["name"].lower() and "deprecated" not in flavor["name"].lower()]
+
+    def set_allowed_address(self, id_or_ip, allowed_address_pair):
+        """
+        Set allowed address (or CIDR) for the given network interface/port
+        :param id_or_ip: id or ipv4 ip-address of the port/interface
+        :param allowed_address: an allowed address pair. For example:
+                {
+                    "ip_address": "23.23.23.1",
+                    "mac_address": "fa:16:3e:c4:cd:3f"
+                }
+        :return:
+        """
