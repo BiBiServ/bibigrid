@@ -8,7 +8,9 @@ import os
 import re
 
 from bibigrid.core.actions import create
+
 LOG = logging.getLogger("bibigrid")
+
 
 def terminate_cluster(cluster_id, providers, debug=False):
     """
@@ -32,8 +34,7 @@ def terminate_cluster(cluster_id, providers, debug=False):
                                        f"Any non-empty input to shutdown cluster {cluster_id}. "
                                        f"Empty input to exit with cluster still alive:"):
         for provider in providers:
-            LOG.info("Terminating cluster %s on on cloud %s",
-                         cluster_id, provider.cloud_specification['identifier'])
+            LOG.info("Terminating cluster %s on on cloud %s", cluster_id, provider.cloud_specification['identifier'])
             server_list = provider.list_servers()
             cluster_server_state += terminate_servers(server_list, cluster_id, provider)
             cluster_keypair_state.append(delete_keypairs(provider, tmp_keyname))
@@ -56,8 +57,8 @@ def terminate_servers(server_list, cluster_id, provider):
     server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}+|(worker|vpnwkr)\d+-{cluster_id}+-\d+)$")
     for server in server_list:
         if server_regex.match(server["name"]):
-            LOG.info("Trying to terminate Server %s on cloud %s.",
-                         server['name'], provider.cloud_specification['identifier'])
+            LOG.info("Trying to terminate Server %s on cloud %s.", server['name'],
+                     provider.cloud_specification['identifier'])
             cluster_server_state.append(terminate_server(provider, server))
     return cluster_server_state
 
@@ -71,11 +72,10 @@ def terminate_server(provider, server):
     """
     terminated = provider.delete_server(server["id"])
     if not terminated:
-        LOG.warning("Unable to terminate server %s on provider %s.",
-                        server['name'], provider.cloud_specification['identifier'])
+        LOG.warning("Unable to terminate server %s on provider %s.", server['name'],
+                    provider.cloud_specification['identifier'])
     else:
-        LOG.info("Server %s terminated on provider %s.",
-                     server['name'], provider.cloud_specification['identifier'])
+        LOG.info("Server %s terminated on provider %s.", server['name'], provider.cloud_specification['identifier'])
     return terminated
 
 
@@ -130,7 +130,7 @@ def delete_application_credentials(master_provider, cluster_id):
     if not auth.get("application_credential_id") or not auth.get("application_credential_secret"):
         return master_provider.delete_application_credential_by_id_or_name(create.AC_NAME.format(cluster_id=cluster_id))
     LOG.info("Because you used application credentials to authenticate, "
-                 "no created application credentials need deletion.")
+             "no created application credentials need deletion.")
     return True
 
 
@@ -161,13 +161,12 @@ def terminate_output(cluster_server_state, cluster_keypair_state, ac_state, clus
             print(out)
         else:
             LOG.warning("Unable to terminate cluster %s properly."
-                            "\nAll servers terminated: %s\nAll keys deleted: %s",
-                            cluster_id, cluster_server_terminated, cluster_keypair_deleted)
+                        "\nAll servers terminated: %s\nAll keys deleted: %s", cluster_id, cluster_server_terminated,
+                        cluster_keypair_deleted)
         if ac_state:
             LOG.info("Successfully handled application credential of cluster %s.", cluster_id)
         else:
             LOG.warning("Unable to delete application credential of cluster %s", cluster_id)
     else:
         LOG.warning("Unable to find any servers for cluster-id %s. "
-                        "Check cluster-id and configuration.\nAll keys deleted: %s",
-                        cluster_id, cluster_keypair_deleted)
+                    "Check cluster-id and configuration.\nAll keys deleted: %s", cluster_id, cluster_keypair_deleted)
