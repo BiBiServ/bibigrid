@@ -12,6 +12,7 @@ Every following configuration describes a provider that is not the master's prov
 vpnwkr (vpn worker). The vpnwkr is a worker with a floating IP. That allows the master - that knows all vpnwkrs to access
 all workers using the floating IP as an entry point into the other local networks. However, all that will be covered by
 an abstraction layer using a virtual network. Therefore, end users can work on a spread cluster without noticing it.
+Read more about BiBiGrid's technical setup for the multi-cloud [here](multi_cloud.md).
 
 ### Master Provider Configuration
 As mentioned before, the first configuration has a master key. Apart from that it also holds all information that is -
