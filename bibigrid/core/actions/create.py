@@ -54,6 +54,8 @@ KEY_NAME = KEY_PREFIX + SEPARATOR + "{cluster_id}"
 CLUSTER_MEMORY_FOLDER = KEY_FOLDER
 CLUSTER_MEMORY_FILE = ".bibigrid.mem"
 CLUSTER_MEMORY_PATH = os.path.join(CLUSTER_MEMORY_FOLDER, CLUSTER_MEMORY_FILE)
+DEFAULT_SECURITY_GROUP_NAME = "default" + SEPARATOR + "{cluster_id}"
+WIREGUARD_SECURITY_GROUP_NAME = "wireguard" + SEPARATOR + "{cluster_id}"
 
 
 class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
@@ -83,6 +85,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         LOG.debug("Cluster-ID: %s", self.cluster_id)
         self.name = AC_NAME.format(cluster_id=self.cluster_id)
         self.key_name = KEY_NAME.format(cluster_id=self.cluster_id)
+        self.default_security_group_name = DEFAULT_SECURITY_GROUP_NAME.format(cluster_id=self.cluster_id)
+        self.wireguard_security_group_name = WIREGUARD_SECURITY_GROUP_NAME.format(cluster_id=self.cluster_id)
+
         self.worker_counter = 0
         self.vpn_counter = 0
         self.thread_lock = threading.Lock()
@@ -93,7 +98,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Generates ECDSA Keypair using system-function ssh-keygen and uploads the generated public key to providers.
         generate_keypair makes use of the fact that files in tmp are automatically deleted
-        ToDo find a more pythonic way to create an ECDSA keypiar
+        ToDo find a more pythonic way to create an ECDSA keypair
         See here for why using python module ECDSA wasn't successful
         https://stackoverflow.com/questions/71194770/why-does-creating-ecdsa-keypairs-via-python-differ-from-ssh-keygen-t-ecdsa-and
         :return:
@@ -116,6 +121,37 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
             yaml.safe_dump(data={"cluster_id": self.cluster_id}, stream=cluster_memory_file)
 
+    def generate_security_groups(self):
+        """
+        Generate a security groups:
+         - default with basic rules for the cluster
+         - wireguard when
+        """
+        for provider, configuration in zip(self.providers, self.configurations):
+            # create a default security group
+            default_security_group_id = provider.create_security_group(name=self.default_security_group_name)["id"]
+
+            rules = [
+                {"direction": "ingress",
+                 "ethertype": "IPv4",
+                 "protocol": None,
+                 "port_range_min": None,
+                 "port_range_max": None,
+                 "remote_ip_prefix": None,
+                 "remote_group_id": default_security_group_id},
+                {"direction": "ingress",
+                 "ethertype": "IPv4",
+                 "protocol": "tcp",
+                 "port_range_min": 22,
+                 "port_range_max": 22,
+                 "remote_ip_prefix": "0.0.0.0/0",
+                 "remote_group_id": None}]
+            provider.append_rules_to_security_group(default_security_group_id, rules)
+            configuration["security_groups"] = [self.default_security_group_name]  # maybe not necessary
+            # when running a multi-cloud setup create an additional wireguard group
+            if len(self.providers) > 1:
+                provider.create_security_group(name=self.wireguard_security_group_name)["id"]
+                configuration["security_groups"].append(self.wireguard_security_group_name)
 
     def start_vpn_or_master_instance(self, configuration, provider):
         """
@@ -136,32 +172,31 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         flavor = instance_type["type"]
         image = instance_type["image"]
         network = configuration["network"]
+
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name,
                                         image=image, network=network, volumes=volumes,
-                                        wait=True)
+                                        security_groups=configuration["security_groups"], wait=True)
         configuration["private_v4"] = server["private_v4"]
 
         # get mac address for given private address
         # Attention: The following source code works with Openstack and IPV4 only
-        configuration["mac_addr"] =  -1
+        configuration["mac_addr"] = None
         for elem in server['addresses']:
             for network in server['addresses'][elem]:
                 if network['addr'] == configuration["private_v4"]:
                     configuration["mac_addr"] = network['OS-EXT-IPS-MAC:mac_addr']
-        if configuration["mac_addr"] == -1:
+        if configuration["mac_addr"] is None:
             raise ConfigurationException(f"MAC address for ip {configuration['private_v4']} not found.")
 
         # pylint: disable=comparison-with-callable
         if identifier == VPN_WORKER_IDENTIFIER or (
                 identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
             configuration["floating_ip"] = provider.attach_available_floating_ip(network=external_network,
-                                                                server=server)["floating_ip_address"]
+                                                                                 server=server)["floating_ip_address"]
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]
         # pylint: enable=comparison-with-callable
-        self.setup_reachable_servers(configuration)
-
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
@@ -184,22 +219,22 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             raise KeyError
         return identifier, instance_type, volumes
 
-    def setup_reachable_servers(self, configuration):
+    def initialize_instances(self):
         """
-        Executes necessary commands on master or vpnwkr
-        :param configuration: said configuration
+        Setup all servers
         """
-        if configuration.get("masterInstance"):
-            self.master_ip = configuration["floating_ip"]
-            ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
-                                            private_key=KEY_FOLDER + self.key_name,
-                                            username=self.ssh_user,
-                                            commands=self.ssh_add_public_key_commands)
-        elif configuration.get("vpnInstance"):
-            ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
-                                    private_key=KEY_FOLDER + self.key_name,
-                                    username=self.ssh_user,
-                                    commands=ssh_handler.VPN_SETUP)
+        for configuration in self.configurations:
+            if configuration.get("masterInstance"):
+                self.master_ip = configuration["floating_ip"]
+                ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
+                                                private_key=KEY_FOLDER + self.key_name,
+                                                username=self.ssh_user,
+                                                commands=self.ssh_add_public_key_commands)
+            elif configuration.get("vpnInstance"):
+                ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
+                                        private_key=KEY_FOLDER + self.key_name,
+                                        username=self.ssh_user,
+                                        commands=ssh_handler.VPN_SETUP)
 
     def prepare_volumes(self, provider, mounts):
         """
@@ -257,8 +292,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                 username=self.ssh_user,
                                 filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
                                            (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
-                                commands= [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
-                                             cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
+                                commands=[ssh_handler.get_ac_command(self.providers, AC_NAME.format(
+                                    cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
 
     def start_start_instances_threads(self):
         """
@@ -282,15 +317,27 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if len(self.providers) == 1:
             return
 
-        for provider_a,configuration_a in zip(self.providers,self.configurations):
+        for provider_a, configuration_a in zip(self.providers, self.configurations):
+            # iterate over all configurations ...
             for configuration_b in self.configurations:
+                # ... and pick all other configuration
                 if configuration_a != configuration_b:
-                    LOG.info(f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},{configuration_b['subnet_cidrs']})")
+                    LOG.info(
+                        f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},{configuration_b['subnet_cidrs']})")
+                    # configure allowed addresses
                     provider_a.set_allowed_address(
                         configuration_a['private_v4'],
-                        {'ip_address' : configuration_b["subnet_cidrs"],
-                         'mac_address' : configuration_a["mac_addr"]})
-
+                        {'ip_address': configuration_b["subnet_cidrs"],
+                         'mac_address': configuration_a["mac_addr"]})
+                    # configure security group rules
+                    provider_a.append_rules_to_security_group(self.wireguard_security_group_name,
+                                                              [{"direction": "ingress",
+                                                                "ethertype": "IPv4",
+                                                                "protocol": "udp",
+                                                                "port_range_min": 51820,
+                                                                "port_range_max": 51820,
+                                                                "remote_ip_prefix": configuration_b["floating_ip"],
+                                                                "remote_group_id": None}])
 
     def create(self):
         """
@@ -299,10 +346,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         :return: exit_state
         """
         self.generate_keypair()
+        self.generate_security_groups()
         try:
             self.prepare_configurations()
             self.start_start_instances_threads()
             self.extended_network_configuration()
+            self.initialize_instances()
             self.upload_data()
             self.print_cluster_start_info()
             if self.debug:
