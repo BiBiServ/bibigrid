@@ -2,23 +2,47 @@
 
 ## Exactly one master or vpn instance per configuration
 
+There can only be a single master or a single vpn-gateway per configuration.
+
 ## Given Server group exist
+
+If a server group is defined in the [Configuration](configuration.md), it must exist in the cloud.
 
 ## All instances are defined correctly
 
-### Flavor
-
-### Image
-
 ### All instances' images and flavors are compatible
+
+Images have a minimal requirement for ram and disk space that a flavor needs to fulfil. If the given flavor fulfils the
+image's requirement, the check is successful.
 
 ## All MasterMounts exist as snapshots or volumes
 
-## Given Networks And Subnets Exist
+If any `MasterMounts` are defined in the [Configuration](configuration.md#mastermounts--optional-), they must exist in
+the cloud as volumes or
+snapshots (if they exist as snapshots, volumes will be created of them during creation).
+
+## Network or Subnet is given and exists
+
+A network or subnet must be defined in the [Configuration](configuration.md#subnet--required-), and it must exist in the
+cloud as well.
 
 ## Quotas are not exceeded
 
+Total cores, floating-ips (not working as OpenStack doesn't return the correct value), instances number, total ram,
+volumes, volume gigabytes and snapshots are compared to the expected usage of the cluster. If the required resources
+fit, the check is successful. Total cores and ram is used as OpenStack doesn't provide a feasible extraction
+option for current usage.
+
 ## All public key files exist
+
+If any additional public key files are defined in the [Configuration](configuration.md#sshpublickeyfiles--optional-),
+the public key file must actually exist on the local machine.
+
+### All public key files are secure (not failing)
+
+BiBiGrid will also check whether your key is considered secure. Currently `RSA: >=4096`, `ECDSA: >=521`
+and `ED25519: >=256`
+are whitelisted. This check will only print a warning, but will not fail the check.
 
 ## All clouds yaml entries are secure and valid
 
