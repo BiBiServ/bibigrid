@@ -1,7 +1,5 @@
 # Check
 
-                  ("nfs", self.check_nfs)]
-
 ## Exactly one master or vpn instance per configuration
 
 ## Given Server group exist
