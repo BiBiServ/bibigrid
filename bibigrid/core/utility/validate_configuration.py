@@ -450,8 +450,8 @@ class ValidateConfiguration:
         nfs_shares = master_configuration.get("nfsShares")
         nfs = master_configuration.get("nfs")
         if nfs_shares and not nfs:
-            success = True
-            LOG.warning("nfsShares exist, but nfs is False. nfsShares will be ignored!")
+            success = False
+            LOG.warning("nfsShares exist, but nfs is False.")
         else:
             success = True
         return success

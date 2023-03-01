@@ -1,6 +1,4 @@
 # Check
-
-                  ("cloudYamls", self.check_clouds_yamls),
                   ("nfs", self.check_nfs)]
 
 ## Exactly one master or vpn instance per configuration
@@ -55,3 +53,5 @@ key - the following keys exist. Additional keys may be set, but are not required
 ### Secure
 A cloud-specification setup is considered secure if the `clouds-public.yaml` doesn't contain `password`, `username`, `application_credential_id`,
 `profile` or `application_credential_secret`.
+
+## If NFS shares are given, nfs must be set to True
