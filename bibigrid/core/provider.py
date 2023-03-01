@@ -84,7 +84,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         """
 
     def create_server(self, name, flavor, image, network, key_name=None, wait=True,
-                      volumes=None):  # pylint: disable=too-many-arguments
+                      volumes=None, security_groups=None):  # pylint: disable=too-many-arguments
         """
         Creates a new server and waits for it to be accessible if wait=True. If volumes are given, they are attached.
         Returns said server (dict)
@@ -95,6 +95,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :param key_name: (str)
         :param wait: (bool)
         :param volumes: List of volumes (list (str))
+        :param security_groups: List of security_groups list (str)
         :return: server (dict)
         """
 
@@ -226,5 +227,20 @@ class Provider:  # pylint: disable=too-many-public-methods
                     "ip_address": "23.23.23.1",
                     "mac_address": "fa:16:3e:c4:cd:3f"
                 }
+        :return:
+        """
+
+    def create_security_group(self, name, rules):
+        """
+        Create a security and add given rules
+        :param name:  Name of the security group to be created
+        :param rules: List of firewall rules to be added
+        :return: id of created security group
+        """
+    def append_rules_to_security_group(self, name_or_id, rules):
+        """
+        Append firewall rules to given security group
+        :param name_or_id:
+        :param rules:
         :return:
         """

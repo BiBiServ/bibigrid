@@ -14,8 +14,9 @@ from keystoneauth1.identity import v3
 from bibigrid.core import provider
 from bibigrid.core.actions import create
 from bibigrid.core.actions import version
-from bibigrid.models.exceptions import ExecutionException
+from bibigrid.models.exceptions import ExecutionException, ConfigurationException
 from openstack.exceptions import ConflictException
+
 
 import re
 
@@ -130,10 +131,10 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         return [elem.toDict() for elem in self.conn.list_servers()]
 
     def create_server(self, name, flavor, image,
-                      network, key_name=None, wait=True, volumes=None):
+                      network, key_name=None, wait=True, volumes=None, security_groups=None):
         try:
             server = self.conn.create_server(name=name, flavor=flavor, image=image,
-                                             network=network, key_name=key_name, volumes=volumes)
+                                             network=network, key_name=key_name, volumes=volumes, security_groups=security_groups)
         except openstack.exceptions.BadRequestException as exc:
             raise ConnectionError() from exc
         except openstack.exceptions.SDKException as exc:
@@ -289,3 +290,41 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                         break
 
         return self.conn.update_port(id_or_ip,allowed_address_pairs=[allowed_address_pair])
+
+    def create_security_group(self, name, rules=None):
+            """
+            Create a security and add given rules
+            :param name:  Name of the security group to be created
+            :param rules: List of firewall rules in the following format.
+            rules = [{ "direction": "ingress" | "egress",
+                       "ethertype": "IPv4" | "IPv6",
+                       "protocol": "txp" | "udp" | "icmp" | None
+                       "port_range_min": None | 1 - 65535
+                       "port_range_max": None | 1 - 65535
+                       "remote_ip_prefix": <addresses in CIDR> | None
+                       "remote_group_id" <security group id> | None },
+                      { ... } ]
+
+
+            :return: created security group
+            """
+            security_group = self.conn.create_security_group(name,f"Security group for {name}.")
+            if rules is not None:
+                self.append_rules_to_security_group(security_group["id"],rules)
+            return security_group
+    def append_rules_to_security_group(self, name_or_id, rules):
+        """
+        Append firewall rules to given security group
+        :param name_or_id:
+        :param rules:
+        :return:
+        """
+        for rule in rules:
+            self.conn.create_security_group_rule(name_or_id,
+                                                 direction=rule["direction"],
+                                                 ethertype=rule["ethertype"],
+                                                 protocol=rule["protocol"],
+                                                 port_range_min=rule["port_range_min"],
+                                                 port_range_max=rule["port_range_max"],
+                                                 remote_ip_prefix=rule["remote_ip_prefix"],
+                                                 remote_group_id=rule["remote_group_id"])
