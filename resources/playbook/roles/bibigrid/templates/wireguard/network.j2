@@ -4,13 +4,29 @@ Name=wg0
 [Network]
 Address=10.0.0.{{1 if inventory_hostname in groups['master'] else groups['vpnwkrs'].index(inventory_hostname) +2}}/{{ wireguard.mask_bits|default(24) }}
 
-# TODO
+# TODO : ugly code !!!
 {% if inventory_hostname in groups['master']%}
+{% for grp in instances %}
+{% if grp != 'master '%}
+{% for types in instances[grp] %}
+{% if types == 'vpnwkr' %}
 [Route]
-Gateway=10.0.0.1
-Destination=192.168.78.0/24
+Gateway={{instances.master.wireguard_ip}}
+Destination={{ instances[grp][types].network_cidr }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
 {% else %}
+{% for grp in instances %}
+{% if grp != 'master '%}
+{% for types in instances[grp] %}
+{% if types == 'vpnwkr' %}
 [Route]
-Gateway=10.0.0.2
-Destination=192.168.192.0/24
+Gateway={{ instances[grp][types].wireguard_ip }}
+Destination={{instances.master.network_cidr}}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
 {% endif %}
