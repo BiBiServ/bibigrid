@@ -339,20 +339,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         for provider_a, configuration_a in zip(self.providers, self.configurations):
             # configure wireguard network as allowed network
-            allowed_wireguard_address = {'ip_address': '10.0.0.0/24',
-                                         'mac_address': configuration_a["mac_addr"]}
+            allowed_addresses = [{'ip_address': '10.0.0.0/24',
+                                 'mac_address': configuration_a["mac_addr"]}]
             # iterate over all configurations ...
             for configuration_b in self.configurations:
                 # ... and pick all other configuration
                 if configuration_a != configuration_b:
                     LOG.info(
                         f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},{configuration_b['subnet_cidrs']})")
-                    # configure allowed addresses
-                    provider_a.set_allowed_addresses(
-                        configuration_a['private_v4'],
-                        [allowed_wireguard_address,
-                        {'ip_address': configuration_b["subnet_cidrs"],
-                         'mac_address': configuration_a["mac_addr"]}])
+                    # add provider_b network as allowed network
+                    allowed_addresses.append({'ip_address': configuration_b["subnet_cidrs"],
+                                             'mac_address': configuration_a["mac_addr"]})
                     # configure security group rules
                     provider_a.append_rules_to_security_group(self.wireguard_security_group_name,
                                                               [{"direction": "ingress",
@@ -362,6 +359,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                                 "port_range_max": 51820,
                                                                 "remote_ip_prefix": configuration_b["floating_ip"],
                                                                 "remote_group_id": None}])
+            # configure allowed addresses for provider_a/configuration_a
+            provider_a.set_allowed_addresses(configuration_a['private_v4'],allowed_addresses)
     def create(self):
         """
         Creates cluster and prints helpful cluster-info afterwards.
