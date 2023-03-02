@@ -318,6 +318,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             return
 
         for provider_a, configuration_a in zip(self.providers, self.configurations):
+            # configure wireguard network as allowed network
+            provider_a.set_allowed_address(
+                configuration_a['private_v4'],
+                {'ip_address': '10.0.0.0/24',
+                 'mac_address': configuration_a["mac_addr"]})
             # iterate over all configurations ...
             for configuration_b in self.configurations:
                 # ... and pick all other configuration
