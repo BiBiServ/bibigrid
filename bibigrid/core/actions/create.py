@@ -125,7 +125,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Generate a security groups:
          - default with basic rules for the cluster
-         - wireguard when
+         - wireguard when more than one provider is used (= multicloud)
         """
         for provider, configuration in zip(self.providers, self.configurations):
             # create a default security group
@@ -146,12 +146,32 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                  "port_range_max": 22,
                  "remote_ip_prefix": "0.0.0.0/0",
                  "remote_group_id": None}]
+            # when running a multi-cloud setup additional default rules are necessary
+            if len(self.providers) > 1:
+                # allow incoming traffic from wireguard network
+                rules.append( {"direction": "ingress",
+                               "ethertype": "IPv4",
+                               "protocol": "tcp",
+                               "port_range_min": None,
+                               "port_range_max": None,
+                               "remote_ip_prefix": "10.0.0.0/24",
+                               "remote_group_id": None})
+                # allow incoming traffic from all other local provider networks
+                for tmp_configuration in self.configurations:
+                    if tmp_configuration != provider:
+                        rules.append({"direction": "ingress",
+                                      "ethertype": "IPv4",
+                                      "protocol": "tcp",
+                                      "port_range_min": None,
+                                      "port_range_max": None,
+                                      "remote_ip_prefix": tmp_configuration['subnet_cidrs'],
+                                      "remote_group_id": None})
             provider.append_rules_to_security_group(default_security_group_id, rules)
-            configuration["security_groups"] = [self.default_security_group_name]  # maybe not necessary
+            configuration["security_groups"] = [self.default_security_group_name]  # store in configuration
             # when running a multi-cloud setup create an additional wireguard group
             if len(self.providers) > 1:
                 provider.create_security_group(name=self.wireguard_security_group_name)["id"]
-                configuration["security_groups"].append(self.wireguard_security_group_name)
+                configuration["security_groups"].append(self.wireguard_security_group_name) # store in configuration
 
     def start_vpn_or_master_instance(self, configuration, provider):
         """
@@ -350,10 +370,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         If debug is set True it offers termination after starting the cluster.
         :return: exit_state
         """
-        self.generate_keypair()
-        self.generate_security_groups()
         try:
+            self.generate_keypair()
             self.prepare_configurations()
+            self.generate_security_groups()
             self.start_start_instances_threads()
             self.extended_network_configuration()
             self.initialize_instances()
