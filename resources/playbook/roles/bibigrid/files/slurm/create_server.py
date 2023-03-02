@@ -46,6 +46,7 @@ def start_server(worker, connection, cloudname, server_start_data):
             image=worker_type["image"],
             network=worker_type["network"],
             key_name=f"tempKey_bibi-{common_config['cluster_id']}",
+            security_groups=[f"default-{common_config['cluster_id']}"],
             userdata=userdata,
             wait=False)
         # ... add it to server
