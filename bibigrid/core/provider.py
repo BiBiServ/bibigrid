@@ -218,25 +218,34 @@ class Provider:  # pylint: disable=too-many-public-methods
         return [flavor["name"] for flavor in self.get_flavors()
                 if "legacy" not in flavor["name"].lower() and "deprecated" not in flavor["name"].lower()]
 
-    def set_allowed_address(self, id_or_ip, allowed_address_pair):
+    def set_allowed_addresses(self, id_or_ip, allowed_address_pairs):
         """
         Set allowed address (or CIDR) for the given network interface/port
         :param id_or_ip: id or ipv4 ip-address of the port/interface
-        :param allowed_address: an allowed address pair. For example:
-                {
+        :param allowed_address: a list of allowed address pairs. For example:
+                [{
                     "ip_address": "23.23.23.1",
                     "mac_address": "fa:16:3e:c4:cd:3f"
-                }
+                }]
         :return:
         """
 
     def create_security_group(self, name, rules):
         """
-        Create a security and add given rules
+        Create a security group and add given rules
         :param name:  Name of the security group to be created
         :param rules: List of firewall rules to be added
         :return: id of created security group
         """
+
+    def delete_security_group(self,name_or_id):
+        """
+        Delete a security group
+        :param name_or_id : Name or Id of the security group to be deleted
+        :return: True if delete succeeded, False otherwise.
+
+        """
+
     def append_rules_to_security_group(self, name_or_id, rules):
         """
         Append firewall rules to given security group

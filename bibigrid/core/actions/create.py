@@ -149,16 +149,16 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             # when running a multi-cloud setup additional default rules are necessary
             if len(self.providers) > 1:
                 # allow incoming traffic from wireguard network
-                rules.append( {"direction": "ingress",
-                               "ethertype": "IPv4",
-                               "protocol": "tcp",
-                               "port_range_min": None,
-                               "port_range_max": None,
-                               "remote_ip_prefix": "10.0.0.0/24",
-                               "remote_group_id": None})
+                rules.append({"direction": "ingress",
+                              "ethertype": "IPv4",
+                              "protocol": "tcp",
+                              "port_range_min": None,
+                              "port_range_max": None,
+                              "remote_ip_prefix": "10.0.0.0/24",
+                              "remote_group_id": None})
                 # allow incoming traffic from all other local provider networks
                 for tmp_configuration in self.configurations:
-                    if tmp_configuration != provider:
+                    if tmp_configuration != configuration:
                         rules.append({"direction": "ingress",
                                       "ethertype": "IPv4",
                                       "protocol": "tcp",
@@ -171,7 +171,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             # when running a multi-cloud setup create an additional wireguard group
             if len(self.providers) > 1:
                 provider.create_security_group(name=self.wireguard_security_group_name)["id"]
-                configuration["security_groups"].append(self.wireguard_security_group_name) # store in configuration
+                configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
     def start_vpn_or_master_instance(self, configuration, provider):
         """
@@ -339,10 +339,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         for provider_a, configuration_a in zip(self.providers, self.configurations):
             # configure wireguard network as allowed network
-            provider_a.set_allowed_address(
-                configuration_a['private_v4'],
-                {'ip_address': '10.0.0.0/24',
-                 'mac_address': configuration_a["mac_addr"]})
+            allowed_wireguard_address = {'ip_address': '10.0.0.0/24',
+                                         'mac_address': configuration_a["mac_addr"]}
             # iterate over all configurations ...
             for configuration_b in self.configurations:
                 # ... and pick all other configuration
@@ -350,10 +348,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     LOG.info(
                         f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},{configuration_b['subnet_cidrs']})")
                     # configure allowed addresses
-                    provider_a.set_allowed_address(
+                    provider_a.set_allowed_addresses(
                         configuration_a['private_v4'],
+                        [allowed_wireguard_address,
                         {'ip_address': configuration_b["subnet_cidrs"],
-                         'mac_address': configuration_a["mac_addr"]})
+                         'mac_address': configuration_a["mac_addr"]}])
                     # configure security group rules
                     provider_a.append_rules_to_security_group(self.wireguard_security_group_name,
                                                               [{"direction": "ingress",
@@ -363,7 +362,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                                 "port_range_max": 51820,
                                                                 "remote_ip_prefix": configuration_b["floating_ip"],
                                                                 "remote_group_id": None}])
-
     def create(self):
         """
         Creates cluster and prints helpful cluster-info afterwards.
@@ -381,7 +379,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.print_cluster_start_info()
             if self.debug:
                 LOG.info("DEBUG MODE: Entering termination...")
-                terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers,
+                terminate_cluster.terminate_cluster(cluster_id=self.cluster_id,
+                                                    providers=self.providers,
+                                                    configurations=self.configurations,
                                                     debug=self.debug)
         except exceptions.ConnectionException:
             if self.debug:
@@ -415,7 +415,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             LOG.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
-        terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug)
+        terminate_cluster.terminate_cluster(cluster_id=self.cluster_id,
+                                            providers=self.providers,
+                                            configurations=self.configurations,
+                                            debug=self.debug)
         return 1
 
     def print_cluster_start_info(self):

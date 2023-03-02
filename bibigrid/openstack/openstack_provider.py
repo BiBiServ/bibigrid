@@ -270,15 +270,15 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         """
         return self.conn.compute.flavors()
 
-    def set_allowed_address(self, id_or_ip, allowed_address_pair):
+    def set_allowed_addresses(self, id_or_ip, allowed_address_pairs):
         """
         Set allowed address (or CIDR) for the given network interface/port
         :param id_or_ip: id or ip-address of the port/interfac
-        :param allowed_address: an allowed address pair. For example:
-                {
+        :param allowed_address: a list of allowed address pairs. For example:
+                [{
                     "ip_address": "23.23.23.1",
                     "mac_address": "fa:16:3e:c4:cd:3f"
-                }
+                }]
         :return updated port:
         """
         # get port id if ip address is given
@@ -289,7 +289,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                         id_or_ip = port["id"]
                         break
 
-        return self.conn.update_port(id_or_ip,allowed_address_pairs=[allowed_address_pair])
+        return self.conn.update_port(id_or_ip,allowed_address_pairs=allowed_address_pairs)
 
     def create_security_group(self, name, rules=None):
             """
@@ -312,6 +312,15 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
             if rules is not None:
                 self.append_rules_to_security_group(security_group["id"],rules)
             return security_group
+
+    def delete_security_group(self,name_or_id):
+        """
+        Delete a security group
+        :param name_or_id : Name or Id of the security group to be deleted
+        :return: True if delete succeeded, False otherwise.
+        """
+        return self.conn.delete_security_group(name_or_id)
+
     def append_rules_to_security_group(self, name_or_id, rules):
         """
         Append firewall rules to given security group
