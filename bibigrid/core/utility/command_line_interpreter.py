@@ -3,10 +3,25 @@ Has necessary methods and variables to interpret the command line
 """
 
 import argparse
+import logging
 import os
 
 STANDARD_CONFIG_INPUT_PATH = os.path.expanduser("~/.config/bibigrid")
 FOLDER_START = ("~/", "/")
+LOG = logging.getLogger("bibigrid")
+
+
+def check_cid(cid):
+    if "-" in cid:
+        new_cid = cid.split("-")[-1]
+        LOG.info("-cid %s is not a cid, but probably the entire master name. Using '%s' as "
+                    "cid instead.", cid, new_cid)
+        return new_cid
+    if "." in cid:
+        LOG.info("-cid %s is not a cid, but probably the master's ip. "
+                    "Using the master ip instead of cid only works if a cluster key is in your systems default ssh key "
+                    "location (~/.ssh/). Otherwise bibigrid can't identify the cluster key.")
+    return cid
 
 
 def interpret_command_line():
@@ -24,7 +39,7 @@ def interpret_command_line():
                                                                        "Relative paths can be used and start "
                                                                        "at ~/.config/bibigrid", required=True,
                         type=lambda s: s if s.startswith(FOLDER_START) else os.path.join(STANDARD_CONFIG_INPUT_PATH, s))
-    parser.add_argument("-cid", "--cluster_id", metavar="<cluster-id>", type=str, default="",
+    parser.add_argument("-cid", "--cluster_id", metavar="<cluster-id>", type=check_cid, default="",
                         help="Cluster id is needed for ide and termination")
 
     actions = parser.add_mutually_exclusive_group(required=True)

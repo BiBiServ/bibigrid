@@ -5,7 +5,6 @@
 
 - name: Change mode of /opt/slurm directory
   file:
-    owner: ubuntu
     group: ansible
     path: /opt/playbook/
     state: directory

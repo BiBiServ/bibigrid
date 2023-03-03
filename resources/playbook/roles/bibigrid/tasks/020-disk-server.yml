@@ -5,7 +5,7 @@
     fstype: none
     opts: bind,auto
     state: mounted
-  when: instances.master.flavor.ephemeral > 0
+  when: flavor.ephemeral > 0
 
 - name: Mount disks
   mount:
@@ -14,5 +14,5 @@
     fstype: ext4
     state: mounted
   with_items:
-    - "{{ instances.master.disks }}"
-  when: instances.master.disks is defined
+    - "{{ master.disks }}"
+  when: master.disks is defined

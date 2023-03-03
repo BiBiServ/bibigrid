@@ -38,7 +38,7 @@ def get_cluster_id_from_mem():
     return None
 
 
-def set_logger(verbosity):
+def set_logger_verbosity(verbosity):
     """
     Sets verbosity, format and handler.
     :param verbosity: level of verbosity
@@ -48,7 +48,6 @@ def set_logger(verbosity):
     capped_verbosity = min(verbosity, len(VERBOSITY_LIST) - 1)
     # LOG.basicConfig(format=LOGGER_FORMAT, level=VERBOSITY_LIST[capped_verbosity],
     #                    handlers=LOGGING_HANDLER_LIST)
-    logging.basicConfig(format=LOGGER_FORMAT, handlers=LOGGING_HANDLER_LIST)
 
     log = logging.getLogger("bibigrid")
     log.setLevel(VERBOSITY_LIST[capped_verbosity])
@@ -129,9 +128,9 @@ def main():
     Interprets command line, sets logger, reads configuration and runs selected action. Then exits.
     :return:
     """
-
+    logging.basicConfig(format=LOGGER_FORMAT, handlers=LOGGING_HANDLER_LIST)
     args = command_line_interpreter.interpret_command_line()
-    set_logger(args.verbose)
+    set_logger_verbosity(args.verbose)
     configurations = configuration_handler.read_configuration(args.config_input)
     if configurations:
         sys.exit(run_action(args, configurations, args.config_input))

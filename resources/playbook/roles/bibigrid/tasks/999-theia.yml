@@ -44,6 +44,8 @@
     creates: "{{ nvm_install_dir }}/nvm.sh"
     executable: bash
     warn: false
+  tags:
+    - skip_ansible_lint
 
 - name: Install node 16 and yarn
   shell: |

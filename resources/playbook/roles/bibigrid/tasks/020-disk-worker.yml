@@ -1,14 +1,14 @@
-- when: "'ephemeral' in group_names"
+- when: flavor.ephemeral > 0
   block:
-  - name: Mount ephemeral
-    mount:
-      path: /vol/scratch
-      src: /mnt
-      fstype: none
-      opts: bind,auto
-      state: mounted
-  - name: Set 0777 rights for ephemeral mount
-    file:
-      path: /vol/scratch
-      state: directory
-      mode: 0777
+    - name: Mount ephemeral
+      mount:
+        path: /vol/scratch
+        src: /mnt
+        fstype: none
+        opts: bind,auto
+        state: mounted
+    - name: Set 0777 rights for ephemeral mount
+      file:
+        path: /vol/scratch
+        state: directory
+        mode: 0777

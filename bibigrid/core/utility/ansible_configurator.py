@@ -3,6 +3,7 @@ Prepares ansible files (vars, common_configuration, ...)
 """
 
 import logging
+import os
 
 import mergedeep
 import yaml
@@ -31,6 +32,15 @@ SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
 LOG = logging.getLogger("bibigrid")
 
 
+def delete_old_group_vars():
+    for file_name in os.listdir(aRP.GROUP_VARS_FOLDER):
+        # construct full file path
+        file = os.path.join(aRP.GROUP_VARS_FOLDER, file_name)
+        if os.path.isfile(file):
+            logging.debug('Deleting file: %s', file)
+            os.remove(file)
+
+
 def generate_site_file_yaml(custom_roles):
     """
     Generates site_yaml (dict).
@@ -38,10 +48,8 @@ def generate_site_file_yaml(custom_roles):
     :param custom_roles: ansibleRoles given by the config
     :return: site_yaml (dict)
     """
-    site_yaml = [{'hosts': 'master', "become": "yes",
-                  "vars_files": VARS_FILES, "roles": MASTER_ROLES},
-                 {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES,
-                  "roles": WORKER_ROLES}]  # ,
+    site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
+                 {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]  # ,
     # {"hosts": "vpnwkr", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
     # "roles": ["common", "vpnwkr"]}]
     # add custom roles and vars
@@ -63,6 +71,7 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
     """
     LOG.info("Generating instances file...")
     instances = {}
+    workers = []
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
     worker_count = 0
     vpn_count = 0
@@ -71,32 +80,27 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             instances[configuration["cloud_specification"]] = {}
             instances[configuration["cloud_specification"]]["workers"] = []
         for index, worker in enumerate(configuration.get("workerInstances", [])):
-            name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                            additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
-            worker_count += worker.get('count', 1)
             flavor = provider.get_flavor(worker["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
+            image = worker["image"]
+            network = configuration["network"]
+            name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+                                            additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
-            instances[configuration["cloud_specification"]]["workers"].append(
-                {"name": name,
-                 "regexp": regexp,
-                 "image":  worker["image"],
-                 "network": configuration["network"],
-                 "flavor": flavor_dict})
+            worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict}
+            workers.append(worker_dict)
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, name), worker_dict)
         vpnwkr = configuration.get("vpnInstance")
         if vpnwkr:
-            name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id,
-                                                additional=f"{vpn_count}")
-            wireguard_ip = f"10.0.0.{vpn_count+2}"  # skipping 0 and 1 (master)
+            name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
+            wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
             vpn_count += 1
             flavor = provider.get_flavor(vpnwkr["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
             image = vpnwkr["image"]
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            instances[configuration["cloud_specification"]]["vpnwkr"] = {"name": name,
-                                                                         "regexp": regexp,
-                                                                         "image": image,
+            instances[configuration["cloud_specification"]]["vpnwkr"] = {"name": name, "regexp": regexp, "image": image,
                                                                          "network": network,
                                                                          "network_cidr": configuration["subnet_cidrs"],
                                                                          "floating_ip": configuration["floating_ip"],
@@ -108,16 +112,13 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
             flavor = provider.get_flavor(master["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
-            instances["master"] = {"name": name,
-                                   "image": master["image"],
-                                   "network": configuration["network"],
+            instances["master"] = {"name": name, "image": master["image"], "network": configuration["network"],
                                    "network_cidr": configuration["subnet_cidrs"],
-                                   "floating_ip": configuration["floating_ip"],
-                                   "flavor": flavor_dict,
-                                   "private_v4": configuration["private_v4"],
-                                   "wireguard_ip": "10.0.0.1",
+                                   "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
+                                   "private_v4": configuration["private_v4"], "wireguard_ip": "10.0.0.1",
                                    "cloud_specification": configuration["cloud_specification"]}
-    instances_yml = {"instances": instances}
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), instances["master"])
+        instances_yml = {"instances": instances}
     return instances_yml
 
 
@@ -149,8 +150,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     master_configuration = configurations[0]
     LOG.info("Generating common configuration file...")
     # print(configuration.get("slurmConf", {}))
-    common_configuration_yaml = {"cluster_id": cluster_id, "cluster_cidrs": cidrs,
-                                 "default_user": default_user,
+    common_configuration_yaml = {"cluster_id": cluster_id, "cluster_cidrs": cidrs, "default_user": default_user,
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
@@ -159,19 +159,17 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                  "enable_zabbix": master_configuration.get("zabbix", False),
                                  "enable_nfs": master_configuration.get("nfs", False),
                                  "enable_ide": master_configuration.get("ide", False),
-                                 "slurm": master_configuration.get("slurm", True),
-                                 "ssh_user": ssh_user,
+                                 "slurm": master_configuration.get("slurm", True), "ssh_user": ssh_user,
                                  "slurm_conf": mergedeep.merge({}, SLURM_CONF,
                                                                master_configuration.get("slurmConf", {}),
-                                                               strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
-                                 }
+                                                               strategy=mergedeep.Strategy.TYPESAFE_REPLACE)}
     if master_configuration.get("nfs"):
         nfs_shares = master_configuration.get("nfsShares", [])
         nfs_shares = nfs_shares + DEFAULT_NFS_SHARES
-        common_configuration_yaml["nfs_mounts"] = [{"src": "/" + nfs_share, "dst": "/" + nfs_share}
-                                                   for nfs_share in nfs_shares]
-        common_configuration_yaml["ext_nfs_mounts"] = [{"src": ext_nfs_share, "dst": ext_nfs_share} for
-                                                       ext_nfs_share in (master_configuration.get("extNfsShares", []))]
+        common_configuration_yaml["nfs_mounts"] = [{"src": "/" + nfs_share, "dst": "/" + nfs_share} for nfs_share in
+                                                   nfs_shares]
+        common_configuration_yaml["ext_nfs_mounts"] = [{"src": ext_nfs_share, "dst": ext_nfs_share} for ext_nfs_share in
+                                                       (master_configuration.get("extNfsShares", []))]
 
     if master_configuration.get("ide"):
         common_configuration_yaml["ide_conf"] = mergedeep.merge({}, IDE_CONF, master_configuration.get("ideConf", {}),
@@ -189,12 +187,9 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
         peers = []
         for configuration in configurations:
             private_key, public_key = wireguard_keys.generate()
-            peers.append({"name": configuration["cloud_specification"],
-                          "private_key": private_key,
-                          "public_key": public_key,
-                          "ip": configuration["floating_ip"],
-                          "subnet": configuration["subnet_cidrs"]})
-            # subnet
+            peers.append(
+                {"name": configuration["cloud_specification"], "private_key": private_key, "public_key": public_key,
+                 "ip": configuration["floating_ip"], "subnet": configuration["subnet_cidrs"]})  # subnet
         common_configuration_yaml["wireguard"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
 
     return common_configuration_yaml
@@ -209,28 +204,27 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
     :return: ansible_hosts yaml (dict)
     """
     LOG.info("Generating ansible hosts file...")
-    ansible_hosts_yaml = {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user,local=False)}},
-                          "workers": {"hosts": {}, "children": {"ephemeral": {"hosts": {}}, "vpnwkrs": {"hosts": {}}}}
+    ansible_hosts_yaml = {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
+                          "workers": {"hosts": {}, "children": {}}  # where vpnwkrs
                           }
     # vpnwkr are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
-
     worker_count = 0
     vpn_count = 0
     for configuration in configurations:
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
-            worker_count += worker.get('count', 1)
             worker_dict = to_instance_host_dict(ssh_user, ip="", local=False)
-            if "ephemeral" in worker["type"]:
-                workers["children"]["ephemeral"]["hosts"][name] = worker_dict
-            else:
-                workers["hosts"][name] = worker_dict
+            group_name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+                                                  additional=f"[{worker_count}:"
+                                                             f"{worker_count + worker.get('count', 1) - 1}]")
+            # if not workers["children"].get(group_name): # in the current setup this is not needed
+            workers["children"][group_name] = {"hosts": {}}
+            workers["children"][group_name]["hosts"][name] = worker_dict
 
             if configuration.get("vpnInstance"):
-                name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id,
-                                                    additional=vpn_count)
+                name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpn_count)
                 vpn_dict = to_instance_host_dict(ssh_user, ip="", local=False)
                 vpn_dict["ansible_host"] = configuration["floating_ip"]
                 workers["children"]["vpnwkrs"]["hosts"][name] = vpn_dict
@@ -245,8 +239,7 @@ def to_instance_host_dict(ssh_user, ip="localhost", local=True):  # pylint: disa
     :param local: bool
     :return: host entry (dict)
     """
-    host_yaml = {"ansible_connection": "local" if local else "ssh",
-                 "ansible_python_interpreter": PYTHON_INTERPRETER,
+    host_yaml = {"ansible_connection": "local" if local else "ssh", "ansible_python_interpreter": PYTHON_INTERPRETER,
                  "ansible_user": ssh_user}
     if ip:
         host_yaml["ip"] = ip
@@ -318,9 +311,8 @@ def generate_worker_specification_file_yaml(configurations):
     worker_specification_yaml = []
     for worker_groups_provider_list, network in zip(worker_groups_list, network_list):
         for worker_group in worker_groups_provider_list:
-            worker_specification_yaml.append({"TYPE": worker_group["type"],
-                                              "IMAGE": worker_group["image"],
-                                              "NETWORK": network})
+            worker_specification_yaml.append(
+                {"TYPE": worker_group["type"], "IMAGE": worker_group["image"], "NETWORK": network})
     return worker_specification_yaml
 
 
@@ -348,19 +340,18 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
     :param cluster_id: id of cluster to create
     :return:
     """
+    delete_old_group_vars()
     LOG.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
     ansible_roles = get_ansible_roles(configurations[0].get("ansibleRoles"))
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
     for path, generated_yaml in [
-        (aRP.WORKER_SPECIFICATION_FILE, generate_worker_specification_file_yaml(configurations)),
-        (aRP.COMMONS_CONFIG_FILE, generate_common_configuration_yaml(cidrs=get_cidrs(configurations),
-                                                                     configurations=configurations,
-                                                                     cluster_id=cluster_id,
-                                                                     ssh_user=configurations[0]["sshUser"],
-                                                                     default_user=default_user)),
+        (aRP.WORKER_SPECIFICATION_FILE, generate_worker_specification_file_yaml(configurations)), (
+                aRP.COMMONS_CONFIG_FILE,
+                generate_common_configuration_yaml(cidrs=get_cidrs(configurations), configurations=configurations,
+                                                   cluster_id=cluster_id, ssh_user=configurations[0]["sshUser"],
+                                                   default_user=default_user)),
         (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(configurations, providers, cluster_id)),
-        (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations,
-                                                            cluster_id)),
+        (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations, cluster_id)),
         (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(ansible_roles))]:
         write_yaml(path, generated_yaml, alias)

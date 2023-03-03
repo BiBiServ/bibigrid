@@ -142,6 +142,8 @@ Find your active `images`:
 openstack image list --os-cloud=openstack | grep active
 ```
 
+Currently, images based on Ubuntu 20.04/22.04 (Focal/Jammy) and Debian 11(Bullseye) are supported. 
+
 Find your active `flavors`:
 
 ```

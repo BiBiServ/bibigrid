@@ -1,7 +1,18 @@
-- name: Install Slurm base packages and dependencies
+- name: Create Slurm group
+  group:
+    name: slurm
+    gid: 64030
+
+- name: Create Slurm user
+  user:
+    name: slurm
+    uid: 64030
+    group: slurm
+
+- name: Install Slurm package (and dependencies)
   apt:
     name:
-      - slurm-wlm
+      - slurm-full
       - munge
 
 - name: Create new secret (Munge)
@@ -14,13 +25,55 @@
   notify:
     - munge
 
-- name: Disable slurmctld (on worker)
-  systemd:
-    name: slurmctld
-    enabled: false
-  when: "'master' not in group_names"
+- name: Ensures slurm directories exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0775
+    owner: root
+    group: slurm
+  with_items:
+    - /etc/slurm
+    - /var/lib/slurm
+    - /var/log/slurm
 
-- name: SLURM configuration
+- name: Create system overrides directories (slurmd, slurmctld)
+  file:
+    path: "/etc/systemd/system/{{ item }}.service.d"
+    group: root
+    owner: root
+    mode: "0755"
+    state: directory
+  with_items:
+    - slurmd
+    - slurmctld
+
+- name: Copy system overrides (slurmd, slurmctld)
+  copy:
+    src: "slurm/systemd/{{ item }}.override"
+    dest: "/etc/systemd/system/{{ item }}.service.d/override.conf"
+    mode: "0644"
+    owner: root
+    group: root
+  with_items:
+    - slurmd
+    - slurmctld
+  notify:
+    - slurmd
+    - slurmctld
+
+- name: Enable slurmctld and slurmd services
+  systemd:
+    name: "{{ item }}"
+    enabled: true
+    masked: false
+    state: started
+    daemon_reload: true
+  with_items:
+    - slurmctld
+    - slurmd
+
+- name: Create Slurm configuration
   template:
     src: slurm/slurm.conf
     dest: /etc/slurm/slurm.conf
@@ -31,22 +84,11 @@
     - slurmctld
     - slurmd
 
-- name: SLURM cgroup configuration
+- name: Slurm cgroup configuration
   copy:
     src: slurm/cgroup.conf
     dest: /etc/slurm/cgroup.conf
     owner: slurm
-    group: root
-    mode: 0444
-  notify:
-    - slurmctld
-    - slurmd
-
-- name: SLURM cgroup allowed devices conf
-  copy:
-    src: slurm/cgroup_allowed_devices_file.conf
-    dest: /etc/slurm/cgroup_allowed_devices_file.conf
-    owner: root
     group: root
     mode: 0444
   notify:
