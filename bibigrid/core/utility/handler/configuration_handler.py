@@ -18,6 +18,7 @@ CLOUD_CONFIGURATION_KEY = "cloud"
 
 LOG = logging.getLogger("bibigrid")
 
+
 def read_configuration(path="bibigrid.yml"):
     """
     Reads yaml from file and returns the list of all configurations
@@ -82,8 +83,8 @@ def get_clouds_files():
         if not clouds:
             LOG.warning("%s is not valid. Must contain key '%s:'", CLOUDS_YAML, CLOUD_ROOT_KEY)
     else:
-        LOG.warning("No %s at %s! Please copy your %s to one of those listed folders. Aborting...",
-                    CLOUDS_YAML, CLOUDS_YAML_PATHS, CLOUDS_YAML)
+        LOG.warning("No %s at %s! Please copy your %s to one of those listed folders. Aborting...", CLOUDS_YAML,
+                    CLOUDS_YAML_PATHS, CLOUDS_YAML)
     if clouds_public_yaml:
         clouds_public = clouds_public_yaml.get(CLOUD_PUBLIC_ROOT_KEY)
         if not clouds_public:
@@ -109,15 +110,15 @@ def get_cloud_specification(cloud_name, clouds, clouds_public):
             cloud_public_specification = clouds_public.get(public_cloud_name)
             if not cloud_public_specification:
                 LOG.warning("%s is not a valid profile name. "
-                                "Must be contained under key '%s'", public_cloud_name, CLOUD_PUBLIC_ROOT_KEY)
+                            "Must be contained under key '%s'", public_cloud_name, CLOUD_PUBLIC_ROOT_KEY)
             else:
                 LOG.debug("Profile found. Merging begins...")
                 try:
                     mergedeep.merge(cloud_full_specification, cloud_public_specification,
                                     strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
                 except TypeError as exc:
-                    LOG.warning("Existing %s and %s configuration keys don't match in type: %s",
-                                    CLOUDS_YAML, CLOUDS_PUBLIC_YAML, exc)
+                    LOG.warning("Existing %s and %s configuration keys don't match in type: %s", CLOUDS_YAML,
+                                CLOUDS_PUBLIC_YAML, exc)
                     return {}
         else:
             LOG.debug("Using only clouds.yaml since no clouds-public profile is set.")

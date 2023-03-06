@@ -107,6 +107,12 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
                                                                          "private_v4": configuration["private_v4"],
                                                                          "flavor": flavor_dict,
                                                                          "wireguard_ip": wireguard_ip}
+            if configuration.get("wireguard_peer"):
+                instances[configuration["cloud_specification"]]["vpnwkr"]["wireguard"] = {"ip": wireguard_ip,
+                                                                                          "peer": configuration.get(
+                                                                                              "wireguard_peer")}
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, name),
+                       instances[configuration["cloud_specification"]]["vpnwkr"])
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
@@ -115,8 +121,10 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             instances["master"] = {"name": name, "image": master["image"], "network": configuration["network"],
                                    "network_cidr": configuration["subnet_cidrs"],
                                    "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
-                                   "private_v4": configuration["private_v4"], "wireguard_ip": "10.0.0.1",
+                                   "private_v4": configuration["private_v4"],
                                    "cloud_specification": configuration["cloud_specification"]}
+            if configuration.get("wireguard_peer"):
+                instances["master"]["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), instances["master"])
         instances_yml = {"instances": instances}
     return instances_yml
@@ -184,12 +192,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
         pass_through(master_configuration, common_configuration_yaml, from_key, to_key)
 
     if len(configurations) > 1:
-        peers = []
-        for configuration in configurations:
-            private_key, public_key = wireguard_keys.generate()
-            peers.append(
-                {"name": configuration["cloud_specification"], "private_key": private_key, "public_key": public_key,
-                 "ip": configuration["floating_ip"], "subnet": configuration["subnet_cidrs"]})  # subnet
+        peers = configuration_handler.get_list_by_key(configurations, "wireguard_peer")
         common_configuration_yaml["wireguard"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
 
     return common_configuration_yaml
@@ -332,6 +335,15 @@ def write_yaml(path, generated_yaml, alias=False):
             yaml.dump(data=generated_yaml, stream=file, Dumper=yaml_dumper.NoAliasSafeDumper)
 
 
+def add_wireguard_in_configurations(configurations):
+    if len(configurations) > 1:
+        for configuration in configurations:
+            private_key, public_key = wireguard_keys.generate()
+            configuration["wireguard_peer"] = {"name": configuration["cloud_specification"], "private_key": private_key,
+                                               "public_key": public_key, "ip": configuration["floating_ip"],
+                                               "subnet": configuration["subnet_cidrs"]}
+
+
 def configure_ansible_yaml(providers, configurations, cluster_id):
     """
     Generates and writes all ansible-configuration-yaml files.
@@ -345,6 +357,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
     alias = configurations[0].get("aliasDumper", False)
     ansible_roles = get_ansible_roles(configurations[0].get("ansibleRoles"))
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
+    add_wireguard_in_configurations(configurations)
     for path, generated_yaml in [
         (aRP.WORKER_SPECIFICATION_FILE, generate_worker_specification_file_yaml(configurations)), (
                 aRP.COMMONS_CONFIG_FILE,
