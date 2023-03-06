@@ -354,7 +354,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if self.debug:
                 LOG.info("DEBUG MODE: Entering termination...")
                 terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers,
-                                                    configurations=self.configurations, debug=self.debug)
+                                                    debug=self.debug)
         except exceptions.ConnectionException:
             if self.debug:
                 LOG.error(traceback.format_exc())
