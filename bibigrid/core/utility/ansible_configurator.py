@@ -217,7 +217,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
                                                "vpnwkr": {"hosts": {}}}}, "workers": {"hosts": {}, "children": {}}}
     # vpnwkr are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
-    vpnwkrs = ansible_hosts_yaml["vpn"]["children"]["vpnwkr"]
+    vpnwkrs = ansible_hosts_yaml["vpn"]["children"]["vpnwkr"]["hosts"]
     worker_count = 0
     vpnwkr_count = 0
     for configuration in configurations:
