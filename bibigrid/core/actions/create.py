@@ -387,8 +387,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             LOG.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
-        terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers,
-                                            configurations=self.configurations, debug=self.debug)
+        terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug)
         return 1
 
     def print_cluster_start_info(self):

@@ -4,29 +4,13 @@ Name=wg0
 [Network]
 Address=wireguard.ip/{{ wireguard_common.mask_bits|default(24) }}
 
-# TODO : ugly code !!!
+{% for vpnwkr in groups["vpnwkr"] %}
+[Route]
 {% if inventory_hostname in groups['master']%}
-{% for grp in instances %}
-{% if grp != 'master '%}
-{% for types in instances[grp] %}
-{% if types == 'vpnwkr' %}
-[Route]
-Gateway={{instances.master.wireguard_ip}}
-Destination={{ instances[grp][types].network_cidr }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% endfor %}
+Gateway={{ wireguard.ip }}
+Destination={{ hostvars[vpnwkr].network_cidr }}
 {% else %}
-{% for grp in instances %}
-{% if grp != 'master '%}
-{% for types in instances[grp] %}
-{% if types == 'vpnwkr' %}
-[Route]
-Gateway={{ instances[grp][types].wireguard_ip }}
-Destination={{instances.master.network_cidr}}
+Gateway={{ hostvars[vpnwkr].wireguard.ip }}
+Destination={{ hostvars["master"].network_cidr }}
 {% endif %}
 {% endfor %}
-{% endif %}
-{% endfor %}
-{% endif %}
