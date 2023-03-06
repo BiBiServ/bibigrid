@@ -32,13 +32,18 @@ SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
 LOG = logging.getLogger("bibigrid")
 
 
-def delete_old_group_vars():
-    for file_name in os.listdir(aRP.GROUP_VARS_FOLDER):
-        # construct full file path
-        file = os.path.join(aRP.GROUP_VARS_FOLDER, file_name)
-        if os.path.isfile(file):
-            logging.debug('Deleting file: %s', file)
-            os.remove(file)
+def delete_old_vars():
+    """
+    Deletes host_vars and group_vars
+    @return:
+    """
+    for folder in [aRP.GROUP_VARS_FOLDER, aRP.HOST_VARS_FOLDER]:
+        for file_name in os.listdir(folder):
+            # construct full file path
+            file = os.path.join(folder, file_name)
+            if os.path.isfile(file):
+                logging.debug('Deleting file: %s', file)
+                os.remove(file)
 
 
 def generate_site_file_yaml(custom_roles):
@@ -111,7 +116,7 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
                 instances[configuration["cloud_specification"]]["vpnwkr"]["wireguard"] = {"ip": wireguard_ip,
                                                                                           "peer": configuration.get(
                                                                                               "wireguard_peer")}
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, name),
+            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name),
                        instances[configuration["cloud_specification"]]["vpnwkr"])
         else:
             master = configuration["masterInstance"]
@@ -335,7 +340,12 @@ def write_yaml(path, generated_yaml, alias=False):
             yaml.dump(data=generated_yaml, stream=file, Dumper=yaml_dumper.NoAliasSafeDumper)
 
 
-def add_wireguard_in_configurations(configurations):
+def add_wireguard_peers(configurations):
+    """
+    Adds wireguard_peer information to configuration
+    @param configurations:
+    @return:
+    """
     if len(configurations) > 1:
         for configuration in configurations:
             private_key, public_key = wireguard_keys.generate()
@@ -352,12 +362,12 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
     :param cluster_id: id of cluster to create
     :return:
     """
-    delete_old_group_vars()
+    delete_old_vars()
     LOG.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
     ansible_roles = get_ansible_roles(configurations[0].get("ansibleRoles"))
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
-    add_wireguard_in_configurations(configurations)
+    add_wireguard_peers(configurations)
     for path, generated_yaml in [
         (aRP.WORKER_SPECIFICATION_FILE, generate_worker_specification_file_yaml(configurations)), (
                 aRP.COMMONS_CONFIG_FILE,
