@@ -131,46 +131,27 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             # create a default security group
             default_security_group_id = provider.create_security_group(name=self.default_security_group_name)["id"]
 
-            rules = [
-                {"direction": "ingress",
-                 "ethertype": "IPv4",
-                 "protocol": None,
-                 "port_range_min": None,
-                 "port_range_max": None,
-                 "remote_ip_prefix": None,
-                 "remote_group_id": default_security_group_id},
-                {"direction": "ingress",
-                 "ethertype": "IPv4",
-                 "protocol": "tcp",
-                 "port_range_min": 22,
-                 "port_range_max": 22,
-                 "remote_ip_prefix": "0.0.0.0/0",
-                 "remote_group_id": None}]
+            rules = [{"direction": "ingress", "ethertype": "IPv4", "protocol": None, "port_range_min": None,
+                      "port_range_max": None, "remote_ip_prefix": None, "remote_group_id": default_security_group_id},
+                     {"direction": "ingress", "ethertype": "IPv4", "protocol": "tcp", "port_range_min": 22,
+                      "port_range_max": 22, "remote_ip_prefix": "0.0.0.0/0", "remote_group_id": None}]
             # when running a multi-cloud setup additional default rules are necessary
             if len(self.providers) > 1:
                 # allow incoming traffic from wireguard network
-                rules.append({"direction": "ingress",
-                              "ethertype": "IPv4",
-                              "protocol": "tcp",
-                              "port_range_min": None,
-                              "port_range_max": None,
-                              "remote_ip_prefix": "10.0.0.0/24",
-                              "remote_group_id": None})
+                rules.append({"direction": "ingress", "ethertype": "IPv4", "protocol": "tcp", "port_range_min": None,
+                              "port_range_max": None, "remote_ip_prefix": "10.0.0.0/24", "remote_group_id": None})
                 # allow incoming traffic from all other local provider networks
                 for tmp_configuration in self.configurations:
                     if tmp_configuration != configuration:
-                        rules.append({"direction": "ingress",
-                                      "ethertype": "IPv4",
-                                      "protocol": "tcp",
-                                      "port_range_min": None,
-                                      "port_range_max": None,
-                                      "remote_ip_prefix": tmp_configuration['subnet_cidrs'],
-                                      "remote_group_id": None})
+                        rules.append(
+                            {"direction": "ingress", "ethertype": "IPv4", "protocol": "tcp", "port_range_min": None,
+                             "port_range_max": None, "remote_ip_prefix": tmp_configuration['subnet_cidrs'],
+                             "remote_group_id": None})
             provider.append_rules_to_security_group(default_security_group_id, rules)
             configuration["security_groups"] = [self.default_security_group_name]  # store in configuration
             # when running a multi-cloud setup create an additional wireguard group
             if len(self.providers) > 1:
-                provider.create_security_group(name=self.wireguard_security_group_name)["id"]
+                _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
                 configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
     def start_vpn_or_master_instance(self, configuration, provider):
@@ -186,7 +167,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(cluster_id=self.cluster_id)
             else:
-                name = identifier(cluster_id=self.cluster_id, additional=self.vpn_counter)
+                name = identifier(cluster_id=self.cluster_id,   # pylint: disable=redundant-keyword-arg
+                                  additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
                 self.vpn_counter += 1
         LOG.info(f"Starting instance/server {name} on {provider.NAME}")
         flavor = instance_type["type"]
@@ -194,9 +176,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         network = configuration["network"]
 
         # create a server and block until it is up and running
-        server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name,
-                                        image=image, network=network, volumes=volumes,
-                                        security_groups=configuration["security_groups"], wait=True)
+        server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
+                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True)
         configuration["private_v4"] = server["private_v4"]
 
         # get mac address for given private address
@@ -210,13 +191,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             raise ConfigurationException(f"MAC address for ip {configuration['private_v4']} not found.")
 
         # pylint: disable=comparison-with-callable
-        if identifier == VPN_WORKER_IDENTIFIER or (
-                identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
-            configuration["floating_ip"] = provider.attach_available_floating_ip(network=external_network,
-                                                                                 server=server)["floating_ip_address"]
+        if identifier == VPN_WORKER_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
+            configuration["floating_ip"] = \
+                provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
         elif identifier == MASTER_IDENTIFIER:
-            configuration["floating_ip"] = server["private_v4"]
-        # pylint: enable=comparison-with-callable
+            configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
@@ -247,13 +226,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if configuration.get("masterInstance"):
                 self.master_ip = configuration["floating_ip"]
                 ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
-                                                private_key=KEY_FOLDER + self.key_name,
-                                                username=self.ssh_user,
+                                                private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
                                                 commands=self.ssh_add_public_key_commands)
             elif configuration.get("vpnInstance"):
                 ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
-                                        private_key=KEY_FOLDER + self.key_name,
-                                        username=self.ssh_user,
+                                        private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
                                         commands=ssh_handler.VPN_SETUP)
 
     def prepare_volumes(self, provider, mounts):
@@ -305,15 +282,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if not os.path.isdir(aRP.VARS_FOLDER):
             LOG.info("%s not found. Creating folder.", aRP.VARS_FOLDER)
             os.mkdir(aRP.VARS_FOLDER)
-        ansible_configurator.configure_ansible_yaml(providers=self.providers,
-                                                    configurations=self.configurations,
+        ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
                                                     cluster_id=self.cluster_id)
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
                                 username=self.ssh_user,
                                 filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
                                            (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
-                                commands=[ssh_handler.get_ac_command(self.providers, AC_NAME.format(
-                                    cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
+                                commands=[
+                                             ssh_handler.get_ac_command(
+                                                 self.providers,
+                                                 AC_NAME.format(
+                                                     cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
 
     def start_start_instances_threads(self):
         """
@@ -339,29 +318,25 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         for provider_a, configuration_a in zip(self.providers, self.configurations):
             # configure wireguard network as allowed network
-            allowed_addresses = [{'ip_address': '10.0.0.0/24',
-                                 'mac_address': configuration_a["mac_addr"]}]
+            allowed_addresses = [{'ip_address': '10.0.0.0/24', 'mac_address': configuration_a["mac_addr"]}]
             # iterate over all configurations ...
             for configuration_b in self.configurations:
                 # ... and pick all other configuration
                 if configuration_a != configuration_b:
-                    LOG.info(
-                        f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},{configuration_b['subnet_cidrs']})")
+                    LOG.info(f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},"
+                             f"{configuration_b['subnet_cidrs']})")
                     # add provider_b network as allowed network
-                    allowed_addresses.append({'ip_address': configuration_b["subnet_cidrs"],
-                                             'mac_address': configuration_a["mac_addr"]})
+                    allowed_addresses.append(
+                        {'ip_address': configuration_b["subnet_cidrs"], 'mac_address': configuration_a["mac_addr"]})
                     # configure security group rules
-                    provider_a.append_rules_to_security_group(self.wireguard_security_group_name,
-                                                              [{"direction": "ingress",
-                                                                "ethertype": "IPv4",
-                                                                "protocol": "udp",
-                                                                "port_range_min": 51820,
-                                                                "port_range_max": 51820,
-                                                                "remote_ip_prefix": configuration_b["floating_ip"],
-                                                                "remote_group_id": None}])
+                    provider_a.append_rules_to_security_group(self.wireguard_security_group_name, [
+                        {"direction": "ingress", "ethertype": "IPv4", "protocol": "udp", "port_range_min": 51820,
+                         "port_range_max": 51820, "remote_ip_prefix": configuration_b["floating_ip"],
+                         "remote_group_id": None}])
             # configure allowed addresses for provider_a/configuration_a
-            provider_a.set_allowed_addresses(configuration_a['private_v4'],allowed_addresses)
-    def create(self):
+            provider_a.set_allowed_addresses(configuration_a['private_v4'], allowed_addresses)
+
+    def create(self):  # pylint: disable=too-many-branches
         """
         Creates cluster and prints helpful cluster-info afterwards.
         If debug is set True it offers termination after starting the cluster.
@@ -378,10 +353,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.print_cluster_start_info()
             if self.debug:
                 LOG.info("DEBUG MODE: Entering termination...")
-                terminate_cluster.terminate_cluster(cluster_id=self.cluster_id,
-                                                    providers=self.providers,
-                                                    configurations=self.configurations,
-                                                    debug=self.debug)
+                terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers,
+                                                    configurations=self.configurations, debug=self.debug)
         except exceptions.ConnectionException:
             if self.debug:
                 LOG.error(traceback.format_exc())
@@ -414,10 +387,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             LOG.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
-        terminate_cluster.terminate_cluster(cluster_id=self.cluster_id,
-                                            providers=self.providers,
-                                            configurations=self.configurations,
-                                            debug=self.debug)
+        terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers,
+                                            configurations=self.configurations, debug=self.debug)
         return 1
 
     def print_cluster_start_info(self):

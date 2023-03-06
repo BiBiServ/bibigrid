@@ -198,7 +198,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
 
     if len(configurations) > 1:
         peers = configuration_handler.get_list_by_key(configurations, "wireguard_peer")
-        common_configuration_yaml["wireguard"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
+        common_configuration_yaml["wireguard_common"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
 
     return common_configuration_yaml
 
@@ -212,13 +212,14 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
     :return: ansible_hosts yaml (dict)
     """
     LOG.info("Generating ansible hosts file...")
-    ansible_hosts_yaml = {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
-                          "workers": {"hosts": {}, "children": {}}  # where vpnwkrs
-                          }
+    ansible_hosts_yaml = {"vpn": {"hosts": {},
+                                  "children": {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
+                                               "vpnwkr": {"hosts": {}}}}, "workers": {"hosts": {}, "children": {}}}
     # vpnwkr are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
+    vpnwkrs = ansible_hosts_yaml["vpn"]["children"]["vpnwkr"]
     worker_count = 0
-    vpn_count = 0
+    vpnwkr_count = 0
     for configuration in configurations:
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
@@ -232,10 +233,10 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
             workers["children"][group_name]["hosts"][name] = worker_dict
 
             if configuration.get("vpnInstance"):
-                name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpn_count)
-                vpn_dict = to_instance_host_dict(ssh_user, ip="", local=False)
-                vpn_dict["ansible_host"] = configuration["floating_ip"]
-                workers["children"]["vpnwkrs"]["hosts"][name] = vpn_dict
+                name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpnwkr_count)
+                vpnwkr_dict = to_instance_host_dict(ssh_user, ip="", local=False)
+                vpnwkr_dict["ansible_host"] = configuration["floating_ip"]
+                vpnwkrs[name] = vpnwkr_dict
     return ansible_hosts_yaml
 
 

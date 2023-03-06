@@ -1,24 +1,23 @@
-{% set this_peer = wireguard.peers|selectattr("ip", "==", public_ip.ansible_facts.ipify_public_ip)|first %}
 [NetDev]
 Name=wg0
 Kind=wireguard
 Description=WireGuard tunnel wg0
 
 [WireGuard]
-# Config Master node {{ this_peer.name }}
-# This node's ipv4: {{ this_peer.ip }}
+# Config Master node {{ wireguard.peer.name }}
+# This node's ipv4: {{ wireguard.peer.ip }}
 
-PrivateKey = {{ this_peer.private_key }}
-ListenPort = {{ wireguard.listen_port|default(51820) }}
+PrivateKey = {{ wireguard.peer.private_key }}
+ListenPort = {{ wireguard_common.listen_port|default(51820) }}
 
 # For every vpn but self
-{% for peer in wireguard.peers %}
-{% if peer.ip != this_peer.ip %}
+{% for peer in wireguard_common.peers %}
+{% if peer.ip != wireguard.peer.ip %}
 # {{ peer.name }}
 [WireGuardPeer]
 PublicKey = {{ peer.public_key }}
-AllowedIPs = 10.0.0.0/{{ wireguard.mask_bits|default(24) }}, {{peer.subnet}}
-Endpoint = {{ peer.ip }}:{{ wireguard.listen_port|default(51820) }}
+AllowedIPs = 10.0.0.0/{{ wireguard_common.mask_bits|default(24) }}, {{peer.subnet}}
+Endpoint = {{ peer.ip }}:{{ wireguard_common.listen_port|default(51820) }}
 {% endif %}
 {% endfor %}
 

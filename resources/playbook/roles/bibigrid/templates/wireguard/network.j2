@@ -2,7 +2,7 @@
 Name=wg0
 
 [Network]
-Address=10.0.0.{{1 if inventory_hostname in groups['master'] else groups['vpnwkrs'].index(inventory_hostname) +2}}/{{ wireguard.mask_bits|default(24) }}
+Address=wireguard.ip/{{ wireguard_common.mask_bits|default(24) }}
 
 # TODO : ugly code !!!
 {% if inventory_hostname in groups['master']%}
