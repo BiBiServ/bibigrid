@@ -11,6 +11,6 @@ Gateway={{ wireguard.ip }}
 Destination={{ hostvars[vpnwkr].network_cidr }}
 {% else %}
 Gateway={{ hostvars[vpnwkr].wireguard.ip }}
-Destination={{ hostvars["master"].network_cidr }}
+Destination={{ hostvars[groups.master.0].network_cidr }}
 {% endif %}
 {% endfor %}

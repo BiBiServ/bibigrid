@@ -3,11 +3,6 @@
     name: wireguard
     state: present
 
-# ToDo: use vars
-- name: Get my public IP (ToDo -> use vars)
-  community.general.ipify_facts:
-  register: public_ip
-
 - name: Setup wg0 device
   template:
     src: wireguard/device.j2

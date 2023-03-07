@@ -160,6 +160,7 @@
   pip:
     name:
       - python-openstackclient==6.0.0
+      - openstacksdk==0.62.0
       - os_client_config
       - paramiko
       - ansible-runner
