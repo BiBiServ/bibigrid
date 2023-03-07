@@ -6,7 +6,6 @@ and application credentials used by it.
 import logging
 import os
 import re
-import time
 
 from bibigrid.core.actions import create
 
@@ -132,7 +131,6 @@ def delete_security_groups(provider, cluster_id):
     """
     LOG.info("Deleting security groups on provider %s...", provider.cloud_specification['identifier'])
     success = True
-    time.sleep(15)  # avoid in use bug
     for security_group_format in [create.DEFAULT_SECURITY_GROUP_NAME, create.WIREGUARD_SECURITY_GROUP_NAME]:
         security_group_name = security_group_format.format(cluster_id=cluster_id)
         tmp_success = provider.delete_security_group(security_group_name)
