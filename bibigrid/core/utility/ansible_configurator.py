@@ -76,7 +76,6 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
     """
     LOG.info("Generating instances file...")
     instances = {}
-    workers = []
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
     worker_count = 0
     vpn_count = 0
@@ -91,9 +90,10 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             network = configuration["network"]
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
+            worker_count += worker.get('count', 1)
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
             worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict}
-            workers.append(worker_dict)
+            instances[configuration["cloud_specification"]]["workers"].append(worker_dict)
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, name), worker_dict)
         vpnwkr = configuration.get("vpnInstance")
         if vpnwkr:
