@@ -6,8 +6,10 @@ and application credentials used by it.
 import logging
 import os
 import re
+import time
 
 from bibigrid.core.actions import create
+from bibigrid.models.exceptions import ConflictException
 
 LOG = logging.getLogger("bibigrid")
 
@@ -133,7 +135,11 @@ def delete_security_groups(provider, cluster_id):
     success = True
     for security_group_format in [create.DEFAULT_SECURITY_GROUP_NAME, create.WIREGUARD_SECURITY_GROUP_NAME]:
         security_group_name = security_group_format.format(cluster_id=cluster_id)
-        tmp_success = provider.delete_security_group(security_group_name)
+        try:
+            tmp_success = provider.delete_security_group(security_group_name)
+        except ConflictException as _:
+            time.sleep(5)
+            tmp_success = provider.delete_security_group(security_group_name)
         LOG.info(f"Delete security_group {security_group_name} -> {tmp_success}")
         success = success and tmp_success
     return success
