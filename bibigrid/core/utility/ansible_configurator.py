@@ -19,6 +19,7 @@ from bibigrid.core.utility.wireguard import wireguard_keys
 DEFAULT_NFS_SHARES = ["/vol/spool"]
 ADDITIONAL_PATH = "additional/"
 PYTHON_INTERPRETER = "/usr/bin/python3"
+VPNWKR_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpnwkr"]}]
 MASTER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-master"]}]
 WORKER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-worker"]}]
 VARS_FILES = [aRP.INSTANCES_YML, aRP.CONFIG_YML, aRP.HOSTS_YML]
@@ -54,14 +55,15 @@ def generate_site_file_yaml(custom_roles):
     :return: site_yaml (dict)
     """
     site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
+                 {'hosts': 'vpnwkr', "become": "yes", "vars_files": VARS_FILES, "roles": VPNWKR_ROLES},
                  {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]  # ,
     # {"hosts": "vpnwkr", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
     # "roles": ["common", "vpnwkr"]}]
     # add custom roles and vars
     for custom_role in custom_roles:
         VARS_FILES.append(custom_role["vars_file"])
-        MASTER_ROLES.append(ADDITIONAL_PATH + custom_role["name"])
-        WORKER_ROLES.append(ADDITIONAL_PATH + custom_role["name"])
+        for role_group in [MASTER_ROLES, VPNWKR_ROLES, WORKER_ROLES]:
+            role_group.append(ADDITIONAL_PATH + custom_role["name"])
     return site_yaml
 
 
@@ -231,12 +233,14 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
             # if not workers["children"].get(group_name): # in the current setup this is not needed
             workers["children"][group_name] = {"hosts": {}}
             workers["children"][group_name]["hosts"][name] = worker_dict
+            worker_count += 1
 
             if configuration.get("vpnInstance"):
                 name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpnwkr_count)
                 vpnwkr_dict = to_instance_host_dict(ssh_user, ip="", local=False)
                 vpnwkr_dict["ansible_host"] = configuration["floating_ip"]
                 vpnwkrs[name] = vpnwkr_dict
+                vpnwkr_count += 1
     return ansible_hosts_yaml
 
 
