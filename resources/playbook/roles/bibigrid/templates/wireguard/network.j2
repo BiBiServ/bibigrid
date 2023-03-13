@@ -2,7 +2,7 @@
 Name=wg0
 
 [Network]
-Address=wireguard.ip/{{ wireguard_common.mask_bits|default(24) }}
+Address={{ wireguard.ip }}/{{ wireguard_common.mask_bits|default(24) }}
 
 {% for vpnwkr in groups["vpnwkr"] %}
 [Route]
