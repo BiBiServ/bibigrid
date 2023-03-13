@@ -39,7 +39,7 @@
     - import_tasks: 001-yum.yml
 
 - name: Configure Wireguard for VPNs
-  when: "('master' in group_names or 'vpnwkrs' in group_names) and wireguard is defined"
+  when: "'vpn' in group_names and wireguard is defined"
   tags: ["vpn"]
   block:
     - debug:
