@@ -108,7 +108,7 @@ def is_active(client, floating_ip_address, private_key, username, timeout=5):
     establishing_connection = True
     while establishing_connection:
         try:
-            client.connect(hostname=floating_ip_address, username=username, pkey=private_key, timeout=5, auth_timeout=5)
+            client.connect(hostname=floating_ip_address, username=username, pkey=private_key, timeout=7, auth_timeout=5)
             establishing_connection = False
             LOG.info(f"Successfully connected to {floating_ip_address}")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
