@@ -92,11 +92,13 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             network = configuration["network"]
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
+            group_name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+                                            additional=f"{worker_count}-{worker_count + worker.get('count', 1) - 1}")
             worker_count += worker.get('count', 1)
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
             worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict}
             instances[configuration["cloud_specification"]]["workers"].append(worker_dict)
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, name), worker_dict)
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict)
         vpnwkr = configuration.get("vpnInstance")
         if vpnwkr:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
@@ -228,8 +230,8 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                                  additional=f"[{worker_count}:"
-                                                             f"{worker_count + worker.get('count', 1) - 1}]")
+                                                  additional=f"{worker_count}:"
+                                                             f"{worker_count + worker.get('count', 1) - 1}")
             # if not workers["children"].get(group_name): # in the current setup this is not needed
             workers["children"][group_name] = {"hosts": {}}
             workers["children"][group_name]["hosts"][name] = worker_dict
