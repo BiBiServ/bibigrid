@@ -226,7 +226,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
-            worker_dict = to_instance_host_dict(ssh_user, ip="", local=False)
+            worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                                   additional=f"[{worker_count}:"
                                                              f"{worker_count + worker.get('count', 1) - 1}]")
@@ -237,22 +237,21 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
 
             if configuration.get("vpnInstance"):
                 name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpnwkr_count)
-                vpnwkr_dict = to_instance_host_dict(ssh_user, ip="", local=False)
+                vpnwkr_dict = to_instance_host_dict(ssh_user, ip="")
                 vpnwkr_dict["ansible_host"] = configuration["floating_ip"]
                 vpnwkrs[name] = vpnwkr_dict
                 vpnwkr_count += 1
     return ansible_hosts_yaml
 
 
-def to_instance_host_dict(ssh_user, ip="localhost", local=True):  # pylint: disable=invalid-name
+def to_instance_host_dict(ssh_user, ip="localhost"):  # pylint: disable=invalid-name
     """
     Generates host entry
     :param ssh_user: str global SSH-username
     :param ip: str ip
-    :param local: bool
     :return: host entry (dict)
     """
-    host_yaml = {"ansible_connection": "local" if local else "ssh", "ansible_python_interpreter": PYTHON_INTERPRETER,
+    host_yaml = {"ansible_connection": "ssh", "ansible_python_interpreter": PYTHON_INTERPRETER,
                  "ansible_user": ssh_user}
     if ip:
         host_yaml["ip"] = ip
