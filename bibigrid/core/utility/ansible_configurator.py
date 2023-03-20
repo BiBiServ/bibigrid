@@ -92,8 +92,7 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             network = configuration["network"]
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
-            group_name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                            additional=f"{worker_count}-{worker_count + worker.get('count', 1) - 1}")
+            group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
             worker_count += worker.get('count', 1)
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
             worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict}
@@ -229,9 +228,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
-            group_name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                                  additional=f"{worker_count}-"
-                                                             f"{worker_count + worker.get('count', 1) - 1}")
+            group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
             # if not workers["children"].get(group_name): # in the current setup this is not needed
             workers["children"][group_name] = {"hosts": {}}
             workers["children"][group_name]["hosts"][name] = worker_dict
