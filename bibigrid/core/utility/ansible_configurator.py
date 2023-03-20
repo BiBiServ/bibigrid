@@ -230,7 +230,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
-                                                  additional=f"{worker_count}:"
+                                                  additional=f"{worker_count}-"
                                                              f"{worker_count + worker.get('count', 1) - 1}")
             # if not workers["children"].get(group_name): # in the current setup this is not needed
             workers["children"][group_name] = {"hosts": {}}
