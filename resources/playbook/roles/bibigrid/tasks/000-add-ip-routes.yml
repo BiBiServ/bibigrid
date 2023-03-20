@@ -1,0 +1,32 @@
+- name: Add persistent ip routes
+  blockinfile:
+    path: /etc/systemd/network/hostroutes.network
+    block: |
+      {% if item != 'master' %}
+      [Match]
+      Name={{ ansible_default_ipv4.interface }}
+      {% if "vpnwkr" in instances[item].keys() %}
+      {% set gateway_ip = instances[item]["vpnwkr"]["private_v4"] %}
+      {% else %}
+      {% set gateway_ip = instances["master"]["private_v4"] %}
+      {% endif %}
+      [Route]
+      Destination=10.0.0.0/24
+      Gateway={{ gateway_ip }}
+      Metric=5
+      GatewayOnLink=True
+      {% for i in instances.keys() %}
+      {% if i != item and i != "master" %}
+      [Route]
+      {% if "vpnwkr" in instances[i].keys() %}
+      Destination= {{ instances[i]["vpnwkr"]["network_cidr"] }}
+      {% else %}
+      Destination= { instances["master"]["network_cidr"] }}
+      {% endif %}
+      Gateway= {{ gateway_ip }}
+      Metric=5
+      GatewayOnLink=True
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+    with_items: "{{ instances.keys() }}"
