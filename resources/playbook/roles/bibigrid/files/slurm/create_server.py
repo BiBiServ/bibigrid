@@ -39,7 +39,7 @@ def start_server(worker, connection, cloudname, start_data):
         userdata_file_path = f"/opt/slurm/userdata_{cloudname}.txt"
         if os.path.isfile(userdata_file_path):
             with open(userdata_file_path, mode="r", encoding="utf-8") as userdata_file:
-                userdata = userdata_file.readlines()
+                userdata = userdata_file.read()
         # create server and ...
         server = connection.create_server(name=worker, flavor=worker_type["flavor"]["name"], image=worker_type["image"],
             network=worker_type["network"], key_name=f"tempKey_bibi-{common_config['cluster_id']}",
