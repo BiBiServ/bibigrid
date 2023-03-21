@@ -2,4 +2,11 @@
   template:
     src : networking/ip_routes.j2
     dest :  "/etc/systemd/network/hostroutes.network"
+    owner: root
+    group: systemd-network
+    mode: 0640
+  become: yes
+  notify:
+    - systemd-networkd restart
   with_items: "{{ instances.keys() }}"
+
