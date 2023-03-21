@@ -95,7 +95,8 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
             worker_count += worker.get('count', 1)
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
-            worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict}
+            worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict,
+                           "gateway_ip": configuration["private_v4"]}
             instances[configuration["cloud_specification"]]["workers"].append(worker_dict)
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict)
         vpnwkr = configuration.get("vpnInstance")
@@ -232,7 +233,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
             # if not workers["children"].get(group_name): # in the current setup this is not needed
             workers["children"][group_name] = {"hosts": {}}
             workers["children"][group_name]["hosts"][name] = worker_dict
-            worker_count += 1
+            worker_count += worker.get('count', 1)
 
             if configuration.get("vpnInstance"):
                 name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpnwkr_count)
