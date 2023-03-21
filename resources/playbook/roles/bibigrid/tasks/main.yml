@@ -14,7 +14,7 @@
 #  retries: 30
 
 - name: Setup persistent ip routes
-  when: "'workers' in group_names and wireguard is defined"
+  when: "'workers' in group_names and wireguard_common is defined"
   block:
     - name: Running 000-add-ip-routes.yml
       debug:
