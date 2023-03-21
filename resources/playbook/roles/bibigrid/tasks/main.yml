@@ -13,6 +13,14 @@
 #  until: job_result.finished
 #  retries: 30
 
+- name: Setup persistent ip routes
+  when: "'worker' in group_names and wireguard is defined"
+  block:
+    - name: Running 000-add-ip-routes.yml
+      debug:
+        msg: "[BIBIGRID] Adding ip routes"
+    - import_tasks: 000-add-ip-routes.yml
+
 - name: Setup common software and dependencies - server rights
   when: "'master' in group_names"
   block:
