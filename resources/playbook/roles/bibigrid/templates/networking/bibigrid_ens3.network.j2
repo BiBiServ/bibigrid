@@ -1,5 +1,13 @@
 [Match]
+MACAdress={{ ansible_default_ipv4.address }}
 Name={{ ansible_default_ipv4.interface }}
+
+[Network]
+DHCP=ipv4
+LinkLocalAddressing=ipv6
+
+RouteMetric=100
+UseMTU=true
 
 [Route]
 Destination=10.0.0.0/{{ wireguard_common.mask_bits|default(24) }}

@@ -1,12 +1,27 @@
+- name:
+    lineinfile:
+      path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+      line: "network: {config: disabled}"
+      create: yes
+
 - name: generate location specific worker userdata
   template:
-    src : networking/ip_routes.j2
-    dest :  "/etc/systemd/network/hostroutes.network"
+    src : networking/bibigrid_ens3.network.j2
+    dest :  "/etc/systemd/network/bibigrid_ens3.network"
     owner: root
     group: systemd-network
     mode: 0640
   become: yes
   notify:
     - systemd-networkd restart
-  with_items: "{{ instances.keys() }}"
 
+- name: generate location specific worker userdata
+  template:
+    src : networking/bibigrid_ens3.link.j2
+    dest :  "/etc/systemd/network/bibigrid_ens3.link"
+    owner: root
+    group: systemd-network
+    mode: 0640
+  become: yes
+  notify:
+    - systemd-networkd restart
