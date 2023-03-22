@@ -1,8 +1,8 @@
-- name:
-    lineinfile:
-      path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
-      line: "network: {config: disabled}"
-      create: yes
+- name: disable cloud network changes after initialization
+  lineinfile:
+    path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    line: "network: {config: disabled}"
+    create: yes
 
 - name: generate location specific worker userdata
   template:
