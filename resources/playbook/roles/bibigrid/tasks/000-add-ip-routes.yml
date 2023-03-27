@@ -1,28 +1,24 @@
-- name: Disable Netplan
-  block:
-    - name: Forbid netplan symbolic link execution
-      file:
-        path: /usr/lib/systemd/system-generators/netplan
-        mode: a-x
-    - name: Forbid netplan execution
-      file:
-        path: /usr/sbin/netplan
-        mode: a-x
-
-- name: Remove netplan run files
+- name: disable netplan configuration files
   block:
     - name: collect files
       find:
-        paths: /run/systemd/network/
+        paths: /etc/netplan/
         hidden: true
         recurse: true
         file_type: any
       register: collected_files
+    - name: copy files
+      copy:
+        src: "{{ item.path }}"
+        dest: "{{ item.path }}.disabled"
+      with_items: "{{ collected_files.files }}"
     - name: remove collected files
       file:
         path: "{{ item.path }}"
         state: absent
       with_items: "{{ collected_files.files }}"
+  notify:
+    - apply netplan
 
 - name: disable cloud network changes after initialization
   lineinfile:
