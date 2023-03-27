@@ -66,3 +66,6 @@
   systemd:
     name: dnsmasq
     state: restarted
+
+- name: apply netplan
+  command: netplan apply

@@ -62,6 +62,14 @@
         msg: "[BIBIGRID] Setup DNS"
     - import_tasks: 003-dns.yml
 
+- name: Update host file on worker
+  when: "'workers' in group_names"
+  tags: ["host"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Update hosts"
+    - import_tasks: 004-update-hosts.yml
+
 - name: Configure database
   when: "'master' in group_names"
   tags: ["database", "slurm"]
