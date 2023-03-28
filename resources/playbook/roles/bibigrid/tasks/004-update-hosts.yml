@@ -1,5 +1,5 @@
 - name: Add a line to a file
   lineinfile:
     path: /etc/hosts
-    line: "{{ hostvars[groups.master.0].private_v4 }} {{ lookup('env', 'USER') }}"
+    line: "{{ hostvars[groups.master.0].private_v4 }} {{ hostvars[groups.master.0].name }}"
     insertafter: EOF
