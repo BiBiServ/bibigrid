@@ -18,7 +18,7 @@
         state: absent
       with_items: "{{ collected_files.files }}"
   notify:
-    - apply netplan
+    - netplan apply
 
 - name: disable cloud network changes after initialization
   lineinfile:
