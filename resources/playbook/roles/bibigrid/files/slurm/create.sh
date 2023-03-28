@@ -3,7 +3,11 @@
 exec >> /var/log/slurm/create.out.log
 exec 2>> /var/log/slurm/create.err.log
 
-echo "Create-Script started"
+function log {
+   echo "$(date) $*"
+}
+
+log "Create-Script started"
 
 hosts=$(scontrol show hostnames "$1")
 
