@@ -155,6 +155,13 @@
     group: ansible
     mode: "0750"
 
+- name: Copy "delete_server.py" script
+  copy:
+    src: slurm/delete_server.py
+    dest: /usr/local/bin/delete_server.py
+    owner: slurm
+    group: ansible
+    mode: "0750"
 
 - name: Install python dependencies
   pip:
