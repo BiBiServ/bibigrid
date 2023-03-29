@@ -127,9 +127,10 @@ def delete_security_groups(provider, cluster_id, timeout=5):
     """
     Delete configured security groups from provider.
 
-    :param provider: current cloud provider
-    :param cluster_id:  cluster id
-    :return: True if all configured security groups can be deleted, false otherwise
+    @param provider: current cloud provider
+    @param cluster_id:  cluster id
+    @param timeout: how often should delete be attempted
+    @return: True if all configured security groups can be deleted, false otherwise
     """
     LOG.info("Deleting security groups on provider %s...", provider.cloud_specification['identifier'])
     success = True
@@ -137,6 +138,7 @@ def delete_security_groups(provider, cluster_id, timeout=5):
         security_group_name = security_group_format.format(cluster_id=cluster_id)
         deleting_security_group = True
         attempts = 0
+        tmp_success = False
         while deleting_security_group:
             try:
                 tmp_success = provider.delete_security_group(security_group_name)
@@ -144,7 +146,7 @@ def delete_security_groups(provider, cluster_id, timeout=5):
             except ConflictException as exc:
                 if attempts < timeout:
                     attempts += 1
-                    time.sleep(time.sleep(1+2 ** attempts))
+                    time.sleep(1+2 ** attempts)
                     tmp_success = provider.delete_security_group(security_group_name)
                 else:
                     LOG.error(f"Attempt to delete security grou {security_group_name} failed.")
