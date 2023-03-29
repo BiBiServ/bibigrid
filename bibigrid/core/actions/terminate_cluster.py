@@ -123,7 +123,7 @@ def delete_local_keypairs(tmp_keyname):
     return success
 
 
-def delete_security_groups(provider, cluster_id):
+def delete_security_groups(provider, cluster_id, timeout=5):
     """
     Delete configured security groups from provider.
 
@@ -135,11 +135,20 @@ def delete_security_groups(provider, cluster_id):
     success = True
     for security_group_format in [create.DEFAULT_SECURITY_GROUP_NAME, create.WIREGUARD_SECURITY_GROUP_NAME]:
         security_group_name = security_group_format.format(cluster_id=cluster_id)
-        try:
-            tmp_success = provider.delete_security_group(security_group_name)
-        except ConflictException as _:
-            time.sleep(5)
-            tmp_success = provider.delete_security_group(security_group_name)
+        deleting_security_group = True
+        attempts = 0
+        while deleting_security_group:
+            try:
+                tmp_success = provider.delete_security_group(security_group_name)
+                deleting_security_group = False
+            except ConflictException as exc:
+                if attempts < timeout:
+                    attempts += 1
+                    time.sleep(time.sleep(1+2 ** attempts))
+                    tmp_success = provider.delete_security_group(security_group_name)
+                else:
+                    LOG.error(f"Attempt to delete security grou {security_group_name} failed.")
+                    raise ConflictException from exc
         LOG.info(f"Delete security_group {security_group_name} -> {tmp_success}")
         success = success and tmp_success
     return success
