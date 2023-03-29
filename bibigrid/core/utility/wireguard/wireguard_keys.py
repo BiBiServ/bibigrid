@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Module for wireguard conforming base64 key creation
+"""
 import codecs
 
 from cryptography.hazmat.primitives import serialization
