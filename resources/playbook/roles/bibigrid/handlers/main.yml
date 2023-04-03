@@ -54,7 +54,7 @@
     name: systemd-networkd
     state: restarted
     enabled: true
-  become: ture
+  become: true
 
 - name: reload wireguard configuration
   when: "'wg0' in ansible_interfaces"
