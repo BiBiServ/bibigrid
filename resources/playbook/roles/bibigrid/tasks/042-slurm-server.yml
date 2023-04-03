@@ -210,10 +210,10 @@
         - slurmdbd
         - slurmrestd
 
-- name: generate location specific worker userdata
+- name: Generate location specific worker userdata
   template:
-    src : slurm/worker_userdata.j2
-    dest :  "/opt/slurm/userdata_{{ item }}.txt"
+    src: slurm/worker_userdata.j2
+    dest: "/opt/slurm/userdata_{{ item }}.txt"
     owner: slurm
     group: ansible
     mode: "0640"

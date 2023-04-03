@@ -53,12 +53,12 @@
   service:
     name: systemd-networkd
     state: restarted
-    enabled: yes
-  become: yes
+    enabled: true
+  become: ture
 
 - name: reload wireguard configuration
   when: "'wg0' in ansible_interfaces"
-  become: yes
+  become: true
   shell:
     cmd: "bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'"
 

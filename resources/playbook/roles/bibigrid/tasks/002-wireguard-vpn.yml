@@ -10,7 +10,7 @@
     owner: root
     group: systemd-network
     mode: 0640
-  become: yes
+  become: true
   notify:
     - systemd-networkd restart
 
@@ -21,7 +21,7 @@
     owner: root
     group: systemd-network
     mode: 0640
-  become: yes
+  become: true
   notify: systemd-networkd restart
 
 - name: Enable ip forwarding

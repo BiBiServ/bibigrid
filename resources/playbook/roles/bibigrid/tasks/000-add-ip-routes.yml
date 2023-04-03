@@ -1,4 +1,6 @@
 - name: disable netplan configuration files
+  notify:
+    - netplan apply
   block:
     - name: collect files
       find:
@@ -11,39 +13,43 @@
       copy:
         src: "{{ item.path }}"
         dest: "{{ item.path }}.disabled"
+        owner: root
+        group: root
+        mode: 0644
       with_items: "{{ collected_files.files }}"
     - name: remove collected files
       file:
         path: "{{ item.path }}"
         state: absent
       with_items: "{{ collected_files.files }}"
-  notify:
-    - netplan apply
 
 - name: disable cloud network changes after initialization
   lineinfile:
     path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
     line: "network: {config: disabled}"
-    create: yes
+    owner: root
+    group: root
+    mode: 0644
+    create: true
 
 - name: generate location specific worker userdata
   template:
-    src : networking/bibigrid_ens3.network.j2
-    dest :  "/etc/systemd/network/bibigrid_ens3.network"
+    src: networking/bibigrid_ens3.network.j2
+    dest: "/etc/systemd/network/bibigrid_ens3.network"
     owner: root
     group: systemd-network
     mode: 0640
-  become: yes
+  become: true
   notify:
     - systemd-networkd restart
 
 - name: generate location specific worker userdata
   template:
-    src : networking/bibigrid_ens3.link.j2
-    dest :  "/etc/systemd/network/bibigrid_ens3.link"
+    src: networking/bibigrid_ens3.link.j2
+    dest: "/etc/systemd/network/bibigrid_ens3.link"
     owner: root
     group: systemd-network
     mode: 0640
-  become: yes
+  become: true
   notify:
     - systemd-networkd restart
