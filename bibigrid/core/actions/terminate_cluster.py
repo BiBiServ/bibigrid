@@ -136,21 +136,23 @@ def delete_security_groups(provider, cluster_id, timeout=5):
     success = True
     for security_group_format in [create.DEFAULT_SECURITY_GROUP_NAME, create.WIREGUARD_SECURITY_GROUP_NAME]:
         security_group_name = security_group_format.format(cluster_id=cluster_id)
-        deleting_security_group = True
         attempts = 0
         tmp_success = False
-        while deleting_security_group:
+        while not tmp_success:
             try:
                 tmp_success = provider.delete_security_group(security_group_name)
-                deleting_security_group = False
-            except ConflictException as exc:
+            except ConflictException:
+                tmp_success = False
+            if not tmp_success:
                 if attempts < timeout:
                     attempts += 1
                     time.sleep(1+2 ** attempts)
-                    tmp_success = provider.delete_security_group(security_group_name)
+                    LOG.info(f"Retrying to delete security group {security_group_name} on "
+                              f"{provider.cloud_specification['identifier']}. Attempt {attempts}/{timeout}")
                 else:
-                    LOG.error(f"Attempt to delete security grou {security_group_name} failed.")
-                    raise ConflictException from exc
+                    LOG.error(f"Attempt to delete security group {security_group_name} on "
+                              f"{provider.cloud_specification['identifier']} failed.")
+                    break
         LOG.info(f"Delete security_group {security_group_name} -> {tmp_success}")
         success = success and tmp_success
     return success
