@@ -1,9 +1,5 @@
 # Slurm
 
-Be aware that due to BiBiGrid's slurm configuration the default behavior of commands might differ slightly from slurm's
-defaults.
-Everything described below explains how slurm will behave in BiBiGrid's context.
-
 ## Slurm Client
 
 ### Useful commands
