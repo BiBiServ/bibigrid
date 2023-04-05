@@ -57,7 +57,7 @@ During cluster creation...
 
 In order to mount a volume into a shared directory, we first need to identify where our volume was attached.
 
-#### Find Where Volume was attached
+#### Find Where Volume Has Been Attached
 
 Executing this openstack client command will give us a list of volumes.
 Most likely it is best run from your local machine.
