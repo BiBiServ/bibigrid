@@ -1,4 +1,1 @@
 # Wireguard
-
-## Encryption
-
