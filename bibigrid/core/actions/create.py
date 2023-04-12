@@ -283,8 +283,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if not os.path.isdir(folder):
                 LOG.info("%s not found. Creating folder.", folder)
                 os.mkdir(folder)
-        if not os.path.isfile(aRP.HOSTS_YML):
-            with open(aRP.HOSTS_YML, 'a', encoding='utf-8') as hosts_file:
+        if not os.path.isfile(aRP.HOSTS_FILE):
+            with open(aRP.HOSTS_FILE, 'a', encoding='utf-8') as hosts_file:
                 hosts_file.write("# placeholder file for worker DNS entries (see 003-dns)")
 
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
