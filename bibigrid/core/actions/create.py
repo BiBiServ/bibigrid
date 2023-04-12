@@ -279,9 +279,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         Configures ansible and then uploads the modified files and all necessary data to the master
         :return:
         """
-        if not os.path.isdir(aRP.VARS_FOLDER):
-            LOG.info("%s not found. Creating folder.", aRP.VARS_FOLDER)
-            os.mkdir(aRP.VARS_FOLDER)
+        for folder in [aRP.VARS_FOLDER, aRP.GROUP_VARS_FOLDER, aRP.HOST_VARS_FOLDER]:
+            if not os.path.isdir(folder):
+                LOG.info("%s not found. Creating folder.", folder)
+                os.mkdir(folder)
+        if not os.path.isfile(aRP.HOSTS_YML):
+            with open(aRP.HOSTS_YML, 'a', encoding='utf-8') as hosts_file:
+                hosts_file.write("# placeholder file for worker DNS entries (see 003-dns)")
+
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
                                                     cluster_id=self.cluster_id)
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
