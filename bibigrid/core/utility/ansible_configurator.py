@@ -235,12 +235,12 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
             workers["children"][group_name]["hosts"][name] = worker_dict
             worker_count += worker.get('count', 1)
 
-            if configuration.get("vpnInstance"):
-                name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpnwkr_count)
-                vpnwkr_dict = to_instance_host_dict(ssh_user, ip="")
-                vpnwkr_dict["ansible_host"] = configuration["floating_ip"]
-                vpnwkrs[name] = vpnwkr_dict
-                vpnwkr_count += 1
+        if configuration.get("vpnInstance"):
+            name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpnwkr_count)
+            vpnwkr_dict = to_instance_host_dict(ssh_user, ip="")
+            vpnwkr_dict["ansible_host"] = configuration["floating_ip"]
+            vpnwkrs[name] = vpnwkr_dict
+            vpnwkr_count += 1
     return ansible_hosts_yaml
 
 
