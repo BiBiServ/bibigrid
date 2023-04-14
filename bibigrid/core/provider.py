@@ -222,7 +222,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         """
         Set allowed address (or CIDR) for the given network interface/port
         :param id_or_ip: id or ipv4 ip-address of the port/interface
-        :param allowed_address: a list of allowed address pairs. For example:
+        :param allowed_address_pairs: a list of allowed address pairs. For example:
                 [{
                     "ip_address": "23.23.23.1",
                     "mac_address": "fa:16:3e:c4:cd:3f"
@@ -238,7 +238,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: id of created security group
         """
 
-    def delete_security_group(self,name_or_id):
+    def delete_security_group(self, name_or_id):
         """
         Delete a security group
         :param name_or_id : Name or Id of the security group to be deleted

@@ -233,7 +233,7 @@ class ValidateConfiguration:
         providers_unconnectable = []
         for provider in self.providers:
             if not provider.conn:
-                providers_unconnectable.append(provider.name)
+                providers_unconnectable.append(provider.cloud_specification["identifier"])
         if providers_unconnectable:
             LOG.warning("API connection to %s not successful. Please check your configuration.",
                         providers_unconnectable)

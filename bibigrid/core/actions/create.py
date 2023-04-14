@@ -170,7 +170,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 name = identifier(cluster_id=self.cluster_id,   # pylint: disable=redundant-keyword-arg
                                   additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
                 self.vpn_counter += 1
-        LOG.info(f"Starting instance/server {name} on {provider.NAME}")
+        LOG.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance_type["type"]
         image = instance_type["image"]
         network = configuration["network"]
