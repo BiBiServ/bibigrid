@@ -82,9 +82,9 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
     worker_count = 0
     vpn_count = 0
     for configuration, provider in zip(configurations, providers):
-        if not instances.get(configuration["cloud_specification"]):
-            instances[configuration["cloud_specification"]] = {}
-            instances[configuration["cloud_specification"]]["workers"] = []
+        if not instances.get(configuration["cloud_identifier"]):
+            instances[configuration["cloud_identifier"]] = {}
+            instances[configuration["cloud_identifier"]]["workers"] = []
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             flavor = provider.get_flavor(worker["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
@@ -96,8 +96,9 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             worker_count += worker.get('count', 1)
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
             worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict,
-                           "gateway_ip": configuration["private_v4"]}
-            instances[configuration["cloud_specification"]]["workers"].append(worker_dict)
+                           "gateway_ip": configuration["private_v4"],
+                           "cloud_identifier": configuration["cloud_identifier"]}
+            instances[configuration["cloud_identifier"]]["workers"].append(worker_dict)
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict)
         vpnwkr = configuration.get("vpnInstance")
         if vpnwkr:
@@ -109,19 +110,20 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             image = vpnwkr["image"]
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            instances[configuration["cloud_specification"]]["vpnwkr"] = {"name": name, "regexp": regexp, "image": image,
-                                                                         "network": network,
-                                                                         "network_cidr": configuration["subnet_cidrs"],
-                                                                         "floating_ip": configuration["floating_ip"],
-                                                                         "private_v4": configuration["private_v4"],
-                                                                         "flavor": flavor_dict,
-                                                                         "wireguard_ip": wireguard_ip}
+            instances[configuration["cloud_identifier"]]["vpnwkr"] = {"name": name, "regexp": regexp, "image": image,
+                                                                      "network": network,
+                                                                      "network_cidr": configuration["subnet_cidrs"],
+                                                                      "floating_ip": configuration["floating_ip"],
+                                                                      "private_v4": configuration["private_v4"],
+                                                                      "flavor": flavor_dict,
+                                                                      "wireguard_ip": wireguard_ip,
+                                                                      "cloud_identifier": configuration[
+                                                                          "cloud_identifier"]}
             if configuration.get("wireguard_peer"):
-                instances[configuration["cloud_specification"]]["vpnwkr"]["wireguard"] = {"ip": wireguard_ip,
-                                                                                          "peer": configuration.get(
-                                                                                              "wireguard_peer")}
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name),
-                       instances[configuration["cloud_specification"]]["vpnwkr"])
+                instances[configuration["cloud_identifier"]]["vpnwkr"]["wireguard"] = {"ip": wireguard_ip,
+                                                                                       "peer": configuration.get(
+                                                                                           "wireguard_peer")}
+            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), instances[configuration["cloud_identifier"]]["vpnwkr"])
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
@@ -131,7 +133,7 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
                                    "network_cidr": configuration["subnet_cidrs"],
                                    "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
                                    "private_v4": configuration["private_v4"],
-                                   "cloud_specification": configuration["cloud_specification"]}
+                                   "cloud_identifier": configuration["cloud_identifier"]}
             if configuration.get("wireguard_peer"):
                 instances["master"]["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), instances["master"])
@@ -267,7 +269,7 @@ def get_cidrs(configurations):
     all_cidrs = []
     for configuration in configurations:
         subnet = configuration["subnet_cidrs"]
-        provider_cidrs = {"provider": configuration["cloud_specification"], "provider_cidrs": subnet}
+        provider_cidrs = {"provider": configuration["cloud_identifier"], "provider_cidrs": subnet}
         all_cidrs.append(provider_cidrs)
     return all_cidrs
 
@@ -353,7 +355,7 @@ def add_wireguard_peers(configurations):
     if len(configurations) > 1:
         for configuration in configurations:
             private_key, public_key = wireguard_keys.generate()
-            configuration["wireguard_peer"] = {"name": configuration["cloud_specification"], "private_key": private_key,
+            configuration["wireguard_peer"] = {"name": configuration["cloud_identifier"], "private_key": private_key,
                                                "public_key": public_key, "ip": configuration["floating_ip"],
                                                "subnet": configuration["subnet_cidrs"]}
 
