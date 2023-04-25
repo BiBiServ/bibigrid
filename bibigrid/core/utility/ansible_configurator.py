@@ -31,7 +31,6 @@ SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 900, "TreeWidth": 128}}
 LOG = logging.getLogger("bibigrid")
 
-
 def delete_old_group_vars():
     for file_name in os.listdir(aRP.GROUP_VARS_FOLDER):
         # construct full file path
@@ -39,7 +38,6 @@ def delete_old_group_vars():
         if os.path.isfile(file):
             logging.debug('Deleting file: %s', file)
             os.remove(file)
-
 
 def generate_site_file_yaml(custom_roles):
     """
@@ -60,7 +58,6 @@ def generate_site_file_yaml(custom_roles):
         MASTER_ROLES.append(ADDITIONAL_PATH + custom_role["name"])
         WORKER_ROLES.append(ADDITIONAL_PATH + custom_role["name"])
     return site_yaml
-
 
 def generate_instances_yaml(cluster_dict, configuration, provider, cluster_id):  # pylint: disable=too-many-locals
     """
