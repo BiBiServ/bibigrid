@@ -31,19 +31,23 @@ start_workers = sys.argv[1].split("\n")
 logging.info("Starting instances %s", start_workers)
 
 
-def start_server(worker, connection, cloudname, start_data):
+def start_server(worker, start_worker_group, start_data):
     try:
         logging.info("Create server %s.", worker)
+        connection = connections[start_worker_group["cloud_identifier"]]
         # check for userdata
         userdata = ""
-        userdata_file_path = f"/opt/slurm/userdata_{cloudname}.txt"
+        userdata_file_path = f"/opt/slurm/userdata_{start_worker_group['cloud_identifier']}.txt"
         if os.path.isfile(userdata_file_path):
             with open(userdata_file_path, mode="r", encoding="utf-8") as userdata_file:
                 userdata = userdata_file.read()
         # create server and ...
-        server = connection.create_server(name=worker, flavor=worker_type["flavor"]["name"], image=worker_type["image"],
-            network=worker_type["network"], key_name=f"tempKey_bibi-{common_config['cluster_id']}",
-            security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata, wait=False)
+        server = connection.create_server(name=worker, flavor=start_worker_group["flavor"]["name"],
+                                          image=start_worker_group["image"],
+                                          network=start_worker_group["network"],
+                                          key_name=f"tempKey_bibi-{common_config['cluster_id']}",
+                                          security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata,
+                                          wait=False)
         # ... add it to server
         start_data["started_servers"].append(server)
         try:
@@ -160,9 +164,15 @@ def _run_playbook(cmdline_args):
 server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [],
                      "available_servers": [], "openstack_wait_exceptions": []}
 
-# read instances configuration
-with open("/opt/playbook/vars/instances.yml", mode="r", encoding="utf-8") as instances_file:
-    instances_vars = yaml.safe_load(instances_file)["instances"]
+GROUP_VARS_PATH = "/opt/playbook/group_vars"
+worker_groups = []
+for filename in os.listdir(GROUP_VARS_PATH):
+    if filename != "master.yml":
+        f = os.path.join(GROUP_VARS_PATH, filename)
+        # checking if it is a file
+        if os.path.isfile(f):
+            with open(f, mode="r", encoding="utf-8") as worker_group:
+                worker_groups.append(yaml.safe_load(worker_group))
 
 # read common configuration
 with open("/opt/playbook/vars/common_configuration.yml", mode="r", encoding="utf-8") as common_configuration_file:
@@ -176,17 +186,14 @@ connections = {}  # connections to cloud providers
 for cloud in clouds:
     connections[cloud] = os_client_config.make_sdk(cloud=cloud)
 
-instances_by_cloud_dict = [(key, value) for key, value in instances_vars.items() if key != 'master']
-
-for cloud_name, instances_of_cloud in instances_by_cloud_dict:
-    for worker_type in instances_of_cloud["workers"]:
-        for start_worker in start_workers:
-            # check if worker in instance is described in instances.yml as part of a worker_type
-            result = subprocess.run(["scontrol", "show", "hostname", worker_type["name"]],
-                                    stdout=subprocess.PIPE, check=True)  # get all workers in worker_type
-            possible_workers = result.stdout.decode("utf-8").strip().split("\n")
-            if start_worker in possible_workers:
-                start_server(start_worker, connections[cloud_name], cloud_name, server_start_data)
+for worker_group in worker_groups:
+    for start_worker in start_workers:
+        # check if worker in instance is described in instances.yml as part of a worker_type
+        result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]],
+                                stdout=subprocess.PIPE, check=True)  # get all workers in worker_type
+        possible_workers = result.stdout.decode("utf-8").strip().split("\n")
+        if start_worker in possible_workers:
+            start_server(start_worker, worker_group, server_start_data)
 
 # If no suitable server can be started: abort
 if len(server_start_data["available_servers"]) == 0:
