@@ -6,6 +6,7 @@ Is called automatically by fail.sh (called by slurm user automatically) which so
 
 import logging
 import math
+import os
 import subprocess
 import sys
 import time
@@ -23,12 +24,18 @@ if len(sys.argv) < 2:
     logging.warning("usage:  $0 instance1_name[,instance2_name,...]")
     logging.info("Your input %s with length %s", sys.argv, len(sys.argv))
     sys.exit(1)
-start_instances = sys.argv[1].split("\n")
-logging.info("Deleting instances %s", start_instances)
+terminate_workers = sys.argv[1].split("\n")
+logging.info("Deleting instances %s", terminate_workers)
 
-# read instances configuration
-with open("/opt/playbook/vars/instances.yml", mode="r", encoding="utf-8") as instances_file:
-    instances_vars = yaml.safe_load(instances_file)["instances"]
+GROUP_VARS_PATH = "/opt/playbook/group_vars"
+worker_groups = []
+for filename in os.listdir(GROUP_VARS_PATH):
+    if filename != "master.yml":
+        f = os.path.join(GROUP_VARS_PATH, filename)
+        # checking if it is a file
+        if os.path.isfile(f):
+            with open(f, mode="r", encoding="utf-8") as worker_group:
+                worker_groups.append(yaml.safe_load(worker_group))
 
 # read common configuration
 with open("/opt/playbook/vars/common_configuration.yml", mode="r", encoding="utf-8") as common_configuration_file:
@@ -42,21 +49,18 @@ connections = {}  # connections to cloud providers
 for cloud in clouds:
     connections[cloud] = os_client_config.make_sdk(cloud=cloud)
 
-instances_by_cloud_dict = [(key, value) for key, value in instances_vars.items() if key != 'master']
-
-for cloud_name, instances_of_cloud in instances_by_cloud_dict:
-    for worker_type in instances_of_cloud["workers"]:
-        for worker in start_instances:
-            # check if worker in instance is described in instances.yml as part of a worker_type
-            result = subprocess.run(["scontrol", "show", "hostname", worker_type["name"]],
-                                    stdout=subprocess.PIPE, check=True)  # get all workers in worker_type
-            possible_workers = result.stdout.decode("utf-8").strip().split("\n")
-            if worker in possible_workers:
-                result = connections[cloud_name].delete_server(worker)
-            if not result:
-                logging.warning(f"Couldn't delete worker {worker}")
-            else:
-                logging.info(f"Deleted {worker}")
+for worker_group in worker_groups:
+    for terminate_worker in terminate_workers:
+        # check if worker in instance is described in instances.yml as part of a worker_type
+        result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]],
+                                stdout=subprocess.PIPE, check=True)  # get all workers in worker_type
+        possible_workers = result.stdout.decode("utf-8").strip().split("\n")
+        if terminate_worker in possible_workers:
+            result = connections[worker_group["cloud_identifier"]].delete_server(terminate_worker)
+        if not result:
+            logging.warning(f"Couldn't delete worker {terminate_worker}")
+        else:
+            logging.info(f"Deleted {terminate_worker}")
 logging.info("Successful delete_server.py execution!")
 time_in_s = time.time() - start_time
 logging.info("--- %s minutes and %s seconds ---", math.floor(time_in_s / 60), time_in_s % 60)
