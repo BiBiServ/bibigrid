@@ -21,12 +21,12 @@ For more options see [slurm client's manpage](https://manpages.debian.org/testin
 
 ## REST API
 
-BiBiGrids configures Slurm's REST API Daemon listening on `0.0.0.0:6420`.
+BiBiGrids configures Slurm's REST API Daemon listening on `0.0.0.0:6820`.
 
 Get token for user slurm
 
 ```shell
-$ scontrol token -u slurm
+$ sudo scontrol token username=slurm [lifespan=<time in seconds>]
 SLURM_JWT=eyJhbGc...
 ```
 
