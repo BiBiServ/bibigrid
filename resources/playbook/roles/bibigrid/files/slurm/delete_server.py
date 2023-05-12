@@ -51,7 +51,7 @@ for cloud in clouds:
 
 for worker_group in worker_groups:
     for terminate_worker in terminate_workers:
-        # check if worker in instance is described in instances.yml as part of a worker_type
+        # terminate all servers that are part of the current worker group
         result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]],
                                 stdout=subprocess.PIPE, check=True)  # get all workers in worker_type
         possible_workers = result.stdout.decode("utf-8").strip().split("\n")

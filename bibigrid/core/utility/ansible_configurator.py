@@ -22,7 +22,7 @@ PYTHON_INTERPRETER = "/usr/bin/python3"
 VPNWKR_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpnwkr"]}]
 MASTER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-master"]}]
 WORKER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-worker"]}]
-VARS_FILES = [aRP.INSTANCES_YML, aRP.CONFIG_YML, aRP.HOSTS_YML]
+VARS_FILES = [aRP.CONFIG_YML, aRP.HOSTS_YML]
 IDE_CONF = {"ide": False, "workspace": ide.DEFAULT_IDE_WORKSPACE, "port_start": ide.REMOTE_BIND_ADDRESS,
             "port_end": ide.DEFAULT_IDE_PORT_END, "build": False}
 ZABBIX_CONF = {"db": "zabbix", "db_user": "zabbix", "db_password": "zabbix", "timezone": "Europe/Berlin",
@@ -67,7 +67,7 @@ def generate_site_file_yaml(custom_roles):
     return site_yaml
 
 
-def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: disable=too-many-locals
+def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint: disable=too-many-locals
     """
     ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
@@ -77,14 +77,10 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
     :return: filtered information (dict)
     """
     LOG.info("Generating instances file...")
-    instances = {}
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
     worker_count = 0
     vpn_count = 0
     for configuration, provider in zip(configurations, providers):
-        if not instances.get(configuration["cloud_identifier"]):
-            instances[configuration["cloud_identifier"]] = {}
-            instances[configuration["cloud_identifier"]]["workers"] = []
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             flavor = provider.get_flavor(worker["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
@@ -98,7 +94,6 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"]}
-            instances[configuration["cloud_identifier"]]["workers"].append(worker_dict)
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict)
         vpnwkr = configuration.get("vpnInstance")
         if vpnwkr:
@@ -110,7 +105,7 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
             image = vpnwkr["image"]
             network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            instances[configuration["cloud_identifier"]]["vpnwkr"] = {"name": name, "regexp": regexp, "image": image,
+            vpnwkr_dict = {"name": name, "regexp": regexp, "image": image,
                                                                       "network": network,
                                                                       "network_cidr": configuration["subnet_cidrs"],
                                                                       "floating_ip": configuration["floating_ip"],
@@ -120,25 +115,23 @@ def generate_instances_yaml(configurations, providers, cluster_id):  # pylint: d
                                                                       "cloud_identifier": configuration[
                                                                           "cloud_identifier"]}
             if configuration.get("wireguard_peer"):
-                instances[configuration["cloud_identifier"]]["vpnwkr"]["wireguard"] = {"ip": wireguard_ip,
+                vpnwkr_dict["wireguard"] = {"ip": wireguard_ip,
                                                                                        "peer": configuration.get(
                                                                                            "wireguard_peer")}
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), instances[configuration["cloud_identifier"]]["vpnwkr"])
+            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpnwkr_dict)
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
             flavor = provider.get_flavor(master["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
-            instances["master"] = {"name": name, "image": master["image"], "network": configuration["network"],
+            master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
                                    "network_cidr": configuration["subnet_cidrs"],
                                    "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
                                    "private_v4": configuration["private_v4"],
                                    "cloud_identifier": configuration["cloud_identifier"]}
             if configuration.get("wireguard_peer"):
-                instances["master"]["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), instances["master"])
-        instances_yml = {"instances": instances}
-    return instances_yml
+                master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict)
 
 
 def pass_through(dict_from, dict_to, key_from, key_to=None):
@@ -269,7 +262,7 @@ def get_cidrs(configurations):
     all_cidrs = []
     for configuration in configurations:
         subnet = configuration["subnet_cidrs"]
-        provider_cidrs = {"provider": configuration["cloud_identifier"], "provider_cidrs": subnet}
+        provider_cidrs = {"cloud_identifier": configuration["cloud_identifier"], "provider_cidrs": subnet}
         all_cidrs.append(provider_cidrs)
     return all_cidrs
 
@@ -380,7 +373,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id):
                 generate_common_configuration_yaml(cidrs=get_cidrs(configurations), configurations=configurations,
                                                    cluster_id=cluster_id, ssh_user=configurations[0]["sshUser"],
                                                    default_user=default_user)),
-        (aRP.COMMONS_INSTANCES_FILE, generate_instances_yaml(configurations, providers, cluster_id)),
         (aRP.HOSTS_CONFIG_FILE, generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations, cluster_id)),
         (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(ansible_roles))]:
         write_yaml(path, generated_yaml, alias)
+    write_host_and_group_vars(configurations, providers, cluster_id)  # writing included in method
