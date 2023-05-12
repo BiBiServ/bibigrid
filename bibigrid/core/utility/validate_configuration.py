@@ -114,8 +114,7 @@ def check_clouds_yaml_security():
     if clouds_public:
         for cloud in clouds_public:
             if clouds_public[cloud].get("profile"):
-                LOG.warning(f"{cloud}: Profiles should be placed in clouds.yaml not clouds-public.yaml! "
-                            f"Key ignored.")
+                LOG.warning(f"{cloud}: Profiles should be placed in clouds.yaml not clouds-public.yaml!")
                 success = False
             if clouds_public[cloud].get("auth"):
                 for key in ["password", "username", "application_credential_id", "application_credential_secret"]:
@@ -451,8 +450,8 @@ class ValidateConfiguration:
         nfs_shares = master_configuration.get("nfsShares")
         nfs = master_configuration.get("nfs")
         if nfs_shares and not nfs:
-            success = True
-            LOG.warning("nfsShares exist, but nfs is False. nfsShares will be ignored!")
+            success = False
+            LOG.warning("nfsShares exist, but nfs is False.")
         else:
             success = True
         return success

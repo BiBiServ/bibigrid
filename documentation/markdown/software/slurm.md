@@ -1,9 +1,9 @@
 # Slurm
-Be aware that due to BiBiGrid's slurm configuration the default behavior of commands might differ slightly from slurm's defaults.
-Everything described below explains how slurm will behave in BiBiGrid's context.
 
 ## Slurm Client
+
 ### Useful commands
+
 For more options see [slurm client's manpage](https://manpages.debian.org/testing/slurm-client/slurm-wlm.1).
 
 |        Summary         |                                   Command                                    |                                                                            Explanation & Comment                                                                            |
@@ -19,18 +19,19 @@ For more options see [slurm client's manpage](https://manpages.debian.org/testin
 |:---------------------------------------------------------------------------------:|:--------------------------------------------:|
 | [NODE STATE CODES](https://slurm.schedmd.com/sinfo.html#SECTION_NODE-STATE-CODES) | Very helpful to interpret `sinfo` correctly. |
 
-
 ## REST API
 
-BiBiGrids configures Slurm's REST API Daemon listening on `0.0.0.0:6420`. 
+BiBiGrids configures Slurm's REST API Daemon listening on `0.0.0.0:6420`.
 
 Get token for user slurm
+
 ```shell
 $ scontrol token -u slurm
 SLURM_JWT=eyJhbGc...
 ```
 
 Get openapi specification
+
 ```shell
 $ token=eyJhbGc...
 $ user=slurm
@@ -42,9 +43,8 @@ $ curl -H "X-SLURM-USER-NAME: $user" -H "X-SLURM-USER-TOKEN: $token" localhost:6
 
 |                                  Summary                                   |             Explanation              |
 |:--------------------------------------------------------------------------:|:------------------------------------:|
-|           [Slurm REST API](https://slurm.schedmd.com/rest.html)            |    Slurm REST API documentation      |
+|           [Slurm REST API](https://slurm.schedmd.com/rest.html)            |     Slurm REST API documentation     |
 | [JSON Web Tokens (JWT) Authentication](https://slurm.schedmd.com/jwt.html) | Helpful to understand JWT/SlurmRestD |
-
 
 ## Slurm Packages
 
@@ -54,7 +54,7 @@ who want to run a specific Slurm version the following documentation might be he
 
 ### Prepare build system
 
-At time of writing Slurm, 22.05.7 was the latest version available. Debian 11, Ubuntu 20.04/22.04 
+At time of writing Slurm, 22.05.7 was the latest version available. Debian 11, Ubuntu 20.04/22.04
 as build system were successfully tested.
 
 ```
@@ -70,6 +70,7 @@ $ tar -xjf slurm-22.05.7.tar.bz2
 ### Install build dependencies
 
 To enable source code repositories uncomment the lines starting with deb-src running :
+
 ```shell
 $ sed -i.bak 's/^# *deb-src/deb-src/g' /etc/apt/sources.list && \
 apt-get update
@@ -87,7 +88,7 @@ and for Ubuntu 20.04 only additionally
 $ apt install libyaml-dev libjson-c-dev libhttp-parser-dev libjwt-dev
 ```
 
-To make use of [Control Group v2](https://slurm.schedmd.com/cgroup_v2.html) the development 
+To make use of [Control Group v2](https://slurm.schedmd.com/cgroup_v2.html) the development
 files from dBus API must be installed additionally.
 
 ```shell
@@ -103,7 +104,6 @@ $ ./configure --prefix=/usr --sysconfdir=/etc/slurm --with-systemdsystemunitdir=
 
 $ make -j 8
 ```
-
 
 ### Create deb package
 
