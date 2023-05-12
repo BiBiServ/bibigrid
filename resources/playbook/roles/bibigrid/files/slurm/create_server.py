@@ -8,6 +8,7 @@ import math
 import os
 import subprocess
 import sys
+import threading
 import time
 
 import ansible_runner
@@ -186,6 +187,7 @@ connections = {}  # connections to cloud providers
 for cloud in clouds:
     connections[cloud] = os_client_config.make_sdk(cloud=cloud)
 
+start_server_threads = []
 for worker_group in worker_groups:
     for start_worker in start_workers:
         # start all servers that are part of the current worker group
@@ -193,7 +195,14 @@ for worker_group in worker_groups:
                                 stdout=subprocess.PIPE, check=True)  # get all workers in worker_type
         possible_workers = result.stdout.decode("utf-8").strip().split("\n")
         if start_worker in possible_workers:
-            start_server(start_worker, worker_group, server_start_data)
+            start_worker_thread = threading.Thread(target=start_server, kwargs={"worker": start_worker,
+                                                                                "start_worker_group": worker_group,
+                                                                                "start_data": server_start_data})
+            start_worker_thread.start()
+            start_server_threads.append(start_worker_thread)
+
+for start_server_thread in start_server_threads:
+    start_server_thread.join()
 
 # If no suitable server can be started: abort
 if len(server_start_data["available_servers"]) == 0:
