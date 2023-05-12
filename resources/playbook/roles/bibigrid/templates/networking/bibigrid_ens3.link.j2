@@ -1,0 +1,13 @@
+[Match]
+MACAddress={{ ansible_default_ipv4.address }}
+Name=ens3
+
+[Link]
+
+[Network]
+DHCP=ipv4
+LinkLocalAddressing=ipv6
+
+[DHCP]
+RouteMetric=100
+UseMTU=true

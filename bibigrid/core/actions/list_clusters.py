@@ -148,5 +148,6 @@ def get_master_access_ip(cluster_id, master_provider):
         master = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
         if server["name"].startswith(master):
             return server.get("public_v4") or server.get("public_v6") or server.get("private_v4")
-    LOG.warning("Cluster %s not found on master_provider %s.", cluster_id, master_provider)
+    LOG.warning("Cluster %s not found on master_provider %s.", cluster_id,
+                master_provider.cloud_specification["identifier"])
     return None

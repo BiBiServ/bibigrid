@@ -1,6 +1,10 @@
+openstacksdk==0.62
 mergedeep
-openstacksdk
 paramiko
-python-openstackclient
-sshtunnel
+python-cinderclient
+python-keystoneclient
+python-novaclient
+python-openstackclient==6.0.0
+PyYAML
 shortuuid
+sshtunnel

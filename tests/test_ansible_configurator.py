@@ -1,3 +1,6 @@
+"""
+Tests for ansibleConfigurator
+"""
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch, call, mock_open, ANY
 
@@ -5,8 +8,10 @@ import bibigrid.core.utility.ansible_configurator as ansibleConfigurator
 import bibigrid.core.utility.paths.ansible_resources_path as aRP
 import bibigrid.core.utility.yaml_dumper as yamlDumper
 
-
 class TestAnsibleConfigurator(TestCase):
+    """
+    Test ansible configurator test class
+    """
     # pylint: disable=R0904
     def test_generate_site_file_yaml_empty(self):
         site_yaml = [{'hosts': 'master', "become": "yes",
@@ -19,7 +24,7 @@ class TestAnsibleConfigurator(TestCase):
 
     def test_generate_site_file_yaml_role(self):
         custom_roles = [{"file": "file", "hosts": "hosts", "name": "name", "vars": "vars", "vars_file": "varsFile"}]
-        vars_files = ['vars/login.yml', 'vars/instances.yml', 'vars/common_configuration.yml', 'varsFile']
+        vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
         site_yaml = [{'hosts': 'master', "become": "yes",
                       "vars_files": vars_files, "roles": ["common", "master", "additional/name"]},
                      {"hosts": "worker", "become": "yes", "vars_files":

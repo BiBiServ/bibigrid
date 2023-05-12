@@ -48,3 +48,24 @@
   systemd:
     name: apache2
     state: restarted
+
+- name: systemd-networkd restart
+  service:
+    name: systemd-networkd
+    state: restarted
+    enabled: true
+  become: true
+
+- name: reload wireguard configuration
+  when: "'wg0' in ansible_interfaces"
+  become: true
+  shell:
+    cmd: "bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'"
+
+- name: dnsmasq
+  systemd:
+    name: dnsmasq
+    state: restarted
+
+- name: netplan apply
+  command: netplan apply

@@ -1,8 +1,9 @@
 """
-Concrete implementation of provider.py for openstack
+Specific OpenStack implementation for the provider
 """
 
 import logging
+import re
 
 import keystoneclient
 import openstack
@@ -14,9 +15,11 @@ from keystoneauth1.identity import v3
 from bibigrid.core import provider
 from bibigrid.core.actions import create
 from bibigrid.core.actions import version
-from bibigrid.models.exceptions import ExecutionException
+from bibigrid.models.exceptions import ExecutionException, ConflictException
 
 LOG = logging.getLogger("bibigrid")
+
+PATTERN_IPV4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
 
 class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-methods
@@ -44,46 +47,31 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         # print(v3)
         auth = self.cloud_specification["auth"]
         if all(key in auth for key in ["auth_url", "application_credential_id", "application_credential_secret"]):
-            auth_session = v3.ApplicationCredential(
-                auth_url=auth["auth_url"],
+            auth_session = v3.ApplicationCredential(auth_url=auth["auth_url"],
                 application_credential_id=auth["application_credential_id"],
-                application_credential_secret=auth["application_credential_secret"]
-            )
+                application_credential_secret=auth["application_credential_secret"])
         elif all(key in auth for key in ["auth_url", "username", "password", "project_id", "user_domain_name"]):
-            auth_session = v3.Password(auth_url=auth["auth_url"],
-                                       username=auth["username"],
-                                       password=auth["password"],
-                                       project_id=auth["project_id"],
-                                       user_domain_name=auth["user_domain_name"])
+            auth_session = v3.Password(auth_url=auth["auth_url"], username=auth["username"], password=auth["password"],
+                                       project_id=auth["project_id"], user_domain_name=auth["user_domain_name"])
         else:
             raise KeyError("Not enough authentication information in clouds.yaml/clouds-public.yaml "
                            "to create a session. Use one:\n"
                            "Application Credentials: auth_url, application_credential_id and "
                            "application_credential_secret\n"
                            "Password: auth_url, username, password, project_id and user_domain_name")
-        return session.Session(auth=auth_session,
-                               app_name=app_name, app_version=app_version)
+        return session.Session(auth=auth_session, app_name=app_name, app_version=app_version)
 
     def create_connection(self, app_name="openstack_bibigrid", app_version=version.__version__):
         auth = self.cloud_specification["auth"]
-        return openstack.connect(
-            load_yaml_config=False,
-            load_envvars=False,
-            auth_url=auth["auth_url"],
-            project_name=auth.get("project_name"),
-            username=auth.get("username"),
-            password=auth.get("password"),
-            region_name=self.cloud_specification["region_name"],
-            user_domain_name=auth.get("user_domain_name"),
-            project_domain_name=auth.get("user_domain_name"),
-            app_name=app_name,
-            app_version=app_version,
+        return openstack.connect(load_yaml_config=False, load_envvars=False, auth_url=auth["auth_url"],
+            project_name=auth.get("project_name"), username=auth.get("username"), password=auth.get("password"),
+            region_name=self.cloud_specification["region_name"], user_domain_name=auth.get("user_domain_name"),
+            project_domain_name=auth.get("user_domain_name"), app_name=app_name, app_version=app_version,
             application_credential_id=auth.get("application_credential_id"),
             application_credential_secret=auth.get("application_credential_secret"),
             interface=self.cloud_specification.get("interface"),
             identity_api_version=self.cloud_specification.get("identity_api_version"),
-            auth_type=self.cloud_specification.get("auth_type")
-        )
+            auth_type=self.cloud_specification.get("auth_type"))
 
     def create_application_credential(self, name=None):
         return self.keystone_client.application_credentials.create(name=name).to_dict()
@@ -124,17 +112,17 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def list_servers(self):
         return [elem.toDict() for elem in self.conn.list_servers()]
 
-    def create_server(self, name, flavor, image,
-                      network, key_name=None, wait=True, volumes=None):
+    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None):
         try:
-            server = self.conn.create_server(name=name, flavor=flavor, image=image,
-                                             network=network, key_name=key_name, volumes=volumes)
+            server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
+                                             volumes=volumes, security_groups=security_groups)
         except openstack.exceptions.BadRequestException as exc:
             raise ConnectionError() from exc
         except openstack.exceptions.SDKException as exc:
             raise ExecutionException() from exc
         except AttributeError as exc:
-            raise ExecutionException("Unable to create server due to faulty configuration.") from exc
+            raise ExecutionException("Unable to create server due to faulty configuration.\n"
+                                     "Check your configuration using `-ch` instead of `-c`.") from exc
         if wait:
             self.conn.wait_for_server(server=server, auto_ip=False, timeout=600)
             server = self.conn.get_server(server["id"])
@@ -147,8 +135,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         :param delete_ips:
         :return:
         """
-        return self.conn.delete_server(name_or_id=name_or_id, wait=False,
-                                       timeout=180, delete_ips=delete_ips,
+        return self.conn.delete_server(name_or_id=name_or_id, wait=False, timeout=180, delete_ips=delete_ips,
                                        delete_ip_retry=1)
 
     def delete_keypair(self, key_name):
@@ -161,7 +148,12 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         return self.conn.close()
 
     def create_keypair(self, name, public_key):
-        return self.conn.create_keypair(name=name, public_key=public_key)
+        # When running a multicloud approach on the same provider and same account,
+        # make sure that the keypair is only created ones.
+        try:
+            return self.conn.create_keypair(name=name, public_key=public_key)
+        except openstack.exceptions.ConflictException:
+            return self.conn.get_keypair(name)
 
     def get_network_id_by_subnet(self, subnet):
         subnet = self.conn.get_subnet(subnet)
@@ -181,16 +173,14 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         compute_limits = dict(self.conn.compute.get_limits()["absolute"])
         # maybe needs limits.get(os.environ["OS_PROJECT_NAME"]) in the future
         volume_limits_generator = self.cinder.limits.get().absolute
-        volume_limits = {absolut_limit.name: absolut_limit.value for absolut_limit in
-                         volume_limits_generator}
+        volume_limits = {absolut_limit.name: absolut_limit.value for absolut_limit in volume_limits_generator}
         # ToDo TotalVolumeGigabytes needs totalVolumeGigabytesUsed, but is not given
         volume_limits["totalVolumeGigabytesUsed"] = 0
         free_resources = {}
         for key in ["total_cores", "floating_ips", "instances", "total_ram"]:
             free_resources[key] = compute_limits[key] - compute_limits[key + "_used"]
         for key in ["Volumes", "VolumeGigabytes", "Snapshots", "Backups", "BackupGigabytes"]:
-            free_resources[key] = volume_limits["maxTotal" + key] - volume_limits[
-                "total" + key + "Used"]
+            free_resources[key] = volume_limits["maxTotal" + key] - volume_limits["total" + key + "Used"]
         return free_resources
 
     def get_volume_by_id_or_name(self, name_or_id):
@@ -258,3 +248,71 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @return: A generator able ot generate all flavors
         """
         return self.conn.compute.flavors()
+
+    def set_allowed_addresses(self, id_or_ip, allowed_address_pairs):
+        """
+        Set allowed address (or CIDR) for the given network interface/port
+        :param id_or_ip: id or ip-address of the port/interfac
+        :param allowed_address: a list of allowed address pairs. For example:
+                [{
+                    "ip_address": "23.23.23.1",
+                    "mac_address": "fa:16:3e:c4:cd:3f"
+                }]
+        :return updated port:
+        """
+        # get port id if ip address is given
+        if re.match(PATTERN_IPV4, id_or_ip):
+            for port in self.conn.list_ports():
+                for fixed_ip in port["fixed_ips"]:
+                    if fixed_ip["ip_address"] == id_or_ip:
+                        id_or_ip = port["id"]
+                        break
+
+        return self.conn.update_port(id_or_ip, allowed_address_pairs=allowed_address_pairs)
+
+    def create_security_group(self, name, rules=None):
+        """
+        Create a security and add given rules
+        :param name:  Name of the security group to be created
+        :param rules: List of firewall rules in the following format.
+        rules = [{ "direction": "ingress" | "egress",
+                   "ethertype": "IPv4" | "IPv6",
+                   "protocol": "txp" | "udp" | "icmp" | None
+                   "port_range_min": None | 1 - 65535
+                   "port_range_max": None | 1 - 65535
+                   "remote_ip_prefix": <addresses in CIDR> | None
+                   "remote_group_id" <security group id> | None },
+                  { ... } ]
+
+
+        :return: created security group
+        """
+        security_group = self.conn.create_security_group(name, f"Security group for {name}.")
+        if rules is not None:
+            self.append_rules_to_security_group(security_group["id"], rules)
+        return security_group
+
+    def delete_security_group(self, name_or_id):
+        """
+        Delete a security group
+        :param name_or_id : Name or Id of the security group to be deleted
+        :return: True if delete succeeded, False otherwise.
+        """
+        try:
+            return self.conn.delete_security_group(name_or_id)
+        except openstack.exceptions.ConflictException as exc:
+            raise ConflictException from exc
+
+    def append_rules_to_security_group(self, name_or_id, rules):
+        """
+        Append firewall rules to given security group
+        :param name_or_id:
+        :param rules:
+        :return:
+        """
+        for rule in rules:
+            self.conn.create_security_group_rule(name_or_id, direction=rule["direction"], ethertype=rule["ethertype"],
+                                                 protocol=rule["protocol"], port_range_min=rule["port_range_min"],
+                                                 port_range_max=rule["port_range_max"],
+                                                 remote_ip_prefix=rule["remote_ip_prefix"],
+                                                 remote_group_id=rule["remote_group_id"])

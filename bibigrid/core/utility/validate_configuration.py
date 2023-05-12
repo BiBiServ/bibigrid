@@ -13,7 +13,7 @@ LOG = logging.getLogger("bibigrid")
 
 def evaluate(check_name, check_result):
     """
-    Logs check_resul as warning if failed and as success if succeeded.
+    Logs check_result as warning if failed and as success if succeeded.
     :param check_name:
     :param check_result:
     :return:
@@ -191,12 +191,12 @@ class ValidateConfiguration:
         """
         success = bool(self.providers)
         LOG.info("Validating config file...")
-        success = check_provider_data(
-            configuration_handler.get_list_by_key(self.configurations, "infrastructure"),
-            len(self.configurations)) and success
-        if not success:
-            LOG.warning("Providers not set correctly in configuration file. Check log for more detail.")
-            return success
+        # success = check_provider_data(
+        #     configuration_handler.get_list_by_key(self.configurations, "cloud"),
+        #     len(self.configurations)) and success
+        # if not success:
+        #     LOG.warning("Providers not set correctly in configuration file. Check log for more detail.")
+        #     return success
         checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),
                   ("instances", self.check_instances), ("volumes", self.check_volumes),
                   ("network", self.check_network), ("quotas", self.check_quotas),
@@ -232,7 +232,7 @@ class ValidateConfiguration:
         providers_unconnectable = []
         for provider in self.providers:
             if not provider.conn:
-                providers_unconnectable.append(provider.name)
+                providers_unconnectable.append(provider.cloud_specification["identifier"])
         if providers_unconnectable:
             LOG.warning("API connection to %s not successful. Please check your configuration.",
                         providers_unconnectable)
@@ -281,7 +281,7 @@ class ValidateConfiguration:
         if instance_image["status"] != "active":
             LOG.warning("Instance %s image: %s not active", instance_name, instance_image_id_or_name)
             print("Available active images:")
-            print("\n".join(provider.get_active_images))
+            print("\n".join(provider.get_active_images()))
             return False
         LOG.info("Instance %s image: %s found", instance_name, instance_image_id_or_name)
         instance_type = instance["type"]

@@ -56,6 +56,7 @@
     executable: bash
   tags:
     - skip_ansible_lint
+  changed_when: false
 
 - when: not ide_conf.build
   block:

@@ -5,50 +5,54 @@ setup the Cluster.
 
 import logging
 import os
-import time
 import socket
+import time
+
 import paramiko
 import yaml
 
-from bibigrid.models.exceptions import ConnectionException, ExecutionException
 from bibigrid.core.utility import ansible_commands as aC
+from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
 ANSIBLE_SETUP = [aC.NO_UPDATE, aC.UPDATE,
                  aC.PYTHON3_PIP, aC.ANSIBLE_PASSLIB,
-                 (f"chmod 600 {PRIVATE_KEY_FILE}","Adjust private key permissions."),
+                 (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."),
                  aC.PLAYBOOK_HOME,
                  aC.PLAYBOOK_HOME_RIGHTS,
                  aC.ADD_PLAYBOOK_TO_LINUX_HOME]
 # ANSIBLE_START = [aC.WAIT_READY, aC.UPDATE, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]  # another UPDATE seems to not necessary.
 ANSIBLE_START = [aC.WAIT_READY, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]
-VPN_SETUP = ["echo Example"]
+VPN_SETUP = [("echo Example", "Echos an Example")]
 LOG = logging.getLogger("bibigrid")
 
 
-def get_ac_command(master_provider, name):
+def get_ac_command(providers, name):
     """
     Get command to write application credentials to remote (
-    @param master_provider: provider that holds the master
+    @param providers: providers
     @param name: how the application credential shall be called
     @return: command to execute on remote to create application credential
     """
-    master_cloud_specification = master_provider.cloud_specification
-    auth = master_cloud_specification["auth"]
-    ac_clouds_yaml = {"clouds": {"master": None}}
-    if auth.get("application_credential_id") and auth.get("application_credential_secret"):
-        wanted_keys = ["auth", "region_name", "interface", "identity_api_version", "auth_type"]
-        ac_cloud_specification = {k: master_cloud_specification[k] for k in wanted_keys if k in
-                                  master_cloud_specification}
-    else:
-        wanted_keys = ["region_name", "interface", "identity_api_version"]
-        ac = master_provider.create_application_credential(name=name)  # pylint: disable=invalid-name
-        ac_dict = {"application_credential_id": ac["id"], "application_credential_secret": ac["secret"],
-                   "auth_type": "v3applicationcredential", "auth_url": auth["auth_url"]}
-        ac_cloud_specification = {k: master_cloud_specification[k] for k in wanted_keys if k in
-                                  master_cloud_specification}
-        ac_cloud_specification.update(ac_dict)
-    ac_clouds_yaml["clouds"]["master"] = ac_cloud_specification
+    ac_clouds_yaml = {"clouds": {}}
+    for provider in providers:
+        cloud_specification = provider.cloud_specification
+        auth = cloud_specification["auth"]
+        if auth.get("application_credential_id") and auth.get("application_credential_secret"):
+            wanted_keys = ["auth", "region_name", "interface", "identity_api_version", "auth_type"]
+            ac_cloud_specification = {wanted_key: cloud_specification[wanted_key] for wanted_key in wanted_keys if
+                                      wanted_key in
+                                      cloud_specification}
+        else:
+            wanted_keys = ["region_name", "interface", "identity_api_version"]
+            ac = provider.create_application_credential(name=name)  # pylint: disable=invalid-name
+            ac_dict = {"application_credential_id": ac["id"], "application_credential_secret": ac["secret"],
+                       "auth_type": "v3applicationcredential", "auth_url": auth["auth_url"]}
+            ac_cloud_specification = {wanted_key: cloud_specification[wanted_key] for wanted_key in wanted_keys if
+                                      wanted_key in
+                                      cloud_specification}
+            ac_cloud_specification.update(ac_dict)
+        ac_clouds_yaml["clouds"][cloud_specification["identifier"]] = ac_cloud_specification
     return (f"echo '{yaml.safe_dump(ac_clouds_yaml)}' | sudo install -D /dev/stdin /etc/openstack/clouds.yaml",
             "Copy application credentials.")
 
@@ -104,8 +108,9 @@ def is_active(client, floating_ip_address, private_key, username, timeout=5):
     establishing_connection = True
     while establishing_connection:
         try:
-            client.connect(hostname=floating_ip_address, username=username, pkey=private_key, timeout=5, auth_timeout=5)
+            client.connect(hostname=floating_ip_address, username=username, pkey=private_key, timeout=7, auth_timeout=5)
             establishing_connection = False
+            LOG.info(f"Successfully connected to {floating_ip_address}")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
             LOG.info(f"Attempting to connect to {floating_ip_address}... This might take a while", )
             if attempts < timeout:
@@ -123,7 +128,7 @@ def is_active(client, floating_ip_address, private_key, username, timeout=5):
                 raise ConnectionException(exc) from exc
         except TimeoutError as exc:  # pylint: disable=duplicate-except
             LOG.error("The attempt to connect to %s failed. Possible known reasons:"
-                          "\n\t-Your network's security group doesn't allow SSH.", floating_ip_address)
+                      "\n\t-Your network's security group doesn't allow SSH.", floating_ip_address)
             raise ConnectionException(exc) from exc
 
 
@@ -220,10 +225,13 @@ def execute_ssh(floating_ip, private_key, username, commands=None, filepaths=Non
             LOG.error(f"Couldn't connect to floating ip {floating_ip} using private key {private_key}.")
             raise exc
         else:
+            LOG.debug(f"Setting up {floating_ip}")
             if filepaths:
+                LOG.debug(f"Setting up filepaths for {floating_ip}")
                 sftp = client.open_sftp()
                 for localpath, remotepath in filepaths:
                     copy_to_server(sftp=sftp, localpath=localpath, remotepath=remotepath)
                 LOG.debug("SFTP: Files %s copied.", filepaths)
             if commands:
+                LOG.debug(f"Setting up commands for {floating_ip}")
                 execute_ssh_cml_commands(client, commands)

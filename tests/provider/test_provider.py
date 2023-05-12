@@ -1,3 +1,7 @@
+"""
+Module containing integration and unit tests regarding the provider
+"""
+
 import os
 import unittest
 
@@ -5,32 +9,27 @@ import bibigrid.core.utility.handler.configuration_handler as configurationHandl
 import bibigrid.core.utility.handler.provider_handler as providerHandler
 import bibigrid.core.utility.paths.basic_path as bP
 
-SERVER_KEYS = {'id', 'name', 'flavor', 'image', 'block_device_mapping', 'location', 'volumes',
-               'has_config_drive', 'host_id', 'progress', 'disk_config', 'power_state', 'task_state',
-               'vm_state', 'launched_at', 'terminated_at', 'hypervisor_hostname', 'instance_name',
-               'user_data', 'host', 'hostname', 'kernel_id', 'launch_index', 'ramdisk_id',
-               'reservation_id', 'root_device_name', 'scheduler_hints', 'security_groups',
-               'created_at', 'accessIPv4', 'accessIPv6', 'addresses', 'adminPass', 'created',
-               'description', 'key_name', 'metadata', 'networks', 'personality', 'private_v4',
-               'public_v4', 'public_v6', 'server_groups', 'status', 'updated', 'user_id', 'tags',
-               'interface_ip', 'properties', 'hostId', 'config_drive', 'project_id', 'tenant_id',
-               'region', 'cloud', 'az', 'OS-DCF:diskConfig', 'OS-EXT-AZ:availability_zone',
-               'OS-SRV-USG:launched_at', 'OS-SRV-USG:terminated_at', 'OS-EXT-STS:task_state',
-               'OS-EXT-STS:vm_state', 'OS-EXT-STS:power_state',
-               'os-extended-volumes:volumes_attached'}
-FLOATING_IP_KEYS = {'attached', 'fixed_ip_address', 'floating_ip_address', 'id', 'location', 'network',
-                    'port', 'router', 'status', 'created_at', 'updated_at', 'description',
-                    'revision_number', 'properties', 'port_id', 'router_id', 'project_id', 'tenant_id',
-                    'floating_network_id', 'port_details', 'dns_domain', 'dns_name', 'port_forwardings',
-                    'tags'}
-SUBNET_KEYS = {'id', 'name', 'tenant_id', 'network_id', 'ip_version', 'subnetpool_id', 'enable_dhcp',
-               'ipv6_ra_mode', 'ipv6_address_mode', 'gateway_ip', 'cidr', 'allocation_pools',
-               'host_routes', 'dns_nameservers', 'description', 'service_types', 'tags',
-               'created_at', 'updated_at', 'revision_number', 'project_id'}
+SERVER_KEYS = {'id', 'name', 'flavor', 'image', 'block_device_mapping', 'location', 'volumes', 'has_config_drive',
+               'host_id', 'progress', 'disk_config', 'power_state', 'task_state', 'vm_state', 'launched_at',
+               'terminated_at', 'hypervisor_hostname', 'instance_name', 'user_data', 'host', 'hostname', 'kernel_id',
+               'launch_index', 'ramdisk_id', 'reservation_id', 'root_device_name', 'scheduler_hints', 'security_groups',
+               'created_at', 'accessIPv4', 'accessIPv6', 'addresses', 'adminPass', 'created', 'description', 'key_name',
+               'metadata', 'networks', 'personality', 'private_v4', 'public_v4', 'public_v6', 'server_groups', 'status',
+               'updated', 'user_id', 'tags', 'interface_ip', 'properties', 'hostId', 'config_drive', 'project_id',
+               'tenant_id', 'region', 'cloud', 'az', 'OS-DCF:diskConfig', 'OS-EXT-AZ:availability_zone',
+               'OS-SRV-USG:launched_at', 'OS-SRV-USG:terminated_at', 'OS-EXT-STS:task_state', 'OS-EXT-STS:vm_state',
+               'OS-EXT-STS:power_state', 'os-extended-volumes:volumes_attached'}
+FLOATING_IP_KEYS = {'attached', 'fixed_ip_address', 'floating_ip_address', 'id', 'location', 'network', 'port',
+                    'router', 'status', 'created_at', 'updated_at', 'description', 'revision_number', 'properties',
+                    'port_id', 'router_id', 'project_id', 'tenant_id', 'floating_network_id', 'port_details',
+                    'dns_domain', 'dns_name', 'port_forwardings', 'tags'}
+SUBNET_KEYS = {'id', 'name', 'tenant_id', 'network_id', 'ip_version', 'subnetpool_id', 'enable_dhcp', 'ipv6_ra_mode',
+               'ipv6_address_mode', 'gateway_ip', 'cidr', 'allocation_pools', 'host_routes', 'dns_nameservers',
+               'description', 'service_types', 'tags', 'created_at', 'updated_at', 'revision_number', 'project_id'}
 NETWORK_KEYS = {'id', 'name', 'tenant_id', 'admin_state_up', 'mtu', 'status', 'subnets', 'shared',
-                'availability_zone_hints', 'availability_zones', 'ipv4_address_scope',
-                'ipv6_address_scope', 'router:external', 'description', 'port_security_enabled',
-                'dns_domain', 'tags', 'created_at', 'updated_at', 'revision_number', 'project_id'}
+                'availability_zone_hints', 'availability_zones', 'ipv4_address_scope', 'ipv6_address_scope',
+                'router:external', 'description', 'port_security_enabled', 'dns_domain', 'tags', 'created_at',
+                'updated_at', 'revision_number', 'project_id'}
 
 FLAVOR_KEYS = {'links', 'name', 'description', 'disk', 'is_public', 'ram', 'vcpus', 'swap', 'ephemeral', 'is_disabled',
                'rxtx_factor', 'extra_specs', 'id', 'location'}
@@ -55,20 +54,29 @@ VOLUME_KEYS = {'location', 'id', 'name', 'description', 'size', 'attachments', '
 FREE_RESOURCES_KEYS = {'total_cores', 'floating_ips', 'instances', 'total_ram', 'Volumes', 'VolumeGigabytes',
                        'Snapshots', 'Backups', 'BackupGigabytes'}
 
-KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwByljG9S1/zHKIEzOMcOBb7WUSmyNa5XHh5IB0/BTsQvSag/O9IAhax2wlp9A2za6EkALYiRdEXeGOMNORw8yylRBqzLluKTErZ5sKYxENf1WGHsE3ifzct0G/moEPmIkixTHR9fZrZgOzQwj4bgJXhgQT8wxpc8FwWncvDSazZ/OAefXKh16Dz8dVz2VbMbYEUMY+XXqZxcnHwJABIpU1mrJV7h1F4DW+E8eUF1b6UNQRibX8VJ11V1mq39zMV9Az6W2ZOR6OXjDXK2r6P8y07+9Lh0rrwzeeZMYF17ACZbxIu8crTCZF0Lr6NtX+KWfdT6usUyFcNwuktIvUYv3ylP/7wcQlaPl0g1FMFbUTTukAiDf4jAgvJkg7ayE0MPapGpI/OhSK2gyN45VAzs2m7uykun87B491JagZ57qr16vt8vxGYpFCEe8QqAcrUszUPqyPrb0auA8bzjO8S41Kx8FfG+7eTu4dQ0= user"
+KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwByljG9S1/zHKIEzOMcOBb7WUSmyNa5XHh5IB0/" \
+          "BTsQvSag/O9IAhax2wlp9A2za6EkALYiRdEXeGOMNORw8yylRBqzLluKTErZ5sKYxENf1WGHsE3ifzct0G/moEPmIkixTHR9fZrZgOzQwj" \
+          "4bgJXhgQT8wxpc8FwWncvDSazZ/OAefXKh16Dz8dVz2VbMbYEUMY+XXqZxcnHwJABIpU1mrJV7h1F4DW+E8eUF1b6UNQRibX8VJ11V1mq3" \
+          "9zMV9Az6W2ZOR6OXjDXK2r6P8y07+9Lh0rrwzeeZMYF17ACZbxIu8crTCZF0Lr6NtX+KWfdT6usUyFcNwuktIvUYv3ylP/7wcQlaPl0g1F" \
+          "MFbUTTukAiDf4jAgvJkg7ayE0MPapGpI/OhSK2gyN45VAzs2m7uykun87B491JagZ57qr16vt8vxGYpFCEe8QqAcrUszUPqyPrb0auA8bz" \
+          "jO8S41Kx8FfG+7eTu4dQ0= user"
 
-CONFIGURATIONS = configurationHandler.read_configuration(os.path.join(bP.ROOT_PATH,
-                                                                      "tests/resources/infrastructure_cloud.yml"))
+CONFIGURATIONS = configurationHandler.read_configuration(
+    os.path.join(bP.ROOT_PATH, "tests/resources/infrastructure_cloud.yml"))
 PROVIDERS = providerHandler.get_providers(CONFIGURATIONS)
 
 
 class ProviderServer:
+    """
+        Class for testing create_server method
+    """
+
     def __init__(self, provider, name, configuration, key_name=None):
         self.provider = provider
         self.name = name
         self.server_dict = provider.create_server(name=self.name, flavor=configuration["flavor"],
-                                                  image=configuration["image"],
-                                                  network=configuration["network"], key_name=key_name)
+                                                  image=configuration["image"], network=configuration["network"],
+                                                  key_name=key_name)
 
     def __enter__(self):
         return self.server_dict
@@ -78,6 +86,10 @@ class ProviderServer:
 
 
 class TestProvider(unittest.TestCase):
+    """
+    Class to unittest provider
+    """
+
     def test_get_free_resources(self):
         for provider in PROVIDERS:
             with self.subTest(provider.NAME):
@@ -93,8 +105,7 @@ class TestProvider(unittest.TestCase):
                     provider.create_server(name="name", flavor=configuration["flavor"],
                                            network=configuration["network"])
                 with self.assertRaises(TypeError):
-                    provider.create_server(name="name", image=configuration["image"],
-                                           network=configuration["network"])
+                    provider.create_server(name="name", image=configuration["image"], network=configuration["network"])
                 with self.assertRaises(TypeError):
                     provider.create_server(flavor=configuration["flavor"], image=configuration["image"],
                                            network=configuration["network"])
@@ -128,17 +139,17 @@ class TestProvider(unittest.TestCase):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             provider.create_keypair("bibigrid_test_keypair", KEYPAIR)
             with self.subTest(provider.NAME):
-                with ProviderServer(provider, "bibigrid_test_server", configuration, "bibigrid_test_keypair") as ps:
+                with ProviderServer(provider, "bibigrid_test_server", configuration,
+                                    "bibigrid_test_keypair") as provider_server:
                     floating_ip = provider.create_floating_ip(provider.get_external_network(configuration["network"]),
-                                                              ps)
+                                                              provider_server)
                     server_list = provider.list_servers()
-                self.assertEqual(SERVER_KEYS,
-                                 set(ps.keys()))
-                self.assertEqual("bibigrid_test_keypair", ps["key_name"])
-                self.assertEqual(FLOATING_IP_KEYS,
-                                 set(floating_ip.keys()))
-                self.assertTrue([server for server in server_list if server["name"] == "bibigrid_test_server" and
-                                 server["public_v4"] == floating_ip.floating_ip_address])
+                self.assertEqual(SERVER_KEYS, set(provider_server.keys()))
+                self.assertEqual("bibigrid_test_keypair", provider_server["key_name"])
+                self.assertEqual(FLOATING_IP_KEYS, set(floating_ip.keys()))
+                self.assertTrue([server for server in server_list if
+                                 server["name"] == "bibigrid_test_server" and server[
+                                     "public_v4"] == floating_ip.floating_ip_address])
             provider.delete_keypair("bibigrid_test_keypair")
 
     def test_get_external_network(self):
@@ -152,11 +163,9 @@ class TestProvider(unittest.TestCase):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
                 network = provider.get_network_by_id_or_name(configuration["network"])
-                self.assertEqual(NETWORK_KEYS,
-                                 set(network.keys()))
+                self.assertEqual(NETWORK_KEYS, set(network.keys()))
                 subnet_id = provider.get_subnet_ids_by_network(network["id"])[0]
-                self.assertEqual(SUBNET_KEYS,
-                                 set(provider.get_subnet_by_id_or_name(subnet_id).keys()))
+                self.assertEqual(SUBNET_KEYS, set(provider.get_subnet_by_id_or_name(subnet_id).keys()))
                 network2 = provider.get_network_id_by_subnet(subnet_id)
                 self.assertEqual(network2, network["id"])
 
@@ -204,9 +213,8 @@ class TestProvider(unittest.TestCase):
         def test_get_snapshot(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):
-                    self.assertEqual(SNAPSHOT_KEYS,
-                                     set(provider.get_volume_snapshot_by_id_or_name(
-                                         configuration["snapshot_image"]).keys()))
+                    self.assertEqual(SNAPSHOT_KEYS, set(provider.get_volume_snapshot_by_id_or_name(
+                        configuration["snapshot_image"]).keys()))
 
         def test_create_volume_from_snapshot(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):

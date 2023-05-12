@@ -19,3 +19,9 @@
       file:
         path: ~{{ ansible_facts.env.SUDO_USER }}/bin
         state: absent
+
+- name: generate bibiname script
+  template:
+    src: "bin/bibiname.j2"
+    dest: "/usr/local/bin/bibiname"
+    mode: '0775'
