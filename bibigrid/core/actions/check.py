@@ -6,6 +6,7 @@ from bibigrid.core.utility import validate_configuration
 
 LOG = logging.getLogger("bibigrid")
 
+
 def check(configurations, providers):
     """
     Uses validate_configuration to validate given configuration.
