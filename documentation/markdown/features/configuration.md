@@ -69,7 +69,7 @@ NFS (Network File System) is a stable and well-functioning network protocol for 
 
 Yet to be explained.
 
-```
+```yaml
   - file: SomeFile
     hosts: SomeHosts
     name: SomeName
@@ -81,7 +81,7 @@ Yet to be explained.
 
 Yet to be explained.
 
-```
+```yaml
   - hosts: SomeHost
     name: SomeName
     galaxy: SomeGalaxy
@@ -143,10 +143,11 @@ When using OpenStack the downloaded `clouds.yaml` is named `openstack`
 
 #### workerInstances (optional)
 
-`workerInstances` expects a list of workers to be used on this specific provider the configuration is for.
+`workerInstances` expects a list of worker groups (it's called group because of the `count` key) to be used on this 
+specific provider the configuration is for.
 `Instances` are also called `servers`.
 
-```
+```yaml
 workerInstance:
   - type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
@@ -155,21 +156,38 @@ workerInstance:
 
 - `type` sets the instance's hardware configuration. Also called `flavor` sometimes.
 - `image` sets the bootable operating system to be installed on the instance.
-- `count` sets how many workers of that `type` `image` combination are to be used by the cluster
+- `count` sets how many workers of that `type` `image` combination are in this work group
 
 Find your active `images`:
 
-```
+```commandline
 openstack image list --os-cloud=openstack | grep active
 ```
 
 Currently, images based on Ubuntu 20.04/22.04 (Focal/Jammy) and Debian 11(Bullseye) are supported.
 
-Find your active `flavors`:
+Find your active `flavor`s:
 
-```
+```commandline
 openstack flavor list --os-cloud=openstack
 ```
+
+##### Features (optional)
+You can declare a list of features for a worker group that are then attached to each node in the worker group.
+For example:
+```yaml
+workerInstance:
+  - type: de.NBI tiny
+    image: Ubuntu 22.04 LTS (2022-10-14)
+    count: 2
+    features:
+      - hasdatabase
+      - holdsinformation
+```
+
+Later those features can be used to schedule jobs to nodes that fulfill the constraint of having those features.
+Features can be any string. For example `hasdatabase`. If you would like to know more about how features exactly work,
+take a look at [slurm's documentation](https://slurm.schedmd.com/slurm.conf.html#OPT_Features).
 
 #### Master or vpnWorker?
 
@@ -177,17 +195,28 @@ openstack flavor list --os-cloud=openstack
 
 Only in the first configuration and only one:
 
-```
+```yaml
   masterInstance:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
+```
+
+You can create features for the master [in the same way](#features-optional) as for the workers:
+
+```yaml
+  masterInstance:
+    type: de.NBI tiny
+    image: Ubuntu 22.04 LTS (2022-10-14)
+    features:
+      - hasdatabase
+      - holdsinformation
 ```
 
 ##### vpnWorker:
 
 Exactly once in every configuration but the first:
 
-```
+```yaml
   vpnWorker:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
@@ -204,7 +233,7 @@ openstack deployment. Every [avilability zone](#availabilityzone-required) belon
 
 Find your `regions`:
 
-```
+```commandline
 openstack region list --os-cloud=openstack
 ```
 
@@ -215,7 +244,7 @@ nodes.
 
 Find your `availabilityZones`:
 
-```
+```commandline
 openstack region list --os-cloud=openstack
 ```
 
@@ -225,7 +254,7 @@ openstack region list --os-cloud=openstack
 
 Find available `subnets`:
 
-```
+```commandline
 openstack subnet list --os-cloud=openstack
 ```
 
@@ -233,3 +262,11 @@ openstack subnet list --os-cloud=openstack
 
 If no full DNS service for started instances is available, set `localDNSLookup: True`.
 Currently the case in Berlin, DKFZ, Heidelberg and Tuebingen.
+
+#### features (optional)
+
+You can declare a list of features that are then attached to every node in the configuration.
+
+Later those features can be used to schedule jobs to nodes that fulfill the constraint of having those features.
+Features can be any string. For example `hasdatabase`. If you would like to know more about how features work,
+take a look at [slurm's documentation](https://slurm.schedmd.com/slurm.conf.html#OPT_Features).
