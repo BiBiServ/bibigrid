@@ -84,16 +84,18 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             flavor = provider.get_flavor(worker["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
-            image = worker["image"]
-            network = configuration["network"]
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
                                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
             worker_count += worker.get('count', 1)
             regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
-            worker_dict = {"name": name, "regexp": regexp, "image": image, "network": network, "flavor": flavor_dict,
+            worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
+                           "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"]}
+            features = set(worker.get("features", []) + configuration.get("features", []))
+            if features:
+                worker_dict["features"] = features
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict)
         vpnwkr = configuration.get("vpnInstance")
         if vpnwkr:
@@ -102,22 +104,20 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
             vpn_count += 1
             flavor = provider.get_flavor(vpnwkr["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
-            image = vpnwkr["image"]
-            network = configuration["network"]
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            vpnwkr_dict = {"name": name, "regexp": regexp, "image": image,
-                                                                      "network": network,
-                                                                      "network_cidr": configuration["subnet_cidrs"],
-                                                                      "floating_ip": configuration["floating_ip"],
-                                                                      "private_v4": configuration["private_v4"],
-                                                                      "flavor": flavor_dict,
-                                                                      "wireguard_ip": wireguard_ip,
-                                                                      "cloud_identifier": configuration[
-                                                                          "cloud_identifier"]}
+            vpnwkr_dict = {"name": name, "regexp": regexp, "image": vpnwkr["image"],
+                           "network": configuration["network"],
+                           "network_cidr": configuration["subnet_cidrs"],
+                           "floating_ip": configuration["floating_ip"],
+                           "private_v4": configuration["private_v4"],
+                           "flavor": flavor_dict,
+                           "wireguard_ip": wireguard_ip,
+                           "cloud_identifier": configuration[
+                               "cloud_identifier"]}
             if configuration.get("wireguard_peer"):
                 vpnwkr_dict["wireguard"] = {"ip": wireguard_ip,
-                                                                                       "peer": configuration.get(
-                                                                                           "wireguard_peer")}
+                                            "peer": configuration.get(
+                                                "wireguard_peer")}
             write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpnwkr_dict)
         else:
             master = configuration["masterInstance"]
@@ -125,10 +125,10 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
             flavor = provider.get_flavor(master["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
             master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
-                                   "network_cidr": configuration["subnet_cidrs"],
-                                   "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
-                                   "private_v4": configuration["private_v4"],
-                                   "cloud_identifier": configuration["cloud_identifier"]}
+                           "network_cidr": configuration["subnet_cidrs"],
+                           "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
+                           "private_v4": configuration["private_v4"],
+                           "cloud_identifier": configuration["cloud_identifier"]}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict)
