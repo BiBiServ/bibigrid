@@ -81,6 +81,9 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
     worker_count = 0
     vpn_count = 0
     for configuration, provider in zip(configurations, providers):
+        configuration_features = configuration.get("features", [])
+        if isinstance(configuration_features, str):
+            configuration_features = [configuration_features]
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             flavor = provider.get_flavor(worker["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
@@ -93,7 +96,11 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"]}
-            features = set(worker.get("features", []) + configuration.get("features", []))
+
+            worker_features = worker.get("features", [])
+            if isinstance(worker_features, str):
+                worker_features = [worker_features]
+            features = set(configuration_features+worker_features)
             if features:
                 worker_dict["features"] = features
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict)
