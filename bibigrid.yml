@@ -90,4 +90,6 @@
   # Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
   #localDNSLookup: True
 
+  #features: # list
+
   #- [next configurations] # KEY NOT IMPLEMENTED YET

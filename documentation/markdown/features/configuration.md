@@ -266,6 +266,8 @@ Currently the case in Berlin, DKFZ, Heidelberg and Tuebingen.
 #### features (optional)
 
 You can declare a list of features that are then attached to every node in the configuration.
+If both [worker group](#features-optional) or [master features](#master) and configuration features are defined, 
+they are merged.
 
 Later those features can be used to schedule jobs to nodes that fulfill the constraint of having those features.
 Features can be any string. For example `hasdatabase`. If you would like to know more about how features work,
