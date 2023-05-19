@@ -1,5 +1,5 @@
   # See https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/ (after update)
-  # First configuration will be used for general cluster information and must include the master.
+  # First configuration also holds general cluster information and must include the master.
   # All other configurations mustn't include another master, but exactly one vpnWorker instead (keys like master).
 
 - infrastructure: openstack # former mode. Describes what cloud provider is used (others are not implemented yet)
@@ -53,6 +53,7 @@
   masterInstance:
     type: # existing type/flavor on your cloud. See launch instance>flavor for options
     image: # existing image on your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/images pick an active one. Currently only ubuntu22.04 is supported
+    # features: # list
 
   # -- END: GENERAL CLUSTER INFORMATION --
 
@@ -61,6 +62,7 @@
   #  - type: # existing type/flavor on your cloud. See launch instance>flavor for options
   #    image: # same as master
   #    count: # any number of workers you would like to create with set type, image combination
+  #    # features: # list
 
   # Depends on cloud image
   sshUser: # for example ubuntu
@@ -89,5 +91,7 @@
   # Uncomment if no full DNS service for started instances is available.
   # Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
   #localDNSLookup: True
+
+  #features: # list
 
   #- [next configurations] # KEY NOT IMPLEMENTED YET
