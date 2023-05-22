@@ -118,7 +118,7 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
             LOG.error(err)
         exit_state = 2
     time_in_s = time.time() - start_time
-    print(f"--- {math.floor(time_in_s / 60)} minutes and {time_in_s % 60} seconds ---")
+    print(f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
     return exit_state
 
 

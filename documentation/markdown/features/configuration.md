@@ -110,6 +110,10 @@ It expects `True` or `False` and helps some specific users to create a filesyste
 If `True`, master will store DNS information for his workers. Default is `False`.
 [More information](https://helpdeskgeek.com/networking/edit-hosts-file/).
 
+#### slurm
+If `False`, the cluster will start without the job scheduling system slurm.
+This is relevant to the fewest. Default is `True`.
+
 #### zabbix (optional)
 
 If `True`, the monitoring solution [zabbix](https://www.zabbix.com/) will be installed on the master. Default is `False`.
@@ -117,6 +121,11 @@ If `True`, the monitoring solution [zabbix](https://www.zabbix.com/) will be ins
 #### nfs (optional)
 
 If `True`, [nfs](../software/nfs.md) is set up. Default is `False`.
+
+#### ide (optional)
+
+If `True`, [Theia Web IDE](../software/theia_ide.md) is installed.
+After creation connection information is [printed](../features/create.md#prints-cluster-information).
 
 #### useMasterAsCompute (optional)
 

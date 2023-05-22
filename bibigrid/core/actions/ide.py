@@ -22,6 +22,7 @@ MAX_JUMP = 100
 LOCALHOST = "127.0.0.1"
 LOG = logging.getLogger("bibigrid")
 
+
 def sigint_handler(caught_signal, frame):  # pylint: disable=unused-argument
     """
     Is called when SIGINT is thrown and terminates the program
@@ -31,6 +32,8 @@ def sigint_handler(caught_signal, frame):  # pylint: disable=unused-argument
     """
     print("Exiting...")
     sys.exit(0)
+
+
 signal.signal(signal.SIGINT, sigint_handler)
 
 
