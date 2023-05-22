@@ -17,7 +17,7 @@ This keypair is injected into every started instance and is used by BiBiGrid to 
 |  Ingress  |   IPv4    |   TCP    |       22       |       22       |    0.0.0.0/0     |
 
 
-#### Multi-Cloud
+#### Default Security Group - Extra Rules: Multi-Cloud
 When running a multi-cloud additionally the following rules are set:
 - allows every TCP connection from the VPN (10.0.0.0/24)
 - allows every TCP connection from other cidrs (other clouds)
