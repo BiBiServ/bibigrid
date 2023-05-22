@@ -167,7 +167,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(cluster_id=self.cluster_id)
             else:
-                name = identifier(cluster_id=self.cluster_id,   # pylint: disable=redundant-keyword-arg
+                name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
                                   additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
                 self.vpn_counter += 1
         LOG.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
@@ -299,18 +299,18 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                  AC_NAME.format(
                                                      cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
 
-    def start_start_instances_threads(self):
+    def start_start_instance_threads(self):
         """
         Starts for each provider a start_instances thread and joins them.
         :return:
         """
-        start_instances_threads = []
+        start_instance_threads = []
         for configuration, provider in zip(self.configurations, self.providers):
-            start_instances_thread = return_threading.ReturnThread(target=self.start_vpn_or_master_instance,
-                                                                   args=[configuration, provider])
-            start_instances_thread.start()
-            start_instances_threads.append(start_instances_thread)
-        for start_instance_thread in start_instances_threads:
+            start_instance_thread = return_threading.ReturnThread(target=self.start_vpn_or_master_instance,
+                                                                  args=[configuration, provider])
+            start_instance_thread.start()
+            start_instance_threads.append(start_instance_thread)
+        for start_instance_thread in start_instance_threads:
             start_instance_thread.join()
 
     def extended_network_configuration(self):
@@ -351,7 +351,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.generate_keypair()
             self.prepare_configurations()
             self.generate_security_groups()
-            self.start_start_instances_threads()
+            self.start_start_instance_threads()
             self.extended_network_configuration()
             self.initialize_instances()
             self.upload_data()
