@@ -122,6 +122,9 @@ def get_cloud_specification(cloud_name, clouds, clouds_public):
                     return {}
         else:
             LOG.debug("Using only clouds.yaml since no clouds-public profile is set.")
+
+        if not cloud_full_specification.get("identifier"):
+            cloud_full_specification["identifier"] = cloud_name
     else:
         LOG.warning("%s is not a valid cloud name. Must be contained under key '%s'", cloud_name, CLOUD_ROOT_KEY)
     return cloud_full_specification
