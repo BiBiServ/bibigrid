@@ -137,6 +137,7 @@ def get_cloud_specifications(configurations):
     @return: list of dicts: cloud_specifications of every configuration
     """
     clouds, clouds_public = get_clouds_files()
+    LOG.debug("Loaded clouds.yml and clouds_public.yml")
     cloud_specifications = []
     if isinstance(clouds, dict):
         for configuration in configurations:
