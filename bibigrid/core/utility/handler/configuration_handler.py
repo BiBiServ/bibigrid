@@ -65,7 +65,7 @@ def find_file_in_folders(file_name, folders):
         if os.path.isfile(file_path):
             LOG.debug("File %s found in folder %s.", file_name, folder_path)
             return read_configuration(file_path)
-        LOG.debug("File %s in folder %s not found.", file_name, folder_path)
+        LOG.debug("File %s not found in folder %s.", file_name, folder_path)
     return None
 
 
