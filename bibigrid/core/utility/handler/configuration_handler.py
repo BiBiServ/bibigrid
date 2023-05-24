@@ -34,6 +34,10 @@ def read_configuration(path="bibigrid.yml"):
                 LOG.warning("Couldn't read configuration %s: %s", path, exc)
     else:
         LOG.warning("No such configuration file %s.", path)
+
+    if not isinstance(list, configuration):
+        LOG.warning("Configuration should be list. Attempting to rescue by assuming a single configuration.")
+        return [configuration]
     return configuration
 
 
