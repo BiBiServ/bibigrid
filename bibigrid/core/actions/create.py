@@ -268,8 +268,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         for configuration, provider in zip(self.configurations, self.providers):
             if not configuration.get("network"):
                 configuration["network"] = provider.get_network_id_by_subnet(configuration["subnet"])
+                if not configuration["network"]:
+                    LOG.warning("Unable to set network. Subnet doesn't exist.")
+                    raise ConfigurationException("Subnet doesn't exist.")
             elif not configuration.get("subnet"):
                 configuration["subnet"] = provider.get_subnet_ids_by_network(configuration["network"])
+                if not configuration["subnet"]:
+                    LOG.warning("Unable to set subnet. Network doesn't exist.")
+                    raise ConfigurationException("Network doesn't exist.")
             configuration["subnet_cidrs"] = provider.get_subnet_by_id_or_name(configuration["subnet"])["cidr"]
             configuration["cloud_identifier"] = provider.cloud_specification["identifier"]
             configuration["sshUser"] = self.ssh_user  # is used in ansibleConfigurator
