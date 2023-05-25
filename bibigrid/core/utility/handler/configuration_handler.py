@@ -19,10 +19,11 @@ CLOUD_CONFIGURATION_KEY = "cloud"
 LOG = logging.getLogger("bibigrid")
 
 
-def read_configuration(path="bibigrid.yml"):
+def read_configuration(path="bibigrid.yml", configuration_list=True):
     """
-    Reads yaml from file and returns the list of all configurations
+    Reads yaml from file and returns configuration
     :param path: Path to yaml file
+    :param configuration_list: True if list is expected
     :return: configurations (dict)
     """
     configuration = None
@@ -34,8 +35,7 @@ def read_configuration(path="bibigrid.yml"):
                 LOG.warning("Couldn't read configuration %s: %s", path, exc)
     else:
         LOG.warning("No such configuration file %s.", path)
-
-    if not isinstance(list, configuration):
+    if configuration_list and not isinstance(configuration, list):
         LOG.warning("Configuration should be list. Attempting to rescue by assuming a single configuration.")
         return [configuration]
     return configuration
@@ -68,7 +68,7 @@ def find_file_in_folders(file_name, folders):
         file_path = os.path.expanduser(os.path.join(folder_path, file_name))
         if os.path.isfile(file_path):
             LOG.debug("File %s found in folder %s.", file_name, folder_path)
-            return read_configuration(file_path)
+            return read_configuration(file_path, False)
         LOG.debug("File %s not found in folder %s.", file_name, folder_path)
     return None
 
