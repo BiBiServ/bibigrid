@@ -27,6 +27,9 @@ def terminate_cluster(cluster_id, providers, debug=False):
         if not input(f"DEBUG MODE: Any non-empty input to shutdown cluster {cluster_id}. "
                      "Empty input to exit with cluster still alive:"):
             return 0
+    security_groups = [create.DEFAULT_SECURITY_GROUP_NAME]
+    if len(providers) > 1:
+        security_groups.append(create.WIREGUARD_SECURITY_GROUP_NAME)
     cluster_server_state = []
     cluster_keypair_state = []
     cluster_security_group_state = []
@@ -41,7 +44,7 @@ def terminate_cluster(cluster_id, providers, debug=False):
             server_list = provider.list_servers()
             cluster_server_state += terminate_servers(server_list, cluster_id, provider)
             cluster_keypair_state.append(delete_keypairs(provider, tmp_keyname))
-            cluster_keypair_state.append(delete_security_groups(provider, cluster_id))
+            cluster_keypair_state.append(delete_security_groups(provider, cluster_id, security_groups))
         ac_state = delete_application_credentials(providers[0], cluster_id)
         terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, ac_state,
                          cluster_id)
@@ -123,18 +126,19 @@ def delete_local_keypairs(tmp_keyname):
     return success
 
 
-def delete_security_groups(provider, cluster_id, timeout=5):
+def delete_security_groups(provider, cluster_id, security_groups, timeout=5):
     """
     Delete configured security groups from provider.
 
     @param provider: current cloud provider
     @param cluster_id:  cluster id
     @param timeout: how often should delete be attempted
+    @param has_wireguard: whether wireguard security group has been used
     @return: True if all configured security groups can be deleted, false otherwise
     """
     LOG.info("Deleting security groups on provider %s...", provider.cloud_specification['identifier'])
     success = True
-    for security_group_format in [create.DEFAULT_SECURITY_GROUP_NAME, create.WIREGUARD_SECURITY_GROUP_NAME]:
+    for security_group_format in security_groups:
         security_group_name = security_group_format.format(cluster_id=cluster_id)
         attempts = 0
         tmp_success = False
