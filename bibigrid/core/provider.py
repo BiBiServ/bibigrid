@@ -21,11 +21,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         Call necessary methods to create a connection and save cloud_specification data as needed.
         """
         self.cloud_specification = cloud_specification  # contains sensitive information!
-        self.cloud_specification["identifier"] = self.cloud_specification.get('identifier') or \
-                                                 self.cloud_specification.get('profile') or \
-                                                 self.cloud_specification['auth'].get('project_id') or \
-                                                 self.cloud_specification["auth"].get(
-                                                     'application_credential_id')
+        self.cloud_specification["identifier"] = self.cloud_specification['identifier']
 
     def create_application_credential(self, name=None):
         """

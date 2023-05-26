@@ -217,4 +217,4 @@
     owner: slurm
     group: ansible
     mode: "0640"
-  with_items: "{{ groups.vpnwkr + groups.master }}"
+  with_items: "{{ groups.vpngtw + groups.master }}"

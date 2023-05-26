@@ -30,8 +30,8 @@ LOG = logging.getLogger("bibigrid")
 
 def get_identifier(identifier, cluster_id, worker_group="", additional=""):
     """
-    This method does more advanced string formatting to generate master, vpnwkr and worker names
-    @param identifier: master|vpnwkr|worker
+    This method does more advanced string formatting to generate master, vpngtw and worker names
+    @param identifier: master|vpngtw|worker
     @param cluster_id: id of cluster
     @param worker_group: group of worker (every member of a group has same flavor/type and image)
     @param additional: an additional string to be added at the end
@@ -45,7 +45,7 @@ def get_identifier(identifier, cluster_id, worker_group="", additional=""):
 
 MASTER_IDENTIFIER = partial(get_identifier, identifier="master", additional="")
 WORKER_IDENTIFIER = partial(get_identifier, identifier="worker")
-VPN_WORKER_IDENTIFIER = partial(get_identifier, identifier="vpnwkr")
+VPN_WORKER_IDENTIFIER = partial(get_identifier, identifier="vpngtw")
 
 KEY_PREFIX = "tempKey_bibi"
 KEY_FOLDER = os.path.expanduser("~/.config/bibigrid/keys/")
@@ -167,7 +167,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(cluster_id=self.cluster_id)
             else:
-                name = identifier(cluster_id=self.cluster_id,   # pylint: disable=redundant-keyword-arg
+                name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
                                   additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
                 self.vpn_counter += 1
         LOG.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
@@ -214,7 +214,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             identifier = VPN_WORKER_IDENTIFIER
             volumes = []  # only master has volumes
         else:
-            LOG.warning("Configuration %s has no vpnwkr or master and is therefore unreachable.", configuration)
+            LOG.warning("Configuration %s has no vpngtw or master and is therefore unreachable.", configuration)
             raise KeyError
         return identifier, instance_type, volumes
 
@@ -266,12 +266,19 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         :return:
         """
         for configuration, provider in zip(self.configurations, self.providers):
+            configuration["cloud_identifier"] = provider.cloud_specification["identifier"]
             if not configuration.get("network"):
                 configuration["network"] = provider.get_network_id_by_subnet(configuration["subnet"])
+                if not configuration["network"]:
+                    LOG.warning("Unable to set network. "
+                                f"Subnet doesn't exist in cloud {configuration['cloud_identifier']}")
+                    raise ConfigurationException(f"Subnet doesn't exist in cloud {configuration['cloud_identifier']}")
             elif not configuration.get("subnet"):
                 configuration["subnet"] = provider.get_subnet_ids_by_network(configuration["network"])
+                if not configuration["subnet"]:
+                    LOG.warning("Unable to set subnet. Network doesn't exist.")
+                    raise ConfigurationException("Network doesn't exist.")
             configuration["subnet_cidrs"] = provider.get_subnet_by_id_or_name(configuration["subnet"])["cidr"]
-            configuration["cloud_identifier"] = provider.cloud_specification["identifier"]
             configuration["sshUser"] = self.ssh_user  # is used in ansibleConfigurator
 
     def upload_data(self):
@@ -299,18 +306,18 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                  AC_NAME.format(
                                                      cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
 
-    def start_start_instances_threads(self):
+    def start_start_instance_threads(self):
         """
         Starts for each provider a start_instances thread and joins them.
         :return:
         """
-        start_instances_threads = []
+        start_instance_threads = []
         for configuration, provider in zip(self.configurations, self.providers):
-            start_instances_thread = return_threading.ReturnThread(target=self.start_vpn_or_master_instance,
-                                                                   args=[configuration, provider])
-            start_instances_thread.start()
-            start_instances_threads.append(start_instances_thread)
-        for start_instance_thread in start_instances_threads:
+            start_instance_thread = return_threading.ReturnThread(target=self.start_vpn_or_master_instance,
+                                                                  args=[configuration, provider])
+            start_instance_thread.start()
+            start_instance_threads.append(start_instance_thread)
+        for start_instance_thread in start_instance_threads:
             start_instance_thread.join()
 
     def extended_network_configuration(self):
@@ -341,7 +348,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             # configure allowed addresses for provider_a/configuration_a
             provider_a.set_allowed_addresses(configuration_a['private_v4'], allowed_addresses)
 
-    def create(self):  # pylint: disable=too-many-branches
+    def create(self):  # pylint: disable=too-many-branches,too-many-statements
         """
         Creates cluster and prints helpful cluster-info afterwards.
         If debug is set True it offers termination after starting the cluster.
@@ -351,7 +358,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.generate_keypair()
             self.prepare_configurations()
             self.generate_security_groups()
-            self.start_start_instances_threads()
+            self.start_start_instance_threads()
             self.extended_network_configuration()
             self.initialize_instances()
             self.upload_data()
@@ -386,6 +393,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if self.debug:
                 LOG.error(traceback.format_exc())
             LOG.error(f"Execution of cmd on remote host fails: {str(exc)}")
+        except ConfigurationException as exc:
+            if self.debug:
+                LOG.error(traceback.format_exc())
+            LOG.error(f"Configuration invalid: {str(exc)}")
         except Exception as exc:  # pylint: disable=broad-except
             if self.debug:
                 LOG.error(traceback.format_exc())

@@ -19,10 +19,11 @@ CLOUD_CONFIGURATION_KEY = "cloud"
 LOG = logging.getLogger("bibigrid")
 
 
-def read_configuration(path="bibigrid.yml"):
+def read_configuration(path="bibigrid.yml", configuration_list=True):
     """
-    Reads yaml from file and returns the list of all configurations
+    Reads yaml from file and returns configuration
     :param path: Path to yaml file
+    :param configuration_list: True if list is expected
     :return: configurations (dict)
     """
     configuration = None
@@ -34,6 +35,9 @@ def read_configuration(path="bibigrid.yml"):
                 LOG.warning("Couldn't read configuration %s: %s", path, exc)
     else:
         LOG.warning("No such configuration file %s.", path)
+    if configuration_list and not isinstance(configuration, list):
+        LOG.warning("Configuration should be list. Attempting to rescue by assuming a single configuration.")
+        return [configuration]
     return configuration
 
 
@@ -64,8 +68,8 @@ def find_file_in_folders(file_name, folders):
         file_path = os.path.expanduser(os.path.join(folder_path, file_name))
         if os.path.isfile(file_path):
             LOG.debug("File %s found in folder %s.", file_name, folder_path)
-            return read_configuration(file_path)
-        LOG.debug("File %s in folder %s not found.", file_name, folder_path)
+            return read_configuration(file_path, False)
+        LOG.debug("File %s not found in folder %s.", file_name, folder_path)
     return None
 
 
@@ -122,6 +126,9 @@ def get_cloud_specification(cloud_name, clouds, clouds_public):
                     return {}
         else:
             LOG.debug("Using only clouds.yaml since no clouds-public profile is set.")
+
+        if not cloud_full_specification.get("identifier"):
+            cloud_full_specification["identifier"] = cloud_name
     else:
         LOG.warning("%s is not a valid cloud name. Must be contained under key '%s'", cloud_name, CLOUD_ROOT_KEY)
     return cloud_full_specification
@@ -134,6 +141,7 @@ def get_cloud_specifications(configurations):
     @return: list of dicts: cloud_specifications of every configuration
     """
     clouds, clouds_public = get_clouds_files()
+    LOG.debug("Loaded clouds.yml and clouds_public.yml")
     cloud_specifications = []
     if isinstance(clouds, dict):
         for configuration in configurations:
