@@ -1,8 +1,8 @@
 # Master node
 {{ ansible_default_ipv4.address }} {{ ansible_hostname }}
-{% for vpnwkr in groups["vpnwkr"] %}
-# {{ hostvars[vpnwkr].cloud_identifier }}
-{{ hostvars[vpnwkr].private_v4 }} {{ hostvars[vpnwkr].name }}
+{% for vpngtw in groups["vpngtw"] %}
+# {{ hostvars[vpngtw].cloud_identifier }}
+{{ hostvars[vpngtw].private_v4 }} {{ hostvars[vpngtw].name }}
 {% endfor %}
 # List of worker
 {% if host_entries is defined %}

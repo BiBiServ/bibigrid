@@ -18,8 +18,8 @@ class TestAnsibleConfigurator(TestCase):
                       "vars_files": ansibleConfigurator.VARS_FILES, "roles": ["common", "master"]},
                      {"hosts": "worker", "become": "yes", "vars_files":
                          ansibleConfigurator.VARS_FILES, "roles": ["common", "worker"]},
-                     {"hosts": "vpnwkr", "become": "yes", "vars_files":
-                         ansibleConfigurator.VARS_FILES, "roles": ["common", "vpnwkr"]}]
+                     {"hosts": "vpngtw", "become": "yes", "vars_files":
+                         ansibleConfigurator.VARS_FILES, "roles": ["common", "vpngtw"]}]
         self.assertEqual(site_yaml, ansibleConfigurator.generate_site_file_yaml([]))
 
     def test_generate_site_file_yaml_role(self):
@@ -29,8 +29,8 @@ class TestAnsibleConfigurator(TestCase):
                       "vars_files": vars_files, "roles": ["common", "master", "additional/name"]},
                      {"hosts": "worker", "become": "yes", "vars_files":
                          vars_files, "roles": ["common", "worker", "additional/name"]},
-                     {"hosts": "vpnwkr", "become": "yes", "vars_files":
-                         vars_files, "roles": ["common", "vpnwkr", "additional/name"]}]
+                     {"hosts": "vpngtw", "become": "yes", "vars_files":
+                         vars_files, "roles": ["common", "vpngtw", "additional/name"]}]
         self.assertEqual(site_yaml, ansibleConfigurator.generate_site_file_yaml(custom_roles))
 
     def test_generate_instances(self):
@@ -151,7 +151,7 @@ class TestAnsibleConfigurator(TestCase):
     @patch("bibigrid.core.utility.ansibleConfigurator.to_instance_host_dict")
     def test_generate_ansible_hosts(self, mock_instance_host_dict):
         mock_instance_host_dict.side_effect = [0, 1, 2]
-        cluster_dict = {"workers": [{"private_v4": 21}], "vpnwkrs": [{"private_v4": 32}]}
+        cluster_dict = {"workers": [{"private_v4": 21}], "vpngtws": [{"private_v4": 32}]}
         expected = {'master': {'hosts': 0}, 'worker': {'hosts': {21: 1, 32: 2}}}
         self.assertEqual(expected, ansibleConfigurator.generate_ansible_hosts_yaml(42, cluster_dict))
         call_list = mock_instance_host_dict.call_args_list

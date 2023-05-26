@@ -15,6 +15,7 @@ import sshtunnel
 from bibigrid.core.utility.handler import cluster_ssh_handler
 
 DEFAULT_IDE_WORKSPACE = "${HOME}"
+DEFAULT_IDE_PORT_END = 8383
 REMOTE_BIND_ADDRESS = 8181
 LOCAL_BIND_ADDRESS = 9191
 MAX_JUMP = 100

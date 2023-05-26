@@ -17,9 +17,9 @@ The configuration file is best stored in `~/.config/bibigrid/`. BiBiGrid starts 
 If you have a single-cloud use case, you can [skip ahead]().
 
 Only the first configuration holds a `master` key (also called `master configuration`).
-Every following configuration must hold a `vpnwkr` key.
+Every following configuration must hold a `vpngtw` key.
 
-Later, this vpnwkr allows BiBiGrid to connect multiple clouds.
+Later, this vpngtw allows BiBiGrid to connect multiple clouds.
 
 [Here](multi_cloud.md) you can get a technical overview regarding BiBiGrid's multi-cloud setup. 
 
@@ -201,7 +201,7 @@ This can be helpful when only certain nodes can access a specific resource - lik
 If you would like to know more about how features exactly work, 
 take a look at [slurm's documentation](https://slurm.schedmd.com/slurm.conf.html#OPT_Features).
 
-#### Master or vpnWorker?
+#### Master or vpngtw?
 
 ##### masterInstance
 
@@ -224,12 +224,12 @@ You can create features for the master [in the same way](#features-optional) as 
       - holdsinformation
 ```
 
-##### vpnWorker:
+##### vpngtw:
 
 Exactly one in every configuration but the first:
 
 ```yaml
-  vpnWorker:
+  vpngtw:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
 ```

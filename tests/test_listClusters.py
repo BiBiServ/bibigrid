@@ -16,7 +16,7 @@ class TestDictClusters(TestCase):
             self.assertEqual(str(cluster_id),
                              list_clusters.setup(server,
                                                  identifier, cluster_dict, test_provider))
-            self.assertEqual({str(cluster_id): {'worker': [], 'vpnwkr': []}}, cluster_dict)
+            self.assertEqual({str(cluster_id): {'worker': [], 'vpngtw': []}}, cluster_dict)
             self.assertEqual(test_provider, server["provider"])
 
     def test_setup_already(self):
@@ -24,19 +24,19 @@ class TestDictClusters(TestCase):
             cluster_id = 42
             test_provider = Mock()
             test_provider.name = "name"
-            cluster_dict = {str(cluster_id): {'worker': ["some"], 'vpnwkr': ["some"]}}
+            cluster_dict = {str(cluster_id): {'worker': ["some"], 'vpngtw': ["some"]}}
             server = {"name": identifier + create.SEPARATOR + str(cluster_id)}
             self.assertEqual(str(cluster_id),
                              list_clusters.setup(server,
                                                  identifier, cluster_dict, test_provider))
-            self.assertEqual({str(cluster_id): {'worker': ["some"], 'vpnwkr': ["some"]}}, cluster_dict)
+            self.assertEqual({str(cluster_id): {'worker': ["some"], 'vpngtw': ["some"]}}, cluster_dict)
             self.assertEqual(test_provider, server["provider"])
 
     def test_dict_clusters(self):
         cluster_id = 42
         expected = {str(cluster_id): {'workers': [{'name': f'bibigrid-worker-{str(cluster_id)}', 'provider': 'Mock'}],
-                                      'vpnwkrs': [
-                                          {'name': f'bibigrid-vpnwkr-{str(cluster_id)}', 'provider': 'Mock'}],
+                                      'vpngtws': [
+                                          {'name': f'bibigrid-vpngtw-{str(cluster_id)}', 'provider': 'Mock'}],
                                       'master': {'name': f'bibigrid-master-{str(cluster_id)}', 'provider': 'Mock'}}}
         provider = Mock()
         provider.list_servers.return_value = [{'name': identifier + create.SEPARATOR + str(cluster_id)} for identifier

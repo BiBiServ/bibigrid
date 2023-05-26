@@ -44,9 +44,9 @@ Only created when multi-cloud is used (more than one configuration in [configura
 - For every cloud C, all other clouds' cidr is set as an `allowed_address` with the mac address of C.
 This prevents outgoing addresses with the "wrong" mac address, ip combination from getting stopped by port security.
 
-## Starts master and vpnwkrs
+## Starts master and vpngtws
 
-For the first configuration a master, for all others a vpnwkr is started.
+For the first configuration a master, for all others a vpngtw is started.
 
 ## Uploads Data
 

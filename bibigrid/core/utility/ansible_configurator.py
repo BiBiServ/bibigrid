@@ -19,7 +19,7 @@ from bibigrid.core.utility.wireguard import wireguard_keys
 DEFAULT_NFS_SHARES = ["/vol/spool"]
 ADDITIONAL_PATH = "additional/"
 PYTHON_INTERPRETER = "/usr/bin/python3"
-VPNWKR_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpnwkr"]}]
+vpngtw_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpngtw"]}]
 MASTER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-master"]}]
 WORKER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-worker"]}]
 VARS_FILES = [aRP.CONFIG_YML, aRP.HOSTS_YML]
@@ -55,14 +55,14 @@ def generate_site_file_yaml(custom_roles):
     :return: site_yaml (dict)
     """
     site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
-                 {'hosts': 'vpnwkr', "become": "yes", "vars_files": VARS_FILES, "roles": VPNWKR_ROLES},
+                 {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": vpngtw_ROLES},
                  {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]  # ,
-    # {"hosts": "vpnwkr", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
-    # "roles": ["common", "vpnwkr"]}]
+    # {"hosts": "vpngtw", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
+    # "roles": ["common", "vpngtw"]}]
     # add custom roles and vars
     for custom_role in custom_roles:
         VARS_FILES.append(custom_role["vars_file"])
-        for role_group in [MASTER_ROLES, VPNWKR_ROLES, WORKER_ROLES]:
+        for role_group in [MASTER_ROLES, vpngtw_ROLES, WORKER_ROLES]:
             role_group.append(ADDITIONAL_PATH + custom_role["name"])
     return site_yaml
 
@@ -97,15 +97,15 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
             if features:
                 worker_dict["features"] = features
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict)
-        vpnwkr = configuration.get("vpnInstance")
-        if vpnwkr:
+        vpngtw = configuration.get("vpnInstance")
+        if vpngtw:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
             wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
             vpn_count += 1
-            flavor = provider.get_flavor(vpnwkr["type"])
+            flavor = provider.get_flavor(vpngtw["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            vpnwkr_dict = {"name": name, "regexp": regexp, "image": vpnwkr["image"],
+            vpngtw_dict = {"name": name, "regexp": regexp, "image": vpngtw["image"],
                            "network": configuration["network"],
                            "network_cidr": configuration["subnet_cidrs"],
                            "floating_ip": configuration["floating_ip"],
@@ -115,10 +115,10 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
                            "cloud_identifier": configuration[
                                "cloud_identifier"]}
             if configuration.get("wireguard_peer"):
-                vpnwkr_dict["wireguard"] = {"ip": wireguard_ip,
+                vpngtw_dict["wireguard"] = {"ip": wireguard_ip,
                                             "peer": configuration.get(
                                                 "wireguard_peer")}
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpnwkr_dict)
+            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpngtw_dict)
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
@@ -213,12 +213,12 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
     LOG.info("Generating ansible hosts file...")
     ansible_hosts_yaml = {"vpn": {"hosts": {},
                                   "children": {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
-                                               "vpnwkr": {"hosts": {}}}}, "workers": {"hosts": {}, "children": {}}}
-    # vpnwkr are handled like workers on this level
+                                               "vpngtw": {"hosts": {}}}}, "workers": {"hosts": {}, "children": {}}}
+    # vpngtw are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
-    vpnwkrs = ansible_hosts_yaml["vpn"]["children"]["vpnwkr"]["hosts"]
+    vpngtws = ansible_hosts_yaml["vpn"]["children"]["vpngtw"]["hosts"]
     worker_count = 0
-    vpnwkr_count = 0
+    vpngtw_count = 0
     for configuration in configurations:
         for index, worker in enumerate(configuration.get("workerInstances", [])):
             name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
@@ -231,11 +231,11 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
             worker_count += worker.get('count', 1)
 
         if configuration.get("vpnInstance"):
-            name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpnwkr_count)
-            vpnwkr_dict = to_instance_host_dict(ssh_user, ip="")
-            vpnwkr_dict["ansible_host"] = configuration["floating_ip"]
-            vpnwkrs[name] = vpnwkr_dict
-            vpnwkr_count += 1
+            name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpngtw_count)
+            vpngtw_dict = to_instance_host_dict(ssh_user, ip="")
+            vpngtw_dict["ansible_host"] = configuration["floating_ip"]
+            vpngtws[name] = vpngtw_dict
+            vpngtw_count += 1
     return ansible_hosts_yaml
 
 

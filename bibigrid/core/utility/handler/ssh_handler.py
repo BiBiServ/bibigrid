@@ -1,5 +1,5 @@
 """
-This module handles ssh and sftp connections to master and vpnwkrs. It also holds general execution routines used to
+This module handles ssh and sftp connections to master and vpngtw. It also holds general execution routines used to
 setup the Cluster.
 """
 

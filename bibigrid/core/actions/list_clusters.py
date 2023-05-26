@@ -9,7 +9,7 @@ import re
 
 from bibigrid.core.actions import create
 
-SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpnwkr)\d+-([a-zA-Z0-9]+)-\d+)$")
+SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)\d+-([a-zA-Z0-9]+)-\d+)$")
 LOG = logging.getLogger("bibigrid")
 
 def dict_clusters(providers):
@@ -48,7 +48,7 @@ def setup(cluster_dict, cluster_id, server, provider):
     if not cluster_dict.get(cluster_id):
         cluster_dict[cluster_id] = {}
         cluster_dict[cluster_id]["workers"] = []
-        cluster_dict[cluster_id]["vpnwkrs"] = []
+        cluster_dict[cluster_id]["vpngtws"] = []
     server["provider"] = provider.NAME
     server["cloud_specification"] = provider.cloud_specification["identifier"]
 
@@ -66,7 +66,7 @@ def print_list_clusters(cluster_id, providers):
         if cluster_dict.get(cluster_id):
             LOG.info("Printing specific cluster_dictionary")
             master_count, worker_count, vpn_count = get_size_overview(cluster_dict[cluster_id])
-            print(f"\tCluster has {master_count} master, {vpn_count} vpnwkr and {worker_count} regular workers. "
+            print(f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
                   f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
             pprint.pprint(cluster_dict[cluster_id])
         else:
@@ -90,7 +90,7 @@ def print_list_clusters(cluster_id, providers):
                 else:
                     LOG.warning("No master for cluster: %s.", cluster_key_id)
                 master_count, worker_count, vpn_count = get_size_overview(cluster_node_dict)
-                print(f"\tCluster has {master_count} master, {vpn_count} vpnwkr and {worker_count} regular workers. "
+                print(f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
                       f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
         else:
             print("No cluster found.")
@@ -105,7 +105,7 @@ def get_size_overview(cluster_dict):
     LOG.info("Printing size overview")
     master_count = int(bool(cluster_dict.get("master")))
     worker_count = len(cluster_dict.get("workers") or "")
-    vpn_count = len(cluster_dict.get("vpnwkrs") or "")
+    vpn_count = len(cluster_dict.get("vpngtws") or "")
     return master_count, worker_count, vpn_count
 
 
@@ -117,7 +117,7 @@ def get_networks(cluster_dict):
     """
     master = cluster_dict["master"]
     addresses = [{master["provider"]: list(master["addresses"].keys())}]
-    for server in (cluster_dict.get("vpnwkrs") or []):
+    for server in (cluster_dict.get("vpngtws") or []):
         addresses.append({server["provider"]: list(server["addresses"].keys())})
     return addresses
 
@@ -130,7 +130,7 @@ def get_security_groups(cluster_dict):
     """
     master = cluster_dict["master"]
     security_groups = [{master["provider"]: master["security_groups"]}]
-    for server in (cluster_dict.get("vpnwkrs") or []):
+    for server in (cluster_dict.get("vpngtws") or []):
         security_groups.append({server["provider"]: server["security_groups"]})
     return security_groups
 

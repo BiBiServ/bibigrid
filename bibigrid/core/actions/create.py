@@ -30,8 +30,8 @@ LOG = logging.getLogger("bibigrid")
 
 def get_identifier(identifier, cluster_id, worker_group="", additional=""):
     """
-    This method does more advanced string formatting to generate master, vpnwkr and worker names
-    @param identifier: master|vpnwkr|worker
+    This method does more advanced string formatting to generate master, vpngtw and worker names
+    @param identifier: master|vpngtw|worker
     @param cluster_id: id of cluster
     @param worker_group: group of worker (every member of a group has same flavor/type and image)
     @param additional: an additional string to be added at the end
@@ -45,7 +45,7 @@ def get_identifier(identifier, cluster_id, worker_group="", additional=""):
 
 MASTER_IDENTIFIER = partial(get_identifier, identifier="master", additional="")
 WORKER_IDENTIFIER = partial(get_identifier, identifier="worker")
-VPN_WORKER_IDENTIFIER = partial(get_identifier, identifier="vpnwkr")
+VPN_WORKER_IDENTIFIER = partial(get_identifier, identifier="vpngtw")
 
 KEY_PREFIX = "tempKey_bibi"
 KEY_FOLDER = os.path.expanduser("~/.config/bibigrid/keys/")
@@ -214,7 +214,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             identifier = VPN_WORKER_IDENTIFIER
             volumes = []  # only master has volumes
         else:
-            LOG.warning("Configuration %s has no vpnwkr or master and is therefore unreachable.", configuration)
+            LOG.warning("Configuration %s has no vpngtw or master and is therefore unreachable.", configuration)
             raise KeyError
         return identifier, instance_type, volumes
 
