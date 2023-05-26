@@ -16,7 +16,6 @@ from bibigrid.core.utility.handler import cluster_ssh_handler
 
 DEFAULT_IDE_WORKSPACE = "${HOME}"
 REMOTE_BIND_ADDRESS = 8181
-DEFAULT_IDE_PORT_END = 8383
 LOCAL_BIND_ADDRESS = 9191
 MAX_JUMP = 100
 LOCALHOST = "127.0.0.1"
