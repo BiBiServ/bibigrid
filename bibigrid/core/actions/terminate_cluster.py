@@ -6,9 +6,13 @@ and application credentials used by it.
 import logging
 import os
 import re
+import time
 
 from bibigrid.core.actions import create
+from bibigrid.models.exceptions import ConflictException
+
 LOG = logging.getLogger("bibigrid")
+
 
 def terminate_cluster(cluster_id, providers, debug=False):
     """
@@ -23,8 +27,12 @@ def terminate_cluster(cluster_id, providers, debug=False):
         if not input(f"DEBUG MODE: Any non-empty input to shutdown cluster {cluster_id}. "
                      "Empty input to exit with cluster still alive:"):
             return 0
+    security_groups = [create.DEFAULT_SECURITY_GROUP_NAME]
+    if len(providers) > 1:
+        security_groups.append(create.WIREGUARD_SECURITY_GROUP_NAME)
     cluster_server_state = []
     cluster_keypair_state = []
+    cluster_security_group_state = []
     tmp_keyname = create.KEY_NAME.format(cluster_id=cluster_id)
     local_keypairs_deleted = delete_local_keypairs(tmp_keyname)
     if local_keypairs_deleted or input(f"WARNING: No local temporary keyfiles found for cluster {cluster_id}. "
@@ -32,13 +40,14 @@ def terminate_cluster(cluster_id, providers, debug=False):
                                        f"Any non-empty input to shutdown cluster {cluster_id}. "
                                        f"Empty input to exit with cluster still alive:"):
         for provider in providers:
-            LOG.info("Terminating cluster %s on on cloud %s",
-                         cluster_id, provider.cloud_specification['identifier'])
+            LOG.info("Terminating cluster %s on cloud %s", cluster_id, provider.cloud_specification['identifier'])
             server_list = provider.list_servers()
             cluster_server_state += terminate_servers(server_list, cluster_id, provider)
             cluster_keypair_state.append(delete_keypairs(provider, tmp_keyname))
+            cluster_keypair_state.append(delete_security_groups(provider, cluster_id, security_groups))
         ac_state = delete_application_credentials(providers[0], cluster_id)
-        terminate_output(cluster_server_state, cluster_keypair_state, ac_state, cluster_id)
+        terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, ac_state,
+                         cluster_id)
     return 0
 
 
@@ -53,11 +62,11 @@ def terminate_servers(server_list, cluster_id, provider):
     LOG.info("Deleting servers on provider %s...", provider.cloud_specification['identifier'])
     cluster_server_state = []
     # ^(master-{cluster_id}|worker-{cluster_id}|worker-[0-9]+-[0-9]+-{cluster_id})$
-    server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}+|(worker|vpnwkr)\d+-{cluster_id}+-\d+)$")
+    server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}+|(worker\d+|vpngtw)-{cluster_id}+-\d+)$")
     for server in server_list:
         if server_regex.match(server["name"]):
-            LOG.info("Trying to terminate Server %s on cloud %s.",
-                         server['name'], provider.cloud_specification['identifier'])
+            LOG.info("Trying to terminate Server %s on cloud %s.", server['name'],
+                     provider.cloud_specification['identifier'])
             cluster_server_state.append(terminate_server(provider, server))
     return cluster_server_state
 
@@ -71,11 +80,10 @@ def terminate_server(provider, server):
     """
     terminated = provider.delete_server(server["id"])
     if not terminated:
-        LOG.warning("Unable to terminate server %s on provider %s.",
-                        server['name'], provider.cloud_specification['identifier'])
+        LOG.warning("Unable to terminate server %s on provider %s.", server['name'],
+                    provider.cloud_specification['identifier'])
     else:
-        LOG.info("Server %s terminated on provider %s.",
-                     server['name'], provider.cloud_specification['identifier'])
+        LOG.info("Server %s terminated on provider %s.", server['name'], provider.cloud_specification['identifier'])
     return terminated
 
 
@@ -118,6 +126,42 @@ def delete_local_keypairs(tmp_keyname):
     return success
 
 
+def delete_security_groups(provider, cluster_id, security_groups, timeout=5):
+    """
+    Delete configured security groups from provider.
+
+    @param provider: current cloud provider
+    @param cluster_id:  cluster id
+    @param timeout: how often should delete be attempted
+    @param has_wireguard: whether wireguard security group has been used
+    @return: True if all configured security groups can be deleted, false otherwise
+    """
+    LOG.info("Deleting security groups on provider %s...", provider.cloud_specification['identifier'])
+    success = True
+    for security_group_format in security_groups:
+        security_group_name = security_group_format.format(cluster_id=cluster_id)
+        attempts = 0
+        tmp_success = False
+        while not tmp_success:
+            try:
+                tmp_success = provider.delete_security_group(security_group_name)
+            except ConflictException:
+                tmp_success = False
+            if not tmp_success:
+                if attempts < timeout:
+                    attempts += 1
+                    time.sleep(1+2 ** attempts)
+                    LOG.info(f"Retrying to delete security group {security_group_name} on "
+                              f"{provider.cloud_specification['identifier']}. Attempt {attempts}/{timeout}")
+                else:
+                    LOG.error(f"Attempt to delete security group {security_group_name} on "
+                              f"{provider.cloud_specification['identifier']} failed.")
+                    break
+        LOG.info(f"Delete security_group {security_group_name} -> {tmp_success}")
+        success = success and tmp_success
+    return success
+
+
 def delete_application_credentials(master_provider, cluster_id):
     """
     Deletes application credentials from the master_provider
@@ -130,15 +174,16 @@ def delete_application_credentials(master_provider, cluster_id):
     if not auth.get("application_credential_id") or not auth.get("application_credential_secret"):
         return master_provider.delete_application_credential_by_id_or_name(create.AC_NAME.format(cluster_id=cluster_id))
     LOG.info("Because you used application credentials to authenticate, "
-                 "no created application credentials need deletion.")
+             "no created application credentials need deletion.")
     return True
 
 
-def terminate_output(cluster_server_state, cluster_keypair_state, ac_state, cluster_id):
+def terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, ac_state, cluster_id):
     """
     Logs the termination result in detail
     @param cluster_server_state: list of bools. Each bool stands for a server termination
     @param cluster_keypair_state: list of bools. Each bool stands for a keypair deletion
+    @param cluster_security_group_state: list of bools. Each bool stands for a security group deletion
     @param ac_state: bool that stands for the deletion of the credentials on the master
     @param cluster_id:
     @return:
@@ -146,6 +191,7 @@ def terminate_output(cluster_server_state, cluster_keypair_state, ac_state, clus
     cluster_existed = bool(cluster_server_state)
     cluster_server_terminated = all(cluster_server_state)
     cluster_keypair_deleted = all(cluster_keypair_state)
+    cluster_security_group_deleted = all(cluster_security_group_state)
     if cluster_existed:
         if cluster_server_terminated:
             LOG.info("Terminated all servers of cluster %s.", cluster_id)
@@ -155,19 +201,25 @@ def terminate_output(cluster_server_state, cluster_keypair_state, ac_state, clus
             LOG.info("Deleted all keypairs of cluster %s.", cluster_id)
         else:
             LOG.warning("Unable to delete all keypairs of cluster %s.", cluster_id)
-        if cluster_server_terminated and cluster_keypair_deleted:
+        if cluster_keypair_deleted:
+            LOG.info("Deleted all security groups of cluster %s.", cluster_id)
+        else:
+            LOG.warning("Unable to delete all security groups of cluster %s.", cluster_id)
+
+        if cluster_server_terminated and cluster_keypair_deleted and cluster_security_group_deleted:
             out = f"Successfully terminated cluster {cluster_id}."
             LOG.info(out)
             print(out)
         else:
             LOG.warning("Unable to terminate cluster %s properly."
-                            "\nAll servers terminated: %s\nAll keys deleted: %s",
-                            cluster_id, cluster_server_terminated, cluster_keypair_deleted)
+                        "\nAll servers terminated: %s"
+                        "\nAll keys deleted: %s"
+                        "\nAll security groups deleted: %s", cluster_id, cluster_server_terminated,
+                        cluster_keypair_deleted, cluster_security_group_deleted)
         if ac_state:
             LOG.info("Successfully handled application credential of cluster %s.", cluster_id)
         else:
             LOG.warning("Unable to delete application credential of cluster %s", cluster_id)
     else:
         LOG.warning("Unable to find any servers for cluster-id %s. "
-                        "Check cluster-id and configuration.\nAll keys deleted: %s",
-                        cluster_id, cluster_keypair_deleted)
+                    "Check cluster-id and configuration.\nAll keys deleted: %s", cluster_id, cluster_keypair_deleted)

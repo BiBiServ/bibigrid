@@ -50,7 +50,7 @@ PLAYBOOK_HOME_RIGHTS = ("uid=$(id -u); gid=$(id -g); sudo chown ${uid}:${gid} /o
 MV_ANSIBLE_CONFIG = (
     "sudo install -D /opt/playbook/ansible.cfg /etc/ansible/ansible.cfg", "Move ansible configuration.")
 EXECUTE = (f"ansible-playbook {os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.SITE_YML)} -i "
-           f"{os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.ANSIBLE_HOSTS)} -l master",
+           f"{os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.ANSIBLE_HOSTS)} -l vpn",
            "Execute ansible playbook. Be patient.")
 
 # ansible setup

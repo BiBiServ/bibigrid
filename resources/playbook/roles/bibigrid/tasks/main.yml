@@ -13,6 +13,14 @@
 #  until: job_result.finished
 #  retries: 30
 
+- name: Setup persistent ip routes
+  when: "'workers' in group_names and wireguard_common is defined"
+  block:
+    - name: Running 000-add-ip-routes.yml
+      debug:
+        msg: "[BIBIGRID] Adding ip routes"
+    - import_tasks: 000-add-ip-routes.yml
+
 - name: Setup common software and dependencies - server rights
   when: "'master' in group_names"
   block:
@@ -38,13 +46,29 @@
         msg: "[BIBIGRID] Setup common software and dependencies"
     - import_tasks: 001-yum.yml
 
-- name: Add all hosts (IP/AC_NAME) to /etc/hosts for local DNS lockup.
-  when: local_dns_lookup|default(false)|bool
-  tags: ['hosts']
+- name: Configure Wireguard for VPNs
+  when: "'vpn' in group_names and wireguard is defined"
+  tags: ["vpn"]
   block:
     - debug:
-        msg: "[BIBIGRID] Add all hosts (IP/AC_NAME) to /etc/hosts for local DNS lockup."
-    - import_tasks: 004-hosts.yml
+        msg: "[BIBIGRID] Configure Wireguard for VPNs"
+    - import_tasks: 002-wireguard-vpn.yml
+
+- name: Setup DNS
+  when: "'master' in group_names"
+  tags: ["dns"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Setup DNS"
+    - import_tasks: 003-dns.yml
+
+- name: Update host file on worker
+  when: "'workers' in group_names"
+  tags: ["host"]
+  block:
+    - debug:
+        msg: "[BIBIGRID] Update hosts"
+    - import_tasks: 004-update-hosts.yml
 
 - name: Configure database
   when: "'master' in group_names"

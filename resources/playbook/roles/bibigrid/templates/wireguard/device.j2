@@ -1,0 +1,24 @@
+[NetDev]
+Name=wg0
+Kind=wireguard
+Description=WireGuard tunnel wg0
+
+[WireGuard]
+# Config Master node {{ wireguard.peer.name }}
+# This node's ipv4: {{ wireguard.peer.ip }}
+
+PrivateKey = {{ wireguard.peer.private_key }}
+ListenPort = {{ wireguard_common.listen_port|default(51820) }}
+
+# For every vpn but self
+{% for peer in wireguard_common.peers %}
+{% if peer.ip != wireguard.peer.ip %}
+# {{ peer.name }}
+[WireGuardPeer]
+PublicKey = {{ peer.public_key }}
+AllowedIPs = 10.0.0.0/{{ wireguard_common.mask_bits|default(24) }}, {{peer.subnet}}
+Endpoint = {{ peer.ip }}:{{ wireguard_common.listen_port|default(51820) }}
+{% endif %}
+{% endfor %}
+
+PersistentKeepalive = 25

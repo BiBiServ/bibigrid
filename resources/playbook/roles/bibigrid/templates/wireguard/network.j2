@@ -1,0 +1,16 @@
+[Match]
+Name=wg0
+
+[Network]
+Address={{ wireguard.ip }}/{{ wireguard_common.mask_bits|default(24) }}
+
+{% for vpngtw in groups["vpngtw"] %}
+[Route]
+{% if inventory_hostname in groups['master']%}
+Gateway={{ wireguard.ip }}
+Destination={{ hostvars[vpngtw].network_cidr }}
+{% else %}
+Gateway={{ hostvars[vpngtw].wireguard.ip }}
+Destination={{ hostvars[groups.master.0].network_cidr }}
+{% endif %}
+{% endfor %}

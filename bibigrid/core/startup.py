@@ -96,7 +96,9 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
                 if args.cluster_id:
                     if args.terminate_cluster:
                         LOG.info("Action terminate_cluster selected")
-                        exit_state = terminate_cluster.terminate_cluster(args.cluster_id, providers, args.debug)
+                        exit_state = terminate_cluster.terminate_cluster(cluster_id=args.cluster_id,
+                                                                         providers=providers,
+                                                                         debug=args.debug)
                     elif args.ide:
                         LOG.info("Action ide selected")
                         exit_state = ide.ide(args.cluster_id, providers[0], configurations[0])
@@ -116,7 +118,7 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
             LOG.error(err)
         exit_state = 2
     time_in_s = time.time() - start_time
-    print(f"--- {math.floor(time_in_s / 60)} minutes and {time_in_s % 60} seconds ---")
+    print(f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
     return exit_state
 
 

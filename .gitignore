@@ -5,10 +5,9 @@
 # variable resources
 resources/playbook/site.yml
 resources/playbook/ansible_hosts
-resources/playbook/vars/instances.yml
-resources/playbook/vars/login.yml
-resources/playbook/vars/worker_specification.yml
-resources/playbook/vars/common_configuration.yml
+resources/playbook/vars/
+resources/playbook/host_vars/
+resources/playbook/group_vars/
 
 # any log files
 *.log

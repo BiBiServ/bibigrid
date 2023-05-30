@@ -1,0 +1,12 @@
+# Master node
+{{ ansible_default_ipv4.address }} {{ ansible_hostname }}
+{% for vpngtw in groups["vpngtw"] %}
+# {{ hostvars[vpngtw].cloud_identifier }}
+{{ hostvars[vpngtw].private_v4 }} {{ hostvars[vpngtw].name }}
+{% endfor %}
+# List of worker
+{% if host_entries is defined %}
+{% for entry in host_entries.keys() %}
+{{ host_entries[entry] }} {{ entry }}
+{% endfor %}
+{% endif %}

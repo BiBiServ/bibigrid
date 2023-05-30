@@ -12,5 +12,6 @@
 | [Cloud Specification Data](features/cloud_specification_data.md) |                         Contains necessary data to establish a general connection to the provider.                          |
  |            [Configuration](features/configuration.md)            |                                Contains all data regarding cluster setup for all providers.                                 |
 |            [Command Line Interface](features/CLI.md)             |                                  What command line arguments can be passed into BiBiGrid.                                   |
+|              [Multi Cloud](features/multi_cloud.md)              |                                    Explanation how BiBiGrid's multi-cloud approach works                                    |
 
 ![](../images/actions.jpg)

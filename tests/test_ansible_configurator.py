@@ -1,3 +1,6 @@
+"""
+Tests for ansibleConfigurator
+"""
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch, call, mock_open, ANY
 
@@ -5,27 +8,29 @@ import bibigrid.core.utility.ansible_configurator as ansibleConfigurator
 import bibigrid.core.utility.paths.ansible_resources_path as aRP
 import bibigrid.core.utility.yaml_dumper as yamlDumper
 
-
 class TestAnsibleConfigurator(TestCase):
+    """
+    Test ansible configurator test class
+    """
     # pylint: disable=R0904
     def test_generate_site_file_yaml_empty(self):
         site_yaml = [{'hosts': 'master', "become": "yes",
                       "vars_files": ansibleConfigurator.VARS_FILES, "roles": ["common", "master"]},
                      {"hosts": "worker", "become": "yes", "vars_files":
                          ansibleConfigurator.VARS_FILES, "roles": ["common", "worker"]},
-                     {"hosts": "vpnwkr", "become": "yes", "vars_files":
-                         ansibleConfigurator.VARS_FILES, "roles": ["common", "vpnwkr"]}]
+                     {"hosts": "vpngtw", "become": "yes", "vars_files":
+                         ansibleConfigurator.VARS_FILES, "roles": ["common", "vpngtw"]}]
         self.assertEqual(site_yaml, ansibleConfigurator.generate_site_file_yaml([]))
 
     def test_generate_site_file_yaml_role(self):
         custom_roles = [{"file": "file", "hosts": "hosts", "name": "name", "vars": "vars", "vars_file": "varsFile"}]
-        vars_files = ['vars/login.yml', 'vars/instances.yml', 'vars/common_configuration.yml', 'varsFile']
+        vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
         site_yaml = [{'hosts': 'master', "become": "yes",
                       "vars_files": vars_files, "roles": ["common", "master", "additional/name"]},
                      {"hosts": "worker", "become": "yes", "vars_files":
                          vars_files, "roles": ["common", "worker", "additional/name"]},
-                     {"hosts": "vpnwkr", "become": "yes", "vars_files":
-                         vars_files, "roles": ["common", "vpnwkr", "additional/name"]}]
+                     {"hosts": "vpngtw", "become": "yes", "vars_files":
+                         vars_files, "roles": ["common", "vpngtw", "additional/name"]}]
         self.assertEqual(site_yaml, ansibleConfigurator.generate_site_file_yaml(custom_roles))
 
     def test_generate_instances(self):
@@ -146,7 +151,7 @@ class TestAnsibleConfigurator(TestCase):
     @patch("bibigrid.core.utility.ansibleConfigurator.to_instance_host_dict")
     def test_generate_ansible_hosts(self, mock_instance_host_dict):
         mock_instance_host_dict.side_effect = [0, 1, 2]
-        cluster_dict = {"workers": [{"private_v4": 21}], "vpnwkrs": [{"private_v4": 32}]}
+        cluster_dict = {"workers": [{"private_v4": 21}], "vpngtws": [{"private_v4": 32}]}
         expected = {'master': {'hosts': 0}, 'worker': {'hosts': {21: 1, 32: 2}}}
         self.assertEqual(expected, ansibleConfigurator.generate_ansible_hosts_yaml(42, cluster_dict))
         call_list = mock_instance_host_dict.call_args_list

@@ -1,0 +1,5 @@
+- name: Add master to hosts' file
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ hostvars[groups.master.0].private_v4 }} {{ hostvars[groups.master.0].name }}"
+    insertafter: EOF

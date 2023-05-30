@@ -13,7 +13,7 @@ LOG = logging.getLogger("bibigrid")
 
 def evaluate(check_name, check_result):
     """
-    Logs check_resul as warning if failed and as success if succeeded.
+    Logs check_result as warning if failed and as success if succeeded.
     :param check_name:
     :param check_result:
     :return:
@@ -114,8 +114,7 @@ def check_clouds_yaml_security():
     if clouds_public:
         for cloud in clouds_public:
             if clouds_public[cloud].get("profile"):
-                LOG.warning(f"{cloud}: Profiles should be placed in clouds.yaml not clouds-public.yaml! "
-                            f"Key ignored.")
+                LOG.warning(f"{cloud}: Profiles should be placed in clouds.yaml not clouds-public.yaml!")
                 success = False
             if clouds_public[cloud].get("auth"):
                 for key in ["password", "username", "application_credential_id", "application_credential_secret"]:
@@ -192,12 +191,12 @@ class ValidateConfiguration:
         """
         success = bool(self.providers)
         LOG.info("Validating config file...")
-        success = check_provider_data(
-            configuration_handler.get_list_by_key(self.configurations, "infrastructure"),
-            len(self.configurations)) and success
-        if not success:
-            LOG.warning("Providers not set correctly in configuration file. Check log for more detail.")
-            return success
+        # success = check_provider_data(
+        #     configuration_handler.get_list_by_key(self.configurations, "cloud"),
+        #     len(self.configurations)) and success
+        # if not success:
+        #     LOG.warning("Providers not set correctly in configuration file. Check log for more detail.")
+        #     return success
         checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),
                   ("instances", self.check_instances), ("volumes", self.check_volumes),
                   ("network", self.check_network), ("quotas", self.check_quotas),
@@ -233,7 +232,7 @@ class ValidateConfiguration:
         providers_unconnectable = []
         for provider in self.providers:
             if not provider.conn:
-                providers_unconnectable.append(provider.name)
+                providers_unconnectable.append(provider.cloud_specification["identifier"])
         if providers_unconnectable:
             LOG.warning("API connection to %s not successful. Please check your configuration.",
                         providers_unconnectable)
@@ -451,8 +450,8 @@ class ValidateConfiguration:
         nfs_shares = master_configuration.get("nfsShares")
         nfs = master_configuration.get("nfs")
         if nfs_shares and not nfs:
-            success = True
-            LOG.warning("nfsShares exist, but nfs is False. nfsShares will be ignored!")
+            success = False
+            LOG.warning("nfsShares exist, but nfs is False.")
         else:
             success = True
         return success
