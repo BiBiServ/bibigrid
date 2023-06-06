@@ -8,7 +8,7 @@
   # -- BEGIN: GENERAL CLUSTER INFORMATION --
   ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
   #sshPublicKeyFiles:
-  #  - [key one]
+  #  - [public key one]
 
   ## Volumes and snapshots that will be mounted to master
   #masterMounts: # KEY NOT FULLY IMPLEMENTED YET
