@@ -81,14 +81,14 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
     worker_count = 0
     vpn_count = 0
     for configuration, provider in zip(configurations, providers):
-        for index, worker in enumerate(configuration.get("workerInstances", [])):
+        for worker in configuration.get("workerInstances", []):
             flavor = provider.get_flavor(worker["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
-            name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+            name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
                                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
             worker_count += worker.get('count', 1)
-            regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
+            regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
             worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
@@ -220,8 +220,8 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id):
     worker_count = 0
     vpngtw_count = 0
     for configuration in configurations:
-        for index, worker in enumerate(configuration.get("workerInstances", [])):
-            name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+        for worker in configuration.get("workerInstances", []):
+            name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")

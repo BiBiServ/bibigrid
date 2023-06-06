@@ -28,16 +28,15 @@ PREFIX_WITH_SEP = PREFIX + SEPARATOR
 LOG = logging.getLogger("bibigrid")
 
 
-def get_identifier(identifier, cluster_id, worker_group="", additional=""):
+def get_identifier(identifier, cluster_id, additional=""):
     """
     This method does more advanced string formatting to generate master, vpngtw and worker names
     @param identifier: master|vpngtw|worker
     @param cluster_id: id of cluster
-    @param worker_group: group of worker (every member of a group has same flavor/type and image)
     @param additional: an additional string to be added at the end
     @return: the generated string
     """
-    general = PREFIX_WITH_SEP + identifier + str(worker_group) + SEPARATOR + cluster_id
+    general = PREFIX_WITH_SEP + identifier + SEPARATOR + cluster_id
     if additional or additional == 0:
         return general + SEPARATOR + str(additional)
     return general

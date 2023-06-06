@@ -9,8 +9,9 @@ import re
 
 from bibigrid.core.actions import create
 
-SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)\d+-([a-zA-Z0-9]+)-\d+)$")
+SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)-([a-zA-Z0-9]+)-\d+)$")
 LOG = logging.getLogger("bibigrid")
+
 
 def dict_clusters(providers):
     """
