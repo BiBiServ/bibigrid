@@ -1,0 +1,3 @@
+#!/bin/bash
+# shows available features
+sinfo -o "%20n  %20P %10c  %10m  %25f"

@@ -4,8 +4,6 @@ Generates ids and munge keys
 
 import shortuuid
 
-from bibigrid.core.actions import create
-
 MAX_ID_LENGTH = 15
 CLUSTER_UUID_ALPHABET = '0123456789abcdefghijkmnopqrstuvwxyz'
 
@@ -43,10 +41,7 @@ def is_unique_cluster_id(cluster_id, providers):
     """
     for provider in providers:
         for server in provider.list_servers():
-            master = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
-            vpngtw = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id)
-            worker = create.WORKER_IDENTIFIER(cluster_id=cluster_id)
-            if server["name"] in [master, vpngtw, worker]:
+            if cluster_id in server["name"]:
                 return False
     return True
 
