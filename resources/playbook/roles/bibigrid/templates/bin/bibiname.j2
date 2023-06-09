@@ -5,8 +5,8 @@ if [ "$1" == "m" ]; then
 elif [ "$1" == "v" ]; then
   name="bibigrid-vpngtw-$cid-$2"
 elif [ "$1" == "w" ]; then
-  name="bibigrid-worker$2-$cid-$3"
+  name="bibigrid-worker-$cid-$2"
 else
-  name="bibigrid-worker$1-$cid-$2"
+  name="bibigrid-worker-$cid-$1"
 fi
 echo "$name"
