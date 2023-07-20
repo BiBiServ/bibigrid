@@ -55,19 +55,20 @@ def set_logger_verbosity(verbosity):
     log.debug(f"Logging verbosity set to {capped_verbosity}")
 
 
-def run_action(args, configurations, config_path):  # pylint: disable=too-many-nested-blocks,too-many-branches
+def run_action(args, config_path):  # pylint: disable=too-many-nested-blocks,too-many-branches
     """
     Uses args to decide which action will be executed and executes said action.
     :param args: command line arguments
-    :param configurations: list of configurations (dicts)
     :param config_path: path to configurations-file
     :return:
     """
     if args.version:
         LOG.info("Action version selected")
-        print(version.__version__)
+        version.version()
         return 0
-
+    configurations = configuration_handler.read_configuration(args.config_input)
+    if not configurations:
+        return 1
     start_time = time.time()
     exit_state = 0
     try:
@@ -92,7 +93,7 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
                 if not args.cluster_id:
                     args.cluster_id = get_cluster_id_from_mem()
                     LOG.info("No cid (cluster_id) specified. Defaulting to last created cluster: %s",
-                                 args.cluster_id or 'None found')
+                             args.cluster_id or 'None found')
                 if args.cluster_id:
                     if args.terminate_cluster:
                         LOG.info("Action terminate_cluster selected")
@@ -105,8 +106,6 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
                     elif args.update:
                         LOG.info("Action update selected")
                         exit_state = update.update(args.cluster_id, providers[0], configurations[0])
-                    else:
-                        LOG.warning("Please make use of -cid <cluster id>.")
             for provider in providers:
                 provider.close()
         else:
@@ -130,11 +129,7 @@ def main():
     logging.basicConfig(format=LOGGER_FORMAT, handlers=LOGGING_HANDLER_LIST)
     args = command_line_interpreter.interpret_command_line()
     set_logger_verbosity(args.verbose)
-    configurations = configuration_handler.read_configuration(args.config_input)
-    if configurations:
-        sys.exit(run_action(args, configurations, args.config_input))
-    sys.exit(1)
-
+    sys.exit(run_action(args, args.config_input))
 
 if __name__ == "__main__":
     main()
