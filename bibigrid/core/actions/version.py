@@ -17,9 +17,9 @@ GIT_HUB = "https://github.com/BiBiServ/bibigrid"
 
 
 def version():
-    print(f"BiBiGrid {__version__} ({RELEASE_DATE})\nUniversität Bielefeld\nWebsite: {GIT_HUB}\n\n"
+    print(f"BiBiGrid {__version__} ({RELEASE_DATE})\nBielefeld University\n{GIT_HUB}\n\n"
           "# Configuration Folders\n")
     for directory in configuration_handler.CLOUDS_YAML_PATHS:
         if os.path.isdir(os.path.expanduser(directory)):
             print(f"## '{directory}'\n")
-            seedir.seedir(directory)
+            seedir.seedir(directory, exclude_folders=["keys"])
