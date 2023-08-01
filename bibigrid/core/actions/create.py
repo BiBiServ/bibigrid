@@ -195,7 +195,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
-
+        configuration["volumes"] = provider.get_mount_info_from_server(server)
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
         Prepares start_instance arguments for master/vpn

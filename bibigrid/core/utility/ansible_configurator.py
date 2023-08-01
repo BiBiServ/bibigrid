@@ -135,7 +135,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
                            "network_cidr": configuration["subnet_cidrs"],
                            "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
                            "private_v4": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"]}
+                           "cloud_identifier": configuration["cloud_identifier"],
+                           "volumes": configuration["volumes"]}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict)

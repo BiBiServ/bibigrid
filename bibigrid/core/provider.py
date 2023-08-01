@@ -249,3 +249,13 @@ class Provider:  # pylint: disable=too-many-public-methods
         :param rules:
         :return:
         """
+
+    def get_mount_info_from_server(self, server):
+        volumes = []
+        for server_volume in server["volumes"]:
+            volume = self.get_volume_by_id_or_name(server_volume["id"])
+            for attachment in volume["attachments"]:
+                if attachment["server_id"] == server["id"]:
+                    volumes.append({"name": volume["name"], "device": attachment["device"]})
+                    break
+        return volumes
