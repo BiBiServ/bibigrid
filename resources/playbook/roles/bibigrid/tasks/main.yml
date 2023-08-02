@@ -102,9 +102,11 @@
     msg: "[BIBIGRID] Generate directory structure available on all hosts"
 - name: Generate general directory structure available on all hosts
   import_tasks: 020-disk.yml
+  tags: ["disk"]
 - name: Generate server directory structure available on all hosts
   import_tasks: 020-disk-server.yml
   when: "'master' in group_names"
+  tags: ["disk"]
 - name: Generate worker directory structure available on all hosts
   import_tasks: 020-disk-worker.yml
   when: "'master' not in group_names"
