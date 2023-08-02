@@ -29,7 +29,7 @@
     - "{{ volumes }}"
 
 - name: Create mount folders if it doesn't exist
-  ansible.builtin.file:
+  file:
     path: "/{{item.name}}"
     state: directory
     mode: '0755'
