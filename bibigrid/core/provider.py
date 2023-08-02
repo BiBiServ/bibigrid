@@ -1,9 +1,10 @@
 """
 Holds the abstract class Provider
 """
+from abc import ABC, abstractmethod
 
 
-class Provider:  # pylint: disable=too-many-public-methods
+class Provider(ABC):  # pylint: disable=too-many-public-methods
     """
     See in detailed return value information in tests>provider>test_Provider.
     Make sure to register your newly implemented provider in provider_handler: name:class
@@ -23,6 +24,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         self.cloud_specification = cloud_specification  # contains sensitive information!
         self.cloud_specification["identifier"] = self.cloud_specification['identifier']
 
+    @abstractmethod
     def create_application_credential(self, name=None):
         """
         Creates an application credential with name name
@@ -30,6 +32,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: the application credential dictionary
         """
 
+    @abstractmethod
     def delete_application_credential_by_id_or_name(self, ac_id_or_name):
         """
         Deletes existing application credential by id or name and returns true.
@@ -38,6 +41,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: True if deleted else false
         """
 
+    @abstractmethod
     def get_image_by_id_or_name(self, image_id_or_name):
         """
         Returns image that has id or name image_id_or_name
@@ -45,6 +49,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: said image (dict) or none if not found
         """
 
+    @abstractmethod
     def get_flavor(self, instance_type):
         """
         Returns flavor that has id or name flavor_id_or_name
@@ -52,6 +57,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: said flavor (dict) or none if not found
         """
 
+    @abstractmethod
     def get_volume_snapshot_by_id_or_name(self, snapshot_id_or_name):
         """
         Returns snapshot that has id or name snapshot_id_or_name
@@ -59,6 +65,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: said snapshot (dict) or none if not found
         """
 
+    @abstractmethod
     def get_network_by_id_or_name(self, network_id_or_name):
         """
         Returns network that has id or name network_id_or_name
@@ -66,6 +73,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: said network (dict) or none if not found
         """
 
+    @abstractmethod
     def get_subnet_by_id_or_name(self, subnet_id_or_name):
         """
         Returns subnet that has id or name subnet_id_or_name
@@ -73,12 +81,14 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: said subnet (dict) or none if not found
         """
 
+    @abstractmethod
     def list_servers(self):
         """
         Returns a list of all servers on logged in provider
         :return: said list of servers or empty list if none found
         """
 
+    @abstractmethod
     def create_server(self, name, flavor, image, network, key_name=None, wait=True,
                       volumes=None, security_groups=None):  # pylint: disable=too-many-arguments
         """
@@ -95,6 +105,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: server (dict)
         """
 
+    @abstractmethod
     def delete_server(self, name_or_id, delete_ips=True):
         """
         Deletes server and floating_ip as well if delete_ips is true. The resource is then free again
@@ -103,6 +114,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: True if delete succeeded, False otherwise
         """
 
+    @abstractmethod
     def delete_keypair(self, key_name):
         """
         Deletes keypair with key_name
@@ -110,6 +122,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: True if delete succeeded, False otherwise
         """
 
+    @abstractmethod
     def get_server_group_by_id_or_name(self, server_group_id_or_name):
         """
         Returns server_group that has id or name server_group_id_or_name
@@ -117,12 +130,14 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: said server_group (dict) or none if not found
         """
 
+    @abstractmethod
     def close(self):
         """
         Closes connection
         :return:
         """
 
+    @abstractmethod
     def create_keypair(self, name, public_key):
         """
         Creates a new keypair with name name and public_key public_key
@@ -131,6 +146,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return:
         """
 
+    @abstractmethod
     def get_network_id_by_subnet(self, subnet):
         """
         Gets network_id by subnet
@@ -138,6 +154,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: (str)
         """
 
+    @abstractmethod
     def get_subnet_ids_by_network(self, network):
         """
         Gets subnet_ids (list (str)) by network_id
@@ -145,12 +162,14 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: subnet_ids (list (str))
         """
 
+    @abstractmethod
     def get_free_resources(self):
         """
         Gets free resources. If a resource cannot be determined, assume maximum is free.
         :return: Dictionary containing the free resources
         """
 
+    @abstractmethod
     def get_volume_by_id_or_name(self, name_or_id):
         """
         Returns volume that has id or name name_or_id
@@ -158,6 +177,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: said volume (dict) or none if not found
         """
 
+    @abstractmethod
     def create_volume_from_snapshot(self, snapshot_name_or_id):
         """
         Creates a volume from snapshot.
@@ -165,6 +185,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: id of created volume or none if failed
         """
 
+    @abstractmethod
     def get_external_network(self, network_name_or_id):
         """
         Finds router interface with network id equal to given network and by that the external network.
@@ -172,17 +193,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: Corresponding external network
         """
 
-    def add_auto_ip(self, server, wait=False, timeout=60, reuse=True):
-        """
-        Add a floating IP to a server.
-        Will reuse floating ips or create a new one if no floating-ip is down.
-        :param server: the server that said floating ip will be attached to
-        :param wait: wait for floating-ip to be assigned
-        :param timeout: when to accept failing
-        :param reuse: if False will just create a new floating-ip and not reuse an existing down one
-        :return: the floating-ip
-        """
-
+    @abstractmethod
     def attach_available_floating_ip(self, network=None, server=None):
         """
         Get a floating IP from a network or a pool and attach it to the server
@@ -191,12 +202,14 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return:
         """
 
+    @abstractmethod
     def get_images(self):
         """
         Get a generator able ot generate all images
         @return: A generator able ot generate all images
         """
 
+    @abstractmethod
     def get_flavors(self):
         """
         Get a generator able ot generate all flavors
@@ -214,6 +227,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         return [flavor["name"] for flavor in self.get_flavors()
                 if "legacy" not in flavor["name"].lower() and "deprecated" not in flavor["name"].lower()]
 
+    @abstractmethod
     def set_allowed_addresses(self, id_or_ip, allowed_address_pairs):
         """
         Set allowed address (or CIDR) for the given network interface/port
@@ -226,6 +240,7 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return:
         """
 
+    @abstractmethod
     def create_security_group(self, name, rules):
         """
         Create a security group and add given rules
@@ -234,14 +249,15 @@ class Provider:  # pylint: disable=too-many-public-methods
         :return: id of created security group
         """
 
+    @abstractmethod
     def delete_security_group(self, name_or_id):
         """
         Delete a security group
         :param name_or_id : Name or Id of the security group to be deleted
         :return: True if delete succeeded, False otherwise.
-
         """
 
+    @abstractmethod
     def append_rules_to_security_group(self, name_or_id, rules):
         """
         Append firewall rules to given security group
