@@ -44,6 +44,13 @@ sshPublicKeyFiles:
   - /home/user/.ssh/id_ecdsa_colleague.pub
 ```
 
+#### autoMount (optional)
+> **Warning:** If a volume has an obscure filesystem, this might overwrite your data!
+
+If `True` all [masterMounts](#mastermounts-optional) will be automatically mounted by BiBiGrid if possible.
+If a volume is not formatted or has an unknown filesystem, it will be formatted to `ext4`.
+Default `False`.
+
 #### masterMounts (optional)
 
 `masterMounts` expects a list of volumes and snapshots. Those will be attached to the master. If any snapshots are
