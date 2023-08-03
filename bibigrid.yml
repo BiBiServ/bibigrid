@@ -11,7 +11,7 @@
   #  - [public key one]
 
   ## Volumes and snapshots that will be mounted to master
-  # autoMount: False # warning: will overwrite unidentified filesystems
+  # autoMount: False # WARNING: will overwrite unidentified filesystems
   #masterMounts: # KEY NOT FULLY IMPLEMENTED YET
   #  - [mount one]
 
