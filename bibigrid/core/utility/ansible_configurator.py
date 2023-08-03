@@ -170,7 +170,8 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     master_configuration = configurations[0]
     LOG.info("Generating common configuration file...")
     # print(configuration.get("slurmConf", {}))
-    common_configuration_yaml = {"cluster_id": cluster_id, "cluster_cidrs": cidrs, "default_user": default_user,
+    common_configuration_yaml = {"auto_mount": master_configuration.get("autoMount", False),
+                                 "cluster_id": cluster_id, "cluster_cidrs": cidrs, "default_user": default_user,
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),

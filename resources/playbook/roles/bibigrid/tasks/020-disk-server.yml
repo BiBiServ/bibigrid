@@ -17,32 +17,29 @@
     - "{{ master.disks }}"
   when: master.disks is defined
 
-- name: Make sure disks are available
-  filesystem:
-    fstype: ext4
-    dev: "{{item.device}}"
-    force: false
-    state: present
-  ignore_errors: true
-  when: volumes is defined
-  with_items:
-    - "{{ volumes }}"
+- block:
+    - name: Make sure disks are available
+      filesystem:
+        fstype: ext4
+        dev: "{{ item.device }}"
+        force: false
+        state: present
+      with_items: "{{ volumes }}"
 
-- name: Create mount folders if it doesn't exist
-  file:
-    path: "/{{item.name}}"
-    state: directory
-    mode: '0755'
-  with_items:
-    - "{{ volumes }}"
+    - name: Create mount folders if they don't exist
+      file:
+        path: "/{{ item.name }}"
+        state: directory
+        mode: '0755'
+        owner: root
+        group: '{{ ansible_distribution | lower }}'
+      with_items: "{{ volumes }}"
 
-- name: Mount disks
-  mount:
-    path: "{{ item.name }}"
-    src: "{{ item.device }}"
-    fstype: ext4
-    state: mounted
+    - name: Mount disks
+      mount:
+        path: "{{ item.name }}"
+        src: "{{ item.device }}"
+        state: mounted
+      with_items: "{{ volumes }}"
+  when: volumes is defined and auto_mount
   ignore_errors: true
-  with_items:
-    - "{{ volumes }}"
-  when: volumes is defined
