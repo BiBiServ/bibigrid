@@ -63,7 +63,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     The class Create holds necessary methods to execute the Create-Action
     """
 
-    def __init__(self, providers, configurations, config_path, debug=False):
+    def __init__(self, providers, configurations, config_path, debug=False, cluster_id=None):
         """
         Additionally sets (unique) cluster_id, public_key_commands (to copy public keys to master) and key_name.
         Call create() to actually start server.
@@ -76,7 +76,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.providers = providers
         self.configurations = configurations
         self.debug = debug
-        self.cluster_id = id_generation.generate_safe_cluster_id(providers)
+        self.cluster_id = cluster_id or id_generation.generate_safe_cluster_id(providers)
         self.ssh_user = configurations[0].get("sshUser") or "ubuntu"
         self.ssh_add_public_key_commands = ssh_handler.get_add_ssh_public_key_commands(
             configurations[0].get("sshPublicKeyFiles"))
