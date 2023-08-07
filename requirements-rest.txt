@@ -1,0 +1,14 @@
+openstacksdk==0.62
+mergedeep
+paramiko
+python-cinderclient
+python-keystoneclient
+python-novaclient
+python-openstackclient==6.0.0
+PyYAML
+shortuuid
+sshtunnel
+fastapi
+python-multipart
+uvicorn
+httpx
