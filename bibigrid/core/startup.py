@@ -131,5 +131,6 @@ def main():
     set_logger_verbosity(args.verbose)
     sys.exit(run_action(args, args.config_input))
 
+
 if __name__ == "__main__":
     main()

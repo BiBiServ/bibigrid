@@ -135,7 +135,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
                            "network_cidr": configuration["subnet_cidrs"],
                            "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
                            "private_v4": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"]}
+                           "cloud_identifier": configuration["cloud_identifier"],
+                           "volumes": configuration["volumes"]}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict)
@@ -169,7 +170,8 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     master_configuration = configurations[0]
     LOG.info("Generating common configuration file...")
     # print(configuration.get("slurmConf", {}))
-    common_configuration_yaml = {"cluster_id": cluster_id, "cluster_cidrs": cidrs, "default_user": default_user,
+    common_configuration_yaml = {"auto_mount": master_configuration.get("autoMount", False),
+                                 "cluster_id": cluster_id, "cluster_cidrs": cidrs, "default_user": default_user,
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
