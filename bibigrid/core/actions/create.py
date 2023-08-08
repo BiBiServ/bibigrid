@@ -12,7 +12,7 @@ from functools import partial
 import paramiko
 import yaml
 
-from bibigrid.core.actions import terminate_cluster
+from bibigrid.core.actions import terminate
 from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import ssh_handler
@@ -365,7 +365,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.print_cluster_start_info()
             if self.debug:
                 LOG.info("DEBUG MODE: Entering termination...")
-                terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers,
+                terminate.terminate(cluster_id=self.cluster_id, providers=self.providers,
                                                     debug=self.debug)
         except exceptions.ConnectionException:
             if self.debug:
@@ -403,7 +403,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             LOG.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
-        terminate_cluster.terminate_cluster(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug)
+        terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug)
         return 1
 
     def print_cluster_start_info(self):

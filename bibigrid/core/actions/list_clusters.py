@@ -12,6 +12,7 @@ from bibigrid.core.actions import create
 SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)\d+-([a-zA-Z0-9]+)-\d+)$")
 LOG = logging.getLogger("bibigrid")
 
+
 def dict_clusters(providers):
     """
     Creates a dictionary containing all servers by type and provider information
@@ -53,7 +54,7 @@ def setup(cluster_dict, cluster_id, server, provider):
     server["cloud_specification"] = provider.cloud_specification["identifier"]
 
 
-def print_list_clusters(cluster_id, providers):
+def print_list(cluster_id, providers):
     """
     Calls dict_clusters and gives a visual representation of the found cluster.
     Detail depends on whether a cluster_id is given or not.
@@ -62,7 +63,7 @@ def print_list_clusters(cluster_id, providers):
     :return:
     """
     cluster_dict = dict_clusters(providers=providers)
-    if cluster_id: # pylint: disable=too-many-nested-blocks
+    if cluster_id:  # pylint: disable=too-many-nested-blocks
         if cluster_dict.get(cluster_id):
             LOG.info("Printing specific cluster_dictionary")
             master_count, worker_count, vpn_count = get_size_overview(cluster_dict[cluster_id])

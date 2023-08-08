@@ -1,1 +1,1 @@
-python3 -m bibigrid.core.startup_rest "$@"
+uvicorn bibigrid.core.startup_rest:app --reload

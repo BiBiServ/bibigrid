@@ -8,6 +8,8 @@ import os
 from bibigrid.core.actions import create, list_clusters
 
 LOG = logging.getLogger("bibigrid")
+
+
 def get_ssh_connection_info(cluster_id, master_provider, master_configuration):
     """
     Gets master_ip, ssh_user and private key to enable other modules to create an ssh connection to a clusters master

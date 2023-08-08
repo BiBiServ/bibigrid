@@ -14,7 +14,7 @@ from bibigrid.models.exceptions import ConflictException
 LOG = logging.getLogger("bibigrid")
 
 
-def terminate_cluster(cluster_id, providers, debug=False):
+def terminate(cluster_id, providers, debug=False):
     """
     Goes through all providers and gets info of all servers which name contains cluster ID.
     It then checks if any resources are reserved, but not used and frees them that were hold by the cluster.

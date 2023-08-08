@@ -3,13 +3,15 @@ Contains main method. Interprets command line, sets logging and starts correspon
 """
 import asyncio
 import logging
+
 import yaml
 # !/usr/bin/env python3
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, status, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-
 from fastapi.testclient import TestClient
-from bibigrid.core.actions import check, create
+
+from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.utility.handler import provider_handler
 
 app = FastAPI()
@@ -20,6 +22,15 @@ LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 logging.basicConfig(format=LOGGER_FORMAT, handlers=LOGGING_HANDLER_LIST)
 log = logging.getLogger("bibigrid")
 log.setLevel(logging.DEBUG)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
+    logging.error(f"{request}: {exc_str}")
+    content = {'status_code': 10422, 'message': exc_str, 'data': None}
+    return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
 
 @app.post("/bibigrid/validate")
 async def validate_configuration(config_file: UploadFile = File(...)):
@@ -33,7 +44,7 @@ async def validate_configuration(config_file: UploadFile = File(...)):
         if exit_state:
             return JSONResponse(content={"message": "Validation failed"}, status_code=420)  # Fail
         return JSONResponse(content={"message": "Validation successful"}, status_code=200)  # Success
-    except Exception as exc: # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
@@ -54,22 +65,44 @@ async def create_cluster(config_file: UploadFile = File(...)):
         # Implement your creation logic
 
         return JSONResponse(content={"cluster_id": cluster_id}, status_code=200)
-    except Exception as exc: # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/info/{id}")
+@app.post("/bibigrid/terminate")
+async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)):
+    try:
+        # Rewrite: Maybe load a configuration file stored somewhere locally to just define access
+        content = await config_file.read()
+        configurations = yaml.safe_load(content.decode())
+        print(configurations)
+        providers = provider_handler.get_providers(configurations)
+
+        async def terminate_async():
+            await terminate.terminate(cluster_id, providers)
+
+        asyncio.create_task(terminate_async())
+        # Create the Bibigrid configuration here
+        # Implement your creation logic
+
+        return JSONResponse(content={"message": "Termination successfully requested."}, status_code=200)
+    except Exception as exc:  # pylint: disable=broad-except
+        return JSONResponse(content={"error": str(exc)}, status_code=400)
+
+
+@app.get("/bibigrid/info/{cluster_id}")
 async def info(cluster_id: str):
     try:
-        config_content = cluster_id
-        if config_content is None:
-            return JSONResponse(content={"error": "Configuration not found"}, status_code=404)
-
-        # Fetch information about the configuration based on the ID
-        # Implement your info retrieval logic
-
-        return JSONResponse(content={"id": cluster_id, "info": "Configuration information"})
-    except Exception as exc: # pylint: disable=broad-except
+        # Rewrite: Maybe load a configuration file stored somewhere locally to just define access
+        with open('test.yml', encoding='utf8') as f:
+            configurations = yaml.safe_load(f)
+        providers = provider_handler.get_providers(configurations)
+        cluster_dict = list_clusters.dict_clusters(providers).get(cluster_id)  # add information filtering
+        # check whether cluster is actually active and append that information
+        if cluster_dict:
+            return JSONResponse(content=cluster_dict, status_code=200)
+        return JSONResponse(content={}, status_code=404)
+    except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
@@ -88,27 +121,36 @@ def test_create():
         response = client.post("/bibigrid/create", files={"config_file": file})
     assert response.status_code == 200
     response_data = response.json()
-    assert "message" in response_data
     assert "id" in response_data
-#
-#
-# def test_info():
-#     # Assuming you've previously created a configuration with ID 1
-#     response = client.get("/bibigrid/info/1")
-#     assert response.status_code == 200
-#     response_data = response.json()
-#     assert "id" in response_data
-#     assert "info" in response_data
-#
-#
-# def test_get_nonexistent_configuration_info():
-#     response = client.get("/bibigrid/info/999")
-#     assert response.status_code == 404
-#     assert response.json() == {"error": "Configuration not found"}
-#
-#
+
+
+def test_terminate_cluster():
+    with open('test.yml', 'rb') as file:
+        response = client.post("/bibigrid/terminate", params={"cluster_id": "2uiy5ka2c5y1k8o"},
+                               files={"config_file": file})
+    print(response)
+    assert response.status_code == 200
+    response_data = response.json()
+    assert "message" in response_data
+
+
+def test_info():
+    # Assuming you've previously created a configuration with ID 1
+    response = client.get("/bibigrid/info/1")
+    assert response.status_code == 200
+    response_data = response.json()
+    assert bool(response_data)
+
+
+def test_get_nonexistent_configuration_info():
+    response = client.get("/bibigrid/info/999")
+    assert response.status_code == 404
+    assert response.json() == {"error": "Configuration not found"}
+
+
 # Run the tests
-test_validate()
-test_create()
+# test_validate()
+# test_create()
 # test_info()
-# # test_get_nonexistent_configuration_info()
+# test_terminate_cluster()
+# test_get_nonexistent_configuration_info()

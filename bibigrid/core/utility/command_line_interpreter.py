@@ -44,10 +44,10 @@ def interpret_command_line():
 
     actions = parser.add_mutually_exclusive_group(required=True)
     actions.add_argument("-V", "--version", action='store_true', help="Displays version")
-    actions.add_argument("-t", "--terminate_cluster", action='store_true',
+    actions.add_argument("-t", "--terminate", action='store_true',
                          help="Terminates cluster. Needs cluster-id set.")
     actions.add_argument("-c", "--create", action='store_true', help="Creates cluster")
-    actions.add_argument("-l", "--list_clusters", action='store_true',
+    actions.add_argument("-l", "--list", action='store_true',
                          help="Lists all running clusters. If cluster-id is set, will list this cluster in detail only")
     actions.add_argument("-ch", "--check", action='store_true', help="Validates cluster configuration")
     actions.add_argument("-ide", "--ide", action='store_true',

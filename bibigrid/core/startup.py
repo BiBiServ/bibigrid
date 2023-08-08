@@ -10,7 +10,7 @@ import traceback
 
 import yaml
 
-from bibigrid.core.actions import check, create, ide, list_clusters, terminate_cluster, update, version
+from bibigrid.core.actions import check, create, ide, list_clusters, terminate, update, version
 from bibigrid.core.utility import command_line_interpreter
 from bibigrid.core.utility.handler import configuration_handler, provider_handler
 
@@ -73,9 +73,9 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
     try:
         providers = provider_handler.get_providers(configurations)
         if providers:
-            if args.list_clusters:
-                LOG.info("Action list_clusters selected")
-                exit_state = list_clusters.print_list_clusters(args.cluster_id, providers)
+            if args.list:
+                LOG.info("Action list selected")
+                exit_state = list_clusters.print_list(args.cluster_id, providers)
             elif args.check:
                 LOG.info("Action check selected")
                 exit_state = check.check(configurations, providers)
@@ -94,9 +94,9 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
                     LOG.info("No cid (cluster_id) specified. Defaulting to last created cluster: %s",
                                  args.cluster_id or 'None found')
                 if args.cluster_id:
-                    if args.terminate_cluster:
-                        LOG.info("Action terminate_cluster selected")
-                        exit_state = terminate_cluster.terminate_cluster(cluster_id=args.cluster_id,
+                    if args.terminate:
+                        LOG.info("Action terminate selected")
+                        exit_state = terminate.terminate(cluster_id=args.cluster_id,
                                                                          providers=providers,
                                                                          debug=args.debug)
                     elif args.ide:
