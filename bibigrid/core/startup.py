@@ -65,7 +65,7 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
     """
     if args.version:
         LOG.info("Action version selected")
-        print(version.__version__)
+        LOG.log(0, version.__version__)
         return 0
 
     start_time = time.time()
@@ -75,7 +75,7 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
         if providers:
             if args.list:
                 LOG.info("Action list selected")
-                exit_state = list_clusters.print_list(args.cluster_id, providers)
+                exit_state = list_clusters.log_list(args.cluster_id, providers)
             elif args.check:
                 LOG.info("Action check selected")
                 exit_state = check.check(configurations, providers)
@@ -83,22 +83,23 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
                 LOG.info("Action create selected")
                 creator = create.Create(providers=providers,
                                         configurations=configurations,
+                                        log=LOG,
                                         debug=args.debug,
                                         config_path=config_path)
-                print("Creating a new cluster takes about 10 or more minutes depending on your cloud provider "
-                      "and your configuration. Be patient.")
+                LOG.log(0, "Creating a new cluster takes about 10 or more minutes depending on your cloud provider "
+                           "and your configuration. Be patient.")
                 exit_state = creator.create()
             else:
                 if not args.cluster_id:
                     args.cluster_id = get_cluster_id_from_mem()
                     LOG.info("No cid (cluster_id) specified. Defaulting to last created cluster: %s",
-                                 args.cluster_id or 'None found')
+                             args.cluster_id or 'None found')
                 if args.cluster_id:
                     if args.terminate:
                         LOG.info("Action terminate selected")
                         exit_state = terminate.terminate(cluster_id=args.cluster_id,
-                                                                         providers=providers,
-                                                                         debug=args.debug)
+                                                         providers=providers,
+                                                         debug=args.debug)
                     elif args.ide:
                         LOG.info("Action ide selected")
                         exit_state = ide.ide(args.cluster_id, providers[0], configurations[0])
@@ -113,12 +114,13 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
             exit_state = 1
     except Exception as err:  # pylint: disable=broad-except
         if args.debug:
-            traceback.print_exc()
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            LOG.error("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
         else:
             LOG.error(err)
         exit_state = 2
     time_in_s = time.time() - start_time
-    print(f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
+    LOG.log(0, f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
     return exit_state
 
 

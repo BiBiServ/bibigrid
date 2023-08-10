@@ -3,7 +3,6 @@ Contains main method. Interprets command line, sets logging and starts correspon
 """
 import asyncio
 import logging
-import contextlib
 import yaml
 # !/usr/bin/env python3
 from fastapi import FastAPI, File, UploadFile, status, Request
@@ -37,12 +36,8 @@ async def validate_configuration(config_file: UploadFile = File(...)):
     try:
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
-        with open("test", 'w', encoding="utf8") as f:
-            with contextlib.redirect_stdout(f):
-                providers = provider_handler.get_providers(configurations)
-                exit_state = check.check(configurations, providers)
-        # Validate the YAML content here
-        # Implement your validation logic
+        providers = provider_handler.get_providers(configurations)
+        exit_state = check.check(configurations, providers)
         if exit_state:
             return JSONResponse(content={"message": "Validation failed"}, status_code=420)  # Fail
         return JSONResponse(content={"message": "Validation successful"}, status_code=200)  # Success
@@ -53,21 +48,14 @@ async def validate_configuration(config_file: UploadFile = File(...)):
 @app.post("/bibigrid/create")
 async def create_cluster(config_file: UploadFile = File(...)):
     async def create_async():
-        with open("test3", 'w', encoding="utf8") as f:
-            with contextlib.redirect_stdout(f):
-                creator.create()
+        creator.create()
     try:
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
-        with open("test2", 'w', encoding="utf8") as f:
-            with contextlib.redirect_stdout(f):
-                providers = provider_handler.get_providers(configurations)
-                creator = create.Create(providers=providers, configurations=configurations, config_path=None)
-            cluster_id = creator.cluster_id
-            asyncio.create_task(create_async())
-            # Create the Bibigrid configuration here
-            # Implement your creation logic
-
+        providers = provider_handler.get_providers(configurations)
+        creator = create.Create(providers=providers, configurations=configurations, log=log, config_path=None)
+        cluster_id = creator.cluster_id
+        asyncio.create_task(create_async())
         return JSONResponse(content={"cluster_id": cluster_id}, status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
@@ -76,16 +64,12 @@ async def create_cluster(config_file: UploadFile = File(...)):
 @app.post("/bibigrid/terminate")
 async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)):
     async def terminate_async():
-        with open(cluster_id, 'w', encoding="utf8") as f:
-            with contextlib.redirect_stdout(f):
-                terminate.terminate(cluster_id, providers)
+        terminate.terminate(cluster_id, providers)
     try:
         # Rewrite: Maybe load a configuration file stored somewhere locally to just define access
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
-        with open(cluster_id, 'w', encoding="utf8") as f:
-            with contextlib.redirect_stdout(f):
-                providers = provider_handler.get_providers(configurations)
+        providers = provider_handler.get_providers(configurations)
         asyncio.create_task(terminate_async())
         # Create the Bibigrid configuration here
         # Implement your creation logic
@@ -102,10 +86,7 @@ async def info(cluster_id: str):
         with open('test.yml', encoding='utf8') as f:
             configurations = yaml.safe_load(f)
         providers = provider_handler.get_providers(configurations)
-        with open(cluster_id, 'w', encoding="utf8") as f:
-            with contextlib.redirect_stdout(f):
-                cluster_dict = list_clusters.dict_clusters(providers).get(cluster_id)  # add information filtering
-        # check whether cluster is actually active and append that information
+        cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id)  # add information filtering
         if cluster_dict:
             return JSONResponse(content=cluster_dict, status_code=200)
         return JSONResponse(content={}, status_code=404)
@@ -128,7 +109,7 @@ def test_create():
         response = client.post("/bibigrid/create", files={"config_file": file})
     assert response.status_code == 200
     response_data = response.json()
-    assert "id" in response_data
+    assert "cluster_id" in response_data
 
 
 def test_terminate_cluster():

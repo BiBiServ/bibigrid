@@ -2,7 +2,6 @@
 The cluster creation (master's creation, key creation, ansible setup and execution, ...) is done here
 """
 
-import logging
 import os
 import subprocess
 import threading
@@ -25,7 +24,7 @@ from bibigrid.models.exceptions import ExecutionException, ConfigurationExceptio
 PREFIX = "bibigrid"
 SEPARATOR = "-"
 PREFIX_WITH_SEP = PREFIX + SEPARATOR
-LOG = logging.getLogger("bibigrid")
+FILEPATHS = [(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE), (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)]
 
 
 def get_identifier(identifier, cluster_id, worker_group="", additional=""):
@@ -63,7 +62,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     The class Create holds necessary methods to execute the Create-Action
     """
 
-    def __init__(self, providers, configurations, config_path, debug=False, cluster_id=None):
+    def __init__(self, providers, configurations, config_path, log, debug=False, cluster_id=None):
         """
         Additionally sets (unique) cluster_id, public_key_commands (to copy public keys to master) and key_name.
         Call create() to actually start server.
@@ -73,6 +72,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         :param debug: Bool. If True Cluster offer shut-down after create and
         will ask before shutting down on errors
         """
+        self.log = log
         self.providers = providers
         self.configurations = configurations
         self.debug = debug
@@ -82,7 +82,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             configurations[0].get("sshPublicKeyFiles"))
         self.config_path = config_path
         self.master_ip = None
-        LOG.debug("Cluster-ID: %s", self.cluster_id)
+        self.log.debug("Cluster-ID: %s", self.cluster_id)
         self.name = AC_NAME.format(cluster_id=self.cluster_id)
         self.key_name = KEY_NAME.format(cluster_id=self.cluster_id)
         self.default_security_group_name = DEFAULT_SECURITY_GROUP_NAME.format(cluster_id=self.cluster_id)
@@ -92,7 +92,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.vpn_counter = 0
         self.thread_lock = threading.Lock()
         self.use_master_with_public_ip = configurations[0].get("useMasterWithPublicIp", True)
-        LOG.debug("Keyname: %s", self.key_name)
+        self.log.debug("Keyname: %s", self.key_name)
 
     def generate_keypair(self):
         """
@@ -100,16 +100,18 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         generate_keypair makes use of the fact that files in tmp are automatically deleted
         ToDo find a more pythonic way to create an ECDSA keypair
         See here for why using python module ECDSA wasn't successful
-        https://stackoverflow.com/questions/71194770/why-does-creating-ecdsa-keypairs-via-python-differ-from-ssh-keygen-t-ecdsa-and
+        https://stackoverflow.com/questions/71194770/why-does-creating-ecdsa-keypairs-via-python-differ-from-ssh
+        -keygen-t-ecdsa-and
         :return:
         """
+        self.log.info("Generating keypair")
         # create KEY_FOLDER if it doesn't exist
         if not os.path.isdir(KEY_FOLDER):
-            LOG.info("%s not found. Creating folder.", KEY_FOLDER)
+            self.log.debug("%s not found. Creating folder.", KEY_FOLDER)
             os.mkdir(KEY_FOLDER)
         # generate keyfile
         res = subprocess.check_output(f'ssh-keygen -t ecdsa -f {KEY_FOLDER}{self.key_name} -P ""', shell=True).decode()
-        LOG.debug(res)
+        self.log.debug(res)
         # read private keyfile
         with open(f"{os.path.join(KEY_FOLDER, self.key_name)}.pub", mode="r", encoding="UTF-8") as key_file:
             public_key = key_file.read()
@@ -127,6 +129,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
          - default with basic rules for the cluster
          - wireguard when more than one provider is used (= multicloud)
         """
+        self.log.info("Generating Security Groups")
         for provider, configuration in zip(self.providers, self.configurations):
             # create a default security group
             default_security_group_id = provider.create_security_group(name=self.default_security_group_name)["id"]
@@ -170,7 +173,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
                                   additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
                 self.vpn_counter += 1
-        LOG.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
+        self.log.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance_type["type"]
         image = instance_type["image"]
         network = configuration["network"]
@@ -214,7 +217,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             identifier = VPN_WORKER_IDENTIFIER
             volumes = []  # only master has volumes
         else:
-            LOG.warning("Configuration %s has no vpngtw or master and is therefore unreachable.", configuration)
+            self.log.warning("Configuration %s has no vpngtw or master and is therefore unreachable.", configuration)
             raise KeyError
         return identifier, instance_type, volumes
 
@@ -240,23 +243,24 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         :param mounts: volumes or snapshots
         :return: list of pre-existing and newly created volumes
         """
-        LOG.info("Preparing volumes")
+        if mounts:
+            self.log.info("Preparing volumes")
         volumes = []
         for mount in mounts:
             volume_id = provider.get_volume_by_id_or_name(mount)["id"]
             if volume_id:
                 volumes.append(volume_id)
             else:
-                LOG.debug("Volume %s does not exist. Checking for snapshot.", mount)
+                self.log.debug("Volume %s does not exist. Checking for snapshot.", mount)
                 volume_id = provider.create_volume_from_snapshot(mount)
                 if volume_id:
                     volumes.append(volume_id)
                 else:
-                    LOG.warning("Mount %s is neither a snapshot nor a volume.", mount)
+                    self.log.warning("Mount %s is neither a snapshot nor a volume.", mount)
         ret_volumes = set(volumes)
         if len(ret_volumes) < len(volumes):
-            LOG.warning("Identical mounts found in masterMounts list. "
-                        "Trying to set() to save the run. Check configurations!")
+            self.log.warning("Identical mounts found in masterMounts list. "
+                             "Trying to set() to save the run. Check configurations!")
         return ret_volumes
 
     def prepare_configurations(self):
@@ -268,15 +272,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         for configuration, provider in zip(self.configurations, self.providers):
             configuration["cloud_identifier"] = provider.cloud_specification["identifier"]
             if not configuration.get("network"):
+                self.log.debug("No network found. Getting network by subnet.")
                 configuration["network"] = provider.get_network_id_by_subnet(configuration["subnet"])
                 if not configuration["network"]:
-                    LOG.warning("Unable to set network. "
-                                f"Subnet doesn't exist in cloud {configuration['cloud_identifier']}")
+                    self.log.warning("Unable to set network. "
+                                     f"Subnet doesn't exist in cloud {configuration['cloud_identifier']}")
                     raise ConfigurationException(f"Subnet doesn't exist in cloud {configuration['cloud_identifier']}")
             elif not configuration.get("subnet"):
+                self.log.debug("No subnet found. Getting subnet by network.")
                 configuration["subnet"] = provider.get_subnet_ids_by_network(configuration["network"])
                 if not configuration["subnet"]:
-                    LOG.warning("Unable to set subnet. Network doesn't exist.")
+                    self.log.warning("Unable to set subnet. Network doesn't exist.")
                     raise ConfigurationException("Network doesn't exist.")
             configuration["subnet_cidrs"] = provider.get_subnet_by_id_or_name(configuration["subnet"])["cidr"]
             configuration["sshUser"] = self.ssh_user  # is used in ansibleConfigurator
@@ -286,9 +292,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         Configures ansible and then uploads the modified files and all necessary data to the master
         :return:
         """
+        self.log.debug("Uploading ansible Data")
         for folder in [aRP.VARS_FOLDER, aRP.GROUP_VARS_FOLDER, aRP.HOST_VARS_FOLDER]:
             if not os.path.isdir(folder):
-                LOG.info("%s not found. Creating folder.", folder)
+                self.log.info("%s not found. Creating folder.", folder)
                 os.mkdir(folder)
         if not os.path.isfile(aRP.HOSTS_FILE):
             with open(aRP.HOSTS_FILE, 'a', encoding='utf-8') as hosts_file:
@@ -296,15 +303,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
                                                     cluster_id=self.cluster_id)
+        commands = [ssh_handler.get_ac_command(self.providers,
+                                               AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
-                                username=self.ssh_user,
-                                filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
-                                           (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
-                                commands=[
-                                             ssh_handler.get_ac_command(
-                                                 self.providers,
-                                                 AC_NAME.format(
-                                                     cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
+                                username=self.ssh_user, filepaths=FILEPATHS, commands=commands)
 
     def start_start_instance_threads(self):
         """
@@ -327,7 +329,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         if len(self.providers) == 1:
             return
-
+        self.log.debug("Applying Extended Network Configuration")
         for provider_a, configuration_a in zip(self.providers, self.configurations):
             # configure wireguard network as allowed network
             allowed_addresses = [{'ip_address': '10.0.0.0/24', 'mac_address': configuration_a["mac_addr"]}]
@@ -335,8 +337,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             for configuration_b in self.configurations:
                 # ... and pick all other configuration
                 if configuration_a != configuration_b:
-                    LOG.info(f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},"
-                             f"{configuration_b['subnet_cidrs']})")
+                    self.log.debug(
+                        f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},"
+                        f"{configuration_b['subnet_cidrs']})")
                     # add provider_b network as allowed network
                     allowed_addresses.append(
                         {'ip_address': configuration_b["subnet_cidrs"], 'mac_address': configuration_a["mac_addr"]})
@@ -350,7 +353,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
     def create(self):  # pylint: disable=too-many-branches,too-many-statements
         """
-        Creates cluster and prints helpful cluster-info afterwards.
+        Creates cluster and logs helpful cluster-info afterwards.
         If debug is set True it offers termination after starting the cluster.
         :return: exit_state
         """
@@ -362,61 +365,61 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.extended_network_configuration()
             self.initialize_instances()
             self.upload_data()
-            self.print_cluster_start_info()
+            self.log_cluster_start_info()
             if self.debug:
-                LOG.info("DEBUG MODE: Entering termination...")
-                terminate.terminate(cluster_id=self.cluster_id, providers=self.providers,
-                                                    debug=self.debug)
+                self.log.info("DEBUG MODE: Entering termination...")
+                terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug)
         except exceptions.ConnectionException:
             if self.debug:
-                LOG.error(traceback.format_exc())
-            LOG.error("Connection couldn't be established. Check Provider connection.")
+                self.log.error(traceback.format_exc())
+            self.log.error("Connection couldn't be established. Check Provider connection.")
         except paramiko.ssh_exception.NoValidConnectionsError:
             if self.debug:
-                LOG.error(traceback.format_exc())
-            LOG.error("SSH connection couldn't be established. Check keypair.")
+                self.log.error(traceback.format_exc())
+            self.log.error("SSH connection couldn't be established. Check keypair.")
         except KeyError as exc:
             if self.debug:
-                LOG.error(traceback.format_exc())
-            LOG.error(f"Tried to access dictionary key {str(exc)}, but couldn't. Please check your configurations.")
+                self.log.error(traceback.format_exc())
+            self.log.error(
+                f"Tried to access dictionary key {str(exc)}, but couldn't. Please check your configurations.")
         except FileNotFoundError as exc:
             if self.debug:
-                LOG.error(traceback.format_exc())
-            LOG.error(f"Tried to access resource files but couldn't. No such file or directory: {str(exc)}")
+                self.log.error(traceback.format_exc())
+            self.log.error(f"Tried to access resource files but couldn't. No such file or directory: {str(exc)}")
         except TimeoutError as exc:
             if self.debug:
-                LOG.error(traceback.format_exc())
-            LOG.error(f"Timeout while connecting to master. Maybe you are trying to create a master without "
-                      f"public ip "
-                      f"while not being in the same network: {str(exc)}")
+                self.log.error(traceback.format_exc())
+            self.log.error(f"Timeout while connecting to master. Maybe you are trying to create a master without "
+                           f"public ip "
+                           f"while not being in the same network: {str(exc)}")
         except ExecutionException as exc:
             if self.debug:
-                LOG.error(traceback.format_exc())
-            LOG.error(f"Execution of cmd on remote host fails: {str(exc)}")
+                self.log.error(traceback.format_exc())
+            self.log.error(f"Execution of cmd on remote host fails: {str(exc)}")
         except ConfigurationException as exc:
             if self.debug:
-                LOG.error(traceback.format_exc())
-            LOG.error(f"Configuration invalid: {str(exc)}")
+                self.log.error(traceback.format_exc())
+            self.log.error(f"Configuration invalid: {str(exc)}")
         except Exception as exc:  # pylint: disable=broad-except
             if self.debug:
-                LOG.error(traceback.format_exc())
-            LOG.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
+                self.log.error(traceback.format_exc())
+            self.log.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
         terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug)
         return 1
 
-    def print_cluster_start_info(self):
+    def log_cluster_start_info(self):
         """
-        Prints helpful cluster-info:
+        Logs helpful cluster-info:
         SSH: How to connect to master via SSH
         Terminate: What bibigrid command is needed to terminate the created cluster
-        Detailed cluster info: How to print detailed info about the created cluster
+        Detailed cluster info: How to log detailed info about the created cluster
         :return:
         """
-        print(f"Cluster {self.cluster_id} with master {self.master_ip} up and running!")
-        print(f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{self.master_ip}")
-        print(f"Terminate cluster: ./bibigrid.sh -i '{self.config_path}' -t -cid {self.cluster_id}")
-        print(f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
+        self.log.log(0, f"Cluster {self.cluster_id} with master {self.master_ip} up and running!")
+        self.log.log(0, f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{self.master_ip}")
+        self.log.log(0, f"Terminate cluster: ./bibigrid.sh -i '{self.config_path}' -t -cid {self.cluster_id}")
+        self.log.log(0, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
         if self.configurations[0].get("ide"):
-            print(f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")
+            self.log.log(0, f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")
