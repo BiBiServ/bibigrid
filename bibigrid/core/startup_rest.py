@@ -64,7 +64,7 @@ async def create_cluster(config_file: UploadFile = File(...)):
 @app.post("/bibigrid/terminate")
 async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)):
     async def terminate_async():
-        terminate.terminate(cluster_id, providers)
+        terminate.terminate(cluster_id, providers, log)
     try:
         # Rewrite: Maybe load a configuration file stored somewhere locally to just define access
         content = await config_file.read()

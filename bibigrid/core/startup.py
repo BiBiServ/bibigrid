@@ -99,6 +99,7 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
                         LOG.info("Action terminate selected")
                         exit_state = terminate.terminate(cluster_id=args.cluster_id,
                                                          providers=providers,
+                                                         log=LOG,
                                                          debug=args.debug)
                     elif args.ide:
                         LOG.info("Action ide selected")

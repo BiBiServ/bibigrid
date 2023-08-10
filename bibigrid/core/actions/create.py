@@ -368,7 +368,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log_cluster_start_info()
             if self.debug:
                 self.log.info("DEBUG MODE: Entering termination...")
-                terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug)
+                terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug,
+                                    log=self.log)
         except exceptions.ConnectionException:
             if self.debug:
                 self.log.error(traceback.format_exc())
@@ -406,7 +407,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
-        terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug)
+        terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
         return 1
 
     def log_cluster_start_info(self):
