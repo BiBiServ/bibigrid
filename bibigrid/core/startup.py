@@ -75,7 +75,7 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
         if providers:
             if args.list:
                 LOG.info("Action list selected")
-                exit_state = list_clusters.log_list(args.cluster_id, providers)
+                exit_state = list_clusters.log_list(args.cluster_id, providers, LOG)
             elif args.check:
                 LOG.info("Action check selected")
                 exit_state = check.check(configurations, providers)
