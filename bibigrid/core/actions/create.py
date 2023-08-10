@@ -179,8 +179,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         network = configuration["network"]
 
         # create a server and block until it is up and running
+        print("Is it here")
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True)
+        print("Or not")
         configuration["private_v4"] = server["private_v4"]
 
         # get mac address for given private address
@@ -302,7 +304,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 hosts_file.write("# placeholder file for worker DNS entries (see 003-dns)")
 
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
-                                                    cluster_id=self.cluster_id)
+                                                    cluster_id=self.cluster_id, log=self.log)
         commands = [ssh_handler.get_ac_command(self.providers,
                                                AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
