@@ -67,7 +67,7 @@ def get_add_ssh_public_key_commands(ssh_public_key_files):
 def copy_to_server(sftp, local_path, remote_path, log):
     """
     Recursively copies files and folders to server.
-    If a folder is given as localpath, the structure within will be kept.
+    If a folder is given as local_path, the structure within will be kept.
     :param sftp: sftp connection
     :param local_path: file or folder locally
     :param remote_path: file or folder locally
@@ -224,8 +224,8 @@ def execute_ssh(floating_ip, private_key, username, log, commands=None, filepath
             if filepaths:
                 log.debug(f"Setting up filepaths for {floating_ip}")
                 sftp = client.open_sftp()
-                for localpath, remotepath in filepaths:
-                    copy_to_server(sftp=sftp, local_path=localpath, remote_path=remotepath, log=log)
+                for local_path, remote_path in filepaths:
+                    copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
                 log.debug("SFTP: Files %s copied.", filepaths)
             if commands:
                 log.debug(f"Setting up commands for {floating_ip}")
