@@ -12,6 +12,7 @@ from bibigrid.core.utility.handler import cluster_ssh_handler
 
 LOG = logging.getLogger("bibigrid")
 
+
 def update(cluster_id, master_provider, master_configuration):
     LOG.info("Starting update...")
     master_ip, ssh_user, used_private_key = cluster_ssh_handler.get_ssh_connection_info(cluster_id, master_provider,

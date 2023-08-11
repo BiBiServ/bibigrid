@@ -179,10 +179,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         network = configuration["network"]
 
         # create a server and block until it is up and running
-        print("Is it here")
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True)
-        print("Or not")
         configuration["private_v4"] = server["private_v4"]
 
         # get mac address for given private address
@@ -232,11 +230,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.master_ip = configuration["floating_ip"]
                 ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
                                                 private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
-                                                commands=self.ssh_add_public_key_commands)
+                                                commands=self.ssh_add_public_key_commands, log=self.log)
             elif configuration.get("vpnInstance"):
                 ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
                                         private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
-                                        commands=ssh_handler.VPN_SETUP)
+                                        commands=ssh_handler.VPN_SETUP, log=self.log)
 
     def prepare_volumes(self, provider, mounts):
         """
@@ -308,7 +306,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         commands = [ssh_handler.get_ac_command(self.providers,
                                                AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
-                                username=self.ssh_user, filepaths=FILEPATHS, commands=commands)
+                                username=self.ssh_user, filepaths=FILEPATHS, commands=commands, log=self.log)
 
     def start_start_instance_threads(self):
         """
