@@ -113,7 +113,7 @@ def check_clouds_yaml_security(log):
     """
     success = True
     log.info("Checking validity of entire clouds.yaml and clouds-public.yaml")
-    clouds, clouds_public = configuration_handler.get_clouds_files()  # pylint: disable=unused-variable
+    clouds, clouds_public = configuration_handler.get_clouds_files(log)  # pylint: disable=unused-variable
     if clouds_public:
         for cloud in clouds_public:
             if clouds_public[cloud].get("profile"):
@@ -434,7 +434,7 @@ class ValidateConfiguration:
         """
         self.log.info("Checking cloud specifications...")
         success = True
-        cloud_specifications = configuration_handler.get_cloud_specifications(self.configurations)
+        cloud_specifications = configuration_handler.get_cloud_specifications(self.configurations, self.log)
         for index, cloud_specification in enumerate(cloud_specifications):
             if not check_cloud_yaml(cloud_specification, self.log):
                 success = False
