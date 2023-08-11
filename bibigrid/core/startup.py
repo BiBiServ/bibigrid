@@ -14,7 +14,6 @@ from bibigrid.core.actions import check, create, ide, list_clusters, terminate, 
 from bibigrid.core.utility import command_line_interpreter
 from bibigrid.core.utility.handler import configuration_handler, provider_handler
 
-LOGGING_HANDLER_LIST = [logging.StreamHandler(), logging.FileHandler("bibigrid.log")]  # stdout and to file
 VERBOSITY_LIST = [logging.WARNING, logging.INFO, logging.DEBUG]
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 
@@ -80,17 +79,9 @@ def run_action(args, configurations, config_path):
                 exit_state = check.check(configurations, providers, LOG)
             elif args.create:
                 LOG.info("Action create selected")
-                log = logging.getLogger("New")
-                for handler in log.handlers[:]:  # remove all old handlers
-                    log.removeHandler(handler)
-                log.addHandler(logging.FileHandler("test.log"))
-                log.setLevel(len(VERBOSITY_LIST))
-                LOG.addHandler(logging.FileHandler("bibigrid.log"))
-                log.info("Testing: log")
-                LOG.info("Testing LOG")
                 creator = create.Create(providers=providers,
                                         configurations=configurations,
-                                        log=log,
+                                        log=LOG,
                                         debug=args.debug,
                                         config_path=config_path)
                 LOG.log(0, "Creating a new cluster takes about 10 or more minutes depending on your cloud provider "
@@ -137,7 +128,9 @@ def main():
     Interprets command line, sets logger, reads configuration and runs selected action. Then exits.
     :return:
     """
-    logging.basicConfig(format=LOGGER_FORMAT, handlers=LOGGING_HANDLER_LIST)
+    logging.basicConfig(format=LOGGER_FORMAT)
+    LOG.addHandler(logging.StreamHandler())  # stdout
+    LOG.addHandler(logging.FileHandler("bibigrid.log"))  # file
     args = command_line_interpreter.interpret_command_line()
     set_logger_verbosity(args.verbose)
     configurations = configuration_handler.read_configuration(LOG, args.config_input)
