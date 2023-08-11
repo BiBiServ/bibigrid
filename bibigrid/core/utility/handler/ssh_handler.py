@@ -13,12 +13,9 @@ from bibigrid.core.utility import ansible_commands as aC
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
-ANSIBLE_SETUP = [aC.NO_UPDATE, aC.UPDATE,
-                 aC.PYTHON3_PIP, aC.ANSIBLE_PASSLIB,
-                 (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."),
-                 aC.PLAYBOOK_HOME,
-                 aC.PLAYBOOK_HOME_RIGHTS,
-                 aC.ADD_PLAYBOOK_TO_LINUX_HOME]
+ANSIBLE_SETUP = [aC.NO_UPDATE, aC.UPDATE, aC.PYTHON3_PIP, aC.ANSIBLE_PASSLIB,
+                 (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."), aC.PLAYBOOK_HOME,
+                 aC.PLAYBOOK_HOME_RIGHTS, aC.ADD_PLAYBOOK_TO_LINUX_HOME]
 # ANSIBLE_START = [aC.WAIT_READY, aC.UPDATE, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]  # another UPDATE seems to not necessary.
 ANSIBLE_START = [aC.WAIT_READY, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]
 VPN_SETUP = [("echo Example", "Echos an Example")]
@@ -38,16 +35,14 @@ def get_ac_command(providers, name):
         if auth.get("application_credential_id") and auth.get("application_credential_secret"):
             wanted_keys = ["auth", "region_name", "interface", "identity_api_version", "auth_type"]
             ac_cloud_specification = {wanted_key: cloud_specification[wanted_key] for wanted_key in wanted_keys if
-                                      wanted_key in
-                                      cloud_specification}
+                                      wanted_key in cloud_specification}
         else:
             wanted_keys = ["region_name", "interface", "identity_api_version"]
             ac = provider.create_application_credential(name=name)  # pylint: disable=invalid-name
             ac_dict = {"application_credential_id": ac["id"], "application_credential_secret": ac["secret"],
                        "auth_type": "v3applicationcredential", "auth_url": auth["auth_url"]}
             ac_cloud_specification = {wanted_key: cloud_specification[wanted_key] for wanted_key in wanted_keys if
-                                      wanted_key in
-                                      cloud_specification}
+                                      wanted_key in cloud_specification}
             ac_cloud_specification.update(ac_dict)
         ac_clouds_yaml["clouds"][cloud_specification["identifier"]] = ac_cloud_specification
     return (f"echo '{yaml.safe_dump(ac_clouds_yaml)}' | sudo install -D /dev/stdin /etc/openstack/clouds.yaml",
@@ -219,10 +214,7 @@ def execute_ssh(floating_ip, private_key, username, log, commands=None, filepath
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            is_active(client=client,
-                      floating_ip_address=floating_ip,
-                      username=username,
-                      private_key=paramiko_key,
+            is_active(client=client, floating_ip_address=floating_ip, username=username, private_key=paramiko_key,
                       log=log)
         except ConnectionException as exc:
             log.error(f"Couldn't connect to floating ip {floating_ip} using private key {private_key}.")
