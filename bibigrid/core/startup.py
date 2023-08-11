@@ -71,7 +71,7 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
     start_time = time.time()
     exit_state = 0
     try:
-        providers = provider_handler.get_providers(configurations)
+        providers = provider_handler.get_providers(configurations, LOG)
         if providers:
             if args.list:
                 LOG.info("Action list selected")

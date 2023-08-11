@@ -36,7 +36,7 @@ async def validate_configuration(config_file: UploadFile = File(...)):
     try:
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
-        providers = provider_handler.get_providers(configurations)
+        providers = provider_handler.get_providers(configurations, log)
         exit_state = check.check(configurations, providers)
         if exit_state:
             return JSONResponse(content={"message": "Validation failed"}, status_code=420)  # Fail
@@ -52,7 +52,7 @@ async def create_cluster(config_file: UploadFile = File(...)):
     try:
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
-        providers = provider_handler.get_providers(configurations)
+        providers = provider_handler.get_providers(configurations, log)
         creator = create.Create(providers=providers, configurations=configurations, log=log, config_path=None)
         cluster_id = creator.cluster_id
         asyncio.create_task(create_async())
@@ -69,7 +69,7 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
         # Rewrite: Maybe load a configuration file stored somewhere locally to just define access
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
-        providers = provider_handler.get_providers(configurations)
+        providers = provider_handler.get_providers(configurations, log)
         asyncio.create_task(terminate_async())
         # Create the Bibigrid configuration here
         # Implement your creation logic
@@ -85,7 +85,7 @@ async def info(cluster_id: str):
         # Rewrite: Maybe load a configuration file stored somewhere locally to just define access
         with open('test.yml', encoding='utf8') as f:
             configurations = yaml.safe_load(f)
-        providers = provider_handler.get_providers(configurations)
+        providers = provider_handler.get_providers(configurations, log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id)  # add information filtering
         if cluster_dict:
             return JSONResponse(content=cluster_dict, status_code=200)
