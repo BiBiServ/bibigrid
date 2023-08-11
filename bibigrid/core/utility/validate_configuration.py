@@ -407,8 +407,8 @@ class ValidateConfiguration:
             free_resources_dict = provider.get_free_resources()
             for key, value in self.required_resources_dict.items():
                 success = has_enough(free_resources_dict[key], value,
-                                          f"Project {self.providers[0].cloud_specification['identifier']}", key,
-                                          self.log) and success
+                                     f"Project {self.providers[0].cloud_specification['identifier']}", key,
+                                     self.log) and success
         return success
 
     def check_ssh_public_key_files(self):
