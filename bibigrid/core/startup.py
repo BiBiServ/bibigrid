@@ -48,11 +48,9 @@ def set_logger_verbosity(verbosity):
     capped_verbosity = min(verbosity, len(VERBOSITY_LIST) - 1)
     # LOG.basicConfig(format=LOGGER_FORMAT, level=VERBOSITY_LIST[capped_verbosity],
     #                    handlers=LOGGING_HANDLER_LIST)
+    LOG.setLevel(VERBOSITY_LIST[capped_verbosity])
 
-    log = logging.getLogger("bibigrid")
-    log.setLevel(VERBOSITY_LIST[capped_verbosity])
-
-    log.debug(f"Logging verbosity set to {capped_verbosity}")
+    LOG.debug(f"Logging verbosity set to {capped_verbosity}")
 
 
 # pylint: disable=too-many-nested-blocks,too-many-branches, too-many-statements
@@ -79,13 +77,17 @@ def run_action(args, configurations, config_path):
                 exit_state = list_clusters.log_list(args.cluster_id, providers, LOG)
             elif args.check:
                 LOG.info("Action check selected")
-                exit_state = check.check(configurations, providers)
+                exit_state = check.check(configurations, providers, LOG)
             elif args.create:
                 LOG.info("Action create selected")
                 log = logging.getLogger("New")
                 for handler in log.handlers[:]:  # remove all old handlers
                     log.removeHandler(handler)
                 log.addHandler(logging.FileHandler("test.log"))
+                log.setLevel(len(VERBOSITY_LIST))
+                LOG.addHandler(logging.FileHandler("bibigrid.log"))
+                log.info("Testing: log")
+                LOG.info("Testing LOG")
                 creator = create.Create(providers=providers,
                                         configurations=configurations,
                                         log=log,

@@ -64,7 +64,7 @@ def ide(cluster_id, master_provider, master_configuration):
     """
     LOG.info("Starting port forwarding for ide")
     master_ip, ssh_user, used_private_key = cluster_ssh_handler.get_ssh_connection_info(cluster_id, master_provider,
-                                                                                        master_configuration)
+                                                                                        master_configuration, LOG)
     used_local_bind_address = LOCAL_BIND_ADDRESS
     if master_ip and ssh_user and used_private_key:
         attempts = 0

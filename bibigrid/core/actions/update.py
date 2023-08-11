@@ -16,7 +16,7 @@ LOG = logging.getLogger("bibigrid")
 def update(cluster_id, master_provider, master_configuration):
     LOG.info("Starting update...")
     master_ip, ssh_user, used_private_key = cluster_ssh_handler.get_ssh_connection_info(cluster_id, master_provider,
-                                                                                        master_configuration)
+                                                                                        master_configuration, LOG)
     if master_ip and ssh_user and used_private_key:
         LOG.info("Trying to update %s@%s", master_ip, ssh_user)
         ssh_handler.execute_ssh(floating_ip=master_ip, private_key=used_private_key, username=ssh_user,

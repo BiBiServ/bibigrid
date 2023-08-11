@@ -3,14 +3,12 @@ This module contains methods to list all clusters or a specific cluster in a for
 This includes a method to create a dictionary containing all running clusters and their servers.
 """
 
-import logging
 import pprint
 import re
 
 from bibigrid.core.actions import create
 
 SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)\d+-([a-zA-Z0-9]+)-\d+)$")
-LOG = logging.getLogger("bibigrid")
 
 
 def dict_clusters(providers, log):
@@ -91,7 +89,7 @@ def log_list(cluster_id, providers, log):
                     networks = get_networks(cluster_node_dict)
                     log.log(0, f"\tnetwork: {pprint.pformat(networks)}")
                 else:
-                    LOG.warning("No master for cluster: %s.", cluster_key_id)
+                    log.warning("No master for cluster: %s.", cluster_key_id)
                 master_count, worker_count, vpn_count = get_size_overview(cluster_node_dict, log)
                 log.log(0,
                         f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "

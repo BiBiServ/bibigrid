@@ -37,7 +37,7 @@ async def validate_configuration(config_file: UploadFile = File(...)):
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
         providers = provider_handler.get_providers(configurations, log)
-        exit_state = check.check(configurations, providers)
+        exit_state = check.check(configurations, providers, log)
         if exit_state:
             return JSONResponse(content={"message": "Validation failed"}, status_code=420)  # Fail
         return JSONResponse(content={"message": "Validation successful"}, status_code=200)  # Success
