@@ -55,7 +55,8 @@ def set_logger_verbosity(verbosity):
     log.debug(f"Logging verbosity set to {capped_verbosity}")
 
 
-def run_action(args, configurations, config_path):  # pylint: disable=too-many-nested-blocks,too-many-branches
+# pylint: disable=too-many-nested-blocks,too-many-branches, too-many-statements
+def run_action(args, configurations, config_path):
     """
     Uses args to decide which action will be executed and executes said action.
     :param args: command line arguments
@@ -81,9 +82,13 @@ def run_action(args, configurations, config_path):  # pylint: disable=too-many-n
                 exit_state = check.check(configurations, providers)
             elif args.create:
                 LOG.info("Action create selected")
+                log = logging.getLogger("New")
+                for handler in log.handlers[:]:  # remove all old handlers
+                    log.removeHandler(handler)
+                log.addHandler(logging.FileHandler("test.log"))
                 creator = create.Create(providers=providers,
                                         configurations=configurations,
-                                        log=LOG,
+                                        log=log,
                                         debug=args.debug,
                                         config_path=config_path)
                 LOG.log(0, "Creating a new cluster takes about 10 or more minutes depending on your cloud provider "
@@ -133,7 +138,7 @@ def main():
     logging.basicConfig(format=LOGGER_FORMAT, handlers=LOGGING_HANDLER_LIST)
     args = command_line_interpreter.interpret_command_line()
     set_logger_verbosity(args.verbose)
-    configurations = configuration_handler.read_configuration(args.config_input)
+    configurations = configuration_handler.read_configuration(LOG, args.config_input)
     if configurations:
         sys.exit(run_action(args, configurations, args.config_input))
     sys.exit(1)
