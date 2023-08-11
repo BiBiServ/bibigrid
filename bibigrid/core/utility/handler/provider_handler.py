@@ -51,9 +51,10 @@ def get_providers(configurations, log):
     Determines list of providers by provider_names and returns it.
     If providers don't match a key error is thrown and the program exits with failure state 1.
     :param configurations:
+    :param log:
     :return:
     """
-    cloud_specifications = configuration_handler.get_cloud_specifications(configurations)
+    cloud_specifications = configuration_handler.get_cloud_specifications(configurations, log)
     if cloud_specifications:
         try:
             provider_names = configuration_handler.get_list_by_key(configurations, "infrastructure")
