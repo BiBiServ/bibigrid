@@ -5,7 +5,7 @@ import asyncio
 import logging
 
 import yaml
-# !/usr/bin/env python3
+
 from fastapi import FastAPI, File, UploadFile, status, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -18,12 +18,16 @@ from bibigrid.core.utility.handler import provider_handler
 app = FastAPI()
 
 VERBOSITY_LIST = [logging.WARNING, logging.INFO, logging.DEBUG]
-LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
-logging.basicConfig(format=LOGGER_FORMAT)
+LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
+LOG_FORMATTER = logging.Formatter(LOG_FORMAT)
 LOG = logging.getLogger("bibigrid")
-LOG.addHandler(logging.StreamHandler())  # stdout
-LOG.addHandler(logging.FileHandler("bibigrid_rest.log"))  # to file
-LOG.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(LOG_FORMATTER)
+file_handler = logging.FileHandler("bibigrid_rest.log")
+file_handler.setFormatter(LOG_FORMATTER)
+LOG.addHandler(stream_handler)  # stdout
+LOG.addHandler(file_handler)  # to file
+logging.addLevelName(42, "PRINT")
 
 
 def setup(cluster_id):
@@ -35,8 +39,11 @@ def setup(cluster_id):
     """
     cluster_id = cluster_id or id_generation.generate_cluster_id()
     log = logging.getLogger(cluster_id)
+    log.setLevel(logging.DEBUG)
     if not log.handlers:
-        log.addHandler(logging.FileHandler(f"{cluster_id}.log"))
+        handler = logging.FileHandler(f"{cluster_id}.log")
+        handler.setFormatter(LOG_FORMATTER)
+        log.addHandler(handler)
     return cluster_id, log
 
 
@@ -49,9 +56,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.post("/bibigrid/validate")
-async def validate_configuration(config_file: UploadFile = File(...), cluster_id:str =None):
-    LOG.info("Validating...")
+async def validate_configuration(cluster_id:str = None, config_file: UploadFile = File(...)):
     cluster_id, log = setup(cluster_id)
+    LOG.info(f"Requested validation on {cluster_id}")
     try:
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
@@ -65,8 +72,8 @@ async def validate_configuration(config_file: UploadFile = File(...), cluster_id
 
 
 @app.post("/bibigrid/create")
-async def create_cluster(config_file: UploadFile = File(...), cluster_id:str =None):
-    LOG.info("Creating...")
+async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(...)):
+    LOG.debug(f"Requested termination on {cluster_id}")
     cluster_id, log = setup(cluster_id)
 
     async def create_async():
@@ -80,7 +87,7 @@ async def create_cluster(config_file: UploadFile = File(...), cluster_id:str =No
                                 cluster_id=cluster_id)
         cluster_id = creator.cluster_id
         asyncio.create_task(create_async())
-        return JSONResponse(content={"cluster_id": cluster_id}, status_code=200)
+        return JSONResponse(content={"message": "Cluster creation started.", "cluster_id": cluster_id}, status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
@@ -88,6 +95,7 @@ async def create_cluster(config_file: UploadFile = File(...), cluster_id:str =No
 @app.post("/bibigrid/terminate")
 async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)):
     cluster_id, log = setup(cluster_id)
+    LOG.debug(f"Requested termination on {cluster_id}")
 
     async def terminate_async():
         terminate.terminate(cluster_id, providers, log)
@@ -106,14 +114,13 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/info/{cluster_id}")
-async def info(cluster_id: str):
+@app.get("/bibigrid/info/")
+async def info(cluster_id: str, infrastructure: str = "openstack", cloud: str = "openstack"):
+    LOG.debug(f"Requested info on {cluster_id}.")
     cluster_id, log = setup(cluster_id)
     try:
-        # Rewrite: Maybe load a configuration file stored somewhere locally to just define access
-        with open('test.yml', encoding='utf8') as f:
-            configurations = yaml.safe_load(f)
-        providers = provider_handler.get_providers(configurations, log)
+        providers = provider_handler.get_providers([{"infrastructure": infrastructure, "cloud": cloud}],
+                                                   log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id)  # add information filtering
         if cluster_dict:
             cluster_dict["message"] = "Cluster found."
@@ -123,6 +130,7 @@ async def info(cluster_id: str):
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
+# outdated tests
 client = TestClient(app)
 
 
@@ -147,7 +155,6 @@ def test_terminate_cluster():
     with open('test.yml', 'rb') as file:
         response = client.post("/bibigrid/terminate", params={"cluster_id": "2uiy5ka2c5y1k8o"},
                                files={"config_file": file})
-    print(response)
     assert response.status_code == 200
     response_data = response.json()
     assert "message" in response_data
@@ -166,9 +173,7 @@ def test_get_nonexistent_configuration_info():
     assert response.status_code == 404
     assert response.json() == {"error": "Configuration not found"}
 
-
-# Run the tests
-test_validate()
+# test_validate()
 # test_create()  # test_info()
 # test_terminate_cluster()
 # test_get_nonexistent_configuration_info()
