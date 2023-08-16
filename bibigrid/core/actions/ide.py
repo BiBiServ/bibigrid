@@ -2,7 +2,6 @@
 This module contains methods to establish port forwarding in order to access an ide (theia).
 """
 
-import logging
 import random
 import re
 import signal
@@ -20,7 +19,6 @@ REMOTE_BIND_ADDRESS = 8181
 LOCAL_BIND_ADDRESS = 9191
 MAX_JUMP = 100
 LOCALHOST = "127.0.0.1"
-LOG = logging.getLogger("bibigrid")
 
 
 def sigint_handler(caught_signal, frame):  # pylint: disable=unused-argument
@@ -53,18 +51,19 @@ def is_used(ip_address):
                 ports_used.append(is_open[1])
 
 
-def ide(cluster_id, master_provider, master_configuration):
+def ide(cluster_id, master_provider, master_configuration, log):
     """
     Creates a port forwarding from LOCAL_BIND_ADDRESS to REMOTE_BIND_ADDRESS from localhost to master of specified
     cluster
     @param cluster_id: cluster_id or ip
     @param master_provider: master's provider
     @param master_configuration: master's configuration
+    @param log:
     @return:
     """
-    LOG.info("Starting port forwarding for ide")
+    log.info("Starting port forwarding for ide")
     master_ip, ssh_user, used_private_key = cluster_ssh_handler.get_ssh_connection_info(cluster_id, master_provider,
-                                                                                        master_configuration, LOG)
+                                                                                        master_configuration, log)
     used_local_bind_address = LOCAL_BIND_ADDRESS
     if master_ip and ssh_user and used_private_key:
         attempts = 0
@@ -88,11 +87,11 @@ def ide(cluster_id, master_provider, master_configuration):
                             time.sleep(5)
             except sshtunnel.HandlerSSHTunnelForwarderError:
                 used_local_bind_address += random.randint(1, MAX_JUMP)
-                LOG.info("Attempt: %s. Port in use... Trying new port %s", attempts, used_local_bind_address)
+                log.info("Attempt: %s. Port in use... Trying new port %s", attempts, used_local_bind_address)
     if not master_ip:
-        LOG.warning("Cluster id %s doesn't match an existing cluster with a master.", cluster_id)
+        log.warning("Cluster id %s doesn't match an existing cluster with a master.", cluster_id)
     if not ssh_user:
-        LOG.warning("No ssh user has been specified in the first configuration.")
+        log.warning("No ssh user has been specified in the first configuration.")
     if not used_private_key:
-        LOG.warning("No matching sshPublicKeyFiles can be found in the first configuration or in .bibigrid")
+        log.warning("No matching sshPublicKeyFiles can be found in the first configuration or in .bibigrid")
     return 1

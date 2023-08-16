@@ -212,7 +212,7 @@ def terminate_output(cluster_server_state, cluster_keypair_state, cluster_securi
             log.warning("Unable to delete all security groups of cluster %s.", cluster_id)
 
         if cluster_server_terminated and cluster_keypair_deleted and cluster_security_group_deleted:
-            log.log(0, f"Successfully terminated cluster {cluster_id}.")
+            log.log(42, f"Successfully terminated cluster {cluster_id}.")
         else:
             log.warning("Unable to terminate cluster %s properly."
                         "\nAll servers terminated: %s"

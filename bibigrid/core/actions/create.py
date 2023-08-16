@@ -418,9 +418,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         Detailed cluster info: How to log detailed info about the created cluster
         :return:
         """
-        self.log.log(0, f"Cluster {self.cluster_id} with master {self.master_ip} up and running!")
-        self.log.log(0, f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{self.master_ip}")
-        self.log.log(0, f"Terminate cluster: ./bibigrid.sh -i '{self.config_path}' -t -cid {self.cluster_id}")
-        self.log.log(0, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
+        self.log.log(42, f"Cluster {self.cluster_id} with master {self.master_ip} up and running!")
+        self.log.log(42, f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{self.master_ip}")
+        self.log.log(42, f"Terminate cluster: ./bibigrid.sh -i '{self.config_path}' -t -cid {self.cluster_id}")
+        self.log.log(42, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
         if self.configurations[0].get("ide"):
-            self.log.log(0, f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")
+            self.log.log(42, f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")

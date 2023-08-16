@@ -14,6 +14,6 @@ def check(configurations, providers, log):
     """
     success = validate_configuration.ValidateConfiguration(configurations, providers, log).validate()
     check_result = "succeeded! Cluster is ready to start." if success else "failed!"
-    log.log(0, f"Total check {check_result}")
+    log.log(42, f"Total check {check_result}")
     log.info("Total check returned %s.", success)
     return 0

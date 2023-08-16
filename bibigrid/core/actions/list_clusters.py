@@ -67,35 +67,35 @@ def log_list(cluster_id, providers, log):
         if cluster_dict.get(cluster_id):
             log.info("Printing specific cluster_dictionary")
             master_count, worker_count, vpn_count = get_size_overview(cluster_dict[cluster_id], log)
-            log.log(0, f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
+            log.log(42, f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
                        f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
             pprint.pprint(cluster_dict[cluster_id])
         else:
             log.info("Cluster with cluster-id {cluster_id} not found.")
-            log.log(0, f"Cluster with cluster-id {cluster_id} not found.")
+            log.log(42, f"Cluster with cluster-id {cluster_id} not found.")
     else:
         log.info("Printing overview of cluster all clusters")
         if cluster_dict:
             for cluster_key_id, cluster_node_dict in cluster_dict.items():
-                log.log(0, f"Cluster-ID: {cluster_key_id}")
+                log.log(42, f"Cluster-ID: {cluster_key_id}")
                 master = cluster_node_dict.get('master')
                 if master:
                     for key in ["name", "user_id", "launched_at", "key_name", "public_v4", "public_v6", "provider"]:
                         value = cluster_node_dict['master'].get(key)
                         if value:
-                            log.log(0, f"\t{key}: {value}")
+                            log.log(42, f"\t{key}: {value}")
                     security_groups = get_security_groups(cluster_node_dict)
-                    log.log(0, f"\tsecurity_groups: {security_groups}")
+                    log.log(42, f"\tsecurity_groups: {security_groups}")
                     networks = get_networks(cluster_node_dict)
-                    log.log(0, f"\tnetwork: {pprint.pformat(networks)}")
+                    log.log(42, f"\tnetwork: {pprint.pformat(networks)}")
                 else:
                     log.warning("No master for cluster: %s.", cluster_key_id)
                 master_count, worker_count, vpn_count = get_size_overview(cluster_node_dict, log)
-                log.log(0,
+                log.log(42,
                         f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
                         f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
         else:
-            log.log(0, "No cluster found.")
+            log.log(42, "No cluster found.")
     return 0
 
 

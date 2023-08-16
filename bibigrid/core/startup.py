@@ -16,8 +16,8 @@ from bibigrid.core.utility.handler import configuration_handler, provider_handle
 
 VERBOSITY_LIST = [logging.WARNING, logging.INFO, logging.DEBUG]
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
-
 LOG = logging.getLogger("bibigrid")
+logging.addLevelName(42, "PRINT")
 
 
 def get_cluster_id_from_mem():
@@ -63,7 +63,7 @@ def run_action(args, configurations, config_path):
     """
     if args.version:
         LOG.info("Action version selected")
-        LOG.log(0, version.__version__)
+        LOG.log(42, version.__version__)
         return 0
 
     start_time = time.time()
@@ -84,7 +84,7 @@ def run_action(args, configurations, config_path):
                                         log=LOG,
                                         debug=args.debug,
                                         config_path=config_path)
-                LOG.log(0, "Creating a new cluster takes about 10 or more minutes depending on your cloud provider "
+                LOG.log(42, "Creating a new cluster takes about 10 or more minutes depending on your cloud provider "
                            "and your configuration. Be patient.")
                 exit_state = creator.create()
             else:
@@ -101,7 +101,7 @@ def run_action(args, configurations, config_path):
                                                          debug=args.debug)
                     elif args.ide:
                         LOG.info("Action ide selected")
-                        exit_state = ide.ide(args.cluster_id, providers[0], configurations[0])
+                        exit_state = ide.ide(args.cluster_id, providers[0], configurations[0], LOG)
                     elif args.update:
                         LOG.info("Action update selected")
                         exit_state = update.update(args.cluster_id, providers[0], configurations[0])
@@ -119,7 +119,7 @@ def run_action(args, configurations, config_path):
             LOG.error(err)
         exit_state = 2
     time_in_s = time.time() - start_time
-    LOG.log(0, f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
+    LOG.log(42, f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
     return exit_state
 
 

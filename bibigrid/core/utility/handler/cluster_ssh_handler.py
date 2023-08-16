@@ -13,6 +13,7 @@ def get_ssh_connection_info(cluster_id, master_provider, master_configuration, l
     @param cluster_id: id of cluster to connect to
     @param master_provider: master's provider
     @param master_configuration: master's configuration
+    @param log:
     @return: triple (master_ip, ssh_user, private_key)
     """
     # If cluster_id is an ip, cluster_id will be used for master_ip
@@ -20,7 +21,7 @@ def get_ssh_connection_info(cluster_id, master_provider, master_configuration, l
         log.info("Interpreting %s as ip since it doesn't match cluster_id", cluster_id)
         master_ip = cluster_id
     else:
-        master_ip = list_clusters.get_master_access_ip(cluster_id, master_provider)
+        master_ip = list_clusters.get_master_access_ip(cluster_id, master_provider, log)
     ssh_user = master_configuration.get("sshUser")
     public_keys = master_configuration.get("sshPublicKeyFiles")
     used_private_key = None
