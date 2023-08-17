@@ -106,20 +106,20 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
         configurations = yaml.safe_load(content.decode())
         providers = provider_handler.get_providers(configurations, log)
         asyncio.create_task(terminate_async())
-        # Create the Bibigrid configuration here
-        # Implement your creation logic
 
         return JSONResponse(content={"message": "Termination successfully requested."}, status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/info/")
-async def info(cluster_id: str, infrastructure: str = "openstack", cloud: str = "openstack"):
+@app.post("/bibigrid/info/")
+async def info(cluster_id: str, configurations: list = None):
+    configurations = configurations or [{"infrastructure": "openstack", "cloud": "openstack"}]
+    print(configurations)
     LOG.debug(f"Requested info on {cluster_id}.")
     cluster_id, log = setup(cluster_id)
     try:
-        providers = provider_handler.get_providers([{"infrastructure": infrastructure, "cloud": cloud}],
+        providers = provider_handler.get_providers(configurations,
                                                    log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id)  # add information filtering
         if cluster_dict:

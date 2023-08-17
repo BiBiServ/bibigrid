@@ -35,7 +35,7 @@ def terminate(cluster_id, configuration="test.yml"):
 
 
 def info(cluster_id):
-    params = {"cluster_id": cluster_id, "cloud": "bibiserv"}
-    response = requests.get("http://localhost:8000/bibigrid/info", params=params, timeout=20)
+    params = {"cluster_id": cluster_id, "configurations": [{"infrastructure": "openstack", "cloud": "bibiserv"}]}
+    response = requests.post("http://localhost:8000/bibigrid/info", params=params, timeout=20)
     response_data = response.json()
     print(response_data)
