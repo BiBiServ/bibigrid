@@ -3,9 +3,10 @@ Contains main method. Interprets command line, sets logging and starts correspon
 """
 import asyncio
 import logging
+import multiprocessing
 
+import uvicorn
 import yaml
-
 from fastapi import FastAPI, File, UploadFile, status, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -17,17 +18,24 @@ from bibigrid.core.utility.handler import provider_handler
 
 app = FastAPI()
 
-VERBOSITY_LIST = [logging.WARNING, logging.INFO, logging.DEBUG]
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMATTER = logging.Formatter(LOG_FORMAT)
 LOG = logging.getLogger("bibigrid")
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(LOG_FORMATTER)
-file_handler = logging.FileHandler("bibigrid_rest.log")
-file_handler.setFormatter(LOG_FORMATTER)
-LOG.addHandler(stream_handler)  # stdout
-LOG.addHandler(file_handler)  # to file
-logging.addLevelName(42, "PRINT")
+
+
+def prepare_logging():
+    stream_handler = logging.StreamHandler()
+    file_handler = logging.FileHandler("bibigrid_rest.log")
+    for handler in [stream_handler, file_handler]:
+        handler.setFormatter(LOG_FORMATTER)
+        LOG.addHandler(handler)
+    logging.addLevelName(42, "PRINT")
+    LOG.setLevel(logging.DEBUG)
+    LOG.log(42, "Test0")
+    LOG.error("Test1")
+    LOG.warning("Test2")
+    LOG.info("Test3")
+    LOG.debug("Test4")
 
 
 def setup(cluster_id):
@@ -56,8 +64,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.post("/bibigrid/validate")
-async def validate_configuration(cluster_id:str = None, config_file: UploadFile = File(...)):
+async def validate_configuration(cluster_id: str = None, config_file: UploadFile = File(...)):
     cluster_id, log = setup(cluster_id)
+    LOG.warning("What now!")
     LOG.info(f"Requested validation on {cluster_id}")
     try:
         content = await config_file.read()
@@ -113,14 +122,14 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
 
 
 @app.post("/bibigrid/info/")
-async def info(cluster_id: str, configurations: list = None):
-    configurations = configurations or [{"infrastructure": "openstack", "cloud": "openstack"}]
-    print(configurations)
+async def info(cluster_id: str, configurations: list = None, config_file: UploadFile = None):
+    if not configurations and not config_file:
+        return JSONResponse(content={"message": "Missing parameters: configurations or config_file required."},
+                            status_code=400)
     LOG.debug(f"Requested info on {cluster_id}.")
     cluster_id, log = setup(cluster_id)
     try:
-        providers = provider_handler.get_providers(configurations,
-                                                   log)
+        providers = provider_handler.get_providers(configurations, log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id)  # add information filtering
         if cluster_dict:
             cluster_dict["message"] = "Cluster found."
@@ -173,7 +182,14 @@ def test_get_nonexistent_configuration_info():
     assert response.status_code == 404
     assert response.json() == {"error": "Configuration not found"}
 
+
 # test_validate()
 # test_create()  # test_info()
 # test_terminate_cluster()
 # test_get_nonexistent_configuration_info()
+
+
+if __name__ == "__main__":
+    prepare_logging()
+    uvicorn.run("bibigrid.core.startup_rest:app", host="0.0.0.0", port=8000,
+                workers=multiprocessing.cpu_count() * 2 + 1)  # Use the on_starting event)
