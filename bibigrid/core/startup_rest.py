@@ -4,6 +4,8 @@ Contains main method. Interprets command line, sets logging and starts correspon
 import asyncio
 import logging
 import multiprocessing
+import os
+import subprocess
 
 import uvicorn
 import yaml
@@ -18,24 +20,24 @@ from bibigrid.core.utility.handler import provider_handler
 
 app = FastAPI()
 
+LOG_FOLDER = "log"
+if not os.path.isdir(LOG_FOLDER):
+    os.mkdir(LOG_FOLDER)
+
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMATTER = logging.Formatter(LOG_FORMAT)
 LOG = logging.getLogger("bibigrid")
+stream_handler = logging.StreamHandler()
+file_handler = logging.FileHandler(os.path.join(LOG_FOLDER, "bibigrid_rest.log"))
+for handler in [stream_handler, file_handler]:
+    handler.setFormatter(LOG_FORMATTER)
+    LOG.addHandler(handler)
+logging.addLevelName(42, "PRINT")
+LOG.setLevel(logging.DEBUG)
 
 
-def prepare_logging():
-    stream_handler = logging.StreamHandler()
-    file_handler = logging.FileHandler("bibigrid_rest.log")
-    for handler in [stream_handler, file_handler]:
-        handler.setFormatter(LOG_FORMATTER)
-        LOG.addHandler(handler)
-    logging.addLevelName(42, "PRINT")
-    LOG.setLevel(logging.DEBUG)
-    LOG.log(42, "Test0")
-    LOG.error("Test1")
-    LOG.warning("Test2")
-    LOG.info("Test3")
-    LOG.debug("Test4")
+def tail(file_path, lines):
+    return subprocess.check_output(['tail', '-n', str(lines), file_path], universal_newlines=True)
 
 
 def setup(cluster_id):
@@ -49,9 +51,9 @@ def setup(cluster_id):
     log = logging.getLogger(cluster_id)
     log.setLevel(logging.DEBUG)
     if not log.handlers:
-        handler = logging.FileHandler(f"{cluster_id}.log")
-        handler.setFormatter(LOG_FORMATTER)
-        log.addHandler(handler)
+        log_handler = logging.FileHandler(os.path.join(LOG_FOLDER, f"{cluster_id}.log"))
+        log_handler.setFormatter(LOG_FORMATTER)
+        log.addHandler(log_handler)
     return cluster_id, log
 
 
@@ -82,7 +84,7 @@ async def validate_configuration(cluster_id: str = None, config_file: UploadFile
 
 @app.post("/bibigrid/create")
 async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(...)):
-    LOG.debug(f"Requested termination on {cluster_id}")
+    LOG.debug(f"Requested creation on {cluster_id}")
     cluster_id, log = setup(cluster_id)
 
     async def create_async():
@@ -92,8 +94,8 @@ async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(
         content = await config_file.read()
         configurations = yaml.safe_load(content.decode())
         providers = provider_handler.get_providers(configurations, log)
-        creator = create.Create(providers=providers, configurations=configurations, log=log, config_path=None,
-                                cluster_id=cluster_id)
+        creator = create.Create(providers=providers, configurations=configurations, log=log,
+                                config_path=config_file.filename, cluster_id=cluster_id)
         cluster_id = creator.cluster_id
         asyncio.create_task(create_async())
         return JSONResponse(content={"message": "Cluster creation started.", "cluster_id": cluster_id}, status_code=200)
@@ -121,13 +123,12 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.post("/bibigrid/info/")
-async def info(cluster_id: str, configurations: list = None, config_file: UploadFile = None):
-    if not configurations and not config_file:
-        return JSONResponse(content={"message": "Missing parameters: configurations or config_file required."},
-                            status_code=400)
+@app.get("/bibigrid/info/")
+async def info(cluster_id: str, config_file: UploadFile):
     LOG.debug(f"Requested info on {cluster_id}.")
     cluster_id, log = setup(cluster_id)
+    content = await config_file.read()
+    configurations = yaml.safe_load(content.decode())
     try:
         providers = provider_handler.get_providers(configurations, log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id)  # add information filtering
@@ -135,6 +136,25 @@ async def info(cluster_id: str, configurations: list = None, config_file: Upload
             cluster_dict["message"] = "Cluster found."
             return JSONResponse(content=cluster_dict, status_code=200)
         return JSONResponse(content={"message": "Cluster not found."}, status_code=404)
+    except Exception as exc:  # pylint: disable=broad-except
+        return JSONResponse(content={"error": str(exc)}, status_code=400)
+
+
+@app.get("/bibigrid/log/")
+async def get_log(cluster_id: str, lines: int = None):
+    LOG.debug(f"Requested log on {cluster_id}.")
+    # cluster_id, log = setup(cluster_id)
+    try:
+        file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
+        print(file_name)
+        if os.path.isfile(file_name):
+            if not lines:
+                with open(file_name, "r", encoding="utf8") as log_file:
+                    response = log_file.read()
+            else:
+                response = tail(file_name, lines)
+            return JSONResponse(content={"message": "Log found", "log": response}, status_code=200)
+        return JSONResponse(content={"message": "Log not found."}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
@@ -190,6 +210,5 @@ def test_get_nonexistent_configuration_info():
 
 
 if __name__ == "__main__":
-    prepare_logging()
     uvicorn.run("bibigrid.core.startup_rest:app", host="0.0.0.0", port=8000,
-                workers=multiprocessing.cpu_count() * 2 + 1)  # Use the on_starting event)
+                workers=multiprocessing.cpu_count() * 2 + 1)  # Use the on_starting event

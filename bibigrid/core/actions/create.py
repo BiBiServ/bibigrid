@@ -230,11 +230,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.master_ip = configuration["floating_ip"]
                 ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
                                                 private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
-                                                commands=self.ssh_add_public_key_commands, log=self.log)
+                                                commands=self.ssh_add_public_key_commands, log=self.log,
+                                                gateway_ip=configuration.get("gateway_ip"))
             elif configuration.get("vpnInstance"):
                 ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
                                         private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
-                                        commands=ssh_handler.VPN_SETUP, log=self.log)
+                                        commands=ssh_handler.VPN_SETUP, log=self.log,
+                                        gateway_ip=configuration.get("gateway_ip"))
 
     def prepare_volumes(self, provider, mounts):
         """

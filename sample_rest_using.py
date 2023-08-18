@@ -27,15 +27,26 @@ def create(cluster_id, configuration="test.yml"):
 
 def terminate(cluster_id, configuration="test.yml"):
     with open(configuration, 'rb') as file:
-        files = {'config_file': (file)}
+        files = {'config_file': file}
         params = {"cluster_id": cluster_id}
         response = requests.post("http://localhost:8000/bibigrid/terminate", params=params, files=files, timeout=20)
     response_data = response.json()
     print(response_data)
 
 
-def info(cluster_id):
-    params = {"cluster_id": cluster_id, "configurations": [{"infrastructure": "openstack", "cloud": "bibiserv"}]}
-    response = requests.post("http://localhost:8000/bibigrid/info", params=params, timeout=20)
+def info(cluster_id, configuration="test.yml"):
+    with open(configuration, 'rb') as file:
+        files = {'config_file': (configuration, file)}
+        params = {"cluster_id": cluster_id}
+        response = requests.get("http://localhost:8000/bibigrid/info", params=params, files=files, timeout=20)
+    response_data = response.json()
+    print(response_data)
+
+
+def get_log(cluster_id, configuration="test.yml", lines=5):
+    with open(configuration, 'rb') as file:
+        files = {'config_file': (configuration, file)}
+        params = {"cluster_id": cluster_id, "lines": lines}
+        response = requests.get("http://localhost:8000/bibigrid/log", params=params, files=files, timeout=20)
     response_data = response.json()
     print(response_data)

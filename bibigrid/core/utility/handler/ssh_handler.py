@@ -86,7 +86,7 @@ def copy_to_server(sftp, local_path, remote_path, log):
             copy_to_server(sftp, os.path.join(local_path, filename), os.path.join(remote_path, filename), log)
 
 
-def is_active(client, floating_ip_address, private_key, username, log, timeout=5):
+def is_active(client, floating_ip_address, private_key, username, log, timeout=5, gateway_ip=None):
     """
     Checks if connection is possible and therefore if server is active.
     Raises paramiko.ssh_exception.NoValidConnectionsError if timeout is reached
@@ -96,13 +96,23 @@ def is_active(client, floating_ip_address, private_key, username, log, timeout=5
     :param username: SSH-username
     :param log:
     :param timeout: how long to wait between ping
+    :param gateway_ip: if node should be reached over a gateway port is set to 30000 + subnet * 256 + host
     (waiting grows quadratically till 2**timeout before accepting failure)
     """
     attempts = 0
     establishing_connection = True
     while establishing_connection:
         try:
-            client.connect(hostname=floating_ip_address, username=username, pkey=private_key, timeout=7, auth_timeout=5)
+            # Add Port
+            port = 22
+            if gateway_ip:
+                log.info("Using SSH Gateway...")
+                ip_split = gateway_ip.split(".")
+                host = int(ip_split[-1])
+                subnet = int(ip_split[-2])
+                port = 30000 + subnet * 256 + host
+            client.connect(hostname=gateway_ip or floating_ip_address, username=username,
+                           pkey=private_key, timeout=7, auth_timeout=5, port=port)
             establishing_connection = False
             log.info(f"Successfully connected to {floating_ip_address}")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
@@ -174,7 +184,7 @@ def execute_ssh_cml_commands(client, commands, log):
             raise ExecutionException(msg)
 
 
-def ansible_preparation(floating_ip, private_key, username, log, commands=None, filepaths=None):
+def ansible_preparation(floating_ip, private_key, username, log, commands=None, filepaths=None, gateway_ip=None):
     """
     Installs python and pip. Then installs ansible over pip.
     Copies private key to instance so cluster-nodes are reachable and sets permission as necessary.
@@ -187,6 +197,7 @@ def ansible_preparation(floating_ip, private_key, username, log, commands=None, 
     :param log:
     :param commands: additional commands to execute
     :param filepaths: additional files to copy: (localpath, remotepath)
+    :param gateway_ip
     """
     if filepaths is None:
         filepaths = []
@@ -195,10 +206,10 @@ def ansible_preparation(floating_ip, private_key, username, log, commands=None, 
     log.info("Ansible preparation...")
     commands = ANSIBLE_SETUP + commands
     filepaths.append((private_key, PRIVATE_KEY_FILE))
-    execute_ssh(floating_ip, private_key, username, log, commands, filepaths)
+    execute_ssh(floating_ip, private_key, username, log, commands, filepaths, gateway_ip)
 
 
-def execute_ssh(floating_ip, private_key, username, log, commands=None, filepaths=None):
+def execute_ssh(floating_ip, private_key, username, log, commands=None, filepaths=None, gateway_ip=None):
     """
     Executes commands on remote and copies files given in filepaths
     :param floating_ip: public ip of remote
@@ -207,6 +218,7 @@ def execute_ssh(floating_ip, private_key, username, log, commands=None, filepath
     :param commands: commands
     :param log:
     :param filepaths: filepaths (localpath, remotepath)
+    :param gateway_ip: IP of gateway if used
     """
     if commands is None:
         commands = []
@@ -215,7 +227,7 @@ def execute_ssh(floating_ip, private_key, username, log, commands=None, filepath
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             is_active(client=client, floating_ip_address=floating_ip, username=username, private_key=paramiko_key,
-                      log=log)
+                      log=log, gateway_ip=gateway_ip)
         except ConnectionException as exc:
             log.error(f"Couldn't connect to floating ip {floating_ip} using private key {private_key}.")
             raise exc
