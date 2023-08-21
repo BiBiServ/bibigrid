@@ -20,7 +20,7 @@
     regexp: '^{{ item.src }}'
 
     line: "{{ item.src }}
-    {{cluster_cidrs|map(attribute='provider_cidrs')|join('(rw,nohide,insecure,no_subtree_check,async) ')}}\
+    {{cluster_cidrs|map(attribute='provider_cidrs')|flatten|join('(rw,nohide,insecure,no_subtree_check,async) ')}}\
     (rw,nohide,insecure,no_subtree_check,async)
     {{ '10.0.0.0/'+wireguard.mask_bits|default(24)|string + '(rw,nohide,insecure,no_subtree_check,async)'
     if wireguard is defined }}"
