@@ -275,20 +275,16 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             configuration["cloud_identifier"] = provider.cloud_specification["identifier"]
             if not configuration.get("network"):
                 self.log.debug("No network found. Getting network by subnet.")
-                subnet = configuration["subnet"]
-                if not isinstance(subnet, list):
-                    subnet = [subnet]
-                configuration["network"] = provider.get_network_id_by_subnet(subnet[0])
-                if not configuration["network"]:
+                configuration["network"] = provider.get_network_id_by_subnet(configuration["subnet"])
+                if not configuration.get("network"):
                     self.log.warning("Unable to set network. "
                                      f"Subnet doesn't exist in cloud {configuration['cloud_identifier']}")
                     raise ConfigurationException(f"Subnet doesn't exist in cloud {configuration['cloud_identifier']}")
-            elif not configuration.get("subnet"):
-                self.log.debug("No subnet found. Getting subnet by network.")
-                configuration["subnet"] = provider.get_subnet_ids_by_network(configuration["network"])
-                if not configuration["subnet"]:
-                    self.log.warning("Unable to set subnet. Network doesn't exist.")
-                    raise ConfigurationException("Network doesn't exist.")
+            self.log.debug("Getting subnets by network.")
+            configuration["subnet"] = provider.get_subnet_ids_by_network(configuration["network"])
+            if not configuration["subnet"]:
+                self.log.warning("Unable to set subnet. Network doesn't exist or has no subnets.")
+                raise ConfigurationException("Network doesn't exist.")
             configuration["subnet_cidrs"] = [provider.get_subnet_by_id_or_name(subnet)["cidr"] for subnet in
                                              configuration["subnet"]]
             configuration["sshUser"] = self.ssh_user  # is used in ansibleConfigurator
