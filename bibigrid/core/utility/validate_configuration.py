@@ -364,7 +364,7 @@ class ValidateConfiguration:
                     self.log.warning(f"Network '{network_name_or_id}' not found", network_name_or_id)
                     success = False
                 else:
-                    self.log.info(f"Network '{subnet_name_or_id}' found")
+                    self.log.info(f"Network '{network_name_or_id}' found")
             subnet_name_or_id = configuration.get("subnet")
             if subnet_name_or_id:
                 subnet = provider.get_subnet_by_id_or_name(subnet_name_or_id)
