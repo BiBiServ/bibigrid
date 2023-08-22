@@ -1,6 +1,8 @@
 """
 Example for an application using the REST API
 """
+import pprint
+
 import requests
 
 
@@ -13,7 +15,7 @@ def validate(cluster_id=None, configuration="test.yml"):
             params = {}
         response = requests.post("http://localhost:8000/bibigrid/validate", files=files, params=params, timeout=20)
     response_data = response.json()
-    print(response_data)
+    pprint.pprint(response_data)
 
 
 def create(cluster_id, configuration="test.yml"):
@@ -22,7 +24,7 @@ def create(cluster_id, configuration="test.yml"):
         params = {"cluster_id": cluster_id}
         response = requests.post("http://localhost:8000/bibigrid/create", files=files, params=params, timeout=20)
     response_data = response.json()
-    print(response_data)
+    pprint.pprint(response_data)
 
 
 def terminate(cluster_id, configuration="test.yml"):
@@ -31,7 +33,7 @@ def terminate(cluster_id, configuration="test.yml"):
         params = {"cluster_id": cluster_id}
         response = requests.post("http://localhost:8000/bibigrid/terminate", params=params, files=files, timeout=20)
     response_data = response.json()
-    print(response_data)
+    pprint.pprint(response_data)
 
 
 def info(cluster_id, configuration="test.yml"):
@@ -40,7 +42,7 @@ def info(cluster_id, configuration="test.yml"):
         params = {"cluster_id": cluster_id}
         response = requests.get("http://localhost:8000/bibigrid/info", params=params, files=files, timeout=20)
     response_data = response.json()
-    print(response_data)
+    pprint.pprint(response_data)
 
 
 def get_log(cluster_id, configuration="test.yml", lines=5):
@@ -49,4 +51,4 @@ def get_log(cluster_id, configuration="test.yml", lines=5):
         params = {"cluster_id": cluster_id, "lines": lines}
         response = requests.get("http://localhost:8000/bibigrid/log", params=params, files=files, timeout=20)
     response_data = response.json()
-    print(response_data)
+    pprint.pprint(response_data)
