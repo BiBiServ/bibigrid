@@ -68,7 +68,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.post("/bibigrid/validate")
 async def validate_configuration(cluster_id: str = None, config_file: UploadFile = File(...)):
     cluster_id, log = setup(cluster_id)
-    LOG.warning("What now!")
     LOG.info(f"Requested validation on {cluster_id}")
     try:
         content = await config_file.read()
