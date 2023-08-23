@@ -57,6 +57,28 @@ def setup(cluster_id):
     return cluster_id, log
 
 
+def is_up(cluster_id, log):
+    """
+    Checks if cluster with cluster_id is up and running
+    @param cluster_id:
+    @param log:
+    @return:
+    """
+    file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
+    print(file_name)
+    if os.path.isfile(file_name):
+        with open(file_name, "r", encoding="utf8") as log_file:
+            for line in reversed(log_file.readlines()):
+                if "up and running" in line:
+                    log.debug("Found running cluster.")
+                    return True
+                if "Successfully terminated cluster" in line:
+                    log.debug("Found cluster termination.")
+                    return False
+    log.debug("Found neither a running nor a terminated cluster.")
+    return False
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
@@ -131,6 +153,7 @@ async def info(cluster_id: str, config_file: UploadFile):
     try:
         providers = provider_handler.get_providers(configurations, log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id)  # add information filtering
+        cluster_dict["ready"] = is_up(cluster_id, log)
         if cluster_dict:
             cluster_dict["message"] = "Cluster found."
             return JSONResponse(content=cluster_dict, status_code=200)
