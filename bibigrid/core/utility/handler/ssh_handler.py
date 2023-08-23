@@ -105,12 +105,14 @@ def is_active(client, floating_ip_address, private_key, username, log, timeout=5
         try:
             # Add Port
             port = 22
+            print("GATEWAYIP", gateway_ip)
             if gateway_ip:
                 log.info("Using SSH Gateway...")
-                ip_split = gateway_ip.split(".")
+                ip_split = floating_ip_address.split(".")  # is not floating but local ip here
                 host = int(ip_split[-1])
-                subnet = int(ip_split[-2])
-                port = 30000 + subnet * 256 + host
+                # subnet = int(ip_split[-2])
+                port = 30000 + host
+            print("PORT", port)
             client.connect(hostname=gateway_ip or floating_ip_address, username=username,
                            pkey=private_key, timeout=7, auth_timeout=5, port=port)
             establishing_connection = False
@@ -229,7 +231,7 @@ def execute_ssh(floating_ip, private_key, username, log, commands=None, filepath
             is_active(client=client, floating_ip_address=floating_ip, username=username, private_key=paramiko_key,
                       log=log, gateway_ip=gateway_ip)
         except ConnectionException as exc:
-            log.error(f"Couldn't connect to floating ip {floating_ip} using private key {private_key}.")
+            log.error(f"Couldn't connect to ip {gateway_ip or floating_ip} using private key {private_key}.")
             raise exc
         else:
             log.debug(f"Setting up {floating_ip}")

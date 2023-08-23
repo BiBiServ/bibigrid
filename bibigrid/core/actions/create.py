@@ -231,12 +231,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
                                                 private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
                                                 commands=self.ssh_add_public_key_commands, log=self.log,
-                                                gateway_ip=configuration.get("gateway_ip"))
+                                                gateway_ip=configuration.get("gatewayIp"))
             elif configuration.get("vpnInstance"):
                 ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
                                         private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
                                         commands=ssh_handler.VPN_SETUP, log=self.log,
-                                        gateway_ip=configuration.get("gateway_ip"))
+                                        gateway_ip=configuration.get("gatewayIp"))
 
     def prepare_volumes(self, provider, mounts):
         """
@@ -308,7 +308,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         commands = [ssh_handler.get_ac_command(self.providers,
                                                AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
-                                username=self.ssh_user, filepaths=FILEPATHS, commands=commands, log=self.log)
+                                username=self.ssh_user, filepaths=FILEPATHS, commands=commands, log=self.log,
+                                gateway_ip=self.configurations[0].get("gatewayIp"))
 
     def start_start_instance_threads(self):
         """
