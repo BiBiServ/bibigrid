@@ -105,14 +105,12 @@ def is_active(client, floating_ip_address, private_key, username, log, timeout=5
         try:
             # Add Port
             port = 22
-            print("GATEWAYIP", gateway_ip)
             if gateway_ip:
                 log.info("Using SSH Gateway...")
                 ip_split = floating_ip_address.split(".")  # is not floating but local ip here
                 host = int(ip_split[-1])
                 # subnet = int(ip_split[-2])
                 port = 30000 + host
-            print("PORT", port)
             client.connect(hostname=gateway_ip or floating_ip_address, username=username,
                            pkey=private_key, timeout=7, auth_timeout=5, port=port)
             establishing_connection = False
