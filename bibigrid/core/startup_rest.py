@@ -65,7 +65,6 @@ def is_up(cluster_id, log):
     @return:
     """
     file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
-    print(file_name)
     if os.path.isfile(file_name):
         with open(file_name, "r", encoding="utf8") as log_file:
             for line in reversed(log_file.readlines()):
@@ -144,7 +143,7 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/info/")
+@app.post("/bibigrid/info/")
 async def info(cluster_id: str, config_file: UploadFile):
     LOG.debug(f"Requested info on {cluster_id}.")
     cluster_id, log = setup(cluster_id)
@@ -152,7 +151,7 @@ async def info(cluster_id: str, config_file: UploadFile):
     configurations = yaml.safe_load(content.decode())
     try:
         providers = provider_handler.get_providers(configurations, log)
-        cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id)  # add information filtering
+        cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id, {})  # add information filtering
         cluster_dict["ready"] = is_up(cluster_id, log)
         if cluster_dict:
             cluster_dict["message"] = "Cluster found."
@@ -168,7 +167,6 @@ async def get_log(cluster_id: str, lines: int = None):
     # cluster_id, log = setup(cluster_id)
     try:
         file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
-        print(file_name)
         if os.path.isfile(file_name):
             if not lines:
                 with open(file_name, "r", encoding="utf8") as log_file:
