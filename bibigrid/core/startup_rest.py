@@ -18,7 +18,15 @@ from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import provider_handler
 
-app = FastAPI()
+VERSION = "0.0.1"
+DESCRIPTION = """
+BiBiGrid REST API allows you to use the most important features of [BiBiGrid](https://github.com/BiBiServ/bibigrid)
+via REST. This includes:
+validation, creation, termination and getting cluster information.
+"""
+
+app = FastAPI(title="BiBiGrid REST API", description=DESCRIPTION,
+              summary="REST API for the cluster creation and management tool BiBiGrid.", version=VERSION)
 
 LOG_FOLDER = "log"
 if not os.path.isdir(LOG_FOLDER):
@@ -66,15 +74,18 @@ def is_up(cluster_id, log):
     """
     file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
     if os.path.isfile(file_name):
+        log.debug(f"Log for {cluster_id} found.")
         with open(file_name, "r", encoding="utf8") as log_file:
             for line in reversed(log_file.readlines()):
                 if "up and running" in line:
-                    log.debug("Found running cluster.")
+                    log.debug(f"Found running cluster for {cluster_id}.")
                     return True
                 if "Successfully terminated cluster" in line:
-                    log.debug("Found cluster termination.")
+                    log.debug(f"Found cluster termination for {cluster_id}.")
                     return False
-    log.debug("Found neither a running nor a terminated cluster.")
+    else:
+        log.debug(f"Log for {cluster_id} not found.")
+    log.debug(f"Found neither a running nor a terminated cluster for {cluster_id}.")
     return False
 
 
@@ -88,6 +99,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.post("/bibigrid/validate")
 async def validate_configuration(cluster_id: str = None, config_file: UploadFile = File(...)):
+    """
+    Expects a cluster id and a
+    [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
+    file.
+
+    Returns validation result (success, or failure)
+    * @param cluster_id: optional id of to be created cluster in order to log into the same file.
+    If not given, one is generated.
+    * @param config_file: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
+    /features/configuration.md) yaml file
+    * @return: success or failure of the validation
+    """
     cluster_id, log = setup(cluster_id)
     LOG.info(f"Requested validation on {cluster_id}")
     try:
@@ -104,6 +127,18 @@ async def validate_configuration(cluster_id: str = None, config_file: UploadFile
 
 @app.post("/bibigrid/create")
 async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(...)):
+    """
+    Expects an optional cluster id and a
+    [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
+    file.
+
+    Returns the cluster id and whether cluster creation (according to the configuration) has started.
+    The user then can check via [ready](#ready) if the cluster is ready.
+    * @param cluster_id: UUID with 15 letters. if not given, one is generated
+    * @param config_file: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
+    /features/configuration.md) yaml file
+    * @return: message whether the cluster creation has been started and cluster id
+    """
     LOG.debug(f"Requested creation on {cluster_id}")
     cluster_id, log = setup(cluster_id)
 
@@ -125,6 +160,17 @@ async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(
 
 @app.post("/bibigrid/terminate")
 async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)):
+    """
+    Expects a cluster id and a
+    [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
+    file.
+
+    Returns whether cluster termination (according to the configuration) has started.
+    * @param cluster_id: id of cluster to terminate
+    * @param config_file: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
+    /features/configuration.md) yaml file
+    * @return: message whether the cluster termination has been started.
+    """
     cluster_id, log = setup(cluster_id)
     LOG.debug(f"Requested termination on {cluster_id}")
 
@@ -145,6 +191,17 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
 
 @app.post("/bibigrid/info/")
 async def info(cluster_id: str, config_file: UploadFile):
+    """
+    Expects a cluster id and a
+    [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
+    file.
+
+    Returns detailed cluster information, including whether the cluster is "ready".
+    * @param cluster_id: id of cluster to get info on
+    * @param config_file: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
+    /features/configuration.md) yaml file
+    * @return: detailed cluster information
+    """
     LOG.debug(f"Requested info on {cluster_id}.")
     cluster_id, log = setup(cluster_id)
     content = await config_file.read()
@@ -152,19 +209,27 @@ async def info(cluster_id: str, config_file: UploadFile):
     try:
         providers = provider_handler.get_providers(configurations, log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id, {})  # add information filtering
-        cluster_dict["ready"] = is_up(cluster_id, log)
         if cluster_dict:
             cluster_dict["message"] = "Cluster found."
+            cluster_dict["ready"] = is_up(cluster_id, log)
             return JSONResponse(content=cluster_dict, status_code=200)
-        return JSONResponse(content={"message": "Cluster not found."}, status_code=404)
+        return JSONResponse(content={"message": "Cluster not found.", "ready": False}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
 @app.get("/bibigrid/log/")
 async def get_log(cluster_id: str, lines: int = None):
+    """
+    Expects a cluster id and optional lines.
+
+    Returns last lines of the .log for the given cluster id. If no lines are specified, all lines are returned.
+    * @param cluster_id: id of cluster to get .log from
+    * @param lines: lines to read from the end
+    * @return: Message whether the log has been found and if found, the las lines lines of the logged text
+    (or everything if lines were omitted).
+    """
     LOG.debug(f"Requested log on {cluster_id}.")
-    # cluster_id, log = setup(cluster_id)
     try:
         file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
         if os.path.isfile(file_name):
@@ -175,6 +240,29 @@ async def get_log(cluster_id: str, lines: int = None):
                 response = tail(file_name, lines)
             return JSONResponse(content={"message": "Log found", "log": response}, status_code=200)
         return JSONResponse(content={"message": "Log not found."}, status_code=404)
+    except Exception as exc:  # pylint: disable=broad-except
+        return JSONResponse(content={"error": str(exc)}, status_code=400)
+
+
+@app.get("/bibigrid/ready/")
+async def ready(cluster_id: str):
+    """
+    Expects a cluster id.
+
+    Returns whether the cluster with cluster id is ready according to the log file.
+    If the running state of the cluster has been changed outside BiBiGrid REST, this method cannot detect this.
+
+    In such cases checking [info](#info)'s ready value is more reliable as it includes a check whether the cluster
+    actually exists on the provider. Ready omits checking the provider and is therefore less reliable, but faster.
+    * @param cluster_id: id of cluster to get ready state from
+    * @return: Message whether cluster is down or up and a bool "ready" whether the cluster is ready.
+    """
+    LOG.debug(f"Requested log on {cluster_id}.")
+    try:
+        cluster_id, log = setup(cluster_id)
+        result = is_up(cluster_id, log)
+        return JSONResponse(content={"message": "Cluster is up" if result else "Cluster is down.", "ready": result},
+                            status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
