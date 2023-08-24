@@ -13,6 +13,7 @@ from fastapi import FastAPI, File, UploadFile, status, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.utility import id_generation
@@ -42,6 +43,57 @@ for handler in [stream_handler, file_handler]:
     LOG.addHandler(handler)
 logging.addLevelName(42, "PRINT")
 LOG.setLevel(logging.DEBUG)
+
+
+class ValidationResponseModel(BaseModel):
+    """
+    ResponseModel for validate
+    """
+    message: str
+    cluster_id: str
+    success: bool
+
+
+class CreateResponseModel(BaseModel):
+    """
+    ResponseModel for create
+    """
+    message: str
+    cluster_id: str
+
+
+class TerminateResponseModel(BaseModel):
+    """
+    ResponseModel for terminate
+    """
+    message: str
+
+
+class InfoResponseModel(BaseModel):
+    """
+    ResponseModel for info
+    """
+    workers: list
+    vpngtws: list
+    master: dict
+    message: str
+    ready: bool
+
+
+class LogResponseModel(BaseModel):
+    """
+    ResponseModel for get_log
+    """
+    message: str
+    log: str
+
+
+class ReadyResponseModel(BaseModel):
+    """
+    ResponseModel for ready
+    """
+    message: str
+    ready: bool
 
 
 def tail(file_path, lines):
@@ -97,7 +149,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
-@app.post("/bibigrid/validate")
+@app.post("/bibigrid/validate", response_model=ValidationResponseModel)
 async def validate_configuration(cluster_id: str = None, config_file: UploadFile = File(...)):
     """
     Expects a cluster id and a
@@ -119,13 +171,17 @@ async def validate_configuration(cluster_id: str = None, config_file: UploadFile
         providers = provider_handler.get_providers(configurations, log)
         exit_state = check.check(configurations, providers, log)
         if exit_state:
-            return JSONResponse(content={"message": "Validation failed", "cluster_id": cluster_id}, status_code=420)
-        return JSONResponse(content={"message": "Validation successful", "cluster_id": cluster_id}, status_code=200)
+            return JSONResponse(
+                content={"message": "Validation failed", "cluster_id": cluster_id, "success": exit_state},
+                status_code=420)
+        return JSONResponse(
+            content={"message": "Validation successful", "cluster_id": cluster_id, "success": exit_state},
+            status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.post("/bibigrid/create")
+@app.post("/bibigrid/create", response_model=CreateResponseModel)
 async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(...)):
     """
     Expects an optional cluster id and a
@@ -153,12 +209,12 @@ async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(
                                 config_path=config_file.filename, cluster_id=cluster_id)
         cluster_id = creator.cluster_id
         asyncio.create_task(create_async())
-        return JSONResponse(content={"message": "Cluster creation started.", "cluster_id": cluster_id}, status_code=200)
+        return JSONResponse(content={"message": "Cluster creation started.", "cluster_id": cluster_id}, status_code=202)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.post("/bibigrid/terminate")
+@app.post("/bibigrid/terminate", response_model=TerminateResponseModel)
 async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)):
     """
     Expects a cluster id and a
@@ -184,12 +240,12 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
         providers = provider_handler.get_providers(configurations, log)
         asyncio.create_task(terminate_async())
 
-        return JSONResponse(content={"message": "Termination successfully requested."}, status_code=200)
+        return JSONResponse(content={"message": "Termination successfully requested."}, status_code=202)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.post("/bibigrid/info/")
+@app.post("/bibigrid/info/", response_model=InfoResponseModel)
 async def info(cluster_id: str, config_file: UploadFile):
     """
     Expects a cluster id and a
@@ -218,7 +274,7 @@ async def info(cluster_id: str, config_file: UploadFile):
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/log/")
+@app.get("/bibigrid/log/", response_model=LogResponseModel)
 async def get_log(cluster_id: str, lines: int = None):
     """
     Expects a cluster id and optional lines.
@@ -239,12 +295,12 @@ async def get_log(cluster_id: str, lines: int = None):
             else:
                 response = tail(file_name, lines)
             return JSONResponse(content={"message": "Log found", "log": response}, status_code=200)
-        return JSONResponse(content={"message": "Log not found."}, status_code=404)
+        return JSONResponse(content={"message": "Log not found.", "log": None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/ready/")
+@app.get("/bibigrid/ready/", response_model=ReadyResponseModel)
 async def ready(cluster_id: str):
     """
     Expects a cluster id.
