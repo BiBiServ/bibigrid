@@ -11,17 +11,18 @@ from bibigrid.core.actions import create
 from bibigrid.models.exceptions import ConflictException
 
 
-def terminate(cluster_id, providers, log, debug=False):
+def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
     """
     Goes through all providers and gets info of all servers which name contains cluster ID.
     It then checks if any resources are reserved, but not used and frees them that were hold by the cluster.
-    :param debug if set user gets asked before termination is executed
-    :param providers:
-    :param log:
-    :param cluster_id: ID of cluster to terminate
-    :return: VOID
+    @param debug if set user gets asked before termination is executed
+    @param providers:
+    @param log:
+    @param cluster_id: ID of cluster to terminate
+    @param assume_yes: if set, no input will be asked, but instead yes will be assumed
+    @return VOID
     """
-    if debug:
+    if not assume_yes and debug:
         if not input(f"DEBUG MODE: Any non-empty input to shutdown cluster {cluster_id}. "
                      "Empty input to exit with cluster still alive:"):
             return 0
@@ -33,14 +34,15 @@ def terminate(cluster_id, providers, log, debug=False):
     cluster_security_group_state = []
     tmp_keyname = create.KEY_NAME.format(cluster_id=cluster_id)
     local_keypairs_deleted = delete_local_keypairs(tmp_keyname, log)
-    if local_keypairs_deleted or input(f"WARNING: No local temporary keyfiles found for cluster {cluster_id}. "
-                                       f"This might not be your cluster. Are you sure you want to terminate it?\n"
-                                       f"Any non-empty input to shutdown cluster {cluster_id}. "
-                                       f"Empty input to exit with cluster still alive:"):
+    if not assume_yes and (
+            local_keypairs_deleted or input(f"WARNING: No local temporary keyfiles found for cluster {cluster_id}. "
+                                            f"This might not be your cluster. Are you sure you want to terminate it?\n"
+                                            f"Any non-empty input to shutdown cluster {cluster_id}. "
+                                            f"Empty input to exit with cluster still alive:")):
         for provider in providers:
             log.info("Terminating cluster %s on cloud %s", cluster_id, provider.cloud_specification['identifier'])
             server_list = provider.list_servers()
-            cluster_server_state += terminate_servers(server_list, cluster_id, provider, log)
+            cluster_server_state += terminate_servers(server_list, cluster_id, provider,    log)
             cluster_keypair_state.append(delete_keypairs(provider, tmp_keyname, log))
             cluster_keypair_state.append(delete_security_groups(provider, cluster_id, security_groups, log))
         ac_state = delete_application_credentials(providers[0], cluster_id, log)
