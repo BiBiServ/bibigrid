@@ -305,8 +305,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
                                                     cluster_id=self.cluster_id, log=self.log)
-        commands = [ssh_handler.get_ac_command(self.providers,
-                                               AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
+        if self.configurations[0].get("dontUploadCredentials"):
+            commands = ssh_handler.ANSIBLE_START
+        else:
+            commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
+                cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
                                 username=self.ssh_user, filepaths=FILEPATHS, commands=commands, log=self.log,
                                 gateway_ip=self.configurations[0].get("gatewayIp"))
@@ -369,6 +372,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.initialize_instances()
             self.upload_data()
             self.log_cluster_start_info()
+            if self.configurations[0].get("deleteTmpKeypairAfter"):
+                for provider in self.providers:
+                    terminate.delete_keypairs(provider=provider, tmp_keyname=self.key_name, log=self.log)
+                terminate.delete_local_keypairs(tmp_keyname=self.key_name, log=self.log)
             if self.debug:
                 self.log.info("DEBUG MODE: Entering termination...")
                 terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug,

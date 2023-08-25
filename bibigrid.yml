@@ -36,6 +36,8 @@
 
   ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
   #useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
+  # deleteTmpKeypairAfter: False
+  # dontUploadCredentials: False
 
   # Other keys - default False
   #localFS: True
@@ -87,6 +89,8 @@
 
   # Depends on cloud site and project
   subnet: # existing subnet on your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/networks/
+  # or network:
+  # gatewayIp:   # [NOT FULLY IMPLEMENTED YET] if you want to use a gateway for master or vpnwkr setup
 
   # Uncomment if no full DNS service for started instances is available.
   # Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
