@@ -27,12 +27,13 @@ def get_ssh_connection_info(cluster_id, master_provider, master_configuration, l
     used_private_key = None
 
     # first check configuration then if not found take the temporary key
-    if public_keys:
-        public_key = public_keys[0]
+    for public_key in public_keys:
+        print(public_key)
         if isinstance(public_key, str):
-            private_key = public_key.strip(".pub")
+            private_key = public_key[:-4]
             if os.path.isfile(private_key):
                 used_private_key = private_key
+                break
     if not used_private_key:
         private_key = os.path.join(create.KEY_FOLDER, create.KEY_NAME.format(cluster_id=cluster_id))
         if os.path.isfile(private_key):
