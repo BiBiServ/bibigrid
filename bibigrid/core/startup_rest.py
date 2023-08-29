@@ -45,6 +45,7 @@ logging.addLevelName(42, "PRINT")
 LOG.setLevel(logging.DEBUG)
 
 
+# pylint: disable=too-few-public-methods
 class ValidationResponseModel(BaseModel):
     """
     ResponseModel for validate
@@ -54,6 +55,7 @@ class ValidationResponseModel(BaseModel):
     success: bool
 
 
+# pylint: disable=too-few-public-methods
 class CreateResponseModel(BaseModel):
     """
     ResponseModel for create
@@ -62,6 +64,7 @@ class CreateResponseModel(BaseModel):
     cluster_id: str
 
 
+# pylint: disable=too-few-public-methods
 class TerminateResponseModel(BaseModel):
     """
     ResponseModel for terminate
@@ -69,6 +72,7 @@ class TerminateResponseModel(BaseModel):
     message: str
 
 
+# pylint: disable=too-few-public-methods
 class InfoResponseModel(BaseModel):
     """
     ResponseModel for info
@@ -80,6 +84,7 @@ class InfoResponseModel(BaseModel):
     ready: bool
 
 
+# pylint: disable=too-few-public-methods
 class LogResponseModel(BaseModel):
     """
     ResponseModel for get_log
@@ -88,6 +93,7 @@ class LogResponseModel(BaseModel):
     log: str
 
 
+# pylint: disable=too-few-public-methods
 class ReadyResponseModel(BaseModel):
     """
     ResponseModel for ready
