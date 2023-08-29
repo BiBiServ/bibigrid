@@ -28,7 +28,6 @@ def get_ssh_connection_info(cluster_id, master_provider, master_configuration, l
 
     # first check configuration then if not found take the temporary key
     for public_key in public_keys:
-        print(public_key)
         if isinstance(public_key, str):
             private_key = public_key[:-4]
             if os.path.isfile(private_key):
