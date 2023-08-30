@@ -2,7 +2,6 @@
 The cluster creation (master's creation, key creation, ansible setup and execution, ...) is done here
 """
 
-import difflib
 import logging
 import os
 import subprocess
@@ -21,8 +20,7 @@ from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.paths import bin_path as biRP
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
-from bibigrid.models.exceptions import ExecutionException, ConfigurationException, ImageDeactivatedException, \
-    ImageNotFoundException
+from bibigrid.models.exceptions import ExecutionException, ConfigurationException, ImageDeactivatedException
 
 PREFIX = "bibigrid"
 SEPARATOR = "-"
@@ -174,27 +172,22 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.vpn_counter += 1
         LOG.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance_type["type"]
-        image = instance_type["image"]
         network = configuration["network"]
+        image = instance_type["image"]
+        # check if image is active
+        active_images = provider.get_active_images()
+        if image not in active_images:
+            LOG.warning(f"Image {image} not active or doesn't exist.")
+            if configuration.get("nearestImage", True):
+                instance_type["image"] = active_images[0]
+                image = instance_type["image"]
+                LOG.warning(f"Taking closest match {image}.")
+            else:
+                raise ImageDeactivatedException(f"Image {image} no longer active! (or doesn't exist)")
 
         # create a server and block until it is up and running
-        try:
-            server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image,
-                                            network=network, volumes=volumes,
-                                            security_groups=configuration["security_groups"], wait=True)
-        except ImageDeactivatedException as exc:
-            LOG.warning(f"Image {image} no longer active!")
-            new_images = difflib.get_close_matches(image, provider.get_active_images())
-            if configuration.get("nearestImage", True):
-                if new_images:
-                    LOG.warning(f"Falling back to {new_images[0]} from the nearest active images: {new_images}.")
-                    server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name,
-                                                    image=new_images[0], network=network, volumes=volumes,
-                                                    security_groups=configuration["security_groups"], wait=True)
-                else:
-                    LOG.warning("No active image found that is close enough in name to fall back on.")
-                    raise ImageNotFoundException("No active image could be found being similar enough "
-                                                 f"to the proposed image {image}.") from exc
+        server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
+                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True)
         configuration["private_v4"] = server["private_v4"]
 
         # get mac address for given private address
@@ -315,7 +308,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
                                                     cluster_id=self.cluster_id)
         commands = [ssh_handler.get_ac_command(self.providers,
-            AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
+                                               AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
                                 username=self.ssh_user, filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
                                                                    (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
