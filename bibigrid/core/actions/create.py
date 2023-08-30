@@ -2,6 +2,7 @@
 The cluster creation (master's creation, key creation, ansible setup and execution, ...) is done here
 """
 
+import difflib
 import logging
 import os
 import subprocess
@@ -20,7 +21,8 @@ from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.paths import bin_path as biRP
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
-from bibigrid.models.exceptions import ExecutionException, ConfigurationException
+from bibigrid.models.exceptions import ExecutionException, ConfigurationException, ImageDeactivatedException, \
+    ImageNotFoundException
 
 PREFIX = "bibigrid"
 SEPARATOR = "-"
@@ -99,7 +101,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         generate_keypair makes use of the fact that files in tmp are automatically deleted
         ToDo find a more pythonic way to create an ECDSA keypair
         See here for why using python module ECDSA wasn't successful
-        https://stackoverflow.com/questions/71194770/why-does-creating-ecdsa-keypairs-via-python-differ-from-ssh-keygen-t-ecdsa-and
+        https://stackoverflow.com/questions/71194770/why-does-creating-ecdsa-keypairs-via-python-differ-from-ssh
+        -keygen-t-ecdsa-and
         :return:
         """
         # create KEY_FOLDER if it doesn't exist
@@ -175,8 +178,23 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         network = configuration["network"]
 
         # create a server and block until it is up and running
-        server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True)
+        try:
+            server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image,
+                                            network=network, volumes=volumes,
+                                            security_groups=configuration["security_groups"], wait=True)
+        except ImageDeactivatedException as exc:
+            LOG.warning(f"Image {image} no longer active!")
+            new_images = difflib.get_close_matches(image, provider.get_active_images())
+            if configuration.get("nearestImage", True):
+                if new_images:
+                    LOG.warning(f"Falling back to {new_images[0]} from the nearest active images: {new_images}.")
+                    server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name,
+                                                    image=new_images[0], network=network, volumes=volumes,
+                                                    security_groups=configuration["security_groups"], wait=True)
+                else:
+                    LOG.warning("No active image found that is close enough in name to fall back on.")
+                    raise ImageNotFoundException("No active image could be found being similar enough "
+                                                 f"to the proposed image {image}.") from exc
         configuration["private_v4"] = server["private_v4"]
 
         # get mac address for given private address
@@ -196,6 +214,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
         configuration["volumes"] = provider.get_mount_info_from_server(server)
+
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
         Prepares start_instance arguments for master/vpn
@@ -295,15 +314,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
                                                     cluster_id=self.cluster_id)
+        commands = [ssh_handler.get_ac_command(self.providers,
+            AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
-                                username=self.ssh_user,
-                                filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
-                                           (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
-                                commands=[
-                                             ssh_handler.get_ac_command(
-                                                 self.providers,
-                                                 AC_NAME.format(
-                                                     cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
+                                username=self.ssh_user, filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
+                                                                   (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
+                                commands=commands)
 
     def start_start_instance_threads(self):
         """

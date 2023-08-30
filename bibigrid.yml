@@ -50,6 +50,8 @@
   #waitForServices:  # existing service name that runs after an instance is launched. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
   #  - de.NBI_Bielefeld_environment.service  # uncomment for cloud site Bielefeld
 
+  # nearestImage: True # if true, the nearest fitting image will be picked if your image doesn't match exactly
+
   # master configuration
   masterInstance:
     type: # existing type/flavor on your cloud. See launch instance>flavor for options

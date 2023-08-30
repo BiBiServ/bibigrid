@@ -15,7 +15,7 @@ from keystoneauth1.identity import v3
 from bibigrid.core import provider
 from bibigrid.core.actions import create
 from bibigrid.core.actions import version
-from bibigrid.models.exceptions import ExecutionException, ConflictException
+from bibigrid.models.exceptions import ExecutionException, ConflictException, ImageDeactivatedException
 
 LOG = logging.getLogger("bibigrid")
 
@@ -117,6 +117,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
             server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
                                              volumes=volumes, security_groups=security_groups)
         except openstack.exceptions.BadRequestException as exc:
+            if "is not active" in str(exc):
+                raise ImageDeactivatedException() from exc
             raise ConnectionError() from exc
         except openstack.exceptions.SDKException as exc:
             raise ExecutionException() from exc
