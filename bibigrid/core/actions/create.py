@@ -8,6 +8,7 @@ import os
 import subprocess
 import threading
 import traceback
+import re
 from functools import partial
 
 import paramiko
@@ -155,7 +156,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
                 configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
-    def start_vpn_or_master_instance(self, configuration, provider):
+    def start_vpn_or_master_instance(self, configuration, provider): # pylint: disable=too-many-branches
         """
         Start master/vpn-worker of a provider
         :param configuration: dict configuration of said provider
@@ -178,14 +179,19 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # check if image is active
         active_images = provider.get_active_images()
         if image not in active_images:
-            LOG.warning(f"Image {image} not active or doesn't exist.")
-            closest_matches = difflib.get_close_matches(image, active_images)
-            if configuration.get("nearestImage", True) and closest_matches:
-                image = closest_matches[0]
-                instance_type["image"] = image
-                LOG.warning(f"Taking closest match {image}.")
+            old_image = image
+            image = None
+            LOG.warning(f"Image '{image}' not active or doesn't exist.")
+            if isinstance(configuration.get("fallbackOnOtherImage"), str):
+                image = next(elem for elem in active_images if re.match(configuration["fallbackOnOtherImage"], elem))
+                LOG.info(f"Taking first regex ('{configuration['fallbackOnOtherImage']}') match '{image}'")
+            elif configuration.get("fallbackOnOtherImage", False):
+                image = difflib.get_close_matches(old_image, active_images)[0]
+                LOG.info(f"Taking closest (in name) active image '{image}'.")
+            if configuration.get("fallbackOnOtherImage", False) and image:
+                LOG.warning(f"Taking '{image}' instead of '{old_image}' as that image doesn't exist or is not active.")
             else:
-                raise ImageDeactivatedException(f"Image {image} no longer active! (or doesn't exist).")
+                raise ImageDeactivatedException(f"Image {old_image} no longer active or doesn't exist.")
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
