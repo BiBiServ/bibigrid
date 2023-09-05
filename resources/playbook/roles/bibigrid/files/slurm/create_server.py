@@ -3,6 +3,7 @@
 Creates one or more instances from comma separated name list.
 Is called automatically by create.sh (called by slurm user automatically) which sources a virtual environment.
 """
+import difflib
 import logging
 import math
 import os
@@ -43,8 +44,14 @@ def start_server(worker, start_worker_group, start_data):
             with open(userdata_file_path, mode="r", encoding="utf-8") as userdata_file:
                 userdata = userdata_file.read()
         # create server and ...
+        active_images = [image["name"] for image in connection.image.images() if image["status"].lower() == "active"]
+        image = start_worker_group["image"]
+        if image not in active_images:
+            logging.warning(f"Image {image} not active or doesn't exist.")
+            image = difflib.get_close_matches(image, active_images)[0]
+            logging.warning(f"Taking closest match {image}.")
         server = connection.create_server(name=worker, flavor=start_worker_group["flavor"]["name"],
-                                          image=start_worker_group["image"],
+                                          image=image,
                                           network=start_worker_group["network"],
                                           key_name=f"tempKey_bibi-{common_config['cluster_id']}",
                                           security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata,
@@ -206,7 +213,7 @@ for start_server_thread in start_server_threads:
 
 # If no suitable server can be started: abort
 if len(server_start_data["available_servers"]) == 0:
-    logging.warning("No suitable server found! Abort!")
+    logging.warning("Couldn't make server available! Abort!")
     sys.exit(1)
 
 # run ansible on master node to configure dns

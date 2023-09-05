@@ -2,6 +2,7 @@
 The cluster creation (master's creation, key creation, ansible setup and execution, ...) is done here
 """
 
+import difflib
 import logging
 import os
 import subprocess
@@ -178,12 +179,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         active_images = provider.get_active_images()
         if image not in active_images:
             LOG.warning(f"Image {image} not active or doesn't exist.")
-            if configuration.get("nearestImage", True):
-                instance_type["image"] = active_images[0]
-                image = instance_type["image"]
+            closest_matches = difflib.get_close_matches(image, active_images)
+            if configuration.get("nearestImage", True) and closest_matches:
+                image = closest_matches[0]
+                instance_type["image"] = image
                 LOG.warning(f"Taking closest match {image}.")
             else:
-                raise ImageDeactivatedException(f"Image {image} no longer active! (or doesn't exist)")
+                raise ImageDeactivatedException(f"Image {image} no longer active! (or doesn't exist).")
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
