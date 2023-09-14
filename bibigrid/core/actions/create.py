@@ -2,27 +2,25 @@
 The cluster creation (master's creation, key creation, ansible setup and execution, ...) is done here
 """
 
-import difflib
 import logging
 import os
 import subprocess
 import threading
 import traceback
-import re
 from functools import partial
 
 import paramiko
 import yaml
 
 from bibigrid.core.actions import terminate_cluster
-from bibigrid.core.utility import ansible_configurator
+from bibigrid.core.utility import ansible_configurator, image_selection
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import ssh_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.paths import bin_path as biRP
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
-from bibigrid.models.exceptions import ExecutionException, ConfigurationException, ImageDeactivatedException
+from bibigrid.models.exceptions import ExecutionException, ConfigurationException
 
 PREFIX = "bibigrid"
 SEPARATOR = "-"
@@ -156,7 +154,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
                 configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
-    def start_vpn_or_master_instance(self, configuration, provider): # pylint: disable=too-many-branches
+    def start_vpn_or_master_instance(self, configuration, provider):  # pylint: disable=too-many-branches
         """
         Start master/vpn-worker of a provider
         :param configuration: dict configuration of said provider
@@ -176,22 +174,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         flavor = instance_type["type"]
         network = configuration["network"]
         image = instance_type["image"]
-        # check if image is active
-        active_images = provider.get_active_images()
-        if image not in active_images:
-            old_image = image
-            image = None
-            LOG.warning(f"Image '{image}' not active or doesn't exist.")
-            if isinstance(configuration.get("fallbackOnOtherImage"), str):
-                image = next(elem for elem in active_images if re.match(configuration["fallbackOnOtherImage"], elem))
-                LOG.info(f"Taking first regex ('{configuration['fallbackOnOtherImage']}') match '{image}'")
-            elif configuration.get("fallbackOnOtherImage", False):
-                image = difflib.get_close_matches(old_image, active_images)[0]
-                LOG.info(f"Taking closest (in name) active image '{image}'.")
-            if configuration.get("fallbackOnOtherImage", False) and image:
-                LOG.warning(f"Taking '{image}' instead of '{old_image}' as that image doesn't exist or is not active.")
-            else:
-                raise ImageDeactivatedException(f"Image {old_image} no longer active or doesn't exist.")
+        image = image_selection.select_image(configuration, provider, image, LOG)
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
