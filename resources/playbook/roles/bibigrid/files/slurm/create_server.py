@@ -49,11 +49,11 @@ def select_image(start_worker_group, connection):
         image = next((elem for elem in active_images if re.match(image, elem)), None)
         if not image:
             logging.warning(f"Couldn't find image '{old_image}'.")
-            if isinstance(start_worker_group.get("fallbackOnOtherImage"), str):
+            if isinstance(start_worker_group.get("fallback_on_other_image"), str):
                 image = next(
-                    elem for elem in active_images if re.match(start_worker_group["fallbackOnOtherImage"], elem))
-                logging.info(f"Taking first regex ('{start_worker_group['fallbackOnOtherImage']}') match '{image}'.")
-            elif start_worker_group.get("fallbackOnOtherImage", False):
+                    elem for elem in active_images if re.match(start_worker_group["fallback_on_other_image"], elem))
+                logging.info(f"Taking first regex ('{start_worker_group['fallback_on_other_image']}') match '{image}'.")
+            elif start_worker_group.get("fallback_on_other_image", False):
                 image = difflib.get_close_matches(old_image, active_images)[0]
                 logging.info(f"Taking closest active image (in name) '{image}' instead.")
             else:
