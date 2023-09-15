@@ -120,7 +120,7 @@ def is_active(client, floating_ip_address, private_key, username, timeout=5):
                 LOG.error(f"Attempt to connect to {floating_ip_address} failed.")
                 raise ConnectionException(exc) from exc
         except socket.timeout as exc:
-            LOG.warning("Socket timeout exception occurred. Try again ...")
+            LOG.info("Socket timeout exception occurred. Try again ...")
             if attempts < timeout:
                 attempts += 1
             else:
