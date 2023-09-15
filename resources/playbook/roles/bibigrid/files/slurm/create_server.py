@@ -7,6 +7,7 @@ import difflib
 import logging
 import math
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -17,6 +18,11 @@ import os_client_config
 import paramiko
 import yaml
 from openstack.exceptions import OpenStackCloudException
+
+
+class ImageNotFoundException(Exception):
+    """ Image not found exception"""
+
 
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/create_server.log", level=logging.INFO)
@@ -33,6 +39,31 @@ start_workers = sys.argv[1].split("\n")
 logging.info("Starting instances %s", start_workers)
 
 
+def select_image(start_worker_group, connection):
+    image = start_worker_group["image"]
+    # check if image is active
+    active_images = [img["name"] for img in connection.image.images() if img["status"].lower() == "active"]
+    if image not in active_images:
+        old_image = image
+        logging.info(f"Image '{old_image}' has no direct match. Maybe it's a regex? Trying regex match.")
+        image = next((elem for elem in active_images if re.match(image, elem)), None)
+        if not image:
+            logging.warning(f"Couldn't find image '{old_image}'.")
+            if isinstance(start_worker_group.get("fallbackOnOtherImage"), str):
+                image = next(
+                    elem for elem in active_images if re.match(start_worker_group["fallbackOnOtherImage"], elem))
+                logging.info(f"Taking first regex ('{start_worker_group['fallbackOnOtherImage']}') match '{image}'.")
+            elif start_worker_group.get("fallbackOnOtherImage", False):
+                image = difflib.get_close_matches(old_image, active_images)[0]
+                logging.info(f"Taking closest active image (in name) '{image}' instead.")
+            else:
+                raise ImageNotFoundException(f"Image {old_image} no longer active or doesn't exist.")
+            logging.info(f"Using alternative '{image}' instead of '{old_image}'. You should change the configuration.")
+        else:
+            logging.info(f"Taking first regex match: '{image}'")
+    return image
+
+
 def start_server(worker, start_worker_group, start_data):
     try:
         logging.info("Create server %s.", worker)
@@ -44,14 +75,8 @@ def start_server(worker, start_worker_group, start_data):
             with open(userdata_file_path, mode="r", encoding="utf-8") as userdata_file:
                 userdata = userdata_file.read()
         # create server and ...
-        active_images = [image["name"] for image in connection.image.images() if image["status"].lower() == "active"]
-        image = start_worker_group["image"]
-        if image not in active_images:
-            logging.warning(f"Image {image} not active or doesn't exist.")
-            image = difflib.get_close_matches(image, active_images)[0]
-            logging.warning(f"Taking closest match {image}.")
-        server = connection.create_server(name=worker, flavor=start_worker_group["flavor"]["name"],
-                                          image=image,
+        image = select_image(start_worker_group, connection)
+        server = connection.create_server(name=worker, flavor=start_worker_group["flavor"]["name"], image=image,
                                           network=start_worker_group["network"],
                                           key_name=f"tempKey_bibi-{common_config['cluster_id']}",
                                           security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata,
@@ -198,13 +223,13 @@ start_server_threads = []
 for worker_group in worker_groups:
     for start_worker in start_workers:
         # start all servers that are part of the current worker group
-        result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]],
-                                stdout=subprocess.PIPE, check=True)  # get all workers in worker_type
+        result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]], stdout=subprocess.PIPE,
+                                check=True)  # get all workers in worker_type
         possible_workers = result.stdout.decode("utf-8").strip().split("\n")
         if start_worker in possible_workers:
-            start_worker_thread = threading.Thread(target=start_server, kwargs={"worker": start_worker,
-                                                                                "start_worker_group": worker_group,
-                                                                                "start_data": server_start_data})
+            start_worker_thread = threading.Thread(target=start_server,
+                                                   kwargs={"worker": start_worker, "start_worker_group": worker_group,
+                                                           "start_data": server_start_data})
             start_worker_thread.start()
             start_server_threads.append(start_worker_thread)
 
