@@ -1,4 +1,5 @@
   # See https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/ (after update)
+  # See https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md
   # First configuration also holds general cluster information and must include the master.
   # All other configurations mustn't include another master, but exactly one vpngtw instead (keys like master).
 
@@ -43,7 +44,7 @@
   #localDNSlookup: True
   #zabbix: True
   #nfs: True
-  #ide: True # Very useful to set on True. Use `./bibigrid.sh -i [path-to-bibigrid.yml] -ide -cid [cluster-id]` to start port forwarding to access the ide.
+  #ide: True # A nice way to view your cluster as if you were using Visual Studio Code
 
   useMasterAsCompute: True # Currently ignored by slurm
   
@@ -53,15 +54,17 @@
   # master configuration
   masterInstance:
     type: # existing type/flavor on your cloud. See launch instance>flavor for options
-    image: # existing image on your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/images pick an active one. Currently only ubuntu22.04 is supported
+    image: # existing active image on your cloud. Consider using regex to prevent image updates from breaking your running cluster
     # features: # list
 
   # -- END: GENERAL CLUSTER INFORMATION --
 
+  # fallbackOnOtherImage: False # if True, most similar image by name will be picked. A regex can also be given instead.
+
   # worker configuration
   #workerInstances:
   #  - type: # existing type/flavor on your cloud. See launch instance>flavor for options
-  #    image: # same as master
+  #    image: # same as master. Consider using regex to prevent image updates from breaking your running cluster
   #    count: # any number of workers you would like to create with set type, image combination
   #    # features: # list
 

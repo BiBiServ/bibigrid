@@ -95,7 +95,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
             worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"]}
+                           "cloud_identifier": configuration["cloud_identifier"],
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
 
             worker_features = worker.get("features", [])
             if isinstance(worker_features, str):
@@ -120,7 +121,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
                            "flavor": flavor_dict,
                            "wireguard_ip": wireguard_ip,
                            "cloud_identifier": configuration[
-                               "cloud_identifier"]}
+                               "cloud_identifier"],
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 vpngtw_dict["wireguard"] = {"ip": wireguard_ip,
                                             "peer": configuration.get(
@@ -136,7 +138,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id):  # pylint:
                            "floating_ip": configuration["floating_ip"], "flavor": flavor_dict,
                            "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"],
-                           "volumes": configuration["volumes"]}
+                           "volumes": configuration["volumes"],
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict)

@@ -13,7 +13,7 @@ import paramiko
 import yaml
 
 from bibigrid.core.actions import terminate_cluster
-from bibigrid.core.utility import ansible_configurator
+from bibigrid.core.utility import ansible_configurator, image_selection
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import ssh_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
@@ -99,7 +99,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         generate_keypair makes use of the fact that files in tmp are automatically deleted
         ToDo find a more pythonic way to create an ECDSA keypair
         See here for why using python module ECDSA wasn't successful
-        https://stackoverflow.com/questions/71194770/why-does-creating-ecdsa-keypairs-via-python-differ-from-ssh-keygen-t-ecdsa-and
+        https://stackoverflow.com/questions/71194770/why-does-creating-ecdsa-keypairs-via-python-differ-from-ssh
+        -keygen-t-ecdsa-and
         :return:
         """
         # create KEY_FOLDER if it doesn't exist
@@ -153,7 +154,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
                 configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
-    def start_vpn_or_master_instance(self, configuration, provider):
+    def start_vpn_or_master_instance(self, configuration, provider):  # pylint: disable=too-many-branches
         """
         Start master/vpn-worker of a provider
         :param configuration: dict configuration of said provider
@@ -171,8 +172,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.vpn_counter += 1
         LOG.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance_type["type"]
-        image = instance_type["image"]
         network = configuration["network"]
+        image = instance_type["image"]
+        image = image_selection.select_image(configuration, provider, image, LOG)
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
@@ -196,6 +198,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
         configuration["volumes"] = provider.get_mount_info_from_server(server)
+
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
         Prepares start_instance arguments for master/vpn
@@ -295,15 +298,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
                                                     cluster_id=self.cluster_id)
+        commands = [ssh_handler.get_ac_command(self.providers,
+                                               AC_NAME.format(cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
-                                username=self.ssh_user,
-                                filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
-                                           (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
-                                commands=[
-                                             ssh_handler.get_ac_command(
-                                                 self.providers,
-                                                 AC_NAME.format(
-                                                     cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START)
+                                username=self.ssh_user, filepaths=[(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE),
+                                                                   (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)],
+                                commands=commands)
 
     def start_start_instance_threads(self):
         """
