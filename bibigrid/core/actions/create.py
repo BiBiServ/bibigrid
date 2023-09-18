@@ -91,7 +91,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.worker_counter = 0
         self.vpn_counter = 0
         self.thread_lock = threading.Lock()
-        self.use_master_with_public_ip = configurations[0].get("useMasterWithPublicIp", True)
+        self.use_master_with_public_ip = not configurations[0].get("gateway") and configurations[0].get(
+            "useMasterWithPublicIp", True)
         self.log.debug("Keyname: %s", self.key_name)
 
     def generate_keypair(self):
