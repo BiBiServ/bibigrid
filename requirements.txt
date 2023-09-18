@@ -8,3 +8,4 @@ python-openstackclient==6.0.0
 PyYAML
 shortuuid
 sshtunnel
+sympy
