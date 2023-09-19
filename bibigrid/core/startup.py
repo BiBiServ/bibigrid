@@ -63,7 +63,7 @@ def run_action(args, configurations, config_path):
     """
     if args.version:
         LOG.info("Action version selected")
-        LOG.log(42, version.__version__)
+        version.version()
         return 0
 
     start_time = time.time()
@@ -105,8 +105,6 @@ def run_action(args, configurations, config_path):
                     elif args.update:
                         LOG.info("Action update selected")
                         exit_state = update.update(args.cluster_id, providers[0], configurations[0])
-                    else:
-                        LOG.warning("Please make use of -cid <cluster id>.")
             for provider in providers:
                 provider.close()
         else:

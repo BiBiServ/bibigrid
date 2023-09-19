@@ -44,6 +44,13 @@ sshPublicKeyFiles:
   - /home/user/.ssh/id_ecdsa_colleague.pub
 ```
 
+#### autoMount (optional)
+> **Warning:** If a volume has an obscure filesystem, this might overwrite your data!
+
+If `True` all [masterMounts](#mastermounts-optional) will be automatically mounted by BiBiGrid if possible.
+If a volume is not formatted or has an unknown filesystem, it will be formatted to `ext4`.
+Default `False`.
+
 #### masterMounts (optional)
 
 `masterMounts` expects a list of volumes and snapshots. Those will be attached to the master. If any snapshots are
@@ -174,6 +181,16 @@ openstack image list --os-cloud=openstack | grep active
 
 Currently, images based on Ubuntu 20.04/22.04 (Focal/Jammy) and Debian 11(Bullseye) are supported.
 
+###### Using Regex
+Instead of using a specific image you can also provide a regex.
+For example if your images are named by following the pattern `Ubuntu 22.04 LTS ($DATE)` and on ly the 
+most recent release is active, you can use `Ubuntu 22.04 LTS \(.*\)` so it always picks the right one.
+
+This regex will also be used when starting worker instances on demand
+and is therefore mandatory to automatically resolve image updates of the described kind while running a cluster.
+
+There's also a [Fallback Option](#fallbackonotherimage-optional).
+
 ##### Find your active `type`s
 `flavor` is just the OpenStack terminology for `type`.
 
@@ -218,7 +235,7 @@ You can create features for the master [in the same way](#features-optional) as 
 ```yaml
   masterInstance:
     type: de.NBI tiny
-    image: Ubuntu 22.04 LTS (2022-10-14)
+    image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
     features:
       - hasdatabase
       - holdsinformation
@@ -231,8 +248,21 @@ Exactly one in every configuration but the first:
 ```yaml
   vpngtw:
     type: de.NBI tiny
-    image: Ubuntu 22.04 LTS (2022-10-14)
+    image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
 ```
+
+### fallbackOnOtherImage (optional)
+If set to `true` and an image is not among the active images, 
+BiBiGrid will try to pick a fallback image for you by finding the closest active image by name that has at least 60% name overlap.
+This will not find a good fallback every time.
+
+You can also set `fallbackOnOtherImage` to a regex like `Ubuntu 22.04 LTS \(.*\)` in which case BiBiGrid will pick an
+active image matching that regex.
+This can be combined with the regular regex option from the [image key](#find-your-active-images).
+In that case the fallback regex should be more open to be still useful when the original regex failed to find an active image.
+
+This fallback will also be used when starting worker instances on demand
+and can be helpful to when image updates occur while running a cluster.
 
 #### sshUser (required)
 

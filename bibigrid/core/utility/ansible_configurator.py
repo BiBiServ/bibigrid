@@ -83,14 +83,14 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
         configuration_features = configuration.get("features", [])
         if isinstance(configuration_features, str):
             configuration_features = [configuration_features]
-        for index, worker in enumerate(configuration.get("workerInstances", [])):
+        for worker in configuration.get("workerInstances", []):
             flavor = provider.get_flavor(worker["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
-            name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+            name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
                                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
             worker_count += worker.get('count', 1)
-            regexp = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id, additional=r"\d+")
+            regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
             worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
@@ -115,7 +115,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "network": configuration["network"], "network_cidr": configuration["subnet_cidrs"],
                            "floating_ip": configuration["floating_ip"], "private_v4": configuration["private_v4"],
                            "flavor": flavor_dict, "wireguard_ip": wireguard_ip,
-                           "cloud_identifier": configuration["cloud_identifier"]}
+                           "cloud_identifier": configuration["cloud_identifier"],
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
             write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpngtw_dict, log)
@@ -127,7 +128,9 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
                            "network_cidr": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"]}
+                           "cloud_identifier": configuration["cloud_identifier"],
+                           "volumes": configuration["volumes"],
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict, log)
@@ -162,7 +165,8 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     master_configuration = configurations[0]
     log.info("Generating common configuration file...")
     # print(configuration.get("slurmConf", {}))
-    common_configuration_yaml = {"cluster_id": cluster_id, "cluster_cidrs": cidrs, "default_user": default_user,
+    common_configuration_yaml = {"auto_mount": master_configuration.get("autoMount", False),
+                                 "cluster_id": cluster_id, "cluster_cidrs": cidrs, "default_user": default_user,
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
@@ -221,8 +225,8 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     worker_count = 0
     vpngtw_count = 0
     for configuration in configurations:
-        for index, worker in enumerate(configuration.get("workerInstances", [])):
-            name = create.WORKER_IDENTIFIER(worker_group=index, cluster_id=cluster_id,
+        for worker in configuration.get("workerInstances", []):
+            name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")

@@ -14,6 +14,7 @@ import yaml
 from bibigrid.core.actions import terminate
 from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility import id_generation
+from bibigrid.core.utility import image_selection
 from bibigrid.core.utility.handler import ssh_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.paths import bin_path as biRP
@@ -27,16 +28,15 @@ PREFIX_WITH_SEP = PREFIX + SEPARATOR
 FILEPATHS = [(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE), (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)]
 
 
-def get_identifier(identifier, cluster_id, worker_group="", additional=""):
+def get_identifier(identifier, cluster_id, additional=""):
     """
     This method does more advanced string formatting to generate master, vpngtw and worker names
     @param identifier: master|vpngtw|worker
     @param cluster_id: id of cluster
-    @param worker_group: group of worker (every member of a group has same flavor/type and image)
     @param additional: an additional string to be added at the end
     @return: the generated string
     """
-    general = PREFIX_WITH_SEP + identifier + str(worker_group) + SEPARATOR + cluster_id
+    general = PREFIX_WITH_SEP + identifier + SEPARATOR + cluster_id
     if additional or additional == 0:
         return general + SEPARATOR + str(additional)
     return general
@@ -176,8 +176,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.vpn_counter += 1
         self.log.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance_type["type"]
-        image = instance_type["image"]
         network = configuration["network"]
+        image = image_selection.select_image(configuration, provider, instance_type["image"], self.log)
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
@@ -200,6 +200,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
+        configuration["volumes"] = provider.get_mount_info_from_server(server)
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
@@ -336,7 +337,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         if len(self.providers) == 1:
             return
-        self.log.debug("Applying Extended Network Configuration")
+
         for provider_a, configuration_a in zip(self.providers, self.configurations):
             # configure wireguard network as allowed network
             allowed_addresses = [{'ip_address': '10.0.0.0/24', 'mac_address': configuration_a["mac_addr"]}]
@@ -344,7 +345,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             for configuration_b in self.configurations:
                 # ... and pick all other configuration
                 if configuration_a != configuration_b:
-                    self.log.debug(
+                    self.log.info(
                         f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},"
                         f"{configuration_b['subnet_cidrs']})")
                     # add provider_b network as allowed network

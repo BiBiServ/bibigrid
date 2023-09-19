@@ -42,9 +42,9 @@ def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
         for provider in providers:
             log.info("Terminating cluster %s on cloud %s", cluster_id, provider.cloud_specification['identifier'])
             server_list = provider.list_servers()
-            cluster_server_state += terminate_servers(server_list, cluster_id, provider,    log)
+            cluster_server_state += terminate_servers(server_list, cluster_id, provider, log)
             cluster_keypair_state.append(delete_keypairs(provider, tmp_keyname, log))
-            cluster_keypair_state.append(delete_security_groups(provider, cluster_id, security_groups, log))
+            cluster_security_group_state.append(delete_security_groups(provider, cluster_id, security_groups, log))
         ac_state = delete_application_credentials(providers[0], cluster_id, log)
         terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, ac_state,
                          cluster_id, log)
@@ -61,10 +61,10 @@ def terminate_servers(server_list, cluster_id, provider, log):
     """
     log.info("Deleting servers on provider %s...", provider.cloud_specification['identifier'])
     cluster_server_state = []
-    # ^(master-{cluster_id}|worker-{cluster_id}|worker-[0-9]+-[0-9]+-{cluster_id})$
-    server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}+|(worker\d+|vpngtw)-{cluster_id}+-\d+)$")
+    server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}+|(worker|vpngtw)-{cluster_id}+-\d+)$")
     for server in server_list:
         if server_regex.match(server["name"]):
+            print("Hohoho")
             log.info("Trying to terminate Server %s on cloud %s.", server['name'],
                      provider.cloud_specification['identifier'])
             cluster_server_state.append(terminate_server(provider, server, log))
@@ -151,16 +151,17 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
                 tmp_success = provider.delete_security_group(security_group_name)
             except ConflictException:
                 tmp_success = False
-            if not tmp_success:
-                if attempts < timeout:
-                    attempts += 1
-                    time.sleep(1 + 2 ** attempts)
-                    log.info(f"Retrying to delete security group {security_group_name} on "
-                             f"{provider.cloud_specification['identifier']}. Attempt {attempts}/{timeout}")
-                else:
-                    log.error(f"Attempt to delete security group {security_group_name} on "
-                              f"{provider.cloud_specification['identifier']} failed.")
-                    break
+            if tmp_success:
+                break
+            if attempts < timeout:
+                attempts += 1
+                time.sleep(1 + 2 ** attempts)
+                log.info(f"Retrying to delete security group {security_group_name} on "
+                         f"{provider.cloud_specification['identifier']}. Attempt {attempts}/{timeout}")
+            else:
+                log.error(f"Attempt to delete security group {security_group_name} on "
+                          f"{provider.cloud_specification['identifier']} failed.")
+                break
         log.info(f"Delete security_group {security_group_name} -> {tmp_success}")
         success = success and tmp_success
     return success

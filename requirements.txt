@@ -9,3 +9,4 @@ PyYAML
 shortuuid
 sshtunnel
 sympy
+seedir
