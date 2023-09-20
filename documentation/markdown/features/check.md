@@ -2,7 +2,7 @@
 
 ## Exactly one master or vpn instance per configuration
 
-There can only be a single master or a single vpn-gateway per configuration.
+There can only be a single master or a single vpn-gateway (vpngtw) per configuration.
 
 ## Given Server group exist
 

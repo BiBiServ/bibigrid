@@ -138,12 +138,34 @@ After creation connection information is [printed](../features/create.md#prints-
 
 If `False`, master will no longer help workers to process jobs. Default is `True`.
 
+#### useMasterWithPublicIP (optional)
+
+If `False`, master will not be created with an attached floating ip. Default is `True`.
+
 #### waitForServices (optional):
 
 Expects a list of services to wait for.
 This is required if your provider has any post-launch services interfering with the package manager. If not set,
 seemingly random errors can occur when the service interrupts ansible's execution. Services are
 listed on [de.NBI Wiki](https://cloud.denbi.de/wiki/) at `Computer Center Specific` (not yet).
+
+#### 
+In order to save valuable floating ips, BiBiGrid can also make use of a gateway to create the cluster.
+For more information on how to set up a gateway, how gateways work and why they save floating ips please continue reading [here](https://cloud.denbi.de/wiki/Tutorials/SaveFloatingIPs/).
+
+BiBiGrid needs the gateway-ip and a function that maps ips of nodes behind the gateway (private nodes) to the port over which you can connect to said node over the gateway.
+
+In the example below the gateway-ip is 123.123.123.42 (ip of the gateway node) and the port function is 30000 + oct4.
+Hereby, Oct4 stands for the fourth octet of the private node's ip (the last element). You can use your own custom port function
+using all octets if needed. <br>
+A private node with ip "123.123.123.12" is reachable over 123.123.123.42:30012 (because the fourth octet is 12).
+```yaml
+gateway:
+    ip: 123.123.123.42 # IP of gateway to use
+    portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
+```
+
+Using gateway also automatically sets [useMasterWithPublicIp](#usemasterwithpublicip-optional) to `False`.
 
 ### Local
 
@@ -303,7 +325,7 @@ openstack subnet list --os-cloud=openstack
 #### localDNSLookup (optional)
 
 If no full DNS service for started instances is available, set `localDNSLookup: True`.
-Currently the case in Berlin, DKFZ, Heidelberg and Tuebingen.
+Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
 
 #### features (optional)
 
