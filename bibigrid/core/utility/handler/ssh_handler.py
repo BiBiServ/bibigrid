@@ -104,7 +104,6 @@ def is_active(client, floating_ip_address, private_key, username, log, gateway, 
     establishing_connection = True
     while establishing_connection:
         try:
-            # Add Port
             port = 22
             if gateway:
                 log.info(f"Using SSH Gateway {gateway.get('ip')}")

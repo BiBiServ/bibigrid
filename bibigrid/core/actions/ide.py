@@ -9,7 +9,9 @@ import subprocess
 import sys
 import time
 import webbrowser
+
 import sshtunnel
+import sympy
 
 from bibigrid.core.utility.handler import cluster_ssh_handler
 
@@ -19,7 +21,6 @@ REMOTE_BIND_ADDRESS = 8181
 LOCAL_BIND_ADDRESS = 9191
 MAX_JUMP = 100
 LOCALHOST = "127.0.0.1"
-
 
 
 def sigint_handler(caught_signal, frame):  # pylint: disable=unused-argument
@@ -48,7 +49,6 @@ def is_used(ip_address):
         for line in lines:
             is_open = re.match(rf'tcp.*{ip_address}:([0-9][0-9]*).*ESTABLISHED\s*$', line)
             if is_open is not None:
-                print(line)
                 ports_used.append(is_open[1])
 
 
@@ -68,18 +68,19 @@ def ide(cluster_id, master_provider, master_configuration, log):
     used_local_bind_address = LOCAL_BIND_ADDRESS
     if master_ip and ssh_user and used_private_key:
         attempts = 0
+        if master_configuration.get("gateway"):
+            octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(master_ip.split("."))}
+            port = sympy.sympify(master_configuration["gateway"]["portFunction"]).subs(dict(octets))
+            gateway = (master_configuration["gateway"]["ip"], int(port))
+        else:
+            gateway = None
         while attempts < 16:
             attempts += 1
             try:
-                with sshtunnel.SSHTunnelForwarder(
-                        ssh_address_or_host=master_ip,  # Raspberry Pi in my network
-
-                        ssh_username=ssh_user,
-                        ssh_pkey=used_private_key,
-
-                        local_bind_address=(LOCALHOST, used_local_bind_address),
-                        remote_bind_address=(LOCALHOST, REMOTE_BIND_ADDRESS)
-                ) as server:
+                with sshtunnel.SSHTunnelForwarder(ssh_address_or_host=gateway or master_ip, ssh_username=ssh_user,
+                                                  ssh_pkey=used_private_key,
+                                                  local_bind_address=(LOCALHOST, used_local_bind_address),
+                                                  remote_bind_address=(LOCALHOST, REMOTE_BIND_ADDRESS)) as server:
                     print("CTRL+C to close port forwarding when you are done.")
                     with server:
                         # opens in existing window if any default program exists
