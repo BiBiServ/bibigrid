@@ -63,7 +63,7 @@ def run_action(args, configurations, config_path):
     """
     if args.version:
         LOG.info("Action version selected")
-        version.version()
+        version.version(LOG)
         return 0
 
     start_time = time.time()
