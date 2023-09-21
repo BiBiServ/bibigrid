@@ -46,11 +46,11 @@ def interpret_command_line():
                         help="Cluster id is needed for '--ide', '--terminate_cluster' and '--update'. "
                              "If not set, last created cluster's id is used")
     actions = parser.add_mutually_exclusive_group(required=True)
-    actions.add_argument("-V", "--version", action='store_true', help="Displays installed BiBiGrid version and info.")
-    actions.add_argument("-t", "--terminate_cluster", action='store_true',
+    actions.add_argument("-V", "--version", action='store_true', help="Displays version")
+    actions.add_argument("-t", "--terminate", action='store_true',
                          help="Terminates cluster. Needs cluster-id set.")
     actions.add_argument("-c", "--create", action='store_true', help="Creates cluster")
-    actions.add_argument("-l", "--list_clusters", action='store_true',
+    actions.add_argument("-l", "--list", action='store_true',
                          help="Lists all running clusters. If cluster-id is set, will list this cluster in detail only")
     actions.add_argument("-ch", "--check", action='store_true', help="Validates cluster configuration")
     actions.add_argument("-ide", "--ide", action='store_true',
@@ -59,7 +59,7 @@ def interpret_command_line():
                                                                      "Needs cluster-id set, no jobs running "
                                                                      "and no workers up")
     args = parser.parse_args()
-    needs_config = args.terminate_cluster or args.create or args.list_clusters or args.check or args.ide
+    needs_config = args.terminate or args.create or args.list or args.check or args.ide
     if needs_config and not args.config_input:
         parser.error("requested action requires '-i' ('--config_input')")
     return args

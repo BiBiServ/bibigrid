@@ -38,6 +38,8 @@
 
   ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
   #useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
+  # deleteTmpKeypairAfter: False
+  # dontUploadCredentials: False
 
   # Other keys - default False
   #localFS: True
@@ -91,6 +93,10 @@
 
   # Depends on cloud site and project
   subnet: # existing subnet on your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/networks/
+  # or network:
+  # gateway: # if you want to use a gateway for create.
+    # ip: # IP of gateway to use
+    # portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
 
   # Uncomment if no full DNS service for started instances is available.
   # Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.

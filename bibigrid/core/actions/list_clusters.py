@@ -3,23 +3,22 @@ This module contains methods to list all clusters or a specific cluster in a for
 This includes a method to create a dictionary containing all running clusters and their servers.
 """
 
-import logging
 import pprint
 import re
 
 from bibigrid.core.actions import create
 
-SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)-([a-zA-Z0-9]+)-\d+)$")
-LOG = logging.getLogger("bibigrid")
+SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)\d+-([a-zA-Z0-9]+)-\d+)$")
 
 
-def dict_clusters(providers):
+def dict_clusters(providers, log):
     """
     Creates a dictionary containing all servers by type and provider information
     :param providers: list of all providers
+    :param log:
     :return: list of all clusters in yaml format
     """
-    LOG.info("Creating cluster dictionary...")
+    log.info("Creating cluster dictionary...")
     cluster_dict = {}
     for provider in providers:
         servers = provider.list_servers()
@@ -54,56 +53,59 @@ def setup(cluster_dict, cluster_id, server, provider):
     server["cloud_specification"] = provider.cloud_specification["identifier"]
 
 
-def print_list_clusters(cluster_id, providers):
+def log_list(cluster_id, providers, log):
     """
     Calls dict_clusters and gives a visual representation of the found cluster.
     Detail depends on whether a cluster_id is given or not.
     :param cluster_id:
     :param providers:
+    :param log:
     :return:
     """
-    cluster_dict = dict_clusters(providers=providers)
-    if cluster_id: # pylint: disable=too-many-nested-blocks
+    cluster_dict = dict_clusters(providers=providers, log=log)
+    if cluster_id:  # pylint: disable=too-many-nested-blocks
         if cluster_dict.get(cluster_id):
-            LOG.info("Printing specific cluster_dictionary")
-            master_count, worker_count, vpn_count = get_size_overview(cluster_dict[cluster_id])
-            print(f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
-                  f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
+            log.info("Printing specific cluster_dictionary")
+            master_count, worker_count, vpn_count = get_size_overview(cluster_dict[cluster_id], log)
+            log.log(42, f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
+                       f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
             pprint.pprint(cluster_dict[cluster_id])
         else:
-            LOG.info("Cluster with cluster-id {cluster_id} not found.")
-            print(f"Cluster with cluster-id {cluster_id} not found.")
+            log.info("Cluster with cluster-id {cluster_id} not found.")
+            log.log(42, f"Cluster with cluster-id {cluster_id} not found.")
     else:
-        LOG.info("Printing overview of cluster all clusters")
+        log.info("Printing overview of cluster all clusters")
         if cluster_dict:
             for cluster_key_id, cluster_node_dict in cluster_dict.items():
-                print(f"Cluster-ID: {cluster_key_id}")
+                log.log(42, f"Cluster-ID: {cluster_key_id}")
                 master = cluster_node_dict.get('master')
                 if master:
                     for key in ["name", "user_id", "launched_at", "key_name", "public_v4", "public_v6", "provider"]:
                         value = cluster_node_dict['master'].get(key)
                         if value:
-                            print(f"\t{key}: {value}")
+                            log.log(42, f"\t{key}: {value}")
                     security_groups = get_security_groups(cluster_node_dict)
-                    print(f"\tsecurity_groups: {security_groups}")
+                    log.log(42, f"\tsecurity_groups: {security_groups}")
                     networks = get_networks(cluster_node_dict)
-                    print(f"\tnetwork: {pprint.pformat(networks)}")
+                    log.log(42, f"\tnetwork: {pprint.pformat(networks)}")
                 else:
-                    LOG.warning("No master for cluster: %s.", cluster_key_id)
-                master_count, worker_count, vpn_count = get_size_overview(cluster_node_dict)
-                print(f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
-                      f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
+                    log.warning("No master for cluster: %s.", cluster_key_id)
+                master_count, worker_count, vpn_count = get_size_overview(cluster_node_dict, log)
+                log.log(42,
+                        f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
+                        f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
         else:
-            print("No cluster found.")
+            log.log(42, "No cluster found.")
     return 0
 
 
-def get_size_overview(cluster_dict):
+def get_size_overview(cluster_dict, log):
     """
     :param cluster_dict: dictionary of cluster to size_overview
+    :param log:
     :return: number of masters, number of workers, number of vpns
     """
-    LOG.info("Printing size overview")
+    log.info("Printing size overview")
     master_count = int(bool(cluster_dict.get("master")))
     worker_count = len(cluster_dict.get("workers") or "")
     vpn_count = len(cluster_dict.get("vpngtws") or "")
@@ -136,19 +138,20 @@ def get_security_groups(cluster_dict):
     return security_groups
 
 
-def get_master_access_ip(cluster_id, master_provider):
+def get_master_access_ip(cluster_id, master_provider, log):
     """
     Returns master's ip of cluster cluster_id
     :param master_provider: master's provider
     :param cluster_id: Id of cluster
+    :param log:
     :return: public ip of master
     """
-    LOG.info("Finding master ip for cluster %s...", cluster_id)
+    log.info("Finding master ip for cluster %s...", cluster_id)
     servers = master_provider.list_servers()
     for server in servers:
         master = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
         if server["name"].startswith(master):
             return server.get("public_v4") or server.get("public_v6") or server.get("private_v4")
-    LOG.warning("Cluster %s not found on master_provider %s.", cluster_id,
+    log.warning("Cluster %s not found on master_provider %s.", cluster_id,
                 master_provider.cloud_specification["identifier"])
     return None
