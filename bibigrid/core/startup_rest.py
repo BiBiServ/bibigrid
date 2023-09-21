@@ -36,11 +36,9 @@ if not os.path.isdir(LOG_FOLDER):
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_FORMATTER = logging.Formatter(LOG_FORMAT)
 LOG = logging.getLogger("bibigrid")
-stream_handler = logging.StreamHandler()
 file_handler = logging.FileHandler(os.path.join(LOG_FOLDER, "bibigrid_rest.log"))
-for handler in [stream_handler, file_handler]:
-    handler.setFormatter(LOG_FORMATTER)
-    LOG.addHandler(handler)
+file_handler.setFormatter(LOG_FORMATTER)
+LOG.addHandler(file_handler)
 logging.addLevelName(42, "PRINT")
 LOG.setLevel(logging.DEBUG)
 
