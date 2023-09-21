@@ -127,7 +127,7 @@ def main():
     :return:
     """
     logging.basicConfig(format=LOGGER_FORMAT)
-    LOG.addHandler(logging.StreamHandler())  # stdout
+    # LOG.addHandler(logging.StreamHandler())  # stdout
     LOG.addHandler(logging.FileHandler("bibigrid.log"))  # file
     args = command_line_interpreter.interpret_command_line()
     set_logger_verbosity(args.verbose)
