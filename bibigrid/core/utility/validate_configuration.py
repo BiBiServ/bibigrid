@@ -4,7 +4,9 @@ Validates configuration and cloud_specification
 
 import os
 
+from bibigrid.core.utility import image_selection
 from bibigrid.core.utility.handler import configuration_handler
+from bibigrid.models.exceptions import ImageNotActiveException
 
 ACCEPTED_KEY_IDENTIFIERS = {"RSA": 4096, "ECDSA": 521, "ED25519": 256}
 
@@ -276,19 +278,16 @@ class ValidateConfiguration:
         """
         self.required_resources_dict["instances"] += instance.get("count") or 1
         instance_image_id_or_name = instance["image"]
-        instance_image = provider.get_image_by_id_or_name(image_id_or_name=instance_image_id_or_name)
-        if not instance_image:
-            self.log.warning("Instance %s image: %s not found", instance_name, instance_image_id_or_name)
-            print("Available active images:")
-            print("\n".join(provider.get_active_images()))
+        try:
+            instance_image = image_selection.select_image(provider, instance_image_id_or_name, self.log)
+            self.log.info("Instance %s image: %s found", instance_name, instance_image_id_or_name)
+            instance_type = instance["type"]
+        except ImageNotActiveException:
+            self.log.warning("Instance %s image: %s not found among active images.",
+                             instance_name, instance_image_id_or_name)
+            self.log.log(42, "Available active images:")
+            self.log.log(42, "\n".join(provider.get_active_images()))
             return False
-        if instance_image["status"] != "active":
-            self.log.warning("Instance %s image: %s not active", instance_name, instance_image_id_or_name)
-            print("Available active images:")
-            print("\n".join(provider.get_active_images()))
-            return False
-        self.log.info("Instance %s image: %s found", instance_name, instance_image_id_or_name)
-        instance_type = instance["type"]
         return self.check_instance_type_image_combination(instance_type, instance_image, provider)
 
     def check_instance_type_image_combination(self, instance_type, instance_image, provider):

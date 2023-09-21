@@ -17,9 +17,13 @@ class ConflictException(Exception):
     """ Conflict exception"""
 
 
-class ImageDeactivatedException(Exception):
+class ImageNotActiveException(Exception):
     """ Image deactivated exception"""
 
 
-class ImageNotFoundException(Exception):
+class ImageDeactivatedException(ImageNotActiveException):
+    """ Image deactivated exception"""
+
+
+class ImageNotFoundException(ImageNotActiveException):
     """ Image not found exception"""

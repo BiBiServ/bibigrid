@@ -177,7 +177,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance_type["type"]
         network = configuration["network"]
-        image = image_selection.select_image(configuration, provider, instance_type["image"], self.log)
+        image = image_selection.select_image(provider, instance_type["image"], self.log,
+                                             configuration.get("fallbackOnOtherImage"))
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
