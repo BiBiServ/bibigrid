@@ -9,6 +9,7 @@ import traceback
 from functools import partial
 
 import paramiko
+import sympy
 import yaml
 
 from bibigrid.core.actions import terminate
@@ -431,8 +432,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         Detailed cluster info: How to log detailed info about the created cluster
         :return:
         """
+        gateway = self.configurations[0].get("gateway")
+        ssh_ip = self.master_ip
+        port = None
+        if gateway:
+            octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(self.master_ip.split("."))}
+            port = int(sympy.sympify(gateway["portFunction"]).subs(dict(octets)))
+            ssh_ip = gateway["ip"]
         self.log.log(42, f"Cluster {self.cluster_id} with master {self.master_ip} up and running!")
-        self.log.log(42, f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{self.master_ip}")
+        self.log.log(42,
+                     f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{ssh_ip}"
+                     f"{f' -p {port}' if gateway else ''}")
         self.log.log(42, f"Terminate cluster: ./bibigrid.sh -i '{self.config_path}' -t -cid {self.cluster_id}")
         self.log.log(42, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
         if self.configurations[0].get("ide"):
