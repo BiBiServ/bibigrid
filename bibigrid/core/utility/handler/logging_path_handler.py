@@ -2,16 +2,13 @@
 This module holds methods to return the logfile's path.
 """
 
-import logging
 
-LOG = logging.getLogger("bibigrid")
-
-def get_logging_path():
+def get_logging_path(log):
     """
     Returns the path were the logfile is stored
     @return: the path were the logfile is stored
     """
-    for handler in LOG.getLoggerClass().root.handlers:
+    for handler in log.getLoggerClass().root.handlers:
         if hasattr(handler, 'baseFilename'):
             log_path = handler.baseFilename
             return log_path

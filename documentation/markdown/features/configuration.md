@@ -44,6 +44,13 @@ sshPublicKeyFiles:
   - /home/user/.ssh/id_ecdsa_colleague.pub
 ```
 
+#### autoMount (optional)
+> **Warning:** If a volume has an obscure filesystem, this might overwrite your data!
+
+If `True` all [masterMounts](#mastermounts-optional) will be automatically mounted by BiBiGrid if possible.
+If a volume is not formatted or has an unknown filesystem, it will be formatted to `ext4`.
+Default `False`.
+
 #### masterMounts (optional)
 
 `masterMounts` expects a list of volumes and snapshots. Those will be attached to the master. If any snapshots are
@@ -131,12 +138,34 @@ After creation connection information is [printed](../features/create.md#prints-
 
 If `False`, master will no longer help workers to process jobs. Default is `True`.
 
+#### useMasterWithPublicIP (optional)
+
+If `False`, master will not be created with an attached floating ip. Default is `True`.
+
 #### waitForServices (optional):
 
 Expects a list of services to wait for.
 This is required if your provider has any post-launch services interfering with the package manager. If not set,
 seemingly random errors can occur when the service interrupts ansible's execution. Services are
 listed on [de.NBI Wiki](https://cloud.denbi.de/wiki/) at `Computer Center Specific` (not yet).
+
+#### 
+In order to save valuable floating ips, BiBiGrid can also make use of a gateway to create the cluster.
+For more information on how to set up a gateway, how gateways work and why they save floating ips please continue reading [here](https://cloud.denbi.de/wiki/Tutorials/SaveFloatingIPs/).
+
+BiBiGrid needs the gateway-ip and a function that maps ips of nodes behind the gateway (private nodes) to the port over which you can connect to said node over the gateway.
+
+In the example below the gateway-ip is 123.123.123.42 (ip of the gateway node) and the port function is 30000 + oct4.
+Hereby, Oct4 stands for the fourth octet of the private node's ip (the last element). You can use your own custom port function
+using all octets if needed. <br>
+A private node with ip "123.123.123.12" is reachable over 123.123.123.42:30012 (because the fourth octet is 12).
+```yaml
+gateway:
+    ip: 123.123.123.42 # IP of gateway to use
+    portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
+```
+
+Using gateway also automatically sets [useMasterWithPublicIp](#usemasterwithpublicip-optional) to `False`.
 
 ### Local
 
@@ -173,6 +202,16 @@ openstack image list --os-cloud=openstack | grep active
 ```
 
 Currently, images based on Ubuntu 20.04/22.04 (Focal/Jammy) and Debian 11(Bullseye) are supported.
+
+###### Using Regex
+Instead of using a specific image you can also provide a regex.
+For example if your images are named by following the pattern `Ubuntu 22.04 LTS ($DATE)` and on ly the 
+most recent release is active, you can use `Ubuntu 22.04 LTS \(.*\)` so it always picks the right one.
+
+This regex will also be used when starting worker instances on demand
+and is therefore mandatory to automatically resolve image updates of the described kind while running a cluster.
+
+There's also a [Fallback Option](#fallbackonotherimage-optional).
 
 ##### Find your active `type`s
 `flavor` is just the OpenStack terminology for `type`.
@@ -218,7 +257,7 @@ You can create features for the master [in the same way](#features-optional) as 
 ```yaml
   masterInstance:
     type: de.NBI tiny
-    image: Ubuntu 22.04 LTS (2022-10-14)
+    image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
     features:
       - hasdatabase
       - holdsinformation
@@ -231,8 +270,21 @@ Exactly one in every configuration but the first:
 ```yaml
   vpngtw:
     type: de.NBI tiny
-    image: Ubuntu 22.04 LTS (2022-10-14)
+    image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
 ```
+
+### fallbackOnOtherImage (optional)
+If set to `true` and an image is not among the active images, 
+BiBiGrid will try to pick a fallback image for you by finding the closest active image by name that has at least 60% name overlap.
+This will not find a good fallback every time.
+
+You can also set `fallbackOnOtherImage` to a regex like `Ubuntu 22.04 LTS \(.*\)` in which case BiBiGrid will pick an
+active image matching that regex.
+This can be combined with the regular regex option from the [image key](#find-your-active-images).
+In that case the fallback regex should be more open to be still useful when the original regex failed to find an active image.
+
+This fallback will also be used when starting worker instances on demand
+and can be helpful to when image updates occur while running a cluster.
 
 #### sshUser (required)
 
@@ -273,7 +325,7 @@ openstack subnet list --os-cloud=openstack
 #### localDNSLookup (optional)
 
 If no full DNS service for started instances is available, set `localDNSLookup: True`.
-Currently the case in Berlin, DKFZ, Heidelberg and Tuebingen.
+Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
 
 #### features (optional)
 

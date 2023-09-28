@@ -15,3 +15,15 @@ class ConfigurationException(Exception):
 
 class ConflictException(Exception):
     """ Conflict exception"""
+
+
+class ImageNotActiveException(Exception):
+    """ Image deactivated exception"""
+
+
+class ImageDeactivatedException(ImageNotActiveException):
+    """ Image deactivated exception"""
+
+
+class ImageNotFoundException(ImageNotActiveException):
+    """ Image not found exception"""

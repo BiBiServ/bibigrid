@@ -1,21 +1,19 @@
 """
 Module that acts as a wrapper and uses validate_configuration to validate given configuration
 """
-import logging
 from bibigrid.core.utility import validate_configuration
 
-LOG = logging.getLogger("bibigrid")
 
-
-def check(configurations, providers):
+def check(configurations, providers, log):
     """
     Uses validate_configuration to validate given configuration.
     :param configurations: list of configurations (dicts)
     :param providers: list of providers
+    :param log:
     :return:
     """
-    success = validate_configuration.ValidateConfiguration(configurations, providers).validate()
+    success = validate_configuration.ValidateConfiguration(configurations, providers, log).validate()
     check_result = "succeeded! Cluster is ready to start." if success else "failed!"
-    print(f"Total check {check_result}")
-    LOG.info("Total check returned %s.", success)
+    log.log(42, f"Total check {check_result}")
+    log.info("Total check returned %s.", success)
     return 0
