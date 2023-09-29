@@ -48,8 +48,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         auth = self.cloud_specification["auth"]
         if all(key in auth for key in ["auth_url", "application_credential_id", "application_credential_secret"]):
             auth_session = v3.ApplicationCredential(auth_url=auth["auth_url"],
-                application_credential_id=auth["application_credential_id"],
-                application_credential_secret=auth["application_credential_secret"])
+                                                    application_credential_id=auth["application_credential_id"],
+                                                    application_credential_secret=auth["application_credential_secret"])
         elif all(key in auth for key in ["auth_url", "username", "password", "project_id", "user_domain_name"]):
             auth_session = v3.Password(auth_url=auth["auth_url"], username=auth["username"], password=auth["password"],
                                        project_id=auth["project_id"], user_domain_name=auth["user_domain_name"])
@@ -64,14 +64,16 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def create_connection(self, app_name="openstack_bibigrid", app_version=version.__version__):
         auth = self.cloud_specification["auth"]
         return openstack.connect(load_yaml_config=False, load_envvars=False, auth_url=auth["auth_url"],
-            project_name=auth.get("project_name"), username=auth.get("username"), password=auth.get("password"),
-            region_name=self.cloud_specification["region_name"], user_domain_name=auth.get("user_domain_name"),
-            project_domain_name=auth.get("user_domain_name"), app_name=app_name, app_version=app_version,
-            application_credential_id=auth.get("application_credential_id"),
-            application_credential_secret=auth.get("application_credential_secret"),
-            interface=self.cloud_specification.get("interface"),
-            identity_api_version=self.cloud_specification.get("identity_api_version"),
-            auth_type=self.cloud_specification.get("auth_type"))
+                                 project_name=auth.get("project_name"), username=auth.get("username"),
+                                 password=auth.get("password"), region_name=self.cloud_specification["region_name"],
+                                 user_domain_name=auth.get("user_domain_name"),
+                                 project_domain_name=auth.get("user_domain_name"), app_name=app_name,
+                                 app_version=app_version,
+                                 application_credential_id=auth.get("application_credential_id"),
+                                 application_credential_secret=auth.get("application_credential_secret"),
+                                 interface=self.cloud_specification.get("interface"),
+                                 identity_api_version=self.cloud_specification.get("identity_api_version"),
+                                 auth_type=self.cloud_specification.get("auth_type"))
 
     def create_application_credential(self, name=None):
         return self.keystone_client.application_credentials.create(name=name).to_dict()
