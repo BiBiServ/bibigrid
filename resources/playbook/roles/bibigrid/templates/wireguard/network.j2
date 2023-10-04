@@ -8,9 +8,9 @@ Address={{ wireguard.ip }}/{{ wireguard_common.mask_bits|default(24) }}
 [Route]
 {% if inventory_hostname in groups['master']%}
 Gateway={{ wireguard.ip }}
-Destination={{ hostvars[vpngtw].network_cidr }}
+Destination={{ hostvars[vpngtw].network_cidr[0] }}
 {% else %}
 Gateway={{ hostvars[vpngtw].wireguard.ip }}
-Destination={{ hostvars[groups.master.0].network_cidr }}
+Destination={{ hostvars[groups.master.0].network_cidr[0] }}
 {% endif %}
 {% endfor %}
