@@ -1,12 +1,23 @@
 #cloud-config
 {% set cloud_identifier = item.cloud_identifier %}
 
-bootcmd:
-  - /usr/bin/ip route add 10.0.0.0/24 via {{ hostvars[item].private_v4 }} dev ens3
-{% for cluster_cidr in cluster_cidrs %}
-{% if cluster_cidr.cloud_identifier != hostvars[item].cloud_identifier %}
-{% for provider_cidr in cluster_cidr.provider_cidrs %}
-  - /usr/bin/ip route add {{ provider_cidr }} via {{ hostvars[item].private_v4 }} dev ens3
-{% endfor %}
-{% endif %}
-{% endfor %}
+# Create a shell script to apply routes
+write_files:
+  - content: |
+      #!/bin/bash
+      echo Adding IP Routes
+      /usr/bin/ip route add 10.0.0.0/24 via {{ hostvars[item].private_v4 }}
+      {% for cluster_cidr in cluster_cidrs %}
+      {% if cluster_cidr.cloud_identifier != hostvars[item].cloud_identifier %}
+      {% for provider_cidr in cluster_cidr.provider_cidrs %}
+      /usr/bin/ip route add {{ provider_cidr }} via {{ hostvars[item].private_v4 }}
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+      echo "IP Routes Added"
+    path: /usr/local/bin/apply-routes.sh
+    permissions: '0755'
+
+# Execute the shell script
+runcmd:
+  - /usr/local/bin/apply-routes.sh
