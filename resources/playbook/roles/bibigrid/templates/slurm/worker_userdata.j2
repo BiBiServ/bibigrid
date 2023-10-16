@@ -7,13 +7,16 @@ write_files:
       #!/bin/bash
       echo Adding IP Routes
       /usr/bin/ip route add 10.0.0.0/24 via {{ hostvars[item].private_v4 }}
+      echo /usr/bin/ip route add 10.0.0.0/24 via {{ hostvars[item].private_v4 }} - $?
       {% for cluster_cidr in cluster_cidrs %}
       {% if cluster_cidr.cloud_identifier != hostvars[item].cloud_identifier %}
       {% for provider_cidr in cluster_cidr.provider_cidrs %}
       /usr/bin/ip route add {{ provider_cidr }} via {{ hostvars[item].private_v4 }}
+      echo /usr/bin/ip route add {{ provider_cidr }} via {{ hostvars[item].private_v4 }} - $?
       {% endfor %}
       {% endif %}
       {% endfor %}
+      echo "$(/usr/bin/ip route)"
       echo "IP Routes Added"
     path: /usr/local/bin/apply-routes.sh
     permissions: '0755'
