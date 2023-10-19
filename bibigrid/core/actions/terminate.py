@@ -34,11 +34,11 @@ def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
     cluster_security_group_state = []
     tmp_keyname = create.KEY_NAME.format(cluster_id=cluster_id)
     local_keypairs_deleted = delete_local_keypairs(tmp_keyname, log)
-    if not assume_yes and (
-            local_keypairs_deleted or input(f"WARNING: No local temporary keyfiles found for cluster {cluster_id}. "
-                                            f"This might not be your cluster. Are you sure you want to terminate it?\n"
-                                            f"Any non-empty input to shutdown cluster {cluster_id}. "
-                                            f"Empty input to exit with cluster still alive:")):
+    if assume_yes or local_keypairs_deleted or input(
+            f"WARNING: No local temporary keyfiles found for cluster {cluster_id}. "
+            f"This might not be your cluster. Are you sure you want to terminate it?\n"
+            f"Any non-empty input to shutdown cluster {cluster_id}. "
+            f"Empty input to exit with cluster still alive:"):
         for provider in providers:
             log.info("Terminating cluster %s on cloud %s", cluster_id, provider.cloud_specification['identifier'])
             server_list = provider.list_servers()
