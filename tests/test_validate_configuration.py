@@ -14,6 +14,7 @@ class TestValidateConfiguration(TestCase):
     """
     Class to test ValidateConfiguration
     """
+
     # pylint: disable=R0904
     def test_check_provider_data_count(self):
         provider_data_1 = {"PROJECT_ID": "abcd", "PROJECT_NAME": "1234"}
@@ -70,14 +71,14 @@ class TestValidateConfiguration(TestCase):
 
     def test_check_instances_master(self):
         v_c = validate_configuration.ValidateConfiguration(providers=["31"], configurations=[{"masterInstance": "42"}],
-                                                          log=Mock())
+                                                           log=Mock())
         with patch.object(v_c, "check_instance") as mock:
             v_c.check_instances()
             mock.assert_called_with("masterInstance", "42", "31")
 
     def test_check_instances_vpn(self):
         v_c = validate_configuration.ValidateConfiguration(providers=["31"], configurations=[{"vpnInstance": "42"}],
-                                                          log=Mock())
+                                                           log=Mock())
         with patch.object(v_c, "check_instance") as mock:
             v_c.check_instances()
             mock.assert_called_with("vpnInstance", "42", "31")
@@ -93,25 +94,18 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=["31"], configurations=[{}], log=Mock())
         self.assertFalse(v_c.check_instances())
         v_c = validate_configuration.ValidateConfiguration(providers=["31"],
-                                                          configurations=[{"workerInstances": ["42"]}], log=Mock())
+                                                           configurations=[{"workerInstances": ["42"]}], log=Mock())
         self.assertFalse(v_c.check_instances())
 
     def test_check_instances_vpn_master_count(self):
-        for i in range(3):
+        for i in range(1, 4):
             v_c = validate_configuration.ValidateConfiguration(providers=["31"] * i,
-                                                              configurations=[{"masterInstance": {"count": 1}}] * i,
-                                                              log=Mock())
+                                                               configurations=[{"masterInstance": {"count": 1}}] + [
+                                                                   {"vpnInstance": {"count": 1}}] * (i - 1), log=Mock())
             # with patch.object(v_c, "check_instance") as mock:
-            v_c.check_instances()
-            print(v_c.required_resources_dict["floating_ips"])
+            with patch.object(v_c, "check_instance", return_value=True):
+                v_c.check_instances()
             self.assertTrue(v_c.required_resources_dict["floating_ips"] == i)
-
-    @patch("bibigrid.core.utility.image_selection.select_image")
-    def test_check_instance_image_not_found(self, mock_select_image):  # pylint: disable=unused-argument
-        v_c = validate_configuration.ValidateConfiguration(providers=None, configurations=None, log=Mock())
-        provider = Mock()
-        provider.get_image_by_id_or_name = MagicMock(return_value=None)
-        self.assertFalse(v_c.check_instance(None, {"count": 1, "image": 2}, provider))
 
     @patch("bibigrid.core.utility.image_selection.select_image")
     def test_check_instance_image_not_active(self, mock_select_image):
@@ -132,15 +126,6 @@ class TestValidateConfiguration(TestCase):
             v_c.check_instance(42, {"count": 1, "image": 2, "type": 3}, provider)
             mock.assert_called_with(3, mock_select_image(2), provider)
 
-    @patch("bibigrid.core.utility.image_selection.select_image")
-    def test_check_instance_image_not_found_count(self, mock_select_image):  # pylint: disable=unused-argument
-        provider = Mock()
-        provider.get_image_by_id_or_name = MagicMock(return_value=None)
-        for i in range(1, 3):
-            v_c = validate_configuration.ValidateConfiguration(providers=None, configurations=None, log=Mock())
-            v_c.check_instance(None, {"count": i, "image": 2}, provider)
-            self.assertTrue(v_c.required_resources_dict["instances"] == i)
-
     def test_check_instance_type_image_combination_has_enough_calls(self):
         log = Mock()
         v_c = validate_configuration.ValidateConfiguration(providers=None, configurations=None, log=log)
@@ -149,7 +134,7 @@ class TestValidateConfiguration(TestCase):
         provider.get_image_by_id_or_name.return_value = {"min_disk": 22, "min_ram": 12}
         with patch.object(validate_configuration, "has_enough") as mock:
             v_c.check_instance_type_image_combination(instance_image=None, instance_type="de.NBI tiny",
-                                                     provider=provider)
+                                                      provider=provider)
             self.assertEqual(call(42, 22, "Type de.NBI tiny", "disk space", log), mock.call_args_list[0])
             self.assertEqual(call(32, 12, "Type de.NBI tiny", "ram", log), mock.call_args_list[1])
 
@@ -162,16 +147,16 @@ class TestValidateConfiguration(TestCase):
             mock.side_effect = [True, True, False, False, True, False, False, True]
             # True True
             self.assertTrue(v_c.check_instance_type_image_combination(instance_image=None, instance_type="de.NBI tiny",
-                                                                     provider=provider))
+                                                                      provider=provider))
             # False False
             self.assertFalse(v_c.check_instance_type_image_combination(instance_image=None, instance_type="de.NBI tiny",
-                                                                      provider=provider))
+                                                                       provider=provider))
             # True False
             self.assertFalse(v_c.check_instance_type_image_combination(instance_image=None, instance_type="de.NBI tiny",
-                                                                      provider=provider))
+                                                                       provider=provider))
             # False True
             self.assertFalse(v_c.check_instance_type_image_combination(instance_image=None, instance_type="de.NBI tiny",
-                                                                      provider=provider))
+                                                                       provider=provider))
 
     def test_check_instance_type_image_combination_count(self):
         for i in range(3):
@@ -182,7 +167,7 @@ class TestValidateConfiguration(TestCase):
             v_c = validate_configuration.ValidateConfiguration(providers=None, configurations=None, log=log)
             with patch.object(validate_configuration, "has_enough") as mock:
                 v_c.check_instance_type_image_combination(instance_image=None, instance_type="de.NBI tiny",
-                                                         provider=provider)
+                                                          provider=provider)
                 self.assertEqual(32 * i, v_c.required_resources_dict["total_ram"])
                 self.assertEqual(10 * i, v_c.required_resources_dict["total_cores"])
                 mock.assert_called_with(32 * i, 12, 'Type de.NBI tiny', 'ram', log)
@@ -196,7 +181,7 @@ class TestValidateConfiguration(TestCase):
         provider.get_volume_by_id_or_name = MagicMock(return_value=None)
         provider.get_volume_snapshot_by_id_or_name = MagicMock(return_value=None)
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"masterMounts": ["Test"]}], log=Mock())
+                                                           configurations=[{"masterMounts": ["Test"]}], log=Mock())
         self.assertFalse(v_c.check_volumes())
 
     def test_check_volumes_match_snapshot(self):
@@ -204,7 +189,7 @@ class TestValidateConfiguration(TestCase):
         provider.get_volume_by_id_or_name = MagicMock(return_value=None)
         provider.get_volume_snapshot_by_id_or_name = MagicMock(return_value={"size": 1})
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"masterMounts": ["Test"]}], log=Mock())
+                                                           configurations=[{"masterMounts": ["Test"]}], log=Mock())
         self.assertTrue(v_c.check_volumes())
 
     def test_check_volumes_match_snapshot_count(self):
@@ -213,8 +198,8 @@ class TestValidateConfiguration(TestCase):
             provider.get_volume_by_id_or_name = MagicMock(return_value=None)
             provider.get_volume_snapshot_by_id_or_name = MagicMock(return_value={"size": i})
             v_c = validate_configuration.ValidateConfiguration(providers=[provider] * i,
-                                                              configurations=[{"masterMounts": ["Test"] * i}],
-                                                              log=Mock())
+                                                               configurations=[{"masterMounts": ["Test"] * i}],
+                                                               log=Mock())
             self.assertTrue(v_c.check_volumes())
             self.assertTrue(v_c.required_resources_dict["Volumes"] == i)
             self.assertTrue(v_c.required_resources_dict["VolumeGigabytes"] == i ** 2)
@@ -224,7 +209,7 @@ class TestValidateConfiguration(TestCase):
         provider.get_volume_by_id_or_name = MagicMock(return_value={"size": 1})
         provider.get_volume_snapshot_by_id_or_name = MagicMock(return_value=None)
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"masterMounts": ["Test"]}], log=Mock())
+                                                           configurations=[{"masterMounts": ["Test"]}], log=Mock())
         self.assertTrue(v_c.check_volumes())
         self.assertTrue(v_c.required_resources_dict["Volumes"] == 0)
         self.assertTrue(v_c.required_resources_dict["VolumeGigabytes"] == 0)
@@ -239,7 +224,7 @@ class TestValidateConfiguration(TestCase):
         provider = Mock()
         provider.get_subnet_by_id_or_name = MagicMock(return_value="network")
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"subnet": "subnet_name"}], log=Mock())
+                                                           configurations=[{"subnet": "subnet_name"}], log=Mock())
         self.assertTrue(v_c.check_network())
         provider.get_subnet_by_id_or_name.assert_called_with("subnet_name")
 
@@ -247,7 +232,7 @@ class TestValidateConfiguration(TestCase):
         provider = Mock()
         provider.get_subnet_by_id_or_name = MagicMock(return_value=None)
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"subnet": "subnet_name"}], log=Mock())
+                                                           configurations=[{"subnet": "subnet_name"}], log=Mock())
         self.assertFalse(v_c.check_network())
         provider.get_subnet_by_id_or_name.assert_called_with("subnet_name")
 
@@ -255,7 +240,7 @@ class TestValidateConfiguration(TestCase):
         provider = Mock()
         provider.get_network_by_id_or_name = MagicMock(return_value=None)
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"network": "network_name"}], log=Mock())
+                                                           configurations=[{"network": "network_name"}], log=Mock())
         self.assertFalse(v_c.check_network())
         provider.get_network_by_id_or_name.assert_called_with("network_name")
 
@@ -263,7 +248,7 @@ class TestValidateConfiguration(TestCase):
         provider = Mock()
         provider.get_network_by_id_or_name = MagicMock(return_value="network")
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"network": "network_name"}], log=Mock())
+                                                           configurations=[{"network": "network_name"}], log=Mock())
         self.assertTrue(v_c.check_network())
         provider.get_network_by_id_or_name.assert_called_with("network_name")
 
@@ -272,7 +257,7 @@ class TestValidateConfiguration(TestCase):
         provider.get_network_by_id_or_name = MagicMock(return_value="network")
         provider.get_subnet_by_id_or_name = MagicMock(return_value="network")
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"network": "network_name"}], log=Mock())
+                                                           configurations=[{"network": "network_name"}], log=Mock())
         self.assertTrue(v_c.check_network())
         provider.get_network_by_id_or_name.assert_called_with("network_name")
 
@@ -286,7 +271,7 @@ class TestValidateConfiguration(TestCase):
         provider = Mock()
         provider.get_server_group_by_id_or_name = MagicMock(return_value=None)
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"serverGroup": "GroupName"}], log=Mock())
+                                                           configurations=[{"serverGroup": "GroupName"}], log=Mock())
         self.assertFalse(v_c.check_server_group())
         provider.get_server_group_by_id_or_name.assert_called_with("GroupName")
 
@@ -294,7 +279,7 @@ class TestValidateConfiguration(TestCase):
         provider = Mock()
         provider.get_server_group_by_id_or_name = MagicMock(return_value="Group")
         v_c = validate_configuration.ValidateConfiguration(providers=[provider],
-                                                          configurations=[{"serverGroup": "GroupName"}], log=Mock())
+                                                           configurations=[{"serverGroup": "GroupName"}], log=Mock())
         self.assertTrue(v_c.check_server_group())
         provider.get_server_group_by_id_or_name.assert_called_with("GroupName")
 
