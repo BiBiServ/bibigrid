@@ -70,6 +70,7 @@ def run_action(args, configurations, config_path):
     exit_state = 0
     try:
         providers = provider_handler.get_providers(configurations, LOG)
+        print(args)
         if providers:
             if args.list:
                 LOG.info("Action list selected")
