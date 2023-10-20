@@ -8,7 +8,7 @@ import re
 
 from bibigrid.core.actions import create
 
-SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)\d+-([a-zA-Z0-9]+)-\d+)$")
+SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)-([a-zA-Z0-9]+)-\d+)$")
 
 
 def dict_clusters(providers, log):
@@ -24,6 +24,8 @@ def dict_clusters(providers, log):
         servers = provider.list_servers()
         for server in servers:
             result = SERVER_REGEX.match(server["name"])
+            print(server["name"])
+            print(result)
             if result:
                 identifier = result.group(4) or result.group(2)
                 cluster_id = result.group(5) or result.group(3)
