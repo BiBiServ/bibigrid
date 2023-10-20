@@ -1,5 +1,5 @@
 """
-Module test list
+Module to test list
 """
 from unittest import TestCase
 from unittest.mock import Mock
@@ -11,7 +11,7 @@ from bibigrid.core.actions import list_clusters
 
 class TestList(TestCase):
     """
-    Class test list
+    Class to test list
     """
 
     def test_setup(self):
