@@ -5,12 +5,17 @@ Name=wg0
 Address={{ wireguard.ip }}/{{ wireguard_common.mask_bits|default(24) }}
 
 {% for vpngtw in groups["vpngtw"] %}
-[Route]
 {% if inventory_hostname in groups['master']%}
+{% for network_cidr in hostvars[vpngtw].network_cidrs %}
+[Route]
 Gateway={{ wireguard.ip }}
-Destination={{ hostvars[vpngtw].network_cidr[0] }}
+Destination={{ network_cidr }}
+{% endfor %}
 {% else %}
+{% for network_cidr in hostvars[groups.master.0].network_cidrs %}
+[Route]
 Gateway={{ hostvars[vpngtw].wireguard.ip }}
-Destination={{ hostvars[groups.master.0].network_cidr[0] }}
+Destination={{ network_cidr }}
+{% endfor %}
 {% endif %}
 {% endfor %}
