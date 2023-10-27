@@ -16,11 +16,13 @@ Metric=5
 GatewayOnLink=True
 
 {% for peer in wireguard_common.peers %}
-{% if peer.subnet != (ansible_default_ipv4.network + '/' + ansible_default_ipv4.netmask) | ipaddr('network/prefix') %}
+{% for subnet in peer.subnets %}
+{% if subnet != (ansible_default_ipv4.network + '/' + ansible_default_ipv4.netmask) | ipaddr('network/prefix') %}
 [Route]
-Destination={{ peer.subnet }}
+Destination={{ subnet }}
 Gateway={{ gateway_ip }}
 Metric=5
 GatewayOnLink=True
 {% endif %}
+{% endfor %}
 {% endfor %}

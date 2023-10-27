@@ -112,7 +112,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             flavor_dict = {key: flavor[key] for key in flavor_keys}
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
             vpngtw_dict = {"name": name, "regexp": regexp, "image": vpngtw["image"],
-                           "network": configuration["network"], "network_cidr": configuration["subnet_cidrs"],
+                           "network": configuration["network"], "network_cidrs": configuration["subnet_cidrs"],
                            "floating_ip": configuration["floating_ip"], "private_v4": configuration["private_v4"],
                            "flavor": flavor_dict, "wireguard_ip": wireguard_ip,
                            "cloud_identifier": configuration["cloud_identifier"],
@@ -126,7 +126,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             flavor = provider.get_flavor(master["type"])
             flavor_dict = {key: flavor[key] for key in flavor_keys}
             master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
-                           "network_cidr": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
+                           "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
@@ -358,7 +358,7 @@ def add_wireguard_peers(configurations):
             private_key, public_key = wireguard_keys.generate()
             configuration["wireguard_peer"] = {"name": configuration["cloud_identifier"], "private_key": private_key,
                                                "public_key": public_key, "ip": configuration["floating_ip"],
-                                               "subnet": configuration["subnet_cidrs"]}
+                                               "subnets": configuration["subnet_cidrs"]}
 
 
 def configure_ansible_yaml(providers, configurations, cluster_id, log):

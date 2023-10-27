@@ -148,10 +148,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 # allow incoming traffic from all other local provider networks
                 for tmp_configuration in self.configurations:
                     if tmp_configuration != configuration:
-                        rules.append(
-                            {"direction": "ingress", "ethertype": "IPv4", "protocol": "tcp", "port_range_min": None,
-                             "port_range_max": None, "remote_ip_prefix": tmp_configuration['subnet_cidrs'],
-                             "remote_group_id": None})
+                        for cidr in tmp_configuration['subnet_cidrs']:
+                            rules.append(
+                                {"direction": "ingress", "ethertype": "IPv4", "protocol": "tcp", "port_range_min": None,
+                                 "port_range_max": None, "remote_ip_prefix": cidr,
+                                 "remote_group_id": None})
             provider.append_rules_to_security_group(default_security_group_id, rules)
             configuration["security_groups"] = [self.default_security_group_name]  # store in configuration
             # when running a multi-cloud setup create an additional wireguard group
@@ -351,8 +352,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         f"{configuration_a['private_v4']} --> allowed_address_pair({configuration_a['mac_addr']},"
                         f"{configuration_b['subnet_cidrs']})")
                     # add provider_b network as allowed network
-                    allowed_addresses.append(
-                        {'ip_address': configuration_b["subnet_cidrs"], 'mac_address': configuration_a["mac_addr"]})
+                    for cidr in configuration_b["subnet_cidrs"]:
+                        allowed_addresses.append(
+                            {'ip_address': cidr, 'mac_address': configuration_a["mac_addr"]})
                     # configure security group rules
                     provider_a.append_rules_to_security_group(self.wireguard_security_group_name, [
                         {"direction": "ingress", "ethertype": "IPv4", "protocol": "udp", "port_range_min": 51820,
