@@ -309,12 +309,14 @@ class TestAnsibleConfigurator(TestCase):
     def test_generate_worker_specification_file_yaml(self):
         configuration = [{"workerInstances": [{elem: elem for elem in ["type", "image"]}], "network": [32]}]
         expected = [{'IMAGE': 'image', 'NETWORK': [32], 'TYPE': 'type'}]
-        self.assertEqual(expected, ansible_configurator.generate_worker_specification_file_yaml(configuration, startup.LOG))
+        self.assertEqual(expected,
+                         ansible_configurator.generate_worker_specification_file_yaml(configuration, startup.LOG))
 
     def test_generate_worker_specification_file_yaml_empty(self):
         configuration = [{}]
         expected = []
-        self.assertEqual(expected, ansible_configurator.generate_worker_specification_file_yaml(configuration, startup.LOG))
+        self.assertEqual(expected,
+                         ansible_configurator.generate_worker_specification_file_yaml(configuration, startup.LOG))
 
     @patch("yaml.dump")
     def test_write_yaml_no_alias(self, mock_yaml):
@@ -330,7 +332,7 @@ class TestAnsibleConfigurator(TestCase):
             output_mock.assert_called_once_with("here", mode="w+", encoding="UTF-8")
             mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY)
 
-    @patch("bibigrid.core.utility.id_generation.generate_munge_key")
+    @patch("bibigrid.core.utility.ansible_configurator.write_host_and_group_vars")
     @patch("bibigrid.core.utility.ansible_configurator.generate_worker_specification_file_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.generate_common_configuration_yaml")
     @patch("bibigrid.core.actions.list_clusters.dict_clusters")
@@ -339,17 +341,16 @@ class TestAnsibleConfigurator(TestCase):
     @patch("bibigrid.core.utility.ansible_configurator.generate_site_file_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.get_cidrs")
-    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_roles, mock_hosts,
-                                    mock_list, mock_common, mock_worker, mock_munge):
-        mock_munge.return_value = 420
+    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_roles, mock_hosts, mock_list,
+                                    mock_common, mock_worker, mock_write):
         mock_cidrs.return_value = 421
         mock_list.return_value = {2: 422}
         mock_roles.return_value = 423
         provider = MagicMock()
         provider.cloud_specification = {"auth": {"username": "Tom"}}
         ansible_configurator.configure_ansible_yaml([provider], [{"sshUser": 42, "ansibleRoles": 21}], 2, startup.LOG)
-        mock_munge.assert_called()
-        mock_worker.assert_called_with([{"sshUser": 42, "ansibleRoles": 21}])
+        print(mock_yaml.call_args_list)
+        mock_worker.assert_called_with([{"sshUser": 42, "ansibleRoles": 21}], startup.LOG)
         mock_common.assert_called_with(421, configuration={"sshUser": 42, "ansibleRoles": 21})
         mock_list.assert_called_with([provider])
         mock_hosts.assert_called_with(42, 422)
