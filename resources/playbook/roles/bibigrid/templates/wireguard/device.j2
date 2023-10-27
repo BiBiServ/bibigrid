@@ -16,7 +16,7 @@ ListenPort = {{ wireguard_common.listen_port|default(51820) }}
 # {{ peer.name }}
 [WireGuardPeer]
 PublicKey = {{ peer.public_key }}
-AllowedIPs = 10.0.0.0/{{ wireguard_common.mask_bits|default(24) }}, {{peer.subnet}}
+AllowedIPs = 10.0.0.0/{{ wireguard_common.mask_bits|default(24) }}, {{peer.subnets|join(', ')}}
 Endpoint = {{ peer.ip }}:{{ wireguard_common.listen_port|default(51820) }}
 {% endif %}
 {% endfor %}
