@@ -5,6 +5,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch, call, mock_open, ANY
 
 import bibigrid.core.utility.paths.ansible_resources_path as aRP
+from bibigrid.core.utility.yaml_dumper import NoAliasSafeDumper
 from bibigrid.core import startup
 from bibigrid.core.utility import ansible_configurator
 
@@ -239,16 +240,16 @@ class TestAnsibleConfigurator(TestCase):
             self.assertEqual(call(42, ip=""), call_happened)
 
     def test_to_instance_host_local(self):
-        ip = 42
+        ip_address = 42
         ssh_user = 21
-        local = {"ip": ip, "ansible_connection": "ssh",
+        local = {"ip": ip_address, "ansible_connection": "ssh",
                  "ansible_python_interpreter": ansible_configurator.PYTHON_INTERPRETER, "ansible_user": ssh_user}
         self.assertEqual(local, ansible_configurator.to_instance_host_dict(21, 42))
 
     def test_to_instance_host_ssh(self):
-        ip = 42
+        ip_address = 42
         ssh_user = 21
-        ssh = {"ip": ip, "ansible_connection": "ssh",
+        ssh = {"ip": ip_address, "ansible_connection": "ssh",
                "ansible_python_interpreter": ansible_configurator.PYTHON_INTERPRETER, "ansible_user": ssh_user}
         self.assertEqual(ssh, ansible_configurator.to_instance_host_dict(21, 42))
 
@@ -300,11 +301,9 @@ class TestAnsibleConfigurator(TestCase):
         galaxy_roles = [{elem: elem for elem in ["hosts", "name", "galaxy", "git", "vars", "vars_file"]}]
         self.assertEqual(galaxy_roles, ansible_configurator.get_ansible_galaxy_roles(galaxy_roles, startup.LOG))
 
-    @patch("logging.warning")
-    def test_get_ansible_galaxy_roles_mismatch(self, mock_log):
+    def test_get_ansible_galaxy_roles_mismatch(self):
         galaxy_roles = [{elem: elem for elem in ["hosts", "name", "vars", "vars_file"]}]
         self.assertEqual([], ansible_configurator.get_ansible_galaxy_roles(galaxy_roles, startup.LOG))
-        mock_log.assert_called()
 
     def test_generate_worker_specification_file_yaml(self):
         configuration = [{"workerInstances": [{elem: elem for elem in ["type", "image"]}], "network": [32]}]
@@ -321,9 +320,9 @@ class TestAnsibleConfigurator(TestCase):
     @patch("yaml.dump")
     def test_write_yaml_no_alias(self, mock_yaml):
         with patch('builtins.open', mock_open()) as output_mock:
-            ansible_configurator.write_yaml("here", {"some": "yaml"}, False)
-            output_mock.assert_called_once_with("here", "w+")
-            mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY, Dumper=yamlDumper.NoAliasSafeDumper)
+            ansible_configurator.write_yaml("here", {"some": "yaml"}, startup.LOG, False)
+            output_mock.assert_called_once_with("here", mode="w+", encoding="UTF-8")
+            mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY, Dumper=NoAliasSafeDumper)
 
     @patch("yaml.safe_dump")
     def test_write_yaml_alias(self, mock_yaml):
@@ -347,17 +346,20 @@ class TestAnsibleConfigurator(TestCase):
         mock_list.return_value = {2: 422}
         mock_roles.return_value = 423
         provider = MagicMock()
-        provider.cloud_specification = {"auth": {"username": "Tom"}}
-        ansible_configurator.configure_ansible_yaml([provider], [{"sshUser": 42, "ansibleRoles": 21}], 2, startup.LOG)
-        print(mock_yaml.call_args_list)
-        mock_worker.assert_called_with([{"sshUser": 42, "ansibleRoles": 21}], startup.LOG)
-        mock_common.assert_called_with(421, configuration={"sshUser": 42, "ansibleRoles": 21})
-        mock_list.assert_called_with([provider])
-        mock_hosts.assert_called_with(42, 422)
+        provider.cloud_specification = {"auth": {"username": "Default"}}
+        configuration = [{"sshUser": 42, "ansibleRoles": 21}]
+        cluster_id = 2
+        ansible_configurator.configure_ansible_yaml([provider], configuration, cluster_id, startup.LOG)
+        mock_worker.assert_called_with(configuration, startup.LOG)
+        mock_common.assert_called_with(cidrs=421, configurations=configuration, cluster_id=cluster_id, ssh_user=42,
+                                       default_user="Default", log=startup.LOG)
+        mock_hosts.assert_called_with(42, configuration, cluster_id, startup.LOG)
         mock_site.assert_called_with(423)
-        mock_roles.assert_called_with(21)
-        mock_cidrs.assert_called_with([{'sshUser': 42, 'ansibleRoles': 21}], [provider])
-        expected = [call(aRP.WORKER_SPECIFICATION_FILE, mock_worker(), False),
-                    call(aRP.COMMONS_CONFIG_FILE, mock_common(), False),
-                    call(aRP.HOSTS_CONFIG_FILE, mock_hosts(), False), call(aRP.SITE_CONFIG_FILE, mock_site(), False)]
+        mock_roles.assert_called_with(21, startup.LOG)
+        mock_cidrs.assert_called_with(configuration)
+        mock_write.assert_called()
+        expected = [call(aRP.WORKER_SPECIFICATION_FILE, mock_worker(), startup.LOG, False),
+                    call(aRP.COMMONS_CONFIG_FILE, mock_common(), startup.LOG, False),
+                    call(aRP.HOSTS_CONFIG_FILE, mock_hosts(), startup.LOG, False),
+                    call(aRP.SITE_CONFIG_FILE, mock_site(), startup.LOG, False)]
         self.assertEqual(expected, mock_yaml.call_args_list)
