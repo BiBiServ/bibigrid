@@ -3,7 +3,7 @@ Module to test create
 """
 import os
 from unittest import TestCase
-from unittest.mock import patch, Mock, MagicMock, mock_open
+from unittest.mock import patch, MagicMock, mock_open
 
 from bibigrid.core import startup
 from bibigrid.core.actions import create
@@ -134,32 +134,30 @@ class TestCreate(TestCase):
     def test_prepare_volumes_volume(self):
         provider = MagicMock()
         provider.list_servers.return_value = []
-        provider.get_volume_by_id_or_name.return_value = 42
+        provider.get_volume_by_id_or_name.return_value = {"id": 42}
         provider.create_volume_from_snapshot = 21
         configuration = {"vpnInstance": 42}
-        c = create.Create([provider], [configuration], "")
-        self.assertEqual([42], c.prepare_volumes(provider, ["Test"]))
+        creator = create.Create([provider], [configuration], "", startup.LOG)
+        self.assertEqual({42}, creator.prepare_volumes(provider, ["Test"]))
 
     def test_prepare_volumes_snapshot(self):
         provider = MagicMock()
         provider.list_servers.return_value = []
-        provider.get_volume_by_id_or_name.return_value = None
+        provider.get_volume_by_id_or_name.return_value = {"id": None}
         provider.create_volume_from_snapshot.return_value = 21
         configuration = {"vpnInstance": 42}
-        c = create.Create([provider], [configuration], "")
-        self.assertEqual([21], c.prepare_volumes(provider, ["Test"]))
+        creator = create.Create([provider], [configuration], "", startup.LOG)
+        self.assertEqual({21}, creator.prepare_volumes(provider, ["Test"]))
 
-    @patch("logging.warning")
-    def test_prepare_volumes_mismatch(self, mock_log):
+    def test_prepare_volumes_mismatch(self):
         provider = MagicMock()
         provider.list_servers.return_value = []
-        provider.get_volume_by_id_or_name.return_value = None
+        provider.get_volume_by_id_or_name.return_value = {"id": None}
         provider.create_volume_from_snapshot.return_value = None
         configuration = {"vpnInstance": 42}
-        c = create.Create([provider], [configuration], "")
+        creator = create.Create([provider], [configuration], "", startup.LOG)
         mount = "Test"
-        self.assertEqual([], c.prepare_volumes(provider, [mount]))
-        mock_log.assert_called_with(f"Mount {mount} is neither a snapshot nor a volume.")
+        self.assertEqual(set(), creator.prepare_volumes(provider, [mount]))
 
     def test_prepare_configurations_no_network(self):
         provider = MagicMock()
@@ -167,11 +165,11 @@ class TestCreate(TestCase):
         network = "network"
         provider.get_network_id_by_subnet.return_value = network
         configuration = {"subnet": 42}
-        c = create.Create([provider], [configuration], "")
-        c.prepare_configurations()
+        creator = create.Create([provider], [configuration], "", startup.LOG)
+        creator.prepare_configurations()
         provider.get_network_id_by_subnet.assert_called_with(42)
         self.assertEqual(network, configuration["network"])
-        self.assertEqual(c.ssh_user, configuration["sshUser"])
+        self.assertEqual(creator.ssh_user, configuration["sshUser"])
 
     def test_prepare_configurations_no_subnet(self):
         provider = MagicMock()
@@ -210,46 +208,33 @@ class TestCreate(TestCase):
                                                                    "resources/playbook/"), "playbook")],
                                     commands=['echo ansible_start'])
 
-    @patch("threading.Thread")
-    def test_start_start_instances_thread(self, mock_thread):
-        provider = MagicMock()
-        provider.list_servers.return_value = []
-        configuration = {}
-        c = create.Create([provider], [configuration], "")
-        start_instances_mock_thread = Mock()
-        mock_thread.return_value = start_instances_mock_thread
-        c.start_start_instances_threads()
-        mock_thread.assert_called_with(target=c.start_instances, args=[configuration, provider])
-        start_instances_mock_thread.start.assert_called()
-        start_instances_mock_thread.join.assert_called()
-
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
-    @patch.object(create.Create, "start_start_instances_threads")
+    @patch.object(create.Create, "start_start_instance_threads")
     @patch.object(create.Create, "upload_data")
-    @patch.object(create.Create, "print_cluster_start_info")
-    @patch("bibigrid.core.actions.terminateCluster.terminate_cluster")
+    @patch.object(create.Create, "log_cluster_start_info")
+    @patch("bibigrid.core.actions.terminate.terminate")
     def test_create_non_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
-        c = create.Create([provider], [configuration], "", False)
-        self.assertEqual(0, c.create())
+        creator = create.Create([provider], [configuration], "", startup.LOG, False)
+        self.assertEqual(0, creator.create())
         for mock in [mock_info, mock_up, mock_start, mock_conf, mock_key]:
             mock.assert_called()
         mock_terminate.assert_not_called()
 
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
-    @patch.object(create.Create, "start_start_instances_threads")
+    @patch.object(create.Create, "start_start_instance_threads")
     @patch.object(create.Create, "upload_data")
-    @patch.object(create.Create, "print_cluster_start_info")
-    @patch("bibigrid.core.actions.terminateCluster.terminate_cluster")
+    @patch.object(create.Create, "log_cluster_start_info")
+    @patch("bibigrid.core.actions.terminate.terminate")
     def test_create_non_debug_upload_raise(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
-        c = create.Create([provider], [configuration], "", False)
+        c = create.Create([provider], [configuration], "", startup.LOG,False)
         mock_up.side_effect = [ConnectionError()]
         self.assertEqual(1, c.create())
         for mock in [mock_start, mock_conf, mock_key, mock_up]:
@@ -260,16 +245,16 @@ class TestCreate(TestCase):
 
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
-    @patch.object(create.Create, "start_start_instances_threads")
+    @patch.object(create.Create, "start_start_instance_threads")
     @patch.object(create.Create, "upload_data")
-    @patch.object(create.Create, "print_cluster_start_info")
-    @patch("bibigrid.core.actions.terminateCluster.terminate_cluster")
+    @patch.object(create.Create, "log_cluster_start_info")
+    @patch("bibigrid.core.actions.terminate.terminate")
     def test_create_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
-        c = create.Create([provider], [configuration], "", True)
-        self.assertEqual(0, c.create())
+        creator = create.Create([provider], [configuration], "", startup.LOG,True)
+        self.assertEqual(0, creator.create())
         for mock in [mock_info, mock_up, mock_start, mock_conf, mock_key]:
             mock.assert_called()
-        mock_terminate.assert_called_with(cluster_id=c.cluster_id, providers=[provider], debug=True)
+        mock_terminate.assert_called_with(cluster_id=creator.cluster_id, providers=[provider], log=startup.LOG, debug=True)
