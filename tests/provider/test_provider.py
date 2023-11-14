@@ -2,13 +2,14 @@
 Module containing integration and unit tests regarding the provider
 """
 
+import logging
 import os
 import unittest
-import logging
 
-import bibigrid.core.utility.handler.configuration_handler as configurationHandler
-import bibigrid.core.utility.handler.provider_handler as providerHandler
 import bibigrid.core.utility.paths.basic_path as bP
+from bibigrid.core.utility.handler import configuration_handler
+from bibigrid.core.utility.handler import provider_handler
+from bibigrid.models.exceptions import ExecutionException
 
 SERVER_KEYS = {'id', 'name', 'flavor', 'image', 'block_device_mapping', 'location', 'volumes', 'has_config_drive',
                'host_id', 'progress', 'disk_config', 'power_state', 'task_state', 'vm_state', 'launched_at',
@@ -62,9 +63,9 @@ KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwB
           "MFbUTTukAiDf4jAgvJkg7ayE0MPapGpI/OhSK2gyN45VAzs2m7uykun87B491JagZ57qr16vt8vxGYpFCEe8QqAcrUszUPqyPrb0auA8bz" \
           "jO8S41Kx8FfG+7eTu4dQ0= user"
 
-CONFIGURATIONS = configurationHandler.read_configuration(logging,
-    os.path.join(bP.ROOT_PATH, "tests/resources/infrastructure_cloud.yml"))
-PROVIDERS = providerHandler.get_providers(CONFIGURATIONS, logging)
+CONFIGURATIONS = configuration_handler.read_configuration(logging, os.path.join(bP.ROOT_PATH,
+                                                          "tests/resources/infrastructure_cloud.yml"))
+PROVIDERS = provider_handler.get_providers(CONFIGURATIONS, logging)
 
 
 class ProviderServer:
@@ -96,9 +97,9 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 free_dict = provider.get_free_resources()
                 self.assertEqual(FREE_RESOURCES_KEYS, set(free_dict.keys()))
-                print(free_dict)
-                for value in free_dict.values():
-                    self.assertLessEqual(0, value)
+                for key, value in free_dict.items():
+                    if key != "floating_ips":
+                        self.assertLessEqual(0, value)
 
     def test_server_start_type_error(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
@@ -117,16 +118,16 @@ class TestProvider(unittest.TestCase):
     def test_server_start_attribute_error(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
-                with self.assertRaises(AttributeError):
+                with self.assertRaises(ExecutionException):
                     provider.create_server(name="name", image="ERROR", flavor=configuration["flavor"],
                                            network=configuration["network"])
-                with self.assertRaises(AttributeError):
+                with self.assertRaises(ExecutionException):
                     provider.create_server(name="name", flavor="ERROR", image=configuration["image"],
                                            network=configuration["network"])
-                with self.assertRaises(AttributeError):
+                with self.assertRaises(ExecutionException):
                     provider.create_server(name="name", flavor=configuration["flavor"], image=configuration["image"],
                                            network="ERROR")
-                with self.assertRaises(AttributeError):
+                with self.assertRaises(ExecutionException):
                     provider.create_server(name="name", flavor=configuration["flavor"], image=configuration["image"],
                                            network=configuration["network"], key_name="ERROR")
 

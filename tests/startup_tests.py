@@ -41,5 +41,5 @@ if __name__ == '__main__':
     # Provider-Test
     # Configuration needs to contain providers and infrastructures
     suite = unittest.TestLoader().discover("./provider", pattern='test_*.py')
-    with suppress_stdout():
-        unittest.TextTestRunner(verbosity=2).run(suite)
+    # with suppress_stdout():
+    unittest.TextTestRunner(verbosity=2).run(suite)
