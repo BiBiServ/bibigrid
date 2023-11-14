@@ -4,6 +4,7 @@ Module containing integration and unit tests regarding the provider
 
 import os
 import unittest
+import logging
 
 import bibigrid.core.utility.handler.configuration_handler as configurationHandler
 import bibigrid.core.utility.handler.provider_handler as providerHandler
@@ -61,9 +62,9 @@ KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwB
           "MFbUTTukAiDf4jAgvJkg7ayE0MPapGpI/OhSK2gyN45VAzs2m7uykun87B491JagZ57qr16vt8vxGYpFCEe8QqAcrUszUPqyPrb0auA8bz" \
           "jO8S41Kx8FfG+7eTu4dQ0= user"
 
-CONFIGURATIONS = configurationHandler.read_configuration(
+CONFIGURATIONS = configurationHandler.read_configuration(logging,
     os.path.join(bP.ROOT_PATH, "tests/resources/infrastructure_cloud.yml"))
-PROVIDERS = providerHandler.get_providers(CONFIGURATIONS)
+PROVIDERS = providerHandler.get_providers(CONFIGURATIONS, logging)
 
 
 class ProviderServer:
@@ -95,6 +96,7 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 free_dict = provider.get_free_resources()
                 self.assertEqual(FREE_RESOURCES_KEYS, set(free_dict.keys()))
+                print(free_dict)
                 for value in free_dict.values():
                     self.assertLessEqual(0, value)
 
@@ -209,7 +211,7 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 self.assertIsNone(provider.get_image_by_id_or_name("NONE"))
 
-    if os.environ.get("OS_SNAPSHOT"):
+    if CONFIGURATIONS[0].get("snapshot_image"):
         def test_get_snapshot(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):

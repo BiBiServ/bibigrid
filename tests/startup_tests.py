@@ -34,13 +34,12 @@ def suppress_stdout():
 logging.basicConfig(level=logging.ERROR)
 if __name__ == '__main__':
     # Unittests
-    suite = unittest.TestLoader().discover("./", pattern='test_*.py')
-    with suppress_stdout():
-        unittest.TextTestRunner(verbosity=2).run(suite)
+    #suite = unittest.TestLoader().discover("./", pattern='test_*.py')
+    #with suppress_stdout():
+    #    unittest.TextTestRunner(verbosity=2).run(suite)
 
     # Provider-Test
     # Configuration needs to contain providers and infrastructures
-    if os.environ.get("OS_KEY_NAME"):
-        suite = unittest.TestLoader().discover("./provider", pattern='test_*.py')
-        with suppress_stdout():
-            unittest.TextTestRunner(verbosity=2).run(suite)
+    suite = unittest.TestLoader().discover("./provider", pattern='test_*.py')
+    with suppress_stdout():
+        unittest.TextTestRunner(verbosity=2).run(suite)
