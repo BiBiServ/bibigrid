@@ -1,12 +1,12 @@
 """
 Module to test create
 """
-import os
 from unittest import TestCase
 from unittest.mock import patch, MagicMock, mock_open
 
 from bibigrid.core import startup
 from bibigrid.core.actions import create
+from bibigrid.core.utility.handler import ssh_handler
 
 
 class TestCreate(TestCase):
@@ -192,8 +192,9 @@ class TestCreate(TestCase):
             creator.prepare_configurations()
 
     @patch("bibigrid.core.utility.ansible_configurator.configure_ansible_yaml")
+    @patch("bibigrid.core.utility.handler.ssh_handler.get_ac_command")
     @patch("bibigrid.core.utility.handler.ssh_handler.execute_ssh")
-    def test_upload_playbooks(self, mock_ssh, mock_configure_ansible):
+    def test_upload_playbooks(self, mock_execute_ssh, mock_ac_ssh, mock_configure_ansible):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
@@ -201,12 +202,12 @@ class TestCreate(TestCase):
         creator.master_ip = 42
         creator.upload_data()
         mock_configure_ansible.assert_called_with(providers=creator.providers, configurations=creator.configurations,
-                                                  cluster_id=creator.cluster_id)
-        mock_ssh.assert_called_with(floating_ip=creator.master_ip, private_key=create.KEY_FOLDER + creator.key_name,
-                                    username=creator.ssh_user,
-                                    filepaths=[(os.path.expanduser("/Documents/Repos/bibigrid/"
-                                                                   "resources/playbook/"), "playbook")],
-                                    commands=['echo ansible_start'])
+                                                  cluster_id=creator.cluster_id, log=startup.LOG)
+        mock_execute_ssh.assert_called_with(floating_ip=creator.master_ip,
+                                            private_key=create.KEY_FOLDER + creator.key_name, username=creator.ssh_user,
+                                            filepaths=create.FILEPATHS,
+                                            commands=[mock_ac_ssh()] + ssh_handler.ANSIBLE_START, log=startup.LOG,
+                                            gateway={})
 
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
@@ -234,14 +235,15 @@ class TestCreate(TestCase):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
-        c = create.Create([provider], [configuration], "", startup.LOG,False)
+        creator = create.Create([provider], [configuration], "", startup.LOG, False)
         mock_up.side_effect = [ConnectionError()]
-        self.assertEqual(1, c.create())
+        self.assertEqual(1, creator.create())
         for mock in [mock_start, mock_conf, mock_key, mock_up]:
             mock.assert_called()
         for mock in [mock_info]:
             mock.assert_not_called()
-        mock_terminate.assert_called_with(cluster_id=c.cluster_id, providers=[provider], debug=False)
+        mock_terminate.assert_called_with(cluster_id=creator.cluster_id, providers=[provider], log=startup.LOG,
+                                          debug=False)
 
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
@@ -253,8 +255,9 @@ class TestCreate(TestCase):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
-        creator = create.Create([provider], [configuration], "", startup.LOG,True)
+        creator = create.Create([provider], [configuration], "", startup.LOG, True)
         self.assertEqual(0, creator.create())
         for mock in [mock_info, mock_up, mock_start, mock_conf, mock_key]:
             mock.assert_called()
-        mock_terminate.assert_called_with(cluster_id=creator.cluster_id, providers=[provider], log=startup.LOG, debug=True)
+        mock_terminate.assert_called_with(cluster_id=creator.cluster_id, providers=[provider], log=startup.LOG,
+                                          debug=True)
