@@ -20,7 +20,12 @@ SERVER_KEYS = {'id', 'name', 'flavor', 'image', 'block_device_mapping', 'locatio
                'updated', 'user_id', 'tags', 'interface_ip', 'properties', 'hostId', 'config_drive', 'project_id',
                'tenant_id', 'region', 'cloud', 'az', 'OS-DCF:diskConfig', 'OS-EXT-AZ:availability_zone',
                'OS-SRV-USG:launched_at', 'OS-SRV-USG:terminated_at', 'OS-EXT-STS:task_state', 'OS-EXT-STS:vm_state',
-               'OS-EXT-STS:power_state', 'os-extended-volumes:volumes_attached'}
+               'OS-EXT-STS:power_state', 'os-extended-volumes:volumes_attached', 'OS-EXT-SRV-ATTR:ramdisk_id',
+               'max_count', 'trusted_image_certificates', 'OS-SCH-HNT:scheduler_hints',
+               'OS-EXT-SRV-ATTR:reservation_id', 'OS-EXT-SRV-ATTR:host', 'locked', 'host_status',
+               'OS-EXT-SRV-ATTR:hypervisor_hostname', 'OS-EXT-SRV-ATTR:launch_index',
+               'OS-EXT-SRV-ATTR:root_device_name', 'OS-EXT-SRV-ATTR:instance_name', 'OS-EXT-SRV-ATTR:user_data',
+               'min_count', 'OS-EXT-SRV-ATTR:kernel_id', 'OS-EXT-SRV-ATTR:hostname'}
 FLOATING_IP_KEYS = {'attached', 'fixed_ip_address', 'floating_ip_address', 'id', 'location', 'network', 'port',
                     'router', 'status', 'created_at', 'updated_at', 'description', 'revision_number', 'properties',
                     'port_id', 'router_id', 'project_id', 'tenant_id', 'floating_network_id', 'port_details',
@@ -41,7 +46,7 @@ IMAGE_KEYS = {'location', 'created_at', 'updated_at', 'checksum', 'container_for
               'is_protected', 'locations', 'properties', 'is_public', 'visibility', 'description',
               'owner_specified.openstack.md5', 'owner_specified.openstack.object', 'owner_specified.openstack.sha256',
               'os_hidden', 'os_hash_algo', 'os_hash_value', 'os_distro', 'os_version', 'schema', 'protected',
-              'metadata', 'created', 'updated', 'minDisk', 'minRam'}
+              'metadata', 'created', 'updated', 'minDisk', 'minRam', 'stores'}
 
 SNAPSHOT_KEYS = {'id', 'created_at', 'updated_at', 'name', 'description', 'volume_id', 'status', 'size', 'metadata',
                  'os-extended-snapshot-attributes:project_id', 'os-extended-snapshot-attributes:progress'}
@@ -63,8 +68,9 @@ KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwB
           "MFbUTTukAiDf4jAgvJkg7ayE0MPapGpI/OhSK2gyN45VAzs2m7uykun87B491JagZ57qr16vt8vxGYpFCEe8QqAcrUszUPqyPrb0auA8bz" \
           "jO8S41Kx8FfG+7eTu4dQ0= user"
 
-CONFIGURATIONS = configuration_handler.read_configuration(logging, os.path.join(bP.ROOT_PATH,
-                                                          "tests/resources/infrastructure_cloud.yml"))
+CONFIGURATIONS = configuration_handler.read_configuration(logging,
+                                                          os.path.join(bP.ROOT_PATH,
+                                                                       "tests/resources/infrastructure_cloud.yml"))
 PROVIDERS = provider_handler.get_providers(CONFIGURATIONS, logging)
 
 
@@ -78,7 +84,7 @@ class ProviderServer:
         self.name = name
         self.server_dict = provider.create_server(name=self.name, flavor=configuration["flavor"],
                                                   image=configuration["image"], network=configuration["network"],
-                                                  key_name=key_name)
+                                                  key_name=key_name, security_groups=[])
 
     def __enter__(self):
         return self.server_dict
@@ -106,30 +112,32 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 with self.assertRaises(TypeError):
                     provider.create_server(name="name", flavor=configuration["flavor"],
-                                           network=configuration["network"])
+                                           network=configuration["network"], security_groups=[])
                 with self.assertRaises(TypeError):
-                    provider.create_server(name="name", image=configuration["image"], network=configuration["network"])
+                    provider.create_server(name="name", image=configuration["image"], network=configuration["network"],
+                                           security_groups=[])
                 with self.assertRaises(TypeError):
                     provider.create_server(flavor=configuration["flavor"], image=configuration["image"],
-                                           network=configuration["network"])
+                                           security_groups=[], network=configuration["network"])
                 with self.assertRaises(TypeError):
-                    provider.create_server(name="name", flavor=configuration["flavor"], image=configuration["image"])
+                    provider.create_server(name="name", flavor=configuration["flavor"], image=configuration["image"],
+                                           security_groups=[])
 
     def test_server_start_attribute_error(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
                 with self.assertRaises(ExecutionException):
                     provider.create_server(name="name", image="ERROR", flavor=configuration["flavor"],
-                                           network=configuration["network"])
+                                           network=configuration["network"], security_groups=[])
                 with self.assertRaises(ExecutionException):
                     provider.create_server(name="name", flavor="ERROR", image=configuration["image"],
-                                           network=configuration["network"])
+                                           network=configuration["network"], security_groups=[])
                 with self.assertRaises(ExecutionException):
                     provider.create_server(name="name", flavor=configuration["flavor"], image=configuration["image"],
-                                           network="ERROR")
+                                           network="ERROR", security_groups=[])
                 with self.assertRaises(ExecutionException):
                     provider.create_server(name="name", flavor=configuration["flavor"], image=configuration["image"],
-                                           network=configuration["network"], key_name="ERROR")
+                                           network=configuration["network"], key_name="ERROR", security_groups=[])
 
     def test_create_keypair_create_delete_false_delete(self):
         for provider in PROVIDERS:
@@ -144,8 +152,8 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 with ProviderServer(provider, "bibigrid_test_server", configuration,
                                     "bibigrid_test_keypair") as provider_server:
-                    floating_ip = provider.create_floating_ip(provider.get_external_network(configuration["network"]),
-                                                              provider_server)
+                    floating_ip = provider.attach_available_floating_ip(
+                        provider.get_external_network(configuration["network"]), provider_server)
                     server_list = provider.list_servers()
                 self.assertEqual(SERVER_KEYS, set(provider_server.keys()))
                 self.assertEqual("bibigrid_test_keypair", provider_server["key_name"])
