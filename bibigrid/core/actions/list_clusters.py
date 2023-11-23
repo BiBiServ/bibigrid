@@ -24,8 +24,8 @@ def dict_clusters(providers, log):
         servers = provider.list_servers()
         for server in servers:
             result = SERVER_REGEX.match(server["name"])
-            print(server["name"])
-            print(result)
+            log.log(42, server["name"])
+            log.log(42, result)
             if result:
                 identifier = result.group(4) or result.group(2)
                 cluster_id = result.group(5) or result.group(3)
@@ -71,7 +71,7 @@ def log_list(cluster_id, providers, log):
             master_count, worker_count, vpn_count = get_size_overview(cluster_dict[cluster_id], log)
             log.log(42, f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
                        f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
-            pprint.pprint(cluster_dict[cluster_id])
+            log.log(42, pprint.pformat(cluster_dict[cluster_id]))
         else:
             log.info("Cluster with cluster-id {cluster_id} not found.")
             log.log(42, f"Cluster with cluster-id {cluster_id} not found.")
