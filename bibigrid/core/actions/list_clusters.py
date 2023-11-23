@@ -24,8 +24,6 @@ def dict_clusters(providers, log):
         servers = provider.list_servers()
         for server in servers:
             result = SERVER_REGEX.match(server["name"])
-            log.log(42, server["name"])
-            log.log(42, result)
             if result:
                 identifier = result.group(4) or result.group(2)
                 cluster_id = result.group(5) or result.group(3)
