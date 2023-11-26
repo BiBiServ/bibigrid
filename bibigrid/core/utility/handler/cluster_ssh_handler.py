@@ -23,7 +23,7 @@ def get_ssh_connection_info(cluster_id, master_provider, master_configuration, l
     else:
         master_ip = list_clusters.get_master_access_ip(cluster_id, master_provider, log)
     ssh_user = master_configuration.get("sshUser")
-    public_keys = master_configuration.get("sshPublicKeyFiles")
+    public_keys = master_configuration.get("sshPublicKeyFiles") or []
     used_private_key = None
 
     # first check configuration then if not found take the temporary key
