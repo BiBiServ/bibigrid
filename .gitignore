@@ -8,6 +8,8 @@ resources/playbook/ansible_hosts
 resources/playbook/vars/
 resources/playbook/host_vars/
 resources/playbook/group_vars/
+tests/resources/*
+!test/resources/test_configuration.yml
 
 # any log files
 *.log

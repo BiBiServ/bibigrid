@@ -303,8 +303,8 @@ class ValidateConfiguration:
         flavor = provider.get_flavor(instance_type)
         if not flavor:
             self.log.warning("Flavor %s does not exist.", instance_type)
-            print("Available flavors:")
-            print("\n".join(provider.get_active_flavors()))
+            self.log.log(42, "Available flavors:")
+            self.log.log(42, "\n".join(provider.get_active_flavors()))
             return False
         type_max_disk_space = flavor["disk"]
         type_max_ram = flavor["ram"]
