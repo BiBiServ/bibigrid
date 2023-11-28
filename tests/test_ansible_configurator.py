@@ -1,313 +1,365 @@
 """
-Tests for ansibleConfigurator
+Tests for ansible_configurator
 """
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch, call, mock_open, ANY
 
-import bibigrid.core.utility.ansible_configurator as ansibleConfigurator
 import bibigrid.core.utility.paths.ansible_resources_path as aRP
-import bibigrid.core.utility.yaml_dumper as yamlDumper
+from bibigrid.core.utility.yaml_dumper import NoAliasSafeDumper
+from bibigrid.core import startup
+from bibigrid.core.utility import ansible_configurator
+
 
 class TestAnsibleConfigurator(TestCase):
     """
     Test ansible configurator test class
     """
+
     # pylint: disable=R0904
     def test_generate_site_file_yaml_empty(self):
-        site_yaml = [{'hosts': 'master', "become": "yes",
-                      "vars_files": ansibleConfigurator.VARS_FILES, "roles": ["common", "master"]},
-                     {"hosts": "worker", "become": "yes", "vars_files":
-                         ansibleConfigurator.VARS_FILES, "roles": ["common", "worker"]},
-                     {"hosts": "vpngtw", "become": "yes", "vars_files":
-                         ansibleConfigurator.VARS_FILES, "roles": ["common", "vpngtw"]}]
-        self.assertEqual(site_yaml, ansibleConfigurator.generate_site_file_yaml([]))
+        site_yaml = [{'become': 'yes', 'hosts': 'master',
+                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']}],
+                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                     {'become': 'yes', 'hosts': 'vpngtw',
+                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']}],
+                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                     {'become': 'yes', 'hosts': 'workers',
+                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']}],
+                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']}]
+        self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml([]))
 
     def test_generate_site_file_yaml_role(self):
         custom_roles = [{"file": "file", "hosts": "hosts", "name": "name", "vars": "vars", "vars_file": "varsFile"}]
-        vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
-        site_yaml = [{'hosts': 'master', "become": "yes",
-                      "vars_files": vars_files, "roles": ["common", "master", "additional/name"]},
-                     {"hosts": "worker", "become": "yes", "vars_files":
-                         vars_files, "roles": ["common", "worker", "additional/name"]},
-                     {"hosts": "vpngtw", "become": "yes", "vars_files":
-                         vars_files, "roles": ["common", "vpngtw", "additional/name"]}]
-        self.assertEqual(site_yaml, ansibleConfigurator.generate_site_file_yaml(custom_roles))
-
-    def test_generate_instances(self):
-        cluster_dict = object()
-        self.assertEqual(cluster_dict, ansibleConfigurator.generate_instances_yaml(cluster_dict))
+        # vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
+        site_yaml = [{'become': 'yes', 'hosts': 'master',
+                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']}, 'additional/name'],
+                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']},
+                     {'become': 'yes', 'hosts': 'vpngtw',
+                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']}, 'additional/name'],
+                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']},
+                     {'become': 'yes', 'hosts': 'workers',
+                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']}, 'additional/name'],
+                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']}]
+        self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml(custom_roles))
 
     def test_generate_common_configuration_false(self):
-        cidrs = 42
-        configuration = {}
-        common_configuration_yaml = {"cluster_cidrs": cidrs,
-                                     "local_fs": False,
-                                     "local_dns_lookup": False,
-                                     "use_master_as_compute": True,
-                                     "enable_slurm": False,
-                                     "enable_zabbix": False,
-                                     "enable_nfs": False,
-                                     "enable_ide": False
-                                     }
-        self.assertEqual(common_configuration_yaml,
-                         ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration))
+        cidrs = "42"
+        cluster_id = "21"
+        default_user = "ubuntu"
+        ssh_user = "test"
+        configuration = [{}]
+        common_configuration_yaml = {'auto_mount': False, 'cluster_cidrs': cidrs, 'cluster_id': cluster_id,
+                                     'default_user': default_user, 'dns_server_list': ['8.8.8.8'], 'enable_ide': False,
+                                     'enable_nfs': False, 'enable_slurm': False, 'enable_zabbix': False,
+                                     'local_dns_lookup': False, 'local_fs': False, 'slurm': True,
+                                     'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
+                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
+                                                                           'TreeWidth': 128},
+                                                    'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
+                                     'use_master_as_compute': True}
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
+                                                                                                 cluster_id, ssh_user,
+                                                                                                 default_user,
+                                                                                                 startup.LOG)
+        # munge key is randomly generated
+        common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
+        self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_true(self):
-        cidrs = 42
-        configuration = {elem: "true" for elem in ["localFS", "localDNSlookup", "useMasterAsCompute", "slurm",
-                                                   "zabbix", "ide"]}
-        common_configuration_yaml = {elem: "true" for elem in ["local_fs", "local_dns_lookup", "use_master_as_compute",
-                                                               "enable_slurm", "enable_zabbix", "enable_ide"]}
-        common_configuration_yaml["cluster_cidrs"] = cidrs
-        common_configuration_yaml["enable_nfs"] = False
-        self.assertEqual(common_configuration_yaml,
-                         ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration))
+        cidrs = "42"
+        cluster_id = "21"
+        default_user = "ubuntu"
+        ssh_user = "test"
+        configuration = [
+            {elem: "True" for elem in ["localFS", "localDNSlookup", "useMasterAsCompute", "slurm", "zabbix", "ide"]}]
+        common_configuration_yaml = {'auto_mount': False, 'cluster_cidrs': cidrs, 'cluster_id': cluster_id,
+                                     'default_user': default_user, 'dns_server_list': ['8.8.8.8'], 'enable_ide': 'True',
+                                     'enable_nfs': False, 'enable_slurm': 'True', 'enable_zabbix': 'True',
+                                     'ide_conf': {'build': False, 'ide': False, 'port_end': 8383, 'port_start': 8181,
+                                                  'workspace': '${HOME}'}, 'local_dns_lookup': 'True',
+                                     'local_fs': 'True', 'slurm': 'True',
+                                     'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
+                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
+                                                                           'TreeWidth': 128},
+                                                    'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
+                                     'use_master_as_compute': 'True',
+                                     'zabbix_conf': {'admin_password': 'bibigrid', 'db': 'zabbix',
+                                                     'db_password': 'zabbix', 'db_user': 'zabbix',
+                                                     'server_name': 'bibigrid', 'timezone': 'Europe/Berlin'}}
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
+                                                                                                 cluster_id, ssh_user,
+                                                                                                 default_user,
+                                                                                                 startup.LOG)
+        common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
+        self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_nfs_shares(self):
-        cidrs = 42
-        configuration = {"nfs": "True", "nfsShares": ["/vil/mil"]}
-        common_configuration_yaml = {'cluster_cidrs': 42,
-                                     'enable_ide': False,
-                                     'enable_nfs': 'True',
-                                     'enable_slurm': False,
-                                     'enable_zabbix': False,
-                                     'ext_nfs_mounts': [],
-                                     'local_dns_lookup': False,
-                                     'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'},
-                                                    {'dst': '/vol/spool', 'src': '/vol/spool'}],
+        configuration = [{"nfs": "True", "nfsShares": ["/vil/mil"]}]
+        cidrs = "42"
+        cluster_id = "21"
+        default_user = "ubuntu"
+        ssh_user = "test"
+        common_configuration_yaml = {'auto_mount': False, 'cluster_cidrs': cidrs, 'cluster_id': cluster_id,
+                                     'default_user': default_user, 'dns_server_list': ['8.8.8.8'], 'enable_ide': False,
+                                     'enable_nfs': 'True', 'enable_slurm': False, 'enable_zabbix': False,
+                                     'ext_nfs_mounts': [], 'local_dns_lookup': False, 'local_fs': False,
+                                     'nfs_mounts': [{'dst': '//vil/mil', 'src': '//vil/mil'},
+                                                    {'dst': '//vol/spool', 'src': '//vol/spool'}], 'slurm': True,
+                                     'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
+                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
+                                                                           'TreeWidth': 128},
+                                                    'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': True}
-        self.assertEqual(common_configuration_yaml,
-                         ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration))
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
+                                                                                                 cluster_id, ssh_user,
+                                                                                                 default_user,
+                                                                                                 startup.LOG)
+        common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
+        self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_nfs(self):
-        cidrs = 42
-        configuration = {"nfs": "True"}
-        common_configuration_yaml = {'cluster_cidrs': 42,
-                                     'enable_ide': False,
-                                     'enable_nfs': 'True',
-                                     'enable_slurm': False,
-                                     'enable_zabbix': False,
-                                     'ext_nfs_mounts': [],
-                                     'local_dns_lookup': False,
-                                     'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vol/spool', 'src': '/vol/spool'}],
+        configuration = [{"nfs": "True"}]
+        cidrs = "42"
+        cluster_id = "21"
+        default_user = "ubuntu"
+        ssh_user = "test"
+        common_configuration_yaml = {'auto_mount': False, 'cluster_cidrs': cidrs, 'cluster_id': cluster_id,
+                                     'default_user': default_user, 'dns_server_list': ['8.8.8.8'], 'enable_ide': False,
+                                     'enable_nfs': 'True', 'enable_slurm': False, 'enable_zabbix': False,
+                                     'ext_nfs_mounts': [], 'local_dns_lookup': False, 'local_fs': False,
+                                     'nfs_mounts': [{'dst': '//vol/spool', 'src': '//vol/spool'}], 'slurm': True,
+                                     'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
+                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
+                                                                           'TreeWidth': 128},
+                                                    'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': True}
-        self.assertEqual(common_configuration_yaml,
-                         ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration))
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
+                                                                                                 cluster_id, ssh_user,
+                                                                                                 default_user,
+                                                                                                 startup.LOG)
+        common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
+        self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_ext_nfs_shares(self):
-        cidrs = 42
-        configuration = {"nfs": "True", "extNfsShares": ["/vil/mil"]}
-        common_configuration_yaml = {'cluster_cidrs': 42,
-                                     'enable_ide': False,
-                                     'enable_nfs': 'True',
-                                     'enable_slurm': False,
-                                     'enable_zabbix': False,
+        configuration = [{"nfs": "True", "extNfsShares": ["/vil/mil"]}]
+        cidrs = "42"
+        cluster_id = "21"
+        default_user = "ubuntu"
+        ssh_user = "test"
+        common_configuration_yaml = {'auto_mount': False, 'cluster_cidrs': cidrs, 'cluster_id': cluster_id,
+                                     'default_user': default_user, 'dns_server_list': ['8.8.8.8'], 'enable_ide': False,
+                                     'enable_nfs': 'True', 'enable_slurm': False, 'enable_zabbix': False,
                                      'ext_nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'}],
-                                     'local_dns_lookup': False,
-                                     'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vol/spool', 'src': '/vol/spool'}],
-                                     'use_master_as_compute': True}
-        self.assertEqual(common_configuration_yaml,
-                         ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration))
+                                     'local_dns_lookup': False, 'local_fs': False,
+                                     'nfs_mounts': [{'dst': '//vol/spool', 'src': '//vol/spool'}], 'slurm': True,
+                                     'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
+                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
+                                                                           'TreeWidth': 128},
+                                                    'munge_key': 'YryJVnqgg24Ksf8zXQtbct3nuXrMSi9N'},
+                                     'ssh_user': ssh_user, 'use_master_as_compute': True}
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
+                                                                                                 cluster_id, ssh_user,
+                                                                                                 default_user,
+                                                                                                 startup.LOG)
+        common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
+        self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_ide(self):
-        cidrs = 42
-        configuration = {"ide": "Some1", "ideConf": "Some2"}
-        common_configuration_yaml = {'cluster_cidrs': 42,
-                                     'enable_ide': "Some1",
-                                     'enable_nfs': False,
-                                     'enable_slurm': False,
+        configuration = [{"ide": "Some1", "ideConf": {"key1": "Some2"}}]
+        cidrs = "42"
+        cluster_id = "21"
+        default_user = "ubuntu"
+        ssh_user = "test"
+        common_configuration_yaml = {'auto_mount': False, 'cluster_cidrs': cidrs, 'cluster_id': cluster_id,
+                                     'default_user': default_user, 'dns_server_list': ['8.8.8.8'],
+                                     'enable_ide': 'Some1', 'enable_nfs': False, 'enable_slurm': False,
                                      'enable_zabbix': False,
-                                     'ide_conf': 'Some2',
-                                     'local_dns_lookup': False,
-                                     'local_fs': False,
-                                     'use_master_as_compute': True}
-        self.assertEqual(common_configuration_yaml,
-                         ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration))
+                                     'ide_conf': {'build': False, 'ide': False, 'key1': 'Some2', 'port_end': 8383,
+                                                  'port_start': 8181, 'workspace': '${HOME}'},
+                                     'local_dns_lookup': False, 'local_fs': False, 'slurm': True,
+                                     'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
+                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
+                                                                           'TreeWidth': 128},
+                                                    'munge_key': 'b7nks3Ur3kanyPAEBxfSC9ypfSHFnWJL'},
+                                     'ssh_user': ssh_user, 'use_master_as_compute': True}
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
+                                                                                                 cluster_id, ssh_user,
+                                                                                                 default_user,
+                                                                                                 startup.LOG)
+        common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
+        self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
-    @patch("bibigrid.core.utility.ansibleConfigurator.get_ansible_roles")
-    def test_generate_common_configuration_ansible_roles_mock(self, mock_ansible_roles):
-        cidrs = 42
+    def test_generate_common_configuration_ansible_roles_mock(self):
+        cidrs = "42"
         ansible_roles = [{elem: elem for elem in ["file", "hosts", "name", "vars", "vars_file"]}]
-        mock_ansible_roles.return_value = 21
-        configuration = {"ansibleRoles": ansible_roles}
-        self.assertEqual(21,
-                         ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration)["ansible_roles"])
-        mock_ansible_roles.assert_called_with(ansible_roles)
+        cluster_id = "21"
+        default_user = "ubuntu"
+        ssh_user = "test"
+        configuration = [{"ansibleRoles": ansible_roles}]
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
+                                                                                                 cluster_id, ssh_user,
+                                                                                                 default_user,
+                                                                                                 startup.LOG)
+        self.assertEqual(ansible_roles, generated_common_configuration["ansible_roles"])
 
-    @patch("bibigrid.core.utility.ansibleConfigurator.get_ansible_galaxy_roles")
-    def test_generate_common_configuration_ansible_galaxy_roles(self, mock_galaxy_roles):
-        cidrs = 42
+    def test_generate_common_configuration_ansible_galaxy_roles(self):
+        cidrs = "42"
+        cluster_id = "21"
+        default_user = "ubuntu"
+        ssh_user = "test"
         galaxy_roles = [{elem: elem for elem in ["hosts", "name", "galaxy", "git", "url", "vars", "vars_file"]}]
-        configuration = {"ansibleGalaxyRoles": galaxy_roles}
-        mock_galaxy_roles.return_value = 21
-        self.assertEqual(21,
-                         ansibleConfigurator.generate_common_configuration_yaml(cidrs, configuration)[
-                             "ansible_galaxy_roles"])
-        mock_galaxy_roles.assert_called_with(galaxy_roles)
+        configuration = [{"ansibleGalaxyRoles": galaxy_roles}]
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
+                                                                                                 cluster_id, ssh_user,
+                                                                                                 default_user,
+                                                                                                 startup.LOG)
+        self.assertEqual(galaxy_roles, generated_common_configuration["ansible_galaxy_roles"])
 
-    @patch("bibigrid.core.utility.ansibleConfigurator.to_instance_host_dict")
+    @patch("bibigrid.core.utility.ansible_configurator.to_instance_host_dict")
     def test_generate_ansible_hosts(self, mock_instance_host_dict):
-        mock_instance_host_dict.side_effect = [0, 1, 2]
-        cluster_dict = {"workers": [{"private_v4": 21}], "vpngtws": [{"private_v4": 32}]}
-        expected = {'master': {'hosts': 0}, 'worker': {'hosts': {21: 1, 32: 2}}}
-        self.assertEqual(expected, ansibleConfigurator.generate_ansible_hosts_yaml(42, cluster_dict))
+        cluster_id = "21"
+        mock_instance_host_dict.side_effect = [0, 1, 2, 4, 5, {}]
+        configuration = [{'masterInstance': {'type': 'mini', 'image': 'Ubuntu'},
+                          'workerInstances': [{'type': 'tiny', 'image': 'Ubuntu', 'count': 2},
+                                              {'type': 'default', 'image': 'Ubuntu', 'count': 1}]},
+                         {'vpnInstance': {'type': 'mini', 'image': 'Ubuntu'}, 'workerInstances': [
+                             {'type': 'tiny', 'image': 'Ubuntu', 'count': 2, 'features': ['holdsinformation']},
+                             {'type': 'small', 'image': 'Ubuntu', 'count': 2}], 'floating_ip': "42"}]
+        expected = {'vpn': {'children': {'master': {'hosts': {'localhost': 0}},
+                                         'vpngtw': {'hosts': {'bibigrid-vpngtw-21-0': {'ansible_host': '42'}}}},
+                            'hosts': {}}, 'workers': {
+            'children': {'bibigrid_worker_21_0_1': {'hosts': {'bibigrid-worker-21-[0:1]': 1}},
+                         'bibigrid_worker_21_2_2': {'hosts': {'bibigrid-worker-21-[2:2]': 2}},
+                         'bibigrid_worker_21_3_4': {'hosts': {'bibigrid-worker-21-[3:4]': 4}},
+                         'bibigrid_worker_21_5_6': {'hosts': {'bibigrid-worker-21-[5:6]': 5}}}, 'hosts': {}}}
+        self.assertEqual(expected,
+                         ansible_configurator.generate_ansible_hosts_yaml(42, configuration, cluster_id, startup.LOG))
         call_list = mock_instance_host_dict.call_args_list
         self.assertEqual(call(42), call_list[0])
-        self.assertEqual(call(42, ip=21, local=False), call_list[1])
-        self.assertEqual(call(42, ip=32, local=False), call_list[2])
+        for call_happened in call_list[1:]:
+            self.assertEqual(call(42, ip=""), call_happened)
 
     def test_to_instance_host_local(self):
-        ip = 42
+        ip_address = 42
         ssh_user = 21
-        local = {"ip": ip, "ansible_connection": "local",
-                 "ansible_python_interpreter": ansibleConfigurator.PYTHON_INTERPRETER,
-                 "ansible_user": ssh_user}
-        self.assertEqual(local, ansibleConfigurator.to_instance_host_dict(21, 42, True))
+        local = {"ip": ip_address, "ansible_connection": "ssh",
+                 "ansible_python_interpreter": ansible_configurator.PYTHON_INTERPRETER, "ansible_user": ssh_user}
+        self.assertEqual(local, ansible_configurator.to_instance_host_dict(21, 42))
 
     def test_to_instance_host_ssh(self):
-        ip = 42
+        ip_address = 42
         ssh_user = 21
-        ssh = {"ip": ip, "ansible_connection": "ssh",
-               "ansible_python_interpreter": ansibleConfigurator.PYTHON_INTERPRETER,
-               "ansible_user": ssh_user}
-        self.assertEqual(ssh, ansibleConfigurator.to_instance_host_dict(21, 42, False))
+        ssh = {"ip": ip_address, "ansible_connection": "ssh",
+               "ansible_python_interpreter": ansible_configurator.PYTHON_INTERPRETER, "ansible_user": ssh_user}
+        self.assertEqual(ssh, ansible_configurator.to_instance_host_dict(21, 42))
 
-    def test_get_cidrs_single(self):
+    def test_get_cidrs(self):
         provider = Mock()
         provider.get_subnet_by_id_or_name.return_value = {"cidr": 42}
-        configuration = {"subnet": 21}
-        expected = [{'provider': 'Mock', 'provider_cidrs': [42]}]
-        self.assertEqual(expected, ansibleConfigurator.get_cidrs([configuration], [provider]))
-        provider.get_subnet_by_id_or_name.assert_called_with(21)
-
-    def test_get_cidrs_list(self):
-        provider = Mock()
-        provider.get_subnet_by_id_or_name.return_value = {"cidr": 42}
-        configuration = {"subnet": [21, 22]}
-        expected = [{'provider': 'Mock', 'provider_cidrs': [42, 42]}]
-        self.assertEqual(expected, ansibleConfigurator.get_cidrs([configuration], [provider]))
-        call_list = provider.get_subnet_by_id_or_name.call_args_list
-        self.assertEqual(call(21), call_list[0])
-        self.assertEqual(call(22), call_list[1])
+        configuration = [{"subnet_cidrs": [21], "cloud_identifier": 13}]
+        expected = [{'cloud_identifier': 13, 'provider_cidrs': [21]}]
+        self.assertEqual(expected, ansible_configurator.get_cidrs(configuration))
 
     def test_get_ansible_roles_empty(self):
-        self.assertEqual([], ansibleConfigurator.get_ansible_roles([]))
+        self.assertEqual([], ansible_configurator.get_ansible_roles([], startup.LOG))
 
     def test_get_ansible_roles(self):
         ansible_roles = [{elem: elem for elem in ["file", "hosts", "name", "vars", "vars_file"]}]
-        self.assertEqual(ansible_roles, ansibleConfigurator.get_ansible_roles(ansible_roles))
+        self.assertEqual(ansible_roles, ansible_configurator.get_ansible_roles(ansible_roles, startup.LOG))
 
     def test_get_ansible_roles_add(self):
         ansible_roles = [{elem: elem for elem in ["file", "hosts", "name", "vars", "vars_file"]}]
         ansible_roles_add = [{elem: elem for elem in ["file", "hosts", "name", "vars", "vars_file", "additional"]}]
-        self.assertEqual(ansible_roles, ansibleConfigurator.get_ansible_roles(ansible_roles_add))
+        self.assertEqual(ansible_roles, ansible_configurator.get_ansible_roles(ansible_roles_add, startup.LOG))
 
     def test_get_ansible_roles_minus(self):
         ansible_roles = [{elem: elem for elem in ["file", "hosts"]}]
-        self.assertEqual(ansible_roles, ansibleConfigurator.get_ansible_roles(ansible_roles))
+        self.assertEqual(ansible_roles, ansible_configurator.get_ansible_roles(ansible_roles, startup.LOG))
 
-    @patch("logging.warning")
-    def test_get_ansible_roles_mismatch_hosts(self, mock_log):
+    def test_get_ansible_roles_mismatch_hosts(self):
         ansible_roles = [{"file": "file"}]
-        self.assertEqual([], ansibleConfigurator.get_ansible_roles(ansible_roles))
-        mock_log.assert_called()
+        self.assertEqual([], ansible_configurator.get_ansible_roles(ansible_roles, startup.LOG))
 
-    @patch("logging.warning")
-    def test_get_ansible_roles_mismatch_file(self, mock_log):
+    def test_get_ansible_roles_mismatch_file(self):
         ansible_roles = [{"hosts": "hosts"}]
-        self.assertEqual([], ansibleConfigurator.get_ansible_roles(ansible_roles))
-        mock_log.assert_called()
+        self.assertEqual([], ansible_configurator.get_ansible_roles(ansible_roles, startup.LOG))
 
     def test_get_ansible_galaxy_roles_empty(self):
-        self.assertEqual([], ansibleConfigurator.get_ansible_galaxy_roles([]))
+        self.assertEqual([], ansible_configurator.get_ansible_galaxy_roles([], startup.LOG))
 
     def test_get_ansible_galaxy_roles(self):
         galaxy_roles = [{elem: elem for elem in ["hosts", "name", "galaxy", "git", "url", "vars", "vars_file"]}]
-        self.assertEqual(galaxy_roles, ansibleConfigurator.get_ansible_galaxy_roles(galaxy_roles))
+        self.assertEqual(galaxy_roles, ansible_configurator.get_ansible_galaxy_roles(galaxy_roles, startup.LOG))
 
     def test_get_ansible_galaxy_roles_add(self):
         galaxy_roles = [{elem: elem for elem in ["hosts", "name", "galaxy", "git", "url", "vars", "vars_file"]}]
         galaxy_roles_add = [
             {elem: elem for elem in ["hosts", "name", "galaxy", "git", "url", "vars", "vars_file", "additional"]}]
-        self.assertEqual(galaxy_roles, ansibleConfigurator.get_ansible_galaxy_roles(galaxy_roles_add))
+        self.assertEqual(galaxy_roles, ansible_configurator.get_ansible_galaxy_roles(galaxy_roles_add, startup.LOG))
 
     def test_get_ansible_galaxy_roles_minus(self):
         galaxy_roles = [{elem: elem for elem in ["hosts", "name", "galaxy", "git", "vars", "vars_file"]}]
-        self.assertEqual(galaxy_roles, ansibleConfigurator.get_ansible_galaxy_roles(galaxy_roles))
+        self.assertEqual(galaxy_roles, ansible_configurator.get_ansible_galaxy_roles(galaxy_roles, startup.LOG))
 
-    @patch("logging.warning")
-    def test_get_ansible_galaxy_roles_mismatch(self, mock_log):
+    def test_get_ansible_galaxy_roles_mismatch(self):
         galaxy_roles = [{elem: elem for elem in ["hosts", "name", "vars", "vars_file"]}]
-        self.assertEqual([], ansibleConfigurator.get_ansible_galaxy_roles(galaxy_roles))
-        mock_log.assert_called()
-
-    def test_generate_login_file(self):
-        login_yaml = {"default_user": 99,
-                      "ssh_user": 21,
-                      "munge_key": 32}
-        self.assertEqual(login_yaml, ansibleConfigurator.generate_login_file_yaml(21, 32, 99))
+        self.assertEqual([], ansible_configurator.get_ansible_galaxy_roles(galaxy_roles, startup.LOG))
 
     def test_generate_worker_specification_file_yaml(self):
         configuration = [{"workerInstances": [{elem: elem for elem in ["type", "image"]}], "network": [32]}]
         expected = [{'IMAGE': 'image', 'NETWORK': [32], 'TYPE': 'type'}]
-        self.assertEqual(expected, ansibleConfigurator.generate_worker_specification_file_yaml(configuration))
+        self.assertEqual(expected,
+                         ansible_configurator.generate_worker_specification_file_yaml(configuration, startup.LOG))
 
     def test_generate_worker_specification_file_yaml_empty(self):
         configuration = [{}]
         expected = []
-        self.assertEqual(expected, ansibleConfigurator.generate_worker_specification_file_yaml(configuration))
+        self.assertEqual(expected,
+                         ansible_configurator.generate_worker_specification_file_yaml(configuration, startup.LOG))
 
     @patch("yaml.dump")
     def test_write_yaml_no_alias(self, mock_yaml):
         with patch('builtins.open', mock_open()) as output_mock:
-            ansibleConfigurator.write_yaml("here", {"some": "yaml"}, False)
-            output_mock.assert_called_once_with("here", "w+")
-            mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY, Dumper=yamlDumper.NoAliasSafeDumper)
+            ansible_configurator.write_yaml("here", {"some": "yaml"}, startup.LOG, False)
+            output_mock.assert_called_once_with("here", mode="w+", encoding="UTF-8")
+            mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY, Dumper=NoAliasSafeDumper)
 
     @patch("yaml.safe_dump")
     def test_write_yaml_alias(self, mock_yaml):
         with patch('builtins.open', mock_open()) as output_mock:
-            ansibleConfigurator.write_yaml("here", {"some": "yaml"}, True)
-            output_mock.assert_called_once_with("here", "w+")
+            ansible_configurator.write_yaml("here", {"some": "yaml"}, startup.LOG, True)
+            output_mock.assert_called_once_with("here", mode="w+", encoding="UTF-8")
             mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY)
 
-    @patch("bibigrid.core.utility.id_generation.generate_munge_key")
-    @patch("bibigrid.core.utility.ansibleConfigurator.generate_worker_specification_file_yaml")
-    @patch("bibigrid.core.utility.ansibleConfigurator.generate_login_file_yaml")
-    @patch("bibigrid.core.utility.ansibleConfigurator.generate_common_configuration_yaml")
+    @patch("bibigrid.core.utility.ansible_configurator.write_host_and_group_vars")
+    @patch("bibigrid.core.utility.ansible_configurator.generate_worker_specification_file_yaml")
+    @patch("bibigrid.core.utility.ansible_configurator.generate_common_configuration_yaml")
     @patch("bibigrid.core.actions.list_clusters.dict_clusters")
-    @patch("bibigrid.core.utility.ansibleConfigurator.generate_instances_yaml")
-    @patch("bibigrid.core.utility.ansibleConfigurator.generate_ansible_hosts_yaml")
-    @patch("bibigrid.core.utility.ansibleConfigurator.get_ansible_roles")
-    @patch("bibigrid.core.utility.ansibleConfigurator.generate_site_file_yaml")
-    @patch("bibigrid.core.utility.ansibleConfigurator.write_yaml")
-    @patch("bibigrid.core.utility.ansibleConfigurator.get_cidrs")
-    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_roles, mock_hosts,
-                                    mock_instances, mock_list, mock_common, mock_login, mock_worker, mock_munge):
-        mock_munge.return_value = 420
+    @patch("bibigrid.core.utility.ansible_configurator.generate_ansible_hosts_yaml")
+    @patch("bibigrid.core.utility.ansible_configurator.get_ansible_roles")
+    @patch("bibigrid.core.utility.ansible_configurator.generate_site_file_yaml")
+    @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
+    @patch("bibigrid.core.utility.ansible_configurator.get_cidrs")
+    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_roles, mock_hosts, mock_list,
+                                    mock_common, mock_worker, mock_write):
         mock_cidrs.return_value = 421
         mock_list.return_value = {2: 422}
         mock_roles.return_value = 423
         provider = MagicMock()
-        provider.cloud_specification = {"auth": {"username":"Tom"}}
-        ansibleConfigurator.configure_ansible_yaml([provider], [{"sshUser": 42, "ansibleRoles": 21}], 2)
-        mock_munge.assert_called()
-        mock_worker.assert_called_with([{"sshUser": 42, "ansibleRoles": 21}])
-        mock_common.assert_called_with(421, configuration={"sshUser": 42, "ansibleRoles": 21})
-        mock_login.assert_called_with(ssh_user=42, munge_key=420, default_user="Tom")
-        mock_list.assert_called_with([provider])
-        mock_instances.assert_called_with(422)
-        mock_hosts.assert_called_with(42, 422)
+        provider.cloud_specification = {"auth": {"username": "Default"}}
+        configuration = [{"sshUser": 42, "ansibleRoles": 21}]
+        cluster_id = 2
+        ansible_configurator.configure_ansible_yaml([provider], configuration, cluster_id, startup.LOG)
+        mock_worker.assert_called_with(configuration, startup.LOG)
+        mock_common.assert_called_with(cidrs=421, configurations=configuration, cluster_id=cluster_id, ssh_user=42,
+                                       default_user="Default", log=startup.LOG)
+        mock_hosts.assert_called_with(42, configuration, cluster_id, startup.LOG)
         mock_site.assert_called_with(423)
-        mock_roles.assert_called_with(21)
-        mock_cidrs.assert_called_with([{'sshUser': 42, 'ansibleRoles': 21}], [provider])
-        expected = [call(aRP.WORKER_SPECIFICATION_FILE, mock_worker(), False),
-                    call(aRP.COMMONS_LOGIN_FILE, mock_login(), False),
-                    call(aRP.COMMONS_CONFIG_FILE, mock_common(), False),
-                    call(aRP.COMMONS_INSTANCES_FILE, mock_instances(), False),
-                    call(aRP.HOSTS_CONFIG_FILE, mock_hosts(), False),
-                    call(aRP.SITE_CONFIG_FILE, mock_site(), False)]
+        mock_roles.assert_called_with(21, startup.LOG)
+        mock_cidrs.assert_called_with(configuration)
+        mock_write.assert_called()
+        expected = [call(aRP.WORKER_SPECIFICATION_FILE, mock_worker(), startup.LOG, False),
+                    call(aRP.COMMONS_CONFIG_FILE, mock_common(), startup.LOG, False),
+                    call(aRP.HOSTS_CONFIG_FILE, mock_hosts(), startup.LOG, False),
+                    call(aRP.SITE_CONFIG_FILE, mock_site(), startup.LOG, False)]
         self.assertEqual(expected, mock_yaml.call_args_list)

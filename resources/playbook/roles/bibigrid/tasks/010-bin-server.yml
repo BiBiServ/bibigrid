@@ -5,7 +5,7 @@
 - name: Does folder exist
   delegate_to: localhost
   stat:
-    path: ~{{ ansible_facts.env.SUDO_USER }}/bin
+    path: "~{{ ansible_facts.env.SUDO_USER }}/bin"
   register: folder
 
 - when: folder.stat.exists

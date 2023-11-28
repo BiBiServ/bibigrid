@@ -23,7 +23,6 @@ MAX_JUMP = 100
 LOCALHOST = "127.0.0.1"
 
 
-
 def sigint_handler(caught_signal, frame):  # pylint: disable=unused-argument
     """
     Is called when SIGINT is thrown and terminates the program
@@ -82,7 +81,7 @@ def ide(cluster_id, master_provider, master_configuration, log):
                                                   ssh_pkey=used_private_key,
                                                   local_bind_address=(LOCALHOST, used_local_bind_address),
                                                   remote_bind_address=(LOCALHOST, REMOTE_BIND_ADDRESS)) as server:
-                    print("CTRL+C to close port forwarding when you are done.")
+                    log.log(42, "CTRL+C to close port forwarding when you are done.")
                     with server:
                         # opens in existing window if any default program exists
                         webbrowser.open(f"http://localhost:{used_local_bind_address}", new=2)
