@@ -12,6 +12,7 @@ import subprocess
 import sys
 import threading
 import time
+from filelock import FileLock
 
 import ansible_runner
 import os_client_config
@@ -142,13 +143,20 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
     @param ip: ibibigrid-worker0-3k1eeysgetmg4vb-3p address
     @return:
     """
-
-    with open(HOSTS_FILE_PATH, mode="w+", encoding="utf-8") as hosts_file:
-        hosts = yaml.safe_load(hosts_file)
+    logging.info("Updating hosts.yml")
+    with FileLock("hosts.yml.lock"):
+        logging.info("Lock acquired")
+        with open(HOSTS_FILE_PATH, mode="r", encoding="utf-8") as hosts_file:
+            hosts = yaml.safe_load(hosts_file)
+        logging.info(f"Existing hosts {hosts}")
         if not hosts or "host_entries" not in hosts:
+            logging.info(f"Resetting host entries because {'first run' if hosts else 'broken'}.")
             hosts = {"host_entries": {}}
         hosts["host_entries"][name] = ip
-        yaml.dump(hosts, hosts_file)
+        logging.info(f"Added host {name} with ip {hosts['host_entries'][name]}")
+        with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
+            yaml.dump(hosts, hosts_file)
+    logging.info("Wrote hosts file. Released hosts.yml.lock.")
 
 
 def configure_dns():
