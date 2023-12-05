@@ -142,16 +142,12 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
     @param ip: ibibigrid-worker0-3k1eeysgetmg4vb-3p address
     @return:
     """
-    hosts = {"host_entries": {}}
-    if os.path.isfile(HOSTS_FILE_PATH):
-        with open(HOSTS_FILE_PATH, mode="r", encoding="utf-8") as hosts_file:
-            hosts = yaml.safe_load(hosts_file)
-        if hosts is None or "host_entries" not in hosts.keys():
+
+    with open(HOSTS_FILE_PATH, mode="w+", encoding="utf-8") as hosts_file:
+        hosts = yaml.safe_load(hosts_file)
+        if not hosts or "host_entries" not in hosts:
             hosts = {"host_entries": {}}
-
-    hosts["host_entries"][name] = ip
-
-    with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
+        hosts["host_entries"][name] = ip
         yaml.dump(hosts, hosts_file)
 
 
