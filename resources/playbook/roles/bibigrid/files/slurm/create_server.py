@@ -146,7 +146,6 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
     if os.path.isfile(HOSTS_FILE_PATH):
         with open(HOSTS_FILE_PATH, mode="r", encoding="utf-8") as hosts_file:
             hosts = yaml.safe_load(hosts_file)
-            hosts_file.close()
         if hosts is None or "host_entries" not in hosts.keys():
             hosts = {"host_entries": {}}
 
@@ -154,7 +153,6 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
 
     with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
         yaml.dump(hosts, hosts_file)
-        hosts_file.close()
 
 
 def configure_dns():
