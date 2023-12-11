@@ -21,12 +21,12 @@ process_string() {
 }
 
 mkdir -p worker_logs
-mkdir -p worker_logs/out
-mkdir -p worker_logs/err
+mkdir -p worker_logs/fail/out
+mkdir -p worker_logs/fail/err
 
 # redirect stderr and stdout
-exec >> "/var/log/slurm/worker_logs/out/$(process_string "$1")_$(date '+%Y-%m-%d_%H:%M:%S').log"
-exec 2>> "/var/log/slurm/worker_logs/err/$(process_string "$1")_$(date '+%Y-%m-%d_%H:%M:%S').log"
+exec >> "/var/log/slurm/worker_logs/fail/out/$(process_string "$1")_$(date '+%Y-%m-%d_%H:%M:%S').log"
+exec 2>> "/var/log/slurm/worker_logs/fail/err/$(process_string "$1")_$(date '+%Y-%m-%d_%H:%M:%S').log"
 
 function log {
    echo "$(date) $*"
