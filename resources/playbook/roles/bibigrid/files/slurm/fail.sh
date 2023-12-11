@@ -39,7 +39,11 @@ scontrol update NodeName="$1" state=RESUME reason=FailedStartup # no sudo needed
 
 hosts=$(scontrol show hostnames "$1")
 
+echo "Hosts $hosts used"
+
 # delete servers
 python3 /usr/local/bin/delete_server.py "${hosts}"
+
+echo "Finished delete_server.py execution."
 
 exit $?
