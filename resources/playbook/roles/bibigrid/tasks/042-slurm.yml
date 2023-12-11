@@ -84,6 +84,17 @@
     - slurmctld
     - slurmd
 
+- name: Create Job Container configuration
+  template:
+    src: slurm/job_container.conf
+    dest: /etc/slurm/job_container.conf
+    owner: slurm
+    group: root
+    mode: 0444
+  notify:
+    - slurmctld
+    - slurmd
+
 - name: Slurm cgroup configuration
   copy:
     src: slurm/cgroup.conf
