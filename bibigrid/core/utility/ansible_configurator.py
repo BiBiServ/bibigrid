@@ -128,8 +128,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
                            "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"],
-                           "volumes": configuration["volumes"],
+                           "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
@@ -165,8 +164,8 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     master_configuration = configurations[0]
     log.info("Generating common configuration file...")
     # print(configuration.get("slurmConf", {}))
-    common_configuration_yaml = {"auto_mount": master_configuration.get("autoMount", False),
-                                 "cluster_id": cluster_id, "cluster_cidrs": cidrs, "default_user": default_user,
+    common_configuration_yaml = {"auto_mount": master_configuration.get("autoMount", False), "cluster_id": cluster_id,
+                                 "cluster_cidrs": cidrs, "default_user": default_user,
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
@@ -266,8 +265,8 @@ def get_cidrs(configurations):
     """
     all_cidrs = []
     for configuration in configurations:
-        subnet = configuration["subnet_cidrs"]
-        provider_cidrs = {"cloud_identifier": configuration["cloud_identifier"], "provider_cidrs": subnet}
+        provider_cidrs = {"cloud_identifier": configuration["cloud_identifier"],
+                          "provider_cidrs": configuration["subnet_cidrs"]}
         all_cidrs.append(provider_cidrs)
     return all_cidrs
 
@@ -275,8 +274,9 @@ def get_cidrs(configurations):
 def get_ansible_roles(ansible_roles, log):
     """
     Checks if ansible_roles have all necessary values and returns True if so.
-    :param ansible_roles: ansible_roles from master configuration (first configuration)
-    :return: list of valid ansible_roles
+    @param ansible_roles: ansible_roles from master configuration (first configuration)
+    @param log:
+    @return: list of valid ansible_roles
     """
     ansible_roles_yaml = []
     for ansible_role in (ansible_roles or []):

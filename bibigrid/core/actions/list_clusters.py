@@ -8,7 +8,7 @@ import re
 
 from bibigrid.core.actions import create
 
-SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)\d+-([a-zA-Z0-9]+)-\d+)$")
+SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)-([a-zA-Z0-9]+)-\d+)$")
 
 
 def dict_clusters(providers, log):
@@ -69,7 +69,7 @@ def log_list(cluster_id, providers, log):
             master_count, worker_count, vpn_count = get_size_overview(cluster_dict[cluster_id], log)
             log.log(42, f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
                        f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
-            pprint.pprint(cluster_dict[cluster_id])
+            log.log(42, pprint.pformat(cluster_dict[cluster_id]))
         else:
             log.info("Cluster with cluster-id {cluster_id} not found.")
             log.log(42, f"Cluster with cluster-id {cluster_id} not found.")

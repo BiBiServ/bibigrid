@@ -121,6 +121,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         except openstack.exceptions.BadRequestException as exc:
             if "is not active" in str(exc):
                 raise ImageDeactivatedException() from exc
+            if "Invalid key_name provided" in str(exc):
+                raise ExecutionException() from exc
             raise ConnectionError() from exc
         except openstack.exceptions.SDKException as exc:
             raise ExecutionException() from exc

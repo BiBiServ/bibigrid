@@ -23,7 +23,6 @@ MAX_JUMP = 100
 LOCALHOST = "127.0.0.1"
 
 
-
 def sigint_handler(caught_signal, frame):  # pylint: disable=unused-argument
     """
     Is called when SIGINT is thrown and terminates the program

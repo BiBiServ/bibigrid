@@ -7,8 +7,8 @@ import socket
 import time
 
 import paramiko
-import yaml
 import sympy
+import yaml
 
 from bibigrid.core.utility import ansible_commands as aC
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
@@ -107,7 +107,7 @@ def is_active(client, floating_ip_address, private_key, username, log, gateway, 
             port = 22
             if gateway:
                 log.info(f"Using SSH Gateway {gateway.get('ip')}")
-                octets = {f'oct{enum+1}': int(elem) for enum, elem in enumerate(floating_ip_address.split("."))}
+                octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(floating_ip_address.split("."))}
                 port = int(sympy.sympify(gateway["portFunction"]).subs(dict(octets)))
                 log.info(f"Port {port} will be used (see {gateway['portFunction']} and octets {octets}).")
             client.connect(hostname=gateway.get("ip") or floating_ip_address, username=username,
@@ -159,7 +159,7 @@ def execute_ssh_cml_commands(client, commands, log):
     :param log:
     """
     for command in commands:
-        ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(command[0])  # pylint: disable=unused-variable
+        _, ssh_stdout, _ = client.exec_command(command[0])
         ssh_stdout.channel.set_combine_stderr(True)
         log.info(f"REMOTE: {command[1]}")
 
