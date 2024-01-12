@@ -147,19 +147,21 @@ def check_cloud_yaml(cloud_specification, log):
                     "application_credential_secret" in auth_keys):
                 log.warning("Insufficient authentication information. Needs either password and username or "
                             "if using application credentials: "
-                            "auth_type, application_credential_id and application_credential_secret.")
+                            "auth_type, application_credential_id and application_credential_secret. "
+                            f"In cloud specification {cloud_specification.get('identifier')}")
                 success = False
             if "auth_url" not in auth_keys:
-                log.warning("Authentification URL auth_url is missing.")
+                log.warning(f"Authentication URL auth_url is missing in cloud specification "
+                            f"{cloud_specification.get('identifier')}")
                 success = False
         else:
-            log.warning("Missing all auth information!")
+            log.warning(f"Missing all auth information in cloud specification {cloud_specification.get('identifier')}!")
             success = False
         if "region_name" not in keys:
-            log.warning("region_name is missing.")
+            log.warning(f"region_name is missing in cloud specification {cloud_specification.get('identifier')}.")
             success = False
     else:
-        log.warning("Missing all cloud_specification information!")
+        log.warning(f"{cloud_specification.get('identifier')} missing all cloud_specification information!")
     return success
 
 
@@ -222,10 +224,12 @@ class ValidateConfiguration:
         """
         self.log.info("Checking master/vpn")
         success = True
-        if not self.configurations[0].get("masterInstance") or self.configurations[0].get("vpnInstance"):
+        if not self.configurations[0].get("masterInstance"):
+            self.log.warning(f"{self.configurations[0].get('cloud')} has no master instance!")
             success = False
         for configuration in self.configurations[1:]:
-            if not configuration.get("vpnInstance") or configuration.get("masterInstance"):
+            if not configuration.get("vpnInstance"):
+                self.log.warning(f"{configuration.get('cloud')} has no vpn instance!")
                 success = False
         return success
 
@@ -238,10 +242,12 @@ class ValidateConfiguration:
         providers_unconnectable = []
         for provider in self.providers:
             if not provider.conn:
+                self.log.warning(f"API connection to {providers_unconnectable} not successful. "
+                                 f"Please check your configuration for cloud "
+                                 f"{provider.cloud_specification['identifier']}.")
                 providers_unconnectable.append(provider.cloud_specification["identifier"])
         if providers_unconnectable:
-            self.log.warning("API connection to %s not successful. Please check your configuration.",
-                             providers_unconnectable)
+            self.log.warning(f"Unconnected clouds: {providers_unconnectable}")
             success = False
         return success
 
@@ -252,9 +258,8 @@ class ValidateConfiguration:
         """
         self.log.info("Checking instance images and type")
         success = True
-        configuration = None
-        try:
-            for configuration, provider in zip(self.configurations, self.providers):
+        for configuration, provider in zip(self.configurations, self.providers):
+            try:
                 self.required_resources_dict["floating_ips"] += 1
                 if configuration.get("masterInstance"):
                     success = self.check_instance("masterInstance", configuration["masterInstance"],
@@ -263,9 +268,10 @@ class ValidateConfiguration:
                     success = self.check_instance("vpnInstance", configuration["vpnInstance"], provider) and success
                 for worker in configuration.get("workerInstances", []):
                     success = self.check_instance("workerInstance", worker, provider) and success
-        except KeyError as exc:
-            self.log.warning("Not found %s, but required in configuration %s.", str(exc), configuration)
-            success = False
+            except KeyError as exc:
+                self.log.warning("Not found %s, but required on %s.", str(exc),
+                                 provider.cloud_specification['identifier'])
+                success = False
         return success
 
     def check_instance(self, instance_name, instance, provider):
@@ -280,13 +286,15 @@ class ValidateConfiguration:
         instance_image_id_or_name = instance["image"]
         try:
             instance_image = image_selection.select_image(provider, instance_image_id_or_name, self.log)
-            self.log.info("Instance %s image: %s found", instance_name, instance_image_id_or_name)
+            self.log.info(
+                f"Instance {instance_name} image: {instance_image_id_or_name} found on "
+                f"{provider.cloud_specification['identifier']}")
             instance_type = instance["type"]
         except ImageNotActiveException:
-            self.log.warning("Instance %s image: %s not found among active images.",
-                             instance_name, instance_image_id_or_name)
-            self.log.log(42, "Available active images:")
-            self.log.log(42, "\n".join(provider.get_active_images()))
+            active_images = '\n'.join(provider.get_active_images())
+            self.log.warning(f"Instance {instance_name} image: {instance_image_id_or_name} not found among"
+                             f" active images on {provider.cloud_specification['identifier']}.\n"
+                             f"Available active images:\n{active_images}")
             return False
         return self.check_instance_type_image_combination(instance_type, instance_image, provider)
 
@@ -302,9 +310,9 @@ class ValidateConfiguration:
         # check
         flavor = provider.get_flavor(instance_type)
         if not flavor:
-            self.log.warning("Flavor %s does not exist.", instance_type)
-            self.log.log(42, "Available flavors:")
-            self.log.log(42, "\n".join(provider.get_active_flavors()))
+            available_flavors = '\n'.join(provider.get_active_flavors())
+            self.log.warning(f"Flavor {instance_type} does not exist on {provider.cloud_specification['identifier']}.\n"
+                             f"Available flavors:\n{available_flavors}")
             return False
         type_max_disk_space = flavor["disk"]
         type_max_ram = flavor["ram"]
@@ -338,14 +346,17 @@ class ValidateConfiguration:
                     if not volume:
                         snapshot = provider.get_volume_snapshot_by_id_or_name(volume_name_or_id)
                         if not snapshot:
-                            self.log.warning("Neither Volume nor Snapshot '%s' found", volume_name_or_id)
+                            self.log.warning(f"Neither Volume nor Snapshot '{volume_name_or_id}' found on "
+                                             f"{provider.cloud_specification['identifier']}")
                             success = False
                         else:
-                            self.log.info("Snapshot '%s' found", volume_name_or_id)
+                            self.log.info(f"Snapshot '{volume_name_or_id}' found on "
+                                          f"{provider.cloud_specification['identifier']}.")
                             self.required_resources_dict["Volumes"] += 1
                             self.required_resources_dict["VolumeGigabytes"] += snapshot["size"]
                     else:
-                        self.log.info(f"Volume '{volume_name_or_id}' found")
+                        self.log.info(f"Volume '{volume_name_or_id}' found on "
+                                      f"{provider.cloud_specification['identifier']}.")
         return success
 
     def check_network(self):
@@ -357,22 +368,29 @@ class ValidateConfiguration:
         success = True
         for configuration, provider in zip(self.configurations, self.providers):
             network_name_or_id = configuration.get("network")
+            subnet_name_or_id = configuration.get("subnet")
             if network_name_or_id:
                 network = provider.get_network_by_id_or_name(network_name_or_id)
                 if not network:
-                    self.log.warning(f"Network '{network_name_or_id}' not found", network_name_or_id)
+                    self.log.warning(
+                        f"Network '{network_name_or_id}' not found on {provider.cloud_specification['identifier']}")
                     success = False
                 else:
-                    self.log.info(f"Network '{network_name_or_id}' found")
-            subnet_name_or_id = configuration.get("subnet")
-            if subnet_name_or_id:
+                    self.log.info(
+                        f"Network '{network_name_or_id}' found on {provider.cloud_specification['identifier']}")
+            elif subnet_name_or_id:
                 subnet = provider.get_subnet_by_id_or_name(subnet_name_or_id)
                 if not subnet:
-                    self.log.warning(f"Subnet '{subnet_name_or_id}' not found")
+                    self.log.warning(
+                        f"Subnet '{subnet_name_or_id}' not found on {provider.cloud_specification['identifier']}")
                     success = False
                 else:
-                    self.log.info(f"Subnet '{subnet_name_or_id}' found")
-        return bool(success and (network_name_or_id or subnet_name_or_id))
+                    self.log.info(f"Subnet '{subnet_name_or_id}' found on {provider.cloud_specification['identifier']}")
+            else:
+                self.log.warning(f"Neither 'network' nor 'subnet' defined in configuration on "
+                                 f"{provider.cloud_specification['identifier']}.")
+                success = False
+        return success
 
     def check_server_group(self):
         """
@@ -384,10 +402,12 @@ class ValidateConfiguration:
             if server_group_name_or_id:
                 server_group = provider.get_server_group_by_id_or_name(server_group_name_or_id)
                 if not server_group:
-                    self.log.warning("ServerGroup '%s' not found", server_group_name_or_id)
+                    self.log.warning(f"ServerGroup '{server_group_name_or_id}' not found on "
+                                     f"{provider.cloud_specification['identifier']}")
                     success = False
                 else:
-                    self.log.info("ServerGroup '%s' found", server_group_name_or_id)
+                    self.log.info(f"ServerGroup '{server_group_name_or_id}' found on "
+                                  f"{provider.cloud_specification['identifier']}")
         return success
 
     def check_quotas(self):
@@ -419,10 +439,11 @@ class ValidateConfiguration:
         for configuration in self.configurations:
             for ssh_public_key_file in configuration.get("sshPublicKeyFiles") or []:
                 if not os.path.isfile(ssh_public_key_file):
-                    self.log.warning("sshPublicKeyFile '%s' not found", ssh_public_key_file)
+                    self.log.warning(
+                        f"sshPublicKeyFile '{ssh_public_key_file}' not found on {configuration.get('cloud')}")
                     success = False
                 else:
-                    self.log.info("sshPublicKeyFile '%s' found", ssh_public_key_file)
+                    self.log.info(f"sshPublicKeyFile '{ssh_public_key_file}' found on {configuration.get('cloud')}")
                     success = evaluate_ssh_public_key_file_security(ssh_public_key_file, self.log) and success
         return success
 
@@ -437,8 +458,7 @@ class ValidateConfiguration:
         for index, cloud_specification in enumerate(cloud_specifications):
             if not check_cloud_yaml(cloud_specification, self.log):
                 success = False
-                self.log.warning("Cloud specification %s is faulty. BiBiGrid understood %s.", index,
-                                 cloud_specification)
+                self.log.warning(f"Cloud specification {cloud_specification.get('identifier', index)} is faulty.")
             success = check_clouds_yaml_security(self.log) and success
         return success
 
