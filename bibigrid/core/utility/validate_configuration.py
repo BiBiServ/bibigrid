@@ -181,9 +181,12 @@ class ValidateConfiguration:
         self.log = log
         self.configurations = configurations
         self.providers = providers
-        self.required_resources_dict = {'total_cores': 0, 'floating_ips': 0, 'instances': 0, 'total_ram': 0,
-                                        'Volumes': 0, 'VolumeGigabytes': 0, 'Snapshots': 0, 'Backups': 0,
-                                        'BackupGigabytes': 0}
+
+        self.required_resources_dict = {
+            provider.cloud_specification['identifier']: {'total_cores': 0, 'floating_ips': 0, 'instances': 0,
+                                                         'total_ram': 0, 'Volumes': 0, 'VolumeGigabytes': 0,
+                                                         'Snapshots': 0, 'Backups': 0, 'BackupGigabytes': 0} for
+            provider in providers}
 
     def validate(self):
         """
@@ -260,7 +263,7 @@ class ValidateConfiguration:
         success = True
         for configuration, provider in zip(self.configurations, self.providers):
             try:
-                self.required_resources_dict["floating_ips"] += 1
+                self.required_resources_dict[provider.cloud_specification['identifier']]["floating_ips"] += 1
                 if configuration.get("masterInstance"):
                     success = self.check_instance("masterInstance", configuration["masterInstance"],
                                                   provider) and success
@@ -282,13 +285,13 @@ class ValidateConfiguration:
         :param provider: provider
         :return: true if type and image compatible and existing
         """
-        self.required_resources_dict["instances"] += instance.get("count") or 1
+        self.required_resources_dict[provider.cloud_specification['identifier']]["instances"] += instance.get(
+            "count") or 1
         instance_image_id_or_name = instance["image"]
         try:
             instance_image = image_selection.select_image(provider, instance_image_id_or_name, self.log)
-            self.log.info(
-                f"Instance {instance_name} image: {instance_image_id_or_name} found on "
-                f"{provider.cloud_specification['identifier']}")
+            self.log.info(f"Instance {instance_name} image: {instance_image_id_or_name} found on "
+                          f"{provider.cloud_specification['identifier']}")
             instance_type = instance["type"]
         except ImageNotActiveException:
             active_images = '\n'.join(provider.get_active_images())
@@ -322,8 +325,8 @@ class ValidateConfiguration:
                                        (type_max_ram, image_min_ram, "ram")]:
             success = has_enough(maximum, needed, f"Type {instance_type}", thing, self.log) and success
         # prepare check quotas
-        self.required_resources_dict["total_ram"] += type_max_ram
-        self.required_resources_dict["total_cores"] += flavor["vcpus"]
+        self.required_resources_dict[provider.cloud_specification['identifier']]["total_ram"] += type_max_ram
+        self.required_resources_dict[provider.cloud_specification['identifier']]["total_cores"] += flavor["vcpus"]
         return success
 
     def check_volumes(self):
@@ -352,8 +355,9 @@ class ValidateConfiguration:
                         else:
                             self.log.info(f"Snapshot '{volume_name_or_id}' found on "
                                           f"{provider.cloud_specification['identifier']}.")
-                            self.required_resources_dict["Volumes"] += 1
-                            self.required_resources_dict["VolumeGigabytes"] += snapshot["size"]
+                            self.required_resources_dict[provider.cloud_specification['identifier']]["Volumes"] += 1
+                            self.required_resources_dict[provider.cloud_specification['identifier']][
+                                "VolumeGigabytes"] += snapshot["size"]
                     else:
                         self.log.info(f"Volume '{volume_name_or_id}' found on "
                                       f"{provider.cloud_specification['identifier']}.")
@@ -424,10 +428,9 @@ class ValidateConfiguration:
         self.log.info("required/available")
         for provider in self.providers:
             free_resources_dict = provider.get_free_resources()
-            for key, value in self.required_resources_dict.items():
+            for key, value in self.required_resources_dict[provider.cloud_specification['identifier']].items():
                 success = has_enough(free_resources_dict[key], value,
-                                     f"Project {self.providers[0].cloud_specification['identifier']}", key,
-                                     self.log) and success
+                                     f"Project {provider.cloud_specification['identifier']}", key, self.log) and success
         return success
 
     def check_ssh_public_key_files(self):
