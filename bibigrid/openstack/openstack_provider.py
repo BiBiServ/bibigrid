@@ -171,22 +171,20 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
 
     def get_free_resources(self):
         """
-        Uses the cinder API to get all relevant volume resources.
-        https://github.com/openstack/python-cinderclient/blob/master/cinderclient/v3/limits.py
-        Uses the nova API to get all relevant compute resources. Floating-IP is not returned correctly by openstack.
+        Uses openstack.block_storage to get all relevant volume resources.
+        Uses the openstack.compute to get all relevant compute resources.
+        Floating-IP is not returned correctly by openstack.
         :return: Dictionary containing the free resources
         """
         compute_limits = dict(self.conn.compute.get_limits()["absolute"])
-        # maybe needs limits.get(os.environ["OS_PROJECT_NAME"]) in the future
-        volume_limits_generator = self.cinder.limits.get().absolute
-        volume_limits = {absolut_limit.name: absolut_limit.value for absolut_limit in volume_limits_generator}
+        volume_limits = dict(self.conn.block_storage.get_limits()["absolute"])
         # ToDo TotalVolumeGigabytes needs totalVolumeGigabytesUsed, but is not given
-        volume_limits["totalVolumeGigabytesUsed"] = 0
+        volume_limits["total_volume_gigabytes_used"] = 0
         free_resources = {}
         for key in ["total_cores", "floating_ips", "instances", "total_ram"]:
             free_resources[key] = compute_limits[key] - compute_limits[key + "_used"]
-        for key in ["Volumes", "VolumeGigabytes", "Snapshots", "Backups", "BackupGigabytes"]:
-            free_resources[key] = volume_limits["maxTotal" + key] - volume_limits["total" + key + "Used"]
+        for key in ["volumes", "volume_gigabytes", "snapshots", "backups", "backup_gigabytes"]:
+            free_resources[key] = volume_limits["max_total_" + key] - volume_limits["total_" + key + "_used"]
         return free_resources
 
     def get_volume_by_id_or_name(self, name_or_id):

@@ -184,8 +184,8 @@ class ValidateConfiguration:
 
         self.required_resources_dict = {
             provider.cloud_specification['identifier']: {'total_cores': 0, 'floating_ips': 0, 'instances': 0,
-                                                         'total_ram': 0, 'Volumes': 0, 'VolumeGigabytes': 0,
-                                                         'Snapshots': 0, 'Backups': 0, 'BackupGigabytes': 0} for
+                                                         'total_ram': 0, 'volumes': 0, 'volume_gigabytes': 0,
+                                                         'snapshots': 0, 'backups': 0, 'backup_gigabytes': 0} for
             provider in providers}
 
     def validate(self):
