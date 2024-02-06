@@ -109,8 +109,9 @@ def is_active(client, floating_ip_address, private_key, username, log, gateway, 
                 log.info(f"Using SSH Gateway {gateway.get('ip')}")
                 octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(floating_ip_address.split("."))}
                 port = int(sympy.sympify(gateway["portFunction"]).subs(dict(octets)))
-            client.connect(hostname=gateway.get("ip") or floating_ip_address, username=username, pkey=private_key,
-                           timeout=7, auth_timeout=5, port=port)
+                log.info(f"Port {port} will be used (see {gateway['portFunction']} and octets {octets}).")
+            client.connect(hostname=gateway.get("ip") or floating_ip_address, username=username,
+                           pkey=private_key, timeout=7, auth_timeout=5, port=port)
             establishing_connection = False
             log.info(f"Successfully connected to {floating_ip_address}")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:

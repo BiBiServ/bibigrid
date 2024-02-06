@@ -81,6 +81,7 @@ def ide(cluster_id, master_provider, master_configuration, log):
                                                   ssh_pkey=used_private_key,
                                                   local_bind_address=(LOCALHOST, used_local_bind_address),
                                                   remote_bind_address=(LOCALHOST, REMOTE_BIND_ADDRESS)) as server:
+                    log.debug(f"Used {used_local_bind_address} as the local binding address")
                     log.log(42, "CTRL+C to close port forwarding when you are done.")
                     with server:
                         # opens in existing window if any default program exists
