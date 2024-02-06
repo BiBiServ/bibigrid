@@ -69,6 +69,16 @@ def start_server(worker, start_worker_group, start_data):
     try:
         logging.info("Create server %s.", worker)
         connection = connections[start_worker_group["cloud_identifier"]]
+        # check if running
+        already_running_server = connection.get_server(worker)
+        if already_running_server:
+            logging.warning(
+                f"Already running server {worker} on {start_worker_group['cloud_identifier']} (will be terminated): "
+                f"{already_running_server}")
+            server_deleted = connection.delete_server(worker)
+            logging.info(
+                f"Server {worker} on {start_worker_group['cloud_identifier']} has been terminated ({server_deleted}). "
+                f"Continuing startup.")
         # check for userdata
         userdata = ""
         userdata_file_path = f"/opt/slurm/userdata_{start_worker_group['cloud_identifier']}.txt"
