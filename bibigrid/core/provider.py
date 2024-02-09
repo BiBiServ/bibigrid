@@ -265,6 +265,14 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         :return:
         """
 
+    @abstractmethod
+    def get_security_group(self, name_or_id):
+        """
+        Returns security group if found else None.
+        @param name_or_id:
+        @return:
+        """
+
     def get_mount_info_from_server(self, server):
         volumes = []
         for server_volume in server["volumes"]:
