@@ -17,14 +17,12 @@
   systemd:
     name: slurmdbd
     state: restarted
-  when: "'vpnwkr' not in group_names"
 
 - name: slurmrestd
   systemd:
     name: slurmrestd
     state: restarted
     daemon_reload: true
-  when: "'vpnwkr' not in group_names"
 
 - name: slurmctld
   systemd:
@@ -36,7 +34,6 @@
   systemd:
     name: slurmd
     state: restarted
-  when: "'vpnwkr' not in group_names"
 
 - name: zabbix-agent
   systemd:
