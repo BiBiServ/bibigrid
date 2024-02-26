@@ -81,6 +81,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.ssh_user = configurations[0].get("sshUser") or "ubuntu"
         self.ssh_add_public_key_commands = ssh_handler.get_add_ssh_public_key_commands(
             configurations[0].get("sshPublicKeyFiles"))
+        self.ssh_timeout = configurations[0].get("sshTimeout", 5)
         self.config_path = config_path
         self.master_ip = None
         self.log.debug("Cluster-ID: %s", self.cluster_id)
@@ -129,7 +130,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Generate a security groups:
          - default with basic rules for the cluster
-         - wireguard when more than one provider is used (= multicloud)
+         - wireguard when more than one provider is used (= multi-cloud)
         """
         self.log.info("Generating Security Groups")
         for provider, configuration in zip(self.providers, self.configurations):
@@ -151,8 +152,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         for cidr in tmp_configuration['subnet_cidrs']:
                             rules.append(
                                 {"direction": "ingress", "ethertype": "IPv4", "protocol": "tcp", "port_range_min": None,
-                                 "port_range_max": None, "remote_ip_prefix": cidr,
-                                 "remote_group_id": None})
+                                 "port_range_max": None, "remote_ip_prefix": cidr, "remote_group_id": None})
             provider.append_rules_to_security_group(default_security_group_id, rules)
             configuration["security_groups"] = [self.default_security_group_name]  # store in configuration
             # when running a multi-cloud setup create an additional wireguard group
@@ -232,17 +232,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         Setup all servers
         """
         for configuration in self.configurations:
+            ssh_data = {"floating_ip": configuration["floating_ip"], "private_key": KEY_FOLDER + self.key_name,
+                        "username": self.ssh_user, "commands": None, "filepaths": None,
+                        "gateway": configuration.get("gateway", {}), "timeout": self.ssh_timeout}
             if configuration.get("masterInstance"):
                 self.master_ip = configuration["floating_ip"]
-                ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
-                                                private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
-                                                commands=self.ssh_add_public_key_commands, log=self.log,
-                                                gateway=configuration.get("gateway", {}))
+                ssh_data["commands"] = self.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP
+                ssh_data["filepaths"] = [(ssh_data["private_key"], ssh_handler.PRIVATE_KEY_FILE)]
+                ssh_handler.execute_ssh(ssh_data, self.log)
             elif configuration.get("vpnInstance"):
-                ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
-                                        private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
-                                        commands=ssh_handler.VPN_SETUP, log=self.log,
-                                        gateway=configuration.get("gateway", {}))
+                ssh_data["commands"] = ssh_handler.VPN_SETUP
+                ssh_handler.execute_ssh(ssh_data, self.log)
 
     def prepare_volumes(self, provider, mounts):
         """
@@ -316,9 +316,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         else:
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
                 cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
-        ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
-                                username=self.ssh_user, filepaths=FILEPATHS, commands=commands, log=self.log,
-                                gateway=self.configurations[0].get("gateway", {}))
+        ssh_data = {"floating_ip": self.master_ip, "private_key": KEY_FOLDER + self.key_name,
+                    "username": self.ssh_user, "commands": commands, "filepaths": FILEPATHS,
+                    "gateway": self.configurations[0].get("gateway", {}), "timeout": self.ssh_timeout}
+        ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 
     def start_start_instance_threads(self):
         """
@@ -354,8 +355,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         f"{configuration_b['subnet_cidrs']})")
                     # add provider_b network as allowed network
                     for cidr in configuration_b["subnet_cidrs"]:
-                        allowed_addresses.append(
-                            {'ip_address': cidr, 'mac_address': configuration_a["mac_addr"]})
+                        allowed_addresses.append({'ip_address': cidr, 'mac_address': configuration_a["mac_addr"]})
                     # configure security group rules
                     provider_a.append_rules_to_security_group(self.wireguard_security_group_name, [
                         {"direction": "ingress", "ethertype": "IPv4", "protocol": "udp", "port_range_min": 51820,
@@ -443,9 +443,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             port = int(sympy.sympify(gateway["portFunction"]).subs(dict(octets)))
             ssh_ip = gateway["ip"]
         self.log.log(42, f"Cluster {self.cluster_id} with master {self.master_ip} up and running!")
-        self.log.log(42,
-                     f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{ssh_ip}"
-                     f"{f' -p {port}' if gateway else ''}")
+        self.log.log(42, f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{ssh_ip}"
+                         f"{f' -p {port}' if gateway else ''}")
         self.log.log(42, f"Terminate cluster: ./bibigrid.sh -i '{self.config_path}' -t -cid {self.cluster_id}")
         self.log.log(42, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
         if self.configurations[0].get("ide"):
