@@ -14,10 +14,10 @@ ACCEPTED_KEY_IDENTIFIERS = {"RSA": 4096, "ECDSA": 521, "ED25519": 256}
 def evaluate(check_name, check_result, log):
     """
     Logs check_result as warning if failed and as success if succeeded.
-    :param check_name:
-    :param check_result:
-    :param log:
-    :return:
+    @param check_name:
+    @param check_result:
+    @param log:
+    @return:
     """
     if check_result:
         log.info("Checking %s: Success", check_name)
@@ -30,10 +30,10 @@ def check_provider_data(provider_data_list, provider_count, log):
     """
     Checks if all provider datas are unique and if enough providers are given
     #ToDo for multiple cloud locations additional provider data needs to be added
-    :param provider_data_list: list of all provider data
-    :param provider_count: number of providers
-    :param log:
-    :return: True if enough providers are given and all providers are unique
+    @param provider_data_list: list of all provider data
+    @param provider_count: number of providers
+    @param log:
+    @return: True if enough providers are given and all providers are unique
     """
     log.info("Checking provider names")
     success = True
@@ -89,12 +89,12 @@ def evaluate_ssh_public_key_file_security(ssh_public_key_file, log):
 def has_enough(maximum, needed, keeper, thing, log):
     """
     Method logs and compares whether enough free things are available
-    :param maximum: maximum (available) resources of thing
-    :param needed: minimum needed to run
-    :param keeper: description of the object having the thing that is checked (for logging)
-    :param thing: description of what resource is checked (RAM for example) (for logging)
-    :param log:
-    :return: True if maximum is larger or equal to the needed
+    @param maximum: maximum (available) resources of thing
+    @param needed: minimum needed to run
+    @param keeper: description of the object having the thing that is checked (for logging)
+    @param thing: description of what resource is checked (RAM for example) (for logging)
+    @param log:
+    @return: True if maximum is larger or equal to the needed
     """
     success = True
     if maximum >= needed:
@@ -175,8 +175,8 @@ class ValidateConfiguration:
         Sets configurations, providers and prepares the required_resources_dict.
         While executing the checks, needed resources are counted.
         In the end check_quotas will decide whether enough resources are available.
-        :param configurations: List of configurations (dicts)
-        :param providers: List of providers
+        @param configurations: List of configurations (dicts)
+        @param providers: List of providers
         """
         self.log = log
         self.configurations = configurations
@@ -199,7 +199,7 @@ class ValidateConfiguration:
             Check images and volumes are available
             Check network and subnet are available
             Check quotas
-        :return:
+        @return:
         """
         success = bool(self.providers)
         self.log.info("Validating config file...")
@@ -223,7 +223,7 @@ class ValidateConfiguration:
         Checks if first configuration has a masterInstance defined
         and every other configuration has a vpnInstance defined.
         If one is missing said provider wouldn't be reachable over the cluster, because no floating IP would be given.
-        :return: True if first configuration has a masterInstance and every other a vpnInstance
+        @return: True if first configuration has a masterInstance and every other a vpnInstance
         """
         self.log.info("Checking master/vpn")
         success = True
@@ -239,7 +239,7 @@ class ValidateConfiguration:
     def check_provider_connections(self):
         """
         Checks if all providers are reachable
-        :return: True if all providers are reachable
+        @return: True if all providers are reachable
         """
         success = True
         providers_unconnectable = []
@@ -257,7 +257,7 @@ class ValidateConfiguration:
     def check_instances(self):
         """
         Checks if all instances exist and image and instance-type are compatible
-        :return: true if image and instance-type (flavor) exist for all instances and are compatible
+        @return: true if image and instance-type (flavor) exist for all instances and are compatible
         """
         self.log.info("Checking instance images and type")
         success = True
@@ -280,10 +280,10 @@ class ValidateConfiguration:
     def check_instance(self, instance_name, instance, provider):
         """
         Checks if instance image exists and whether it is compatible with the defined instance/server type (flavor).
-        :param instance_name: containing name for logging purposes
-        :param instance: dict containing image, type and count (count is not used)
-        :param provider: provider
-        :return: true if type and image compatible and existing
+        @param instance_name: containing name for logging purposes
+        @param instance: dict containing image, type and count (count is not used)
+        @param provider: provider
+        @return: true if type and image compatible and existing
         """
         self.required_resources_dict[provider.cloud_specification['identifier']]["instances"] += instance.get(
             "count") or 1
@@ -304,10 +304,10 @@ class ValidateConfiguration:
     def check_instance_type_image_combination(self, instance_type, instance_image, provider):
         """
         Checks, if enough ram, disk space for instance_image are provided by instance_type on provider.
-        :param instance_type
-        :param instance_image
-        :param provider
-        :return true, if enough resources available
+        @param instance_type
+        @param instance_image
+        @param provider
+        @return true, if enough resources available
         """
         success = True
         # check
@@ -333,7 +333,7 @@ class ValidateConfiguration:
     def check_volumes(self):
         """
         Checking if volume or snapshot exists for all volumes
-        :return: True if all snapshot and volumes are found. Else false.
+        @return: True if all snapshot and volumes are found. Else false.
         """
         self.log.info("Checking volumes...")
         success = True
@@ -367,7 +367,7 @@ class ValidateConfiguration:
     def check_network(self):
         """
         Check if network (or subnet) is accessible
-        :return True if any given network or subnet is accessible by provider
+        @return True if any given network or subnet is accessible by provider
         """
         self.log.info("Checking network...")
         success = True
@@ -395,7 +395,7 @@ class ValidateConfiguration:
 
     def check_server_group(self):
         """
-        :return: True if server group accessible
+        @return: True if server group accessible
         """
         success = True
         for configuration, provider in zip(self.configurations, self.providers):
@@ -418,7 +418,7 @@ class ValidateConfiguration:
         Covered resources are: cores, floating_ips, instances, ram, volumes, volumeGigabytes, snapshots, backups and
         backupGigabytes. If a concrete provider implementation is unable to return remaining resources a maximum number
         is returned to make the check not fail because of the missing API implementation.
-        :return: True if check succeeded. Else false.
+        @return: True if check succeeded. Else false.
         """
         self.log.info("Checking quotas")
         success = True
@@ -433,7 +433,7 @@ class ValidateConfiguration:
     def check_ssh_public_key_files(self):
         """
         Checks if keys listed in the config exist
-        :return: True if check succeeded. Else false.
+        @return: True if check succeeded. Else false.
         """
         success = True
         for configuration in self.configurations:

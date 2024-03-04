@@ -40,8 +40,8 @@ def get_cluster_id_from_mem():
 def set_logger_verbosity(verbosity):
     """
     Sets verbosity, format and handler.
-    :param verbosity: level of verbosity
-    :return:
+    @param verbosity: level of verbosity
+    @return:
     """
 
     capped_verbosity = min(verbosity, len(VERBOSITY_LIST) - 1)
@@ -56,10 +56,10 @@ def set_logger_verbosity(verbosity):
 def run_action(args, configurations, config_path):
     """
     Uses args to decide which action will be executed and executes said action.
-    :param args: command line arguments
-    :param configurations: list of configurations (dicts)
-    :param config_path: path to configurations-file
-    :return:
+    @param args: command line arguments
+    @param configurations: list of configurations (dicts)
+    @param config_path: path to configurations-file
+    @return:
     """
     if args.version:
         LOG.info("Action version selected")
@@ -124,7 +124,7 @@ def run_action(args, configurations, config_path):
 def main():
     """
     Interprets command line, sets logger, reads configuration and runs selected action. Then exits.
-    :return:
+    @return:
     """
     logging.basicConfig(format=LOGGER_FORMAT)
     # LOG.addHandler(logging.StreamHandler())  # stdout

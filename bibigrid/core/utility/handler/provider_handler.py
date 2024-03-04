@@ -14,8 +14,8 @@ def get_provider_by_class_name(provider_name,
     """
     Returns provider that is associated with the key provider_name in provider_dict.
     Otherwise, a KeyError is thrown.
-    :param provider_name: key of provider_dict
-    :return: provider
+    @param provider_name: key of provider_dict
+    @return: provider
     """
     return provider_dict[provider_name]
 
@@ -24,8 +24,8 @@ def get_provider_by_name(provider_name, provider_dict=PROVIDER_NAME_DICT):  # py
     """
     Returns provider that is associated with the key provider_name in provider_dict.
     Otherwise a KeyError is thrown.
-    :param provider_name: key of provider_dict
-    :return: provider
+    @param provider_name: key of provider_dict
+    @return: provider
     """
     return provider_dict.get(provider_name)
 
@@ -35,9 +35,9 @@ def get_provider_list_by_name_list(provider_name_list, cloud_specifications):
     Returns provider list for given provider_name_list
     If name is not found in PROVIDER_NAME_DICT, PROVIDER_CLASS_DICT is tried instead.
     If not found in both a key error is thrown.
-    :param provider_name_list: list of provider names
-    :param cloud_specifications: list of cloud specifications
-    :return: list of providers
+    @param provider_name_list: list of provider names
+    @param cloud_specifications: list of cloud specifications
+    @return: list of providers
     """
     provider_list = [
         (get_provider_by_name(provider_name) or get_provider_by_class_name(provider_name))(cloud_specification) for
@@ -50,9 +50,9 @@ def get_providers(configurations, log):
     Reads list of provider_names from configurations.
     Determines list of providers by provider_names and returns it.
     If providers don't match a key error is thrown and the program exits with failure state 1.
-    :param configurations:
-    :param log:
-    :return:
+    @param configurations:
+    @param log:
+    @return:
     """
     cloud_specifications = configuration_handler.get_cloud_specifications(configurations, log)
     if cloud_specifications:

@@ -82,8 +82,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         """
         Deletes existing application credential by id or name and returns true.
         If application credential not found it returns false.
-        :param ac_id_or_name: application credential id or name
-        :return: True if deleted else false
+        @param ac_id_or_name: application credential id or name
+        @return: True if deleted else false
         """
         try:
             self.keystone_client.application_credentials.delete(ac_id_or_name)  # id
@@ -137,9 +137,9 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def delete_server(self, name_or_id, delete_ips=True):
         """
         Deletes server. floating_ip as well if delete_ips is true. The resources are then free again
-        :param name_or_id:
-        :param delete_ips:
-        :return:
+        @param name_or_id:
+        @param delete_ips:
+        @return:
         """
         return self.conn.delete_server(name_or_id=name_or_id, wait=False, timeout=180, delete_ips=delete_ips,
                                        delete_ip_retry=1)
@@ -174,7 +174,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         Uses openstack.block_storage to get all relevant volume resources.
         Uses the openstack.compute to get all relevant compute resources.
         Floating-IP is not returned correctly by openstack.
-        :return: Dictionary containing the free resources
+        @return: Dictionary containing the free resources
         """
         compute_limits = dict(self.conn.compute.get_limits()["absolute"])
         volume_limits = dict(self.conn.block_storage.get_limits()["absolute"])
@@ -194,8 +194,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         """
         Uses the cinder API to create a volume from snapshot:
         https://github.com/openstack/python-cinderclient/blob/master/cinderclient/v3/volumes.py
-        :param snapshot_name_or_id: name or id of snapshot
-        :return: id of created volume
+        @param snapshot_name_or_id: name or id of snapshot
+        @return: id of created volume
         """
         LOG.debug("Trying to create volume from snapshot")
         snapshot = self.conn.get_volume_snapshot(snapshot_name_or_id)
@@ -217,8 +217,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def get_external_network(self, network_name_or_id):
         """
         Finds router interface with network id equal to given network and by that the external network.
-        :param network_name_or_id:Name or id of network
-        :return:Corresponding external network
+        @param network_name_or_id:Name or id of network
+        @return:Corresponding external network
         """
         network_id = self.conn.get_network(network_name_or_id)["id"]
         for router in self.conn.list_routers():
@@ -230,9 +230,9 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def attach_available_floating_ip(self, network=None, server=None):
         """
         Get a floating IP from a network or a pool and attach it to the server
-        :param network:
-        :param server:
-        :return:
+        @param network:
+        @param server:
+        @return:
         """
         floating_ip = self.conn.available_floating_ip(network=network)
         if server:
@@ -256,13 +256,13 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def set_allowed_addresses(self, id_or_ip, allowed_address_pairs):
         """
         Set allowed address (or CIDR) for the given network interface/port
-        :param id_or_ip: id or ip-address of the port/interfac
-        :param allowed_address: a list of allowed address pairs. For example:
+        @param id_or_ip: id or ip-address of the port/interfac
+        @param allowed_address: a list of allowed address pairs. For example:
                 [{
                     "ip_address": "23.23.23.1",
                     "mac_address": "fa:16:3e:c4:cd:3f"
                 }]
-        :return updated port:
+        @return updated port:
         """
         # get port id if ip address is given
         if re.match(PATTERN_IPV4, id_or_ip):
@@ -277,8 +277,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def create_security_group(self, name, rules=None):
         """
         Create a security and add given rules
-        :param name:  Name of the security group to be created
-        :param rules: List of firewall rules in the following format.
+        @param name:  Name of the security group to be created
+        @param rules: List of firewall rules in the following format.
         rules = [{ "direction": "ingress" | "egress",
                    "ethertype": "IPv4" | "IPv6",
                    "protocol": "txp" | "udp" | "icmp" | None
@@ -289,7 +289,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                   { ... } ]
 
 
-        :return: created security group
+        @return: created security group
         """
         security_group = self.conn.create_security_group(name, f"Security group for {name}.")
         if rules is not None:
@@ -299,8 +299,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def delete_security_group(self, name_or_id):
         """
         Delete a security group
-        :param name_or_id : Name or Id of the security group to be deleted
-        :return: True if delete succeeded, False otherwise.
+        @param name_or_id : Name or Id of the security group to be deleted
+        @return: True if delete succeeded, False otherwise.
         """
         try:
             return self.conn.delete_security_group(name_or_id)
@@ -310,9 +310,9 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def append_rules_to_security_group(self, name_or_id, rules):
         """
         Append firewall rules to given security group
-        :param name_or_id:
-        :param rules:
-        :return:
+        @param name_or_id:
+        @param rules:
+        @return:
         """
         for rule in rules:
             self.conn.create_security_group_rule(name_or_id, direction=rule["direction"], ethertype=rule["ethertype"],

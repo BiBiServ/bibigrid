@@ -53,8 +53,8 @@ def get_ac_command(providers, name):
 def get_add_ssh_public_key_commands(ssh_public_key_files):
     """
     Builds and returns the necessary commands to add given public keys to remote for additional access.
-    :param ssh_public_key_files: public keys to add
-    :return: list of public key add commands
+    @param ssh_public_key_files: public keys to add
+    @return: list of public key add commands
     """
     commands = []
     if ssh_public_key_files:
@@ -69,11 +69,11 @@ def copy_to_server(sftp, local_path, remote_path, log):
     """
     Recursively copies files and folders to server.
     If a folder is given as local_path, the structure within will be kept.
-    :param sftp: sftp connection
-    :param local_path: file or folder locally
-    :param remote_path: file or folder locally
-    :param log:
-    :return:
+    @param sftp: sftp connection
+    @param local_path: file or folder locally
+    @param remote_path: file or folder locally
+    @param log:
+    @return:
     """
     log.debug("Copy %s to %s...", local_path, remote_path)
     if os.path.isfile(local_path):
@@ -91,13 +91,13 @@ def is_active(client, floating_ip_address, private_key, username, log, gateway, 
     """
     Checks if connection is possible and therefore if server is active.
     Raises paramiko.ssh_exception.NoValidConnectionsError if timeout is reached
-    :param client: created client
-    :param floating_ip_address: ip to connect to
-    :param private_key: SSH-private_key
-    :param username: SSH-username
-    :param log:
-    :param timeout: how long to wait between ping
-    :param gateway: if node should be reached over a gateway port is set to 30000 + subnet * 256 + host
+    @param client: created client
+    @param floating_ip_address: ip to connect to
+    @param private_key: SSH-private_key
+    @param username: SSH-username
+    @param log:
+    @param timeout: how long to wait between ping
+    @param gateway: if node should be reached over a gateway port is set to 30000 + subnet * 256 + host
     (waiting grows quadratically till 2**timeout before accepting failure)
     """
     attempts = 0
@@ -139,8 +139,8 @@ def line_buffered(f):
     """
     https://stackoverflow.com/questions/25260088/paramiko-with-continuous-stdout
     temporary hangs?
-    :param f:
-    :return:
+    @param f:
+    @return:
     """
     line_buf = b""
     while not f.channel.exit_status_ready():
@@ -154,9 +154,9 @@ def line_buffered(f):
 def execute_ssh_cml_commands(client, commands, log):
     """
     Executes commands and logs exit_status accordingly.
-    :param client: Client with connection to remote
-    :param commands: Commands to execute on remote
-    :param log:
+    @param client: Client with connection to remote
+    @param commands: Commands to execute on remote
+    @param log:
     """
     for command in commands:
         _, ssh_stdout, _ = client.exec_command(command[0])
@@ -190,13 +190,13 @@ def ansible_preparation(floating_ip, private_key, username, log, gateway, comman
     Copies additional files and executes additional commands if given.
     The playbook is copied later, because it needs all servers setup and is not time intensive.
     See: create.update_playbooks
-    :param floating_ip: public ip of server to ansible-prepare
-    :param private_key: generated private key of all cluster-server
-    :param username: username of all server
-    :param log:
-    :param commands: additional commands to execute
-    :param filepaths: additional files to copy: (localpath, remotepath)
-    :param gateway
+    @param floating_ip: public ip of server to ansible-prepare
+    @param private_key: generated private key of all cluster-server
+    @param username: username of all server
+    @param log:
+    @param commands: additional commands to execute
+    @param filepaths: additional files to copy: (localpath, remotepath)
+    @param gateway
     """
     if filepaths is None:
         filepaths = []
@@ -211,13 +211,13 @@ def ansible_preparation(floating_ip, private_key, username, log, gateway, comman
 def execute_ssh(floating_ip, private_key, username, log, gateway, commands=None, filepaths=None):
     """
     Executes commands on remote and copies files given in filepaths
-    :param floating_ip: public ip of remote
-    :param private_key: key of remote
-    :param username: username of remote
-    :param commands: commands
-    :param log:
-    :param filepaths: filepaths (localpath, remotepath)
-    :param gateway: gateway if used
+    @param floating_ip: public ip of remote
+    @param private_key: key of remote
+    @param username: username of remote
+    @param commands: commands
+    @param log:
+    @param filepaths: filepaths (localpath, remotepath)
+    @param gateway: gateway if used
     """
     if commands is None:
         commands = []

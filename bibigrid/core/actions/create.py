@@ -67,10 +67,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Additionally sets (unique) cluster_id, public_key_commands (to copy public keys to master) and key_name.
         Call create() to actually start server.
-        :param providers: List of providers (provider)
-        :param configurations: List of configurations (dict)
-        :param config_path: string that is the path to config-file
-        :param debug: Bool. If True Cluster offer shut-down after create and
+        @param providers: List of providers (provider)
+        @param configurations: List of configurations (dict)
+        @param config_path: string that is the path to config-file
+        @param debug: Bool. If True Cluster offer shut-down after create and
         will ask before shutting down on errors
         """
         self.log = log
@@ -104,7 +104,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         See here for why using python module ECDSA wasn't successful
         https://stackoverflow.com/questions/71194770/why-does-creating-ecdsa-keypairs-via-python-differ-from-ssh
         -keygen-t-ecdsa-and
-        :return:
+        @return:
         """
         self.log.info("Generating keypair")
         # create KEY_FOLDER if it doesn't exist
@@ -163,9 +163,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     def start_vpn_or_master_instance(self, configuration, provider):
         """
         Start master/vpn-worker of a provider
-        :param configuration: dict configuration of said provider
-        :param provider: provider
-        :return:
+        @param configuration: dict configuration of said provider
+        @param provider: provider
+        @return:
         """
         identifier, instance_type, volumes = self.prepare_vpn_or_master_args(configuration, provider)
         external_network = provider.get_external_network(configuration["network"])
@@ -209,9 +209,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
         Prepares start_instance arguments for master/vpn
-        :param configuration: configuration (dict) of said master/vpn
-        :param provider: provider
-        :return: arguments needed by start_instance
+        @param configuration: configuration (dict) of said master/vpn
+        @param provider: provider
+        @return: arguments needed by start_instance
         """
         if configuration.get("masterInstance"):
             instance_type = configuration["masterInstance"]
@@ -247,9 +247,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     def prepare_volumes(self, provider, mounts):
         """
         Creates volumes from snapshots and returns all volumes (pre-existing and newly created)
-        :param provider: provider on which the volumes and snapshots exist
-        :param mounts: volumes or snapshots
-        :return: list of pre-existing and newly created volumes
+        @param provider: provider on which the volumes and snapshots exist
+        @param mounts: volumes or snapshots
+        @return: list of pre-existing and newly created volumes
         """
         if mounts:
             self.log.info("Preparing volumes")
@@ -275,7 +275,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Makes sure that subnet and network key are set for each configuration.
         If none is set a keyError will be raised and caught in create.
-        :return:
+        @return:
         """
         for configuration, provider in zip(self.configurations, self.providers):
             configuration["cloud_identifier"] = provider.cloud_specification["identifier"]
@@ -298,7 +298,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     def upload_data(self):
         """
         Configures ansible and then uploads the modified files and all necessary data to the master
-        :return:
+        @return:
         """
         self.log.debug("Uploading ansible Data")
         for folder in [aRP.VARS_FOLDER, aRP.GROUP_VARS_FOLDER, aRP.HOST_VARS_FOLDER]:
@@ -323,7 +323,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     def start_start_instance_threads(self):
         """
         Starts for each provider a start_instances thread and joins them.
-        :return:
+        @return:
         """
         start_instance_threads = []
         for configuration, provider in zip(self.configurations, self.providers):
@@ -337,7 +337,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     def extended_network_configuration(self):
         """
             Configure master/vpn-worker network for a multi/hybrid cloud
-        :return:
+        @return:
         """
         if len(self.providers) == 1:
             return
@@ -368,7 +368,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Creates cluster and logs helpful cluster-info afterwards.
         If debug is set True it offers termination after starting the cluster.
-        :return: exit_state
+        @return: exit_state
         """
         try:
             self.generate_keypair()
@@ -433,7 +433,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         SSH: How to connect to master via SSH
         Terminate: What bibigrid command is needed to terminate the created cluster
         Detailed cluster info: How to log detailed info about the created cluster
-        :return:
+        @return:
         """
         gateway = self.configurations[0].get("gateway")
         ssh_ip = self.master_ip
