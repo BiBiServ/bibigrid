@@ -317,6 +317,7 @@ class ValidateConfiguration:
             self.log.warning(f"Flavor {instance_type} does not exist on {provider.cloud_specification['identifier']}.\n"
                              f"Available flavors:\n{available_flavors}")
             return False
+        
         type_max_disk_space = flavor["disk"]
         type_max_ram = flavor["ram"]
         image_min_disk_space = provider.get_image_by_id_or_name(instance_image)["min_disk"]
