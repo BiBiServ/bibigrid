@@ -467,7 +467,6 @@ class ValidateConfiguration:
         @return: True
         """
         self.log.info("Checking nfs...")
-        success = True
         master_configuration = self.configurations[0]
         nfs_shares = master_configuration.get("nfsShares")
         nfs = master_configuration.get("nfs")
