@@ -17,8 +17,8 @@ from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import image_selection
 from bibigrid.core.utility.handler import ssh_handler
-from bibigrid.core.utility.paths import ansible_resources_path as aRP
-from bibigrid.core.utility.paths import bin_path as biRP
+from bibigrid.core.utility.paths import ansible_resources_path as a_rp
+from bibigrid.core.utility.paths import bin_path
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
 from bibigrid.models.exceptions import ExecutionException, ConfigurationException
@@ -26,7 +26,7 @@ from bibigrid.models.exceptions import ExecutionException, ConfigurationExceptio
 PREFIX = "bibigrid"
 SEPARATOR = "-"
 PREFIX_WITH_SEP = PREFIX + SEPARATOR
-FILEPATHS = [(aRP.PLAYBOOK_PATH, aRP.PLAYBOOK_PATH_REMOTE), (biRP.BIN_PATH, biRP.BIN_PATH_REMOTE)]
+FILEPATHS = [(a_rp.PLAYBOOK_PATH, a_rp.PLAYBOOK_PATH_REMOTE), (bin_path.BIN_PATH, bin_path.BIN_PATH_REMOTE)]
 
 
 def get_identifier(identifier, cluster_id, additional=""):
@@ -129,7 +129,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Generate a security groups:
          - default with basic rules for the cluster
-         - wireguard when more than one provider is used (= multicloud)
+         - wireguard when more than one provider is used (= multi-cloud)
         """
         self.log.info("Generating Security Groups")
         for provider, configuration in zip(self.providers, self.configurations):
@@ -163,7 +163,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     def start_vpn_or_master_instance(self, configuration, provider):
         """
         Start master/vpn-worker of a provider
-        @param configuration: dict configuration of said provider
+        @param configuration: dict configuration of said provider.
         @param provider: provider
         @return:
         """
@@ -301,12 +301,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @return:
         """
         self.log.debug("Uploading ansible Data")
-        for folder in [aRP.VARS_FOLDER, aRP.GROUP_VARS_FOLDER, aRP.HOST_VARS_FOLDER]:
+        for folder in [a_rp.VARS_FOLDER, a_rp.GROUP_VARS_FOLDER, a_rp.HOST_VARS_FOLDER]:
             if not os.path.isdir(folder):
                 self.log.info("%s not found. Creating folder.", folder)
                 os.mkdir(folder)
-        if not os.path.isfile(aRP.HOSTS_FILE):
-            with open(aRP.HOSTS_FILE, 'a', encoding='utf-8') as hosts_file:
+        if not os.path.isfile(a_rp.HOSTS_FILE):
+            with open(a_rp.HOSTS_FILE, 'a', encoding='utf-8') as hosts_file:
                 hosts_file.write("# placeholder file for worker DNS entries (see 003-dns)")
 
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,

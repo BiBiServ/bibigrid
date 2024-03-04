@@ -139,7 +139,7 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
     @abstractmethod
     def create_keypair(self, name, public_key):
         """
-        Creates a new keypair with name name and public_key public_key
+        Creates a new keypair with name and public_key
         @param name: name of new keypair
         @param public_key: public_key of new keypair
         @return:
@@ -252,7 +252,7 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
     def delete_security_group(self, name_or_id):
         """
         Delete a security group
-        @param name_or_id : Name or Id of the security group to be deleted
+        @param name_or_id : Name or id of the security group to be deleted
         @return: True if delete succeeded, False otherwise.
         """
 

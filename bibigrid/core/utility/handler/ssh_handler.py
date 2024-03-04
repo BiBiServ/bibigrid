@@ -1,6 +1,6 @@
 """
 This module handles ssh and sftp connections to master and vpngtw. It also holds general execution routines used to
-setup the Cluster.
+set up the Cluster.
 """
 import os
 import socket
@@ -10,15 +10,15 @@ import paramiko
 import sympy
 import yaml
 
-from bibigrid.core.utility import ansible_commands as aC
+from bibigrid.core.utility import ansible_commands as a_c
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
-ANSIBLE_SETUP = [aC.NO_UPDATE, aC.UPDATE, aC.PYTHON3_PIP, aC.ANSIBLE_PASSLIB,
-                 (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."), aC.PLAYBOOK_HOME,
-                 aC.PLAYBOOK_HOME_RIGHTS, aC.ADD_PLAYBOOK_TO_LINUX_HOME]
+ANSIBLE_SETUP = [a_c.NO_UPDATE, a_c.UPDATE, a_c.PYTHON3_PIP, a_c.ANSIBLE_PASSLIB,
+                 (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."), a_c.PLAYBOOK_HOME,
+                 a_c.PLAYBOOK_HOME_RIGHTS, a_c.ADD_PLAYBOOK_TO_LINUX_HOME]
 # ANSIBLE_START = [aC.WAIT_READY, aC.UPDATE, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]  # another UPDATE seems to not necessary.
-ANSIBLE_START = [aC.WAIT_READY, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]
+ANSIBLE_START = [a_c.WAIT_READY, a_c.MV_ANSIBLE_CONFIG, a_c.EXECUTE]
 VPN_SETUP = [("echo Example", "Echos an Example")]
 
 

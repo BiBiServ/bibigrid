@@ -68,7 +68,7 @@ def log_list(cluster_id, providers, log):
             log.info("Printing specific cluster_dictionary")
             master_count, worker_count, vpn_count = get_size_overview(cluster_dict[cluster_id], log)
             log.log(42, f"\tCluster has {master_count} master, {vpn_count} vpngtw and {worker_count} regular workers. "
-                       f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
+                        f"The cluster is spread over {vpn_count + master_count} reachable provider(s).")
             log.log(42, pprint.pformat(cluster_dict[cluster_id]))
         else:
             log.info("Cluster with cluster-id {cluster_id} not found.")
@@ -142,7 +142,7 @@ def get_master_access_ip(cluster_id, master_provider, log):
     """
     Returns master's ip of cluster cluster_id
     @param master_provider: master's provider
-    @param cluster_id: Id of cluster
+    @param cluster_id: id of cluster
     @param log:
     @return: public ip of master
     """

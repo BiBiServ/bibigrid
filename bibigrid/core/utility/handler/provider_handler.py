@@ -15,6 +15,7 @@ def get_provider_by_class_name(provider_name,
     Returns provider that is associated with the key provider_name in provider_dict.
     Otherwise, a KeyError is thrown.
     @param provider_name: key of provider_dict
+    @param provider_dict:
     @return: provider
     """
     return provider_dict[provider_name]
@@ -23,8 +24,9 @@ def get_provider_by_class_name(provider_name,
 def get_provider_by_name(provider_name, provider_dict=PROVIDER_NAME_DICT):  # pylint: disable=dangerous-default-value
     """
     Returns provider that is associated with the key provider_name in provider_dict.
-    Otherwise a KeyError is thrown.
+    Otherwise, a KeyError is thrown.
     @param provider_name: key of provider_dict
+    @param provider_dict
     @return: provider
     """
     return provider_dict.get(provider_name)

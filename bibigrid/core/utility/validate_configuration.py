@@ -131,7 +131,7 @@ def check_clouds_yaml_security(log):
 
 def check_cloud_yaml(cloud_specification, log):
     """
-    Check if cloud_specification is valid i.e. contains the necessary authentification data.
+    Check if cloud_specification is valid i.e. contains the necessary authentication data.
     @param cloud_specification: dict to check whether it is a valid cloud_specification
     @param log
     @return: True if cloud_specification is valid. False else.
@@ -194,7 +194,7 @@ class ValidateConfiguration:
             The validation steps are as follows:
             Check connection can be established
             Check provider uniqueness
-            Check servergroup
+            Check server group
             Check instances are available
             Check images and volumes are available
             Check network and subnet are available
@@ -391,7 +391,11 @@ class ValidateConfiguration:
                     success = False
                 else:
                     self.log.info(f"Subnet '{subnet_name_or_id}' found")
-        return bool(success and (network_name_or_id or subnet_name_or_id))
+            else:
+                self.log.warning(
+                    f"Neither network nor subnet given in configuration {provider.cloud_specification['identifier']}.")
+                success = False
+        return success
 
     def check_server_group(self):
         """

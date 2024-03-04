@@ -154,7 +154,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         return self.conn.close()
 
     def create_keypair(self, name, public_key):
-        # When running a multicloud approach on the same provider and same account,
+        # When running a multi-cloud approach on the same provider and same account,
         # make sure that the keypair is only created ones.
         try:
             return self.conn.create_keypair(name=name, public_key=public_key)
@@ -172,7 +172,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def get_free_resources(self):
         """
         Uses openstack.block_storage to get all relevant volume resources.
-        Uses the openstack.compute to get all relevant compute resources.
+        Uses openstack compute to get all relevant compute resources.
         Floating-IP is not returned correctly by openstack.
         @return: Dictionary containing the free resources
         """
@@ -256,8 +256,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def set_allowed_addresses(self, id_or_ip, allowed_address_pairs):
         """
         Set allowed address (or CIDR) for the given network interface/port
-        @param id_or_ip: id or ip-address of the port/interfac
-        @param allowed_address: a list of allowed address pairs. For example:
+        @param id_or_ip: id or ip-address of the port/interface
+        @param allowed_address_pairs: a list of allowed address pairs. For example:
                 [{
                     "ip_address": "23.23.23.1",
                     "mac_address": "fa:16:3e:c4:cd:3f"
@@ -299,7 +299,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def delete_security_group(self, name_or_id):
         """
         Delete a security group
-        @param name_or_id : Name or Id of the security group to be deleted
+        @param name_or_id : Name or id of the security group to be deleted
         @return: True if delete succeeded, False otherwise.
         """
         try:
