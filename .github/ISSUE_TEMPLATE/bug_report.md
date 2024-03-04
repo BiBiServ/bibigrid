@@ -23,9 +23,10 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
+**Setup (please complete the following information):**
  - OS: [e.g. Ubuntu 22.04]
  - Cloud Location [e.g. Bielefeld]
+ - Configuration
  - BiBiGrid Version
 
 **Additional context**
