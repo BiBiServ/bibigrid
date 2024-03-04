@@ -20,10 +20,13 @@ logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/delete_server
 logging.info("delete_server.py started")
 start_time = time.time()
 
+logging.info(f"Terminate parameter: {sys.argv[1]}")
+
 if len(sys.argv) < 2:
     logging.warning("usage:  $0 instance1_name[,instance2_name,...]")
     logging.info("Your input %s with length %s", sys.argv, len(sys.argv))
     sys.exit(1)
+
 terminate_workers = sys.argv[1].split("\n")
 logging.info("Deleting instances %s", terminate_workers)
 
@@ -61,7 +64,8 @@ for worker_group in worker_groups:
             logging.warning(f"Couldn't delete worker {terminate_worker}")
         else:
             logging.info(f"Deleted {terminate_worker}")
-logging.info("Successful delete_server.py execution!")
+
+logging.info(f"Successful delete_server.py execution ({sys.argv[1]})!")
 time_in_s = time.time() - start_time
 logging.info("--- %s minutes and %s seconds ---", math.floor(time_in_s / 60), time_in_s % 60)
 logging.info("Exit Code 0")

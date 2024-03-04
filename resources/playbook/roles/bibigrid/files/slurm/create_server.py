@@ -12,6 +12,7 @@ import subprocess
 import sys
 import threading
 import time
+from filelock import FileLock
 
 import ansible_runner
 import os_client_config
@@ -68,6 +69,16 @@ def start_server(worker, start_worker_group, start_data):
     try:
         logging.info("Create server %s.", worker)
         connection = connections[start_worker_group["cloud_identifier"]]
+        # check if running
+        already_running_server = connection.get_server(worker)
+        if already_running_server:
+            logging.warning(
+                f"Already running server {worker} on {start_worker_group['cloud_identifier']} (will be terminated): "
+                f"{already_running_server}")
+            server_deleted = connection.delete_server(worker)
+            logging.info(
+                f"Server {worker} on {start_worker_group['cloud_identifier']} has been terminated ({server_deleted}). "
+                f"Continuing startup.")
         # check for userdata
         userdata = ""
         userdata_file_path = f"/opt/slurm/userdata_{start_worker_group['cloud_identifier']}.txt"
@@ -142,19 +153,20 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
     @param ip: ibibigrid-worker0-3k1eeysgetmg4vb-3p address
     @return:
     """
-    hosts = {"host_entries": {}}
-    if os.path.isfile(HOSTS_FILE_PATH):
+    logging.info("Updating hosts.yml")
+    with FileLock("hosts.yml.lock"):
+        logging.info("Lock acquired")
         with open(HOSTS_FILE_PATH, mode="r", encoding="utf-8") as hosts_file:
             hosts = yaml.safe_load(hosts_file)
-            hosts_file.close()
-        if hosts is None or "host_entries" not in hosts.keys():
+        logging.info(f"Existing hosts {hosts}")
+        if not hosts or "host_entries" not in hosts:
+            logging.info(f"Resetting host entries because {'first run' if hosts else 'broken'}.")
             hosts = {"host_entries": {}}
-
-    hosts["host_entries"][name] = ip
-
-    with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
-        yaml.dump(hosts, hosts_file)
-        hosts_file.close()
+        hosts["host_entries"][name] = ip
+        logging.info(f"Added host {name} with ip {hosts['host_entries'][name]}")
+        with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
+            yaml.dump(hosts, hosts_file)
+    logging.info("Wrote hosts file. Released hosts.yml.lock.")
 
 
 def configure_dns():

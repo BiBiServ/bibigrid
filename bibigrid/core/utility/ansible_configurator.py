@@ -102,6 +102,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             features = set(configuration_features + worker_features)
             if features:
                 worker_dict["features"] = features
+            pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict, log)
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
@@ -119,6 +120,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
+            pass_through(configuration, vpngtw_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpngtw_dict, log)
         else:
             master = configuration["masterInstance"]
@@ -132,6 +134,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
+            pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict, log)
 
 
@@ -194,7 +197,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                                                    master_configuration.get("zabbixConf", {}),
                                                                    strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
 
-    for from_key, to_key in [("waitForServices", "wait_for_services"), ("ansibleRoles", "ansible_roles"),
+    for from_key, to_key in [("ansibleRoles", "ansible_roles"),
                              ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
         pass_through(master_configuration, common_configuration_yaml, from_key, to_key)
 

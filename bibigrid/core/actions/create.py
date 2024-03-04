@@ -186,7 +186,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True)
         configuration["private_v4"] = server["private_v4"]
-
+        self.log.debug(f"Created Server {name}: {server['private_v4']}.")
         # get mac address for given private address
         # Attention: The following source code works with Openstack and IPV4 only
         configuration["mac_addr"] = None
@@ -201,6 +201,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if identifier == VPN_WORKER_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
             configuration["floating_ip"] = \
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
+            self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
         configuration["volumes"] = provider.get_mount_info_from_server(server)
