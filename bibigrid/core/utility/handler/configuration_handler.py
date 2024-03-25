@@ -19,10 +19,10 @@ CLOUD_CONFIGURATION_KEY = "cloud"
 def read_configuration(log, path="bibigrid.yml", configuration_list=True):
     """
     Reads yaml from file and returns configuration
-    :param log:
-    :param path: Path to yaml file
-    :param configuration_list: True if list is expected
-    :return: configurations (dict)
+    @param log:
+    @param path: Path to yaml file
+    @param configuration_list: True if list is expected
+    @return: configurations (dict)
     """
     configuration = None
     if os.path.isfile(path):
@@ -42,10 +42,10 @@ def read_configuration(log, path="bibigrid.yml", configuration_list=True):
 def get_list_by_key(configurations, key, get_empty=True):
     """
     Returns a list of objects which are value to the key.
-    :param get_empty: if true empty configurations return None
-    :param configurations: YAML of configuration File containing the configuration-data for each provider
-    :param key: Key that is looked out for
-    :return: List of values of said key through all configs
+    @param get_empty: if true empty configurations return None
+    @param configurations: YAML of configuration File containing the configuration-data for each provider
+    @param key: Key that is looked out for
+    @return: List of values of said key through all configs
     """
     return [configuration.get(key) for configuration in configurations if configuration.get(key) or get_empty]
 
@@ -98,11 +98,11 @@ def get_clouds_files(log):
 def get_cloud_specification(cloud_name, clouds, clouds_public, log):
     """
     As in openstack cloud_public_specification will be overwritten by cloud_private_specification
-    :param cloud_name: name of the cloud to look for in clouds.yaml
-    :param clouds: dict containing the data loaded from clouds.yaml
-    :param clouds_public: dict containing the data loaded from clouds-public.yaml
-    :param log:
-    :return:
+    @param cloud_name: name of the cloud to look for in clouds.yaml
+    @param clouds: dict containing the data loaded from clouds.yaml
+    @param clouds_public: dict containing the data loaded from clouds-public.yaml
+    @param log:
+    @return:
     """
     cloud_full_specification = {}
     cloud_private_specification = clouds.get(cloud_name)

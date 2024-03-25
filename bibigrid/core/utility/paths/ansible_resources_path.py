@@ -4,7 +4,7 @@ Paths that are used by Ansible. Especially playbook, vars files and Co.
 
 import os
 
-import bibigrid.core.utility.paths.basic_path as bP
+import bibigrid.core.utility.paths.basic_path as b_p
 
 # UNIVERSAL
 ANSIBLE_HOSTS: str = "ansible_hosts"
@@ -27,7 +27,7 @@ DEFAULT_IP_FILE = VARS_PATH + "{{ ansible_default_ipv4.address }}.yml"
 # LOCAL
 # ANSIBLE_CFG_PATH = os.path.join(bP.RESOURCES_PATH, ANSIBLE_CFG)
 PLAYBOOK = "playbook/"
-PLAYBOOK_PATH: str = os.path.join(bP.RESOURCES_PATH, PLAYBOOK)
+PLAYBOOK_PATH: str = os.path.join(b_p.RESOURCES_PATH, PLAYBOOK)
 HOSTS_FILE = os.path.join(PLAYBOOK_PATH, HOSTS_YML)
 HOSTS_CONFIG_FILE: str = os.path.join(PLAYBOOK_PATH, ANSIBLE_HOSTS)
 CONFIG_ROOT_PATH: str = os.path.join(PLAYBOOK_PATH, VARS_PATH)

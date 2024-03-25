@@ -40,7 +40,7 @@ signal.signal(signal.SIGINT, sigint_handler)
 def is_used(ip_address):
     """
     https://stackoverflow.com/questions/62000168/how-to-check-if-ssh-tunnel-is-being-used
-    :return:
+    @return:
     """
     ports_used = []
     with subprocess.Popen(["netstat", "-na"], stdout=subprocess.PIPE) as process:
