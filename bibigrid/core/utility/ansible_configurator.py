@@ -29,6 +29,7 @@ ZABBIX_CONF = {"db": "zabbix", "db_user": "zabbix", "db_password": "zabbix", "ti
 SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "munge_key": id_generation.generate_munge_key(),
               "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 900, "TreeWidth": 128}}
+CLOUD_SCHEDULING = {"timeout": 5}
 
 
 def delete_old_vars(log):
@@ -180,7 +181,11 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                  "slurm": master_configuration.get("slurm", True), "ssh_user": ssh_user,
                                  "slurm_conf": mergedeep.merge({}, SLURM_CONF,
                                                                master_configuration.get("slurmConf", {}),
-                                                               strategy=mergedeep.Strategy.TYPESAFE_REPLACE)}
+                                                               strategy=mergedeep.Strategy.TYPESAFE_REPLACE),
+                                 "cloud_scheduling": mergedeep.merge({}, CLOUD_SCHEDULING,
+                                                                          master_configuration.get(
+                                                                              "cloudScheduling", {}),
+                                                                          strategy=mergedeep.Strategy.TYPESAFE_REPLACE)}
     if master_configuration.get("nfs"):
         nfs_shares = master_configuration.get("nfsShares", [])
         nfs_shares = nfs_shares + DEFAULT_NFS_SHARES
@@ -197,8 +202,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                                                    master_configuration.get("zabbixConf", {}),
                                                                    strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
 
-    for from_key, to_key in [("ansibleRoles", "ansible_roles"),
-                             ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
+    for from_key, to_key in [("ansibleRoles", "ansible_roles"), ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
         pass_through(master_configuration, common_configuration_yaml, from_key, to_key)
 
     if len(configurations) > 1:
