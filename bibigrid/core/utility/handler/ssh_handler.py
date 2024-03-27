@@ -99,21 +99,22 @@ def is_active(client, paramiko_key, ssh_data, log):
     """
     attempts = 0
     establishing_connection = True
+    log.info(f"Attempting to connect to {ssh_data['floating_ip']}... This might take a while")
+    port = 22
+    if ssh_data.get('gateway'):
+        log.info(f"Using SSH Gateway {ssh_data['gateway'].get('ip')}")
+        octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(ssh_data['floating_ip'].split("."))}
+        port = int(sympy.sympify(ssh_data['gateway']["portFunction"]).subs(dict(octets)))
+        log.info(f"Port {port} will be used (see {ssh_data['gateway']['portFunction']} and octets {octets}).")
     while establishing_connection:
         try:
-            port = 22
-            if ssh_data.get('gateway'):
-                log.info(f"Using SSH Gateway {ssh_data['gateway'].get('ip')}")
-                octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(ssh_data['floating_ip'].split("."))}
-                port = int(sympy.sympify(ssh_data['gateway']["portFunction"]).subs(dict(octets)))
-                log.info(f"Port {port} will be used (see {ssh_data['gateway']['portFunction']} and octets {octets}).")
+            log.info(f"Attempt {attempts}/{ssh_data['timeout']}. Connecting to {ssh_data['floating_ip']}")
             client.connect(hostname=ssh_data['gateway'].get("ip") or ssh_data['floating_ip'],
                            username=ssh_data['username'], pkey=paramiko_key, timeout=7,
                            auth_timeout=ssh_data['timeout'], port=port)
             establishing_connection = False
             log.info(f"Successfully connected to {ssh_data['floating_ip']}")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
-            log.info(f"Attempting to connect to {ssh_data['floating_ip']}... This might take a while", )
             if attempts < ssh_data['timeout']:
                 time.sleep(2 ** attempts)
                 attempts += 1
