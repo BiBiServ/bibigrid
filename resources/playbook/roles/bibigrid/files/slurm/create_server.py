@@ -222,7 +222,7 @@ for filename in os.listdir(GROUP_VARS_PATH):
 # read common configuration
 with open("/opt/playbook/vars/common_configuration.yml", mode="r", encoding="utf-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
-logging.warning(f"ThisGrep {common_config['cloud_scheduling']['timeout']}")
+logging.warning(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['timeout']}")
 # read clouds.yaml
 with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
     clouds = yaml.safe_load(clouds_file)["clouds"]
