@@ -7,6 +7,8 @@
   cloud: openstack # name of clouds.yaml cloud-specification key (which is value to top level key clouds)
 
   # -- BEGIN: GENERAL CLUSTER INFORMATION --
+  # sshTimeout: 5 # Number of ssh connection attempts with 2^attempt seconds in between (2^sshTimeout-1 is the max time before returning with an error)
+
   ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
   #sshPublicKeyFiles:
   #  - [public key one]
