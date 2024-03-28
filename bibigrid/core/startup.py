@@ -40,8 +40,8 @@ def get_cluster_id_from_mem():
 def set_logger_verbosity(verbosity):
     """
     Sets verbosity, format and handler.
-    :param verbosity: level of verbosity
-    :return:
+    @param verbosity: level of verbosity
+    @return:
     """
 
     capped_verbosity = min(verbosity, len(VERBOSITY_LIST) - 1)
@@ -56,10 +56,10 @@ def set_logger_verbosity(verbosity):
 def run_action(args, configurations, config_path):
     """
     Uses args to decide which action will be executed and executes said action.
-    :param args: command line arguments
-    :param configurations: list of configurations (dicts)
-    :param config_path: path to configurations-file
-    :return:
+    @param args: command line arguments
+    @param configurations: list of configurations (dicts)
+    @param config_path: path to configurations-file
+    @return:
     """
     if args.version:
         LOG.info("Action version selected")
@@ -79,10 +79,7 @@ def run_action(args, configurations, config_path):
                 exit_state = check.check(configurations, providers, LOG)
             elif args.create:
                 LOG.info("Action create selected")
-                creator = create.Create(providers=providers,
-                                        configurations=configurations,
-                                        log=LOG,
-                                        debug=args.debug,
+                creator = create.Create(providers=providers, configurations=configurations, log=LOG, debug=args.debug,
                                         config_path=config_path)
                 LOG.log(42, "Creating a new cluster takes about 10 or more minutes depending on your cloud provider "
                            "and your configuration. Please be patient.")
@@ -95,9 +92,7 @@ def run_action(args, configurations, config_path):
                 if args.cluster_id:
                     if args.terminate:
                         LOG.info("Action terminate selected")
-                        exit_state = terminate.terminate(cluster_id=args.cluster_id,
-                                                         providers=providers,
-                                                         log=LOG,
+                        exit_state = terminate.terminate(cluster_id=args.cluster_id, providers=providers, log=LOG,
                                                          debug=args.debug)
                     elif args.ide:
                         LOG.info("Action ide selected")
@@ -124,7 +119,7 @@ def run_action(args, configurations, config_path):
 def main():
     """
     Interprets command line, sets logger, reads configuration and runs selected action. Then exits.
-    :return:
+    @return:
     """
     logging.basicConfig(format=LOGGER_FORMAT)
     # LOG.addHandler(logging.StreamHandler())  # stdout

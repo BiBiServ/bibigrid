@@ -54,7 +54,7 @@ def get_add_ssh_public_key_commands(ssh_public_key_files):
     """
     Builds and returns the necessary commands to add given public keys to remote for additional access.
     @param ssh_public_key_files: public keys to add
-    :return: list of public key add commands
+    @return: list of public key add commands
     """
     commands = []
     if ssh_public_key_files:
@@ -73,7 +73,7 @@ def copy_to_server(sftp, local_path, remote_path, log):
     @param local_path: file or folder locally
     @param remote_path: file or folder locally
     @param log:
-    :return:
+    @return:
     """
     log.debug("Copy %s to %s...", local_path, remote_path)
     if os.path.isfile(local_path):
@@ -139,7 +139,7 @@ def line_buffered(f):
     https://stackoverflow.com/questions/25260088/paramiko-with-continuous-stdout
     temporary hangs?
     @param f:
-    :return:
+    @return:
     """
     line_buf = b""
     while not f.channel.exit_status_ready():
