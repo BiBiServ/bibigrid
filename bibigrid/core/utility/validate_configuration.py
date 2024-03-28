@@ -317,6 +317,7 @@ class ValidateConfiguration:
             self.log.warning(f"Flavor {instance_type} does not exist on {provider.cloud_specification['identifier']}.\n"
                              f"Available flavors:\n{available_flavors}")
             return False
+
         type_max_disk_space = flavor["disk"]
         type_max_ram = flavor["ram"]
         image_min_disk_space = provider.get_image_by_id_or_name(instance_image)["min_disk"]
@@ -389,12 +390,8 @@ class ValidateConfiguration:
                         f"Subnet '{subnet_name_or_id}' not found on {provider.cloud_specification['identifier']}")
                     success = False
                 else:
-                    self.log.info(f"Subnet '{subnet_name_or_id}' found on {provider.cloud_specification['identifier']}")
-            else:
-                self.log.warning(f"Neither 'network' nor 'subnet' defined in configuration on "
-                                 f"{provider.cloud_specification['identifier']}.")
-                success = False
-        return success
+                    self.log.info(f"Subnet '{subnet_name_or_id}' found")
+        return bool(success and (network_name_or_id or subnet_name_or_id))
 
     def check_server_group(self):
         """
@@ -471,7 +468,6 @@ class ValidateConfiguration:
         @return: True
         """
         self.log.info("Checking nfs...")
-        success = True
         master_configuration = self.configurations[0]
         nfs_shares = master_configuration.get("nfsShares")
         nfs = master_configuration.get("nfs")
