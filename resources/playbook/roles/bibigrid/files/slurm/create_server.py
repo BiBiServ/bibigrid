@@ -138,8 +138,8 @@ def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", usernam
                 establishing_connection = False
             except paramiko.ssh_exception.NoValidConnectionsError as exc:
                 logging.info("Attempting to connect to %s... This might take a while", private_ip)
-                if attempts < common_config["cloud_scheduling"]["timeout"]:
-                    time.sleep(2 ** attempts)
+                if attempts < common_config["cloud_scheduling"]["sshTimeout"]:
+                    time.sleep(2 ** (2+attempts))
                     attempts += 1
                 else:
                     logging.warning("Attempt to connect to %s failed.", private_ip)
@@ -222,7 +222,7 @@ for filename in os.listdir(GROUP_VARS_PATH):
 # read common configuration
 with open("/opt/playbook/vars/common_configuration.yml", mode="r", encoding="utf-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
-logging.warning(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['timeout']}")
+logging.info(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['sshTimeout']}")
 # read clouds.yaml
 with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
     clouds = yaml.safe_load(clouds_file)["clouds"]

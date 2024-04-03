@@ -113,10 +113,12 @@ def is_active(client, paramiko_key, ssh_data, log):
                            username=ssh_data['username'], pkey=paramiko_key, timeout=7,
                            auth_timeout=ssh_data['timeout'], port=port)
             establishing_connection = False
-            log.info(f"Successfully connected to {ssh_data['floating_ip']}")
+            log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
             if attempts < ssh_data['timeout']:
-                time.sleep(2 ** attempts)
+                sleep_time = 2 ** (attempts+2)
+                time.sleep(sleep_time)
+                log.info(f"Waiting {sleep_time} before attempting to reconnect.")
                 attempts += 1
             else:
                 log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed.")
