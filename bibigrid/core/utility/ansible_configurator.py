@@ -6,6 +6,7 @@ import os
 
 import mergedeep
 import yaml
+from bibigrid.core.actions.version import __version__
 
 from bibigrid.core.actions import create
 from bibigrid.core.actions import ide
@@ -50,8 +51,8 @@ def generate_site_file_yaml(custom_roles):
     """
     Generates site_yaml (dict).
     Deepcopy is used in case roles might differ between servers in the future.
-    :param custom_roles: ansibleRoles given by the config
-    :return: site_yaml (dict)
+    @param custom_roles: ansibleRoles given by the config
+    @return: site_yaml (dict)
     """
     site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
                  {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": vpngtw_ROLES},
@@ -69,11 +70,10 @@ def generate_site_file_yaml(custom_roles):
 def write_host_and_group_vars(configurations, providers, cluster_id, log):  # pylint: disable=too-many-locals
     """
     Filters unnecessary information
-    :param configurations: configurations
-    :param providers: providers
-    :param cluster_id: To get proper naming
-    :return: filtered information (dict)
-    :param log:
+    @param configurations: configurations
+    @param providers: providers
+    @param cluster_id: To get proper naming
+    @return: filtered information (dict)
     """
     log.info("Generating instances file...")
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
@@ -102,6 +102,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             features = set(configuration_features + worker_features)
             if features:
                 worker_dict["features"] = features
+            pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict, log)
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
@@ -119,6 +120,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
+            pass_through(configuration, vpngtw_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpngtw_dict, log)
         else:
             master = configuration["masterInstance"]
@@ -132,6 +134,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
+            pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict, log)
 
 
@@ -153,18 +156,19 @@ def pass_through(dict_from, dict_to, key_from, key_to=None):
 def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user, log):
     """
     Generates common_configuration yaml (dict)
-    :param cidrs: str subnet cidrs (provider generated)
-    :param configurations: master configuration (first in file)
-    :param cluster_id: id of cluster
-    :param ssh_user: user for ssh connections
-    :param default_user: Given default user
-    :param log:
-    :return: common_configuration_yaml (dict)
+    @param cidrs: str subnet cidrs (provider generated)
+    @param configurations: master configuration (first in file)
+    @param cluster_id: id of cluster
+    @param ssh_user: user for ssh connections
+    @param default_user: Given default user
+    @param log:
+    @return: common_configuration_yaml (dict)
     """
     master_configuration = configurations[0]
     log.info("Generating common configuration file...")
     # print(configuration.get("slurmConf", {}))
-    common_configuration_yaml = {"auto_mount": master_configuration.get("autoMount", False), "cluster_id": cluster_id,
+    common_configuration_yaml = {"bibigrid_version": __version__,
+                                 "auto_mount": master_configuration.get("autoMount", False), "cluster_id": cluster_id,
                                  "cluster_cidrs": cidrs, "default_user": default_user,
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
@@ -194,7 +198,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                                                    master_configuration.get("zabbixConf", {}),
                                                                    strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
 
-    for from_key, to_key in [("waitForServices", "wait_for_services"), ("ansibleRoles", "ansible_roles"),
+    for from_key, to_key in [("ansibleRoles", "ansible_roles"),
                              ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
         pass_through(master_configuration, common_configuration_yaml, from_key, to_key)
 
@@ -208,11 +212,11 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
 def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # pylint: disable-msg=too-many-locals
     """
     Generates ansible_hosts_yaml (inventory file).
-    :param ssh_user: str global SSH-username
-    :param configurations: dict
-    :param cluster_id: id of cluster
-    :param log:
-    :return: ansible_hosts yaml (dict)
+    @param ssh_user: str global SSH-username
+    @param configurations: dict
+    @param cluster_id: id of cluster
+    @param log:
+    @return: ansible_hosts yaml (dict)
     """
     log.info("Generating ansible hosts file...")
     ansible_hosts_yaml = {"vpn": {"hosts": {},
@@ -246,9 +250,9 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
 def to_instance_host_dict(ssh_user, ip="localhost"):  # pylint: disable=invalid-name
     """
     Generates host entry
-    :param ssh_user: str global SSH-username
-    :param ip: str ip
-    :return: host entry (dict)
+    @param ssh_user: str global SSH-username
+    @param ip: str ip
+    @return: host entry (dict)
     """
     host_yaml = {"ansible_connection": "ssh", "ansible_python_interpreter": PYTHON_INTERPRETER,
                  "ansible_user": ssh_user}
@@ -260,8 +264,8 @@ def to_instance_host_dict(ssh_user, ip="localhost"):  # pylint: disable=invalid-
 def get_cidrs(configurations):
     """
     Gets cidrs of all subnets in all providers
-    :param configurations: list of configurations (dict)
-    :return:
+    @param configurations: list of configurations (dict)
+    @return:
     """
     all_cidrs = []
     for configuration in configurations:
@@ -294,9 +298,9 @@ def get_ansible_roles(ansible_roles, log):
 def get_ansible_galaxy_roles(ansible_galaxy_roles, log):
     """
     Checks if ansible_galaxy_role have all necessary values and adds it to the return list if so.
-    :param ansible_galaxy_roles:
-    :param log:
-    :return: list of valid ansible_galaxy_roles
+    @param ansible_galaxy_roles:
+    @param log:
+    @return: list of valid ansible_galaxy_roles
     """
     ansible_galaxy_roles_yaml = []
     for ansible_galaxy_role in (ansible_galaxy_roles or []):
@@ -314,9 +318,9 @@ def get_ansible_galaxy_roles(ansible_galaxy_roles, log):
 def generate_worker_specification_file_yaml(configurations, log):
     """
     Generates worker_specification_file_yaml
-    :param configurations: list of configurations (dict)
-    :param log:
-    :return: worker_specification_yaml
+    @param configurations: list of configurations (dict)
+    @param log:
+    @return: worker_specification_yaml
     """
     log.info("Generating worker specification file...")
     worker_groups_list = configuration_handler.get_list_by_key(configurations, "workerInstances", False)
@@ -364,11 +368,11 @@ def add_wireguard_peers(configurations):
 def configure_ansible_yaml(providers, configurations, cluster_id, log):
     """
     Generates and writes all ansible-configuration-yaml files.
-    :param providers: list of providers
-    :param configurations: list of configurations (dict)
-    :param cluster_id: id of cluster to create
-    :param log:
-    :return:
+    @param providers: list of providers
+    @param configurations: list of configurations (dict)
+    @param cluster_id: id of cluster to create
+    @param log:
+    @return:
     """
     delete_old_vars(log)
     log.info("Writing ansible files...")

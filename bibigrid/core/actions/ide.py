@@ -40,7 +40,7 @@ signal.signal(signal.SIGINT, sigint_handler)
 def is_used(ip_address):
     """
     https://stackoverflow.com/questions/62000168/how-to-check-if-ssh-tunnel-is-being-used
-    :return:
+    @return:
     """
     ports_used = []
     with subprocess.Popen(["netstat", "-na"], stdout=subprocess.PIPE) as process:
@@ -81,6 +81,7 @@ def ide(cluster_id, master_provider, master_configuration, log):
                                                   ssh_pkey=used_private_key,
                                                   local_bind_address=(LOCALHOST, used_local_bind_address),
                                                   remote_bind_address=(LOCALHOST, REMOTE_BIND_ADDRESS)) as server:
+                    log.debug(f"Used {used_local_bind_address} as the local binding address")
                     log.log(42, "CTRL+C to close port forwarding when you are done.")
                     with server:
                         # opens in existing window if any default program exists
