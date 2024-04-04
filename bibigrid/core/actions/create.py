@@ -91,7 +91,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         self.worker_counter = 0
         self.vpn_counter = 0
-        self.thread_lock = threading.Lock()
+        self.vpn_master_thread_lock = threading.Lock()
+        self.worker_thread_lock = threading.Lock()
         self.use_master_with_public_ip = not configurations[0].get("gateway") and configurations[0].get(
             "useMasterWithPublicIp", True)
         self.log.debug("Keyname: %s", self.key_name)
@@ -151,8 +152,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         for cidr in tmp_configuration['subnet_cidrs']:
                             rules.append(
                                 {"direction": "ingress", "ethertype": "IPv4", "protocol": "tcp", "port_range_min": None,
-                                 "port_range_max": None, "remote_ip_prefix": cidr,
-                                 "remote_group_id": None})
+                                 "port_range_max": None, "remote_ip_prefix": cidr, "remote_group_id": None})
             provider.append_rules_to_security_group(default_security_group_id, rules)
             configuration["security_groups"] = [self.default_security_group_name]  # store in configuration
             # when running a multi-cloud setup create an additional wireguard group
@@ -160,7 +160,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
                 configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
-    def start_vpn_or_master_instance(self, configuration, provider):
+    def start_vpn_or_master(self, configuration, provider):
         """
         Start master/vpn-worker of a provider
         :param configuration: dict configuration of said provider
@@ -169,7 +169,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         identifier, instance_type, volumes = self.prepare_vpn_or_master_args(configuration, provider)
         external_network = provider.get_external_network(configuration["network"])
-        with self.thread_lock:
+        with self.vpn_master_thread_lock:
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
                 name = identifier(cluster_id=self.cluster_id)
             else:
@@ -204,6 +204,19 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
         configuration["volumes"] = provider.get_mount_info_from_server(server)
+
+    def start_worker(self, worker, worker_count, configuration, provider):
+        name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
+        self.log.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
+        flavor = worker["type"]
+        network = configuration["network"]
+        image = image_selection.select_image(provider, worker["image"], self.log,
+                                             configuration.get("fallbackOnOtherImage"))
+
+        # create a server and block until it is up and running
+        provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
+                               volumes=None, security_groups=configuration["security_groups"], wait=True)
+        # ansible_configurator.write_yaml()
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
@@ -319,19 +332,33 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                 username=self.ssh_user, filepaths=FILEPATHS, commands=commands, log=self.log,
                                 gateway=self.configurations[0].get("gateway", {}))
 
-    def start_start_instance_threads(self):
+    def start_start_server_threads(self):
         """
-        Starts for each provider a start_instances thread and joins them.
+        Starts for each provider a start_servers thread and joins them.
         :return:
         """
-        start_instance_threads = []
+        start_server_threads = []
+        worker_count = 0
         for configuration, provider in zip(self.configurations, self.providers):
-            start_instance_thread = return_threading.ReturnThread(target=self.start_vpn_or_master_instance,
-                                                                  args=[configuration, provider])
-            start_instance_thread.start()
-            start_instance_threads.append(start_instance_thread)
-        for start_instance_thread in start_instance_threads:
-            start_instance_thread.join()
+            start_server_thread = return_threading.ReturnThread(target=self.start_vpn_or_master,
+                                                                args=[configuration, provider])
+            start_server_thread.start()
+            start_server_threads.append(start_server_thread)
+            for worker in configuration.get("workerInstances", []):
+                if not worker.get("onDemand", True):
+                    print(worker)
+                    print(range(int(worker["count"])))
+                    for _ in range(int(worker["count"])):
+                        start_server_thread = return_threading.ReturnThread(target=self.start_worker,
+                                                                            args=[worker, worker_count, configuration,
+                                                                                  provider])
+                        start_server_thread.start()
+                        start_server_threads.append(start_server_thread)
+                        worker_count += 1
+                else:
+                    worker_count += worker["count"]
+        for start_server_thread in start_server_threads:
+            start_server_thread.join()
 
     def extended_network_configuration(self):
         """
@@ -353,8 +380,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         f"{configuration_b['subnet_cidrs']})")
                     # add provider_b network as allowed network
                     for cidr in configuration_b["subnet_cidrs"]:
-                        allowed_addresses.append(
-                            {'ip_address': cidr, 'mac_address': configuration_a["mac_addr"]})
+                        allowed_addresses.append({'ip_address': cidr, 'mac_address': configuration_a["mac_addr"]})
                     # configure security group rules
                     provider_a.append_rules_to_security_group(self.wireguard_security_group_name, [
                         {"direction": "ingress", "ethertype": "IPv4", "protocol": "udp", "port_range_min": 51820,
@@ -373,7 +399,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.generate_keypair()
             self.prepare_configurations()
             self.generate_security_groups()
-            self.start_start_instance_threads()
+            self.start_start_server_threads()
             self.extended_network_configuration()
             self.initialize_instances()
             self.upload_data()
@@ -442,9 +468,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             port = int(sympy.sympify(gateway["portFunction"]).subs(dict(octets)))
             ssh_ip = gateway["ip"]
         self.log.log(42, f"Cluster {self.cluster_id} with master {self.master_ip} up and running!")
-        self.log.log(42,
-                     f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{ssh_ip}"
-                     f"{f' -p {port}' if gateway else ''}")
+        self.log.log(42, f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{ssh_ip}"
+                         f"{f' -p {port}' if gateway else ''}")
         self.log.log(42, f"Terminate cluster: ./bibigrid.sh -i '{self.config_path}' -t -cid {self.cluster_id}")
         self.log.log(42, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
         if self.configurations[0].get("ide"):

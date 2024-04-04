@@ -68,12 +68,12 @@ def generate_site_file_yaml(custom_roles):
 
 def write_host_and_group_vars(configurations, providers, cluster_id, log):  # pylint: disable=too-many-locals
     """
-    ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
     :param configurations: configurations
     :param providers: providers
     :param cluster_id: To get proper naming
     :return: filtered information (dict)
+    :param log:
     """
     log.info("Generating instances file...")
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
