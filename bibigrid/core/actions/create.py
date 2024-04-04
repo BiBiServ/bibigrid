@@ -185,6 +185,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True)
+        print("MASTER", server)
         configuration["private_v4"] = server["private_v4"]
         self.log.debug(f"Created Server {name}: {server['private_v4']}.")
         # get mac address for given private address
@@ -215,9 +216,16 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                              configuration.get("fallbackOnOtherImage"))
 
         # create a server and block until it is up and running
-        provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                               volumes=None, security_groups=configuration["security_groups"], wait=True)
-        # ansible_configurator.write_yaml()
+        server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
+                                        volumes=None, security_groups=configuration["security_groups"], wait=True)
+        with self.worker_thread_lock:
+            with open(a_rp.HOSTS_FILE, mode="r", encoding="utf-8") as hosts_file:
+                hosts = yaml.safe_load(hosts_file)
+            if not hosts or "host_entries" not in hosts:
+                self.log.info(f"Resetting host entries because {'first run' if hosts else 'broken'}.")
+                hosts = {"host_entries": {}}
+            hosts["host_entries"][name] = server["private_v4"]
+            ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
