@@ -90,6 +90,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.wireguard_security_group_name = WIREGUARD_SECURITY_GROUP_NAME.format(cluster_id=self.cluster_id)
 
         self.worker_counter = 0
+        # permanents holds groups or single nodes that ansible playbook should be run for during startup
+        self.permanents = ["vpn"]
         self.vpn_counter = 0
         self.vpn_master_thread_lock = threading.Lock()
         self.worker_thread_lock = threading.Lock()
@@ -219,6 +221,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=None, security_groups=configuration["security_groups"], wait=True)
         with self.worker_thread_lock:
+            self.permanents.append(name)
             with open(a_rp.HOSTS_FILE, mode="r", encoding="utf-8") as hosts_file:
                 hosts = yaml.safe_load(hosts_file)
             if not hosts or "host_entries" not in hosts:
@@ -335,6 +338,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if self.configurations[0].get("dontUploadCredentials"):
             commands = ssh_handler.ANSIBLE_START
         else:
+            ansible_start = ssh_handler.ANSIBLE_START
+            ansible_start[-1] = (ansible_start[-1][0].format(",".join(self.permanents)), ansible_start[-1][1])
+            self.log.debug(f"Starting playbook with {ansible_start}.")
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
                 cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
@@ -355,8 +361,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             start_server_threads.append(start_server_thread)
             for worker in configuration.get("workerInstances", []):
                 if not worker.get("onDemand", True):
-                    print(worker)
-                    print(range(int(worker["count"])))
                     for _ in range(int(worker["count"])):
                         start_server_thread = return_threading.ReturnThread(target=self.start_worker,
                                                                             args=[worker, worker_count, configuration,
