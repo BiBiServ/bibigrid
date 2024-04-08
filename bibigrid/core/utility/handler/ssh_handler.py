@@ -185,7 +185,7 @@ def execute_ssh_cml_commands(client, commands, log):
 
 def ansible_preparation(floating_ip, private_key, username, log, gateway, commands=None, filepaths=None):
     """
-    Installs python and pip. Then installs ansible over pip.
+    Installs python and pip. Then installs ansible via pip.
     Copies private key to instance so cluster-nodes are reachable and sets permission as necessary.
     Copies additional files and executes additional commands if given.
     The playbook is copied later, because it needs all servers setup and is not time intensive.
