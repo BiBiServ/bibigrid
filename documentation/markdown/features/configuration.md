@@ -179,7 +179,7 @@ Other infrastructures would be [AWS](https://aws.amazon.com/) and so on.
 `cloud` decides which entry in the `clouds.yaml` is used. When using OpenStack the entry is named `openstack`.
 You can read more about the `clouds.yaml` [here](cloud_specification_data.md).
 
-#### workerInstances (optional)
+#### workerInstances
 
 `workerInstances` expects a list of worker groups (instance definitions with `count` key).
 If `count` is omitted, `count: 1` is assumed. 
@@ -189,11 +189,13 @@ workerInstance:
   - type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
     count: 2
+    onDemand: True # optional only on master cloud for now. Default True.
 ```
 
 - `type` sets the instance's hardware configuration.
 - `image` sets the bootable operating system to be installed on the instance.
 - `count` sets how many workers of that `type` `image` combination are in this work group
+- `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). This option only works on the master cloud for now.
 
 ##### Find your active `images`
 

@@ -69,7 +69,6 @@ def generate_site_file_yaml(custom_roles):
 
 def write_host_and_group_vars(configurations, providers, cluster_id, log):  # pylint: disable=too-many-locals
     """
-    ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
     @param configurations: configurations
     @param providers: providers
@@ -95,7 +94,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"]}
+                           "cloud_identifier": configuration["cloud_identifier"],
+                           "on_demand": worker.get("onDemand", True)}
 
             worker_features = worker.get("features", [])
             if isinstance(worker_features, str):
@@ -118,7 +118,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "floating_ip": configuration["floating_ip"], "private_v4": configuration["private_v4"],
                            "flavor": flavor_dict, "wireguard_ip": wireguard_ip,
                            "cloud_identifier": configuration["cloud_identifier"],
-                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
+                           "on_demand": False}
             if configuration.get("wireguard_peer"):
                 vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
             pass_through(configuration, vpngtw_dict, "waitForServices", "wait_for_services")
@@ -132,7 +133,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
-                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
+                           "on_demand": False}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
