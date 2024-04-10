@@ -87,51 +87,52 @@ def copy_to_server(sftp, local_path, remote_path, log):
             copy_to_server(sftp, os.path.join(local_path, filename), os.path.join(remote_path, filename), log)
 
 
-def is_active(client, floating_ip_address, private_key, username, log, gateway, timeout=5):
+def is_active(client, paramiko_key, ssh_data, log):
     """
     Checks if connection is possible and therefore if server is active.
     Raises paramiko.ssh_exception.NoValidConnectionsError if timeout is reached
     @param client: created client
-    @param floating_ip_address: ip to connect to
-    @param private_key: SSH-private_key
-    @param username: SSH-username
+    @param paramiko_key: SSH-private_key
     @param log:
-    @param timeout: how long to wait between ping
-    @param gateway: if node should be reached over a gateway port is set to 30000 + subnet * 256 + host
+    @param ssh_data: dict containing among other things gateway, floating_ip, username
     (waiting grows quadratically till 2**timeout before accepting failure)
     """
     attempts = 0
     establishing_connection = True
+    log.info(f"Attempting to connect to {ssh_data['floating_ip']}... This might take a while")
+    port = 22
+    if ssh_data.get('gateway'):
+        log.info(f"Using SSH Gateway {ssh_data['gateway'].get('ip')}")
+        octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(ssh_data['floating_ip'].split("."))}
+        port = int(sympy.sympify(ssh_data['gateway']["portFunction"]).subs(dict(octets)))
+        log.info(f"Port {port} will be used (see {ssh_data['gateway']['portFunction']} and octets {octets}).")
     while establishing_connection:
         try:
-            port = 22
-            if gateway:
-                log.info(f"Using SSH Gateway {gateway.get('ip')}")
-                octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(floating_ip_address.split("."))}
-                port = int(sympy.sympify(gateway["portFunction"]).subs(dict(octets)))
-                log.info(f"Port {port} will be used (see {gateway['portFunction']} and octets {octets}).")
-            client.connect(hostname=gateway.get("ip") or floating_ip_address, username=username,
-                           pkey=private_key, timeout=7, auth_timeout=5, port=port)
+            log.info(f"Attempt {attempts}/{ssh_data['timeout']}. Connecting to {ssh_data['floating_ip']}")
+            client.connect(hostname=ssh_data['gateway'].get("ip") or ssh_data['floating_ip'],
+                           username=ssh_data['username'], pkey=paramiko_key, timeout=7,
+                           auth_timeout=ssh_data['timeout'], port=port)
             establishing_connection = False
-            log.info(f"Successfully connected to {floating_ip_address}")
+            log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
-            log.info(f"Attempting to connect to {floating_ip_address}... This might take a while", )
-            if attempts < timeout:
-                time.sleep(2 ** attempts)
+            if attempts < ssh_data['timeout']:
+                sleep_time = 2 ** (attempts+2)
+                time.sleep(sleep_time)
+                log.info(f"Waiting {sleep_time} before attempting to reconnect.")
                 attempts += 1
             else:
-                log.error(f"Attempt to connect to {floating_ip_address} failed.")
+                log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed.")
                 raise ConnectionException(exc) from exc
         except socket.timeout as exc:
             log.warning("Socket timeout exception occurred. Try again ...")
-            if attempts < timeout:
+            if attempts < ssh_data['timeout']:
                 attempts += 1
             else:
-                log.error(f"Attempt to connect to {floating_ip_address} failed, due to a socket timeout.")
+                log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed, due to a socket timeout.")
                 raise ConnectionException(exc) from exc
         except TimeoutError as exc:  # pylint: disable=duplicate-except
             log.error("The attempt to connect to %s failed. Possible known reasons:"
-                      "\n\t-Your network's security group doesn't allow SSH.", floating_ip_address)
+                      "\n\t-Your network's security group doesn't allow SSH.", ssh_data['floating_ip'])
             raise ConnectionException(exc) from exc
 
 
@@ -183,61 +184,35 @@ def execute_ssh_cml_commands(client, commands, log):
             raise ExecutionException(msg)
 
 
-def ansible_preparation(floating_ip, private_key, username, log, gateway, commands=None, filepaths=None):
-    """
-    Installs python and pip. Then installs ansible over pip.
-    Copies private key to instance so cluster-nodes are reachable and sets permission as necessary.
-    Copies additional files and executes additional commands if given.
-    The playbook is copied later, because it needs all servers setup and is not time intensive.
-    See: create.update_playbooks
-    @param floating_ip: public ip of server to ansible-prepare
-    @param private_key: generated private key of all cluster-server
-    @param username: username of all server
-    @param log:
-    @param commands: additional commands to execute
-    @param filepaths: additional files to copy: (localpath, remotepath)
-    @param gateway
-    """
-    if filepaths is None:
-        filepaths = []
-    if commands is None:
-        commands = []
-    log.info("Ansible preparation...")
-    commands = ANSIBLE_SETUP + commands
-    filepaths.append((private_key, PRIVATE_KEY_FILE))
-    execute_ssh(floating_ip, private_key, username, log, gateway, commands, filepaths)
-
-
-def execute_ssh(floating_ip, private_key, username, log, gateway, commands=None, filepaths=None):
+def execute_ssh(ssh_data, log):
     """
     Executes commands on remote and copies files given in filepaths
-    @param floating_ip: public ip of remote
-    @param private_key: key of remote
-    @param username: username of remote
-    @param commands: commands
+
+    @param ssh_data: Dict containing floating_ip, private_key, username, commands, filepaths, gateway, timeout
     @param log:
-    @param filepaths: filepaths (localpath, remotepath)
-    @param gateway: gateway if used
     """
-    if commands is None:
-        commands = []
-    paramiko_key = paramiko.ECDSAKey.from_private_key_file(private_key)
+    log.debug(f"Running execute_sshc with ssh_data: {ssh_data}.")
+    if ssh_data.get("filepaths") is None:
+        ssh_data["filepaths"] = []
+    if ssh_data.get("commands") is None:
+        ssh_data["commands"] = []
+    paramiko_key = paramiko.ECDSAKey.from_private_key_file(ssh_data["private_key"])
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            is_active(client=client, floating_ip_address=floating_ip, username=username, private_key=paramiko_key,
-                      log=log, gateway=gateway)
+            is_active(client=client, paramiko_key=paramiko_key, ssh_data=ssh_data, log=log)
         except ConnectionException as exc:
-            log.error(f"Couldn't connect to ip {gateway or floating_ip} using private key {private_key}.")
+            log.error(f"Couldn't connect to ip {ssh_data['gateway'] or ssh_data['floating_ip']} using private key "
+                      f"{ssh_data['private_key']}.")
             raise exc
         else:
-            log.debug(f"Setting up {floating_ip}")
-            if filepaths:
-                log.debug(f"Setting up filepaths for {floating_ip}")
+            log.debug(f"Setting up {ssh_data['floating_ip']}")
+            if ssh_data['filepaths']:
+                log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")
                 sftp = client.open_sftp()
-                for local_path, remote_path in filepaths:
+                for local_path, remote_path in ssh_data['filepaths']:
                     copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
-                log.debug("SFTP: Files %s copied.", filepaths)
-            if commands:
-                log.debug(f"Setting up commands for {floating_ip}")
-                execute_ssh_cml_commands(client=client, commands=commands, log=log)
+                log.debug("SFTP: Files %s copied.", ssh_data['filepaths'])
+            if ssh_data["floating_ip"]:
+                log.debug(f"Setting up commands for {ssh_data['floating_ip']}")
+                execute_ssh_cml_commands(client=client, commands=ssh_data["commands"], log=log)

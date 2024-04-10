@@ -44,6 +44,17 @@ sshPublicKeyFiles:
   - /home/user/.ssh/id_ecdsa_colleague.pub
 ```
 
+#### sshTimeout (optional)
+Defines the number of attempts that BiBiGrid will try to connect to the master instance via ssh.
+Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 4.
+
+#### cloudScheduling (optional)
+This key allows you to influence cloud scheduling. Currently, only a single key `sshTimeout` can be set here.
+
+##### sshTimeout (optional)
+Defines the number of attempts that the master will try to connect to on demand created worker instances via ssh.
+Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 4.
+
 #### autoMount (optional)
 > **Warning:** If a volume has an obscure filesystem, this might overwrite your data!
 
@@ -149,7 +160,7 @@ This is required if your provider has any post-launch services interfering with 
 seemingly random errors can occur when the service interrupts ansible's execution. Services are
 listed on [de.NBI Wiki](https://cloud.denbi.de/wiki/) at `Computer Center Specific` (not yet).
 
-#### 
+#### gateway (optional)
 In order to save valuable floating ips, BiBiGrid can also make use of a gateway to create the cluster.
 For more information on how to set up a gateway, how gateways work and why they save floating ips please continue reading [here](https://cloud.denbi.de/wiki/Tutorials/SaveFloatingIPs/).
 
@@ -179,7 +190,7 @@ Other infrastructures would be [AWS](https://aws.amazon.com/) and so on.
 `cloud` decides which entry in the `clouds.yaml` is used. When using OpenStack the entry is named `openstack`.
 You can read more about the `clouds.yaml` [here](cloud_specification_data.md).
 
-#### workerInstances (optional)
+#### workerInstances
 
 `workerInstances` expects a list of worker groups (instance definitions with `count` key).
 If `count` is omitted, `count: 1` is assumed. 
@@ -189,11 +200,13 @@ workerInstance:
   - type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
     count: 2
+    onDemand: True # optional only on master cloud for now. Default True.
 ```
 
 - `type` sets the instance's hardware configuration.
 - `image` sets the bootable operating system to be installed on the instance.
 - `count` sets how many workers of that `type` `image` combination are in this work group
+- `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). This option only works on the master cloud for now.
 
 ##### Find your active `images`
 
