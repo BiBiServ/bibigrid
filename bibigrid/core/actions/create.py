@@ -81,6 +81,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.ssh_user = configurations[0].get("sshUser") or "ubuntu"
         self.ssh_add_public_key_commands = ssh_handler.get_add_ssh_public_key_commands(
             configurations[0].get("sshPublicKeyFiles"))
+        self.ssh_timeout = configurations[0].get("sshTimeout", 4)
         self.config_path = config_path
         self.master_ip = None
         self.log.debug("Cluster-ID: %s", self.cluster_id)
@@ -256,17 +257,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         Setup all servers
         """
         for configuration in self.configurations:
+            ssh_data = {"floating_ip": configuration["floating_ip"], "private_key": KEY_FOLDER + self.key_name,
+                        "username": self.ssh_user, "commands": None, "filepaths": None,
+                        "gateway": configuration.get("gateway", {}), "timeout": self.ssh_timeout}
             if configuration.get("masterInstance"):
                 self.master_ip = configuration["floating_ip"]
-                ssh_handler.ansible_preparation(floating_ip=configuration["floating_ip"],
-                                                private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
-                                                commands=self.ssh_add_public_key_commands, log=self.log,
-                                                gateway=configuration.get("gateway", {}))
+                ssh_data["commands"] = self.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP
+                ssh_data["filepaths"] = [(ssh_data["private_key"], ssh_handler.PRIVATE_KEY_FILE)]
+                ssh_handler.execute_ssh(ssh_data, self.log)
             elif configuration.get("vpnInstance"):
-                ssh_handler.execute_ssh(floating_ip=configuration["floating_ip"],
-                                        private_key=KEY_FOLDER + self.key_name, username=self.ssh_user,
-                                        commands=ssh_handler.VPN_SETUP, log=self.log,
-                                        gateway=configuration.get("gateway", {}))
+                ssh_data["commands"] = ssh_handler.VPN_SETUP
+                ssh_handler.execute_ssh(ssh_data, self.log)
 
     def prepare_volumes(self, provider, mounts):
         """
@@ -343,9 +344,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.debug(f"Starting playbook with {ansible_start}.")
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
                 cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
-        ssh_handler.execute_ssh(floating_ip=self.master_ip, private_key=KEY_FOLDER + self.key_name,
-                                username=self.ssh_user, filepaths=FILEPATHS, commands=commands, log=self.log,
-                                gateway=self.configurations[0].get("gateway", {}))
+        ssh_data = {"floating_ip": self.master_ip, "private_key": KEY_FOLDER + self.key_name,
+                    "username": self.ssh_user, "commands": commands, "filepaths": FILEPATHS,
+                    "gateway": self.configurations[0].get("gateway", {}), "timeout": self.ssh_timeout}
+        ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 
     def start_start_server_threads(self):
         """
