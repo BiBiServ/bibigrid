@@ -117,7 +117,7 @@ def start_server(worker, start_worker_group, start_data):
         server_start_data["other_openstack_exception"].append(worker)
 
 
-def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", username="ubuntu", timeout=7):
+def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", username="ubuntu"):
     """
     Waits until SSH connects successful. This guarantees that the node can be reached via Ansible.
     @param private_ip: ip of node
@@ -138,8 +138,8 @@ def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", usernam
                 establishing_connection = False
             except paramiko.ssh_exception.NoValidConnectionsError as exc:
                 logging.info("Attempting to connect to %s... This might take a while", private_ip)
-                if attempts < timeout:
-                    time.sleep(2 ** attempts)
+                if attempts < common_config["cloud_scheduling"]["sshTimeout"]:
+                    time.sleep(2 ** (2+attempts))
                     attempts += 1
                 else:
                     logging.warning("Attempt to connect to %s failed.", private_ip)
@@ -213,16 +213,16 @@ GROUP_VARS_PATH = "/opt/playbook/group_vars"
 worker_groups = []
 for filename in os.listdir(GROUP_VARS_PATH):
     if filename != "master.yml":
-        f = os.path.join(GROUP_VARS_PATH, filename)
+        worker_group_yaml_file = os.path.join(GROUP_VARS_PATH, filename)
         # checking if it is a file
-        if os.path.isfile(f):
-            with open(f, mode="r", encoding="utf-8") as worker_group:
-                worker_groups.append(yaml.safe_load(worker_group))
+        if os.path.isfile(worker_group_yaml_file):
+            with open(worker_group_yaml_file, mode="r", encoding="utf-8") as worker_group_yaml:
+                worker_groups.append(yaml.safe_load(worker_group_yaml))
 
 # read common configuration
 with open("/opt/playbook/vars/common_configuration.yml", mode="r", encoding="utf-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
-
+logging.info(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['sshTimeout']}")
 # read clouds.yaml
 with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
     clouds = yaml.safe_load(clouds_file)["clouds"]
