@@ -42,8 +42,8 @@
     login_unix_socket: /run/mysqld/mysqld.sock
 
 - name: Check if zabbix schema exists
+  failed_when: false
   shell: "echo describe users | mysql --user={{ zabbix_conf.db_user }} --password={{ zabbix_conf.db_password }} zabbix"
-  ignore_errors: true
   changed_when: false
   register: zabbix_schema_exists
   tags:
