@@ -3,6 +3,7 @@
 .run/
 
 # variable resources
+resources/playbook/ansible.cfg
 resources/playbook/site.yml
 resources/playbook/ansible_hosts
 resources/playbook/vars/
