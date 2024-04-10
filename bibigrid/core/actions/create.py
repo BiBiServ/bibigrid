@@ -3,6 +3,7 @@ The cluster creation (master's creation, key creation, ansible setup and executi
 """
 
 import os
+import shutil
 import subprocess
 import threading
 import traceback
@@ -373,6 +374,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         try:
             self.generate_keypair()
             self.prepare_configurations()
+            if not os.path.isfile(a_rp.ANSIBLE_CFG_PATH):
+                shutil.copy(a_rp.ANSIBLE_CFG_DEFAULT_PATH, a_rp.ANSIBLE_CFG_PATH)
             self.generate_security_groups()
             self.start_start_instance_threads()
             self.extended_network_configuration()

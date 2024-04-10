@@ -6,10 +6,10 @@ import os
 
 import mergedeep
 import yaml
-from bibigrid.core.actions.version import __version__
 
 from bibigrid.core.actions import create
 from bibigrid.core.actions import ide
+from bibigrid.core.actions.version import __version__
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.handler import configuration_handler
@@ -54,7 +54,10 @@ def generate_site_file_yaml(custom_roles):
     @param custom_roles: ansibleRoles given by the config
     @return: site_yaml (dict)
     """
-    site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
+    site_yaml = [{'hosts': 'master', "pre_tasks": [
+        {"name": "Print ansible.cfg timeout", "command": "ansible-config dump | grep 'DEFAULT_TIMEOUT'",
+         "register": "ansible_cfg_output"}, {"debug": {"msg": "{{ ansible_cfg_output.stdout }}"}}], "become": "yes",
+                  "vars_files": VARS_FILES, "roles": MASTER_ROLES},
                  {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": vpngtw_ROLES},
                  {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]  # ,
     # {"hosts": "vpngtw", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
@@ -199,8 +202,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                                                    master_configuration.get("zabbixConf", {}),
                                                                    strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
 
-    for from_key, to_key in [("ansibleRoles", "ansible_roles"),
-                             ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
+    for from_key, to_key in [("ansibleRoles", "ansible_roles"), ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
         pass_through(master_configuration, common_configuration_yaml, from_key, to_key)
 
     if len(configurations) > 1:
