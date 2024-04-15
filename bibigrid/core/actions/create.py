@@ -3,6 +3,7 @@ The cluster creation (master's creation, key creation, ansible setup and executi
 """
 
 import os
+import shutil
 import subprocess
 import threading
 import traceback
@@ -56,6 +57,13 @@ CLUSTER_MEMORY_FILE = ".bibigrid.mem"
 CLUSTER_MEMORY_PATH = os.path.join(CLUSTER_MEMORY_FOLDER, CLUSTER_MEMORY_FILE)
 DEFAULT_SECURITY_GROUP_NAME = "default" + SEPARATOR + "{cluster_id}"
 WIREGUARD_SECURITY_GROUP_NAME = "wireguard" + SEPARATOR + "{cluster_id}"
+
+
+def create_defaults():
+    if not os.path.isfile(a_rp.ANSIBLE_CFG_PATH):
+        shutil.copy(a_rp.ANSIBLE_CFG_DEFAULT_PATH, a_rp.ANSIBLE_CFG_PATH)
+    if not os.path.isfile(a_rp.SLURM_CONF_TEMPLATE_PATH):
+        shutil.copy(a_rp.SLURM_CONF_TEMPLATE_DEFAULT_PATH, a_rp.SLURM_CONF_TEMPLATE_PATH)
 
 
 class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
@@ -210,9 +218,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
         configuration["volumes"] = provider.get_mount_info_from_server(server)
 
-    def start_worker(self, worker, worker_count, configuration, provider):
+    def start_workers(self, worker, worker_count, configuration, provider):
         name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
-        self.log.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
+        self.log.info(f"Starting worker {name} on {provider.cloud_specification['identifier']}.")
         flavor = worker["type"]
         network = configuration["network"]
         image = image_selection.select_image(provider, worker["image"], self.log,
@@ -221,12 +229,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=None, security_groups=configuration["security_groups"], wait=True)
+        self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
         with self.worker_thread_lock:
             self.permanents.append(name)
             with open(a_rp.HOSTS_FILE, mode="r", encoding="utf-8") as hosts_file:
                 hosts = yaml.safe_load(hosts_file)
             if not hosts or "host_entries" not in hosts:
-                self.log.info(f"Resetting host entries because {'first run' if hosts else 'broken'}.")
+                self.log.warning("Hosts file is broken.")
                 hosts = {"host_entries": {}}
             hosts["host_entries"][name] = server["private_v4"]
             ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
@@ -356,6 +365,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         start_server_threads = []
         worker_count = 0
+        ansible_configurator.write_yaml(a_rp.HOSTS_FILE, {"host_entries": {}}, self.log)
         for configuration, provider in zip(self.configurations, self.providers):
             start_server_thread = return_threading.ReturnThread(target=self.start_vpn_or_master,
                                                                 args=[configuration, provider])
@@ -364,7 +374,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             for worker in configuration.get("workerInstances", []):
                 if not worker.get("onDemand", True):
                     for _ in range(int(worker["count"])):
-                        start_server_thread = return_threading.ReturnThread(target=self.start_worker,
+                        start_server_thread = return_threading.ReturnThread(target=self.start_workers,
                                                                             args=[worker, worker_count, configuration,
                                                                                   provider])
                         start_server_thread.start()
@@ -413,6 +423,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         try:
             self.generate_keypair()
             self.prepare_configurations()
+            create_defaults()
             self.generate_security_groups()
             self.start_start_server_threads()
             self.extended_network_configuration()

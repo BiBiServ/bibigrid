@@ -22,12 +22,13 @@ HOSTS_YML: str = VARS_PATH + "hosts.yml"
 WORKER_SPECIFICATION_YML: str = VARS_PATH + "worker_specification.yml"
 ADDITIONAL_ROLES_PATH: str = ROLES_PATH + "additional/"
 DEFAULT_IP_FILE = VARS_PATH + "{{ ansible_default_ipv4.address }}.yml"
-# ANSIBLE_CFG = "ansible.cfg"
+ANSIBLE_CFG = "ansible.cfg"
+SLURM_CONF = "slurm.conf"
 
 # LOCAL
-# ANSIBLE_CFG_PATH = os.path.join(bP.RESOURCES_PATH, ANSIBLE_CFG)
 PLAYBOOK = "playbook/"
 PLAYBOOK_PATH: str = os.path.join(b_p.RESOURCES_PATH, PLAYBOOK)
+ANSIBLE_CFG_PATH = os.path.join(PLAYBOOK_PATH, ANSIBLE_CFG)
 HOSTS_FILE = os.path.join(PLAYBOOK_PATH, HOSTS_YML)
 HOSTS_CONFIG_FILE: str = os.path.join(PLAYBOOK_PATH, ANSIBLE_HOSTS)
 CONFIG_ROOT_PATH: str = os.path.join(PLAYBOOK_PATH, VARS_PATH)
@@ -40,6 +41,13 @@ ADDITIONAL_ROLES_ROOT_PATH: str = ROLES_ROOT_PATH + ADDITIONAL_ROLES_PATH
 VARS_FOLDER = os.path.join(PLAYBOOK_PATH, VARS_PATH)
 GROUP_VARS_FOLDER = os.path.join(PLAYBOOK_PATH, GROUP_VARS_PATH)
 HOST_VARS_FOLDER = os.path.join(PLAYBOOK_PATH, HOST_VARS_PATH)
+SLURM_CONF_TEMPLATE_PATH = os.path.join(PLAYBOOK_PATH, "roles", "bibigrid", "templates", "slurm", SLURM_CONF)
+
+# DEFAULTS
+DEFAULTS = os.path.join(b_p.RESOURCES_PATH, "defaults")
+ANSIBLE_CFG_DEFAULT_PATH = os.path.join(DEFAULTS, "ansible", ANSIBLE_CFG)
+SLURM_CONF_TEMPLATE_DEFAULT_PATH = os.path.join(DEFAULTS, "slurm", SLURM_CONF)
+
 
 # REMOTE
 ROOT_PATH_REMOTE = "~"

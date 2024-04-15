@@ -55,7 +55,10 @@ def generate_site_file_yaml(custom_roles):
     @param custom_roles: ansibleRoles given by the config
     @return: site_yaml (dict)
     """
-    site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
+    site_yaml = [{'hosts': 'master', "pre_tasks": [
+        {"name": "Print ansible.cfg timeout", "command": "ansible-config dump | grep 'DEFAULT_TIMEOUT'",
+         "register": "ansible_cfg_output"}, {"debug": {"msg": "{{ ansible_cfg_output.stdout }}"}}], "become": "yes",
+                  "vars_files": VARS_FILES, "roles": MASTER_ROLES},
                  {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": vpngtw_ROLES},
                  {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]  # ,
     # {"hosts": "vpngtw", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
