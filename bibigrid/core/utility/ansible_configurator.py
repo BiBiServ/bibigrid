@@ -19,7 +19,7 @@ from bibigrid.core.utility.wireguard import wireguard_keys
 DEFAULT_NFS_SHARES = ["/vol/spool"]
 ADDITIONAL_PATH = "additional/"
 PYTHON_INTERPRETER = "/usr/bin/python3"
-vpngtw_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpngtw"]}]
+VPNGTW_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpngtw"]}]
 MASTER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-master"]}]
 WORKER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-worker"]}]
 VARS_FILES = [aRP.CONFIG_YML, aRP.HOSTS_YML]
@@ -59,14 +59,14 @@ def generate_site_file_yaml(custom_roles):
         {"name": "Print ansible.cfg timeout", "command": "ansible-config dump | grep 'DEFAULT_TIMEOUT'",
          "register": "ansible_cfg_output"}, {"debug": {"msg": "{{ ansible_cfg_output.stdout }}"}}], "become": "yes",
                   "vars_files": VARS_FILES, "roles": MASTER_ROLES},
-                 {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": vpngtw_ROLES},
+                 {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": VPNGTW_ROLES},
                  {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]  # ,
     # {"hosts": "vpngtw", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
     # "roles": ["common", "vpngtw"]}]
     # add custom roles and vars
     for custom_role in custom_roles:
         VARS_FILES.append(custom_role["vars_file"])
-        for role_group in [MASTER_ROLES, vpngtw_ROLES, WORKER_ROLES]:
+        for role_group in [MASTER_ROLES, VPNGTW_ROLES, WORKER_ROLES]:
             role_group.append(ADDITIONAL_PATH + custom_role["name"])
     return site_yaml
 
