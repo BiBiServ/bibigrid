@@ -6,7 +6,6 @@ import os
 
 import mergedeep
 import yaml
-from bibigrid.core.actions.version import __version__
 
 from bibigrid.core.actions import create
 from bibigrid.core.actions import ide
