@@ -17,7 +17,6 @@ from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.wireguard import wireguard_keys
 
 DEFAULT_NFS_SHARES = ["/vol/spool"]
-ADDITIONAL_PATH = "additional/"
 PYTHON_INTERPRETER = "/usr/bin/python3"
 VPNGTW_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpngtw"]}]
 MASTER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-master"]}]
@@ -55,25 +54,25 @@ def generate_site_file_yaml(custom_roles):
     @param custom_roles: ansibleRoles given by the config
     @return: site_yaml (dict)
     """
+    # add custom roles and vars
     site_yaml = [{'hosts': 'master', "pre_tasks": [
         {"name": "Print ansible.cfg timeout", "command": "ansible-config dump | grep 'DEFAULT_TIMEOUT'",
          "register": "ansible_cfg_output"}, {"debug": {"msg": "{{ ansible_cfg_output.stdout }}"}}], "become": "yes",
                   "vars_files": VARS_FILES, "roles": MASTER_ROLES},
                  {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": VPNGTW_ROLES},
-                 {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]  # ,
-    # {"hosts": "vpngtw", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
-    # "roles": ["common", "vpngtw"]}]
-    # add custom roles and vars
+                 {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]
     for custom_role in custom_roles:
-        VARS_FILES.append(custom_role["vars_file"])
-        for role_group in [MASTER_ROLES, VPNGTW_ROLES, WORKER_ROLES]:
-            role_group.append(ADDITIONAL_PATH + custom_role["name"])
+        for host_dict in site_yaml:
+            if host_dict["hosts"] in custom_role["hosts"]:
+                host_dict["vars_files"] = host_dict["vars_files"] + custom_role["varsFiles"]
+                host_dict["roles"] = host_dict["roles"] + custom_role["roles"]
     return site_yaml
 
 
 def write_host_and_group_vars(configurations, providers, cluster_id, log):  # pylint: disable=too-many-locals
     """
     Filters unnecessary information
+    @param log:
     @param configurations: configurations
     @param providers: providers
     @param cluster_id: To get proper naming
