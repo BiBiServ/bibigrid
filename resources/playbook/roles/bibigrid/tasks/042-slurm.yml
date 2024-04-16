@@ -12,17 +12,8 @@
 - name: Install Slurm package (and dependencies)
   apt:
     name:
-      # - slurm-full
+      - slurm-bibigrid
       - munge
-
-- name: Download Slurm (TEMPORARY)
-  get_url:
-    url: "https://docs.cebitec.uni-bielefeld.de/s/FjCP3xQPPnBwSy9/download?path=%2F&files=slurm-full_23.11.0-0_amd64.deb"  # Replace with your package link
-    dest: "/tmp/package.deb"  # Destination where the package will be saved
-- name: Install Slurm package
-  apt:
-    deb: "/tmp/package.deb"
-    state: present  # Install the package if not already installed
 
 - name: Create new secret (Munge)
   copy:
