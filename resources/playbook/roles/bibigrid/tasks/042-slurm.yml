@@ -12,7 +12,7 @@
 - name: Install Slurm package (and dependencies)
   apt:
     name:
-      - slurm-bibigrid
+      - slurm-bibigrid=23.11.*
       - munge
 
 - name: Create new secret (Munge)
