@@ -3,12 +3,12 @@ Module containing a bunch of useful commands to be used by sshHandler.py for clu
 """
 
 import os
-import bibigrid.core.utility.paths.ansible_resources_path as aRP
+import bibigrid.core.utility.paths.ansible_resources_path as a_rp
 
-#TO_LOG = "| sudo tee -a /var/log/ansible.log"
-#AIY = "apt-get -y install"
-#SAU = "sudo apt-get update"
-#NO_KEY_CHECK = "export ANSIBLE_HOST_KEY_CHECKING=False"
+# TO_LOG = "| sudo tee -a /var/log/ansible.log"
+# AIY = "apt-get -y install"
+# SAU = "sudo apt-get update"
+# NO_KEY_CHECK = "export ANSIBLE_HOST_KEY_CHECKING=False"
 NO_UPDATE = ("""sudo sed -i 's/APT::Periodic::Unattended-Upgrade "1";/APT::Periodic::Unattended-Upgrade "0";/g' """
              """/etc/apt/apt.conf.d/20auto-upgrades""", "Disable apt auto update.")
 # Setup (Python for everyone)
@@ -49,8 +49,8 @@ PLAYBOOK_HOME_RIGHTS = ("uid=$(id -u); gid=$(id -g); sudo chown ${uid}:${gid} /o
                         "Adjust playbook home permission.")
 MV_ANSIBLE_CONFIG = (
     "sudo install -D /opt/playbook/ansible.cfg /etc/ansible/ansible.cfg", "Move ansible configuration.")
-EXECUTE = (f"ansible-playbook {os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.SITE_YML)} -i "
-           f"{os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.ANSIBLE_HOSTS)} -l vpn",
+EXECUTE = (f"ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE_YML)} -i "
+           f"{os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.ANSIBLE_HOSTS)} -l {{}}",
            "Execute ansible playbook. Be patient.")
 
 # ansible setup
