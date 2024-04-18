@@ -10,6 +10,13 @@
     group: root
     mode: 0644
 
+- name: Wait for cloud-init / user-data to finish
+  command: cloud-init status --wait
+  changed_when: false
+
+- name: Wait for /var/lib/dpkg/lock-frontend to be released
+  shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
+
 - name: Wait for post-launch services to stop
   service_facts:
   register: result
