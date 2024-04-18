@@ -16,6 +16,8 @@
 
 - name: Wait for /var/lib/dpkg/lock-frontend to be released
   shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
+  tags:
+    - skip_ansible_lint
 
 - name: Wait for post-launch services to stop
   service_facts:

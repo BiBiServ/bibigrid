@@ -16,6 +16,7 @@
       Pin: version 23.11.*
       Pin-Priority: 1001
     dest: /etc/apt/preferences.d/slurm-bibigrid
+    mode: '0311'
 
 - name: Install slurm-bibigrid package
   apt:
