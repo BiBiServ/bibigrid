@@ -42,4 +42,4 @@
         state: mounted
       with_items: "{{ volumes }}"
   when: volumes is defined and auto_mount
-  ignore_errors: true
+  failed_when: false
