@@ -13,5 +13,6 @@
  |            [Configuration](features/configuration.md)            |                                Contains all data regarding cluster setup for all providers.                                 |
 |            [Command Line Interface](features/CLI.md)             |                                  What command line arguments can be passed into BiBiGrid.                                   |
 |              [Multi Cloud](features/multi_cloud.md)              |                                    Explanation how BiBiGrid's multi-cloud approach works                                    |
+|    [BiBiGrid Cluster Commands](features/cluster_commands.md)     |                                   Short useful commands to get information on the cluster                                   |
 
 ![](../images/actions.jpg)

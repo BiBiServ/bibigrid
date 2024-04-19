@@ -28,6 +28,7 @@
   systemd:
     name: slurmctld
     state: restarted
+  when: "'master' in group_names"
 
 - name: slurmd
   systemd:

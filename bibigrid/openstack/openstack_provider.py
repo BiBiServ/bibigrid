@@ -320,3 +320,11 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                                                  port_range_max=rule["port_range_max"],
                                                  remote_ip_prefix=rule["remote_ip_prefix"],
                                                  remote_group_id=rule["remote_group_id"])
+
+    def get_security_group(self, name_or_id):
+        """
+        Returns security group if found else None.
+        @param name_or_id:
+        @return:
+        """
+        return self.conn.get_security_group(name_or_id)
