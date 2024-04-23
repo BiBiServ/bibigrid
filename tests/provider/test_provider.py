@@ -6,6 +6,8 @@ import logging
 import os
 import unittest
 
+from bibigrid.core import startup
+from bibigrid.core.utility import image_selection
 import bibigrid.core.utility.paths.basic_path as bP
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility.handler import provider_handler
@@ -58,8 +60,8 @@ VOLUME_KEYS = {'location', 'id', 'name', 'description', 'size', 'attachments', '
                'encrypted', 'multiattach', 'availability_zone', 'source_volid', 'user_id',
                'os-vol-tenant-attr:tenant_id'}
 
-FREE_RESOURCES_KEYS = {'total_cores', 'floating_ips', 'instances', 'total_ram', 'Volumes', 'VolumeGigabytes',
-                       'Snapshots', 'Backups', 'BackupGigabytes'}
+FREE_RESOURCES_KEYS = {'total_cores', 'floating_ips', 'instances', 'total_ram', 'volumes', 'volume_gigabytes',
+                       'snapshots', 'backups', 'backup_gigabytes'}
 
 KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwByljG9S1/zHKIEzOMcOBb7WUSmyNa5XHh5IB0/" \
           "BTsQvSag/O9IAhax2wlp9A2za6EkALYiRdEXeGOMNORw8yylRBqzLluKTErZ5sKYxENf1WGHsE3ifzct0G/moEPmIkixTHR9fZrZgOzQwj" \
@@ -70,7 +72,7 @@ KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwB
 
 CONFIGURATIONS = configuration_handler.read_configuration(logging,
                                                           os.path.join(bP.ROOT_PATH,
-                                                                       "tests/resources/infrastructure_cloud.yml"))
+                                                                       "resources/tests/bibigrid_test.yml"))
 PROVIDERS = provider_handler.get_providers(CONFIGURATIONS, logging)
 
 
@@ -82,6 +84,9 @@ class ProviderServer:
     def __init__(self, provider, name, configuration, key_name=None):
         self.provider = provider
         self.name = name
+        self.log = startup.LOG
+        configuration["image"] = image_selection.select_image(provider=provider, image=configuration["image"],
+                                                              log=self.log)
         self.server_dict = provider.create_server(name=self.name, flavor=configuration["flavor"],
                                                   image=configuration["image"], network=configuration["network"],
                                                   key_name=key_name, security_groups=[])
@@ -166,6 +171,7 @@ class TestProvider(unittest.TestCase):
     def test_get_external_network(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
+                print("FIRE", provider.get_external_network(configuration["network"]))
                 self.assertTrue(provider.get_external_network(configuration["network"]))
                 with self.assertRaises(TypeError):
                     provider.get_external_network("ERROR")
@@ -220,16 +226,17 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 self.assertIsNone(provider.get_image_by_id_or_name("NONE"))
 
-    if CONFIGURATIONS[0].get("snapshot_image"):
+    if CONFIGURATIONS[0].get("snapshotImage"):
         def test_get_snapshot(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):
                     self.assertEqual(SNAPSHOT_KEYS, set(provider.get_volume_snapshot_by_id_or_name(
-                        configuration["snapshot_image"]).keys()))
+                        configuration["snapshotImage"]).keys()))
 
         def test_create_volume_from_snapshot(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):
-                    volume_id = provider.create_volume_from_snapshot(configuration["snapshot_image"])
+                    volume_id = provider.create_volume_from_snapshot(configuration["snapshotImage"])
+                    print(volume_id)
                     volume = provider.get_volume_by_id_or_name(volume_id)
                     self.assertEqual(VOLUME_KEYS, set(volume.keys()))

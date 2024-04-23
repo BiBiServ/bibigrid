@@ -10,8 +10,7 @@ resources/playbook/ansible_hosts
 resources/playbook/vars/
 resources/playbook/host_vars/
 resources/playbook/group_vars/
-tests/resources/*
-!test/resources/test_configuration.yml
+resources/tests/bibigrid_test.yml
 
 # any log files
 *.log

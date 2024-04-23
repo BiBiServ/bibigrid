@@ -92,6 +92,7 @@ def get_clouds_files(log):
         clouds_public = clouds_public_yaml.get(CLOUD_PUBLIC_ROOT_KEY)
         if not clouds_public:
             log.warning("%s is not valid. Must contain key '%s'", CLOUDS_PUBLIC_YAML, CLOUD_PUBLIC_ROOT_KEY)
+
     return clouds, clouds_public
 
 
