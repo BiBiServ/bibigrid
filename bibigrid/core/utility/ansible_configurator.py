@@ -47,23 +47,23 @@ def delete_old_vars(log):
                 os.remove(file)
 
 
-def generate_site_file_yaml(custom_roles):
+def generate_site_file_yaml(user_roles):
     """
     Generates site_yaml (dict).
     Deepcopy is used in case roles might differ between servers in the future.
-    @param custom_roles: ansibleRoles given by the config
+    @param user_roles: userRoles given by the config
     @return: site_yaml (dict)
     """
     site_yaml = [{'hosts': 'master', "become": "yes",
                   "vars_files": VARS_FILES, "roles": MASTER_ROLES},
                  {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": VPNGTW_ROLES},
                  {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]
-    for custom_role in custom_roles:
+    for user_role in user_roles:
         for host_dict in site_yaml:
-            if host_dict["hosts"] in custom_role["hosts"]:
-                host_dict["vars_files"] = host_dict["vars_files"] + custom_role.get("varsFiles", [])
+            if host_dict["hosts"] in user_role["hosts"]:
+                host_dict["vars_files"] = host_dict["vars_files"] + user_role.get("varsFiles", [])
                 host_dict["roles"] = host_dict["roles"] + [{"role": role["name"], "tags": role.get("tags", [])} for role
-                                                           in custom_role["roles"]]
+                                                           in user_role["roles"]]
     return site_yaml
 
 
@@ -203,9 +203,6 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
         common_configuration_yaml["zabbix_conf"] = mergedeep.merge({}, ZABBIX_CONF,
                                                                    master_configuration.get("zabbixConf", {}),
                                                                    strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
-
-    for from_key, to_key in [("ansibleRoles", "ansible_roles"), ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
-        pass_through(master_configuration, common_configuration_yaml, from_key, to_key)
 
     if len(configurations) > 1:
         peers = configuration_handler.get_list_by_key(configurations, "wireguard_peer")
@@ -382,8 +379,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
     delete_old_vars(log)
     log.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
-    ansible_roles = configurations[0].get("userRoles")
-    # ansible_roles = get_ansible_roles(configurations[0].get("ansibleRoles"), log)
+    user_roles = configurations[0].get("userRoles")
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
     add_wireguard_peers(configurations)
     for path, generated_yaml in [
@@ -397,6 +393,6 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
                                                                                                   "sshUser"],
                                                                                               configurations,
                                                                                               cluster_id, log)),
-        (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(ansible_roles))]:
+        (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(user_roles))]:
         write_yaml(path, generated_yaml, log, alias)
     write_host_and_group_vars(configurations, providers, cluster_id, log)  # writing included in method
