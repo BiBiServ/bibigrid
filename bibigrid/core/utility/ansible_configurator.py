@@ -54,10 +54,7 @@ def generate_site_file_yaml(custom_roles):
     @param custom_roles: ansibleRoles given by the config
     @return: site_yaml (dict)
     """
-    # add custom roles and vars
-    site_yaml = [{'hosts': 'master', "pre_tasks": [
-        {"name": "Print ansible.cfg timeout", "command": "ansible-config dump | grep 'DEFAULT_TIMEOUT'",
-         "register": "ansible_cfg_output"}, {"debug": {"msg": "{{ ansible_cfg_output.stdout }}"}}], "become": "yes",
+    site_yaml = [{'hosts': 'master', "become": "yes",
                   "vars_files": VARS_FILES, "roles": MASTER_ROLES},
                  {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": VPNGTW_ROLES},
                  {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]
@@ -173,7 +170,6 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     """
     master_configuration = configurations[0]
     log.info("Generating common configuration file...")
-    # print(configuration.get("slurmConf", {}))
     common_configuration_yaml = {"bibigrid_version": __version__,
                                  "auto_mount": master_configuration.get("autoMount", False), "cluster_id": cluster_id,
                                  "cluster_cidrs": cidrs, "default_user": default_user,

@@ -10,7 +10,7 @@ process_string() {
     fifth=${elements[4]}
 
     # Replace undesired characters in the second element
-    second=$(echo "$second" | sed -E 's/worker-/worker_/; s/vpnwkr-/vpnwkr_/')
+    second=$(echo "$second" | sed -E 's/worker-/worker_/; s/vpngtw-/vpngtw_/')
 
     # Check if the fifth element is not empty
     if [[ ! -z $fifth ]]; then

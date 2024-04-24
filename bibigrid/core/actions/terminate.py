@@ -148,10 +148,12 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
         tmp_success = False
         while not tmp_success:
             try:
+                # TODO: Check if security group exists at all
+                not_found = not provider.get_security_group(security_group_name)
                 tmp_success = provider.delete_security_group(security_group_name)
             except ConflictException:
                 tmp_success = False
-            if tmp_success:
+            if tmp_success or not_found:
                 break
             if attempts < timeout:
                 attempts += 1
@@ -162,7 +164,8 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
                 log.error(f"Attempt to delete security group {security_group_name} on "
                           f"{provider.cloud_specification['identifier']} failed.")
                 break
-        log.info(f"Delete security_group {security_group_name} -> {tmp_success}")
+        log.info(f"Delete security_group {security_group_name} -> {tmp_success or not_found} on "
+                 f"{provider.cloud_specification['identifier']}.")
         success = success and tmp_success
     return success
 

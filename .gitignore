@@ -10,6 +10,7 @@ resources/playbook/ansible_hosts
 resources/playbook/vars/
 resources/playbook/host_vars/
 resources/playbook/group_vars/
+resources/tests/bibigrid_test.yml
 
 # Roles
 resources/playbook/roles_galaxy/*

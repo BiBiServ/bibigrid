@@ -273,13 +273,6 @@ if failed_list or unreachable_list:
     sys.exit(1)
 else:
     logging.info(ansible_execution_data)
-server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [],
-                     "available_servers": [], "openstack_wait_exceptions": []}
-if [key for key in server_start_data if "exception" in key]:
-    logging.warning(server_start_data)
-    sys.exit(1)
-else:
-    logging.info(server_start_data)
 
 logging.info("Successful create_server.py execution!")
 time_in_s = time.time() - start_time

@@ -1,0 +1,9 @@
+- infrastructure: # former mode.
+  cloud: #credentials # name of clouds.yaml entry
+  
+  flavor: de.NBI small
+  image: ^Ubuntu 22\.04 LTS \(.*\)$
+  sshUser: ubuntu
+  network: # network
+
+  snapshotImage: # name of a snapshot
