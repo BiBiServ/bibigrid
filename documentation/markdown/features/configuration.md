@@ -92,30 +92,16 @@ What is NFS?
 NFS (Network File System) is a stable and well-functioning network protocol for exchanging files over the local network.
 </details>
 
-#### ansibleRoles (optional)
+#### userRoles (optional)
 
-Yet to be explained and implemented.
-
-```yaml
-  - file: SomeFile
-    hosts: SomeHosts
-    name: SomeName
-    vars: SomeVars
-    vars_file: SomeVarsFile
-```
-
-#### ansibleGalaxyRoles (optional)
-
-Yet to be explained and implemented.
+`userRoles` takes a list of elements containing the keys `hosts`, `roles` and  
 
 ```yaml
-  - hosts: SomeHost
-    name: SomeName
-    galaxy: SomeGalaxy
-    git: SomeGit
-    url: SomeURL
-    vars: SomeVars
-    vars_file: SomeVarsFile
+userRoles:
+    - hosts: 
+      - "master"
+      roles:
+      - name: "resistance_nextflow"
 ```
 
 #### localFS (optional)
