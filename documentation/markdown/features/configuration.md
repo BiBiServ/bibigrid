@@ -100,8 +100,8 @@ NFS (Network File System) is a stable and well-functioning network protocol for 
 userRoles: # see ansible_hosts for all options
     - hosts: 
         - "master"
-      roles:
-        - name: "resistance_nextflow" # role placed in resources/playbook/roles_user
+      roles: # roles placed in resources/playbook/roles_user
+        - name: "resistance_nextflow" 
       # varsFiles: # (optional)
       #  - file1
 ```

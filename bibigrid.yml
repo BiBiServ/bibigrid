@@ -23,11 +23,13 @@
   #nfsShares: /vol/spool/ is automatically created as a nfs
   #  - [nfsShare one]
 
-  # userRoles:
+  # userRoles: # see ansible_hosts for all options
   #  - hosts:
   #    - "master"
-  #    roles:
-  #    - name: "resistance_nextflow" # roles in
+  #    roles: # roles placed in resources/playbook/roles_user
+  #    - name: "resistance_nextflow"
+  #    varsFiles: # (optional)
+  #    - [...]
 
   ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
   #useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
