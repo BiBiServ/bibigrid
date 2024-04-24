@@ -181,7 +181,6 @@ class ValidateConfiguration:
         self.log = log
         self.configurations = configurations
         self.providers = providers
-
         self.required_resources_dict = {
             provider.cloud_specification['identifier']: {'total_cores': 0, 'floating_ips': 0, 'instances': 0,
                                                          'total_ram': 0, 'volumes': 0, 'volume_gigabytes': 0,
@@ -227,11 +226,11 @@ class ValidateConfiguration:
         """
         self.log.info("Checking master/vpn")
         success = True
-        if not self.configurations[0].get("masterInstance"):
+        if not self.configurations[0].get("masterInstance") or self.configurations[0].get("vpnInstance"):
             self.log.warning(f"{self.configurations[0].get('cloud')} has no master instance!")
             success = False
         for configuration in self.configurations[1:]:
-            if not configuration.get("vpnInstance"):
+            if not configuration.get("vpnInstance") or configuration.get("masterInstance"):
                 self.log.warning(f"{configuration.get('cloud')} has no vpn instance!")
                 success = False
         return success
@@ -356,9 +355,9 @@ class ValidateConfiguration:
                         else:
                             self.log.info(f"Snapshot '{volume_name_or_id}' found on "
                                           f"{provider.cloud_specification['identifier']}.")
-                            self.required_resources_dict[provider.cloud_specification['identifier']]["Volumes"] += 1
+                            self.required_resources_dict[provider.cloud_specification['identifier']]["volumes"] += 1
                             self.required_resources_dict[provider.cloud_specification['identifier']][
-                                "VolumeGigabytes"] += snapshot["size"]
+                                "volume_gigabytes"] += snapshot["size"]
                     else:
                         self.log.info(f"Volume '{volume_name_or_id}' found on "
                                       f"{provider.cloud_specification['identifier']}.")

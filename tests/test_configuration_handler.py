@@ -14,6 +14,7 @@ class TestConfigurationHandler(TestCase):
     """
     Class to test configuration_handler
     """
+
     # pylint: disable=R0904
     def test_get_list_by_name_none(self):
         configurations = [{}, {}]
