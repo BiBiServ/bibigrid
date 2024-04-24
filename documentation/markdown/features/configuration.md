@@ -101,8 +101,8 @@ userRoles: # see ansible_hosts for all options
     - hosts: 
         - "master"
       roles:
-        - name: "resistance_nextflow" # role placed in 
-      # varsFiles: # vars placed in 
+        - name: "resistance_nextflow" # role placed in resources/playbook/user_roles
+      # varsFiles:
       #  - file1
 ```
 
