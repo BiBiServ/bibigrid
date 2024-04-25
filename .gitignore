@@ -12,6 +12,12 @@ resources/playbook/host_vars/
 resources/playbook/group_vars/
 resources/tests/bibigrid_test.yml
 
+# Roles
+resources/playbook/roles_galaxy/*
+!resources/playbook/roles_galaxy/README
+resources/playbook/roles_user/*
+!resources/playbook/roles_user/README
+!resources/playbook/roles_user/resistance_nextflow
 # any log files
 *.log
 log/
