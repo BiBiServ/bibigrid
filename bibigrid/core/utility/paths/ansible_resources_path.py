@@ -24,6 +24,7 @@ ADDITIONAL_ROLES_PATH: str = ROLES_PATH + "additional/"
 DEFAULT_IP_FILE = VARS_PATH + "{{ ansible_default_ipv4.address }}.yml"
 ANSIBLE_CFG = "ansible.cfg"
 SLURM_CONF = "slurm.conf"
+SLURM_J2 = "slurm.j2"
 
 # LOCAL
 PLAYBOOK = "playbook/"
@@ -41,12 +42,12 @@ ADDITIONAL_ROLES_ROOT_PATH: str = ROLES_ROOT_PATH + ADDITIONAL_ROLES_PATH
 VARS_FOLDER = os.path.join(PLAYBOOK_PATH, VARS_PATH)
 GROUP_VARS_FOLDER = os.path.join(PLAYBOOK_PATH, GROUP_VARS_PATH)
 HOST_VARS_FOLDER = os.path.join(PLAYBOOK_PATH, HOST_VARS_PATH)
-SLURM_CONF_TEMPLATE_PATH = os.path.join(PLAYBOOK_PATH, "roles", "bibigrid", "templates", "slurm", SLURM_CONF)
+SLURM_CONF_TEMPLATE_PATH = os.path.join(PLAYBOOK_PATH, "roles", "bibigrid", "templates", "slurm", SLURM_J2)
 
 # DEFAULTS
 DEFAULTS = os.path.join(b_p.RESOURCES_PATH, "defaults")
 ANSIBLE_CFG_DEFAULT_PATH = os.path.join(DEFAULTS, "ansible", ANSIBLE_CFG)
-SLURM_CONF_TEMPLATE_DEFAULT_PATH = os.path.join(DEFAULTS, "slurm", SLURM_CONF)
+SLURM_CONF_TEMPLATE_DEFAULT_PATH = os.path.join(DEFAULTS, "slurm", SLURM_J2)
 
 
 # REMOTE

@@ -88,7 +88,7 @@
 
 - name: Create Slurm configuration
   template:
-    src: slurm/slurm.conf
+    src: slurm/slurm.j2
     dest: /etc/slurm/slurm.conf
     owner: slurm
     group: root
@@ -99,7 +99,7 @@
 
 - name: Create Job Container configuration
   template:
-    src: slurm/job_container.conf
+    src: slurm/job_container.j2
     dest: /etc/slurm/job_container.conf
     owner: slurm
     group: root

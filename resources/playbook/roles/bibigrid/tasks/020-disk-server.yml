@@ -18,9 +18,9 @@
   when: master.disks is defined
 
 - when: volumes is defined and auto_mount
-  failed_when: false
   block:
     - name: Make sure disks are available
+      failed_when: false
       filesystem:
         fstype: ext4
         dev: "{{ item.device }}"
@@ -29,6 +29,7 @@
       with_items: "{{ volumes }}"
 
     - name: Create mount folders if they don't exist
+      failed_when: false
       file:
         path: "/{{ item.name }}"
         state: directory
@@ -38,7 +39,7 @@
       with_items: "{{ volumes }}"
 
     - name: Mount disks
-
+      failed_when: false
       mount:
         path: "{{ item.name }}"
         src: "{{ item.device }}"
