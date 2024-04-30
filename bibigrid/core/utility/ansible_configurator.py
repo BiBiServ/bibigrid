@@ -379,7 +379,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
     delete_old_vars(log)
     log.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
-    user_roles = configurations[0].get("userRoles")
+    user_roles = configurations[0].get("userRoles", [])
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
     add_wireguard_peers(configurations)
     for path, generated_yaml in [
