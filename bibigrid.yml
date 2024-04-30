@@ -8,6 +8,8 @@
 
   # -- BEGIN: GENERAL CLUSTER INFORMATION --
   # sshTimeout: 5 # Number of ssh connection attempts with 2^attempt seconds in between (2^sshTimeout-1 is the max time before returning with an error)
+  # cloudScheduling:
+  #    sshTimeout: 42 # like the sshTimeout during startup but during the on demand scheduling
 
   ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
   #sshPublicKeyFiles:
@@ -21,22 +23,13 @@
   #nfsShares: /vol/spool/ is automatically created as a nfs
   #  - [nfsShare one]
 
-  ## Ansible (Galaxy) roles can be added for execution # KEY NOT IMPLEMENTED YET
-  #ansibleRoles:
-  #  - file: SomeFile
-  #    hosts: SomeHosts
-  #    name: SomeName
-  #    vars: SomeVars
-  #    vars_file: SomeVarsFile
-
-  #ansibleGalaxyRoles: # KEY NOT IMPLEMENTED YET
-  #  - hosts: SomeHost
-  #    name: SomeName
-  #    galaxy: SomeGalaxy
-  #    git: SomeGit
-  #    url: SomeURL
-  #    vars: SomeVars
-  #    vars_file: SomeVarsFile
+  # userRoles: # see ansible_hosts for all options
+  #  - hosts:
+  #    - "master"
+  #    roles: # roles placed in resources/playbook/roles_user
+  #    - name: "resistance_nextflow"
+  #    varsFiles: # (optional)
+  #    - [...]
 
   ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
   #useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated

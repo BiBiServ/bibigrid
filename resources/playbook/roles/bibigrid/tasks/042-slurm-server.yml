@@ -14,7 +14,7 @@
 
 - name: Create slurmdb configuration file
   template:
-    src: slurm/slurmdbd.conf
+    src: slurm/slurmdbd.j2
     dest: /etc/slurm/slurmdbd.conf
     owner: slurm
     group: root

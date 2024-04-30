@@ -92,30 +92,18 @@ What is NFS?
 NFS (Network File System) is a stable and well-functioning network protocol for exchanging files over the local network.
 </details>
 
-#### ansibleRoles (optional)
+#### userRoles (optional)
 
-Yet to be explained and implemented.
-
-```yaml
-  - file: SomeFile
-    hosts: SomeHosts
-    name: SomeName
-    vars: SomeVars
-    vars_file: SomeVarsFile
-```
-
-#### ansibleGalaxyRoles (optional)
-
-Yet to be explained and implemented.
+`userRoles` takes a list of elements containing the keys `hosts`, `roles` and  
 
 ```yaml
-  - hosts: SomeHost
-    name: SomeName
-    galaxy: SomeGalaxy
-    git: SomeGit
-    url: SomeURL
-    vars: SomeVars
-    vars_file: SomeVarsFile
+userRoles: # see ansible_hosts for all options
+    - hosts: 
+        - "master"
+      roles: # roles placed in resources/playbook/roles_user
+        - name: "resistance_nextflow" 
+      # varsFiles: # (optional)
+      #  - file1
 ```
 
 #### localFS (optional)
@@ -131,6 +119,31 @@ If `True`, master will store DNS information for his workers. Default is `False`
 #### slurm
 If `False`, the cluster will start without the job scheduling system slurm.
 This is relevant to the fewest. Default is `True`.
+
+##### SlurmConf (optional)
+`SlurmConf` contains variable fields in the `slurm.conf`. The most common use is to increase the `SuspendTime` 
+and the `ResumeTimeout` like:
+
+```yaml
+elastic_scheduling:
+  SuspendTime: 1800
+  ResumeTimeout: 1800
+```
+
+Please only use if necessary. On Demand Scheduling improves resource availability for all users.
+
+###### Defaults
+```yaml
+slurmConf:
+    db: slurm # see task 042-slurm-server.yml
+    db_user: slurm
+    db_password: changeme
+    munge_key: # automatically generated via id_generation.generate_munge_key
+    elastic_scheduling:
+      SuspendTime: 900 # if a node doesn't start in SuspendTime seconds, the start is considered failed. See https://slurm.schedmd.com/slurm.conf.html#OPT_ResumeProgram
+      ResumeTimeout: 900 # if a node is not used for ResumeTimeout seconds, it will shut down  
+      TreeWidth: 128 # https://slurm.schedmd.com/slurm.conf.html#OPT_TreeWidth
+```
 
 #### zabbix (optional)
 
@@ -206,7 +219,7 @@ workerInstance:
 - `type` sets the instance's hardware configuration.
 - `image` sets the bootable operating system to be installed on the instance.
 - `count` sets how many workers of that `type` `image` combination are in this work group
-- `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). This option only works on the master cloud for now.
+- `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works on the master cloud for now.
 
 ##### Find your active `images`
 

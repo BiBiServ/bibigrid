@@ -4,7 +4,7 @@
 
 # variable resources
 resources/playbook/ansible.cfg
-resources/playbook/roles/bibigrid/templates/slurm/slurm.conf
+resources/playbook/roles/bibigrid/templates/slurm/slurm.j2
 resources/playbook/site.yml
 resources/playbook/ansible_hosts
 resources/playbook/vars/

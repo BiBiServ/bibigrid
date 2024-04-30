@@ -1,3 +1,4 @@
+# remove _example in order to actually use this file
 - infrastructure: # former mode.
   cloud: #credentials # name of clouds.yaml entry
   
@@ -6,4 +7,4 @@
   sshUser: ubuntu
   network: # network
 
-  snapshotImage: # name of a snapshot
+  snapshotImage: # name of a snapshot to create volume from. Volume needs to be deleted manually afterwards (optional)
