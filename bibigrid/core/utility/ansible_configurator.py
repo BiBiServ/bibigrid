@@ -96,7 +96,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"],
-                           "on_demand": worker.get("onDemand", True)}
+                           "on_demand": worker.get("onDemand", True),
+                           "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
 
             worker_features = worker.get("features", [])
             if isinstance(worker_features, str):
@@ -104,6 +105,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             features = set(configuration_features + worker_features)
             if features:
                 worker_dict["features"] = features
+
             pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict, log)
         vpngtw = configuration.get("vpnInstance")
@@ -135,7 +137,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
-                           "on_demand": False}
+                           "on_demand": False,
+                           "partitions": master.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
