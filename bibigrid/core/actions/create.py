@@ -59,13 +59,6 @@ DEFAULT_SECURITY_GROUP_NAME = "default" + SEPARATOR + "{cluster_id}"
 WIREGUARD_SECURITY_GROUP_NAME = "wireguard" + SEPARATOR + "{cluster_id}"
 
 
-def create_defaults():
-    if not os.path.isfile(a_rp.ANSIBLE_CFG_PATH):
-        shutil.copy(a_rp.ANSIBLE_CFG_DEFAULT_PATH, a_rp.ANSIBLE_CFG_PATH)
-    if not os.path.isfile(a_rp.SLURM_CONF_TEMPLATE_PATH):
-        shutil.copy(a_rp.SLURM_CONF_TEMPLATE_DEFAULT_PATH, a_rp.SLURM_CONF_TEMPLATE_PATH)
-
-
 class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     """
     The class Create holds necessary methods to execute the Create-Action
@@ -107,6 +100,15 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.use_master_with_public_ip = not configurations[0].get("gateway") and configurations[0].get(
             "useMasterWithPublicIp", True)
         self.log.debug("Keyname: %s", self.key_name)
+
+
+    def create_defaults(self):
+        if not self.configurations[0].get("customAnsibleCfg", False) or not os.path.isfile(a_rp.ANSIBLE_CFG_PATH):
+            shutil.copy(a_rp.ANSIBLE_CFG_DEFAULT_PATH, a_rp.ANSIBLE_CFG_PATH)
+        if not self.configurations[0].get("customSlurmConf", False) or not os.path.isfile(
+                a_rp.SLURM_CONF_TEMPLATE_PATH):
+            shutil.copy(a_rp.SLURM_CONF_TEMPLATE_DEFAULT_PATH, a_rp.SLURM_CONF_TEMPLATE_PATH)
+
 
     def generate_keypair(self):
         """
@@ -422,7 +424,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         try:
             self.generate_keypair()
             self.prepare_configurations()
-            create_defaults()
+            self.create_defaults()
             self.generate_security_groups()
             self.start_start_server_threads()
             self.extended_network_configuration()
