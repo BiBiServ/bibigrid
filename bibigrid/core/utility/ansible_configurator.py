@@ -64,6 +64,7 @@ def generate_site_file_yaml(user_roles):
                 host_dict["vars_files"] = host_dict["vars_files"] + user_role.get("varsFiles", [])
                 host_dict["roles"] = host_dict["roles"] + [{"role": role["name"], "tags": role.get("tags", [])} for role
                                                            in user_role["roles"]]
+
     return site_yaml
 
 
@@ -278,26 +279,6 @@ def get_cidrs(configurations):
                           "provider_cidrs": configuration["subnet_cidrs"]}
         all_cidrs.append(provider_cidrs)
     return all_cidrs
-
-
-def get_ansible_roles(ansible_roles, log):
-    """
-    Checks if ansible_roles have all necessary values and returns True if so.
-    @param ansible_roles: ansible_roles from master configuration (first configuration)
-    @param log:
-    @return: list of valid ansible_roles
-    """
-    ansible_roles_yaml = []
-    for ansible_role in (ansible_roles or []):
-        if ansible_role.get("file") and ansible_role.get("hosts"):
-            ansible_role_dict = {"file": ansible_role["file"], "hosts": ansible_role["hosts"]}
-            for key in ["name", "vars", "vars_file"]:
-                if ansible_role.get(key):
-                    ansible_role_dict[key] = ansible_role[key]
-            ansible_roles_yaml.append(ansible_role_dict)
-        else:
-            log.warning("Ansible role %s had neither galaxy,git nor url. Not added.", ansible_role)
-    return ansible_roles_yaml
 
 
 def get_ansible_galaxy_roles(ansible_galaxy_roles, log):
