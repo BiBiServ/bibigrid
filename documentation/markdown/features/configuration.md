@@ -101,7 +101,9 @@ userRoles: # see ansible_hosts for all options
     - hosts: 
         - "master"
       roles: # roles placed in resources/playbook/roles_user
-        - name: "resistance_nextflow" 
+        - name: "resistance_nextflow"
+          tags:
+            - resistance_nextflow
       # varsFiles: # (optional)
       #  - file1
 ```
@@ -120,8 +122,8 @@ If `True`, master will store DNS information for his workers. Default is `False`
 If `False`, the cluster will start without the job scheduling system slurm.
 This is relevant to the fewest. Default is `True`.
 
-##### SlurmConf (optional)
-`SlurmConf` contains variable fields in the `slurm.conf`. The most common use is to increase the `SuspendTime` 
+##### slurmConf (optional)
+`slurmConf` contains variable fields in the `slurm.conf`. The most common use is to increase the `SuspendTime` 
 and the `ResumeTimeout` like:
 
 ```yaml
@@ -166,13 +168,6 @@ If `False`, master will no longer help workers to process jobs. Default is `True
 
 If `False`, master will not be created with an attached floating ip. Default is `True`.
 
-#### waitForServices (optional):
-
-Expects a list of services to wait for.
-This is required if your provider has any post-launch services interfering with the package manager. If not set,
-seemingly random errors can occur when the service interrupts ansible's execution. Services are
-listed on [de.NBI Wiki](https://cloud.denbi.de/wiki/) at `Computer Center Specific` (not yet).
-
 #### gateway (optional)
 In order to save valuable floating ips, BiBiGrid can also make use of a gateway to create the cluster.
 For more information on how to set up a gateway, how gateways work and why they save floating ips please continue reading [here](https://cloud.denbi.de/wiki/Tutorials/SaveFloatingIPs/).
@@ -192,6 +187,13 @@ gateway:
 Using gateway also automatically sets [useMasterWithPublicIp](#usemasterwithpublicip-optional) to `False`.
 
 ### Local
+
+#### waitForServices (optional):
+
+Expects a list of services to wait for.
+This is required if your provider has any post-launch services interfering with the package manager. If not set,
+seemingly random errors can occur when the service interrupts ansible's execution. Services are
+listed on [de.NBI Wiki](https://cloud.denbi.de/wiki/) at `Computer Center Specific` (not yet).
 
 #### infrastructure (required)
 
