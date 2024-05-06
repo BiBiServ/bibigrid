@@ -101,14 +101,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             "useMasterWithPublicIp", True)
         self.log.debug("Keyname: %s", self.key_name)
 
-
     def create_defaults(self):
         if not self.configurations[0].get("customAnsibleCfg", False) or not os.path.isfile(a_rp.ANSIBLE_CFG_PATH):
             shutil.copy(a_rp.ANSIBLE_CFG_DEFAULT_PATH, a_rp.ANSIBLE_CFG_PATH)
         if not self.configurations[0].get("customSlurmConf", False) or not os.path.isfile(
                 a_rp.SLURM_CONF_TEMPLATE_PATH):
             shutil.copy(a_rp.SLURM_CONF_TEMPLATE_DEFAULT_PATH, a_rp.SLURM_CONF_TEMPLATE_PATH)
-
 
     def generate_keypair(self):
         """
