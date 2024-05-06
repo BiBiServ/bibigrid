@@ -48,21 +48,36 @@ sshPublicKeyFiles:
 Defines the number of attempts that BiBiGrid will try to connect to the master instance via ssh.
 Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 4.
 
+#### customAnsibleCfg (optional:False)
+When False, changes in the resources/playbook/ansible.cfg are overwritten by the create action. 
+When True, changes are kept - even when you perform a git pull as the file is not tracked. The default can be found at
+resources/default/ansible/ansible.cfg.
+
+#### customSlurmTemplate (optional:False)
+When False, changes in the resources/playbook/roles/bibigrid/templates/slurm.j2 are overwritten by the create action. 
+When True, changes are kept - even when you perform a git pull as the file is not tracked. The default can be found at
+resources/default/slurm/slurm.j2.
+
 #### cloudScheduling (optional)
 This key allows you to influence cloud scheduling. Currently, only a single key `sshTimeout` can be set here.
 
-##### sshTimeout (optional)
+##### sshTimeout (optional:4)
 Defines the number of attempts that the master will try to connect to on demand created worker instances via ssh.
 Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 4.
 
-#### autoMount (optional)
+```yaml
+cloudScheduling:
+  sshTimeout: 4
+```
+
+#### autoMount (optional:False)
 > **Warning:** If a volume has an obscure filesystem, this might overwrite your data!
 
 If `True` all [masterMounts](#mastermounts-optional) will be automatically mounted by BiBiGrid if possible.
 If a volume is not formatted or has an unknown filesystem, it will be formatted to `ext4`.
 Default `False`.
 
-#### masterMounts (optional)
+#### masterMounts (optional:False)
 
 `masterMounts` expects a list of volumes and snapshots. Those will be attached to the master. If any snapshots are
 given, volumes are first created from them. Volumes are not deleted after Cluster termination.
@@ -106,19 +121,19 @@ userRoles: # see ansible_hosts for all options
       #  - file1
 ```
 
-#### localFS (optional)
+#### localFS (optional:False)
 
 In general, this key is ignored.
 It expects `True` or `False` and helps some specific users to create a filesystem to their liking. Default is `False`.
 
-#### localDNSlookup (optional)
+#### localDNSlookup (optional:False)
 
 If `True`, master will store DNS information for his workers. Default is `False`.
 [More information](https://helpdeskgeek.com/networking/edit-hosts-file/).
 
-#### slurm
+#### slurm (optional:True)
 If `False`, the cluster will start without the job scheduling system slurm.
-This is relevant to the fewest. Default is `True`.
+For nearly all cases the default value is what you need. Default is `True`.
 
 ##### SlurmConf (optional)
 `SlurmConf` contains variable fields in the `slurm.conf`. The most common use is to increase the `SuspendTime` 
@@ -145,24 +160,24 @@ slurmConf:
       TreeWidth: 128 # https://slurm.schedmd.com/slurm.conf.html#OPT_TreeWidth
 ```
 
-#### zabbix (optional)
+#### zabbix (optional:False)
 
 If `True`, the monitoring solution [zabbix](https://www.zabbix.com/) will be installed on the master. Default is `False`.
 
-#### nfs (optional)
+#### nfs (optional:False)
 
 If `True`, [nfs](../software/nfs.md) is set up. Default is `False`.
 
-#### ide (optional)
+#### ide (optional:False)
 
 If `True`, [Theia Web IDE](../software/theia_ide.md) is installed.
-After creation connection information is [printed](../features/create.md#prints-cluster-information).
+After creation connection information is [printed](../features/create.md#prints-cluster-information). Default is `False`.
 
-#### useMasterAsCompute (optional)
+#### useMasterAsCompute (optional:True)
 
 If `False`, master will no longer help workers to process jobs. Default is `True`.
 
-#### useMasterWithPublicIP (optional)
+#### useMasterWithPublicIP (optional:True)
 
 If `False`, master will not be created with an attached floating ip. Default is `True`.
 
@@ -198,7 +213,7 @@ Using gateway also automatically sets [useMasterWithPublicIp](#usemasterwithpubl
 `infrastructure` sets the used provider implementation for this configuration. Currently only `openstack` is available.
 Other infrastructures would be [AWS](https://aws.amazon.com/) and so on.
 
-#### cloud
+#### cloud (required)
 
 `cloud` decides which entry in the `clouds.yaml` is used. When using OpenStack the entry is named `openstack`.
 You can read more about the `clouds.yaml` [here](cloud_specification_data.md).
@@ -214,12 +229,20 @@ workerInstance:
     image: Ubuntu 22.04 LTS (2022-10-14)
     count: 2
     onDemand: True # optional only on master cloud for now. Default True.
+    partitions: # optional. Always adds "all" and the cloud identifier as partitions
+      - small
+      - onDemand
+    features: # optional
+      - hasdatabase
+      - holdsinformation
 ```
 
 - `type` sets the instance's hardware configuration.
 - `image` sets the bootable operating system to be installed on the instance.
 - `count` sets how many workers of that `type` `image` combination are in this work group
 - `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works on the master cloud for now.
+- `partitions` allow you to force Slurm to schedule to a group of nodes (partitions) ([more](https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION))
+- `features` allow you to force Slurm to schedule a job only on nodes that meet certain `bool` constraints. This can be helpful when only certain nodes can access a specific resource - like a database ([more](https://slurm.schedmd.com/slurm.conf.html#OPT_Features)).
 
 ##### Find your active `images`
 
@@ -246,25 +269,6 @@ There's also a [Fallback Option](#fallbackonotherimage-optional).
 openstack flavor list --os-cloud=openstack
 ```
 
-##### features (optional)
-You can declare a list of features for a worker group. Those are then attached to each node in the worker group.
-For example:
-```yaml
-workerInstance:
-  - type: de.NBI tiny
-    image: Ubuntu 22.04 LTS (2022-10-14)
-    count: 2
-    features:
-      - hasdatabase
-      - holdsinformation
-```
-
-###### What's a feature?
-Features allow you to force Slurm to schedule a job only on nodes that meet a certain `bool` constraint.
-This can be helpful when only certain nodes can access a specific resource - like a database.
-
-If you would like to know more about how features exactly work, 
-take a look at [slurm's documentation](https://slurm.schedmd.com/slurm.conf.html#OPT_Features).
 
 #### Master or vpngtw?
 
@@ -299,8 +303,8 @@ Exactly one in every configuration but the first:
     image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
 ```
 
-### fallbackOnOtherImage (optional)
-If set to `true` and an image is not among the active images, 
+### fallbackOnOtherImage (optional:False)
+If set to `True` and an image is not among the active images, 
 BiBiGrid will try to pick a fallback image for you by finding the closest active image by name that has at least 60% name overlap.
 This will not find a good fallback every time.
 
@@ -316,28 +320,6 @@ and can be helpful to when image updates occur while running a cluster.
 
 `sshUser` is the standard user of the installed images. For `Ubuntu 22.04` this would be `ubuntu`.
 
-#### region (required)
-
-Every [region](https://docs.openstack.org/python-openstackclient/rocky/cli/command-objects/region.html) has its own
-openstack deployment. Every [avilability zone](#availabilityzone-required) belongs to a region.
-
-Find your `regions`:
-
-```commandline
-openstack region list --os-cloud=openstack
-```
-
-#### availabilityZone (required)
-
-[availability zones](https://docs.openstack.org/nova/latest/admin/availability-zones.html) allow to logically group
-nodes.
-
-Find your `availabilityZones`:
-
-```commandline
-openstack region list --os-cloud=openstack
-```
-
 #### subnet (required)
 
 `subnet` is a block of ip addresses.
@@ -348,13 +330,14 @@ Find available `subnets`:
 openstack subnet list --os-cloud=openstack
 ```
 
-#### localDNSLookup (optional)
+#### localDNSLookup (optional:False)
 
 If no full DNS service for started instances is available, set `localDNSLookup: True`.
 Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
 
 #### features (optional)
 
-You can declare a list of [features](#whats-a-feature) that are then attached to every node in the configuration.
-If both [worker group](#features-optional) or [master features](#masterInstance) and configuration features are defined, 
-they are merged.
+You can declare a list of cloud-wide [features](#whats-a-feature) that are then attached to every node in the cloud described by the configuration.
+If both [worker group](#workerinstances) or [master features](#masterInstance) and configuration features are defined, 
+they are merged. If you only have a single cloud and therefore a single configuration, this key is not helpful as a feature
+that is present at all nodes can be omitted as it can't influence the scheduling.
