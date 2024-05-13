@@ -202,8 +202,6 @@ class ValidateConfiguration:
         @return:
         """
         success = bool(self.providers)
-        self.log.info("Validating config file...")
-
         success = validate_schema.validate_configurations(self.configurations, self.log) and success
 
         checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),

@@ -30,16 +30,17 @@ other_schema = Schema(
     {'infrastructure': str, 'cloud': str, 'sshUser': str, Or('subnet', 'network'): str, 'cloud_identifier': str,
      Optional('waitForServices'): [str], Optional('features'): [str], 'workerInstances': [
         {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'): bool, Optional('partitions'): [str],
-         Optional('features'): [str]}], 'vpngtw': {'type': str, 'image': str}})
+         Optional('features'): [str]}], 'vpnInstance': {'type': str, 'image': str}})
 
 
 def validate_configurations(configurations, log):
+    log.info("Validating config file...")
     configuration = None
     try:
         configuration = configurations[0]
         if configuration.get("region") or configuration.get("availabilityZone"):
             log.warning(
-                "Keys region and availabilityZone are deprecated! Check will return False if you use one of them."
+                "Keys 'region' and 'availabilityZone' are deprecated! Check will return False if you use one of them."
                 "Just remove them. They are no longer required.")
         master_schema.validate(configuration)
         log.debug(f"Master configuration '{configuration['cloud_identifier']}' valid.")
@@ -50,6 +51,7 @@ def validate_configurations(configurations, log):
                     "Just remove them. They are no longer required.")
             other_schema.validate(configuration)
             log.debug(f"Configuration '{configuration['cloud_identifier']}' valid.")
+        log.debug("Entire configuration valid.")
         return True
     except SchemaError as err:
         log.warning(
