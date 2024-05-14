@@ -18,7 +18,7 @@ master_schema = Schema(
                                                                                               'ResumeTimeout'): int,
                                                                                           Optional('TreeWidth'): int}},
      Optional('zabbix'): bool, Optional('nfs'): bool, Optional('ide'): bool, Optional('useMasterAsCompute'): bool,
-     Optional('useMasterWithPublicIP'): bool, Optional('waitForServices'): [str],
+     Optional('useMasterWithPublicIp'): bool, Optional('waitForServices'): [str],
      Optional('gateway'): {'ip': str, 'portFunction': str}, Optional('fallbackOnOtherImage'): bool,
      Optional('localDNSLookup'): bool, Optional('features'): [str], 'workerInstances': [
         {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'): bool, Optional('partitions'): [str],
@@ -34,7 +34,7 @@ other_schema = Schema(
 
 
 def validate_configurations(configurations, log):
-    log.info("Validating config file...")
+    log.info("Validating config file schema...")
     configuration = None
     try:
         configuration = configurations[0]
@@ -50,8 +50,8 @@ def validate_configurations(configurations, log):
                     "Keys region and availabilityZone are deprecated! Check will return False if you use one of them."
                     "Just remove them. They are no longer required.")
             other_schema.validate(configuration)
-            log.debug(f"Configuration '{configuration['cloud_identifier']}' valid.")
-        log.debug("Entire configuration valid.")
+            log.debug(f"Configuration '{configuration['cloud_identifier']}' schema valid.")
+        log.debug("Entire configuration schema valid.")
         return True
     except SchemaError as err:
         log.warning(
