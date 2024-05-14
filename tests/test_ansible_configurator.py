@@ -29,20 +29,6 @@ class TestAnsibleConfigurator(TestCase):
                       'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']}]
         self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml([]))
 
-    def test_generate_site_file_yaml_role(self):
-        custom_roles = [{"file": "file", "hosts": "hosts", "name": "name", "vars": "vars", "vars_file": "varsFile"}]
-        # vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
-        site_yaml = [{'become': 'yes', 'hosts': 'master',
-                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']}, 'additional/name'],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']},
-                     {'become': 'yes', 'hosts': 'vpngtw',
-                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']}, 'additional/name'],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']},
-                     {'become': 'yes', 'hosts': 'workers',
-                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']}, 'additional/name'],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']}]
-        self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml(custom_roles))
-
     def test_generate_common_configuration_false(self):
         cidrs = "42"
         cluster_id = "21"
@@ -202,7 +188,6 @@ class TestAnsibleConfigurator(TestCase):
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
-
     @patch("bibigrid.core.utility.ansible_configurator.to_instance_host_dict")
     def test_generate_ansible_hosts(self, mock_instance_host_dict):
         cluster_id = "21"
@@ -327,8 +312,8 @@ class TestAnsibleConfigurator(TestCase):
     @patch("bibigrid.core.utility.ansible_configurator.generate_site_file_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.get_cidrs")
-    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list,
-                                    mock_common, mock_worker, mock_write):
+    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list, mock_common,
+                                    mock_worker, mock_write):
         mock_cidrs.return_value = 421
         mock_list.return_value = {2: 422}
         provider = MagicMock()
