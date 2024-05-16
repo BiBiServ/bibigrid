@@ -54,6 +54,6 @@ EXECUTE = (f"ansible-playbook {os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.SITE_Y
            "Execute ansible playbook. Be patient.")
 
 # ansible setup
-UPDATE = ("sudo apt-get update", "Update apt repository lists.")
+UPDATE = ("sleep 60 && sudo apt-get update", "Update apt repository lists.")  # dirty fix
 PYTHON3_PIP = "sudo apt-get install -y python3-pip", "Install python3 pip using apt."
 ANSIBLE_PASSLIB = ("sudo pip install ansible==6.6 passlib", "Install Ansible and Passlib using pip.")
