@@ -54,6 +54,9 @@ EXECUTE = (f"ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE
            "Execute ansible playbook. Be patient.")
 
 # ansible setup
+WAIT_FOR_SERVICES = (
+    "while [[ $(systemctl is-active {service}) == 'active' ]]; do echo 'Waiting for service {service}'; sleep 2; done",
+    "Waiting for service {service}.")
 UPDATE = ("sudo apt-get update", "Update apt repository lists.")
 PYTHON3_PIP = "sudo apt-get install -y python3-pip", "Install python3 pip using apt."
 ANSIBLE_PASSLIB = ("sudo pip install ansible==6.6 passlib", "Install Ansible and Passlib using pip.")
