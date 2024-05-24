@@ -44,6 +44,17 @@ sshPublicKeyFiles:
   - /home/user/.ssh/id_ecdsa_colleague.pub
 ```
 
+#### sshTimeout (optional)
+Defines the number of attempts that BiBiGrid will try to connect to the master instance via ssh.
+Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 4.
+
+#### cloudScheduling (optional)
+This key allows you to influence cloud scheduling. Currently, only a single key `sshTimeout` can be set here.
+
+##### sshTimeout (optional)
+Defines the number of attempts that the master will try to connect to on demand created worker instances via ssh.
+Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 4.
+
 #### autoMount (optional)
 > **Warning:** If a volume has an obscure filesystem, this might overwrite your data!
 
@@ -81,30 +92,18 @@ What is NFS?
 NFS (Network File System) is a stable and well-functioning network protocol for exchanging files over the local network.
 </details>
 
-#### ansibleRoles (optional)
+#### userRoles (optional)
 
-Yet to be explained and implemented.
-
-```yaml
-  - file: SomeFile
-    hosts: SomeHosts
-    name: SomeName
-    vars: SomeVars
-    vars_file: SomeVarsFile
-```
-
-#### ansibleGalaxyRoles (optional)
-
-Yet to be explained and implemented.
+`userRoles` takes a list of elements containing the keys `hosts`, `roles` and  
 
 ```yaml
-  - hosts: SomeHost
-    name: SomeName
-    galaxy: SomeGalaxy
-    git: SomeGit
-    url: SomeURL
-    vars: SomeVars
-    vars_file: SomeVarsFile
+userRoles: # see ansible_hosts for all options
+    - hosts: 
+        - "master"
+      roles: # roles placed in resources/playbook/roles_user
+        - name: "resistance_nextflow" 
+      # varsFiles: # (optional)
+      #  - file1
 ```
 
 #### localFS (optional)
@@ -120,6 +119,31 @@ If `True`, master will store DNS information for his workers. Default is `False`
 #### slurm
 If `False`, the cluster will start without the job scheduling system slurm.
 This is relevant to the fewest. Default is `True`.
+
+##### SlurmConf (optional)
+`SlurmConf` contains variable fields in the `slurm.conf`. The most common use is to increase the `SuspendTime` 
+and the `ResumeTimeout` like:
+
+```yaml
+elastic_scheduling:
+  SuspendTime: 1800
+  ResumeTimeout: 1800
+```
+
+Please only use if necessary. On Demand Scheduling improves resource availability for all users.
+
+###### Defaults
+```yaml
+slurmConf:
+    db: slurm # see task 042-slurm-server.yml
+    db_user: slurm
+    db_password: changeme
+    munge_key: # automatically generated via id_generation.generate_munge_key
+    elastic_scheduling:
+      SuspendTime: 900 # if a node doesn't start in SuspendTime seconds, the start is considered failed. See https://slurm.schedmd.com/slurm.conf.html#OPT_ResumeProgram
+      ResumeTimeout: 900 # if a node is not used for ResumeTimeout seconds, it will shut down  
+      TreeWidth: 128 # https://slurm.schedmd.com/slurm.conf.html#OPT_TreeWidth
+```
 
 #### zabbix (optional)
 
@@ -149,7 +173,7 @@ This is required if your provider has any post-launch services interfering with 
 seemingly random errors can occur when the service interrupts ansible's execution. Services are
 listed on [de.NBI Wiki](https://cloud.denbi.de/wiki/) at `Computer Center Specific` (not yet).
 
-#### 
+#### gateway (optional)
 In order to save valuable floating ips, BiBiGrid can also make use of a gateway to create the cluster.
 For more information on how to set up a gateway, how gateways work and why they save floating ips please continue reading [here](https://cloud.denbi.de/wiki/Tutorials/SaveFloatingIPs/).
 
@@ -179,7 +203,7 @@ Other infrastructures would be [AWS](https://aws.amazon.com/) and so on.
 `cloud` decides which entry in the `clouds.yaml` is used. When using OpenStack the entry is named `openstack`.
 You can read more about the `clouds.yaml` [here](cloud_specification_data.md).
 
-#### workerInstances (optional)
+#### workerInstances
 
 `workerInstances` expects a list of worker groups (instance definitions with `count` key).
 If `count` is omitted, `count: 1` is assumed. 
@@ -189,11 +213,13 @@ workerInstance:
   - type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
     count: 2
+    onDemand: True # optional only on master cloud for now. Default True.
 ```
 
 - `type` sets the instance's hardware configuration.
 - `image` sets the bootable operating system to be installed on the instance.
 - `count` sets how many workers of that `type` `image` combination are in this work group
+- `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works on the master cloud for now.
 
 ##### Find your active `images`
 

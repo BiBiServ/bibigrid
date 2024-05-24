@@ -1,15 +1,12 @@
 """
 Module to test ssh_handler
 """
-import socket
 from unittest import TestCase
 from unittest.mock import mock_open, Mock, MagicMock, patch, call
 
-from paramiko.ssh_exception import NoValidConnectionsError
-
 from bibigrid.core import startup
 from bibigrid.core.utility.handler import ssh_handler
-from bibigrid.models.exceptions import ExecutionException, ConnectionException
+from bibigrid.models.exceptions import ExecutionException
 
 
 class TestSshHandler(TestCase):
@@ -49,25 +46,6 @@ class TestSshHandler(TestCase):
         mock_listdir.assert_called_with("Jim")
         sftp.mkdir.assert_called_with("Joe")
 
-    @patch("logging.info")
-    def test_is_active(self, mock_log):
-        client = Mock()
-        client.connect = MagicMock(return_value=True)
-        self.assertFalse(ssh_handler.is_active(client, 42, 32, 22, startup.LOG, {}, timeout=5))
-        mock_log.assert_not_called()
-
-    def test_is_active_on_second_attempt(self):
-        client = Mock()
-        client.connect = MagicMock(side_effect=[NoValidConnectionsError({('127.0.0.1', 22): socket.error}), True])
-        self.assertFalse(ssh_handler.is_active(client, 42, 32, 22, startup.LOG, {}, timeout=5))
-
-    def test_is_active_exception(self):
-        client = Mock()
-        client.connect = MagicMock(side_effect=NoValidConnectionsError({('127.0.0.1', 22): socket.error}))
-        with self.assertRaises(ConnectionException):
-            ssh_handler.is_active(client, 42, 32, 22, startup.LOG, {}, timeout=0)
-        client.connect.assert_called_with(hostname=42, username=22, pkey=32, timeout=7, auth_timeout=5, port=22)
-
     @patch("bibigrid.core.utility.handler.ssh_handler.execute_ssh_cml_commands")
     @patch("paramiko.ECDSAKey.from_private_key_file")
     @patch("paramiko.SSHClient")
@@ -79,24 +57,14 @@ class TestSshHandler(TestCase):
         mock.__enter__ = client
         mock.__exit__ = Mock(return_value=None)
         with patch("bibigrid.core.utility.handler.ssh_handler.is_active") as mock_active:
-            ssh_handler.execute_ssh(42, 32, 22, startup.LOG, {}, [12])
+            ssh_data = {'floating_ip': 42, 'private_key': "key", 'username': "ubuntu", 'commands': ["ho"],
+                        'filepaths': [], 'gateway': {}, 'timeout': 4}
+            ssh_handler.execute_ssh(ssh_data, startup.LOG)
             mock_client.assert_called_with()
-            mock_active.assert_called_with(client=client(), floating_ip_address=42, username=22, private_key=2,
-                                           log=startup.LOG, gateway={})
-            mock_exec.assert_called_with(client=client(), commands=[12], log=startup.LOG)
-            mock_paramiko_key.assert_called_with(32)
-
-    @patch("bibigrid.core.utility.handler.ssh_handler.execute_ssh")
-    def test_ansible_preparation(self, mock_execute):
-        ssh_handler.ansible_preparation(1, 2, 3, startup.LOG, {}, [], [])
-        mock_execute.assert_called_with(1, 2, 3, startup.LOG, {}, ssh_handler.ANSIBLE_SETUP,
-                                        [(2, ssh_handler.PRIVATE_KEY_FILE)])
-
-    @patch("bibigrid.core.utility.handler.ssh_handler.execute_ssh")
-    def test_ansible_preparation_elem(self, mock_execute):
-        ssh_handler.ansible_preparation(1, 2, 3, startup.LOG, {}, [42], [42])
-        mock_execute.assert_called_with(1, 2, 3, startup.LOG, {}, ssh_handler.ANSIBLE_SETUP + [42],
-                                        [42, (2, ssh_handler.PRIVATE_KEY_FILE)])
+            mock_active.assert_called_with(client=client(), paramiko_key=mock_paramiko_key.return_value,
+                                           ssh_data=ssh_data, log=startup.LOG)
+            mock_exec.assert_called_with(client=client(), commands=["ho"], log=startup.LOG)
+            mock_paramiko_key.assert_called_with("key")
 
     def test_execute_ssh_cml_commands(self):
         client = Mock()

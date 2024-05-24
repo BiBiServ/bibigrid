@@ -28,7 +28,7 @@ def check_cid(cid):
 def interpret_command_line():
     """
     Interprets commandline. Used in startup.py
-    :return:
+    @return:
     """
     parser = argparse.ArgumentParser(description='BiBiGrid easily sets up clusters within a cloud environment')
     parser.add_argument("-v", "--verbose", action="count", default=0,

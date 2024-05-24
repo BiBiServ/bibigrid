@@ -12,7 +12,9 @@ class ReturnThread(threading.Thread):
     - An exception occurred within the called function is raised by join()
     """
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):  # pylint: disable=dangerous-default-value
+    # pylint: disable=dangerous-default-value
+    def __init__(self, group=None, target=None, name=None, args=(),
+                 kwargs={}):
         threading.Thread.__init__(self, group, target, name, args, kwargs)
         self._return = None
         self._exc = None
@@ -21,7 +23,7 @@ class ReturnThread(threading.Thread):
         if self._target is not None:
             try:
                 self._return = self._target(*self._args, **self._kwargs)
-            except Exception as exc: # pylint: disable=broad-except
+            except Exception as exc:  # pylint: disable=broad-except
                 self._exc = exc
 
     def join(self, *args):

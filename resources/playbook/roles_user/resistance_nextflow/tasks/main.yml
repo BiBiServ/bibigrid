@@ -1,0 +1,25 @@
+- debug:
+    msg: 
+    - "Hello {{ ansible_user }}!"
+
+- name: Unarchive ZIP file from GitHub repository
+  unarchive:
+    src: "https://github.com/deNBI/bibigrid_clum/raw/main/resources/Resistance_Nextflow.tar.xz"
+    dest: "/vol/spool/"
+    remote_src: yes
+
+- name: Install Java JRE on Debian/Ubuntu
+  become: True
+  apt:
+    name: default-jre  # Package name for Java JRE on Debian-based systems
+    state: present     # Ensure that the package is present, you can use "latest" as well
+
+- name: Get Nextflow
+  shell: wget -qO- https://get.nextflow.io | bash
+  args:
+    chdir: /vol/spool/
+
+- name: Execute Nextflow workflow
+  shell: ./nextflow run resFinder.nf -profile slurm
+  args:
+    chdir: "/vol/spool"  # Change to the directory where your workflow resides

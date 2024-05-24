@@ -16,7 +16,7 @@ class TestIDGeneration(TestCase):
     def test_generate_cluster_id(self):
         """
         This test is not ideal, but prevents worst within a reasonable runtime
-        :return:
+        @return:
         """
         test_list = []
         for _ in range(10000):

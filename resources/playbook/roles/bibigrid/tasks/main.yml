@@ -136,6 +136,7 @@
     - debug:
         msg: "[BIBIGRID] Setup Slurm"
     - import_tasks: 042-slurm.yml
+      when: "'vpngtw' not in group_names"
     - import_tasks: 042-slurm-server.yml
       when: "'master' in group_names"
 

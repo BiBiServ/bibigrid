@@ -1,0 +1,3 @@
+# User Roles
+This folder can be filled with [galaxy roles](https://docs.ansible.com/ansible/latest/galaxy/user_guide.html).
+They will not be overwritten when pulling a new BiBiGrid version.

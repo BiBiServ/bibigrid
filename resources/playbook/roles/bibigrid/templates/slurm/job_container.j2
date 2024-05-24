@@ -1,0 +1,5 @@
+NodeName={{ name }} AutoBasePath=true BasePath={{ '/vol/scratch/storage' if flavor.ephemeral else '/var/local/storage' }}
+{% for worker_group in groups | select('match', '^bibigrid_worker_*') %}
+{% set first_worker = groups[worker_group] | first %}
+NodeName={{ hostvars[first_worker].name }} AutoBasePath=true BasePath={{ '/vol/scratch/storage' if hostvars[first_worker].flavor.ephemeral else '/var/local/storage' }}
+{% endfor %}
