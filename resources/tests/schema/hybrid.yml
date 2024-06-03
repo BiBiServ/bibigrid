@@ -1,0 +1,103 @@
+  # See https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/ (after update)
+  # First configuration will be used for general cluster information and must include the master.
+  # All other configurations mustn't include another master, but exactly one vpnWorker instead (keys like master).
+
+- infrastructure: openstack # former mode.
+  cloud: somecloud # name of clouds.yaml entry
+
+  # -- BEGIN: GENERAL CLUSTER INFORMATION --
+  ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
+  #sshPublicKeyFiles:
+  #  - [key one]
+  sshPublicKeyFiles:
+    - some_key
+  ## Volumes and snapshots that will be mounted to master
+  #masterMounts:
+  #  - [mount one]
+  #masterMounts:
+  #  - test
+
+  #nfsShares:
+  #  - test
+
+  ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
+  useMasterWithPublicIp: no
+
+  # Other keys
+  #localFS: False
+  #localDNSlookup: False
+  slurm: True
+  zabbix: True
+  nfs: True
+  ide: True
+
+  waitForServices:
+    - some.service
+
+  useMasterAsCompute: False
+
+
+  # master configuration
+  masterInstance:
+    type: de.NBI mini
+    image: ^Ubuntu 22\.04 LTS \(.*\)$
+
+  # -- END: GENERAL CLUSTER INFORMATION --
+
+  # worker configuration
+  workerInstances:
+    - type: de.NBI tiny
+      image: ^Ubuntu 22\.04 LTS \(.*\)$
+      count: 2
+      onDemand: False
+    - type: de.NBI default
+      image: ^Ubuntu 22\.04 LTS \(.*\)$
+
+  # Depends on cloud image
+  sshUser: ubuntu
+
+  # Depends on cloud site:
+  # Berlin     : regionOne
+  # Bielefeld  : bielefeld
+  # DKFZ       : regionOne
+  # Giessen    : RegionOne
+  # Heidelberg : RegionOne
+  # Tuebingen  : RegionOne
+
+  # Depends on cloud site and project
+  subnet: subnet
+
+  # Uncomment if no full DNS service for started instances is available.
+  # Currently the case in Berlin, DKFZ, Heidelberg and Tuebingen.
+  #localDNSLookup: yes
+
+- infrastructure: openstack # former mode.
+  cloud: another_cloud # name of clouds.yaml entry
+
+  # master configuration
+  vpnInstance:
+    type: de.NBI mini
+    image: ^Ubuntu 22\.04 LTS \(.*\)$
+
+  # -- END: GENERAL CLUSTER INFORMATION --
+
+  # worker configuration
+  workerInstances:
+    - type: de.NBI tiny
+      image: ^Ubuntu 22\.04 LTS \(.*\)$
+      count: 2
+      features:
+        - holdsinformation
+  # Depends on cloud image
+  sshUser: ubuntu
+
+  # Depends on cloud site and project
+  subnet: another_subnet
+
+  # Uncomment if no full DNS service for started instances is available.
+  # Currently the case in Berlin, DKFZ, Heidelberg and Tuebingen.
+  #localDNSLookup: yes
+
+  features:
+    - hasdatabase
+  #- [next configurations]

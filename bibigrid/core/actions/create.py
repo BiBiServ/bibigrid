@@ -317,7 +317,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @return:
         """
         for configuration, provider in zip(self.configurations, self.providers):
-            configuration["cloud_identifier"] = provider.cloud_specification["identifier"]
             if not configuration.get("network"):
                 self.log.debug("No network found. Getting network by subnet.")
                 configuration["network"] = provider.get_network_id_by_subnet(configuration["subnet"])

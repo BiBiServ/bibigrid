@@ -149,5 +149,7 @@ def get_cloud_specifications(configurations, log):
         for configuration in configurations:
             cloud = configuration.get(CLOUD_CONFIGURATION_KEY)
             if cloud:
-                cloud_specifications.append(get_cloud_specification(cloud, clouds, clouds_public, log))  # might be None
+                cloud_specification = get_cloud_specification(cloud, clouds, clouds_public, log)
+                cloud_specifications.append(cloud_specification)  # might be None if not found
+                configuration["cloud_identifier"] = cloud_specification["identifier"]
     return cloud_specifications

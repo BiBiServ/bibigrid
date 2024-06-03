@@ -29,20 +29,6 @@ class TestAnsibleConfigurator(TestCase):
                       'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']}]
         self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml([]))
 
-    def test_generate_site_file_yaml_role(self):
-        custom_roles = [{"file": "file", "hosts": "hosts", "name": "name", "vars": "vars", "vars_file": "varsFile"}]
-        # vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
-        site_yaml = [{'become': 'yes', 'hosts': 'master',
-                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']}, 'additional/name'],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']},
-                     {'become': 'yes', 'hosts': 'vpngtw',
-                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']}, 'additional/name'],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']},
-                     {'become': 'yes', 'hosts': 'workers',
-                      'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']}, 'additional/name'],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'varsFile']}]
-        self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml(custom_roles))
-
     def test_generate_common_configuration_false(self):
         cidrs = "42"
         cluster_id = "21"
@@ -202,32 +188,6 @@ class TestAnsibleConfigurator(TestCase):
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
-    def test_generate_common_configuration_ansible_roles_mock(self):
-        cidrs = "42"
-        ansible_roles = [{elem: elem for elem in ["file", "hosts", "name", "vars", "vars_file"]}]
-        cluster_id = "21"
-        default_user = "ubuntu"
-        ssh_user = "test"
-        configuration = [{"ansibleRoles": ansible_roles}]
-        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
-                                                                                                 cluster_id, ssh_user,
-                                                                                                 default_user,
-                                                                                                 startup.LOG)
-        self.assertEqual(ansible_roles, generated_common_configuration["ansible_roles"])
-
-    def test_generate_common_configuration_ansible_galaxy_roles(self):
-        cidrs = "42"
-        cluster_id = "21"
-        default_user = "ubuntu"
-        ssh_user = "test"
-        galaxy_roles = [{elem: elem for elem in ["hosts", "name", "galaxy", "git", "url", "vars", "vars_file"]}]
-        configuration = [{"ansibleGalaxyRoles": galaxy_roles}]
-        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
-                                                                                                 cluster_id, ssh_user,
-                                                                                                 default_user,
-                                                                                                 startup.LOG)
-        self.assertEqual(galaxy_roles, generated_common_configuration["ansible_galaxy_roles"])
-
     @patch("bibigrid.core.utility.ansible_configurator.to_instance_host_dict")
     def test_generate_ansible_hosts(self, mock_instance_host_dict):
         cluster_id = "21"
@@ -349,26 +309,23 @@ class TestAnsibleConfigurator(TestCase):
     @patch("bibigrid.core.utility.ansible_configurator.generate_common_configuration_yaml")
     @patch("bibigrid.core.actions.list_clusters.dict_clusters")
     @patch("bibigrid.core.utility.ansible_configurator.generate_ansible_hosts_yaml")
-    @patch("bibigrid.core.utility.ansible_configurator.get_ansible_roles")
     @patch("bibigrid.core.utility.ansible_configurator.generate_site_file_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.get_cidrs")
-    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_roles, mock_hosts, mock_list,
-                                    mock_common, mock_worker, mock_write):
+    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list, mock_common,
+                                    mock_worker, mock_write):
         mock_cidrs.return_value = 421
         mock_list.return_value = {2: 422}
-        mock_roles.return_value = 423
         provider = MagicMock()
         provider.cloud_specification = {"auth": {"username": "Default"}}
-        configuration = [{"sshUser": 42, "ansibleRoles": 21}]
+        configuration = [{"sshUser": 42, "userRoles": 21}]
         cluster_id = 2
         ansible_configurator.configure_ansible_yaml([provider], configuration, cluster_id, startup.LOG)
         mock_worker.assert_called_with(configuration, startup.LOG)
         mock_common.assert_called_with(cidrs=421, configurations=configuration, cluster_id=cluster_id, ssh_user=42,
                                        default_user="Default", log=startup.LOG)
         mock_hosts.assert_called_with(42, configuration, cluster_id, startup.LOG)
-        mock_site.assert_called_with(423)
-        mock_roles.assert_called_with(21, startup.LOG)
+        mock_site.assert_called_with(21)
         mock_cidrs.assert_called_with(configuration)
         mock_write.assert_called()
         expected = [call(aRP.WORKER_SPECIFICATION_FILE, mock_worker(), startup.LOG, False),
