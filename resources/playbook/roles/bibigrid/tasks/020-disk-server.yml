@@ -17,31 +17,7 @@
     - "{{ master.disks }}"
   when: master.disks is defined
 
-- when: volumes is defined and auto_mount
-  block:
-    - name: Make sure disks are available
-      failed_when: false
-      filesystem:
-        fstype: ext4
-        dev: "{{ item.device }}"
-        force: false
-        state: present
-      with_items: "{{ volumes }}"
-
-    - name: Create mount folders if they don't exist
-      failed_when: false
-      file:
-        path: "/{{ item.name }}"
-        state: directory
-        mode: '0755'
-        owner: root
-        group: '{{ ansible_distribution | lower }}'
-      with_items: "{{ volumes }}"
-
-    - name: Mount disks
-      failed_when: false
-      mount:
-        path: "{{ item.name }}"
-        src: "{{ item.device }}"
-        state: mounted
-      with_items: "{{ volumes }}"
+- name: Automount
+  when: volumes is defined and auto_mount
+  include_tasks: 020-disk-server-automount.yml
+  with_items: "{{ volumes }}"
