@@ -4,6 +4,7 @@ Validates configuration and cloud_specification
 
 import os
 
+from bibigrid.core.utility import validate_schema
 from bibigrid.core.utility import image_selection
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.models.exceptions import ImageNotActiveException
@@ -201,13 +202,8 @@ class ValidateConfiguration:
         @return:
         """
         success = bool(self.providers)
-        self.log.info("Validating config file...")
-        # success = check_provider_data(
-        #     configuration_handler.get_list_by_key(self.configurations, "cloud"),
-        #     len(self.configurations)) and success
-        # if not success:
-        #     LOG.warning("Providers not set correctly in configuration file. Check log for more detail.")
-        #     return success
+        success = validate_schema.validate_configurations(self.configurations, self.log) and success
+
         checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),
                   ("instances", self.check_instances), ("volumes", self.check_volumes), ("network", self.check_network),
                   ("quotas", self.check_quotas), ("sshPublicKeyFiles", self.check_ssh_public_key_files),

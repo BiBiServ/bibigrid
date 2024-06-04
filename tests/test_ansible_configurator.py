@@ -92,7 +92,7 @@ class TestAnsibleConfigurator(TestCase):
                                 {'role': 'resistance_nextflow', 'tags': ['rn']}],
                       'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'vars/rn']}]
         self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml(user_roles))
-
+        
     def test_generate_common_configuration_false(self):
         cidrs = "42"
         cluster_id = "21"

@@ -273,7 +273,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         "gateway": configuration.get("gateway", {}), "timeout": self.ssh_timeout}
             if configuration.get("masterInstance"):
                 self.master_ip = configuration["floating_ip"]
-                ssh_data["commands"] = self.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP
+                wait_for_service_command, wait_for_service_message = ssh_handler.a_c.WAIT_FOR_SERVICES
+                wait_for_services_commands = [
+                    (wait_for_service_command.format(service=service), wait_for_service_message.format(service=service))
+                    for service in configuration.get("waitForServices", [])]
+                print(wait_for_services_commands)
+                ssh_data["commands"] = (
+                        wait_for_services_commands + self.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP)
                 ssh_data["filepaths"] = [(ssh_data["private_key"], ssh_handler.PRIVATE_KEY_FILE)]
                 ssh_handler.execute_ssh(ssh_data, self.log)
             elif configuration.get("vpnInstance"):
@@ -314,7 +320,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @return:
         """
         for configuration, provider in zip(self.configurations, self.providers):
-            configuration["cloud_identifier"] = provider.cloud_specification["identifier"]
             if not configuration.get("network"):
                 self.log.debug("No network found. Getting network by subnet.")
                 configuration["network"] = provider.get_network_id_by_subnet(configuration["subnet"])
@@ -355,9 +360,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.debug(f"Starting playbook with {ansible_start}.")
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
                 cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
-        ssh_data = {"floating_ip": self.master_ip, "private_key": KEY_FOLDER + self.key_name,
-                    "username": self.ssh_user, "commands": commands, "filepaths": FILEPATHS,
-                    "gateway": self.configurations[0].get("gateway", {}), "timeout": self.ssh_timeout}
+        ssh_data = {"floating_ip": self.master_ip, "private_key": KEY_FOLDER + self.key_name, "username": self.ssh_user,
+                    "commands": commands, "filepaths": FILEPATHS, "gateway": self.configurations[0].get("gateway", {}),
+                    "timeout": self.ssh_timeout}
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 
     def start_start_server_threads(self):

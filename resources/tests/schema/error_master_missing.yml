@@ -1,0 +1,82 @@
+  # See https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/ (after update)
+  # First configuration will be used for general cluster information and must include the master.
+  # All other configurations mustn't include another master, but exactly one vpnWorker instead (keys like master).
+
+- infrastructure: openstack # former mode.
+  cloud: some_cloud #credentials # name of clouds.yaml entry
+
+  sshTimeout: 6
+
+  # customAnsibleCfg: True # If True, changes in ansible.cfg are kept. Default False.
+  # customSlurmTemplate: True # If True, changes in slurm.j2 are kept. Default False.
+
+  cloudScheduling:
+    sshTimeout: 42
+  # -- BEGIN: GENERAL CLUSTER INFORMATION --
+  # deleteTmpKeypairAfter: True
+  # dontUploadCredentials: True
+  ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
+  #  - [key one]
+  ## Volumes and snapshots that will be mounted to master
+  #autoMount: True
+  #masterMounts:
+  #  - test
+
+  #nfsShares:
+  #  - test2
+
+  ## Ansible (Galaxy) roles can be added for execution
+  #userRoles:
+  #  - hosts:
+  #    - "master"
+  #    roles:
+  #    - name: "resistance_nextflow"
+
+  ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
+  # useMasterWithPublicIp: False
+
+  # Other keys
+  #localFS: False
+  #localDNSlookup: False
+  zabbix: True
+  nfs: True
+  ide: True
+
+  useMasterAsCompute: True
+  waitForServices:
+    - some.service
+
+  fallbackOnOtherImage: True
+
+
+  # master configuration
+  # -- END: GENERAL CLUSTER INFORMATION --
+
+  workerInstances:
+    - type: de.NBI small + ephemeral
+      image: ^Ubuntu 22\.04 LTS \(.*\)$
+      count: 2
+      #partitions:
+      #  - ephemeral
+    - type: de.NBI small
+      image: ^Ubuntu 22\.04 LTS \(.*\)$
+      count: 1
+      #onDemand: False
+  # worker configuration
+
+  # Depends on cloud image
+  sshUser: ubuntu
+
+  # Depends on cloud site and project
+  # network: bibiserv-external
+  # network: bibiserv_test2_network
+  subnet: subnet
+  #gateway:
+  #  ip: 129.70.51.103
+  #  portFunction: "30000 + oct4"
+
+  # Uncomment if no full DNS service for started instances is available.
+  # Currently the case in Berlin, DKFZ, Heidelberg and Tuebingen.
+  #localDNSLookup: yes
+
+  #- [next configurations]
