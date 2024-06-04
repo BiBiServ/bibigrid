@@ -64,6 +64,7 @@ def generate_site_file_yaml(user_roles):
                 host_dict["vars_files"] = host_dict["vars_files"] + user_role.get("varsFiles", [])
                 host_dict["roles"] = host_dict["roles"] + [{"role": role["name"], "tags": role.get("tags", [])} for role
                                                            in user_role["roles"]]
+
     return site_yaml
 
 
@@ -96,7 +97,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"],
-                           "on_demand": worker.get("onDemand", True)}
+                           "on_demand": worker.get("onDemand", True),
+                           "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
 
             worker_features = worker.get("features", [])
             if isinstance(worker_features, str):
@@ -104,6 +106,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             features = set(configuration_features + worker_features)
             if features:
                 worker_dict["features"] = features
+
             pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict, log)
         vpngtw = configuration.get("vpnInstance")
@@ -135,7 +138,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
-                           "on_demand": False}
+                           "on_demand": False,
+                           "partitions": master.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
@@ -275,26 +279,6 @@ def get_cidrs(configurations):
                           "provider_cidrs": configuration["subnet_cidrs"]}
         all_cidrs.append(provider_cidrs)
     return all_cidrs
-
-
-def get_ansible_roles(ansible_roles, log):
-    """
-    Checks if ansible_roles have all necessary values and returns True if so.
-    @param ansible_roles: ansible_roles from master configuration (first configuration)
-    @param log:
-    @return: list of valid ansible_roles
-    """
-    ansible_roles_yaml = []
-    for ansible_role in (ansible_roles or []):
-        if ansible_role.get("file") and ansible_role.get("hosts"):
-            ansible_role_dict = {"file": ansible_role["file"], "hosts": ansible_role["hosts"]}
-            for key in ["name", "vars", "vars_file"]:
-                if ansible_role.get(key):
-                    ansible_role_dict[key] = ansible_role[key]
-            ansible_roles_yaml.append(ansible_role_dict)
-        else:
-            log.warning("Ansible role %s had neither galaxy,git nor url. Not added.", ansible_role)
-    return ansible_roles_yaml
 
 
 def get_ansible_galaxy_roles(ansible_galaxy_roles, log):

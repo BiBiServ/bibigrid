@@ -64,25 +64,31 @@ SlurmdDebug=info
 SlurmdLogFile=/var/log/slurm/slurmd.log
 
 # COMPUTE NODES
-{% set sl = {} %}
-{% set all = {"nodes":[]} %}
+{% set partitions = {} %}
+{% set exclude_groups = [] %}
 {% set master_or_empty = groups.master if use_master_as_compute else [] %}
-{% for node_name in master_or_empty +groups.workers %}
+{% set node_groups = [] %}
+{% for node_name in master_or_empty + groups.workers %}
 {% set node = hostvars[node_name] %}
-{% set mem = node.flavor.ram // 1024 * 1000 %}
-{% if node.cloud_identifier not in sl %}
-{{ sl.update({node.cloud_identifier: []}) }}
+{% if node.name not in node_groups %}
+{% if not node.on_demand %}
+{% set _ = exclude_groups.append(node.name) %}
 {% endif %}
-{% if node.name not in sl[node.cloud_identifier] %}
-NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem - [mem // 2, 16000] | min }} State={{'CLOUD' if node.on_demand else 'UNKNOWN'}} {{"Features="+node.features|join(",") if node.features is defined}}# {{ node.cloud_identifier }}
-{{ sl[node.cloud_identifier].append(node.name)}}
-{{ all.nodes.append(node.name)}}
+{% set _ = node_groups.append(node.name) %}
+{% set mem = (node.flavor.ram // 1024) * 1000 %}
+NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem - [mem // 2, 16000] | min }} State={{ 'CLOUD' if node.on_demand else 'UNKNOWN' }} {{"Features=" + (node.features | join(",")) if node.features is defined }}# {{ node.cloud_identifier }}
+{% for partition in node.partitions %}
+{% if partition not in partitions %}
+{% set _ = partitions.update({partition: []}) %}
+{% endif %}
+{% set _ = partitions[partition].append(node.name) %}
+{% endfor %}
 {% endif %}
 {% endfor %}
-{% for key,value in sl.items() %}
-PartitionName={{ key }} Nodes={{ value|join(",") }}
+
+{% for key, value in partitions.items() %}
+PartitionName={{ key }} Nodes={{ value | join(",") }}
 {% endfor %}
-PartitionName=All Nodes = {{ all.nodes|join(",") }} default=yes
 
 # JobSubmitPlugin
 JobSubmitPlugins=all_partitions
@@ -95,7 +101,7 @@ SuspendProgram=/opt/slurm/terminate.sh
 # Suspend time is 10 minutes (600 seconds)
 SuspendTime= {{ slurm_conf.elastic_scheduling.SuspendTime }}
 # Excludes {{ hostvars[groups.master.0].name }} from suspend
-SuspendExcNodes={{ hostvars[groups.master.0].name }}
+SuspendExcNodes={{ exclude_groups | join(',') }}
 # Maximum number of nodes
 TreeWidth= {{ slurm_conf.elastic_scheduling.TreeWidth }}
 # Do not cache dns names
