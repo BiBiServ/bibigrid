@@ -1,4 +1,5 @@
-- block:
+- when: item.mount_point is defined
+  block:
     - name: Make sure disks are available
       failed_when: false
       filesystem:

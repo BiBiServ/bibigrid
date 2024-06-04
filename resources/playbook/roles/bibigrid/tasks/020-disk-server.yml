@@ -18,6 +18,6 @@
   when: master.disks is defined
 
 - name: Automount
-  when: volumes is defined and auto_mount
+  when: volumes is defined
   include_tasks: 020-disk-server-automount.yml
   with_items: "{{ volumes }}"
