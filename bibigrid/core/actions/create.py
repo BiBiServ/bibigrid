@@ -342,10 +342,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @return:
         """
         self.log.debug("Uploading ansible Data")
-        for folder in [a_rp.VARS_FOLDER, a_rp.GROUP_VARS_FOLDER, a_rp.HOST_VARS_FOLDER]:
-            if not os.path.isdir(folder):
-                self.log.info("%s not found. Creating folder.", folder)
-                os.mkdir(folder)
         if not os.path.isfile(a_rp.HOSTS_FILE):
             with open(a_rp.HOSTS_FILE, 'a', encoding='utf-8') as hosts_file:
                 hosts_file.write("# placeholder file for worker DNS entries (see 003-dns)")
@@ -428,6 +424,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @return: exit_state
         """
         try:
+            for folder in [a_rp.VARS_FOLDER, a_rp.GROUP_VARS_FOLDER, a_rp.HOST_VARS_FOLDER]:
+                if not os.path.isdir(folder):
+                    self.log.info("%s not found. Creating folder.", folder)
+                    os.mkdir(folder)
             self.generate_keypair()
             self.prepare_configurations()
             self.create_defaults()
