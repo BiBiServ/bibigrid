@@ -17,8 +17,7 @@
   lineinfile:
     path: /etc/exports
     state: present
-    regexp: '^{{ item.src }}'
-
+    regexp: '^{{ item.src }} '
     line: "{{ item.src }}
     {{cluster_cidrs|map(attribute='provider_cidrs')|flatten|join('(rw,nohide,insecure,no_subtree_check,async) ')}}\
     (rw,nohide,insecure,no_subtree_check,async)
