@@ -333,7 +333,7 @@ class ValidateConfiguration:
         self.log.info("Checking volumes...")
         success = True
         for configuration, provider in zip(self.configurations, self.providers):
-            volume_identifiers = configuration.get("masterMounts")
+            volume_identifiers = [masterMount["name"] for masterMount in configuration.get("masterMounts", [])]
             if volume_identifiers:
                 # check individually if volumes exist
                 for volume_identifier in volume_identifiers:

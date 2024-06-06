@@ -16,9 +16,9 @@
   #  - [public key one]
 
   ## Volumes and snapshots that will be mounted to master
-  # autoMount: False # WARNING: will overwrite unidentified filesystems
-  #masterMounts:
-  #  - [mount one]
+  #masterMounts: (optional) # WARNING: will overwrite unidentified filesystems
+  #  - name: [volume name]
+  #    mountPoint: [where to mount to] # (optional)
 
   #nfsShares: /vol/spool/ is automatically created as a nfs
   #  - [nfsShare one]

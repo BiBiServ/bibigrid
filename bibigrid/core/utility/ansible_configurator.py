@@ -175,7 +175,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     master_configuration = configurations[0]
     log.info("Generating common configuration file...")
     common_configuration_yaml = {"bibigrid_version": __version__,
-                                 "auto_mount": master_configuration.get("autoMount", False), "cluster_id": cluster_id,
+                                 "cluster_id": cluster_id,
                                  "cluster_cidrs": cidrs, "default_user": default_user,
                                  "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),

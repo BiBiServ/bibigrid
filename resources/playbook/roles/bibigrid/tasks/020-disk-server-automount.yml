@@ -1,4 +1,5 @@
-- block:
+- when: item.mount_point is defined
+  block:
     - name: Make sure disks are available
       failed_when: false
       filesystem:
@@ -18,7 +19,7 @@
 
     - name: Create mount folders if they don't exist
       file:
-        path: "/vol/{{ item.name }}"
+        path: "/vol/{{ item.mount_point }}"
         state: directory
         mode: '0755'
         owner: root
@@ -26,7 +27,7 @@
 
     - name: Mount disks
       mount:
-        path: "/vol/{{ item.name }}"
+        path: "{{ item.mount_point }}"
         src: "{{ item.device }}"
         state: mounted
         fstype: "{{ filesystem_type.stdout }}"

@@ -219,6 +219,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
         configuration["volumes"] = provider.get_mount_info_from_server(server)
+        for volume in configuration["volumes"]:
+            mount = next((mount for mount in configuration["masterMounts"] if mount["name"] == volume["name"]), None)
+            if mount.get("mountPoint"):
+                volume["mount_point"] = mount["mountPoint"]
 
     def start_workers(self, worker, worker_count, configuration, provider):
         name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
@@ -252,8 +256,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if configuration.get("masterInstance"):
             instance_type = configuration["masterInstance"]
             identifier = MASTER_IDENTIFIER
-            master_mounts = configuration.get("masterMounts", [])
-            volumes = self.prepare_volumes(provider, master_mounts)
+            master_mounts_src = [master_mount["name"] for master_mount in configuration.get("masterMounts", [])]
+            volumes = self.prepare_volumes(provider, master_mounts_src)
         elif configuration.get("vpnInstance"):
             instance_type = configuration["vpnInstance"]
             identifier = VPN_WORKER_IDENTIFIER

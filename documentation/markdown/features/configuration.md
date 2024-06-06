@@ -70,17 +70,29 @@ cloudScheduling:
   sshTimeout: 4
 ```
 
-#### autoMount (optional:False)
-> **Warning:** If a volume has an obscure filesystem, this might overwrite your data!
-
-If `True` all [masterMounts](#mastermounts-optional) will be automatically mounted by BiBiGrid if possible.
-If a volume is not formatted or has an unknown filesystem, it will be formatted to `ext4`.
-Default `False`.
-
 #### masterMounts (optional:False)
 
 `masterMounts` expects a list of volumes and snapshots. Those will be attached to the master. If any snapshots are
 given, volumes are first created from them. Volumes are not deleted after Cluster termination.
+
+```yaml
+masterMounts:
+    - name: test # name of the volume to be attached
+      mountPoint: /vol/spool2 # where attached volume is to be mount to (optional)
+```
+
+`masterMounts` can be combined with [nfsshares](#nfsshares-optional).
+The following example attaches volume test to our master instance and mounts it to `/vol/spool2`.
+Then it creates an nfsshare on `/vol/spool2` allowing workers to access the volume test.
+
+```yaml
+masterMounts:
+  - name: test # name of the volume to be attached
+    mountPoint: /vol/spool2 # where attached volume is to be mount to (optional)
+
+nfsshares:
+  - /vol/spool2
+```
 
 <details>
 <summary>
