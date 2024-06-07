@@ -1,3 +1,8 @@
+- name: Install dnsmasq
+  apt:
+    name: dnsmasq
+    state: present
+
 - name: Disable and Stop systemd-resolve
   systemd:
     name: systemd-resolved
@@ -8,11 +13,6 @@
   file:
     path: /etc/resolv.conf
     state: absent
-
-- name: Install dnsmasq
-  apt:
-    name: dnsmasq
-    state: present
 
 - name: Create /etc/hosts
   template:
