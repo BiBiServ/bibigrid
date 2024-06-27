@@ -98,6 +98,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "gateway_ip": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"],
                            "on_demand": worker.get("onDemand", True),
+                           "state": "CLOUD",
                            "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
 
             worker_features = worker.get("features", [])
@@ -138,6 +139,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
+                           "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
                            "on_demand": False,
                            "partitions": master.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
             if configuration.get("wireguard_peer"):

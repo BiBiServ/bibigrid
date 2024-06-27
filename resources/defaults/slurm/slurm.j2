@@ -64,11 +64,11 @@ SlurmdDebug=info
 SlurmdLogFile=/var/log/slurm/slurmd.log
 
 # COMPUTE NODES
+# use_master_as_compute
 {% set partitions = {} %}
 {% set exclude_groups = [] %}
-{% set master_or_empty = groups.master if use_master_as_compute else [] %}
 {% set node_groups = [] %}
-{% for node_name in master_or_empty + groups.workers %}
+{% for node_name in groups.master + groups.workers %}
 {% set node = hostvars[node_name] %}
 {% if node.name not in node_groups %}
 {% if not node.on_demand %}
@@ -76,7 +76,8 @@ SlurmdLogFile=/var/log/slurm/slurmd.log
 {% endif %}
 {% set _ = node_groups.append(node.name) %}
 {% set mem = (node.flavor.ram // 1024) * 1000 %}
-NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem - [mem // 2, 16000] | min }} State={{ 'CLOUD' if node.on_demand else 'UNKNOWN' }} {{"Features=" + (node.features | join(",")) if node.features is defined }}# {{ node.cloud_identifier }}
+# {{ node }}
+NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem - [mem // 2, 16000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) if node.features is defined }}# {{ node.cloud_identifier }}
 {% for partition in node.partitions %}
 {% if partition not in partitions %}
 {% set _ = partitions.update({partition: []}) %}
