@@ -61,7 +61,7 @@ for worker_group in worker_groups:
         if terminate_worker in possible_workers:
             result = connections[worker_group["cloud_identifier"]].delete_server(terminate_worker)
         if not result:
-            logging.warning(f"Couldn't delete worker {terminate_worker}")
+            logging.warning(f"Couldn't delete worker {terminate_worker}: Server doesn't exist")
         else:
             logging.info(f"Deleted {terminate_worker}")
 
