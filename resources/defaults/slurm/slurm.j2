@@ -99,8 +99,10 @@ ResumeProgram=/opt/slurm/create.sh
 # Resume time is 15 minutes (900 seconds)
 ResumeTimeout= {{ slurm_conf.elastic_scheduling.ResumeTimeout }}
 SuspendProgram=/opt/slurm/terminate.sh
-# Suspend time is 10 minutes (600 seconds)
+# Suspend time is 15 minutes (900 seconds)
 SuspendTime= {{ slurm_conf.elastic_scheduling.SuspendTime }}
+# SuspendTimeout is 30 seconds
+SuspendTimeout={{ slurm_conf.elastic_scheduling.SuspendTimeout }}
 # Excludes {{ hostvars[groups.master.0].name }} from suspend
 SuspendExcNodes={{ exclude_groups | join(',') }}
 # Maximum number of nodes

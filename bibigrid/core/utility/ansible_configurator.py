@@ -28,8 +28,8 @@ ZABBIX_CONF = {"db": "zabbix", "db_user": "zabbix", "db_password": "zabbix", "ti
                "server_name": "bibigrid", "admin_password": "bibigrid"}
 SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "munge_key": id_generation.generate_munge_key(),
-              "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 900, "TreeWidth": 128}}
-CLOUD_SCHEDULING = {"sshTimeout": 4}
+              "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 900, "SuspendTimeout": 30, "TreeWidth": 128}}
+CLOUD_SCHEDULING = {"sshTimeout": 5}
 
 
 def delete_old_vars(log):
