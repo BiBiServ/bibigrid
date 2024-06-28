@@ -44,9 +44,9 @@ sshPublicKeyFiles:
   - /home/user/.ssh/id_ecdsa_colleague.pub
 ```
 
-#### sshTimeout (optional)
+#### sshTimeout (optional:5)
 Defines the number of attempts that BiBiGrid will try to connect to the master instance via ssh.
-Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 4.
+Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 5.
 
 #### customAnsibleCfg (optional:False)
 When False, changes in the resources/playbook/ansible.cfg are overwritten by the create action. 
@@ -58,12 +58,12 @@ When False, changes in the resources/playbook/roles/bibigrid/templates/slurm.j2 
 When True, changes are kept - even when you perform a git pull as the file is not tracked. The default can be found at
 resources/default/slurm/slurm.j2.
 
-#### cloudScheduling (optional)
-This key allows you to influence cloud scheduling. Currently, only a single key `sshTimeout` can be set here.
+#### cloudScheduling (optional:5)
+This key allows you to influence cloud scheduling. Currently, only a single key `sshTimeout` can be set here. Default is 5.
 
-##### sshTimeout (optional:4)
+##### sshTimeout (optional:5)
 Defines the number of attempts that the master will try to connect to on demand created worker instances via ssh.
-Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 4.
+Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 5.
 
 ```yaml
 cloudScheduling:
