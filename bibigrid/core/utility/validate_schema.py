@@ -15,6 +15,8 @@ master_schema = Schema(
      Optional('slurmConf'): {Optional('db'): str, Optional('db_user'): str, Optional('db_password'): str,
                              Optional('munge_key'): str, Optional('elastic_scheduling'): {Optional('SuspendTime'): int,
                                                                                           Optional(
+                                                                                              'SuspendTimeout'): int,
+                                                                                          Optional(
                                                                                               'ResumeTimeout'): int,
                                                                                           Optional('TreeWidth'): int}},
      Optional('zabbix'): bool, Optional('nfs'): bool, Optional('ide'): bool, Optional('useMasterAsCompute'): bool,
