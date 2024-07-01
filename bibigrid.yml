@@ -7,9 +7,9 @@
   cloud: openstack # name of clouds.yaml cloud-specification key (which is value to top level key clouds)
 
   # -- BEGIN: GENERAL CLUSTER INFORMATION --
-  # sshTimeout: 5 # Number of ssh connection attempts with 2^attempt seconds in between (2^sshTimeout-1 is the max time before returning with an error)
+  # sshTimeout: 5 # number of attempts to connect to instances during startup with delay in between
   # cloudScheduling:
-  #    sshTimeout: 42 # like the sshTimeout during startup but during the on demand scheduling
+  #    sshTimeout: 42 # like sshTimeout but during the on demand scheduling on the running cluster
 
   ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
   #sshPublicKeyFiles:
@@ -32,7 +32,11 @@
   #    - [...]
 
   ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
-  #useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
+  # useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
+  # gateway: # if you want to use a gateway for create.
+  # ip: # IP of gateway to use
+  # portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
+
   # deleteTmpKeypairAfter: False
   # dontUploadCredentials: False
 
@@ -45,7 +49,7 @@
 
   useMasterAsCompute: True
   
-  #waitForServices:  # existing service name that runs after an instance is launched. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
+  # waitForServices:  # existing service name that runs after an instance is launched. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
   #  - de.NBI_Bielefeld_environment.service  # uncomment for cloud site Bielefeld
 
   # master configuration
@@ -59,7 +63,7 @@
   # fallbackOnOtherImage: False # if True, most similar image by name will be picked. A regex can also be given instead.
 
   # worker configuration
-  #workerInstances:
+  # workerInstances:
   #  - type: # existing type/flavor on your cloud. See launch instance>flavor for options
   #    image: # same as master. Consider using regex to prevent image updates from breaking your running cluster
   #    count: # any number of workers you would like to create with set type, image combination
@@ -89,14 +93,15 @@
   # Depends on cloud site and project
   subnet: # existing subnet on your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/networks/
   # or network:
-  # gateway: # if you want to use a gateway for create.
-    # ip: # IP of gateway to use
-    # portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
 
   # Uncomment if no full DNS service for started instances is available.
   # Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
   #localDNSLookup: True
 
   #features: # list
+
+  # elastic_scheduling: # for large or slow clusters increasing these timeouts might be necessary to avoid failures
+  #   SuspendTimeout: 30 # after SuspendTimeout seconds, slurm allows to power up the node again
+  #   ResumeTimeout: 900 # if a node doesn't start in ResumeTimeout seconds, the start is considered failed.
 
   #- [next configurations]

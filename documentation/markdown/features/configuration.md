@@ -67,7 +67,7 @@ Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 5
 
 ```yaml
 cloudScheduling:
-  sshTimeout: 4
+  sshTimeout: 5
 ```
 
 #### masterMounts (optional:False)
@@ -150,16 +150,19 @@ If `False`, the cluster will start without the job scheduling system slurm.
 For nearly all cases the default value is what you need. Default is `True`.
 
 ##### slurmConf (optional)
-`slurmConf` contains variable fields in the `slurm.conf`. The most common use is to increase the `SuspendTime` 
-and the `ResumeTimeout` like:
+`slurmConf` contains variable fields in the `slurm.conf`. The most common use is to increase the `SuspendTime`, 
+`SuspendTimeout` and the `ResumeTimeout` like:
 
 ```yaml
 elastic_scheduling:
   SuspendTime: 1800
+  SuspendTimeout: 60
   ResumeTimeout: 1800
 ```
 
-Please only use if necessary. On Demand Scheduling improves resource availability for all users.
+Increasing the `SuspendTime` should only be done with consideration for other users. 
+On Demand Scheduling improves resource availability for all users.
+If some nodes need to be active during the entire cluster lifetime, [onDemand](#workerinstances) might be the better approach.
 
 ###### Defaults
 ```yaml
@@ -169,8 +172,9 @@ slurmConf:
     db_password: changeme
     munge_key: # automatically generated via id_generation.generate_munge_key
     elastic_scheduling:
-      SuspendTime: 900 # if a node doesn't start in SuspendTime seconds, the start is considered failed. See https://slurm.schedmd.com/slurm.conf.html#OPT_ResumeProgram
-      ResumeTimeout: 900 # if a node is not used for ResumeTimeout seconds, it will shut down  
+      SuspendTime: 900  # if a node is not used for SuspendTime seconds, it will shut down  
+      SuspendTimeout: 30 # after SuspendTimeout seconds, slurm allows to power up the powered down node again
+      ResumeTimeout: 900 # if a node doesn't start in ResumeTimeout seconds, the start is considered failed. See https://slurm.schedmd.com/slurm.conf.html#OPT_ResumeProgram
       TreeWidth: 128 # https://slurm.schedmd.com/slurm.conf.html#OPT_TreeWidth
 ```
 
@@ -254,7 +258,7 @@ workerInstance:
 - `type` sets the instance's hardware configuration.
 - `image` sets the bootable operating system to be installed on the instance.
 - `count` sets how many workers of that `type` `image` combination are in this work group
-- `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works on the master cloud for now.
+- `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works for single cloud setups for now.
 - `partitions` allow you to force Slurm to schedule to a group of nodes (partitions) ([more](https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION))
 - `features` allow you to force Slurm to schedule a job only on nodes that meet certain `bool` constraints. This can be helpful when only certain nodes can access a specific resource - like a database ([more](https://slurm.schedmd.com/slurm.conf.html#OPT_Features)).
 
