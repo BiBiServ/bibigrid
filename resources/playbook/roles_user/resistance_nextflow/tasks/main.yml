@@ -19,7 +19,15 @@
   args:
     chdir: /vol/spool/
 
+- name: Change file ownership, group and permissions
+  file:
+    path: /vol/spool/nextflow
+    owner: ubuntu
+    group: ubuntu
+    mode: '0775'
+
 - name: Execute Nextflow workflow
+  become_user: ubuntu
   shell: ./nextflow run resFinder.nf -profile slurm
   args:
     chdir: "/vol/spool"  # Change to the directory where your workflow resides
