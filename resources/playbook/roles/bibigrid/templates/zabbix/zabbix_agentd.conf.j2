@@ -98,7 +98,7 @@ LogFileSize=0
 {% if 'master' in group_names %}
 Server=127.0.0.1
 {% else %}
-Server={{ hostvars[groups.master.0].private_v4 }}
+Server={{ hostvars[groups.master.0].private_v4 }}{%if 'wireguard' in hostvars[groups.master.0] %},{{ hostvars[groups.master.0].wireguard.ip }}{% endif %}
 {% endif %}
 
 ### Option: ListenPort
