@@ -98,7 +98,7 @@ LogFileSize=0
 {% if 'master' in group_names %}
 Server=127.0.0.1
 {% else %}
-Server={{ hostvars[groups.master.0].floating_ip }}
+Server={{ hostvars[groups.master.0].private_v4 }}
 {% endif %}
 
 ### Option: ListenPort
@@ -146,7 +146,7 @@ ListenIP={{ ansible_default_ipv4.address }}
 # Default:
 # ServerActive=
 
-ServerActive={{ hostvars[groups.master.0].floating_ip }}
+ServerActive={{ hostvars[groups.master.0].private_v4 }}
 
 ### Option: Hostname
 #	Unique, case sensitive hostname.
