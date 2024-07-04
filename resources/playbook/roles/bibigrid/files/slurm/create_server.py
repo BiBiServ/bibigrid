@@ -27,7 +27,7 @@ class ImageNotFoundException(Exception):
 
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/create_server.log", level=logging.INFO)
-HOSTS_FILE_PATH = "/opt/playbook/vars/hosts.yml"
+HOSTS_FILE_PATH = "/opt/playbook/vars/hosts.yaml"
 
 logging.info("create_server.py started")
 start_time = time.time()
@@ -109,7 +109,7 @@ def start_server(worker, start_worker_group, start_data):
         except ConnectionError as exc:
             logging.warning(f"{exc}: Couldn't connect to {server.name}.")
             server_start_data["connection_exceptions"].append(server.name)
-        logging.info("Update hosts.yml")
+        logging.info("Update hosts.yaml")
         update_hosts(server.name, server.private_v4)
 
     except OpenStackCloudException as exc:
@@ -148,13 +148,13 @@ def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", usernam
 
 def update_hosts(name, ip):  # pylint: disable=invalid-name
     """
-    Update hosts.yml
+    Update hosts.yaml
     @param name: hostname
     @param ip: ibibigrid-worker0-3k1eeysgetmg4vb-3p address
     @return:
     """
-    logging.info("Updating hosts.yml")
-    with FileLock("hosts.yml.lock"):
+    logging.info("Updating hosts.yaml")
+    with FileLock("hosts.yaml.lock"):
         logging.info("Lock acquired")
         with open(HOSTS_FILE_PATH, mode="r", encoding="utf-8") as hosts_file:
             hosts = yaml.safe_load(hosts_file)
@@ -166,7 +166,7 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
         logging.info(f"Added host {name} with ip {hosts['host_entries'][name]}")
         with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
             yaml.dump(hosts, hosts_file)
-    logging.info("Wrote hosts file. Released hosts.yml.lock.")
+    logging.info("Wrote hosts file. Released hosts.yaml.lock.")
 
 
 def configure_dns():
@@ -175,7 +175,7 @@ def configure_dns():
     @return:
     """
     logging.info("configure_dns")
-    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', "master", "-t", "dns"]
+    cmdline_args = ["/opt/playbook/site.yaml", '-i', '/opt/playbook/ansible_hosts', '-l', "master", "-t", "dns"]
     return _run_playbook(cmdline_args)
 
 
@@ -186,7 +186,7 @@ def configure_worker(instances):
     @return:
     """
     logging.info("configure_worker \nworker: %s", instances)
-    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', instances]
+    cmdline_args = ["/opt/playbook/site.yaml", '-i', '/opt/playbook/ansible_hosts', '-l', instances]
     return _run_playbook(cmdline_args)
 
 
@@ -212,7 +212,7 @@ server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "c
 GROUP_VARS_PATH = "/opt/playbook/group_vars"
 worker_groups = []
 for filename in os.listdir(GROUP_VARS_PATH):
-    if filename != "master.yml":
+    if filename != "master.yaml":
         worker_group_yaml_file = os.path.join(GROUP_VARS_PATH, filename)
         # checking if it is a file
         if os.path.isfile(worker_group_yaml_file):
@@ -220,7 +220,7 @@ for filename in os.listdir(GROUP_VARS_PATH):
                 worker_groups.append(yaml.safe_load(worker_group_yaml))
 
 # read common configuration
-with open("/opt/playbook/vars/common_configuration.yml", mode="r", encoding="utf-8") as common_configuration_file:
+with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="utf-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
 logging.info(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['sshTimeout']}")
 # read clouds.yaml

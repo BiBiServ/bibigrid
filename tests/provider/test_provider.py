@@ -72,7 +72,7 @@ KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwB
 
 CONFIGURATIONS = configuration_handler.read_configuration(logging,
                                                           os.path.join(bP.ROOT_PATH,
-                                                                       "resources/tests/bibigrid_test.yml"))
+                                                                       "resources/tests/bibigrid_test.yaml"))
 PROVIDERS = provider_handler.get_providers(CONFIGURATIONS, logging)
 
 

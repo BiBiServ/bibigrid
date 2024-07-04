@@ -5,12 +5,12 @@
 # variable resources
 resources/playbook/ansible.cfg
 resources/playbook/roles/bibigrid/templates/slurm/slurm.j2
-resources/playbook/site.yml
+resources/playbook/site.yaml
 resources/playbook/ansible_hosts
 resources/playbook/vars/
 resources/playbook/host_vars/
 resources/playbook/group_vars/
-resources/tests/bibigrid_test.yml
+resources/tests/bibigrid_test.yaml
 
 # Roles
 resources/playbook/roles_galaxy/*

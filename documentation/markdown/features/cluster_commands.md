@@ -8,7 +8,7 @@ Similar to `sinfo` but shows detailed information regarding node features.
 Thereby, it helps you with understanding any worker startup issues.
 
 ## [bibiplay](../../../resources/bin/bibiplay)
-`bibiplay` is mainly a shortcut for `ansible-playbook /opt/playbook/site.yml -i /opt/playbook/ansible_hosts`
+`bibiplay` is mainly a shortcut for `ansible-playbook /opt/playbook/site.yaml -i /opt/playbook/ansible_hosts`
 which allows you to execute the ansible playbook more easily.
 
 ### Examples

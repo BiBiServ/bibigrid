@@ -96,12 +96,12 @@ JobSubmitPlugins=all_partitions
 
 # POWER  /ELASTIC SCHEDULING
 ResumeProgram=/opt/slurm/create.sh
-# Resume time is 15 minutes (900 seconds)
+# Resume time's default is 20 minutes (1200 seconds)
 ResumeTimeout= {{ slurm_conf.elastic_scheduling.ResumeTimeout }}
 SuspendProgram=/opt/slurm/terminate.sh
-# Suspend time is 15 minutes (900 seconds)
+# Suspend time's default is 1 hour (3600 seconds)
 SuspendTime= {{ slurm_conf.elastic_scheduling.SuspendTime }}
-# SuspendTimeout is 30 seconds
+# SuspendTimeout's default is 30 seconds
 SuspendTimeout={{ slurm_conf.elastic_scheduling.SuspendTimeout }}
 # Excludes {{ hostvars[groups.master.0].name }} from suspend
 SuspendExcNodes={{ exclude_groups | join(',') }}

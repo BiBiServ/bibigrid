@@ -15,6 +15,6 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
       - name: ansible_lint
-        run: ansible-lint resources/playbook/roles/bibigrid/tasks/main.yml
+        run: ansible-lint resources/playbook/roles/bibigrid/tasks/main.yaml
       - name: pylint_lint
         run: pylint bibigrid

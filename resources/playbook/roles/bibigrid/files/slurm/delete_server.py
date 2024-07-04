@@ -33,7 +33,7 @@ logging.info("Deleting instances %s", terminate_workers)
 GROUP_VARS_PATH = "/opt/playbook/group_vars"
 worker_groups = []
 for filename in os.listdir(GROUP_VARS_PATH):
-    if filename != "master.yml":
+    if filename != "master.yaml":
         f = os.path.join(GROUP_VARS_PATH, filename)
         # checking if it is a file
         if os.path.isfile(f):
@@ -41,7 +41,7 @@ for filename in os.listdir(GROUP_VARS_PATH):
                 worker_groups.append(yaml.safe_load(worker_group))
 
 # read common configuration
-with open("/opt/playbook/vars/common_configuration.yml", mode="r", encoding="utf-8") as common_configuration_file:
+with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="utf-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
 
 # read clouds.yaml

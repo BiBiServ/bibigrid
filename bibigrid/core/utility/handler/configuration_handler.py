@@ -16,7 +16,7 @@ CLOUDS_PUBLIC_NAME_KEY = "profile"
 CLOUD_CONFIGURATION_KEY = "cloud"
 
 
-def read_configuration(log, path="bibigrid.yml", configuration_list=True):
+def read_configuration(log, path, configuration_list=True):
     """
     Reads yaml from file and returns configuration
     @param log:
@@ -143,7 +143,7 @@ def get_cloud_specifications(configurations, log):
     @return: list of dicts: cloud_specifications of every configuration
     """
     clouds, clouds_public = get_clouds_files(log)
-    log.debug("Loaded clouds.yml and clouds_public.yml")
+    log.debug("Loaded clouds.yaml and clouds_public.yaml")
     cloud_specifications = []
     if isinstance(clouds, dict):
         for configuration in configurations:

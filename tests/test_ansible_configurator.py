@@ -20,79 +20,79 @@ class TestAnsibleConfigurator(TestCase):
     def test_generate_site_file_yaml_empty(self):
         site_yaml = [{'become': 'yes', 'hosts': 'master',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']},
                      {'become': 'yes', 'hosts': 'vpngtw',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']},
                      {'become': 'yes', 'hosts': 'workers',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']}]
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']}]
         self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml([]))
 
     def test_generate_site_file_yaml_master_role(self):
         user_roles = [{'hosts': ['master'], 'roles': [{'name': 'resistance_nextflow', 'tags': ['rn']}]}]
-        # vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
+        # vars_files = ['vars/login.yaml', 'vars/common_configuration.yaml', 'varsFile']
         site_yaml = [{'become': 'yes', 'hosts': 'master',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']},
                                 {'role': 'resistance_nextflow', 'tags': ['rn']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']},
                      {'become': 'yes', 'hosts': 'vpngtw',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']},
                      {'become': 'yes', 'hosts': 'workers',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']}]
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']}]
         self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml(user_roles))
 
     def test_generate_site_file_yaml_vpngtw_role(self):
         user_roles = [{'hosts': ['vpngtw'], 'roles': [{'name': 'resistance_nextflow'}], 'varsFiles': ['vars/rn']}]
-        # vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
+        # vars_files = ['vars/login.yaml', 'vars/common_configuration.yaml', 'varsFile']
         site_yaml = [{'become': 'yes', 'hosts': 'master',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']},
                      {'become': 'yes', 'hosts': 'vpngtw',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']},
                                 {'role': 'resistance_nextflow', 'tags': []}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'vars/rn']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml', 'vars/rn']},
                      {'become': 'yes', 'hosts': 'workers',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']}]
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']}]
         self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml(user_roles))
 
     def test_generate_site_file_yaml_workers_role(self):
         user_roles = [{'hosts': ['workers'], 'roles': [{'name': 'resistance_nextflow'}]}]
-        # vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
+        # vars_files = ['vars/login.yaml', 'vars/common_configuration.yaml', 'varsFile']
         site_yaml = [{'become': 'yes', 'hosts': 'master',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']},
                      {'become': 'yes', 'hosts': 'vpngtw',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']},
                      {'become': 'yes', 'hosts': 'workers',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']},
                                 {'role': 'resistance_nextflow', 'tags': []}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml']}]
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml']}]
         self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml(user_roles))
 
     def test_generate_site_file_yaml_all_role(self):
         user_roles = [
             {'hosts': ['master', 'vpngtw', 'workers'], 'roles': [{'name': 'resistance_nextflow', 'tags': ['rn']}],
              'varsFiles': ['vars/rn']}]
-        # vars_files = ['vars/login.yml', 'vars/common_configuration.yml', 'varsFile']
+        # vars_files = ['vars/login.yaml', 'vars/common_configuration.yaml', 'varsFile']
         site_yaml = [{'become': 'yes', 'hosts': 'master',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-master']},
                                 {'role': 'resistance_nextflow', 'tags': ['rn']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'vars/rn']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml', 'vars/rn']},
                      {'become': 'yes', 'hosts': 'vpngtw',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-vpngtw']},
                                 {'role': 'resistance_nextflow', 'tags': ['rn']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'vars/rn']},
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml', 'vars/rn']},
                      {'become': 'yes', 'hosts': 'workers',
                       'roles': [{'role': 'bibigrid', 'tags': ['bibigrid', 'bibigrid-worker']},
                                 {'role': 'resistance_nextflow', 'tags': ['rn']}],
-                      'vars_files': ['vars/common_configuration.yml', 'vars/hosts.yml', 'vars/rn']}]
+                      'vars_files': ['vars/common_configuration.yaml', 'vars/hosts.yaml', 'vars/rn']}]
         self.assertEqual(site_yaml, ansible_configurator.generate_site_file_yaml(user_roles))
-        
+
     def test_generate_common_configuration_false(self):
         cidrs = "42"
         cluster_id = "21"
@@ -351,8 +351,8 @@ class TestAnsibleConfigurator(TestCase):
     @patch("bibigrid.core.utility.ansible_configurator.generate_site_file_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.get_cidrs")
-    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list,
-                                    mock_common, mock_worker, mock_write):
+    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list, mock_common,
+                                    mock_worker, mock_write):
         mock_cidrs.return_value = 421
         mock_list.return_value = {2: 422}
         provider = MagicMock()

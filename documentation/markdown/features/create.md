@@ -65,7 +65,7 @@ The [playbook](../../../resources/playbook) and [bin](../../../resources/bin) is
 
 The playbook is executed. Read more about the exact steps of execution [here](bibigrid_ansible_playbook.md).
 
-## Prints Cluster Information
+## Logs Cluster Information
 
 At the end the cluster information is printed:
 - cluster id
@@ -76,12 +76,12 @@ At the end the cluster information is printed:
 - How to connect via IDE Port Forwarding (only if [ide](configuration.md#ide-optional))
 - Duration
 
-### Print Example
+### Log Example
 ```
 Cluster myclusterid with master 123.45.67.89 up and running!
 SSH: ssh -i '/home/user/.config/bibigrid/keys/tempKey_bibi-myclusterid' ubuntu@123.45.67.89
-Terminate cluster: ./bibigrid.sh -i '/home/xaver/.config/bibigrid/hybrid.yml' -t -cid myclusterid
-Detailed cluster info: ./bibigrid.sh -i '/home/xaver/.config/bibigrid/hybrid.yml' -l -cid myclusterid
-IDE Port Forwarding: ./bibigrid.sh -i '/home/xaver/.config/bibigrid/hybrid.yml' -ide -cid myclusterid
+Terminate cluster: ./bibigrid.sh -i '/home/xaver/.config/bibigrid/hybrid.yaml' -t -cid myclusterid
+Detailed cluster info: ./bibigrid.sh -i '/home/xaver/.config/bibigrid/hybrid.yaml' -l -cid myclusterid
+IDE Port Forwarding: ./bibigrid.sh -i '/home/xaver/.config/bibigrid/hybrid.yaml' -ide -cid myclusterid
 --- 12 minutes and 0.9236352443695068 seconds ---
 ```

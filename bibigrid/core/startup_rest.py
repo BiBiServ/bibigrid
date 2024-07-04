@@ -332,7 +332,7 @@ client = TestClient(app)
 
 
 def test_validate():
-    with open('test.yml', 'rb') as file:
+    with open('test.yaml', 'rb') as file:
         response = client.post("/bibigrid/validate", files={"config_file": file})
     assert response.status_code == 200
     response_data = response.json()
@@ -341,7 +341,7 @@ def test_validate():
 
 
 def test_create():
-    with open('test.yml', 'rb') as file:
+    with open('test.yaml', 'rb') as file:
         response = client.post("/bibigrid/create", files={"config_file": file})
     assert response.status_code == 200
     response_data = response.json()
@@ -349,7 +349,7 @@ def test_create():
 
 
 def test_terminate_cluster():
-    with open('test.yml', 'rb') as file:
+    with open('test.yaml', 'rb') as file:
         response = client.post("/bibigrid/terminate", params={"cluster_id": "2uiy5ka2c5y1k8o"},
                                files={"config_file": file})
     assert response.status_code == 200

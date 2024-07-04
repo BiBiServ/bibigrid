@@ -35,7 +35,7 @@ By mounting a volume into a shared directory, volumes can be shared.
 
 Let's assume our configuration holds (among others) the keys:
 
-```yml
+```yaml
 nfs: True
 masterMounts:
   - testMount

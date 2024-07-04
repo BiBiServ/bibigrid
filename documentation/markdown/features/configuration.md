@@ -3,10 +3,10 @@
 > **Note**
 > 
 > First take a look at our [Hands-On BiBiGrid Tutorial](https://github.com/deNBI/bibigrid_clum2022) and our 
-> example [bibigrid.yml](../../../bibigrid.yml).
+> example [bibigrid.yaml](../../../bibigrid.yaml).
 > This documentation is no replacement for those, but provides greater detail - too much detail for first time users.
 
-The configuration file (often called `bibigrid.yml`) contains important information about cluster creation.
+The configuration file (often called `bibigrid.yaml`) contains important information about cluster creation.
 The cluster configuration holds a list of configurations where each configuration has a specific 
 cloud (location) and infrastructure (e.g. OpenStack). For single-cloud use cases you just need a single configuration.
 However, you can use additional configurations to set up a multi-cloud.
@@ -167,7 +167,7 @@ If some nodes need to be active during the entire cluster lifetime, [onDemand](#
 ###### Defaults
 ```yaml
 slurmConf:
-    db: slurm # see task 042-slurm-server.yml
+    db: slurm # see task 042-slurm-server.yaml
     db_user: slurm
     db_password: changeme
     munge_key: # automatically generated via id_generation.generate_munge_key

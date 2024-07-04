@@ -1,5 +1,5 @@
 """
-Handles the schema validation for BiBiGrid's configuration yml.
+Handles the schema validation for BiBiGrid's configuration yaml.
 """
 
 from schema import Schema, Optional, Or, SchemaError

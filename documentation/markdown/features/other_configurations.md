@@ -6,10 +6,10 @@ For that purpose we store defaults in `resources/defaults` and on the first run 
 That way you can make changes and if something doesn't work, you can just delete the configuration to go back to our
 default one.
 
-## slurm.cfg
+## slurm.j2
 The `slurm.j2` is not a static configuration file, but instead a [jinja](https://jinja.palletsprojects.com/en/3.1.x/) template for the actual configuration that is
 generated during runtime. That is necessary because it contains the actual instance names that are only known at runtime.
-The jinja template is converted to the actual configuration by ansible in the `042-slurm.yml` task.
+The jinja template is converted to the actual configuration by ansible in the `042-slurm.yaml` task.
 
 The `slurm.j2` also takes certain information from your BiBiGrid configuration (see [slurmConf](configuration.md#slurmconf-optional)).
 

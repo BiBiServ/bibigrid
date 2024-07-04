@@ -20,7 +20,7 @@ class TestValidateSchema(TestCase):
     """
 
     def test_validate_configurations(self):
-        for bibigrid_configuration_name in glob.iglob(f'{TEST_CONFIGURATION_DIRECTORY}/*.yml'):
+        for bibigrid_configuration_name in glob.iglob(f'{TEST_CONFIGURATION_DIRECTORY}/*.yaml'):
             with open(bibigrid_configuration_name, mode="r", encoding="utf-8") as config_file:
                 config_yaml = yaml.safe_load(config_file)
                 for cloud_config in config_yaml:

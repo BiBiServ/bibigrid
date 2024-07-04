@@ -30,7 +30,7 @@ WAIT_READY = ('while sudo lsof /var/lib/dpkg/lock 2> null; do echo "/var/lib/dpk
 #     'else echo"Ansible hosts not reachable. There seems to be a misconfiguration."; fi',"Check for ")
 
 # Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
-# GALAXY = f"ansible-galaxy install --roles-path {aRP.ADDITIONAL_ROLES_ROOT_PATH_REMOTE} -r {aRP.REQUIREMENTS_YML}"
+# GALAXY = f"ansible-galaxy install --roles-path {aRP.ADDITIONAL_ROLES_ROOT_PATH_REMOTE} -r {aRP.REQUIREMENTS_YAML}"
 
 # Extract ansible roles from files (.tar.gz, .tgz)
 # EXTRACT = f"for f in $(find /tmp/roles -type f -regex '.*\\.t\\(ar\\.\\)?gz'); " \
@@ -49,7 +49,7 @@ PLAYBOOK_HOME_RIGHTS = ("uid=$(id -u); gid=$(id -g); sudo chown ${uid}:${gid} /o
                         "Adjust playbook home permission.")
 MV_ANSIBLE_CONFIG = (
     "sudo install -D /opt/playbook/ansible.cfg /etc/ansible/ansible.cfg", "Move ansible configuration.")
-EXECUTE = (f"ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE_YML)} -i "
+EXECUTE = (f"ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE_YAML)} -i "
            f"{os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.ANSIBLE_HOSTS)} -l {{}}",
            "Execute ansible playbook. Be patient.")
 
