@@ -28,7 +28,8 @@ ZABBIX_CONF = {"db": "zabbix", "db_user": "zabbix", "db_password": "zabbix", "ti
                "server_name": "bibigrid", "admin_password": "bibigrid"}
 SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "munge_key": id_generation.generate_munge_key(),
-              "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 900, "SuspendTimeout": 30, "TreeWidth": 128}}
+              "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 1200, "SuspendTimeout": 30,
+                                     "TreeWidth": 128}}
 CLOUD_SCHEDULING = {"sshTimeout": 5}
 
 
@@ -54,8 +55,7 @@ def generate_site_file_yaml(user_roles):
     @param user_roles: userRoles given by the config
     @return: site_yaml (dict)
     """
-    site_yaml = [{'hosts': 'master', "become": "yes",
-                  "vars_files": VARS_FILES, "roles": MASTER_ROLES},
+    site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
                  {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": VPNGTW_ROLES},
                  {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]
     for user_role in user_roles:
@@ -97,8 +97,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"],
-                           "on_demand": worker.get("onDemand", True),
-                           "state": "CLOUD",
+                           "on_demand": worker.get("onDemand", True), "state": "CLOUD",
                            "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
 
             worker_features = worker.get("features", [])
@@ -109,7 +108,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                 worker_dict["features"] = features
 
             pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict, log)
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
@@ -128,7 +127,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             if configuration.get("wireguard_peer"):
                 vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
             pass_through(configuration, vpngtw_dict, "waitForServices", "wait_for_services")
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpngtw_dict, log)
+            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), vpngtw_dict, log)
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
@@ -145,7 +144,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
             pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict, log)
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yaml"), master_dict, log)
 
 
 def pass_through(dict_from, dict_to, key_from, key_to=None):
@@ -176,10 +175,8 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     """
     master_configuration = configurations[0]
     log.info("Generating common configuration file...")
-    common_configuration_yaml = {"bibigrid_version": __version__,
-                                 "cluster_id": cluster_id,
-                                 "cluster_cidrs": cidrs, "default_user": default_user,
-                                 "local_fs": master_configuration.get("localFS", False),
+    common_configuration_yaml = {"bibigrid_version": __version__, "cluster_id": cluster_id, "cluster_cidrs": cidrs,
+                                 "default_user": default_user, "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
                                  "dns_server_list": master_configuration.get("dns_server_list", ["8.8.8.8"]),
@@ -197,8 +194,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     if master_configuration.get("nfs"):
         nfs_shares = master_configuration.get("nfsShares", [])
         nfs_shares = nfs_shares + DEFAULT_NFS_SHARES
-        common_configuration_yaml["nfs_mounts"] = [{"src": nfs_share, "dst": nfs_share} for nfs_share in
-                                                   nfs_shares]
+        common_configuration_yaml["nfs_mounts"] = [{"src": nfs_share, "dst": nfs_share} for nfs_share in nfs_shares]
         common_configuration_yaml["ext_nfs_mounts"] = [{"src": ext_nfs_share, "dst": ext_nfs_share} for ext_nfs_share in
                                                        (master_configuration.get("extNfsShares", []))]
 
