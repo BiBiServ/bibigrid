@@ -99,9 +99,8 @@ class TestAnsibleConfigurator(TestCase):
         default_user = "ubuntu"
         ssh_user = "test"
         configuration = [{}]
-        common_configuration_yaml = {'auto_mount': False, 'bibigrid_version': version.__version__,
-                                     'cloud_scheduling': {'sshTimeout': 4}, 'cluster_cidrs': cidrs,
-                                     'cluster_id': cluster_id, 'default_user': default_user,
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+                                     'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': False,
                                      'enable_slurm': False, 'enable_zabbix': False, 'local_dns_lookup': False,
                                      'local_fs': False, 'slurm': True,
@@ -125,9 +124,8 @@ class TestAnsibleConfigurator(TestCase):
         ssh_user = "test"
         configuration = [
             {elem: "True" for elem in ["localFS", "localDNSlookup", "useMasterAsCompute", "slurm", "zabbix", "ide"]}]
-        common_configuration_yaml = {'auto_mount': False, 'bibigrid_version': version.__version__,
-                                     'cloud_scheduling': {'sshTimeout': 4}, 'cluster_cidrs': cidrs,
-                                     'cluster_id': cluster_id, 'default_user': default_user,
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+                                     'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': 'True', 'enable_nfs': False,
                                      'enable_slurm': 'True', 'enable_zabbix': 'True',
                                      'ide_conf': {'build': False, 'ide': False, 'port_end': 8383, 'port_start': 8181,
@@ -154,9 +152,8 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'auto_mount': False, 'bibigrid_version': version.__version__,
-                                     'cloud_scheduling': {'sshTimeout': 4}, 'cluster_cidrs': cidrs,
-                                     'cluster_id': cluster_id, 'default_user': default_user,
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+                                     'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False, 'ext_nfs_mounts': [],
                                      'local_dns_lookup': False, 'local_fs': False,
@@ -180,9 +177,8 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'auto_mount': False, 'bibigrid_version': version.__version__,
-                                     'cloud_scheduling': {'sshTimeout': 4}, 'cluster_cidrs': cidrs,
-                                     'cluster_id': cluster_id, 'default_user': default_user,
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+                                     'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False, 'ext_nfs_mounts': [],
                                      'local_dns_lookup': False, 'local_fs': False,
@@ -205,9 +201,8 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'auto_mount': False, 'bibigrid_version': version.__version__,
-                                     'cloud_scheduling': {'sshTimeout': 4}, 'cluster_cidrs': cidrs,
-                                     'cluster_id': cluster_id, 'default_user': default_user,
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+                                     'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False,
                                      'ext_nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'}],
@@ -231,9 +226,8 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'auto_mount': False, 'bibigrid_version': version.__version__,
-                                     'cloud_scheduling': {'sshTimeout': 4}, 'cluster_cidrs': cidrs,
-                                     'cluster_id': cluster_id, 'default_user': default_user,
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+                                     'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': 'Some1', 'enable_nfs': False,
                                      'enable_slurm': False, 'enable_zabbix': False,
                                      'ide_conf': {'build': False, 'ide': False, 'key1': 'Some2', 'port_end': 8383,
