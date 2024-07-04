@@ -101,7 +101,7 @@
   #features: # list
 
   # elastic_scheduling: # for large or slow clusters increasing these timeouts might be necessary to avoid failures
-  #   SuspendTimeout: 30 # after SuspendTimeout seconds, slurm allows to power up the node again
+  #   SuspendTimeout: 60 # after SuspendTimeout seconds, slurm allows to power up the node again
   #   ResumeTimeout: 1200 # if a node doesn't start in ResumeTimeout seconds, the start is considered failed.
 
   #- [next configurations]

@@ -123,7 +123,7 @@ class TestCreate(TestCase):
                     'username': creator.ssh_user,
                     'commands': creator.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP,
                     'filepaths': [(create.KEY_FOLDER + creator.key_name, '.ssh/id_ecdsa')],
-                    'gateway': {}, 'timeout': 4}
+                    'gateway': {}, 'timeout': 5}
         mock_execute_ssh.assert_called_with(ssh_data, startup.LOG)
 
     def test_prepare_volumes_none(self):
@@ -211,7 +211,7 @@ class TestCreate(TestCase):
                     'username': creator.ssh_user,
                     'commands': [mock_ac_ssh()] + ssh_handler.ANSIBLE_START,
                     'filepaths': create.FILEPATHS,
-                    'gateway': {}, 'timeout': 4}
+                    'gateway': {}, 'timeout': 5}
         mock_execute_ssh.assert_called_with(ssh_data=ssh_data, log=startup.LOG)
 
     @patch.object(create.Create, "generate_keypair")

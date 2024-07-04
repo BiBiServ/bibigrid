@@ -28,7 +28,7 @@ ZABBIX_CONF = {"db": "zabbix", "db_user": "zabbix", "db_password": "zabbix", "ti
                "server_name": "bibigrid", "admin_password": "bibigrid"}
 SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "munge_key": id_generation.generate_munge_key(),
-              "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 1200, "SuspendTimeout": 30,
+              "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 1200, "SuspendTimeout": 60,
                                      "TreeWidth": 128}}
 CLOUD_SCHEDULING = {"sshTimeout": 5}
 

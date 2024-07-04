@@ -101,7 +101,7 @@ ResumeTimeout= {{ slurm_conf.elastic_scheduling.ResumeTimeout }}
 SuspendProgram=/opt/slurm/terminate.sh
 # Suspend time's default is 1 hour (3600 seconds)
 SuspendTime= {{ slurm_conf.elastic_scheduling.SuspendTime }}
-# SuspendTimeout's default is 30 seconds
+# SuspendTimeout's default is 90 seconds
 SuspendTimeout={{ slurm_conf.elastic_scheduling.SuspendTimeout }}
 # Excludes {{ hostvars[groups.master.0].name }} from suspend
 SuspendExcNodes={{ exclude_groups | join(',') }}

@@ -156,7 +156,7 @@ For nearly all cases the default value is what you need. Default is `True`.
 ```yaml
 elastic_scheduling:
   SuspendTime: 1800
-  SuspendTimeout: 60
+  SuspendTimeout: 90
   ResumeTimeout: 1800
 ```
 
@@ -173,7 +173,7 @@ slurmConf:
     munge_key: # automatically generated via id_generation.generate_munge_key
     elastic_scheduling:
       SuspendTime: 900  # if a node is not used for SuspendTime seconds, it will shut down  
-      SuspendTimeout: 30 # after SuspendTimeout seconds, slurm allows to power up the powered down node again
+      SuspendTimeout: 60 # after SuspendTimeout seconds, slurm allows to power up the powered down node again
       ResumeTimeout: 900 # if a node doesn't start in ResumeTimeout seconds, the start is considered failed. See https://slurm.schedmd.com/slurm.conf.html#OPT_ResumeProgram
       TreeWidth: 128 # https://slurm.schedmd.com/slurm.conf.html#OPT_TreeWidth
 ```

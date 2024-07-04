@@ -99,14 +99,14 @@ class TestAnsibleConfigurator(TestCase):
         default_user = "ubuntu"
         ssh_user = "test"
         configuration = [{}]
-        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': False,
                                      'enable_slurm': False, 'enable_zabbix': False, 'local_dns_lookup': False,
                                      'local_fs': False, 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
-                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
-                                                                           'TreeWidth': 128},
+                                                    'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
+                                                                           'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': True}
         generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
@@ -124,7 +124,7 @@ class TestAnsibleConfigurator(TestCase):
         ssh_user = "test"
         configuration = [
             {elem: "True" for elem in ["localFS", "localDNSlookup", "useMasterAsCompute", "slurm", "zabbix", "ide"]}]
-        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': 'True', 'enable_nfs': False,
                                      'enable_slurm': 'True', 'enable_zabbix': 'True',
@@ -132,8 +132,8 @@ class TestAnsibleConfigurator(TestCase):
                                                   'workspace': '${HOME}'}, 'local_dns_lookup': 'True',
                                      'local_fs': 'True', 'slurm': 'True',
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
-                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
-                                                                           'TreeWidth': 128},
+                                                    'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
+                                                                           'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': 'True',
                                      'zabbix_conf': {'admin_password': 'bibigrid', 'db': 'zabbix',
@@ -152,16 +152,16 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False, 'ext_nfs_mounts': [],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '//vil/mil', 'src': '//vil/mil'},
-                                                    {'dst': '//vol/spool', 'src': '//vol/spool'}], 'slurm': True,
+                                     'nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'},
+                                                    {'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
-                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
-                                                                           'TreeWidth': 128},
+                                                    'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
+                                                                           'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': True}
         generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
@@ -177,15 +177,15 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False, 'ext_nfs_mounts': [],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '//vol/spool', 'src': '//vol/spool'}], 'slurm': True,
+                                     'nfs_mounts': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
-                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
-                                                                           'TreeWidth': 128},
+                                                    'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
+                                                                           'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': True}
         generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
@@ -201,16 +201,16 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False,
                                      'ext_nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'}],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '//vol/spool', 'src': '//vol/spool'}], 'slurm': True,
+                                     'nfs_mounts': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
-                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
-                                                                           'TreeWidth': 128},
+                                                    'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
+                                                                           'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'YryJVnqgg24Ksf8zXQtbct3nuXrMSi9N'},
                                      'ssh_user': ssh_user, 'use_master_as_compute': True}
         generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
@@ -226,7 +226,7 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 4},
+        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': 'Some1', 'enable_nfs': False,
                                      'enable_slurm': False, 'enable_zabbix': False,
@@ -234,8 +234,8 @@ class TestAnsibleConfigurator(TestCase):
                                                   'port_start': 8181, 'workspace': '${HOME}'},
                                      'local_dns_lookup': False, 'local_fs': False, 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
-                                                    'elastic_scheduling': {'ResumeTimeout': 900, 'SuspendTime': 3600,
-                                                                           'TreeWidth': 128},
+                                                    'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
+                                                                           'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'b7nks3Ur3kanyPAEBxfSC9ypfSHFnWJL'},
                                      'ssh_user': ssh_user, 'use_master_as_compute': True}
         generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
