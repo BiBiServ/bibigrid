@@ -156,6 +156,7 @@
       - filelock
       - paramiko
       - ansible-runner
+      - pyzabbix
 
 - name: 'Add default user to ansible group'
   user:

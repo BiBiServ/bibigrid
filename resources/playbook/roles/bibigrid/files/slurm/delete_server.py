@@ -14,6 +14,8 @@ import time
 import os_client_config
 import yaml
 
+from pyzabbix import ZabbixAPI
+
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/delete_server.log", level=logging.INFO)
 
@@ -23,11 +25,15 @@ start_time = time.time()
 logging.info(f"Terminate parameter: {sys.argv[1]}")
 
 if len(sys.argv) < 2:
-    logging.warning("usage:  $0 instance1_name[,instance2_name,...]")
+    logging.warning("usage:  $0 instance1_name[(,\\n)instance2_name,...]")
     logging.info("Your input %s with length %s", sys.argv, len(sys.argv))
     sys.exit(1)
 
-terminate_workers = sys.argv[1].split("\n")
+separator = ','
+if '\n' in sys.argv[1]:
+    separator = '\n'
+
+terminate_workers = sys.argv[1].split(separator)
 logging.info("Deleting instances %s", terminate_workers)
 
 GROUP_VARS_PATH = "/opt/playbook/group_vars"
@@ -64,6 +70,25 @@ for worker_group in worker_groups:
             logging.warning(f"Couldn't delete worker {terminate_worker}: Server doesn't exist")
         else:
             logging.info(f"Deleted {terminate_worker}")
+
+# -------------------------------
+# Remove hosts from Zabbix
+# -------------------------------
+
+# connect to Zabbix API
+zapi = ZabbixAPI(server='http://localhost/zabbix')
+# authenticate
+zapi.login("Admin",common_config["zabbix_conf"]["admin_password"])
+# iterate over terminate_workers list
+for terminate_worker in terminate_workers:
+    # get list of hosts that matches the hostname
+    hosts = zapi.host.get(output=["hostid","name"],filter={"name": terminate_worker})
+    if not hosts:
+        logging.warning(f"Can't remove host '{terminate_worker}' from Zabbix: Host doesn't exist.")
+    else:
+        # remove host from Zabbix
+        zapi.host.delete(hosts[0]["hostid"])
+        logging.info(f"Remove host '{terminate_worker}' from Zabbix.")
 
 logging.info(f"Successful delete_server.py execution ({sys.argv[1]})!")
 time_in_s = time.time() - start_time
