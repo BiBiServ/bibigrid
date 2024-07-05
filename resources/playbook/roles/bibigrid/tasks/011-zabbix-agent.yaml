@@ -5,7 +5,7 @@
     comment: "Zabbix Monitoring User"
     home: /var/lib/zabbix
     shell: /usr/sbin/nologin
-    createhome: no
+    create_home: false
 
 - name: Create zabbix_agent dropin directory
   file:
