@@ -1,18 +1,11 @@
-- name: Install zabbix python-api
-  pip:
-    name: zabbix-api
-
-- name: Install zabbix agent
-  apt:
-    name: zabbix-agent
-    state: present
-  when: "ansible_distribution_file_variety == 'Debian'"
-
-- name: Install zabbix agent
-  dnf:
-    name: zabbix-agent
-    state: present
-  when: "ansible_distribution_file_variety == 'RedHat'"
+- name: Ensure zabbix user exists
+  when: "'master' not in group_names"
+  user:
+    name: zabbix
+    comment: "Zabbix Monitoring User"
+    home: /var/lib/zabbix
+    shell: /usr/sbin/nologin
+    createhome: no
 
 - name: Create zabbix_agent dropin directory
   file:
@@ -35,21 +28,33 @@
     mode: 0644
   notify: zabbix-agent
 
-- name: Start and Enable zabbix-agent
-  systemd:
-    name: zabbix-agent
-    state: started
-    enabled: true
-
-- name: Install zabbix python-api
-  pip:
-    name: zabbix-api
-
 - name: Copy Zabbix Host delete script
   copy:
     src: zabbix/zabbix_host_delete.py
     dest: /usr/local/bin/zabbix_host_delete.py
     mode: 0755
+
+- name: Install zabbix python-api
+  pip:
+    name: zabbix-api
+
+- name: Install zabbix agent
+  apt:
+    name: zabbix-agent
+    state: present
+  when: "ansible_distribution_file_variety == 'Debian'"
+
+- name: Install zabbix agent
+  dnf:
+    name: zabbix-agent
+    state: present
+  when: "ansible_distribution_file_variety == 'RedHat'"
+
+- name: Start and Enable zabbix-agent
+  systemd:
+    name: zabbix-agent
+    state: started
+    enabled: true
 
 # --------------------------------------
 # -- Add worker node as zabbix hosts --

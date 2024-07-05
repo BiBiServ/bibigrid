@@ -12,9 +12,9 @@ import sys
 import time
 
 import os_client_config
+import requests
 import yaml
-
-from pyzabbix import ZabbixAPI
+from pyzabbix import ZabbixAPI, ZabbixAPIException
 
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/delete_server.log", level=logging.INFO)
@@ -29,11 +29,11 @@ if len(sys.argv) < 2:
     logging.info("Your input %s with length %s", sys.argv, len(sys.argv))
     sys.exit(1)
 
-separator = ','
+SEPERATOR = ','
 if '\n' in sys.argv[1]:
-    separator = '\n'
+    SEPERATOR = '\n'
 
-terminate_workers = sys.argv[1].split(separator)
+terminate_workers = sys.argv[1].split(SEPERATOR)
 logging.info("Deleting instances %s", terminate_workers)
 
 GROUP_VARS_PATH = "/opt/playbook/group_vars"
@@ -61,8 +61,8 @@ for cloud in clouds:
 for worker_group in worker_groups:
     for terminate_worker in terminate_workers:
         # terminate all servers that are part of the current worker group
-        result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]],
-                                stdout=subprocess.PIPE, check=True)  # get all workers in worker_type
+        result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]], stdout=subprocess.PIPE,
+                                check=True)  # get all workers in worker_type
         possible_workers = result.stdout.decode("utf-8").strip().split("\n")
         if terminate_worker in possible_workers:
             result = connections[worker_group["cloud_identifier"]].delete_server(terminate_worker)
@@ -76,19 +76,29 @@ for worker_group in worker_groups:
 # -------------------------------
 
 # connect to Zabbix API
-zapi = ZabbixAPI(server='http://localhost/zabbix')
-# authenticate
-zapi.login("Admin",common_config["zabbix_conf"]["admin_password"])
-# iterate over terminate_workers list
-for terminate_worker in terminate_workers:
-    # get list of hosts that matches the hostname
-    hosts = zapi.host.get(output=["hostid","name"],filter={"name": terminate_worker})
-    if not hosts:
-        logging.warning(f"Can't remove host '{terminate_worker}' from Zabbix: Host doesn't exist.")
-    else:
-        # remove host from Zabbix
-        zapi.host.delete(hosts[0]["hostid"])
-        logging.info(f"Remove host '{terminate_worker}' from Zabbix.")
+if common_config["enable_zabbix"]:
+    try:
+        # Connect to Zabbix API
+        zapi = ZabbixAPI(server='http://localhost/zabbix')
+
+        # Authenticate
+        zapi.login("Admin", common_config["zabbix_conf"]["admin_password"])
+
+        # Iterate over terminate_workers list
+        for terminate_worker in terminate_workers:
+            try:
+                # Get list of hosts that matches the hostname
+                hosts = zapi.host.get(output=["hostid", "name"], filter={"name": terminate_worker})
+                if not hosts:
+                    logging.warning(f"Can't remove host '{terminate_worker}' from Zabbix: Host doesn't exist.")
+                else:
+                    # Remove host from Zabbix
+                    zapi.host.delete(hosts[0]["hostid"])
+                    logging.info(f"Removed host '{terminate_worker}' from Zabbix.")
+            except ZabbixAPIException as e:
+                logging.error(f"Error while handling host '{terminate_worker}': {e}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Cannot connect to Zabbix server: {e}")
 
 logging.info(f"Successful delete_server.py execution ({sys.argv[1]})!")
 time_in_s = time.time() - start_time
