@@ -59,4 +59,6 @@ WAIT_FOR_SERVICES = (
     "Waiting for service {service}.")
 UPDATE = ("sudo apt-get update", "Update apt repository lists.")
 PYTHON3_PIP = "sudo apt-get install -y python3-pip", "Install python3 pip using apt."
-ANSIBLE_PASSLIB = ("sudo pip install ansible==6.6 passlib", "Install Ansible and Passlib using pip.")
+# sudo apt-get install -y ansible python3-passlib
+# sudo apt-get install -y ansible=6.6 python3-passlib
+ANSIBLE_PASSLIB = ("sudo apt-get install -y ansible python3-passlib", "Install Ansible and Passlib using pip.")
