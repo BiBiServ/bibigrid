@@ -99,7 +99,10 @@ def run_action(args, configurations, config_path):
                         exit_state = ide.ide(args.cluster_id, providers[0], configurations[0], LOG)
                     elif args.update:
                         LOG.info("Action update selected")
-                        exit_state = update.update(args.cluster_id, providers[0], configurations[0], LOG)
+                        creator = create.Create(providers=providers, configurations=configurations, log=LOG,
+                                                debug=args.debug,
+                                                config_path=config_path, cluster_id=args.cluster_id)
+                        exit_state = update.update(creator, LOG)
             for provider in providers:
                 provider.close()
         else:

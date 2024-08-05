@@ -88,8 +88,8 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         """
 
     @abstractmethod
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True,
-                      volumes=None, security_groups=None):  # pylint: disable=too-many-arguments
+    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None,
+                      security_groups=None):  # pylint: disable=too-many-arguments
         """
         Creates a new server and waits for it to be accessible if wait=True. If volumes are given, they are attached.
         Returns said server (dict)
@@ -223,8 +223,8 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         return [image["name"] for image in self.get_images() if image["status"].lower() == "active"]
 
     def get_active_flavors(self):
-        return [flavor["name"] for flavor in self.get_flavors()
-                if "legacy" not in flavor["name"].lower() and "deprecated" not in flavor["name"].lower()]
+        return [flavor["name"] for flavor in self.get_flavors() if
+                "legacy" not in flavor["name"].lower() and "deprecated" not in flavor["name"].lower()]
 
     @abstractmethod
     def set_allowed_addresses(self, id_or_ip, allowed_address_pairs):
@@ -272,6 +272,13 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         @param name_or_id:
         @return:
         """
+
+    def get_server(self, name_or_id):
+        """
+        Returns server if found else None.
+        @param name_or_id:
+        @return:
+        """  # TODO Test
 
     def get_mount_info_from_server(self, server):
         volumes = []

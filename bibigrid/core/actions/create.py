@@ -340,7 +340,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                              configuration["subnet"]]
             configuration["sshUser"] = self.ssh_user  # is used in ansibleConfigurator
 
-    def upload_data(self):
+    def upload_data(self, private_key):
         """
         Configures ansible and then uploads the modified files and all necessary data to the master
         @return:
@@ -360,7 +360,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.debug(f"Starting playbook with {ansible_start}.")
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
                 cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
-        ssh_data = {"floating_ip": self.master_ip, "private_key": KEY_FOLDER + self.key_name, "username": self.ssh_user,
+        ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
                     "commands": commands, "filepaths": FILEPATHS, "gateway": self.configurations[0].get("gateway", {}),
                     "timeout": self.ssh_timeout}
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
@@ -439,7 +439,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.start_start_server_threads()
             self.extended_network_configuration()
             self.initialize_instances()
-            self.upload_data()
+            self.upload_data(os.path.join(KEY_FOLDER, self.key_name))
             self.log_cluster_start_info()
             if self.configurations[0].get("deleteTmpKeypairAfter"):
                 for provider in self.providers:

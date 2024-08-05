@@ -19,9 +19,6 @@
     owner: slurm
     group: root
     mode: "0600"
-  notify:
-    - slurmdbd
-    - slurmctld
 
 - name: Generate random JWT Secret
   command:
@@ -42,8 +39,6 @@
     owner: root
     group: root
     mode: "0644"
-  notify:
-    - slurmrestd
 
 - name: Create system overrides directories (slurmdbdm slurmrestd)
   file:
@@ -64,9 +59,6 @@
     owner: root
     group: root
   with_items:
-    - slurmdbd
-    - slurmrestd
-  notify:
     - slurmdbd
     - slurmrestd
 
@@ -220,3 +212,23 @@
         - slurmd
         - slurmdbd
         - slurmrestd
+
+- name: slurmdbd
+  systemd:
+    name: slurmdbd
+    state: restarted
+
+- name: slurmrestd
+  systemd:
+    name: slurmrestd
+    state: restarted
+
+- name: slurmctld
+  systemd:
+    name: slurmctld
+    state: restarted
+
+- name: slurmd
+  systemd:
+    name: slurmd
+    state: restarted

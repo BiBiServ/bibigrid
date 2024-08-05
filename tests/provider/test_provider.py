@@ -226,6 +226,15 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 self.assertIsNone(provider.get_image_by_id_or_name("NONE"))
 
+    # TODO test_get_images
+    # TODO test_get_flavors
+    # TODO test_set_allowed_addresses
+    # TODO test_get_server
+    # TODO test_get_security_group
+    # TODO test_create_security_group
+    # TODO append_rules_to_security_group
+    # TODO test_delete_security_group
+
     if CONFIGURATIONS[0].get("snapshotImage"):
         def test_get_snapshot(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
