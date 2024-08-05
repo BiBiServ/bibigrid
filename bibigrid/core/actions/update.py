@@ -2,8 +2,9 @@
 Module that contains methods to update the master playbook
 """
 
-from bibigrid.core.utility.handler import cluster_ssh_handler
 from bibigrid.core.actions import create
+from bibigrid.core.actions.list_clusters import dict_clusters
+from bibigrid.core.utility.handler import cluster_ssh_handler
 
 
 def update(creator, log):
@@ -12,6 +13,11 @@ def update(creator, log):
                                                                                         creator.providers[0],
                                                                                         creator.configurations[0], log)
     log.info(f"Trying to update {master_ip}@{ssh_user} with key {used_private_key}")
+    cluster_dict = dict_clusters(creator.providers, log)
+    if cluster_dict[creator.cluster_id]["workers"]:
+        workers = [worker['name'] for worker in cluster_dict[creator.cluster_id]["workers"]]
+        log.warning(f"There are still workers up! {workers}")
+        return 1
     if master_ip and ssh_user and used_private_key:
         master = create.MASTER_IDENTIFIER(cluster_id=creator.cluster_id)
         server = creator.providers[0].get_server(master)
