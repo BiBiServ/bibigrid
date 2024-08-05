@@ -57,7 +57,7 @@ def interpret_command_line():
                          help="Establishes a secure connection to ide. Needs cluster-id set")
     actions.add_argument("-u", "--update", action='store_true', help="Updates master's playbook. "
                                                                      "Needs cluster-id set, no jobs running "
-                                                                     "and no workers up")
+                                                                     "and all workers down (experimental)")
     args = parser.parse_args()
     needs_config = args.terminate or args.create or args.list or args.check or args.ide
     if needs_config and not args.config_input:
