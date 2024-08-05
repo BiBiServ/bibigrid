@@ -213,22 +213,12 @@
         - slurmdbd
         - slurmrestd
 
-- name: slurmdbd
+- name: Restart Slurm services
   systemd:
-    name: slurmdbd
+    name: "{{ item }}"
     state: restarted
-
-- name: slurmrestd
-  systemd:
-    name: slurmrestd
-    state: restarted
-
-- name: slurmctld
-  systemd:
-    name: slurmctld
-    state: restarted
-
-- name: slurmd
-  systemd:
-    name: slurmd
-    state: restarted
+  loop:
+    - slurmdbd
+    - slurmrestd
+    - slurmctld
+    - slurmd

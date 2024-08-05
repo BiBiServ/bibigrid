@@ -107,7 +107,7 @@
     group: root
     mode: 0444
 
-- name: slurmd
+- name: Restart slurmd
   systemd:
     name: slurmd
     state: restarted
