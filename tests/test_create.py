@@ -1,6 +1,7 @@
 """
 Module to test create
 """
+import os
 from unittest import TestCase
 from unittest.mock import patch, MagicMock, mock_open
 
@@ -122,8 +123,7 @@ class TestCreate(TestCase):
         ssh_data = {'floating_ip': floating_ip, 'private_key': create.KEY_FOLDER + creator.key_name,
                     'username': creator.ssh_user,
                     'commands': creator.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP,
-                    'filepaths': [(create.KEY_FOLDER + creator.key_name, '.ssh/id_ecdsa')],
-                    'gateway': {}, 'timeout': 5}
+                    'filepaths': [(create.KEY_FOLDER + creator.key_name, '.ssh/id_ecdsa')], 'gateway': {}, 'timeout': 5}
         mock_execute_ssh.assert_called_with(ssh_data, startup.LOG)
 
     def test_prepare_volumes_none(self):
@@ -204,14 +204,12 @@ class TestCreate(TestCase):
         configuration = {}
         creator = create.Create([provider], [configuration], "", startup.LOG)
         creator.master_ip = 42
-        creator.upload_data()
+        creator.upload_data(os.path.join(create.KEY_FOLDER, creator.key_name))
         mock_configure_ansible.assert_called_with(providers=creator.providers, configurations=creator.configurations,
                                                   cluster_id=creator.cluster_id, log=startup.LOG)
         ssh_data = {'floating_ip': creator.master_ip, 'private_key': create.KEY_FOLDER + creator.key_name,
-                    'username': creator.ssh_user,
-                    'commands': [mock_ac_ssh()] + ssh_handler.ANSIBLE_START,
-                    'filepaths': create.FILEPATHS,
-                    'gateway': {}, 'timeout': 5}
+                    'username': creator.ssh_user, 'commands': [mock_ac_ssh()] + ssh_handler.ANSIBLE_START,
+                    'filepaths': create.FILEPATHS, 'gateway': {}, 'timeout': 5}
         mock_execute_ssh.assert_called_with(ssh_data=ssh_data, log=startup.LOG)
 
     @patch.object(create.Create, "generate_keypair")

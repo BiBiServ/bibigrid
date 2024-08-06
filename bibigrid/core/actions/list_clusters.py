@@ -146,7 +146,7 @@ def get_master_access_ip(cluster_id, master_provider, log):
     @param log:
     @return: public ip of master
     """
-    # TODO: change to get server
+    # TODO: maybe move the method from list_clusters as it is now independent of list_clusters
     log.info("Finding master ip for cluster %s...", cluster_id)
     master = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
     server = master_provider.get_server(master)
