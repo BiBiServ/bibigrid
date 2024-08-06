@@ -28,7 +28,7 @@ def update(creator, log):
         creator.configurations[0]["volumes"] = server["volumes"]
         creator.prepare_configurations()
         log.log(42, f"Uploading data and executing BiBiGrid's Ansible playbook to {creator.cluster_id}")
-        creator.upload_data(used_private_key)
+        creator.upload_data(used_private_key, clean_playbook=True)
         log.log(42, f"Successfully updated cluster {creator.cluster_id}")
         return 0
     log.warning("One or more among master_ip, ssh_user and used_private_key are none. Aborting...")
