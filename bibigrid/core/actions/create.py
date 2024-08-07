@@ -281,7 +281,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 wait_for_services_commands = [
                     (wait_for_service_command.format(service=service), wait_for_service_message.format(service=service))
                     for service in configuration.get("waitForServices", [])]
-                print(wait_for_services_commands)
                 ssh_data["commands"] = (
                         wait_for_services_commands + self.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP)
                 ssh_data["filepaths"] = [(ssh_data["private_key"], ssh_handler.PRIVATE_KEY_FILE)]
