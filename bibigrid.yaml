@@ -9,7 +9,7 @@
   # -- BEGIN: GENERAL CLUSTER INFORMATION --
   # sshTimeout: 5 # number of attempts to connect to instances during startup with delay in between
   # cloudScheduling:
-  #    sshTimeout: 42 # like sshTimeout but during the on demand scheduling on the running cluster
+  #    sshTimeout: 5 # like sshTimeout but during the on demand scheduling on the running cluster
 
   ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
   #sshPublicKeyFiles:
@@ -71,24 +71,6 @@
 
   # Depends on cloud image
   sshUser: # for example ubuntu
-
-  # Depends on cloud site:
-  # Berlin     : regionOne
-  # Bielefeld  : bielefeld
-  # DKFZ       : regionOne
-  # Giessen    : RegionOne
-  # Heidelberg : RegionOne
-  # Tuebingen  : RegionOne
-  region: Bielefeld
-
-  # Depends on cloud site:
-  # Berlin     : nova
-  # Bielefeld  : default
-  # DKFZ       : nova
-  # Giessen    : nova
-  # Heidelberg : nova
-  # Tuebingen  : nova
-  availabilityZone: default
 
   # Depends on cloud site and project
   subnet: # existing subnet on your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/networks/
