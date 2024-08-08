@@ -148,4 +148,13 @@
   block:
     - debug:
         msg: "[BIBIGRID] Setup Theia"
-    - import_tasks: 999-theia.yaml
+    - import_tasks: 900-theia.yaml
+
+- name: APT Reactivate Auto Update
+  when: "ansible_distribution_file_variety == 'Debian'"
+  tags: ["pkg"]
+  block:
+    - name: Running 999-apt-reactivate-auto-update.yaml
+      debug:
+        msg: "[BIBIGRID] APT Reactivate Auto Update"
+    - import_tasks: 999-apt-reactivate-auto-update.yaml
