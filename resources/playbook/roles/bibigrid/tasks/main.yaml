@@ -31,7 +31,8 @@
 
 - name: Setup common software and dependencies for Debian
   when: "ansible_distribution_file_variety == 'Debian'"
-  tags: [ "pkg" ]
+  tags:
+    - "pkg"
   block:
     - name: Running 001-apt.yaml
       debug:
@@ -40,7 +41,8 @@
 
 - name: Setup common software and dependencies for RedHat
   when: "ansible_distribution_file_variety == 'RedHat'"
-  tags: [ "pkg" ]
+  tags:
+    - "pkg"
   block:
     - debug:
         msg: "[BIBIGRID] Setup common software and dependencies"
@@ -48,7 +50,7 @@
 
 - name: Configure Wireguard for VPNs
   when: "'vpn' in group_names and wireguard is defined"
-  tags: [ "vpn" ]
+  tags: "vpn"
   block:
     - debug:
         msg: "[BIBIGRID] Configure Wireguard for VPNs"
@@ -56,7 +58,8 @@
 
 - name: Setup DNS
   when: "'master' in group_names"
-  tags: [ "dns" ]
+  tags:
+    - "dns"
   block:
     - debug:
         msg: "[BIBIGRID] Setup DNS"
@@ -64,7 +67,8 @@
 
 - name: Update host file on worker
   when: "'workers' in group_names"
-  tags: [ "host" ]
+  tags:
+    - "host"
   block:
     - debug:
         msg: "[BIBIGRID] Update hosts"
@@ -72,7 +76,9 @@
 
 - name: Configure database
   when: "'master' in group_names"
-  tags: [ "database", "slurm" ]
+  tags:
+    - "database"
+    - "slurm"
   block:
     - debug:
         msg: "[BIBIGRID] Configure database"
@@ -81,7 +87,8 @@
 - name: Setup additional binary executables /usr/local/bin/
   when:
     - "'master' in group_names"
-  tags: [ "bin" ]
+  tags:
+    - "bin"
   block:
     - debug:
         msg: "[BIBIGRID] Setup additional binary executables /usr/local/bin/"
@@ -90,7 +97,8 @@
 - name: Setup Zabbix Agent
   when:
     - enable_zabbix|default(false)|bool
-  tags: [ "zabbix" ]
+  tags:
+    - "zabbix"
   block:
     - debug:
         msg: "[BIBIGRID] Setup Zabbix Agent"
@@ -102,20 +110,24 @@
     msg: "[BIBIGRID] Generate directory structure available on all hosts"
 - name: Generate general directory structure available on all hosts
   import_tasks: 020-disk.yaml
-  tags: [ "disk" ]
+  tags:
+    - "disk"
 - name: Generate server directory structure available on all hosts
   import_tasks: 020-disk-server.yaml
   when: "'master' in group_names"
-  tags: [ "disk" ]
+  tags:
+    - "disk"
 - name: Generate worker directory structure available on all hosts
   import_tasks: 020-disk-worker.yaml
   when: "'master' not in group_names"
-  tags: [ "disk" ]
+  tags:
+    - "disk"
 
 - name: Setup NFS
   when:
     - enable_nfs|default(false)|bool
-  tags: [ "nfs" ]
+  tags:
+    - "nfs"
   block:
     - debug:
         msg: "[BIBIGRID] Setup NFS"
@@ -128,10 +140,12 @@
   debug:
     msg: "[BIBIGRID] Setup Docker"
 - import_tasks: 030-docker.yaml
-  tags: [ "docker" ]
+  tags:
+    - "docker"
 
 - name: Setup Slurm
-  tags: [ "slurm" ]
+  tags:
+    - "slurm"
   block:
     - debug:
         msg: "[BIBIGRID] Setup Slurm"
@@ -144,7 +158,8 @@
   when:
     - enable_ide|default(false)|bool
     - "'master' in group_names"
-  tags: [ "theia" ]
+  tags:
+    - "theia"
   block:
     - debug:
         msg: "[BIBIGRID] Setup Theia"
@@ -152,7 +167,8 @@
 
 - name: APT Reactivate Auto Update
   when: "ansible_distribution_file_variety == 'Debian'"
-  tags: [ "pkg" ]
+  tags:
+    - "pkg"
   block:
     - name: Running 999-apt-reactivate-auto-update.yaml
       debug:
