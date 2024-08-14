@@ -190,7 +190,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
                                   additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
                 self.vpn_counter += 1
-        self.log.info(f"Starting instance/server {name} on {provider.cloud_specification['identifier']}")
+        self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance_type["type"]
         network = configuration["network"]
         image = image_selection.select_image(provider, instance_type["image"], self.log,
@@ -223,10 +223,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             mount = next((mount for mount in configuration["masterMounts"] if mount["name"] == volume["name"]), None)
             if mount.get("mountPoint"):
                 volume["mount_point"] = mount["mountPoint"]
+                self.log.debug(f"Added mount point {mount['mountPoint']} as a mount point in configuration.")
 
     def start_workers(self, worker, worker_count, configuration, provider):
         name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
-        self.log.info(f"Starting worker {name} on {provider.cloud_specification['identifier']}.")
+        self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}.")
         flavor = worker["type"]
         network = configuration["network"]
         image = image_selection.select_image(provider, worker["image"], self.log,
@@ -245,6 +246,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 hosts = {"host_entries": {}}
             hosts["host_entries"][name] = server["private_v4"]
             ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
+            self.log.debug(f"Added worker {name} to hosts file {a_rp.HOSTS_FILE}.")
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """
@@ -481,8 +483,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.log.error(traceback.format_exc())
             self.log.error(f"Configuration invalid: {str(exc)}")
         except Exception as exc:  # pylint: disable=broad-except
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
