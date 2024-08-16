@@ -328,3 +328,11 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @return:
         """
         return self.conn.get_security_group(name_or_id)
+
+    def get_server(self, name_or_id):
+        """
+        Returns server if found else None.
+        @param name_or_id:
+        @return:
+        """
+        return self.conn.get_server(name_or_id)

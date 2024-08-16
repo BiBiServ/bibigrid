@@ -6,9 +6,9 @@ import logging
 import os
 import unittest
 
+import bibigrid.core.utility.paths.basic_path as bP
 from bibigrid.core import startup
 from bibigrid.core.utility import image_selection
-import bibigrid.core.utility.paths.basic_path as bP
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility.handler import provider_handler
 from bibigrid.models.exceptions import ExecutionException
@@ -70,9 +70,8 @@ KEYPAIR = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDORPauyW3O7M4Uk8/Qo557h2zxd9fwB
           "MFbUTTukAiDf4jAgvJkg7ayE0MPapGpI/OhSK2gyN45VAzs2m7uykun87B491JagZ57qr16vt8vxGYpFCEe8QqAcrUszUPqyPrb0auA8bz" \
           "jO8S41Kx8FfG+7eTu4dQ0= user"
 
-CONFIGURATIONS = configuration_handler.read_configuration(logging,
-                                                          os.path.join(bP.ROOT_PATH,
-                                                                       "resources/tests/bibigrid_test.yaml"))
+CONFIGURATIONS = configuration_handler.read_configuration(logging, os.path.join(bP.ROOT_PATH,
+                                                                                "resources/tests/bibigrid_test.yaml"))
 PROVIDERS = provider_handler.get_providers(CONFIGURATIONS, logging)
 
 
@@ -160,12 +159,15 @@ class TestProvider(unittest.TestCase):
                     floating_ip = provider.attach_available_floating_ip(
                         provider.get_external_network(configuration["network"]), provider_server)
                     server_list = provider.list_servers()
+                    get_server = provider.get_server("bibigrid_test_server")
                 self.assertEqual(SERVER_KEYS, set(provider_server.keys()))
                 self.assertEqual("bibigrid_test_keypair", provider_server["key_name"])
                 self.assertEqual(FLOATING_IP_KEYS, set(floating_ip.keys()))
-                self.assertTrue([server for server in server_list if
-                                 server["name"] == "bibigrid_test_server" and server[
-                                     "public_v4"] == floating_ip.floating_ip_address])
+                list_server = next(server for server in server_list if
+                                    server["name"] == "bibigrid_test_server" and server[
+                                        "public_v4"] == floating_ip.floating_ip_address)
+                self.assertEqual("bibigrid_test_server", get_server["name"])
+                self.assertEqual(get_server, list_server)
             provider.delete_keypair("bibigrid_test_keypair")
 
     def test_get_external_network(self):
@@ -225,6 +227,15 @@ class TestProvider(unittest.TestCase):
         for provider in PROVIDERS:
             with self.subTest(provider.NAME):
                 self.assertIsNone(provider.get_image_by_id_or_name("NONE"))
+
+    # TODO test_get_images
+    # TODO test_get_flavors
+    # TODO test_set_allowed_addresses
+    # TODO test_get_server
+    # TODO test_get_security_group
+    # TODO test_create_security_group
+    # TODO append_rules_to_security_group
+    # TODO test_delete_security_group
 
     if CONFIGURATIONS[0].get("snapshotImage"):
         def test_get_snapshot(self):

@@ -71,9 +71,6 @@
   with_items:
     - slurmd
     - slurmctld
-  notify:
-    - slurmd
-    - slurmctld
 
 - name: Enable slurmctld and slurmd services
   systemd:
@@ -93,9 +90,6 @@
     owner: slurm
     group: root
     mode: 0444
-  notify:
-    - slurmctld
-    - slurmd
 
 - name: Create Job Container configuration
   template:
@@ -104,9 +98,6 @@
     owner: slurm
     group: root
     mode: 0444
-  notify:
-    - slurmctld
-    - slurmd
 
 - name: Slurm cgroup configuration
   copy:
@@ -115,6 +106,8 @@
     owner: slurm
     group: root
     mode: 0444
-  notify:
-    - slurmctld
-    - slurmd
+
+- name: Restart slurmd
+  systemd:
+    name: slurmd
+    state: restarted

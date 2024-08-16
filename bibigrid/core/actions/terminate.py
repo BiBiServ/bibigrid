@@ -148,7 +148,6 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
         tmp_success = False
         while not tmp_success:
             try:
-                # TODO: Check if security group exists at all
                 not_found = not provider.get_security_group(security_group_name)
                 tmp_success = provider.delete_security_group(security_group_name)
             except ConflictException:
