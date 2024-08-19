@@ -174,14 +174,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
                 configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
-    def start_vpn_or_master(self, configuration, provider):
+    def start_vpn_or_master(self, configuration, provider): # pylint: disable=too-many-locals
         """
         Start master/vpn-worker of a provider
         @param configuration: dict configuration of said provider.
         @param provider: provider
         @return:
         """
-        identifier, instance_type, volumes = self.prepare_vpn_or_master_args(configuration, provider)
+        identifier, instance, volumes = self.prepare_vpn_or_master_args(configuration, provider)
         external_network = provider.get_external_network(configuration["network"])
         with self.vpn_master_thread_lock:
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
@@ -191,14 +191,21 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                   additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
                 self.vpn_counter += 1
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}")
-        flavor = instance_type["type"]
+        flavor = instance["type"]
         network = configuration["network"]
-        image = image_selection.select_image(provider, instance_type["image"], self.log,
+        image = image_selection.select_image(provider, instance["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True)
+                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True,
+                                        boot_from_volume=instance.get("bootFromVolume",
+                                                                      configuration.get("bootFromVolume", False)),
+                                        boot_volume=instance.get("bootVolume", configuration.get("bootVolume")),
+                                        terminate_boot_volume=instance.get("terminateBootVolume",
+                                                                           configuration.get("terminateBootVolume",
+                                                                                             True)),
+                                        volume_size=instance.get("volumeSize", configuration.get("volumeSize", 50)))
         configuration["private_v4"] = server["private_v4"]
         self.log.debug(f"Created Server {name}: {server['private_v4']}.")
         # get mac address for given private address
@@ -219,11 +226,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
         configuration["volumes"] = provider.get_mount_info_from_server(server)
-        for volume in configuration["volumes"]:
-            mount = next((mount for mount in configuration["masterMounts"] if mount["name"] == volume["name"]), None)
-            if mount.get("mountPoint"):
-                volume["mount_point"] = mount["mountPoint"]
-                self.log.debug(f"Added mount point {mount['mountPoint']} as a mount point in configuration.")
+        master_mounts = configuration.get("masterMounts", [])
+        if master_mounts:
+            for volume in configuration["volumes"]:
+                mount = next((mount for mount in master_mounts if mount["name"] == volume["name"]), None)
+                if mount and mount.get("mountPoint"):
+                    volume["mount_point"] = mount["mountPoint"]
+                    self.log.debug(f"Added mount point {mount['mountPoint']} of attached volume to configuration.")
 
     def start_workers(self, worker, worker_count, configuration, provider):
         name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
@@ -235,7 +244,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=None, security_groups=configuration["security_groups"], wait=True)
+                                        volumes=None, security_groups=configuration["security_groups"], wait=True,
+                                        boot_from_volume=worker.get("bootFromVolume",
+                                                                    configuration.get("bootFromVolume", False)),
+                                        boot_volume=worker.get("bootVolume", configuration.get("bootVolume")),
+                                        terminate_boot_volume=worker.get("terminateBootVolume",
+                                                                         configuration.get("terminateBootVolume",
+                                                                                           True)))
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
         with self.worker_thread_lock:
             self.permanents.append(name)

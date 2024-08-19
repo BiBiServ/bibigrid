@@ -114,10 +114,13 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def list_servers(self):
         return [elem.toDict() for elem in self.conn.list_servers()]
 
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None):
+    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None,
+                      boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50):
         try:
             server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
-                                             volumes=volumes, security_groups=security_groups)
+                                             volumes=volumes, security_groups=security_groups, boot_volume=boot_volume,
+                                             boot_from_volume=boot_from_volume,
+                                             terminate_volume=terminate_boot_volume, volume_size=volume_size)
         except openstack.exceptions.BadRequestException as exc:
             if "is not active" in str(exc):
                 raise ImageDeactivatedException() from exc

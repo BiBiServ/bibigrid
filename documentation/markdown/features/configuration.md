@@ -16,10 +16,10 @@ The configuration file is best stored in `~/.config/bibigrid/`. BiBiGrid starts 
 ## Configuration List
 If you have a single-cloud use case, you can [skip ahead]().
 
-Only the first configuration holds a `master` key (also called `master configuration`).
-Every following configuration must hold a `vpngtw` key.
+Only the first configuration holds a `masterInstance` key (also called `master configuration`).
+Every following configuration must hold a `vpnInstance` key.
 
-Later, this vpngtw allows BiBiGrid to connect multiple clouds.
+Later, this vpnInstance allows BiBiGrid to connect multiple clouds.
 
 [Here](multi_cloud.md) you can get a technical overview regarding BiBiGrid's multi-cloud setup. 
 
@@ -288,7 +288,7 @@ openstack flavor list --os-cloud=openstack
 ```
 
 
-#### Master or vpngtw?
+#### masterInstance or vpnInstance?
 
 ##### masterInstance
 
@@ -311,12 +311,12 @@ You can create features for the master [in the same way](#features-optional) as 
       - holdsinformation
 ```
 
-##### vpngtw:
+##### vpnInstance:
 
 Exactly one in every configuration but the first:
 
 ```yaml
-  vpngtw:
+  vpnInstance:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
 ```
