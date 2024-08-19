@@ -48,6 +48,10 @@
   #ide: True # A nice way to view your cluster as if you were using Visual Studio Code
 
   useMasterAsCompute: True
+
+  # bootFromVolume: False
+  # terminateBootVolume: True
+  # volumeSize: 50
   
   # waitForServices:  # existing service name that runs after an instance is launched. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
   #  - de.NBI_Bielefeld_environment.service  # uncomment for cloud site Bielefeld
@@ -57,6 +61,11 @@
     type: # existing type/flavor on your cloud. See launch instance>flavor for options
     image: # existing active image on your cloud. Consider using regex to prevent image updates from breaking your running cluster
     # features: # list
+    # partitions: # list
+    # bootVolume: None
+    # bootFromVolume: True
+    # terminateBootVolume: True
+    # volumeSize: 50
 
   # -- END: GENERAL CLUSTER INFORMATION --
 
@@ -68,6 +77,11 @@
   #    image: # same as master. Consider using regex to prevent image updates from breaking your running cluster
   #    count: # any number of workers you would like to create with set type, image combination
   #    # features: # list
+  #    # partitions: # list
+  #    # bootVolume: None
+  #    # bootFromVolume: True
+  #    # terminateBootVolume: True
+  #    # volumeSize: 50
 
   # Depends on cloud image
   sshUser: # for example ubuntu

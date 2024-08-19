@@ -253,14 +253,22 @@ workerInstance:
     features: # optional
       - hasdatabase
       - holdsinformation
+    bootVolume: False
+    bootFromVolume: True
+    terminateBootVolume: True
+    volumeSize: 50
 ```
 
 - `type` sets the instance's hardware configuration.
 - `image` sets the bootable operating system to be installed on the instance.
 - `count` sets how many workers of that `type` `image` combination are in this work group
-- `onDemand` defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works for single cloud setups for now.
-- `partitions` allow you to force Slurm to schedule to a group of nodes (partitions) ([more](https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION))
-- `features` allow you to force Slurm to schedule a job only on nodes that meet certain `bool` constraints. This can be helpful when only certain nodes can access a specific resource - like a database ([more](https://slurm.schedmd.com/slurm.conf.html#OPT_Features)).
+- `onDemand` (optional:False) defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works for single cloud setups for now.
+- `partitions` (optional:[]) allow you to force Slurm to schedule to a group of nodes (partitions) ([more](https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION))
+- `features` (optional:[]) allow you to force Slurm to schedule a job only on nodes that meet certain `bool` constraints. This can be helpful when only certain nodes can access a specific resource - like a database ([more](https://slurm.schedmd.com/slurm.conf.html#OPT_Features)).
+- `bootVolume` (optional:None) takes name or id of a boot volume and boots from that volume if given.
+- `bootFromVolume` (optional:False) if True, the instance will boot from a volume created for this purpose.
+- `terminateBootVolume` (optional:True) if True, the boot volume will be terminated when the server is terminated.
+- `volumeSize` (optional:50) if a boot volume is created, this sets its size.
 
 ##### Find your active `images`
 
@@ -298,6 +306,10 @@ Only in the first configuration and only one:
   masterInstance:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
+    bootVolume: False
+    bootFromVolume: True
+    terminateBootVolume: False
+    volumeSize: 50
 ```
 
 You can create features for the master [in the same way](#features-optional) as for the workers:
@@ -355,7 +367,19 @@ Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
 
 #### features (optional)
 
-You can declare a list of cloud-wide [features](#whats-a-feature) that are then attached to every node in the cloud described by the configuration.
+Cloud-wide slurm [features](#whats-a-feature) that are attached to every node in the cloud described by the configuration.
 If both [worker group](#workerinstances) or [master features](#masterInstance) and configuration features are defined, 
 they are merged. If you only have a single cloud and therefore a single configuration, this key is not helpful as a feature
 that is present at all nodes can be omitted as it can't influence the scheduling.
+
+#### bootFromVolume (optional:False)
+If True, the instance will boot from a volume created for this purpose. Keep in mind that on demand scheduling can lead
+to multiple boots of the same configurated node. If you don't make use of [terminateBootVolume](#terminatebootvolume-optionalfalse)
+this will lead to many created volumes.
+
+#### terminateBootVolume (optional:True)
+If True, once the instance is shut down, boot volume is destroyed. This does not affect other attached volumes. 
+Only the boot volume is affected.
+#### volumeSize (optional:50)
+The created volume's size if you use [bootFromVolume](#bootfromvolume-optionalfalse).
+
