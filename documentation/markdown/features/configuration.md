@@ -135,15 +135,17 @@ userRoles: # see ansible_hosts for all options
       #  - file1
 ```
 
-#### localFS (optional:False)
+#### Usually Ignored Keys
+##### localFS (optional:False)
 
 In general, this key is ignored.
 It expects `True` or `False` and helps some specific users to create a filesystem to their liking. Default is `False`.
 
-#### localDNSlookup (optional:False)
+##### localDNSlookup (optional:False)
 
-If `True`, master will store DNS information for his workers. Default is `False`.
-[More information](https://helpdeskgeek.com/networking/edit-hosts-file/).
+If no full DNS service for started instances is available, set `localDNSLookup: True`.
+Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
+Given that we use dnsmasq, this might be obsolete.
 
 #### slurm (optional:True)
 If `False`, the cluster will start without the job scheduling system slurm.
@@ -360,11 +362,6 @@ Find available `subnets`:
 openstack subnet list --os-cloud=openstack
 ```
 
-#### localDNSLookup (optional:False)
-
-If no full DNS service for started instances is available, set `localDNSLookup: True`.
-Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
-
 #### features (optional)
 
 Cloud-wide slurm [features](#whats-a-feature) that are attached to every node in the cloud described by the configuration.
@@ -377,9 +374,10 @@ If True, the instance will boot from a volume created for this purpose. Keep in 
 to multiple boots of the same configurated node. If you don't make use of [terminateBootVolume](#terminatebootvolume-optionalfalse)
 this will lead to many created volumes.
 
+#### volumeSize (optional:50)
+The created volume's size if you use [bootFromVolume](#bootfromvolume-optionalfalse).
+
 #### terminateBootVolume (optional:True)
 If True, once the instance is shut down, boot volume is destroyed. This does not affect other attached volumes. 
 Only the boot volume is affected.
-#### volumeSize (optional:50)
-The created volume's size if you use [bootFromVolume](#bootfromvolume-optionalfalse).
 

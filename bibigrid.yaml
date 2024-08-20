@@ -40,9 +40,11 @@
   # deleteTmpKeypairAfter: False
   # dontUploadCredentials: False
 
-  # Other keys - default False
-  #localFS: True
-  #localDNSlookup: True
+  # Other keys - these are default False
+  # Usually Ignored
+  ##localFS: True
+  ##localDNSlookup: True
+
   #zabbix: True
   #nfs: True
   #ide: True # A nice way to view your cluster as if you were using Visual Studio Code
