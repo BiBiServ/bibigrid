@@ -237,9 +237,14 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param server:
         @return:
         """
+        print("attach_available_floating_ip: Entered")
+        print(f"attach_available_floating_ip: Server: {server}")
         floating_ip = self.conn.available_floating_ip(network=network)
+        print(f"attach_available_floating_ip: Available Floating IP: {floating_ip}")
         if server:
             self.conn.compute.add_floating_ip_to_server(server, floating_ip["floating_ip_address"])
+            print("attach_available_floating_ip: Added floating_ip")
+        print("attach_available_floating_ip: Returning floating_ip")
         return floating_ip
 
     def get_images(self):

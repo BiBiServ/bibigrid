@@ -206,6 +206,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                                            configuration.get("terminateBootVolume",
                                                                                              True)),
                                         volume_size=instance.get("volumeSize", configuration.get("volumeSize", 50)))
+        print(f"start_vpn_or_master: server: {server}")
         configuration["private_v4"] = server["private_v4"]
         self.log.debug(f"Created Server {name}: {server['private_v4']}.")
         # get mac address for given private address
@@ -220,6 +221,15 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         # pylint: disable=comparison-with-callable
         if identifier == VPN_WORKER_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
+            if self.debug:
+                try:
+                    print(f"start_von_or_master: get_server {provider.get_server(name_or_id=name)}")
+                except Exception as exc:
+                    print(traceback.format_exc())
+                    print(str(exc))
+                print(f"attach_available_floating_ip: waiting for 120 seconds")
+                import time
+                time.sleep(120)
             configuration["floating_ip"] = \
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
