@@ -16,8 +16,7 @@ a cloud IDE for writing, running and debugging (Theia Web IDE) and many more.
 > but not maintained anymore.
 
 ## Getting Started
-For most users the [Hands-On BiBiGrid Tutorial](https://github.com/deNBI/bibigrid_clum2022) 
-is the best entry point.
+For most users the [Hands-On BiBiGrid Tutorial](https://github.com/deNBI/bibigrid_clum2022) is the best entry point.
 
 However, if you are already quite experienced with *OpenStack* and the previous *BiBiGrid* the following brief explanation
 might be just what you need.
@@ -58,7 +57,7 @@ an sshUser (most likely ubuntu) and a subnet.
 You will likely also want to specify at least one worker instance with a valid type, image, and count.
 4. If your cloud provider runs post-launch services, you need to set the `waitForServices` 
 key appropriately which expects a list of services to wait for.
-5. Create a virtual environment from `bibigrid/requirements.txt`. 
+5. Create a virtual environment from `bibigrid/requirements.txt`. Conda environments do not work. 
 See [here](https://www.akamai.com/blog/developers/how-building-virtual-python-environment) for more detailed info. 
 6. Take a look at [First execution](#first-execution)
 
@@ -69,18 +68,18 @@ After cloning the repository, navigate to the bibigrid directory.
 Source the virtual environment created during [preparation](#preparation) to execute BiBiGrid.
 Refer to BiBiGrid's [Command Line Interface documentation](documentation/markdown/features/CLI.md) if you want to explore additional options.
 
-A first execution run through could be:
+First steps could be:
 1. `./bibigrid.sh -i [path-to-bibigrid.yaml] -ch`: checks the configuration
 2. `./bibigrid.sh -i 'bibigrid.yaml -i [path-to-bibigrid.yaml] -c'`: creates the cluster (execute only if check was successful)
 3. Use **BiBiGrid's create output** to investigate the created cluster further. Especially connecting to the ide might be helpful. 
 Otherwise, connect using ssh.
 4. While in ssh try `sinfo` to printing node info
 5. Run `srun -x $(hostname) hostname` to power up a worker and get its hostname.
-6. Run `sinfo` again to see the node powering up. After a while it will be terminated again.
+6. Run `sinfo` again to see the node powering up. Run `bibilog` after a while to see the ansible playbook run.
 7. Use the terminate command from **BiBiGrid's create output** to shut down the cluster again. 
 All floating-ips used will be released.
 
-Great! You've just started and terminated your first cluster using BiBiGrid!
+Great! You have just started and terminated your first cluster using BiBiGrid!
 
 </details>
 

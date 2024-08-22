@@ -130,6 +130,11 @@ def main():
     args = command_line_interpreter.interpret_command_line()
     set_logger_verbosity(args.verbose)
     configurations = configuration_handler.read_configuration(LOG, args.config_input)
+    if "CONDA_PREFIX" in os.environ:
+        LOG.warning("Do not use a conda environment for bibigrid.\n"
+                    "Please create a regular python environment: https://docs.python.org/3/library/venv.html")
+        if input("Empty input to continue; otherwise aborts:"):
+            sys.exit(1)
     if configurations:
         sys.exit(run_action(args, configurations, args.config_input))
     sys.exit(1)
