@@ -1,6 +1,7 @@
 """
 Tests for ansible_configurator
 """
+import os
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch, call, mock_open, ANY
 
@@ -220,14 +221,14 @@ class TestAnsibleConfigurator(TestCase):
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
-    def test_generate_common_configuration_ide(self):
-        configuration = [{"ide": "Some1", "ideConf": {"key1": "Some2"}}]
+    def test_generate_common_configuration_ide_and_wireguard(self):
+        configuration = [{"ide": "Some1", "ideConf": {"key1": "Some2"}, "wireguard_peer": 21}, {"wireguard_peer": 42}]
         cidrs = "42"
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
-                                     'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
+        common_configuration_yaml = {'bibigrid_version': '0.4.0', 'cloud_scheduling': {'sshTimeout': 5},
+                                     'cluster_cidrs': '42', 'cluster_id': '21', 'default_user': 'ubuntu',
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': 'Some1', 'enable_nfs': False,
                                      'enable_slurm': False, 'enable_zabbix': False,
                                      'ide_conf': {'build': False, 'ide': False, 'key1': 'Some2', 'port_end': 8383,
@@ -236,8 +237,9 @@ class TestAnsibleConfigurator(TestCase):
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
                                                     'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
-                                                    'munge_key': 'b7nks3Ur3kanyPAEBxfSC9ypfSHFnWJL'},
-                                     'ssh_user': ssh_user, 'use_master_as_compute': True}
+                                                    'munge_key': 'b4pPb7bQTHzTDtGsqo2pYkGdpa87TtPD'},
+                                     'ssh_user': 'test', 'use_master_as_compute': True,
+                                     'wireguard_common': {'listen_port': 51820, 'mask_bits': 24, 'peers': [21, 42]}}
         generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
                                                                                                  cluster_id, ssh_user,
                                                                                                  default_user,
@@ -366,3 +368,158 @@ class TestAnsibleConfigurator(TestCase):
                     call(aRP.HOSTS_CONFIG_FILE, mock_hosts(), startup.LOG, False),
                     call(aRP.SITE_CONFIG_FILE, mock_site(), startup.LOG, False)]
         self.assertEqual(expected, mock_yaml.call_args_list)
+
+    @patch('bibigrid.core.utility.ansible_configurator.write_yaml')
+    @patch('bibigrid.core.utility.ansible_configurator.aRP.GROUP_VARS_FOLDER', '/mocked/path/group_vars')
+    @patch('bibigrid.core.utility.ansible_configurator.aRP.HOST_VARS_FOLDER', '/mocked/path/host_vars')
+    def test_write_host_and_group_vars(self, mock_write_yaml):
+        mock_log = MagicMock()
+
+        mock_provider = MagicMock()
+        mock_provider.get_flavor.return_value = {"name": "flavor-name", "ram": 4096, "vcpus": 2, "disk": 40,
+                                                 "ephemeral": 0}
+
+        # Define configurations and providers for the test
+        configurations = [{"features": ["feature1", "feature2"], "workerInstances": [
+            {"type": "m1.small", "count": 2, "image": "worker-image", "onDemand": True, "partitions": ["partition1"],
+             "features": "worker-feature"}], "masterInstance": {"type": "m1.large", "image": "master-image"},
+                           "network": "private-network", "subnet_cidrs": ["10.0.0.0/24"], "floating_ip": "1.2.3.4",
+                           "private_v4": "10.0.0.1", "cloud_identifier": "cloud-1", "volumes": ["volume1"],
+                           "fallbackOnOtherImage": False, "wireguard_peer": "peer1"},
+                          {"vpnInstance": {"type": "vpn-type", "image": "vpn-image"}, "network": "private-network",
+                           "subnet_cidrs": ["10.0.0.0/24"], "floating_ip": "1.2.3.4", "private_v4": "10.0.0.1",
+                           "cloud_identifier": "cloud-1", "fallbackOnOtherImage": False, "wireguard_peer": "peer1"}]
+
+        providers = [mock_provider, mock_provider]
+        cluster_id = "test-cluster"
+
+        # Call the function under test
+        ansible_configurator.write_host_and_group_vars(configurations, providers, cluster_id, mock_log)
+
+        expected_worker_dict = {"name": "bibigrid-worker-test-cluster-[0-1]",
+                                "regexp": "bibigrid-worker-test-cluster-\\d+", "image": "worker-image",
+                                "network": "private-network",
+                                "flavor": {"name": "flavor-name", "ram": 4096, "vcpus": 2, "disk": 40, "ephemeral": 0},
+                                "gateway_ip": "10.0.0.1", "cloud_identifier": "cloud-1", "on_demand": True,
+                                "state": "CLOUD", "partitions": ["partition1", "all", "cloud-1"],
+                                "features": {"feature1", "feature2", "worker-feature"}}
+        mock_write_yaml.assert_any_call(
+            os.path.join('/mocked/path/group_vars', 'bibigrid_worker_test_cluster_0_1.yaml'), expected_worker_dict,
+            mock_log)
+
+        # Assertions for masterInstance
+        expected_master_dict = {"name": "bibigrid-master-test-cluster", "image": "master-image",
+                                "network": "private-network", "network_cidrs": ["10.0.0.0/24"],
+                                "floating_ip": "1.2.3.4",
+                                "flavor": {"name": "flavor-name", "ram": 4096, "vcpus": 2, "disk": 40, "ephemeral": 0},
+                                "private_v4": "10.0.0.1", "cloud_identifier": "cloud-1", "volumes": ["volume1"],
+                                "fallback_on_other_image": False, "state": "UNKNOWN", "on_demand": False,
+                                "partitions": ["all", "cloud-1"], "wireguard": {"ip": "10.0.0.1", "peer": "peer1"}}
+        mock_write_yaml.assert_any_call(os.path.join('/mocked/path/group_vars', 'master.yaml'), expected_master_dict,
+                                        mock_log)
+
+        expected_vpn_dict = {"name": "bibigrid-vpngtw-test-cluster-0", "regexp": "bibigrid-worker-test-cluster-\\d+",
+                             "image": "vpn-image", "network": "private-network", "network_cidrs": ["10.0.0.0/24"],
+                             "floating_ip": "1.2.3.4", "private_v4": "10.0.0.1",
+                             "flavor": {"name": "flavor-name", "ram": 4096, "vcpus": 2, "disk": 40, "ephemeral": 0},
+                             "wireguard_ip": "10.0.0.2", "cloud_identifier": "cloud-1",
+                             "fallback_on_other_image": False, "on_demand": False,
+                             "wireguard": {"ip": "10.0.0.2", "peer": "peer1"}}
+        mock_write_yaml.assert_any_call(os.path.join('/mocked/path/host_vars', 'bibigrid-vpngtw-test-cluster-0.yaml'),
+                                        expected_vpn_dict, mock_log)
+
+    @patch('os.remove')
+    @patch('os.listdir')
+    @patch('os.path.isfile')
+    @patch('bibigrid.core.utility.ansible_configurator.aRP.GROUP_VARS_FOLDER', '/mocked/path/group_vars')
+    @patch('bibigrid.core.utility.ansible_configurator.aRP.HOST_VARS_FOLDER', '/mocked/path/host_vars')
+    @patch('logging.getLogger')
+    def test_delete_old_vars(self, mock_get_logger, mock_isfile, mock_listdir, mock_remove):
+        mock_log = MagicMock()
+        mock_get_logger.return_value = mock_log
+        mock_isfile.return_value = True
+
+        mock_listdir.side_effect = [['file1.yaml', 'file2.yaml'],  # Files in GROUP_VARS_FOLDER
+                                    ['file3.yaml', 'file4.yaml']  # Files in HOST_VARS_FOLDER
+                                    ]
+
+        # Call the function under test
+        ansible_configurator.delete_old_vars(mock_log)
+
+        # Assertions for file removal
+        mock_remove.assert_any_call('/mocked/path/group_vars/file1.yaml')
+        mock_remove.assert_any_call('/mocked/path/group_vars/file2.yaml')
+        mock_remove.assert_any_call('/mocked/path/host_vars/file3.yaml')
+        mock_remove.assert_any_call('/mocked/path/host_vars/file4.yaml')
+
+        self.assertEqual(mock_remove.call_count, 4)
+
+    def test_key_present_with_key_to(self):
+        dict_from = {'source_key': 'value1'}
+        dict_to = {}
+        ansible_configurator.pass_through(dict_from, dict_to, 'source_key', 'destination_key')
+        self.assertEqual(dict_to, {'destination_key': 'value1'})
+
+    def test_key_present_without_key_to(self):
+        dict_from = {'source_key': 'value2'}
+        dict_to = {}
+        ansible_configurator.pass_through(dict_from, dict_to, 'source_key')
+        self.assertEqual(dict_to, {'source_key': 'value2'})
+
+    def test_key_not_present(self):
+        dict_from = {}
+        dict_to = {}
+        ansible_configurator.pass_through(dict_from, dict_to, 'source_key', 'destination_key')
+        self.assertEqual(dict_to, {})
+
+    def test_key_to_not_specified(self):
+        dict_from = {'source_key': 'value3'}
+        dict_to = {'existing_key': 'existing_value'}
+        ansible_configurator.pass_through(dict_from, dict_to, 'source_key')
+        self.assertEqual(dict_to, {'existing_key': 'existing_value', 'source_key': 'value3'})
+
+    def test_key_from_not_in_dict_from(self):
+        dict_from = {'another_key': 'value4'}
+        dict_to = {'existing_key': 'existing_value'}
+        ansible_configurator.pass_through(dict_from, dict_to, 'source_key', 'destination_key')
+        self.assertEqual(dict_to, {'existing_key': 'existing_value'})
+
+    @patch('bibigrid.core.utility.wireguard.wireguard_keys.generate')
+    def test_add_wireguard_peers_multiple_configurations(self, mock_generate):
+        # Set up the mock to return specific keys
+        mock_generate.return_value = ('private_key_example', 'public_key_example')
+
+        configurations = [{"cloud_identifier": "cloud-1", "floating_ip": "10.0.0.1", "subnet_cidrs": ["10.0.0.0/24"]},
+            {"cloud_identifier": "cloud-2", "floating_ip": "10.0.0.2", "subnet_cidrs": ["10.0.1.0/24"]}]
+
+        # Call the function
+        ansible_configurator.add_wireguard_peers(configurations)
+
+        # Assert that the wireguard_peer field is added correctly to each configuration
+        for config in configurations:
+            self.assertIn("wireguard_peer", config)
+            self.assertEqual(config["wireguard_peer"]["name"], config["cloud_identifier"])
+            self.assertEqual(config["wireguard_peer"]["private_key"], 'private_key_example')
+            self.assertEqual(config["wireguard_peer"]["public_key"], 'public_key_example')
+            self.assertEqual(config["wireguard_peer"]["ip"], config["floating_ip"])
+            self.assertEqual(config["wireguard_peer"]["subnets"], config["subnet_cidrs"])
+
+    def test_add_wireguard_peers_single_configuration(self):
+        # Test with only one configuration
+        configurations = [{"cloud_identifier": "cloud-1", "floating_ip": "10.0.0.1", "subnet_cidrs": ["10.0.0.0/24"]}]
+
+        # Call the function
+        ansible_configurator.add_wireguard_peers(configurations)
+
+        # Assert that no wireguard_peer field is added
+        self.assertNotIn("wireguard_peer", configurations[0])
+
+    def test_add_wireguard_peers_empty_list(self):
+        # Test with an empty list
+        configurations = []
+
+        # Call the function
+        ansible_configurator.add_wireguard_peers(configurations)
+
+        # Assert that the configurations list remains empty
+        self.assertEqual(configurations, [])
