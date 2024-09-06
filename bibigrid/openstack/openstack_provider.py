@@ -82,8 +82,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         """
         Deletes existing application credential by id or name and returns true.
         If application credential not found it returns false.
-        :param ac_id_or_name: application credential id or name
-        :return: True if deleted else false
+        @param ac_id_or_name: application credential id or name
+        @return: True if deleted else false
         """
         try:
             self.keystone_client.application_credentials.delete(ac_id_or_name)  # id
@@ -114,10 +114,13 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def list_servers(self):
         return [elem.toDict() for elem in self.conn.list_servers()]
 
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None):
+    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None,
+                      boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50):
         try:
             server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
-                                             volumes=volumes, security_groups=security_groups)
+                                             volumes=volumes, security_groups=security_groups, boot_volume=boot_volume,
+                                             boot_from_volume=boot_from_volume,
+                                             terminate_volume=terminate_boot_volume, volume_size=volume_size)
         except openstack.exceptions.BadRequestException as exc:
             if "is not active" in str(exc):
                 raise ImageDeactivatedException() from exc
@@ -137,9 +140,9 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def delete_server(self, name_or_id, delete_ips=True):
         """
         Deletes server. floating_ip as well if delete_ips is true. The resources are then free again
-        :param name_or_id:
-        :param delete_ips:
-        :return:
+        @param name_or_id:
+        @param delete_ips:
+        @return:
         """
         return self.conn.delete_server(name_or_id=name_or_id, wait=False, timeout=180, delete_ips=delete_ips,
                                        delete_ip_retry=1)
@@ -154,7 +157,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         return self.conn.close()
 
     def create_keypair(self, name, public_key):
-        # When running a multicloud approach on the same provider and same account,
+        # When running a multi-cloud approach on the same provider and same account,
         # make sure that the keypair is only created ones.
         try:
             return self.conn.create_keypair(name=name, public_key=public_key)
@@ -171,22 +174,20 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
 
     def get_free_resources(self):
         """
-        Uses the cinder API to get all relevant volume resources.
-        https://github.com/openstack/python-cinderclient/blob/master/cinderclient/v3/limits.py
-        Uses the nova API to get all relevant compute resources. Floating-IP is not returned correctly by openstack.
-        :return: Dictionary containing the free resources
+        Uses openstack.block_storage to get all relevant volume resources.
+        Uses openstack compute to get all relevant compute resources.
+        Floating-IP is not returned correctly by openstack.
+        @return: Dictionary containing the free resources
         """
         compute_limits = dict(self.conn.compute.get_limits()["absolute"])
-        # maybe needs limits.get(os.environ["OS_PROJECT_NAME"]) in the future
-        volume_limits_generator = self.cinder.limits.get().absolute
-        volume_limits = {absolut_limit.name: absolut_limit.value for absolut_limit in volume_limits_generator}
+        volume_limits = dict(self.conn.block_storage.get_limits()["absolute"])
         # ToDo TotalVolumeGigabytes needs totalVolumeGigabytesUsed, but is not given
-        volume_limits["totalVolumeGigabytesUsed"] = 0
+        volume_limits["total_volume_gigabytes_used"] = 0
         free_resources = {}
         for key in ["total_cores", "floating_ips", "instances", "total_ram"]:
             free_resources[key] = compute_limits[key] - compute_limits[key + "_used"]
-        for key in ["Volumes", "VolumeGigabytes", "Snapshots", "Backups", "BackupGigabytes"]:
-            free_resources[key] = volume_limits["maxTotal" + key] - volume_limits["total" + key + "Used"]
+        for key in ["volumes", "volume_gigabytes", "snapshots", "backups", "backup_gigabytes"]:
+            free_resources[key] = volume_limits["max_total_" + key] - volume_limits["total_" + key + "_used"]
         return free_resources
 
     def get_volume_by_id_or_name(self, name_or_id):
@@ -196,8 +197,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         """
         Uses the cinder API to create a volume from snapshot:
         https://github.com/openstack/python-cinderclient/blob/master/cinderclient/v3/volumes.py
-        :param snapshot_name_or_id: name or id of snapshot
-        :return: id of created volume
+        @param snapshot_name_or_id: name or id of snapshot
+        @return: id of created volume
         """
         LOG.debug("Trying to create volume from snapshot")
         snapshot = self.conn.get_volume_snapshot(snapshot_name_or_id)
@@ -219,8 +220,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def get_external_network(self, network_name_or_id):
         """
         Finds router interface with network id equal to given network and by that the external network.
-        :param network_name_or_id:Name or id of network
-        :return:Corresponding external network
+        @param network_name_or_id:Name or id of network
+        @return:Corresponding external network
         """
         network_id = self.conn.get_network(network_name_or_id)["id"]
         for router in self.conn.list_routers():
@@ -232,9 +233,9 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def attach_available_floating_ip(self, network=None, server=None):
         """
         Get a floating IP from a network or a pool and attach it to the server
-        :param network:
-        :param server:
-        :return:
+        @param network:
+        @param server:
+        @return:
         """
         floating_ip = self.conn.available_floating_ip(network=network)
         if server:
@@ -258,13 +259,13 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def set_allowed_addresses(self, id_or_ip, allowed_address_pairs):
         """
         Set allowed address (or CIDR) for the given network interface/port
-        :param id_or_ip: id or ip-address of the port/interfac
-        :param allowed_address: a list of allowed address pairs. For example:
+        @param id_or_ip: id or ip-address of the port/interface
+        @param allowed_address_pairs: a list of allowed address pairs. For example:
                 [{
                     "ip_address": "23.23.23.1",
                     "mac_address": "fa:16:3e:c4:cd:3f"
                 }]
-        :return updated port:
+        @return updated port:
         """
         # get port id if ip address is given
         if re.match(PATTERN_IPV4, id_or_ip):
@@ -279,8 +280,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def create_security_group(self, name, rules=None):
         """
         Create a security and add given rules
-        :param name:  Name of the security group to be created
-        :param rules: List of firewall rules in the following format.
+        @param name:  Name of the security group to be created
+        @param rules: List of firewall rules in the following format.
         rules = [{ "direction": "ingress" | "egress",
                    "ethertype": "IPv4" | "IPv6",
                    "protocol": "txp" | "udp" | "icmp" | None
@@ -291,7 +292,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                   { ... } ]
 
 
-        :return: created security group
+        @return: created security group
         """
         security_group = self.conn.create_security_group(name, f"Security group for {name}.")
         if rules is not None:
@@ -301,8 +302,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def delete_security_group(self, name_or_id):
         """
         Delete a security group
-        :param name_or_id : Name or Id of the security group to be deleted
-        :return: True if delete succeeded, False otherwise.
+        @param name_or_id : Name or id of the security group to be deleted
+        @return: True if delete succeeded, False otherwise.
         """
         try:
             return self.conn.delete_security_group(name_or_id)
@@ -312,9 +313,9 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def append_rules_to_security_group(self, name_or_id, rules):
         """
         Append firewall rules to given security group
-        :param name_or_id:
-        :param rules:
-        :return:
+        @param name_or_id:
+        @param rules:
+        @return:
         """
         for rule in rules:
             self.conn.create_security_group_rule(name_or_id, direction=rule["direction"], ethertype=rule["ethertype"],
@@ -322,3 +323,19 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                                                  port_range_max=rule["port_range_max"],
                                                  remote_ip_prefix=rule["remote_ip_prefix"],
                                                  remote_group_id=rule["remote_group_id"])
+
+    def get_security_group(self, name_or_id):
+        """
+        Returns security group if found else None.
+        @param name_or_id:
+        @return:
+        """
+        return self.conn.get_security_group(name_or_id)
+
+    def get_server(self, name_or_id):
+        """
+        Returns server if found else None.
+        @param name_or_id:
+        @return:
+        """
+        return self.conn.get_server(name_or_id)

@@ -12,6 +12,7 @@ import subprocess
 import sys
 import threading
 import time
+from filelock import FileLock
 
 import ansible_runner
 import os_client_config
@@ -26,7 +27,7 @@ class ImageNotFoundException(Exception):
 
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/create_server.log", level=logging.INFO)
-HOSTS_FILE_PATH = "/opt/playbook/vars/hosts.yml"
+HOSTS_FILE_PATH = "/opt/playbook/vars/hosts.yaml"
 
 logging.info("create_server.py started")
 start_time = time.time()
@@ -68,6 +69,16 @@ def start_server(worker, start_worker_group, start_data):
     try:
         logging.info("Create server %s.", worker)
         connection = connections[start_worker_group["cloud_identifier"]]
+        # check if running
+        already_running_server = connection.get_server(worker)
+        if already_running_server:
+            logging.warning(
+                f"Already running server {worker} on {start_worker_group['cloud_identifier']} (will be terminated): "
+                f"{already_running_server}")
+            server_deleted = connection.delete_server(worker)
+            logging.info(
+                f"Server {worker} on {start_worker_group['cloud_identifier']} has been terminated ({server_deleted}). "
+                f"Continuing startup.")
         # check for userdata
         userdata = ""
         userdata_file_path = f"/opt/slurm/userdata_{start_worker_group['cloud_identifier']}.txt"
@@ -98,7 +109,7 @@ def start_server(worker, start_worker_group, start_data):
         except ConnectionError as exc:
             logging.warning(f"{exc}: Couldn't connect to {server.name}.")
             server_start_data["connection_exceptions"].append(server.name)
-        logging.info("Update hosts.yml")
+        logging.info("Update hosts.yaml")
         update_hosts(server.name, server.private_v4)
 
     except OpenStackCloudException as exc:
@@ -106,7 +117,7 @@ def start_server(worker, start_worker_group, start_data):
         server_start_data["other_openstack_exception"].append(worker)
 
 
-def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", username="ubuntu", timeout=7):
+def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", username="ubuntu"):
     """
     Waits until SSH connects successful. This guarantees that the node can be reached via Ansible.
     @param private_ip: ip of node
@@ -127,8 +138,8 @@ def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", usernam
                 establishing_connection = False
             except paramiko.ssh_exception.NoValidConnectionsError as exc:
                 logging.info("Attempting to connect to %s... This might take a while", private_ip)
-                if attempts < timeout:
-                    time.sleep(2 ** attempts)
+                if attempts < common_config["cloud_scheduling"]["sshTimeout"]:
+                    time.sleep(2 ** (2+attempts))
                     attempts += 1
                 else:
                     logging.warning("Attempt to connect to %s failed.", private_ip)
@@ -137,24 +148,25 @@ def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", usernam
 
 def update_hosts(name, ip):  # pylint: disable=invalid-name
     """
-    Update hosts.yml
+    Update hosts.yaml
     @param name: hostname
     @param ip: ibibigrid-worker0-3k1eeysgetmg4vb-3p address
     @return:
     """
-    hosts = {"host_entries": {}}
-    if os.path.isfile(HOSTS_FILE_PATH):
+    logging.info("Updating hosts.yaml")
+    with FileLock("hosts.yaml.lock"):
+        logging.info("Lock acquired")
         with open(HOSTS_FILE_PATH, mode="r", encoding="utf-8") as hosts_file:
             hosts = yaml.safe_load(hosts_file)
-            hosts_file.close()
-        if hosts is None or "host_entries" not in hosts.keys():
+        logging.info(f"Existing hosts {hosts}")
+        if not hosts or "host_entries" not in hosts:
+            logging.info(f"Resetting host entries because {'first run' if hosts else 'broken'}.")
             hosts = {"host_entries": {}}
-
-    hosts["host_entries"][name] = ip
-
-    with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
-        yaml.dump(hosts, hosts_file)
-        hosts_file.close()
+        hosts["host_entries"][name] = ip
+        logging.info(f"Added host {name} with ip {hosts['host_entries'][name]}")
+        with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
+            yaml.dump(hosts, hosts_file)
+    logging.info("Wrote hosts file. Released hosts.yaml.lock.")
 
 
 def configure_dns():
@@ -163,7 +175,7 @@ def configure_dns():
     @return:
     """
     logging.info("configure_dns")
-    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', "master", "-t", "dns"]
+    cmdline_args = ["/opt/playbook/site.yaml", '-i', '/opt/playbook/ansible_hosts', '-l', "master", "-t", "dns"]
     return _run_playbook(cmdline_args)
 
 
@@ -174,7 +186,7 @@ def configure_worker(instances):
     @return:
     """
     logging.info("configure_worker \nworker: %s", instances)
-    cmdline_args = ["/opt/playbook/site.yml", '-i', '/opt/playbook/ansible_hosts', '-l', instances]
+    cmdline_args = ["/opt/playbook/site.yaml", '-i', '/opt/playbook/ansible_hosts', '-l', instances]
     return _run_playbook(cmdline_args)
 
 
@@ -200,17 +212,17 @@ server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "c
 GROUP_VARS_PATH = "/opt/playbook/group_vars"
 worker_groups = []
 for filename in os.listdir(GROUP_VARS_PATH):
-    if filename != "master.yml":
-        f = os.path.join(GROUP_VARS_PATH, filename)
+    if filename != "master.yaml":
+        worker_group_yaml_file = os.path.join(GROUP_VARS_PATH, filename)
         # checking if it is a file
-        if os.path.isfile(f):
-            with open(f, mode="r", encoding="utf-8") as worker_group:
-                worker_groups.append(yaml.safe_load(worker_group))
+        if os.path.isfile(worker_group_yaml_file):
+            with open(worker_group_yaml_file, mode="r", encoding="utf-8") as worker_group_yaml:
+                worker_groups.append(yaml.safe_load(worker_group_yaml))
 
 # read common configuration
-with open("/opt/playbook/vars/common_configuration.yml", mode="r", encoding="utf-8") as common_configuration_file:
+with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="utf-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
-
+logging.info(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['sshTimeout']}")
 # read clouds.yaml
 with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
     clouds = yaml.safe_load(clouds_file)["clouds"]
@@ -261,13 +273,6 @@ if failed_list or unreachable_list:
     sys.exit(1)
 else:
     logging.info(ansible_execution_data)
-server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [],
-                     "available_servers": [], "openstack_wait_exceptions": []}
-if [key for key in server_start_data if "exception" in key]:
-    logging.warning(server_start_data)
-    sys.exit(1)
-else:
-    logging.info(server_start_data)
 
 logging.info("Successful create_server.py execution!")
 time_in_s = time.time() - start_time

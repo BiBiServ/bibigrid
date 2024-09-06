@@ -9,17 +9,15 @@ AuthAltParameters=jwt_key=/etc/slurm/jwt-secret.key
 ClusterName=bibigrid
 
 MpiDefault=none
-ProctrackType=proctrack/linuxproc
+ProctrackType=proctrack/cgroup # linuxproc # changed for 23.11.0
 ReturnToService=2
 SwitchType=switch/none
 TaskPlugin=task/none
 #TaskPlugin=task/cgroup
 JobAcctGatherType=jobacct_gather/linux
 
-# see https://slurm.schedmd.com/slurm.conf.html#OPT_cloud_dns:~:text=for%20additional%20details.-,cloud_dns,-By%20default%2C%20Slurm
 # SlurmctldParameters=cloud_dns
-# Funktioniert nicht wie vermutet. slurmctld versucht mit diesem Parameter schon beim Start alle Clients aufzulösen,
-# was natürlich nicht funktioniert.
+# didn't work as expected. slurmctld tries to resolve all clients on startup which doesn't work obviously
 
 # PRIORITY
 PriorityType=priority/multifactor
@@ -37,7 +35,6 @@ SlurmctldPort=6817
 SlurmdPort=6818
 
 # DIRECTORIES
-#JobCheckpointDir=/var/lib/slurm/job_checkpoint
 SlurmdSpoolDir=/var/lib/slurm/slurmd
 StateSaveLocation=/var/lib/slurm/state_checkpoint
 
@@ -61,51 +58,64 @@ AccountingStorageHost={{ hostvars[groups.master.0].name | lower }}
 AccountingStorageUser={{ slurm_conf.db_user }}
 
 # LOGGING
-SlurmctldDebug=info
+SlurmctldDebug=debug # info
 SlurmctldLogFile=/var/log/slurm/slurmctld.log
 SlurmdDebug=info
 SlurmdLogFile=/var/log/slurm/slurmd.log
 
 # COMPUTE NODES
-{% set sl = {} %}
-{% set all = {"nodes":[]} %}
-{% set master_or_empty = groups.master if use_master_as_compute else [] %}
-{% for node_name in master_or_empty +groups.workers %}
+# use_master_as_compute
+{% set partitions = {} %}
+{% set exclude_groups = [] %}
+{% set node_groups = [] %}
+{% for node_name in groups.master + groups.workers %}
 {% set node = hostvars[node_name] %}
-{% set mem = node.flavor.ram // 1024 * 1000 %}
-{% if node.cloud_identifier not in sl %}
-{{ sl.update({node.cloud_identifier: []}) }}
+{% if node.name not in node_groups %}
+{% if not node.on_demand %}
+{% set _ = exclude_groups.append(node.name) %}
 {% endif %}
-{% if node.name not in sl[node.cloud_identifier] %}
-NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem - [mem // 2, 16000] | min }} State=CLOUD {{"Features="+node.features|join(",") if node.features is defined}}# {{ node.cloud_identifier }}
-{{ sl[node.cloud_identifier].append(node.name)}}
-{{ all.nodes.append(node.name)}}
+{% set _ = node_groups.append(node.name) %}
+{% set mem = (node.flavor.ram // 1024) * 1000 %}
+NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem - [mem // 2, 16000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) if node.features is defined }}# {{ node.cloud_identifier }}
+{% for partition in node.partitions %}
+{% if partition not in partitions %}
+{% set _ = partitions.update({partition: []}) %}
+{% endif %}
+{% set _ = partitions[partition].append(node.name) %}
+{% endfor %}
 {% endif %}
 {% endfor %}
-{% for key,value in sl.items() %}
-PartitionName={{ key }} Nodes={{ value|join(",") }}
+
+{% for key, value in partitions.items() %}
+PartitionName={{ key }} Nodes={{ value | join(",") }}
 {% endfor %}
-PartitionName=All Nodes = {{ all.nodes|join(",") }} default=yes
 
 # JobSubmitPlugin
 JobSubmitPlugins=all_partitions
 
 # POWER  /ELASTIC SCHEDULING
 ResumeProgram=/opt/slurm/create.sh
-# Resume time is 15 minutes (900 seconds)
+# Resume time's default is 20 minutes (1200 seconds)
 ResumeTimeout= {{ slurm_conf.elastic_scheduling.ResumeTimeout }}
 SuspendProgram=/opt/slurm/terminate.sh
-# Suspend time is 10 minutes (600 seconds)
+# Suspend time's default is 1 hour (3600 seconds)
 SuspendTime= {{ slurm_conf.elastic_scheduling.SuspendTime }}
+# SuspendTimeout's default is 90 seconds
+SuspendTimeout={{ slurm_conf.elastic_scheduling.SuspendTimeout }}
 # Excludes {{ hostvars[groups.master.0].name }} from suspend
-SuspendExcNodes={{ hostvars[groups.master.0].name }}
+SuspendExcNodes={{ exclude_groups | join(',') }}
 # Maximum number of nodes
 TreeWidth= {{ slurm_conf.elastic_scheduling.TreeWidth }}
 # Do not cache dns names
-CommunicationParameters=NoAddrCache
+# CommunicationParameters=NoAddrCache # REMOVED for 23.11.0
 # Mark node status idle on suspend so DOWN is removed
 SlurmctldParameters=idle_on_node_suspend
 # Show slurm nodes all the time
 PrivateData=cloud
 # return node to idle when startup fails
 ResumeFailProgram=/opt/slurm/fail.sh
+
+# job container
+# TO BE TESTED
+JobContainerType=job_container/tmpfs
+PrologFlags=Contain

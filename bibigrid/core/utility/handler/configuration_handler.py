@@ -16,13 +16,13 @@ CLOUDS_PUBLIC_NAME_KEY = "profile"
 CLOUD_CONFIGURATION_KEY = "cloud"
 
 
-def read_configuration(log, path="bibigrid.yml", configuration_list=True):
+def read_configuration(log, path, configuration_list=True):
     """
     Reads yaml from file and returns configuration
-    :param log:
-    :param path: Path to yaml file
-    :param configuration_list: True if list is expected
-    :return: configurations (dict)
+    @param log:
+    @param path: Path to yaml file
+    @param configuration_list: True if list is expected
+    @return: configurations (dict)
     """
     configuration = None
     if os.path.isfile(path):
@@ -42,10 +42,10 @@ def read_configuration(log, path="bibigrid.yml", configuration_list=True):
 def get_list_by_key(configurations, key, get_empty=True):
     """
     Returns a list of objects which are value to the key.
-    :param get_empty: if true empty configurations return None
-    :param configurations: YAML of configuration File containing the configuration-data for each provider
-    :param key: Key that is looked out for
-    :return: List of values of said key through all configs
+    @param get_empty: if true empty configurations return None
+    @param configurations: YAML of configuration File containing the configuration-data for each provider
+    @param key: Key that is looked out for
+    @return: List of values of said key through all configs
     """
     return [configuration.get(key) for configuration in configurations if configuration.get(key) or get_empty]
 
@@ -92,17 +92,18 @@ def get_clouds_files(log):
         clouds_public = clouds_public_yaml.get(CLOUD_PUBLIC_ROOT_KEY)
         if not clouds_public:
             log.warning("%s is not valid. Must contain key '%s'", CLOUDS_PUBLIC_YAML, CLOUD_PUBLIC_ROOT_KEY)
+
     return clouds, clouds_public
 
 
 def get_cloud_specification(cloud_name, clouds, clouds_public, log):
     """
     As in openstack cloud_public_specification will be overwritten by cloud_private_specification
-    :param cloud_name: name of the cloud to look for in clouds.yaml
-    :param clouds: dict containing the data loaded from clouds.yaml
-    :param clouds_public: dict containing the data loaded from clouds-public.yaml
-    :param log:
-    :return:
+    @param cloud_name: name of the cloud to look for in clouds.yaml
+    @param clouds: dict containing the data loaded from clouds.yaml
+    @param clouds_public: dict containing the data loaded from clouds-public.yaml
+    @param log:
+    @return:
     """
     cloud_full_specification = {}
     cloud_private_specification = clouds.get(cloud_name)
@@ -142,11 +143,13 @@ def get_cloud_specifications(configurations, log):
     @return: list of dicts: cloud_specifications of every configuration
     """
     clouds, clouds_public = get_clouds_files(log)
-    log.debug("Loaded clouds.yml and clouds_public.yml")
+    log.debug("Loaded clouds.yaml and clouds_public.yaml")
     cloud_specifications = []
     if isinstance(clouds, dict):
         for configuration in configurations:
             cloud = configuration.get(CLOUD_CONFIGURATION_KEY)
             if cloud:
-                cloud_specifications.append(get_cloud_specification(cloud, clouds, clouds_public, log))  # might be None
+                cloud_specification = get_cloud_specification(cloud, clouds, clouds_public, log)
+                cloud_specifications.append(cloud_specification)  # might be None if not found
+                configuration["cloud_identifier"] = cloud_specification["identifier"]
     return cloud_specifications

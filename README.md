@@ -1,6 +1,6 @@
 # BiBiGrid
-BiBiGrid is a cloud cluster creation and management framework for OpenStack
-(and more providers in the future).
+BiBiGrid is a framework for creating and managing cloud clusters, currently supporting OpenStack. 
+Future versions will support additional cloud providers.
 
 BiBiGrid uses Ansible to configure standard Ubuntu 20.04/22.04 LTS as 
 well as Debian 11 cloud images. Depending on your configuration BiBiGrid
@@ -26,22 +26,23 @@ might be just what you need.
 <summary> Brief, technical BiBiGrid overview </summary>
 
 ### How to configure a cluster?
-#### Configuration File: bibigrid.yml
-A [template](bibigrid.yml) file is included in the repository ([bibigrid.yml](bibigrid.yml)). 
+#### Configuration File: bibigrid.yaml
+A [template](bibigrid.yaml) file is included in the repository ([bibigrid.yaml](bibigrid.yaml)). 
 
-The cluster configuration file consists of a list of configurations. Every configuration describes the provider specific configuration.
-The first configuration additionally contains all the keys that apply to the entire cluster (roles for example).
-Currently only clusters with one provider are possible, so focus only on the first configuration in the list.
 
-The configuration template [bibigrid.yml](bibigrid.yml) contains many helpful comments, making completing it easier for you.
+The cluster configuration file, `bibigrid.yaml`, consists of a list of configurations. 
+Each configuration describes provider-specific settings. 
+The first configuration in the list also contains keys that apply to the entire cluster (e.g., roles).
+
+The configuration template [bibigrid.yaml](bibigrid.yaml) contains many helpful comments, making completing it easier for you.
 
 [You need more details?](documentation/markdown/features/configuration.md)
 
-#### Cloud Specification Data: clouds.yml
+#### Cloud Specification Data: clouds.yaml
 To access the cloud, authentication information is required.
 You can download your `clouds.yaml` from OpenStack.
 
-Your `clouds.yaml` is to be placed in `~/.config/bibigrid/` and will be loaded by BiBiGrid on execution.
+Place the `clouds.yaml` file in the `~/.config/bibigrid/` directory. BiBiGrid will load this file during execution.
 
 [You need more details?](documentation/markdown/features/cloud_specification_data.md)
 
@@ -50,11 +51,11 @@ If you haven't used BiBiGrid1 in the past or are unfamiliar with OpenStack, we h
 [tutorial](https://github.com/deNBI/bibigrid_clum2022) instead.
 
 #### Preparation
-1. Download (or create) the `clouds.yaml` (and optionally `clouds-public.yaml`) file as described [above](#cloud-specification-data-cloudsyml). 
+1. Download (or create) your `clouds.yaml` file (and optionally `clouds-public.yaml`) as described [above](#cloud-specification-data-cloudsyaml). 
 2. Place the `clouds.yaml` into `~/.config/bibigrid`
-3. Fill the configuration, `bibigrid.yml`, with your specifics. At least you need: A master instance with valid type and image, 
-a region, an availability zone, an sshUser (most likely ubuntu) and a subnet. 
-You probably also want at least one worker with a valid type, image and count.
+3. Fill in the `bibigrid.yaml` configuration file with your specifics. At a minimum you need to specify: a master instance with valid type and image, 
+an sshUser (most likely ubuntu) and a subnet. 
+You will likely also want to specify at least one worker instance with a valid type, image, and count.
 4. If your cloud provider runs post-launch services, you need to set the `waitForServices` 
 key appropriately which expects a list of services to wait for.
 5. Create a virtual environment from `bibigrid/requirements.txt`. 
@@ -62,16 +63,15 @@ See [here](https://www.akamai.com/blog/developers/how-building-virtual-python-en
 6. Take a look at [First execution](#first-execution)
 
 #### First execution
-Before follow the steps described at [Preparation](#preparation).
+Before proceeding, ensure you have completed the steps described in the [Preparation section](#preparation).
 
-After cloning the repository navigate to `bibigrid`.
-In order to execute BiBiGrid source the virtual environment created during [preparation](#preparation).
-Take a look at BiBiGrid's [Command Line Interface](documentation/markdown/features/CLI.md) 
-if you want to explore for yourself.
+After cloning the repository, navigate to the bibigrid directory. 
+Source the virtual environment created during [preparation](#preparation) to execute BiBiGrid.
+Refer to BiBiGrid's [Command Line Interface documentation](documentation/markdown/features/CLI.md) if you want to explore additional options.
 
 A first execution run through could be:
-1. `./bibigrid.sh -i [path-to-bibigrid.yml] -ch`: checks the configuration
-2. `./bibigrid.sh -i 'bibigrid.yml -i [path-to-bibigrid.yml] -c'`: creates the cluster (execute only if check was successful)
+1. `./bibigrid.sh -i [path-to-bibigrid.yaml] -ch`: checks the configuration
+2. `./bibigrid.sh -i 'bibigrid.yaml -i [path-to-bibigrid.yaml] -c'`: creates the cluster (execute only if check was successful)
 3. Use **BiBiGrid's create output** to investigate the created cluster further. Especially connecting to the ide might be helpful. 
 Otherwise, connect using ssh.
 4. While in ssh try `sinfo` to printing node info
@@ -85,17 +85,17 @@ Great! You've just started and terminated your first cluster using BiBiGrid!
 </details>
 
 ### Troubleshooting
-If your cluster doesn't start up, please first make sure your configurations file is valid (`-ch`). 
-If it is not, try to modify the configurations file to make it valid. Use `-v` or `-vv` to get a more verbose output, 
-so you can find the issue faster. Also double check if you have sufficient permissions to access the project. 
-If you can't make your configurations file valid, please contact a developer.
-If that's the case, please contact a developer and/or manually check if your quotas are exceeded. 
-Some quotas can currently not be checked by bibigrid.
+If your cluster doesn't start up, first ensure your configuration file is valid using the `-ch` option.
+If the configuration is invalid, modify the file as needed.
+Use the `-v` or `-vv` options for more verbose output to help identify the issue faster.
+Also, double-check that you have sufficient permissions to access the project.
+If you cannot make your configuration file valid, please contact a developer.
+Additionally, manually check if your quotas are exceeded, as some quotas cannot currently be checked by BiBiGrid.
 
 **Whenever you contact a developer, please send your logfile along.**
 
 # Documentation
-If you would like to learn more about BiBiGrid please follow a fitting link:
+For more information about BiBiGrid, please visit the following links:
 - [BiBiGrid Features](documentation/markdown/bibigrid_feature_list.md)
 - [Software used by BiBiGrid](documentation/markdown/bibigrid_software_list.md)
 
@@ -118,7 +118,9 @@ Workers are powered down once they are not used for a longer period.
 [https://github.com/BiBiServ/Development-Guidelines](https://github.com/BiBiServ/Development-Guidelines)
 
 ## On implementing concrete providers
-New concrete providers can be implemented very easily. Just copy the `provider.py` file and implement all methods for
-your cloud-provider. Also inherit from the `provider` class. After that add your provider to the providerHandler lists; giving it a associated name for the
-configuration files. By that, your provider is automatically added to BiBiGrid's tests and regular execution. By testing
-your provider first, you will see whether all provider methods are implemented as expected.
+Implementing new cloud providers is straightforward. 
+Copy the `provider.py` file and implement all necessary methods for your cloud provider.
+Inherit from the `provider` class.
+Add your provider to the `providerHandler` lists and assign it an associated name for the configuration files.
+This will automatically include your provider in BiBiGrid's tests and regular execution.
+Test your provider to ensure all methods are implemented correctly.

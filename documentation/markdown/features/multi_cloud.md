@@ -15,7 +15,7 @@ What follows are implementation details that are not relevant for most users.
 DNS is provided by [dnsmasq](../software/dnsmasq.md). All instances are added whether they are started once (master, vpngtw)
 or on demand (workers). Explicitly, BiBiGrid manages adding workers to [dnsmasq](../software/dnsmasq.md) on creation
 triggered by [create_server](../../../resources/playbook/roles/bibigrid/files/slurm/create_server.py) and executed by ansible 
-by task [003-dns.yml](../../../resources/playbook/roles/bibigrid/tasks/003-dns.yml).
+by task [003-dns.yaml](../../../resources/playbook/roles/bibigrid/tasks/003-dns.yaml).
 
 ## VPN - Wireguard
 [Wireguard](../software/wireguard.md) creates a VPN between all vpngtw and the master node.
@@ -25,7 +25,7 @@ A single keypair (X25519 encrypted and base64 encoded) is [generated](../../../b
 creation and distributed via SSH to the master and every vpngtw.  
 
 ### Interface
-Using systemd-network a persistent wg0 interface is [created by ansible](../../../resources/playbook/roles/bibigrid/tasks/002-wireguard-vpn.yml)
+Using systemd-network a persistent wg0 interface is [created by ansible](../../../resources/playbook/roles/bibigrid/tasks/002-wireguard-vpn.yaml)
 in order to enable Wireguard.
 
 ## Port Security
@@ -36,18 +36,18 @@ While forwarding the MAC Address changes, but the IP remains the IP of the worke
 By adding `Allowed Address Pairs` OpenStack knows that it should allow those mismatch packages.
 These `Allowed Address Pairs` are added to the master and to every vpngtw.
 
-For that Ansible creates [userdata](../../../resources/playbook/roles/bibigrid/tasks/042-slurm-server.yml)
+For that Ansible creates [userdata](../../../resources/playbook/roles/bibigrid/tasks/042-slurm-server.yaml)
 files that are later [injected](../../../resources/playbook/roles/bibigrid/files/slurm/create_server.py)
 into started worker instances by `create_server.py` triggered by slurm.
 
 ## MTU Probing
-MTU Probing is necessary, because MTU might be different across networks. [Ansible handles that]([created by ansible](../../../resources/playbook/roles/bibigrid/tasks/002-wireguard-vpn.yml).
+MTU Probing is necessary, because MTU might be different across networks. [Ansible handles that]([created by ansible](../../../resources/playbook/roles/bibigrid/tasks/002-wireguard-vpn.yaml).
 
 ## IP Routes
 In order to allow workers to communicate over the vpn, they need to know how to use it.
-Therefore, IP routes are [set by ansible]([deactivated by ansible](../../../resources/playbook/roles/bibigrid/tasks/000-add-ip-routes.yml)
+Therefore, IP routes are [set by ansible]([deactivated by ansible](../../../resources/playbook/roles/bibigrid/tasks/000-add-ip-routes.yaml)
 for the workers, telling them how to contact the master. 
 
 ## Deactivating Netplan
-Netplan is [deactivated by ansible](../../../resources/playbook/roles/bibigrid/tasks/000-add-ip-routes.yml)
+Netplan is [deactivated by ansible](../../../resources/playbook/roles/bibigrid/tasks/000-add-ip-routes.yaml)
 in order to avoid set ip routes being overwritten.

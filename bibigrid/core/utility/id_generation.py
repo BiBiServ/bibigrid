@@ -13,7 +13,7 @@ CLUSTER_UUID_ALPHABET = '0123456789abcdefghijkmnopqrstuvwxyz'
 def generate_cluster_id():
     """
     Generates an encrypted shortUUID with length MAX_ID_LENGTH
-    :return:
+    @return:
     """
     uuid = shortuuid.ShortUUID()
     uuid.set_alphabet(CLUSTER_UUID_ALPHABET)
@@ -23,8 +23,8 @@ def generate_cluster_id():
 def generate_safe_cluster_id(providers):
     """
     Generates a cluster_id and checks if cluster_id is not in use. When a unique id is found it is returned
-    :param providers: providers to check whether they use said cluster_id
-    :return: cluster_id
+    @param providers: providers to check whether they use said cluster_id
+    @return: cluster_id
     """
     id_is_unique = False
     cluster_id = None
@@ -37,9 +37,9 @@ def generate_safe_cluster_id(providers):
 def is_unique_cluster_id(cluster_id, providers):
     """
     Checks if cluster_id is not in use on any provider
-    :param cluster_id: generated cluster_ird
-    :param providers: providers to check
-    :return: True if cluster_id is unique. False else.
+    @param cluster_id: generated cluster_ird
+    @param providers: providers to check
+    @return: True if cluster_id is unique. False else.
     """
     for provider in providers:
         for server in provider.list_servers():
@@ -54,6 +54,6 @@ def is_unique_cluster_id(cluster_id, providers):
 def generate_munge_key():
     """
     Generates a munge key (UUID) for slurm
-    :return:
+    @return:
     """
     return shortuuid.ShortUUID().random(32)

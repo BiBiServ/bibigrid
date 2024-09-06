@@ -9,10 +9,23 @@
     uid: 64030
     group: slurm
 
-- name: Install Slurm package (and dependencies)
+- name: Create pinning configuration for slurm-bibigrid version 23.11.*
+  copy:
+    content: |
+      Package: slurm-bibigrid
+      Pin: version 23.11.*
+      Pin-Priority: 1001
+    dest: /etc/apt/preferences.d/slurm-bibigrid
+    mode: '0311'
+
+- name: Install slurm-bibigrid package
+  apt:
+    name: slurm-bibigrid
+    state: present
+
+- name: Install Slurm package dependencies
   apt:
     name:
-      - slurm-full
       - munge
 
 - name: Create new secret (Munge)
@@ -58,9 +71,6 @@
   with_items:
     - slurmd
     - slurmctld
-  notify:
-    - slurmd
-    - slurmctld
 
 - name: Enable slurmctld and slurmd services
   systemd:
@@ -75,14 +85,19 @@
 
 - name: Create Slurm configuration
   template:
-    src: slurm/slurm.conf
+    src: slurm/slurm.j2
     dest: /etc/slurm/slurm.conf
     owner: slurm
     group: root
     mode: 0444
-  notify:
-    - slurmctld
-    - slurmd
+
+- name: Create Job Container configuration
+  template:
+    src: slurm/job_container.j2
+    dest: /etc/slurm/job_container.conf
+    owner: slurm
+    group: root
+    mode: 0444
 
 - name: Slurm cgroup configuration
   copy:
@@ -91,6 +106,8 @@
     owner: slurm
     group: root
     mode: 0444
-  notify:
-    - slurmctld
-    - slurmd
+
+- name: Restart slurmd
+  systemd:
+    name: slurmd
+    state: restarted

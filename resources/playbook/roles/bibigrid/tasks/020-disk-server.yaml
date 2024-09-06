@@ -1,0 +1,23 @@
+- name: Create /vol bind mount from /mnt ephemeral
+  mount:
+    path: /vol
+    src: /mnt
+    fstype: none
+    opts: bind,auto
+    state: mounted
+  when: flavor.ephemeral > 0
+
+- name: Mount disks
+  mount:
+    path: "{{ item.dst }}"
+    src: "{{ item.src }}"
+    fstype: ext4
+    state: mounted
+  with_items:
+    - "{{ master.disks }}"
+  when: master.disks is defined
+
+- name: Automount
+  when: volumes is defined
+  include_tasks: 020-disk-server-automount.yaml
+  with_items: "{{ volumes }}"

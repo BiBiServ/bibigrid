@@ -14,14 +14,11 @@
 
 - name: Create slurmdb configuration file
   template:
-    src: slurm/slurmdbd.conf
+    src: slurm/slurmdbd.j2
     dest: /etc/slurm/slurmdbd.conf
     owner: slurm
     group: root
     mode: "0600"
-  notify:
-    - slurmdbd
-    - slurmctld
 
 - name: Generate random JWT Secret
   command:
@@ -42,8 +39,6 @@
     owner: root
     group: root
     mode: "0644"
-  notify:
-    - slurmrestd
 
 - name: Create system overrides directories (slurmdbdm slurmrestd)
   file:
@@ -66,25 +61,6 @@
   with_items:
     - slurmdbd
     - slurmrestd
-  notify:
-    - slurmdbd
-    - slurmrestd
-
-- name: Enable slurmdbd and slurmrestd services
-  systemd:
-    name: "{{ item }}"
-    enabled: true
-    masked: false
-    state: started
-    daemon_reload: true
-  with_items:
-    - slurmdbd
-    - slurmrestd
-
-- name: Start slurm explicit after all dependencies are configured
-  systemd:
-    name: slurmctld
-    state: started
 
 - name: Register Slurm users home dir
   shell: "set -o pipefail &&  grep slurm /etc/passwd | cut -d ':' -f 6"
@@ -169,8 +145,10 @@
       - python-openstackclient==6.0.0
       - openstacksdk==0.62.0
       - os_client_config
+      - filelock
       - paramiko
       - ansible-runner
+      - pyzabbix
 
 - name: 'Add default user to ansible group'
   user:
@@ -178,6 +156,31 @@
     append: true
     groups:
       - ansible
+
+- name: Generate location specific worker userdata
+  template:
+    src: slurm/worker_userdata.j2
+    dest: "/opt/slurm/userdata_{{ hostvars[item].cloud_identifier }}.txt"
+    owner: slurm
+    group: ansible
+    mode: "0640"
+  with_items: "{{ groups.vpngtw + groups.master }}"
+
+- name: Enable slurmdbd and slurmrestd services
+  systemd:
+    name: "{{ item }}"
+    enabled: true
+    masked: false
+    state: started
+    daemon_reload: true
+  with_items:
+    - slurmdbd
+    - slurmrestd
+
+- name: Start slurm explicit after all dependencies are configured
+  systemd:
+    name: slurmctld
+    state: started
 
 
 - when: slurm_home.stdout != '/opt/slurm'
@@ -210,11 +213,12 @@
         - slurmdbd
         - slurmrestd
 
-- name: Generate location specific worker userdata
-  template:
-    src: slurm/worker_userdata.j2
-    dest: "/opt/slurm/userdata_{{ hostvars[item].cloud_identifier }}.txt"
-    owner: slurm
-    group: ansible
-    mode: "0640"
-  with_items: "{{ groups.vpngtw + groups.master }}"
+- name: Restart Slurm services
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - slurmdbd
+    - slurmrestd
+    - slurmctld
+    - slurmd

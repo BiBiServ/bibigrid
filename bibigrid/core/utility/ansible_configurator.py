@@ -9,6 +9,7 @@ import yaml
 
 from bibigrid.core.actions import create
 from bibigrid.core.actions import ide
+from bibigrid.core.actions.version import __version__
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.handler import configuration_handler
@@ -16,19 +17,20 @@ from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.wireguard import wireguard_keys
 
 DEFAULT_NFS_SHARES = ["/vol/spool"]
-ADDITIONAL_PATH = "additional/"
 PYTHON_INTERPRETER = "/usr/bin/python3"
-vpngtw_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpngtw"]}]
+VPNGTW_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpngtw"]}]
 MASTER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-master"]}]
 WORKER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-worker"]}]
-VARS_FILES = [aRP.CONFIG_YML, aRP.HOSTS_YML]
+VARS_FILES = [aRP.CONFIG_YAML, aRP.HOSTS_YAML]
 IDE_CONF = {"ide": False, "workspace": ide.DEFAULT_IDE_WORKSPACE, "port_start": ide.REMOTE_BIND_ADDRESS,
             "port_end": ide.DEFAULT_IDE_PORT_END, "build": False}
 ZABBIX_CONF = {"db": "zabbix", "db_user": "zabbix", "db_password": "zabbix", "timezone": "Europe/Berlin",
                "server_name": "bibigrid", "admin_password": "bibigrid"}
 SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "munge_key": id_generation.generate_munge_key(),
-              "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 900, "TreeWidth": 128}}
+              "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 1200, "SuspendTimeout": 60,
+                                     "TreeWidth": 128}}
+CLOUD_SCHEDULING = {"sshTimeout": 5}
 
 
 def delete_old_vars(log):
@@ -46,34 +48,34 @@ def delete_old_vars(log):
                 os.remove(file)
 
 
-def generate_site_file_yaml(custom_roles):
+def generate_site_file_yaml(user_roles):
     """
     Generates site_yaml (dict).
     Deepcopy is used in case roles might differ between servers in the future.
-    :param custom_roles: ansibleRoles given by the config
-    :return: site_yaml (dict)
+    @param user_roles: userRoles given by the config
+    @return: site_yaml (dict)
     """
     site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
-                 {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": vpngtw_ROLES},
-                 {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]  # ,
-    # {"hosts": "vpngtw", "become": "yes", "vars_files": copy.deepcopy(VARS_FILES),
-    # "roles": ["common", "vpngtw"]}]
-    # add custom roles and vars
-    for custom_role in custom_roles:
-        VARS_FILES.append(custom_role["vars_file"])
-        for role_group in [MASTER_ROLES, vpngtw_ROLES, WORKER_ROLES]:
-            role_group.append(ADDITIONAL_PATH + custom_role["name"])
+                 {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": VPNGTW_ROLES},
+                 {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]
+    for user_role in user_roles:
+        for host_dict in site_yaml:
+            if host_dict["hosts"] in user_role["hosts"]:
+                host_dict["vars_files"] = host_dict["vars_files"] + user_role.get("varsFiles", [])
+                host_dict["roles"] = host_dict["roles"] + [{"role": role["name"], "tags": role.get("tags", [])} for role
+                                                           in user_role["roles"]]
+
     return site_yaml
 
 
 def write_host_and_group_vars(configurations, providers, cluster_id, log):  # pylint: disable=too-many-locals
     """
-    ToDo filter what information really is necessary. Determined by further development
     Filters unnecessary information
-    :param configurations: configurations
-    :param providers: providers
-    :param cluster_id: To get proper naming
-    :return: filtered information (dict)
+    @param log:
+    @param configurations: configurations
+    @param providers: providers
+    @param cluster_id: To get proper naming
+    @return: filtered information (dict)
     """
     log.info("Generating instances file...")
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
@@ -94,7 +96,9 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                            "network": configuration["network"], "flavor": flavor_dict,
                            "gateway_ip": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"]}
+                           "cloud_identifier": configuration["cloud_identifier"],
+                           "on_demand": worker.get("onDemand", True), "state": "CLOUD",
+                           "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
 
             worker_features = worker.get("features", [])
             if isinstance(worker_features, str):
@@ -102,7 +106,9 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             features = set(configuration_features + worker_features)
             if features:
                 worker_dict["features"] = features
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, group_name), worker_dict, log)
+
+            pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
@@ -116,10 +122,12 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "floating_ip": configuration["floating_ip"], "private_v4": configuration["private_v4"],
                            "flavor": flavor_dict, "wireguard_ip": wireguard_ip,
                            "cloud_identifier": configuration["cloud_identifier"],
-                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
+                           "on_demand": False}
             if configuration.get("wireguard_peer"):
                 vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, name), vpngtw_dict, log)
+            pass_through(configuration, vpngtw_dict, "waitForServices", "wait_for_services")
+            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), vpngtw_dict, log)
         else:
             master = configuration["masterInstance"]
             name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
@@ -129,10 +137,14 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
-                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False)}
+                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
+                           "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
+                           "on_demand": False,
+                           "partitions": master.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
             if configuration.get("wireguard_peer"):
                 master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yml"), master_dict, log)
+            pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
+            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yaml"), master_dict, log)
 
 
 def pass_through(dict_from, dict_to, key_from, key_to=None):
@@ -153,20 +165,18 @@ def pass_through(dict_from, dict_to, key_from, key_to=None):
 def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user, log):
     """
     Generates common_configuration yaml (dict)
-    :param cidrs: str subnet cidrs (provider generated)
-    :param configurations: master configuration (first in file)
-    :param cluster_id: id of cluster
-    :param ssh_user: user for ssh connections
-    :param default_user: Given default user
-    :param log:
-    :return: common_configuration_yaml (dict)
+    @param cidrs: str subnet cidrs (provider generated)
+    @param configurations: master configuration (first in file)
+    @param cluster_id: id of cluster
+    @param ssh_user: user for ssh connections
+    @param default_user: Given default user
+    @param log:
+    @return: common_configuration_yaml (dict)
     """
     master_configuration = configurations[0]
     log.info("Generating common configuration file...")
-    # print(configuration.get("slurmConf", {}))
-    common_configuration_yaml = {"auto_mount": master_configuration.get("autoMount", False), "cluster_id": cluster_id,
-                                 "cluster_cidrs": cidrs, "default_user": default_user,
-                                 "local_fs": master_configuration.get("localFS", False),
+    common_configuration_yaml = {"bibigrid_version": __version__, "cluster_id": cluster_id, "cluster_cidrs": cidrs,
+                                 "default_user": default_user, "local_fs": master_configuration.get("localFS", False),
                                  "local_dns_lookup": master_configuration.get("localDNSlookup", False),
                                  "use_master_as_compute": master_configuration.get("useMasterAsCompute", True),
                                  "dns_server_list": master_configuration.get("dns_server_list", ["8.8.8.8"]),
@@ -177,12 +187,14 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                  "slurm": master_configuration.get("slurm", True), "ssh_user": ssh_user,
                                  "slurm_conf": mergedeep.merge({}, SLURM_CONF,
                                                                master_configuration.get("slurmConf", {}),
-                                                               strategy=mergedeep.Strategy.TYPESAFE_REPLACE)}
+                                                               strategy=mergedeep.Strategy.TYPESAFE_REPLACE),
+                                 "cloud_scheduling": mergedeep.merge({}, CLOUD_SCHEDULING,
+                                                                     master_configuration.get("cloudScheduling", {}),
+                                                                     strategy=mergedeep.Strategy.TYPESAFE_REPLACE)}
     if master_configuration.get("nfs"):
         nfs_shares = master_configuration.get("nfsShares", [])
         nfs_shares = nfs_shares + DEFAULT_NFS_SHARES
-        common_configuration_yaml["nfs_mounts"] = [{"src": "/" + nfs_share, "dst": "/" + nfs_share} for nfs_share in
-                                                   nfs_shares]
+        common_configuration_yaml["nfs_mounts"] = [{"src": nfs_share, "dst": nfs_share} for nfs_share in nfs_shares]
         common_configuration_yaml["ext_nfs_mounts"] = [{"src": ext_nfs_share, "dst": ext_nfs_share} for ext_nfs_share in
                                                        (master_configuration.get("extNfsShares", []))]
 
@@ -194,10 +206,6 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
                                                                    master_configuration.get("zabbixConf", {}),
                                                                    strategy=mergedeep.Strategy.TYPESAFE_REPLACE)
 
-    for from_key, to_key in [("waitForServices", "wait_for_services"), ("ansibleRoles", "ansible_roles"),
-                             ("ansibleGalaxyRoles", "ansible_galaxy_roles")]:
-        pass_through(master_configuration, common_configuration_yaml, from_key, to_key)
-
     if len(configurations) > 1:
         peers = configuration_handler.get_list_by_key(configurations, "wireguard_peer")
         common_configuration_yaml["wireguard_common"] = {"mask_bits": 24, "listen_port": 51820, "peers": peers}
@@ -208,11 +216,11 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
 def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # pylint: disable-msg=too-many-locals
     """
     Generates ansible_hosts_yaml (inventory file).
-    :param ssh_user: str global SSH-username
-    :param configurations: dict
-    :param cluster_id: id of cluster
-    :param log:
-    :return: ansible_hosts yaml (dict)
+    @param ssh_user: str global SSH-username
+    @param configurations: dict
+    @param cluster_id: id of cluster
+    @param log:
+    @return: ansible_hosts yaml (dict)
     """
     log.info("Generating ansible hosts file...")
     ansible_hosts_yaml = {"vpn": {"hosts": {},
@@ -246,9 +254,9 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
 def to_instance_host_dict(ssh_user, ip="localhost"):  # pylint: disable=invalid-name
     """
     Generates host entry
-    :param ssh_user: str global SSH-username
-    :param ip: str ip
-    :return: host entry (dict)
+    @param ssh_user: str global SSH-username
+    @param ip: str ip
+    @return: host entry (dict)
     """
     host_yaml = {"ansible_connection": "ssh", "ansible_python_interpreter": PYTHON_INTERPRETER,
                  "ansible_user": ssh_user}
@@ -260,8 +268,8 @@ def to_instance_host_dict(ssh_user, ip="localhost"):  # pylint: disable=invalid-
 def get_cidrs(configurations):
     """
     Gets cidrs of all subnets in all providers
-    :param configurations: list of configurations (dict)
-    :return:
+    @param configurations: list of configurations (dict)
+    @return:
     """
     all_cidrs = []
     for configuration in configurations:
@@ -271,32 +279,12 @@ def get_cidrs(configurations):
     return all_cidrs
 
 
-def get_ansible_roles(ansible_roles, log):
-    """
-    Checks if ansible_roles have all necessary values and returns True if so.
-    @param ansible_roles: ansible_roles from master configuration (first configuration)
-    @param log:
-    @return: list of valid ansible_roles
-    """
-    ansible_roles_yaml = []
-    for ansible_role in (ansible_roles or []):
-        if ansible_role.get("file") and ansible_role.get("hosts"):
-            ansible_role_dict = {"file": ansible_role["file"], "hosts": ansible_role["hosts"]}
-            for key in ["name", "vars", "vars_file"]:
-                if ansible_role.get(key):
-                    ansible_role_dict[key] = ansible_role[key]
-            ansible_roles_yaml.append(ansible_role_dict)
-        else:
-            log.warning("Ansible role %s had neither galaxy,git nor url. Not added.", ansible_role)
-    return ansible_roles_yaml
-
-
 def get_ansible_galaxy_roles(ansible_galaxy_roles, log):
     """
     Checks if ansible_galaxy_role have all necessary values and adds it to the return list if so.
-    :param ansible_galaxy_roles:
-    :param log:
-    :return: list of valid ansible_galaxy_roles
+    @param ansible_galaxy_roles:
+    @param log:
+    @return: list of valid ansible_galaxy_roles
     """
     ansible_galaxy_roles_yaml = []
     for ansible_galaxy_role in (ansible_galaxy_roles or []):
@@ -314,9 +302,9 @@ def get_ansible_galaxy_roles(ansible_galaxy_roles, log):
 def generate_worker_specification_file_yaml(configurations, log):
     """
     Generates worker_specification_file_yaml
-    :param configurations: list of configurations (dict)
-    :param log:
-    :return: worker_specification_yaml
+    @param configurations: list of configurations (dict)
+    @param log:
+    @return: worker_specification_yaml
     """
     log.info("Generating worker specification file...")
     worker_groups_list = configuration_handler.get_list_by_key(configurations, "workerInstances", False)
@@ -364,16 +352,16 @@ def add_wireguard_peers(configurations):
 def configure_ansible_yaml(providers, configurations, cluster_id, log):
     """
     Generates and writes all ansible-configuration-yaml files.
-    :param providers: list of providers
-    :param configurations: list of configurations (dict)
-    :param cluster_id: id of cluster to create
-    :param log:
-    :return:
+    @param providers: list of providers
+    @param configurations: list of configurations (dict)
+    @param cluster_id: id of cluster to create
+    @param log:
+    @return:
     """
     delete_old_vars(log)
     log.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
-    ansible_roles = get_ansible_roles(configurations[0].get("ansibleRoles"), log)
+    user_roles = configurations[0].get("userRoles", [])
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
     add_wireguard_peers(configurations)
     for path, generated_yaml in [
@@ -387,6 +375,6 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
                                                                                                   "sshUser"],
                                                                                               configurations,
                                                                                               cluster_id, log)),
-        (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(ansible_roles))]:
+        (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(user_roles))]:
         write_yaml(path, generated_yaml, log, alias)
     write_host_and_group_vars(configurations, providers, cluster_id, log)  # writing included in method

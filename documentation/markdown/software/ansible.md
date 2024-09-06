@@ -25,7 +25,7 @@ bibiplay
 is the same as:
 
 ```sh
-ansible-playbook /opt/playbook/site.yml /opt/playbook/ansible_hosts/
+ansible-playbook /opt/playbook/site.yaml /opt/playbook/ansible_hosts/
 ```
 
 any additional arguments are passed to `ansible-playbook`:
@@ -37,7 +37,7 @@ bibiplay -l master
 is the same as:
 
 ```sh
-ansible-playbook /opt/playbook/site.yml /opt/playbook/ansible_hosts/ -l master
+ansible-playbook /opt/playbook/site.yaml /opt/playbook/ansible_hosts/ -l master
 ```
 
 ### Useful commands

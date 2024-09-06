@@ -57,6 +57,7 @@ def terminate_servers(server_list, cluster_id, provider, log):
     @param server_list: list of server dicts. All servers are from provider
     @param cluster_id: id of cluster to terminate
     @param provider: provider that holds all servers in server_list
+    @param log:
     @return: a list of the servers' (that were to be terminated) termination states
     """
     log.info("Deleting servers on provider %s...", provider.cloud_specification['identifier'])
@@ -73,7 +74,7 @@ def terminate_servers(server_list, cluster_id, provider, log):
 def terminate_server(provider, server, log):
     """
     Terminates a single server and stores the termination state
-    @param provider: the provider that holds the server
+    @param provider: the provider that holds the server.
     @param server: the server that is to be terminated
     @param log:
     @return: true if the server has been terminated, false else
@@ -147,10 +148,11 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
         tmp_success = False
         while not tmp_success:
             try:
+                not_found = not provider.get_security_group(security_group_name)
                 tmp_success = provider.delete_security_group(security_group_name)
             except ConflictException:
                 tmp_success = False
-            if tmp_success:
+            if tmp_success or not_found:
                 break
             if attempts < timeout:
                 attempts += 1
@@ -161,7 +163,8 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
                 log.error(f"Attempt to delete security group {security_group_name} on "
                           f"{provider.cloud_specification['identifier']} failed.")
                 break
-        log.info(f"Delete security_group {security_group_name} -> {tmp_success}")
+        log.info(f"Delete security_group {security_group_name} -> {tmp_success or not_found} on "
+                 f"{provider.cloud_specification['identifier']}.")
         success = success and tmp_success
     return success
 

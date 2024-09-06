@@ -1,6 +1,7 @@
 """
 Module to test create
 """
+import os
 from unittest import TestCase
 from unittest.mock import patch, MagicMock, mock_open
 
@@ -111,16 +112,19 @@ class TestCreate(TestCase):
                                  creator.prepare_vpn_or_master_args(configuration, provider))
             prepare_mock.assert_not_called()
 
-    @patch("bibigrid.core.utility.handler.ssh_handler.ansible_preparation")
-    def test_initialize_instances_master(self, mock_ansible):
+    @patch("bibigrid.core.utility.handler.ssh_handler.execute_ssh")
+    def test_initialize_master(self, mock_execute_ssh):
         provider = MagicMock()
         provider.list_servers.return_value = []
         floating_ip = 21
         configuration = {"masterInstance": 42, "floating_ip": floating_ip}
         creator = create.Create([provider], [configuration], "", startup.LOG)
         creator.initialize_instances()
-        mock_ansible.assert_called_with(floating_ip=floating_ip, private_key=create.KEY_FOLDER + creator.key_name,
-                                        username=creator.ssh_user, commands=[], log=startup.LOG, gateway={})
+        ssh_data = {'floating_ip': floating_ip, 'private_key': create.KEY_FOLDER + creator.key_name,
+                    'username': creator.ssh_user,
+                    'commands': creator.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP,
+                    'filepaths': [(create.KEY_FOLDER + creator.key_name, '.ssh/id_ecdsa')], 'gateway': {}, 'timeout': 5}
+        mock_execute_ssh.assert_called_with(ssh_data, startup.LOG)
 
     def test_prepare_volumes_none(self):
         provider = MagicMock()
@@ -200,25 +204,24 @@ class TestCreate(TestCase):
         configuration = {}
         creator = create.Create([provider], [configuration], "", startup.LOG)
         creator.master_ip = 42
-        creator.upload_data()
+        creator.upload_data(os.path.join(create.KEY_FOLDER, creator.key_name))
         mock_configure_ansible.assert_called_with(providers=creator.providers, configurations=creator.configurations,
                                                   cluster_id=creator.cluster_id, log=startup.LOG)
-        mock_execute_ssh.assert_called_with(floating_ip=creator.master_ip,
-                                            private_key=create.KEY_FOLDER + creator.key_name, username=creator.ssh_user,
-                                            filepaths=create.FILEPATHS,
-                                            commands=[mock_ac_ssh()] + ssh_handler.ANSIBLE_START, log=startup.LOG,
-                                            gateway={})
+        ssh_data = {'floating_ip': creator.master_ip, 'private_key': create.KEY_FOLDER + creator.key_name,
+                    'username': creator.ssh_user, 'commands': [mock_ac_ssh()] + ssh_handler.ANSIBLE_START,
+                    'filepaths': create.FILEPATHS, 'gateway': {}, 'timeout': 5}
+        mock_execute_ssh.assert_called_with(ssh_data=ssh_data, log=startup.LOG)
 
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
-    @patch.object(create.Create, "start_start_instance_threads")
+    @patch.object(create.Create, "start_start_server_threads")
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
     def test_create_non_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
-        configuration = {}
+        configuration = {"floating_ip": 42}
         creator = create.Create([provider], [configuration], "", startup.LOG, False)
         self.assertEqual(0, creator.create())
         for mock in [mock_info, mock_up, mock_start, mock_conf, mock_key]:
@@ -227,18 +230,16 @@ class TestCreate(TestCase):
 
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
-    @patch.object(create.Create, "start_start_instance_threads")
-    @patch.object(create.Create, "upload_data")
+    @patch.object(create.Create, "start_start_server_threads")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_non_debug_upload_raise(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
+    def test_create_non_debug_upload_raise(self, mock_terminate, mock_info, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
         creator = create.Create([provider], [configuration], "", startup.LOG, False)
-        mock_up.side_effect = [ConnectionError()]
         self.assertEqual(1, creator.create())
-        for mock in [mock_start, mock_conf, mock_key, mock_up]:
+        for mock in [mock_start, mock_conf, mock_key]:
             mock.assert_called()
         for mock in [mock_info]:
             mock.assert_not_called()
@@ -247,14 +248,14 @@ class TestCreate(TestCase):
 
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
-    @patch.object(create.Create, "start_start_instance_threads")
+    @patch.object(create.Create, "start_start_server_threads")
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
     def test_create_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
-        configuration = {}
+        configuration = {"floating_ip": 42}
         creator = create.Create([provider], [configuration], "", startup.LOG, True)
         self.assertEqual(0, creator.create())
         for mock in [mock_info, mock_up, mock_start, mock_conf, mock_key]:

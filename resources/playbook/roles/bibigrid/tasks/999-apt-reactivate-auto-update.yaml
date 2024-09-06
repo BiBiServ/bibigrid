@@ -1,0 +1,7 @@
+- name: Disable auto-update/upgrade during ansible-run
+  copy:
+    src: enable-auto-upgrades.conf
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: 0644

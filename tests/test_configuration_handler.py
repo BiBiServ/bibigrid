@@ -14,6 +14,7 @@ class TestConfigurationHandler(TestCase):
     """
     Class to test configuration_handler
     """
+
     # pylint: disable=R0904
     def test_get_list_by_name_none(self):
         configurations = [{}, {}]
@@ -157,11 +158,11 @@ class TestConfigurationHandler(TestCase):
     @patch("bibigrid.core.utility.handler.configuration_handler.get_clouds_files")
     def test_get_cloud_specifications_cloud(self, mock_get_clouds_files, mock_get_clouds_specification):
         mock_get_clouds_files.return_value = {"1": "1"}, {"2": "2"}
-        mock_get_clouds_specification.return_value = 21
-        expected_result = [21]
-        result = configuration_handler.get_cloud_specifications([{"cloud": 42}], startup.LOG)
+        mock_get_clouds_specification.return_value = {"identifier": 21}
+        expected_result = [{'identifier': 21}]
+        result = configuration_handler.get_cloud_specifications([{"cloud": 1}], startup.LOG)
         self.assertEqual(expected_result, result)
-        mock_get_clouds_specification.assert_called_with(42, {"1": "1"}, {"2": "2"}, startup.LOG)
+        mock_get_clouds_specification.assert_called_with(1, {"1": "1"}, {"2": "2"}, startup.LOG)
         mock_get_clouds_files.assert_called()
 
     @patch("bibigrid.core.utility.handler.configuration_handler.get_cloud_specification")

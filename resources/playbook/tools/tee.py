@@ -11,7 +11,7 @@ from pathlib import Path
 
 parser = ArgumentParser(description='Tee like program, that executes given cmd and branch stdout and stderr\n.'
                                     'Exits with the exit code of called program.')
-parser.add_argument("--cmd", help="A cmd executed by tee.py, e.g. --cmd \"ansible-playbook -i hosts site.yml\"",
+parser.add_argument("--cmd", help="A cmd executed by tee.py, e.g. --cmd \"ansible-playbook -i hosts site.yaml\"",
                     required=True)
 parser.add_argument("--outfile", help="Path to stdoutfile", required=True)
 args = parser.parse_args()

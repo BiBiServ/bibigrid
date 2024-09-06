@@ -5,7 +5,7 @@ Available command line parameters:
 - `-h, --help`            show help message and exit
 - `-v, --verbose`         Increases output verbosity (can be of great use when cluster fails to start). `-v` adds more
   detailed info to the logfile, `-vv` adds debug information to the logfile.
-- `-d, --debug`           Keeps cluster active in case of an error. Offers termination after successful create.
+- `-d, --debug`           Keeps cluster active in case of an error. Offers termination after successful create. Prints full stack trace on errors.
 - `-i <path>, --config_input <path> (required)` Path to YAML configurations file. Relative paths can be used and start
   at `~/.config/bibigrid`
 - `-cid <cluster-id>, --cluster_id <cluster-id>` Cluster id is needed for ide and termination. If no cluster id is set,

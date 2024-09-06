@@ -28,7 +28,7 @@ def check_cid(cid):
 def interpret_command_line():
     """
     Interprets commandline. Used in startup.py
-    :return:
+    @return:
     """
     parser = argparse.ArgumentParser(description='BiBiGrid easily sets up clusters within a cloud environment')
     parser.add_argument("-v", "--verbose", action="count", default=0,
@@ -57,7 +57,7 @@ def interpret_command_line():
                          help="Establishes a secure connection to ide. Needs cluster-id set")
     actions.add_argument("-u", "--update", action='store_true', help="Updates master's playbook. "
                                                                      "Needs cluster-id set, no jobs running "
-                                                                     "and no workers up")
+                                                                     "and all workers down (experimental)")
     args = parser.parse_args()
     needs_config = args.terminate or args.create or args.list or args.check or args.ide
     if needs_config and not args.config_input:

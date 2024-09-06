@@ -1,5 +1,7 @@
 # Check
 
+Besides the in depth check which is explained below there is a schema check in [validate_schema.py](../../../bibigrid/core/utility/validate_schema.py).
+
 ## Exactly one master or vpn instance per configuration
 
 There can only be a single master or a single vpn-gateway (vpngtw) per configuration.
@@ -49,7 +51,7 @@ are whitelisted. This check will only print a warning, but will not fail the che
 If this check doesn't succeed, downloading the `clouds.yaml` again might be the fastest solution.
 You can read more about these files here [Cloud-specification](cloud_specification_data.md)
 
-### Valid
+### Clouds.yaml validity
 
 A `clouds.yaml` entry is considered valid if - combined with any `clouds-public.yaml` entries it refers to using the
 profile

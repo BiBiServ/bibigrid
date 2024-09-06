@@ -7,50 +7,55 @@
   cloud: openstack # name of clouds.yaml cloud-specification key (which is value to top level key clouds)
 
   # -- BEGIN: GENERAL CLUSTER INFORMATION --
+  # sshTimeout: 5 # number of attempts to connect to instances during startup with delay in between
+  # cloudScheduling:
+  #    sshTimeout: 5 # like sshTimeout but during the on demand scheduling on the running cluster
+
   ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
   #sshPublicKeyFiles:
   #  - [public key one]
 
   ## Volumes and snapshots that will be mounted to master
-  # autoMount: False # WARNING: will overwrite unidentified filesystems
-  #masterMounts: # KEY NOT FULLY IMPLEMENTED YET
-  #  - [mount one]
+  #masterMounts: (optional) # WARNING: will overwrite unidentified filesystems
+  #  - name: [volume name]
+  #    mountPoint: [where to mount to] # (optional)
 
-  #nfsShares: # KEY NOT FULLY IMPLEMENTED YET; /vol/spool/ is automatically created as a nfs
+  #nfsShares: /vol/spool/ is automatically created as a nfs
   #  - [nfsShare one]
 
-  ## Ansible (Galaxy) roles can be added for execution # KEY NOT IMPLEMENTED YET
-  #ansibleRoles:
-  #  - file: SomeFile
-  #    hosts: SomeHosts
-  #    name: SomeName
-  #    vars: SomeVars
-  #    vars_file: SomeVarsFile
-
-  #ansibleGalaxyRoles: # KEY NOT IMPLEMENTED YET
-  #  - hosts: SomeHost
-  #    name: SomeName
-  #    galaxy: SomeGalaxy
-  #    git: SomeGit
-  #    url: SomeURL
-  #    vars: SomeVars
-  #    vars_file: SomeVarsFile
+  # userRoles: # see ansible_hosts for all options
+  #  - hosts:
+  #    - "master"
+  #    roles: # roles placed in resources/playbook/roles_user
+  #    - name: "resistance_nextflow"
+  #    varsFiles: # (optional)
+  #    - [...]
 
   ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
-  #useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
+  # useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
+  # gateway: # if you want to use a gateway for create.
+  # ip: # IP of gateway to use
+  # portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
+
   # deleteTmpKeypairAfter: False
   # dontUploadCredentials: False
 
-  # Other keys - default False
-  #localFS: True
-  #localDNSlookup: True
+  # Other keys - these are default False
+  # Usually Ignored
+  ##localFS: True
+  ##localDNSlookup: True
+
   #zabbix: True
   #nfs: True
   #ide: True # A nice way to view your cluster as if you were using Visual Studio Code
 
-  useMasterAsCompute: True # Currently ignored by slurm
+  useMasterAsCompute: True
+
+  # bootFromVolume: False
+  # terminateBootVolume: True
+  # volumeSize: 50
   
-  #waitForServices:  # existing service name that runs after an instance is launched. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
+  # waitForServices:  # existing service name that runs after an instance is launched. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
   #  - de.NBI_Bielefeld_environment.service  # uncomment for cloud site Bielefeld
 
   # master configuration
@@ -58,45 +63,34 @@
     type: # existing type/flavor on your cloud. See launch instance>flavor for options
     image: # existing active image on your cloud. Consider using regex to prevent image updates from breaking your running cluster
     # features: # list
+    # partitions: # list
+    # bootVolume: None
+    # bootFromVolume: True
+    # terminateBootVolume: True
+    # volumeSize: 50
 
   # -- END: GENERAL CLUSTER INFORMATION --
 
   # fallbackOnOtherImage: False # if True, most similar image by name will be picked. A regex can also be given instead.
 
   # worker configuration
-  #workerInstances:
+  # workerInstances:
   #  - type: # existing type/flavor on your cloud. See launch instance>flavor for options
   #    image: # same as master. Consider using regex to prevent image updates from breaking your running cluster
   #    count: # any number of workers you would like to create with set type, image combination
   #    # features: # list
+  #    # partitions: # list
+  #    # bootVolume: None
+  #    # bootFromVolume: True
+  #    # terminateBootVolume: True
+  #    # volumeSize: 50
 
   # Depends on cloud image
   sshUser: # for example ubuntu
 
-  # Depends on cloud site:
-  # Berlin     : regionOne
-  # Bielefeld  : bielefeld
-  # DKFZ       : regionOne
-  # Giessen    : RegionOne
-  # Heidelberg : RegionOne
-  # Tuebingen  : RegionOne
-  region: Bielefeld
-
-  # Depends on cloud site:
-  # Berlin     : nova
-  # Bielefeld  : default
-  # DKFZ       : nova
-  # Giessen    : nova
-  # Heidelberg : nova
-  # Tuebingen  : nova
-  availabilityZone: default
-
   # Depends on cloud site and project
   subnet: # existing subnet on your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/networks/
   # or network:
-  # gateway: # if you want to use a gateway for create.
-    # ip: # IP of gateway to use
-    # portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
 
   # Uncomment if no full DNS service for started instances is available.
   # Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
@@ -104,4 +98,8 @@
 
   #features: # list
 
-  #- [next configurations] # KEY NOT IMPLEMENTED YET
+  # elastic_scheduling: # for large or slow clusters increasing these timeouts might be necessary to avoid failures
+  #   SuspendTimeout: 60 # after SuspendTimeout seconds, slurm allows to power up the node again
+  #   ResumeTimeout: 1200 # if a node doesn't start in ResumeTimeout seconds, the start is considered failed.
+
+  #- [next configurations]

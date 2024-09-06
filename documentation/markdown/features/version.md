@@ -1,3 +1,3 @@
 # Version
 
-Prints BiBiGrid's current version.
+Logs BiBiGrid's current version.

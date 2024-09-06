@@ -3,10 +3,10 @@
 > **Note**
 > 
 > First take a look at our [Hands-On BiBiGrid Tutorial](https://github.com/deNBI/bibigrid_clum2022) and our 
-> example [bibigrid.yml](../../../bibigrid.yml).
+> example [bibigrid.yaml](../../../bibigrid.yaml).
 > This documentation is no replacement for those, but provides greater detail - too much detail for first time users.
 
-The configuration file (often called `bibigrid.yml`) contains important information about cluster creation.
+The configuration file (often called `bibigrid.yaml`) contains important information about cluster creation.
 The cluster configuration holds a list of configurations where each configuration has a specific 
 cloud (location) and infrastructure (e.g. OpenStack). For single-cloud use cases you just need a single configuration.
 However, you can use additional configurations to set up a multi-cloud.
@@ -16,10 +16,10 @@ The configuration file is best stored in `~/.config/bibigrid/`. BiBiGrid starts 
 ## Configuration List
 If you have a single-cloud use case, you can [skip ahead]().
 
-Only the first configuration holds a `master` key (also called `master configuration`).
-Every following configuration must hold a `vpngtw` key.
+Only the first configuration holds a `masterInstance` key (also called `master configuration`).
+Every following configuration must hold a `vpnInstance` key.
 
-Later, this vpngtw allows BiBiGrid to connect multiple clouds.
+Later, this vpnInstance allows BiBiGrid to connect multiple clouds.
 
 [Here](multi_cloud.md) you can get a technical overview regarding BiBiGrid's multi-cloud setup. 
 
@@ -44,17 +44,55 @@ sshPublicKeyFiles:
   - /home/user/.ssh/id_ecdsa_colleague.pub
 ```
 
-#### autoMount (optional)
-> **Warning:** If a volume has an obscure filesystem, this might overwrite your data!
+#### sshTimeout (optional:5)
+Defines the number of attempts that BiBiGrid will try to connect to the master instance via ssh.
+Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 5.
 
-If `True` all [masterMounts](#mastermounts-optional) will be automatically mounted by BiBiGrid if possible.
-If a volume is not formatted or has an unknown filesystem, it will be formatted to `ext4`.
-Default `False`.
+#### customAnsibleCfg (optional:False)
+When False, changes in the resources/playbook/ansible.cfg are overwritten by the create action. 
+When True, changes are kept - even when you perform a git pull as the file is not tracked. The default can be found at
+resources/default/ansible/ansible.cfg.
 
-#### masterMounts (optional)
+#### customSlurmTemplate (optional:False)
+When False, changes in the resources/playbook/roles/bibigrid/templates/slurm.j2 are overwritten by the create action. 
+When True, changes are kept - even when you perform a git pull as the file is not tracked. The default can be found at
+resources/default/slurm/slurm.j2.
+
+#### cloudScheduling (optional:5)
+This key allows you to influence cloud scheduling. Currently, only a single key `sshTimeout` can be set here. Default is 5.
+
+##### sshTimeout (optional:5)
+Defines the number of attempts that the master will try to connect to on demand created worker instances via ssh.
+Attempts have a pause of `2^(attempts+2)` seconds in between. Default value is 5.
+
+```yaml
+cloudScheduling:
+  sshTimeout: 5
+```
+
+#### masterMounts (optional:False)
 
 `masterMounts` expects a list of volumes and snapshots. Those will be attached to the master. If any snapshots are
 given, volumes are first created from them. Volumes are not deleted after Cluster termination.
+
+```yaml
+masterMounts:
+    - name: test # name of the volume to be attached
+      mountPoint: /vol/spool2 # where attached volume is to be mount to (optional)
+```
+
+`masterMounts` can be combined with [nfsshares](#nfsshares-optional).
+The following example attaches volume test to our master instance and mounts it to `/vol/spool2`.
+Then it creates an nfsshare on `/vol/spool2` allowing workers to access the volume test.
+
+```yaml
+masterMounts:
+  - name: test # name of the volume to be attached
+    mountPoint: /vol/spool2 # where attached volume is to be mount to (optional)
+
+nfsshares:
+  - /vol/spool2
+```
 
 <details>
 <summary>
@@ -81,75 +119,89 @@ What is NFS?
 NFS (Network File System) is a stable and well-functioning network protocol for exchanging files over the local network.
 </details>
 
-#### ansibleRoles (optional)
+#### userRoles (optional)
 
-Yet to be explained and implemented.
-
-```yaml
-  - file: SomeFile
-    hosts: SomeHosts
-    name: SomeName
-    vars: SomeVars
-    vars_file: SomeVarsFile
-```
-
-#### ansibleGalaxyRoles (optional)
-
-Yet to be explained and implemented.
+`userRoles` takes a list of elements containing the keys `hosts`, `roles` and  
 
 ```yaml
-  - hosts: SomeHost
-    name: SomeName
-    galaxy: SomeGalaxy
-    git: SomeGit
-    url: SomeURL
-    vars: SomeVars
-    vars_file: SomeVarsFile
+userRoles: # see ansible_hosts for all options
+    - hosts: 
+        - "master"
+      roles: # roles placed in resources/playbook/roles_user
+        - name: "resistance_nextflow"
+          tags:
+            - resistance_nextflow
+      # varsFiles: # (optional)
+      #  - file1
 ```
 
-#### localFS (optional)
+#### Usually Ignored Keys
+##### localFS (optional:False)
 
 In general, this key is ignored.
 It expects `True` or `False` and helps some specific users to create a filesystem to their liking. Default is `False`.
 
-#### localDNSlookup (optional)
+##### localDNSlookup (optional:False)
 
-If `True`, master will store DNS information for his workers. Default is `False`.
-[More information](https://helpdeskgeek.com/networking/edit-hosts-file/).
+If no full DNS service for started instances is available, set `localDNSLookup: True`.
+Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
+Given that we use dnsmasq, this might be obsolete.
 
-#### slurm
+#### slurm (optional:True)
 If `False`, the cluster will start without the job scheduling system slurm.
-This is relevant to the fewest. Default is `True`.
+For nearly all cases the default value is what you need. Default is `True`.
 
-#### zabbix (optional)
+##### slurmConf (optional)
+`slurmConf` contains variable fields in the `slurm.conf`. The most common use is to increase the `SuspendTime`, 
+`SuspendTimeout` and the `ResumeTimeout` like:
+
+```yaml
+elastic_scheduling:
+  SuspendTime: 1800
+  SuspendTimeout: 90
+  ResumeTimeout: 1800
+```
+
+Increasing the `SuspendTime` should only be done with consideration for other users. 
+On Demand Scheduling improves resource availability for all users.
+If some nodes need to be active during the entire cluster lifetime, [onDemand](#workerinstances) might be the better approach.
+
+###### Defaults
+```yaml
+slurmConf:
+    db: slurm # see task 042-slurm-server.yaml
+    db_user: slurm
+    db_password: changeme
+    munge_key: # automatically generated via id_generation.generate_munge_key
+    elastic_scheduling:
+      SuspendTime: 900  # if a node is not used for SuspendTime seconds, it will shut down  
+      SuspendTimeout: 60 # after SuspendTimeout seconds, slurm allows to power up the powered down node again
+      ResumeTimeout: 900 # if a node doesn't start in ResumeTimeout seconds, the start is considered failed. See https://slurm.schedmd.com/slurm.conf.html#OPT_ResumeProgram
+      TreeWidth: 128 # https://slurm.schedmd.com/slurm.conf.html#OPT_TreeWidth
+```
+
+#### zabbix (optional:False)
 
 If `True`, the monitoring solution [zabbix](https://www.zabbix.com/) will be installed on the master. Default is `False`.
 
-#### nfs (optional)
+#### nfs (optional:False)
 
 If `True`, [nfs](../software/nfs.md) is set up. Default is `False`.
 
-#### ide (optional)
+#### ide (optional:False)
 
 If `True`, [Theia Web IDE](../software/theia_ide.md) is installed.
-After creation connection information is [printed](../features/create.md#prints-cluster-information).
+After creation connection information is [printed](../features/create.md#prints-cluster-information). Default is `False`.
 
-#### useMasterAsCompute (optional)
+#### useMasterAsCompute (optional:True)
 
 If `False`, master will no longer help workers to process jobs. Default is `True`.
 
-#### useMasterWithPublicIP (optional)
+#### useMasterWithPublicIP (optional:True)
 
 If `False`, master will not be created with an attached floating ip. Default is `True`.
 
-#### waitForServices (optional):
-
-Expects a list of services to wait for.
-This is required if your provider has any post-launch services interfering with the package manager. If not set,
-seemingly random errors can occur when the service interrupts ansible's execution. Services are
-listed on [de.NBI Wiki](https://cloud.denbi.de/wiki/) at `Computer Center Specific` (not yet).
-
-#### 
+#### gateway (optional)
 In order to save valuable floating ips, BiBiGrid can also make use of a gateway to create the cluster.
 For more information on how to set up a gateway, how gateways work and why they save floating ips please continue reading [here](https://cloud.denbi.de/wiki/Tutorials/SaveFloatingIPs/).
 
@@ -169,17 +221,24 @@ Using gateway also automatically sets [useMasterWithPublicIp](#usemasterwithpubl
 
 ### Local
 
+#### waitForServices (optional):
+
+Expects a list of services to wait for.
+This is required if your provider has any post-launch services interfering with the package manager. If not set,
+seemingly random errors can occur when the service interrupts ansible's execution. Services are
+listed on [de.NBI Wiki](https://cloud.denbi.de/wiki/) at `Computer Center Specific` (not yet).
+
 #### infrastructure (required)
 
 `infrastructure` sets the used provider implementation for this configuration. Currently only `openstack` is available.
 Other infrastructures would be [AWS](https://aws.amazon.com/) and so on.
 
-#### cloud
+#### cloud (required)
 
 `cloud` decides which entry in the `clouds.yaml` is used. When using OpenStack the entry is named `openstack`.
 You can read more about the `clouds.yaml` [here](cloud_specification_data.md).
 
-#### workerInstances (optional)
+#### workerInstances
 
 `workerInstances` expects a list of worker groups (instance definitions with `count` key).
 If `count` is omitted, `count: 1` is assumed. 
@@ -189,11 +248,29 @@ workerInstance:
   - type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
     count: 2
+    onDemand: True # optional only on master cloud for now. Default True.
+    partitions: # optional. Always adds "all" and the cloud identifier as partitions
+      - small
+      - onDemand
+    features: # optional
+      - hasdatabase
+      - holdsinformation
+    bootVolume: False
+    bootFromVolume: True
+    terminateBootVolume: True
+    volumeSize: 50
 ```
 
 - `type` sets the instance's hardware configuration.
 - `image` sets the bootable operating system to be installed on the instance.
 - `count` sets how many workers of that `type` `image` combination are in this work group
+- `onDemand` (optional:False) defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works for single cloud setups for now.
+- `partitions` (optional:[]) allow you to force Slurm to schedule to a group of nodes (partitions) ([more](https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION))
+- `features` (optional:[]) allow you to force Slurm to schedule a job only on nodes that meet certain `bool` constraints. This can be helpful when only certain nodes can access a specific resource - like a database ([more](https://slurm.schedmd.com/slurm.conf.html#OPT_Features)).
+- `bootVolume` (optional:None) takes name or id of a boot volume and boots from that volume if given.
+- `bootFromVolume` (optional:False) if True, the instance will boot from a volume created for this purpose.
+- `terminateBootVolume` (optional:True) if True, the boot volume will be terminated when the server is terminated.
+- `volumeSize` (optional:50) if a boot volume is created, this sets its size.
 
 ##### Find your active `images`
 
@@ -220,27 +297,8 @@ There's also a [Fallback Option](#fallbackonotherimage-optional).
 openstack flavor list --os-cloud=openstack
 ```
 
-##### features (optional)
-You can declare a list of features for a worker group. Those are then attached to each node in the worker group.
-For example:
-```yaml
-workerInstance:
-  - type: de.NBI tiny
-    image: Ubuntu 22.04 LTS (2022-10-14)
-    count: 2
-    features:
-      - hasdatabase
-      - holdsinformation
-```
 
-###### What's a feature?
-Features allow you to force Slurm to schedule a job only on nodes that meet a certain `bool` constraint.
-This can be helpful when only certain nodes can access a specific resource - like a database.
-
-If you would like to know more about how features exactly work, 
-take a look at [slurm's documentation](https://slurm.schedmd.com/slurm.conf.html#OPT_Features).
-
-#### Master or vpngtw?
+#### masterInstance or vpnInstance?
 
 ##### masterInstance
 
@@ -250,6 +308,10 @@ Only in the first configuration and only one:
   masterInstance:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
+    bootVolume: False
+    bootFromVolume: True
+    terminateBootVolume: False
+    volumeSize: 50
 ```
 
 You can create features for the master [in the same way](#features-optional) as for the workers:
@@ -263,18 +325,18 @@ You can create features for the master [in the same way](#features-optional) as 
       - holdsinformation
 ```
 
-##### vpngtw:
+##### vpnInstance:
 
 Exactly one in every configuration but the first:
 
 ```yaml
-  vpngtw:
+  vpnInstance:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
 ```
 
-### fallbackOnOtherImage (optional)
-If set to `true` and an image is not among the active images, 
+### fallbackOnOtherImage (optional:False)
+If set to `True` and an image is not among the active images, 
 BiBiGrid will try to pick a fallback image for you by finding the closest active image by name that has at least 60% name overlap.
 This will not find a good fallback every time.
 
@@ -290,28 +352,6 @@ and can be helpful to when image updates occur while running a cluster.
 
 `sshUser` is the standard user of the installed images. For `Ubuntu 22.04` this would be `ubuntu`.
 
-#### region (required)
-
-Every [region](https://docs.openstack.org/python-openstackclient/rocky/cli/command-objects/region.html) has its own
-openstack deployment. Every [avilability zone](#availabilityzone-required) belongs to a region.
-
-Find your `regions`:
-
-```commandline
-openstack region list --os-cloud=openstack
-```
-
-#### availabilityZone (required)
-
-[availability zones](https://docs.openstack.org/nova/latest/admin/availability-zones.html) allow to logically group
-nodes.
-
-Find your `availabilityZones`:
-
-```commandline
-openstack region list --os-cloud=openstack
-```
-
 #### subnet (required)
 
 `subnet` is a block of ip addresses.
@@ -322,13 +362,22 @@ Find available `subnets`:
 openstack subnet list --os-cloud=openstack
 ```
 
-#### localDNSLookup (optional)
-
-If no full DNS service for started instances is available, set `localDNSLookup: True`.
-Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
-
 #### features (optional)
 
-You can declare a list of [features](#whats-a-feature) that are then attached to every node in the configuration.
-If both [worker group](#features-optional) or [master features](#masterInstance) and configuration features are defined, 
-they are merged.
+Cloud-wide slurm [features](#whats-a-feature) that are attached to every node in the cloud described by the configuration.
+If both [worker group](#workerinstances) or [master features](#masterInstance) and configuration features are defined, 
+they are merged. If you only have a single cloud and therefore a single configuration, this key is not helpful as a feature
+that is present at all nodes can be omitted as it can't influence the scheduling.
+
+#### bootFromVolume (optional:False)
+If True, the instance will boot from a volume created for this purpose. Keep in mind that on demand scheduling can lead
+to multiple boots of the same configurated node. If you don't make use of [terminateBootVolume](#terminatebootvolume-optionalfalse)
+this will lead to many created volumes.
+
+#### volumeSize (optional:50)
+The created volume's size if you use [bootFromVolume](#bootfromvolume-optionalfalse).
+
+#### terminateBootVolume (optional:True)
+If True, once the instance is shut down, boot volume is destroyed. This does not affect other attached volumes. 
+Only the boot volume is affected.
+

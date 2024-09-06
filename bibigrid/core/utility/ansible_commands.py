@@ -3,12 +3,12 @@ Module containing a bunch of useful commands to be used by sshHandler.py for clu
 """
 
 import os
-import bibigrid.core.utility.paths.ansible_resources_path as aRP
+import bibigrid.core.utility.paths.ansible_resources_path as a_rp
 
-#TO_LOG = "| sudo tee -a /var/log/ansible.log"
-#AIY = "apt-get -y install"
-#SAU = "sudo apt-get update"
-#NO_KEY_CHECK = "export ANSIBLE_HOST_KEY_CHECKING=False"
+# TO_LOG = "| sudo tee -a /var/log/ansible.log"
+# AIY = "apt-get -y install"
+# SAU = "sudo apt-get update"
+# NO_KEY_CHECK = "export ANSIBLE_HOST_KEY_CHECKING=False"
 NO_UPDATE = ("""sudo sed -i 's/APT::Periodic::Unattended-Upgrade "1";/APT::Periodic::Unattended-Upgrade "0";/g' """
              """/etc/apt/apt.conf.d/20auto-upgrades""", "Disable apt auto update.")
 # Setup (Python for everyone)
@@ -30,7 +30,7 @@ WAIT_READY = ('while sudo lsof /var/lib/dpkg/lock 2> null; do echo "/var/lib/dpk
 #     'else echo"Ansible hosts not reachable. There seems to be a misconfiguration."; fi',"Check for ")
 
 # Run ansible-galaxy to install ansible-galaxy roles from galaxy, git or url (.tar.gz)
-# GALAXY = f"ansible-galaxy install --roles-path {aRP.ADDITIONAL_ROLES_ROOT_PATH_REMOTE} -r {aRP.REQUIREMENTS_YML}"
+# GALAXY = f"ansible-galaxy install --roles-path {aRP.ADDITIONAL_ROLES_ROOT_PATH_REMOTE} -r {aRP.REQUIREMENTS_YAML}"
 
 # Extract ansible roles from files (.tar.gz, .tgz)
 # EXTRACT = f"for f in $(find /tmp/roles -type f -regex '.*\\.t\\(ar\\.\\)?gz'); " \
@@ -49,11 +49,14 @@ PLAYBOOK_HOME_RIGHTS = ("uid=$(id -u); gid=$(id -g); sudo chown ${uid}:${gid} /o
                         "Adjust playbook home permission.")
 MV_ANSIBLE_CONFIG = (
     "sudo install -D /opt/playbook/ansible.cfg /etc/ansible/ansible.cfg", "Move ansible configuration.")
-EXECUTE = (f"ansible-playbook {os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.SITE_YML)} -i "
-           f"{os.path.join(aRP.PLAYBOOK_PATH_REMOTE, aRP.ANSIBLE_HOSTS)} -l vpn",
+EXECUTE = (f"ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE_YAML)} -i "
+           f"{os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.ANSIBLE_HOSTS)} -l {{}}",
            "Execute ansible playbook. Be patient.")
 
 # ansible setup
-UPDATE = ("sleep 60 && sudo apt-get update", "Update apt repository lists.")  # dirty fix
+WAIT_FOR_SERVICES = (
+    "while [[ $(systemctl is-active {service}) == 'active' ]]; do echo 'Waiting for service {service}'; sleep 2; done",
+    "Waiting for service {service}.")
+UPDATE = ("sudo apt-get update", "Update apt repository lists.")
 PYTHON3_PIP = "sudo apt-get install -y python3-pip", "Install python3 pip using apt."
 ANSIBLE_PASSLIB = ("sudo pip install ansible==6.6 passlib", "Install Ansible and Passlib using pip.")
