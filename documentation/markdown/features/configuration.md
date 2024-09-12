@@ -107,9 +107,9 @@ nfsshares:
 `nfsShares` expects a list of folder paths to share over the network using nfs. 
 In every case, `/vol/spool/` is always an nfsShare.
 
-This key is only relevant if the [nfs key](#nfs-optional) is set `True`.
+This key is only relevant if the [nfs key](#nfs-optionalfalse) is set `True`.
 
-If you would like to share a [masterMount](#mastermounts-optional), take a look [here](../software/nfs.md#mount-volume-into-share).
+If you would like to share a [masterMount](#mastermounts-optionalfalse), take a look [here](../software/nfs.md#mount-volume-into-share).
 
 <details>
 <summary>
@@ -191,7 +191,7 @@ If `True`, [nfs](../software/nfs.md) is set up. Default is `False`.
 #### ide (optional:False)
 
 If `True`, [Theia Web IDE](../software/theia_ide.md) is installed.
-After creation connection information is [printed](../features/create.md#prints-cluster-information). Default is `False`.
+After creation connection information is [printed](../features/create.md). Default is `False`.
 
 #### useMasterAsCompute (optional:True)
 
@@ -217,7 +217,7 @@ gateway:
     portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
 ```
 
-Using gateway also automatically sets [useMasterWithPublicIp](#usemasterwithpublicip-optional) to `False`.
+Using gateway also automatically sets [useMasterWithPublicIp](#usemasterwithpublicip-optionaltrue) to `False`.
 
 #### dontUploadCredentials (optional:True)
 Usually, BiBiGrid will upload your credentials to the cluster. This is necessary for on demand scheduling.
@@ -296,7 +296,7 @@ most recent release is active, you can use `Ubuntu 22.04 LTS \(.*\)` so it alway
 This regex will also be used when starting worker instances on demand
 and is therefore mandatory to automatically resolve image updates of the described kind while running a cluster.
 
-There's also a [Fallback Option](#fallbackonotherimage-optional).
+There's also a [Fallback Option](#fallbackonotherimage-optionalfalse).
 
 ##### Find your active `type`s
 `flavor` is just the OpenStack terminology for `type`.
@@ -372,14 +372,14 @@ openstack subnet list --os-cloud=openstack
 
 #### features (optional)
 
-Cloud-wide slurm [features](#whats-a-feature) that are attached to every node in the cloud described by the configuration.
+Cloud-wide slurm features that are attached to every node in the cloud described by the configuration.
 If both [worker group](#workerinstances) or [master features](#masterInstance) and configuration features are defined, 
 they are merged. If you only have a single cloud and therefore a single configuration, this key is not helpful as a feature
 that is present at all nodes can be omitted as it can't influence the scheduling.
 
 #### bootFromVolume (optional:False)
 If True, the instance will boot from a volume created for this purpose. Keep in mind that on demand scheduling can lead
-to multiple boots of the same configurated node. If you don't make use of [terminateBootVolume](#terminatebootvolume-optionalfalse)
+to multiple boots of the same configurated node. If you don't make use of [terminateBootVolume](#terminatebootvolume-optionaltrue)
 this will lead to many created volumes.
 
 #### volumeSize (optional:50)
@@ -388,4 +388,3 @@ The created volume's size if you use [bootFromVolume](#bootfromvolume-optionalfa
 #### terminateBootVolume (optional:True)
 If True, once the instance is shut down, boot volume is destroyed. This does not affect other attached volumes. 
 Only the boot volume is affected.
-
