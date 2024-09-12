@@ -219,6 +219,14 @@ gateway:
 
 Using gateway also automatically sets [useMasterWithPublicIp](#usemasterwithpublicip-optional) to `False`.
 
+#### dontUploadCredentials (optional:True)
+Usually, BiBiGrid will upload your credentials to the cluster. This is necessary for on demand scheduling.
+However, if all your nodes are permanent (i.e. not on demand), you do not need to upload your credentials.
+In such cases you can set `dontUploadCredentials: True`.
+
+This also allows for external node schedulers by using the Slurm REST API to decide whether a new node should be started or not.
+[SimpleVM](https://cloud.denbi.de/about/project-types/simplevm/) is scheduling that way.
+
 ### Local
 
 #### waitForServices (optional):
