@@ -196,8 +196,6 @@ def execute_ssh(ssh_data, log):
         ssh_data["filepaths"] = []
     if ssh_data.get("commands") is None:
         ssh_data["commands"] = []
-    print(ssh_data["private_key"])
-    input("waiting")
     paramiko_key = paramiko.ECDSAKey.from_private_key_file(ssh_data["private_key"])
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
