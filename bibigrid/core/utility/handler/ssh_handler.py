@@ -111,7 +111,7 @@ def is_active(client, paramiko_key, ssh_data, log):
             log.info(f"Attempt {attempts}/{ssh_data['timeout']}. Connecting to {ssh_data['floating_ip']}")
             client.connect(hostname=ssh_data['gateway'].get("ip") or ssh_data['floating_ip'],
                            username=ssh_data['username'], pkey=paramiko_key, timeout=7,
-                           auth_timeout=ssh_data['timeout'], port=port)
+                           auth_timeout=ssh_data['timeout'], port=port, look_for_keys=False)
             establishing_connection = False
             log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
@@ -196,6 +196,8 @@ def execute_ssh(ssh_data, log):
         ssh_data["filepaths"] = []
     if ssh_data.get("commands") is None:
         ssh_data["commands"] = []
+    print(ssh_data["private_key"])
+    input("waiting")
     paramiko_key = paramiko.ECDSAKey.from_private_key_file(ssh_data["private_key"])
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
