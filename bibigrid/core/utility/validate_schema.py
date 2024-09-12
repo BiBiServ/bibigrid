@@ -33,7 +33,8 @@ master_schema = Schema(
      Optional('zabbix'): bool, Optional('nfs'): bool, Optional('ide'): bool, Optional('useMasterAsCompute'): bool,
      Optional('useMasterWithPublicIp'): bool, Optional('waitForServices'): [str], Optional('bootVolume'): str,
      Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('volumeSize'): int,
-     Optional('gateway'): {'ip': str, 'portFunction': str}, Optional('fallbackOnOtherImage'): bool,
+     Optional('gateway'): {'ip': str, 'portFunction': str}, Optional('dontUploadCredentials'): bool,
+     Optional('fallbackOnOtherImage'): bool,
      Optional('localDNSLookup'): bool, Optional('features'): [str], 'workerInstances': [
         WORKER],
      'masterInstance': MASTER,
