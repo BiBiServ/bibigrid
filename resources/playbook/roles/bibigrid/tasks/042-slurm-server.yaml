@@ -51,7 +51,7 @@
     path: "/etc/systemd/system/{{ item }}.service.d"
     group: root
     owner: root
-    mode: 0o755
+    mode: "0o755"
     state: directory
   with_items:
     - slurmdbd
