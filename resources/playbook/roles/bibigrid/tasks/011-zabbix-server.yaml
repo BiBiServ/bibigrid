@@ -69,7 +69,7 @@
   template:
     src: zabbix/zabbix_server.conf.j2
     dest: /etc/zabbix/zabbix_server.conf
-    mode: 0644
+    mode: 0o644
   notify: zabbix-server
 
 - name: Start and Enable zabbix-server

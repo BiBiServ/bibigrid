@@ -13,7 +13,7 @@
     dest: /etc/docker/daemon.json
     owner: root
     group: root
-    mode: 0644
+    mode: 0o644
   notify:
     docker
 

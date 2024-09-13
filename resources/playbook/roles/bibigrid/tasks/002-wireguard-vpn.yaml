@@ -9,7 +9,7 @@
     dest: /etc/systemd/network/wg0.netdev
     owner: root
     group: systemd-network
-    mode: 0640
+    mode: 0o640
   become: true
   notify:
     - systemd-networkd restart
@@ -20,7 +20,7 @@
     dest: /etc/systemd/network/wg0.network
     owner: root
     group: systemd-network
-    mode: 0640
+    mode: 0o640
   become: true
   notify: systemd-networkd restart
 

@@ -15,7 +15,7 @@
         dest: "{{ item.path }}.disabled"
         owner: root
         group: root
-        mode: 0644
+        mode: 0o644
         remote_src: true
       with_items: "{{ collected_files.files }}"
     - name: Remove collected files
@@ -30,7 +30,7 @@
     line: "network: {config: disabled}"
     owner: root
     group: root
-    mode: 0644
+    mode: 0o644
     create: true
 
 - name: Generate location specific worker userdata
@@ -39,7 +39,7 @@
     dest: "/etc/systemd/network/bibigrid_ens3.network"
     owner: root
     group: systemd-network
-    mode: 0640
+    mode: 0o640
   become: true
   notify:
     - systemd-networkd restart
@@ -50,7 +50,7 @@
     dest: "/etc/systemd/network/bibigrid_ens3.link"
     owner: root
     group: systemd-network
-    mode: 0640
+    mode: 0o640
   become: true
   notify:
     - systemd-networkd restart

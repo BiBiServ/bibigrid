@@ -4,7 +4,7 @@
     state: directory
     owner: root
     group: '{{ ansible_distribution | lower }}'
-    mode: 0775
+    mode: 0o775
 
 - name: Create /vol/ directory with rights 0775 owned by root
   file:
@@ -12,13 +12,13 @@
     state: directory
     owner: root
     group: '{{ ansible_distribution | lower }}'
-    mode: 0775
+    mode: 0o775
 
 - name: Create /vol/spool/ directory with rights 0777
   file:
     path: /vol/spool/
     state: directory
-    mode: 0777
+    mode: 0o777
 
 - name: Change rights of /opt directory to 0775 and set group to ansible_distribution
   file:
@@ -26,7 +26,7 @@
     state: directory
     owner: root
     group: '{{ ansible_distribution | lower }}'
-    mode: 0775
+    mode: 0o775
 
 - name: Create link in '{{ ansible_distribution | lower }}' home
   file:

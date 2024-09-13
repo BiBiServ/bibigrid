@@ -11,7 +11,7 @@
   file:
     path: /etc/zabbix/zabbix_agentd.d/
     state: directory
-    mode: 0755
+    mode: 0o755
 
 - name: Create zabbix_agent log directory
   file:
@@ -19,7 +19,7 @@
     state: directory
     owner: zabbix
     group: zabbix
-    mode: 0755
+    mode: 0o755
 
 - name: Adjust zabbix agent configuration
   template:
