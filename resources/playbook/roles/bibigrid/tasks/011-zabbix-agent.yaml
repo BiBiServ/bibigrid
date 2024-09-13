@@ -32,7 +32,7 @@
   copy:
     src: zabbix/zabbix_host_delete.py
     dest: /usr/local/bin/zabbix_host_delete.py
-    mode: 0o755"
+    mode: "0o755"
 
 - name: Install zabbix python-api
   pip:
