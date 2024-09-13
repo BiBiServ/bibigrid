@@ -9,7 +9,7 @@
     state: directory
     owner: root
     group: root
-    mode: 0o777
+    mode: "0o777"
   with_items:
     - "{{ nfs_mounts }}"
 

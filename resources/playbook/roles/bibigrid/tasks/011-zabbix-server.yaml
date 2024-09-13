@@ -69,7 +69,7 @@
   template:
     src: zabbix/zabbix_server.conf.j2
     dest: /etc/zabbix/zabbix_server.conf
-    mode: 0o644
+    mode: "0o644"
   notify: zabbix-server
 
 - name: Start and Enable zabbix-server
@@ -121,7 +121,7 @@
     state: directory
     owner: root
     group: root
-    mode: '0755'
+    mode: "0o755"
 
 - name: Adjust zabbix web frontend configuration
   notify: apache2
@@ -130,12 +130,12 @@
       template:
         src: zabbix/apache.conf.j2
         dest: /etc/zabbix/apache.conf
-        mode: 0644
+        mode: "0o644"
     - name: Adjust zabbix.conf
       template:
         src: zabbix/zabbix.conf.php.j2
         dest: /etc/zabbix/web/zabbix.conf.php
-        mode: 0644
+        mode: "0o644"
 
 - name: Start and enable apache web server
   systemd:
@@ -147,7 +147,7 @@
   copy:
     src: zabbix/index.html
     dest: /var/www/html/index.html
-    mode: 0644
+    mode: "0o644"
 
 - name: Force all notified handlers to run at this point
   meta: flush_handlers

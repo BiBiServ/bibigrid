@@ -21,7 +21,7 @@
       file:
         path: "/vol/{{ item.mount_point }}"
         state: directory
-        mode: 0o755
+        mode: "0o755"
         owner: root
         group: '{{ ansible_distribution | lower }}'
 

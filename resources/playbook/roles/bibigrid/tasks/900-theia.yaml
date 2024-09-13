@@ -12,7 +12,7 @@
   file:
     path: "{{ nvm_install_dir }}"
     state: directory
-    mode: 0755
+    mode: "0o755"
 
 - name: Set fact 'theia_ide_user' when not defined
   set_fact:
@@ -75,13 +75,13 @@
       file:
         path: "{{ theia_ide_install_dir }}"
         state: directory
-        mode: 0755
+        mode: "0o755"
 
     - name: Copy IDE configuration to IDE build dir
       template:
         src: theia/package.json.j2
         dest: "{{ theia_ide_install_dir }}/package.json"
-        mode: 0644
+        mode: "0o644"
 
     - name: Build ide
       shell: |
@@ -98,13 +98,13 @@
   template:
     src: theia/theia-ide.sh.j2
     dest: "{{ theia_ide_install_dir }}/theia-ide.sh"
-    mode: 0755
+    mode: "0o755"
 
 - name: Generate systemd service
   template:
     src: theia/theia-ide.service.j2
     dest: /etc/systemd/system/theia-ide.service
-    mode: 0644
+    mode: "0o644"
 
 - name: Enable and Start service
   systemd:

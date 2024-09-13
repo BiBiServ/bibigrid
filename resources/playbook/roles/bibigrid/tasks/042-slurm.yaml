@@ -16,7 +16,7 @@
       Pin: version 23.11.*
       Pin-Priority: 1001
     dest: /etc/apt/preferences.d/slurm-bibigrid
-    mode: 0o311
+    mode: "0o311"
 
 - name: Install slurm-bibigrid package
   apt:
@@ -34,7 +34,7 @@
     dest: /etc/munge/munge.key
     owner: munge
     group: munge
-    mode: 0o600
+    mode: "0o600"
   notify:
     - munge
 
@@ -42,7 +42,7 @@
   file:
     path: "{{ item }}"
     state: directory
-    mode: 0o775
+    mode: "0o775"
     owner: root
     group: slurm
   with_items:
@@ -55,7 +55,7 @@
     path: "/etc/systemd/system/{{ item }}.service.d"
     group: root
     owner: root
-    mode: 0o755
+    mode: "0o755"
     state: directory
   with_items:
     - slurmd
@@ -65,7 +65,7 @@
   copy:
     src: "slurm/systemd/{{ item }}.override"
     dest: "/etc/systemd/system/{{ item }}.service.d/override.conf"
-    mode: 0o644
+    mode: "0o644"
     owner: root
     group: root
   with_items:
@@ -89,7 +89,7 @@
     dest: /etc/slurm/slurm.conf
     owner: slurm
     group: root
-    mode: 0o444
+    mode: "0o444"
 
 - name: Create Job Container configuration
   template:
@@ -97,7 +97,7 @@
     dest: /etc/slurm/job_container.conf
     owner: slurm
     group: root
-    mode: 0o444
+    mode: "0o444"
 
 - name: Slurm cgroup configuration
   copy:
@@ -105,7 +105,7 @@
     dest: /etc/slurm/cgroup.conf
     owner: slurm
     group: root
-    mode: 0o444
+    mode: "0o444"
 
 - name: Restart slurmd
   systemd:
