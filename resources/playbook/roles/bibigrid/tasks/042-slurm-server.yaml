@@ -1,3 +1,9 @@
+- name: Change group ownership of OpenStack credentials file to slurm
+  file:
+    path: /etc/openstack/clouds.yaml
+    group: slurm
+    mode: '0640'  # (owner can read/write, group can read, others have no access)
+
 - name: Create slurm db
   mysql_db:
     name: "{{ slurm_conf.db }}"
