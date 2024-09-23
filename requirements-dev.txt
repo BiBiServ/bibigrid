@@ -1,2 +1,2 @@
-ansible_lint==24.7.0
+ansible_lint==24.9.0
 pylint==2.14.5
