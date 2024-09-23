@@ -19,7 +19,7 @@
 
     - name: Create mount folders if they don't exist
       file:
-        path: "/vol/{{ item.mount_point }}"
+        path: "{{ item.mount_point }}"
         state: directory
         mode: "0o755"
         owner: root
