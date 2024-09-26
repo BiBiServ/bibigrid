@@ -9,4 +9,4 @@
     path: /opt/playbook/
     state: directory
     recurse: true
-    mode: "0770"
+    mode: "0o770"

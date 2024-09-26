@@ -368,12 +368,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
                                                     cluster_id=self.cluster_id, log=self.log)
+        ansible_start = ssh_handler.ANSIBLE_START
+        ansible_start[-1] = (ansible_start[-1][0].format(",".join(self.permanents)), ansible_start[-1][1])
+        self.log.debug(f"Starting playbook with {ansible_start}.")
         if self.configurations[0].get("dontUploadCredentials"):
-            commands = ssh_handler.ANSIBLE_START
+            commands = ansible_start
         else:
-            ansible_start = ssh_handler.ANSIBLE_START
-            ansible_start[-1] = (ansible_start[-1][0].format(",".join(self.permanents)), ansible_start[-1][1])
-            self.log.debug(f"Starting playbook with {ansible_start}.")
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
                 cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
         if clean_playbook:

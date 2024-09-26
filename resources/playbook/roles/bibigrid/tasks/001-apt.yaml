@@ -8,7 +8,7 @@
     dest: /etc/apt/apt.conf.d/20auto-upgrades
     owner: root
     group: root
-    mode: 0644
+    mode: "0o644"
 
 - name: Wait for cloud-init / user-data to finish
   command: cloud-init status --wait

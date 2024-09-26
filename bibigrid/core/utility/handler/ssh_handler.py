@@ -111,7 +111,7 @@ def is_active(client, paramiko_key, ssh_data, log):
             log.info(f"Attempt {attempts}/{ssh_data['timeout']}. Connecting to {ssh_data['floating_ip']}")
             client.connect(hostname=ssh_data['gateway'].get("ip") or ssh_data['floating_ip'],
                            username=ssh_data['username'], pkey=paramiko_key, timeout=7,
-                           auth_timeout=ssh_data['timeout'], port=port)
+                           auth_timeout=ssh_data['timeout'], port=port, look_for_keys=False, allow_agent=False)
             establishing_connection = False
             log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:

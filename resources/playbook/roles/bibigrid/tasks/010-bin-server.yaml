@@ -14,7 +14,7 @@
       copy:
         src: ~/bin
         dest: /usr/local
-        mode: '0775'
+        mode: "0o775"
     - name: Delete origin folder
       file:
         path: ~{{ ansible_facts.env.SUDO_USER }}/bin
@@ -24,4 +24,4 @@
   template:
     src: "bin/bibiname.j2"
     dest: "/usr/local/bin/bibiname"
-    mode: '0775'
+    mode: "0o775"

@@ -3,6 +3,7 @@ This module contains methods to read the configuration and cloud specification.
 """
 
 import os
+import sys
 
 import mergedeep
 import yaml
@@ -31,8 +32,10 @@ def read_configuration(log, path, configuration_list=True):
                 configuration = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 log.warning("Couldn't read configuration %s: %s", path, exc)
+                sys.exit(1)
     else:
         log.warning("No such configuration file %s.", path)
+        sys.exit(1)
     if configuration_list and not isinstance(configuration, list):
         log.warning("Configuration should be list. Attempting to rescue by assuming a single configuration.")
         return [configuration]

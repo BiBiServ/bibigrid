@@ -18,21 +18,21 @@
   template:
     src: dns/hosts.j2
     dest: /etc/dnsmasq.hosts
-    mode: '0644'
+    mode: "0o644"
   notify: dnsmasq
 
 - name: Adjust dnsmasq.resolv.conf
   template:
     src: dns/resolv.conf.j2
     dest: /etc/dnsmasq.resolv.conf
-    mode: '0644'
+    mode: "0o644"
   notify: dnsmasq
 
 - name: Adjust dnsmasq conf
   template:
     src: dns/dnsmasq.conf.j2
     dest: /etc/dnsmasq.conf
-    mode: '0644'
+    mode: "0o644"
   notify: dnsmasq
 
 - name: Flush handlers
