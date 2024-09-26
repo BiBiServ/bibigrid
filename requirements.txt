@@ -14,6 +14,6 @@ cryptography~=43.0.1
 uvicorn~=0.30.6
 fastapi~=0.101.0
 pydantic~=2.9.2
-keystoneauth1~=5.1.0
+keystoneauth1~=5.8.0
 filelock~=3.16.1
 schema~=0.7.7
