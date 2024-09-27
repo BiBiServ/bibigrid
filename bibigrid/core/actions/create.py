@@ -235,7 +235,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     volume["mount_point"] = mount["mountPoint"]
                     self.log.debug(f"Added mount point {mount['mountPoint']} of attached volume to configuration.")
 
-    def start_workers(self, worker, worker_count, configuration, provider):
+    def start_workers(self, worker, worker_count, configuration, provider): # pylint: disable=too-many-locals
         name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}.")
         flavor = worker["type"]
@@ -243,9 +243,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         image = image_selection.select_image(provider, worker["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
 
+        self.log.info("Creating volumes ...")
+        volumes = []
+        for i, attach_volume in enumerate(worker.get("attachVolumes", [])):
+            volume_name = f"{name}-{i}"
+            self.log.debug(f"Created volume {volume_name}")
+            volume = provider.create_volume(volume_name, attach_volume.get("size", 50))
+            volumes.append(volume)
+
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=None, security_groups=configuration["security_groups"], wait=True,
+                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True,
                                         boot_from_volume=worker.get("bootFromVolume",
                                                                     configuration.get("bootFromVolume", False)),
                                         boot_volume=worker.get("bootVolume", configuration.get("bootVolume")),
