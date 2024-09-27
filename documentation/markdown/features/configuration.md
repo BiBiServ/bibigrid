@@ -266,7 +266,7 @@ workerInstance:
     bootVolume: False
     bootFromVolume: True
     terminateBootVolume: True
-    volumeSize: 50
+    bootVolumeSize: 50
 ```
 
 - `type` sets the instance's hardware configuration.
@@ -278,7 +278,7 @@ workerInstance:
 - `bootVolume` (optional:None) takes name or id of a boot volume and boots from that volume if given.
 - `bootFromVolume` (optional:False) if True, the instance will boot from a volume created for this purpose.
 - `terminateBootVolume` (optional:True) if True, the boot volume will be terminated when the server is terminated.
-- `volumeSize` (optional:50) if a boot volume is created, this sets its size.
+- `bootVolumeSize` (optional:50) if a boot volume is created, this sets its size.
 
 ##### Find your active `images`
 
@@ -319,7 +319,7 @@ Only in the first configuration and only one:
     bootVolume: False
     bootFromVolume: True
     terminateBootVolume: False
-    volumeSize: 50
+    bootVolumeSize: 50
 ```
 
 You can create features for the master [in the same way](#features-optional) as for the workers:
@@ -382,7 +382,7 @@ If True, the instance will boot from a volume created for this purpose. Keep in 
 to multiple boots of the same configurated node. If you don't make use of [terminateBootVolume](#terminatebootvolume-optionaltrue)
 this will lead to many created volumes.
 
-#### volumeSize (optional:50)
+#### bootVolumeSize (optional:50)
 The created volume's size if you use [bootFromVolume](#bootfromvolume-optionalfalse).
 
 #### terminateBootVolume (optional:True)

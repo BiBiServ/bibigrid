@@ -174,7 +174,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
                 configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
-    def start_vpn_or_master(self, configuration, provider): # pylint: disable=too-many-locals
+    def start_vpn_or_master(self, configuration, provider):  # pylint: disable=too-many-locals
         """
         Start master/vpn-worker of a provider
         @param configuration: dict configuration of said provider.
@@ -205,7 +205,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         terminate_boot_volume=instance.get("terminateBootVolume",
                                                                            configuration.get("terminateBootVolume",
                                                                                              True)),
-                                        volume_size=instance.get("volumeSize", configuration.get("volumeSize", 50)))
+                                        volume_size=instance.get("bootVolumeSize",
+                                                                 configuration.get("bootVolumeSize", 50)))
         configuration["private_v4"] = server["private_v4"]
         self.log.debug(f"Created Server {name}: {server['private_v4']}.")
         # get mac address for given private address

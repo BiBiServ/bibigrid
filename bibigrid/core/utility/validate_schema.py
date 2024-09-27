@@ -7,12 +7,12 @@ from schema import Schema, Optional, Or, SchemaError
 WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'): bool, Optional('partitions'): [str],
          Optional('features'): [str],
          Optional('bootVolume'): str,
-         Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('volumeSize'): int,
+         Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('bootVolumeSize'): int,
          }
 MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional('partitions'): [str],
          Optional('features'): [str],
          Optional('bootVolume'): str,
-         Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('volumeSize'): int,
+         Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('bootVolumeSize'): int,
          }
 
 # Define the schema for the configuration file
@@ -32,7 +32,7 @@ master_schema = Schema(
                                                                                           Optional('TreeWidth'): int}},
      Optional('zabbix'): bool, Optional('nfs'): bool, Optional('ide'): bool, Optional('useMasterAsCompute'): bool,
      Optional('useMasterWithPublicIp'): bool, Optional('waitForServices'): [str], Optional('bootVolume'): str,
-     Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('volumeSize'): int,
+     Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('bootVolumeSize'): int,
      Optional('gateway'): {'ip': str, 'portFunction': str}, Optional('dontUploadCredentials'): bool,
      Optional('fallbackOnOtherImage'): bool,
      Optional('localDNSLookup'): bool, Optional('features'): [str], 'workerInstances': [
@@ -40,7 +40,7 @@ master_schema = Schema(
      'masterInstance': MASTER,
      Optional('vpngtw'): {'type': str, 'image': str},
      Optional('bootVolume'): str,
-     Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('volumeSize'): int
+     Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('bootVolumeSize'): int
      })
 
 other_schema = Schema(

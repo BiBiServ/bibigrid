@@ -53,7 +53,7 @@
 
   # bootFromVolume: False
   # terminateBootVolume: True
-  # volumeSize: 50
+  # bootVolumeSize: 50
   
   # waitForServices:  # existing service name that runs after an instance is launched. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
   #  - de.NBI_Bielefeld_environment.service  # uncomment for cloud site Bielefeld
@@ -67,7 +67,7 @@
     # bootVolume: None
     # bootFromVolume: True
     # terminateBootVolume: True
-    # volumeSize: 50
+    # bootVolumeSize: 50
 
   # -- END: GENERAL CLUSTER INFORMATION --
 
@@ -83,7 +83,7 @@
   #    # bootVolume: None
   #    # bootFromVolume: True
   #    # terminateBootVolume: True
-  #    # volumeSize: 50
+  #    # bootVolumeSize: 50
 
   # Depends on cloud image
   sshUser: # for example ubuntu
