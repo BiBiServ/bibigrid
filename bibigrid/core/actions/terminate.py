@@ -32,6 +32,7 @@ def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
     cluster_server_state = []
     cluster_keypair_state = []
     cluster_security_group_state = []
+    cluster_volume_state = []
     tmp_keyname = create.KEY_NAME.format(cluster_id=cluster_id)
     local_keypairs_deleted = delete_local_keypairs(tmp_keyname, log)
     if assume_yes or local_keypairs_deleted or input(
@@ -41,26 +42,26 @@ def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
             f"Empty input to exit with cluster still alive:"):
         for provider in providers:
             log.info("Terminating cluster %s on cloud %s", cluster_id, provider.cloud_specification['identifier'])
-            server_list = provider.list_servers()
-            cluster_server_state += terminate_servers(server_list, cluster_id, provider, log)
+            cluster_server_state += terminate_servers(cluster_id, provider, log)
             cluster_keypair_state.append(delete_keypairs(provider, tmp_keyname, log))
             cluster_security_group_state.append(delete_security_groups(provider, cluster_id, security_groups, log))
+            cluster_volume_state.append(delete_tmp_volumes(provider, cluster_id, log))
         ac_state = delete_application_credentials(providers[0], cluster_id, log)
-        terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, ac_state,
-                         cluster_id, log)
+        terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state,
+                         cluster_volume_state, ac_state, cluster_id, log)
     return 0
 
 
-def terminate_servers(server_list, cluster_id, provider, log):
+def terminate_servers(cluster_id, provider, log):
     """
-    Terminates all servers in server_list that match the bibigrid regex.
-    @param server_list: list of server dicts. All servers are from provider
+    Terminates all servers that match the bibigrid regex.
     @param cluster_id: id of cluster to terminate
     @param provider: provider that holds all servers in server_list
     @param log:
     @return: a list of the servers' (that were to be terminated) termination states
     """
     log.info("Deleting servers on provider %s...", provider.cloud_specification['identifier'])
+    server_list = provider.list_servers()
     cluster_server_state = []
     server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-\d+)$")
     for server in server_list:
@@ -186,13 +187,34 @@ def delete_application_credentials(master_provider, cluster_id, log):
     return True
 
 
-def terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, ac_state, cluster_id,
-                     log):
+def delete_tmp_volumes(provider, cluster_id, log):
+    """
+    Terminates all temporary volumes that match the regex.
+    @param cluster_id: id of cluster to terminate
+    @param provider: provider that holds all servers in server_list
+    @param log:
+    @return: a list of the servers' (that were to be terminated) termination states
+    """
+    log.info("Deleting tmp volumes on provider %s...", provider.cloud_specification['identifier'])
+    volume_list = provider.list_volumes()
+    cluster_volume_state = []
+    volume_regex = re.compile(fr"^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-(.*))$")
+    for volume in volume_list:
+        if volume_regex.match(volume["name"]):
+            log.info("Trying to delete volume %s on cloud %s.", volume['name'], provider.cloud_specification[
+                'identifier'])
+            cluster_volume_state.append(provider.delete_volume(volume))
+    return cluster_volume_state
+
+# pylint: disable=too-many-branches
+def terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, cluster_volume_state,
+                     ac_state, cluster_id, log):
     """
     Logs the termination result in detail
     @param cluster_server_state: list of bools. Each bool stands for a server termination
     @param cluster_keypair_state: list of bools. Each bool stands for a keypair deletion
     @param cluster_security_group_state: list of bools. Each bool stands for a security group deletion
+    @param cluster_volume_state: list of bools. Each bool stands for a volume deletion
     @param ac_state: bool that stands for the deletion of the credentials on the master
     @param cluster_id:
     @param log:
@@ -202,6 +224,7 @@ def terminate_output(cluster_server_state, cluster_keypair_state, cluster_securi
     cluster_server_terminated = all(cluster_server_state)
     cluster_keypair_deleted = all(cluster_keypair_state)
     cluster_security_group_deleted = all(cluster_security_group_state)
+    cluster_volume_deleted = all(cluster_volume_state)
     if cluster_existed:
         if cluster_server_terminated:
             log.info("Terminated all servers of cluster %s.", cluster_id)
@@ -215,15 +238,20 @@ def terminate_output(cluster_server_state, cluster_keypair_state, cluster_securi
             log.info("Deleted all security groups of cluster %s.", cluster_id)
         else:
             log.warning("Unable to delete all security groups of cluster %s.", cluster_id)
-
-        if cluster_server_terminated and cluster_keypair_deleted and cluster_security_group_deleted:
+        if cluster_volume_deleted:
+            log.info("Deleted all volumes of cluster %s", cluster_id)
+        else:
+            log.warning("Unable to delete all volumes of cluster %s.", cluster_id)
+        if (cluster_server_terminated and cluster_keypair_deleted and cluster_security_group_deleted and
+                cluster_volume_deleted):
             log.log(42, f"Successfully terminated cluster {cluster_id}.")
         else:
             log.warning("Unable to terminate cluster %s properly."
                         "\nAll servers terminated: %s"
                         "\nAll keys deleted: %s"
+                        "\nAll security groups deleted: %s"
                         "\nAll security groups deleted: %s", cluster_id, cluster_server_terminated,
-                        cluster_keypair_deleted, cluster_security_group_deleted)
+                        cluster_keypair_deleted, cluster_security_group_deleted, cluster_volume_deleted)
         if ac_state:
             log.info("Successfully handled application credential of cluster %s.", cluster_id)
         else:
