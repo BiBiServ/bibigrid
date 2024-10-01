@@ -1,0 +1,33 @@
+- when: item.mountPoint is defined
+  block:
+    - name: Make sure disks are available
+      failed_when: false
+      filesystem:
+        fstype: ext4
+        dev: "{{ item.device }}"
+        force: false
+        state: present
+
+    - name: Get the filesystem type of the device using lsblk
+      command: "lsblk -no FSTYPE {{ item.device }}"
+      register: filesystem_type
+      changed_when: false
+
+    - name: Log the filesystem type
+      debug:
+        msg: "Filesystem type is {{ filesystem_type.stdout }}"
+
+    - name: Create mount folders if they don't exist
+      file:
+        path: "{{ item.mountPoint }}"
+        state: directory
+        mode: "0o755"
+        owner: root
+        group: '{{ ansible_distribution | lower }}'
+
+    - name: Mount disks
+      mount:
+        path: "{{ item.mountPoint }}"
+        src: "{{ item.device }}"
+        state: mounted
+        fstype: "{{ filesystem_type.stdout }}"

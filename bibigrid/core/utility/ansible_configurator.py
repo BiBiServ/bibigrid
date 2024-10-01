@@ -98,7 +98,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "gateway_ip": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"],
                            "on_demand": worker.get("onDemand", True), "state": "CLOUD",
-                           "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
+                           "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]],
+                           "volumes": worker.get("attachVolumes", [])}
 
             worker_features = worker.get("features", [])
             if isinstance(worker_features, str):
@@ -136,7 +137,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
                            "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
+                           "cloud_identifier": configuration["cloud_identifier"],
+                           "volumes": configuration["masterInstance"]["attachVolumes"],
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
                            "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
                            "on_demand": False,

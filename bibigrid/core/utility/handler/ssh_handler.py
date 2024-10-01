@@ -155,6 +155,7 @@ def line_buffered(f):
 def execute_ssh_cml_commands(client, commands, log):
     """
     Executes commands and logs exit_status accordingly.
+    Do not log commands as they contain cloud credentials.
     @param client: Client with connection to remote
     @param commands: Commands to execute on remote
     @param log:
@@ -187,11 +188,14 @@ def execute_ssh_cml_commands(client, commands, log):
 def execute_ssh(ssh_data, log):
     """
     Executes commands on remote and copies files given in filepaths
-
+    Do not log commands as they contain cloud credentials.
     @param ssh_data: Dict containing floating_ip, private_key, username, commands, filepaths, gateway, timeout
     @param log:
     """
-    log.debug(f"Running execute_sshc with ssh_data: {ssh_data}.")
+    log.debug("Running execute_ssh")
+    for key in ssh_data:
+        if key not in ["commands", "filepaths"]:
+            log.debug(f"{key}: {ssh_data[key]}")
     if ssh_data.get("filepaths") is None:
         ssh_data["filepaths"] = []
     if ssh_data.get("commands") is None:

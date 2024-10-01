@@ -84,6 +84,11 @@
   #    # bootFromVolume: True
   #    # terminateBootVolume: True
   #    # bootVolumeSize: 50
+  #    # attachVolumes:
+  #    # - mountPoint:
+  #    #   size: 50
+  #    #   fstype: ext4
+
 
   # Depends on cloud image
   sshUser: # for example ubuntu

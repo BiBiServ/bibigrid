@@ -196,6 +196,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         image = image_selection.select_image(provider, instance["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
 
+        volumes = self.attach_volumes(provider=provider, instance=instance, name=name)
+
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
@@ -207,6 +209,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                                                              True)),
                                         volume_size=instance.get("bootVolumeSize",
                                                                  configuration.get("bootVolumeSize", 50)))
+        self.attached_volumes_ansible_preparation(provider, server, instance, name)
+
         configuration["private_v4"] = server["private_v4"]
         self.log.debug(f"Created Server {name}: {server['private_v4']}.")
         # get mac address for given private address
@@ -226,16 +230,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
-        configuration["volumes"] = provider.get_mount_info_from_server(server)
-        master_mounts = configuration.get("masterMounts", [])
-        if master_mounts:
-            for volume in configuration["volumes"]:
-                mount = next((mount for mount in master_mounts if mount["name"] == volume["name"]), None)
-                if mount and mount.get("mountPoint"):
-                    volume["mount_point"] = mount["mountPoint"]
-                    self.log.debug(f"Added mount point {mount['mountPoint']} of attached volume to configuration.")
 
-    def start_workers(self, worker, worker_count, configuration, provider): # pylint: disable=too-many-locals
+    def start_workers(self, worker, worker_count, configuration, provider):  # pylint: disable=too-many-locals
         name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}.")
         flavor = worker["type"]
@@ -243,13 +239,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         image = image_selection.select_image(provider, worker["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
 
-        self.log.info("Creating volumes ...")
-        volumes = []
-        for i, attach_volume in enumerate(worker.get("attachVolumes", [])):
-            volume_name = f"{name}-{i}"
-            self.log.debug(f"Created volume {volume_name}")
-            volume = provider.create_volume(volume_name, attach_volume.get("size", 50))
-            volumes.append(volume)
+        volumes = self.attach_volumes(provider=provider, instance=worker, name=name)
 
         # create a server and block until it is up and running
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
@@ -260,6 +250,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         terminate_boot_volume=worker.get("terminateBootVolume",
                                                                          configuration.get("terminateBootVolume",
                                                                                            True)))
+        self.attached_volumes_ansible_preparation(provider, server, worker, name)
+
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
         with self.worker_thread_lock:
             self.permanents.append(name)
@@ -271,6 +263,32 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             hosts["host_entries"][name] = server["private_v4"]
             ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
             self.log.debug(f"Added worker {name} to hosts file {a_rp.HOSTS_FILE}.")
+
+    def attach_volumes(self, provider, instance, name):
+        self.log.info("Creating volumes ...")
+        volumes = []
+        for i, attach_volume in enumerate(instance.get("attachVolumes", [])):
+            volume_name = f"{name}-{i}"
+            self.log.debug(f"Created volume {volume_name}")
+            volume = provider.create_volume(volume_name, attach_volume.get("size", 50))
+            attach_volume["name"] = volume_name
+            volumes.append(volume)
+        return volumes
+
+    def attached_volumes_ansible_preparation(self, provider, server, instance, name):
+        server_volumes = provider.get_mount_info_from_server(server)  # list of attached volumes
+        print(server_volumes)
+        attach_volumes = instance.get("attachVolumes", [])
+        if attach_volumes:
+            for attach_volume in attach_volumes:
+                server_volume = next((server_volume for server_volume in server_volumes if
+                                      server_volume["name"] == attach_volume["name"]), None)
+                attach_volume["device"] = server_volume.get("device")
+                self.log.debug(f"Added Configuration: Instance {name} has volume {attach_volume['name']} "
+                               f"as device {attach_volume['device']} that is going to be mounted to "
+                               f"{attach_volume['mountPoint']}")
+        else:
+            instance["attachVolumes"] = []
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """

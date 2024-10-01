@@ -33,3 +33,8 @@
     src: /vol/
     dest: '/home/{{ ansible_distribution | lower }}/vol'
     state: link
+
+- name: Automount
+  when: attachVolumes is defined
+  include_tasks: 020-disk-automount.yaml
+  with_items: "{{ volumes }}"
