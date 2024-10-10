@@ -40,6 +40,45 @@ start_workers = sys.argv[1].split("\n")
 logging.info("Starting instances %s", start_workers)
 
 
+def attach_volumes(provider, instance, name):
+    logging.info("Creating volumes ...")
+    volumes = []
+    logging.info(instance)
+    logging.info(instance.get("attachVolumes", []))
+    for i, attach_volume in enumerate(instance.get("attachVolumes", [])):
+        logging.info(f"{i}: {attach_volume}")
+        volume_name = f"{name}-{i}"
+        logging.info(f"Created volume {volume_name}")
+        volume = provider.create_volume(size=attach_volume.get("size", 50), name=volume_name)
+        attach_volume["name"] = volume_name
+        volumes.append(volume)
+    return volumes
+
+
+def attached_volumes_ansible_preparation(connection, server, instance, name):
+    # get mount info from server
+    server_volumes = []
+    for server_volume in server["volumes"]:
+        print(server_volume)
+        volume = connection.get_volume_by_id_or_name(server_volume["id"])
+        for attachment in volume["attachments"]:
+            if attachment["server_id"] == server["id"]:
+                server_volumes.append({"name": volume["name"], "device": attachment["device"]})
+                break
+    # attach
+    attach_volumes = instance.get("attachVolumes", [])
+    if attach_volumes:
+        for attach_volume in attach_volumes:
+            server_volume = next((server_volume for server_volume in server_volumes if
+                                  server_volume["name"] == attach_volume["name"]), None)
+            attach_volume["device"] = server_volume.get("device")
+            logging.debug(f"Added Configuration: Instance {name} has volume {attach_volume['name']} "
+                           f"as device {attach_volume['device']} that is going to be mounted to "
+                           f"{attach_volume['mountPoint']}")
+    else:
+        instance["attachVolumes"] = []
+
+
 def select_image(start_worker_group, connection):
     image = start_worker_group["image"]
     # check if image is active
@@ -87,11 +126,12 @@ def start_server(worker, start_worker_group, start_data):
                 userdata = userdata_file.read()
         # create server and ...
         image = select_image(start_worker_group, connection)
+        volumes = attach_volumes(connection, start_worker_group, worker)
         server = connection.create_server(name=worker, flavor=start_worker_group["flavor"]["name"], image=image,
                                           network=start_worker_group["network"],
                                           key_name=f"tempKey_bibi-{common_config['cluster_id']}",
                                           security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata,
-                                          wait=False)
+                                          volumes=volumes, wait=False)
         # ... add it to server
         start_data["started_servers"].append(server)
         try:
@@ -229,7 +269,7 @@ with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_fi
 
 connections = {}  # connections to cloud providers
 for cloud in clouds:
-    connections[cloud] = os_client_config.make_sdk(cloud=cloud)
+    connections[cloud] = os_client_config.make_sdk(cloud=cloud, volume_api_version="3")
 
 start_server_threads = []
 for worker_group in worker_groups:

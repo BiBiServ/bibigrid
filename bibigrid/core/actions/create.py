@@ -270,7 +270,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         for i, attach_volume in enumerate(instance.get("attachVolumes", [])):
             volume_name = f"{name}-{i}"
             self.log.debug(f"Created volume {volume_name}")
-            volume = provider.create_volume(volume_name, attach_volume.get("size", 50))
+            volume = provider.create_volume(size=attach_volume.get("size", 50), name=volume_name)
             attach_volume["name"] = volume_name
             volumes.append(volume)
         return volumes
