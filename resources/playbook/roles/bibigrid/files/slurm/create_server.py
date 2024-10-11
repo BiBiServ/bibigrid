@@ -40,43 +40,73 @@ start_workers = sys.argv[1].split("\n")
 logging.info("Starting instances %s", start_workers)
 
 
+server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [],
+                     "available_servers": [], "openstack_wait_exceptions": []}
+
+GROUP_VARS_PATH = "/opt/playbook/group_vars"
+worker_groups = []
+for filename in os.listdir(GROUP_VARS_PATH):
+    if filename != "master.yaml":
+        worker_group_yaml_file = os.path.join(GROUP_VARS_PATH, filename)
+        # checking if it is a file
+        if os.path.isfile(worker_group_yaml_file):
+            with open(worker_group_yaml_file, mode="r", encoding="utf-8") as worker_group_yaml:
+                worker_groups.append(yaml.safe_load(worker_group_yaml))
+
+# read common configuration
+with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="utf-8") as common_configuration_file:
+    common_config = yaml.safe_load(common_configuration_file)
+logging.info(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['sshTimeout']}")
+# read clouds.yaml
+with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
+    clouds = yaml.safe_load(clouds_file)["clouds"]
+
+connections = {}  # connections to cloud providers
+for cloud in clouds:
+    connections[cloud] = os_client_config.make_sdk(cloud=cloud, volume_api_version="3")
+
+
 def attach_volumes(provider, instance, name):
     logging.info("Creating volumes ...")
     volumes = []
     logging.info(instance)
-    logging.info(instance.get("attachVolumes", []))
-    for i, attach_volume in enumerate(instance.get("attachVolumes", [])):
+    logging.info(instance.get("volumes", []))
+    for i, attach_volume in enumerate(instance.get("volumes", [])):
         logging.info(f"{i}: {attach_volume}")
         volume_name = f"{name}-{i}"
-        logging.info(f"Created volume {volume_name}")
+        logging.info(f"Creating volume {volume_name}")
         volume = provider.create_volume(size=attach_volume.get("size", 50), name=volume_name)
         attach_volume["name"] = volume_name
         volumes.append(volume)
     return volumes
 
 
-def attached_volumes_ansible_preparation(connection, server, instance, name):
-    # get mount info from server
-    server_volumes = []
-    for server_volume in server["volumes"]:
-        print(server_volume)
-        volume = connection.get_volume_by_id_or_name(server_volume["id"])
-        for attachment in volume["attachments"]:
-            if attachment["server_id"] == server["id"]:
-                server_volumes.append({"name": volume["name"], "device": attachment["device"]})
-                break
-    # attach
-    attach_volumes = instance.get("attachVolumes", [])
-    if attach_volumes:
-        for attach_volume in attach_volumes:
+def attached_volumes_ansible_preparation(connection, server):
+    host_vars_path = f"/opt/playbook/vars/host_vars/{server['name']}.yaml"
+    with FileLock(f"{host_vars_path}.lock"):
+        logging.info(f"Host Vars {server['name']} Lock acquired")
+        if os.path.isfile(host_vars_path):
+            with open(host_vars_path, mode="r", encoding="utf-8") as host_vars_file:
+                server_vars = yaml.safe_load(host_vars_file)
+                logging.info(server_vars)
+        # get mount info from server
+        server_volumes = []
+        for server_volume in server["volumes"]:
+            print(server_volume)
+            volume = connection.get_volume(server_volume["id"])
+            for attachment in volume["attachments"]:
+                if attachment["server_id"] == server["id"]:
+                    server_volumes.append({"name": volume["name"], "device": attachment["device"]})
+                    break
+        for attach_volume in server_vars["volumes"]:
             server_volume = next((server_volume for server_volume in server_volumes if
                                   server_volume["name"] == attach_volume["name"]), None)
             attach_volume["device"] = server_volume.get("device")
-            logging.debug(f"Added Configuration: Instance {name} has volume {attach_volume['name']} "
-                           f"as device {attach_volume['device']} that is going to be mounted to "
-                           f"{attach_volume['mountPoint']}")
-    else:
-        instance["attachVolumes"] = []
+            logging.debug(f"Added Configuration: Instance {server['name']} has volume {attach_volume['name']} "
+                          f"as device {attach_volume['device']} that is going to be mounted to "
+                          f"{attach_volume['mountPoint']}")
+        with open(host_vars_path, mode="w", encoding="utf-8") as host_vars_file:
+            yaml.dump(server_vars, host_vars_file)
 
 
 def select_image(start_worker_group, connection):
@@ -150,6 +180,7 @@ def start_server(worker, start_worker_group, start_data):
             logging.warning(f"{exc}: Couldn't connect to {server.name}.")
             server_start_data["connection_exceptions"].append(server.name)
         logging.info("Update hosts.yaml")
+        attached_volumes_ansible_preparation(connection, server)
         update_hosts(server.name, server.private_v4)
 
     except OpenStackCloudException as exc:
@@ -244,32 +275,6 @@ def _run_playbook(cmdline_args):
     runner_response = runner.stdout.read()
     runner_error = runner.stderr.read()
     return runner, runner_response, runner_error, runner.rc
-
-
-server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [],
-                     "available_servers": [], "openstack_wait_exceptions": []}
-
-GROUP_VARS_PATH = "/opt/playbook/group_vars"
-worker_groups = []
-for filename in os.listdir(GROUP_VARS_PATH):
-    if filename != "master.yaml":
-        worker_group_yaml_file = os.path.join(GROUP_VARS_PATH, filename)
-        # checking if it is a file
-        if os.path.isfile(worker_group_yaml_file):
-            with open(worker_group_yaml_file, mode="r", encoding="utf-8") as worker_group_yaml:
-                worker_groups.append(yaml.safe_load(worker_group_yaml))
-
-# read common configuration
-with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="utf-8") as common_configuration_file:
-    common_config = yaml.safe_load(common_configuration_file)
-logging.info(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['sshTimeout']}")
-# read clouds.yaml
-with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
-    clouds = yaml.safe_load(clouds_file)["clouds"]
-
-connections = {}  # connections to cloud providers
-for cloud in clouds:
-    connections[cloud] = os_client_config.make_sdk(cloud=cloud, volume_api_version="3")
 
 start_server_threads = []
 for worker_group in worker_groups:

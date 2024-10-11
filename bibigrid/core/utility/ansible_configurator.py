@@ -99,7 +99,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "cloud_identifier": configuration["cloud_identifier"],
                            "on_demand": worker.get("onDemand", True), "state": "CLOUD",
                            "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]],
-                           "volumes": worker.get("attachVolumes", [])}
+                           }
 
             worker_features = worker.get("features", [])
             if isinstance(worker_features, str):
@@ -110,6 +110,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
 
             pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
+            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), {"volumes": worker.get("attachVolumes", [])},
+                       log)
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
