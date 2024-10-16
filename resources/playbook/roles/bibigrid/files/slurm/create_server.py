@@ -20,13 +20,23 @@ import paramiko
 import yaml
 from openstack.exceptions import OpenStackCloudException
 
+print("Test")
+
 
 class ImageNotFoundException(Exception):
     """ Image not found exception"""
 
 
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
-logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/create_server.log", level=logging.INFO)
+# Create a StreamHandler to log to stdout
+console_handler = logging.StreamHandler(sys.stdout)
+
+# Set the logging format for the StreamHandler
+console_handler.setFormatter(logging.Formatter(LOGGER_FORMAT))
+
+# Set up the logger with the StreamHandler
+logging.basicConfig(level=logging.INFO, handlers=[console_handler])
+
 HOSTS_FILE_PATH = "/opt/playbook/vars/hosts.yaml"
 
 logging.info("create_server.py started")
@@ -69,8 +79,7 @@ for cloud in clouds:
 def attach_volumes(provider, instance, name):
     logging.info("Creating volumes ...")
     volumes = []
-    logging.info(instance)
-    logging.info(instance.get("volumes", []))
+    logging.info(f"Instance Volumes {instance.get('volumes', [])}")
     for i, attach_volume in enumerate(instance.get("volumes", [])):
         logging.info(f"{i}: {attach_volume}")
         volume_name = f"{name}-{i}"
@@ -81,32 +90,39 @@ def attach_volumes(provider, instance, name):
     return volumes
 
 
-def attached_volumes_ansible_preparation(connection, server):
-    host_vars_path = f"/opt/playbook/vars/host_vars/{server['name']}.yaml"
+def attached_volumes_host_vars_update(connection, server, instance):
+    host_vars_path = f"/opt/playbook/host_vars/{server['name']}.yaml"
     with FileLock(f"{host_vars_path}.lock"):
-        logging.info(f"Host Vars {server['name']} Lock acquired")
+        logging.info(f"{host_vars_path}.lock acquired")
+        # loading server_vars
+        server_vars = {"volumes": []}
         if os.path.isfile(host_vars_path):
+            logging.info(f"Found host_vars file {host_vars_path}.")
             with open(host_vars_path, mode="r", encoding="utf-8") as host_vars_file:
                 server_vars = yaml.safe_load(host_vars_file)
-                logging.info(server_vars)
-        # get mount info from server
-        server_volumes = []
+                logging.info(f"Loaded Vars: {server_vars}")
+        # get name and device info
+        server_attachment = []
         for server_volume in server["volumes"]:
-            print(server_volume)
             volume = connection.get_volume(server_volume["id"])
             for attachment in volume["attachments"]:
                 if attachment["server_id"] == server["id"]:
-                    server_volumes.append({"name": volume["name"], "device": attachment["device"]})
+                    server_attachment.append({"name": volume["name"], "device": attachment["device"]})
                     break
-        for attach_volume in server_vars["volumes"]:
-            server_volume = next((server_volume for server_volume in server_volumes if
-                                  server_volume["name"] == attach_volume["name"]), None)
-            attach_volume["device"] = server_volume.get("device")
-            logging.debug(f"Added Configuration: Instance {server['name']} has volume {attach_volume['name']} "
-                          f"as device {attach_volume['device']} that is going to be mounted to "
-                          f"{attach_volume['mountPoint']}")
-        with open(host_vars_path, mode="w", encoding="utf-8") as host_vars_file:
+        # add device info
+        attach_volumes = instance.get("volumes", [])
+        if attach_volumes:
+            for attach_volume in attach_volumes:
+                server_volume = next((server_volume for server_volume in server_attachment if
+                                      server_volume["name"] == attach_volume["name"]), None)
+                attach_volume["device"] = server_volume.get("device")
+                logging.debug(f"Added Configuration: Instance {server['name']} has volume {attach_volume['name']} "
+                               f"as device {attach_volume['device']} that is going to be mounted to "
+                               f"{attach_volume['mountPoint']}")
+            server_vars["volumes"].append(attach_volume)
+        with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
             yaml.dump(server_vars, host_vars_file)
+    logging.info(f"{host_vars_path}.lock released")
 
 
 def select_image(start_worker_group, connection):
@@ -143,7 +159,7 @@ def start_server(worker, start_worker_group, start_data):
         if already_running_server:
             logging.warning(
                 f"Already running server {worker} on {start_worker_group['cloud_identifier']} (will be terminated): "
-                f"{already_running_server}")
+                f"{already_running_server['name']}")
             server_deleted = connection.delete_server(worker)
             logging.info(
                 f"Server {worker} on {start_worker_group['cloud_identifier']} has been terminated ({server_deleted}). "
@@ -180,7 +196,7 @@ def start_server(worker, start_worker_group, start_data):
             logging.warning(f"{exc}: Couldn't connect to {server.name}.")
             server_start_data["connection_exceptions"].append(server.name)
         logging.info("Update hosts.yaml")
-        attached_volumes_ansible_preparation(connection, server)
+        attached_volumes_host_vars_update(connection, server, start_worker_group)
         update_hosts(server.name, server.private_v4)
 
     except OpenStackCloudException as exc:
@@ -292,7 +308,8 @@ for worker_group in worker_groups:
 
 for start_server_thread in start_server_threads:
     start_server_thread.join()
-
+print("Server Started. Test Done")
+exit(0)
 # If no suitable server can be started: abort
 if len(server_start_data["available_servers"]) == 0:
     logging.warning("Couldn't make server available! Abort!")
@@ -301,13 +318,21 @@ if len(server_start_data["available_servers"]) == 0:
 # run ansible on master node to configure dns
 logging.info("Call Ansible to configure dns.")
 r, response, error, rc = configure_dns()
-logging.info("DNS was configure by Ansible!")
+logging.info(f"This is error {error}")
+logging.info(f"This is response {response}")
+if error:
+    logging.error(response)
+else:
+    logging.info("DNS was configure by Ansible!")
 
 # run ansible on started worker nodes
 logging.info("Call Ansible to configure worker.")
 RUNNABLE_INSTANCES = ",".join(server_start_data["available_servers"])
 r, response, error, rc = configure_worker(RUNNABLE_INSTANCES)
-logging.info("Worker were configured by Ansible!")
+if error:
+    logging.error(response)
+else:
+    logging.info("Worker were configured by Ansible!")
 
 # the rest of this code is only concerned with logging errors
 unreachable_list = list(r.stats["dark"].keys())
