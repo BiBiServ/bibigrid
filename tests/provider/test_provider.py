@@ -173,7 +173,6 @@ class TestProvider(unittest.TestCase):
     def test_get_external_network(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
-                print("FIRE", provider.get_external_network(configuration["network"]))
                 self.assertTrue(provider.get_external_network(configuration["network"]))
                 with self.assertRaises(TypeError):
                     provider.get_external_network("ERROR")
@@ -248,6 +247,5 @@ class TestProvider(unittest.TestCase):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):
                     volume_id = provider.create_volume_from_snapshot(configuration["snapshotImage"])
-                    print(volume_id)
                     volume = provider.get_volume_by_id_or_name(volume_id)
                     self.assertEqual(VOLUME_KEYS, set(volume.keys()))
