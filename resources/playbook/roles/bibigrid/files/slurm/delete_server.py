@@ -10,6 +10,7 @@ import os
 import subprocess
 import sys
 import time
+import re
 
 import os_client_config
 import requests
@@ -56,7 +57,7 @@ with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_fi
 
 connections = {}  # connections to cloud providers
 for cloud in clouds:
-    connections[cloud] = os_client_config.make_sdk(cloud=cloud)
+    connections[cloud] = os_client_config.make_sdk(cloud=cloud, volume_api_version="3")
 
 for worker_group in worker_groups:
     for terminate_worker in terminate_workers:
@@ -65,7 +66,14 @@ for worker_group in worker_groups:
                                 check=True)  # get all workers in worker_type
         possible_workers = result.stdout.decode("utf-8").strip().split("\n")
         if terminate_worker in possible_workers:
-            result = connections[worker_group["cloud_identifier"]].delete_server(terminate_worker)
+            connection = connections[worker_group["cloud_identifier"]]
+            result = connection.delete_server(terminate_worker)
+            logging.info(f"Deleting Volumes")
+            volume_list = connection.list_volumes()
+            volume_regex = re.compile(fr"^{terminate_worker}-(\d+)$")
+            for volume in volume_list:
+                if volume_regex.match(volume["name"]):
+                    logging.info(f"Trying to delete volume {volume['name']}: {0}") #connection.delete_volume(volume)}")
         if not result:
             logging.warning(f"Couldn't delete worker {terminate_worker}: Server doesn't exist")
         else:
