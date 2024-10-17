@@ -277,7 +277,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
     def attached_volumes_ansible_preparation(self, provider, server, instance, name):
         server_volumes = provider.get_mount_info_from_server(server)  # list of attached volumes
-        print(server_volumes)
         attach_volumes = instance.get("attachVolumes", [])
         if attach_volumes:
             for attach_volume in attach_volumes:
