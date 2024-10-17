@@ -110,8 +110,9 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
 
             pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), {"volumes": worker.get("attachVolumes", [])},
-                       log)
+            for worker_number in range(worker.get('count', 1)):
+                name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_number)
+                write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), {"volumes": worker.get("attachVolumes", [])}, log)
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
