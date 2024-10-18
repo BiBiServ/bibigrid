@@ -5,15 +5,21 @@ Handles the schema validation for BiBiGrid's configuration yaml.
 from schema import Schema, Optional, Or, SchemaError
 
 WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'): bool, Optional('partitions'): [str],
-         Optional('features'): [str],
-         Optional('bootVolume'): str,
-         Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('bootVolumeSize'): int,
-         }
+          Optional('features'): [str],
+          Optional('bootVolume'): {
+              Optional('name'): str,
+              Optional('terminate'): bool,
+              Optional('size'): int
+          },
+          }
 MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional('partitions'): [str],
-         Optional('features'): [str],
-         Optional('bootVolume'): str,
-         Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('bootVolumeSize'): int,
-         }
+                Optional('features'): [str],
+                Optional('bootVolume'): {
+                    Optional('name'): str,
+                    Optional('terminate'): bool,
+                    Optional('size'): int
+                },
+                }
 
 # Define the schema for the configuration file
 master_schema = Schema(
@@ -31,22 +37,30 @@ master_schema = Schema(
                                                                                               'ResumeTimeout'): int,
                                                                                           Optional('TreeWidth'): int}},
      Optional('zabbix'): bool, Optional('nfs'): bool, Optional('ide'): bool, Optional('useMasterAsCompute'): bool,
-     Optional('useMasterWithPublicIp'): bool, Optional('waitForServices'): [str], Optional('bootVolume'): str,
-     Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('bootVolumeSize'): int,
+     Optional('useMasterWithPublicIp'): bool, Optional('waitForServices'): [str],
      Optional('gateway'): {'ip': str, 'portFunction': str}, Optional('dontUploadCredentials'): bool,
      Optional('fallbackOnOtherImage'): bool,
      Optional('localDNSLookup'): bool, Optional('features'): [str], 'workerInstances': [
         WORKER],
      'masterInstance': MASTER,
      Optional('vpngtw'): {'type': str, 'image': str},
-     Optional('bootVolume'): str,
-     Optional('bootFromVolume'): bool, Optional('terminateBootVolume'): bool, Optional('bootVolumeSize'): int
+     Optional('bootVolume'): {
+         Optional('name'): str,
+         Optional('terminate'): bool,
+         Optional('size'): int
+     },
      })
 
 other_schema = Schema(
     {'infrastructure': str, 'cloud': str, 'sshUser': str, Or('subnet', 'network'): str, 'cloud_identifier': str,
      Optional('waitForServices'): [str], Optional('features'): [str], 'workerInstances': [
-        WORKER], 'vpnInstance': VPN})
+        WORKER], 'vpnInstance': VPN,
+     Optional('bootVolume'): {
+         Optional('name'): str,
+         Optional('terminate'): bool,
+         Optional('size'): int
+     },
+     })
 
 
 def validate_configurations(configurations, log):

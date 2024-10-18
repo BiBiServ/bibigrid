@@ -67,13 +67,13 @@ for worker_group in worker_groups:
         possible_workers = result.stdout.decode("utf-8").strip().split("\n")
         if terminate_worker in possible_workers:
             connection = connections[worker_group["cloud_identifier"]]
-            result = connection.delete_server(terminate_worker)
+            result = connection.delete_server(terminate_worker, wait=True)
             logging.info(f"Deleting Volumes")
             volume_list = connection.list_volumes()
             volume_regex = re.compile(fr"^{terminate_worker}-(\d+)$")
             for volume in volume_list:
                 if volume_regex.match(volume["name"]):
-                    logging.info(f"Trying to delete volume {volume['name']}: {0}") #connection.delete_volume(volume)}")
+                    logging.info(f"Trying to delete volume {volume['name']}: {connection.delete_volume(volume)}")
         if not result:
             logging.warning(f"Couldn't delete worker {terminate_worker}: Server doesn't exist")
         else:

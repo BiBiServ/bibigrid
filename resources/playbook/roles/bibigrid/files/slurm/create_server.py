@@ -85,27 +85,27 @@ def get_server_vars(name):
     return server_vars
 
 
-def attach_volumes(provider, host_vars, name):
+def create_server_volumes(provider, host_vars, name):
     logging.info("Creating volumes ...")
-    attach_volumes = host_vars.get('volumes', [])
-    volumes = []
+    volumes = host_vars.get('volumes', [])
+    return_volumes = []
     host_vars_path = f"/opt/playbook/host_vars/{name}.yaml"
 
     with FileLock(f"{host_vars_path}.lock"):
-        logging.info(f"Instance Volumes {attach_volumes}")
-        for i, attach_volume in enumerate(attach_volumes):
-            logging.info(f"{i}: {attach_volume}")
+        logging.info(f"Instance Volumes {volumes}")
+        for i, volume in enumerate(volumes):
+            logging.info(f"{i}: {volume}")
             volume_name = f"{name}-{i}"
             logging.info(f"Creating volume {volume_name}")
-            volume = provider.create_volume(size=attach_volume.get("size", 50), name=volume_name)
-            attach_volume["name"] = volume_name
-            volumes.append(volume)
+            volume["name"] = volume_name
+            return_volume = provider.create_volume(size=volume.get("size", 50), name=volume_name)
+            return_volumes.append(return_volume)
         with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
             yaml.dump(host_vars, host_vars_file)
-    return volumes
+    return return_volumes
 
 
-def attached_volumes_host_vars_update(connection, server, host_vars):
+def volumes_host_vars_update(connection, server, host_vars):
     logging.info("Updating host vars volume info")
     host_vars_path = f"/opt/playbook/host_vars/{server['name']}.yaml"
 
@@ -120,16 +120,17 @@ def attached_volumes_host_vars_update(connection, server, host_vars):
                     server_attachment.append({"name": volume["name"], "device": attachment["device"]})
                     break
         # add device info
-        attach_volumes = host_vars.get("volumes", [])
-        if attach_volumes:
-            for attach_volume in attach_volumes:
-                logging.info(f"Finding device for {attach_volume['name']}.")
+        volumes = host_vars.get("volumes", [])
+        if volumes:
+            for volume in volumes:
+                logging.info(f"Finding device for {volume['name']}.")
                 server_volume = next((server_volume for server_volume in server_attachment if
-                                      server_volume["name"] == attach_volume["name"]), None)
-                attach_volume["device"] = server_volume.get("device")
-                logging.debug(f"Added Configuration: Instance {server['name']} has volume {attach_volume['name']} "
-                               f"as device {attach_volume['device']} that is going to be mounted to "
-                               f"{attach_volume['mountPoint']}")
+                                      server_volume["name"] == volume["name"]), None)
+                volume["device"] = server_volume.get("device")
+
+                logging.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
+                               f"as device {volume['device']} that is going to be mounted to "
+                               f"{volume['mountPoint']}")
         with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
             yaml.dump(host_vars, host_vars_file)
     logging.info(f"{host_vars_path}.lock released")
@@ -183,12 +184,18 @@ def start_server(name, start_worker_group, start_data):
         # create server and ...
         image = select_image(start_worker_group, connection)
         host_vars = get_server_vars(name)
-        volumes = attach_volumes(connection, host_vars, name)
+        volumes = create_server_volumes(connection, host_vars, name)
+        boot_volume = start_worker_group.get("bootVolume", {})
         server = connection.create_server(name=name, flavor=start_worker_group["flavor"]["name"], image=image,
                                           network=start_worker_group["network"],
                                           key_name=f"tempKey_bibi-{common_config['cluster_id']}",
                                           security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata,
-                                          volumes=volumes, wait=False)
+                                          volumes=volumes, wait=False,
+                                          boot_from_volume=boot_volume.get("bootFromVolume", False),
+                                          boot_volume=bool(boot_volume),
+                                          terminate_volume=boot_volume.get("terminate", True),
+                                          volume_size=boot_volume.get("size", 50)
+                                          )
         # ... add it to server
         start_data["started_servers"].append(server)
         try:
@@ -207,7 +214,7 @@ def start_server(name, start_worker_group, start_data):
             logging.warning(f"{exc}: Couldn't connect to {server.name}.")
             server_start_data["connection_exceptions"].append(server.name)
         logging.info("Update hosts.yaml")
-        attached_volumes_host_vars_update(connection, server, host_vars)
+        volumes_host_vars_update(connection, server, host_vars)
         update_hosts(server.name, server.private_v4)
 
     except OpenStackCloudException as exc:

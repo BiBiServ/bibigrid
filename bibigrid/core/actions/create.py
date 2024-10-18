@@ -196,20 +196,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         image = image_selection.select_image(provider, instance["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
 
-        volumes = self.attach_volumes(provider=provider, instance=instance, name=name)
+        volumes = self.create_server_volumes(provider=provider, instance=instance, name=name)
 
         # create a server and block until it is up and running
+        boot_volume = instance.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
-                                        boot_from_volume=instance.get("bootFromVolume",
-                                                                      configuration.get("bootFromVolume", False)),
-                                        boot_volume=instance.get("bootVolume", configuration.get("bootVolume")),
-                                        terminate_boot_volume=instance.get("terminateBootVolume",
-                                                                           configuration.get("terminateBootVolume",
-                                                                                             True)),
-                                        volume_size=instance.get("bootVolumeSize",
-                                                                 configuration.get("bootVolumeSize", 50)))
-        self.attached_volumes_ansible_preparation(provider, server, instance, name)
+                                        boot_from_volume=boot_volume.get("bootFromVolume", False),
+                                        boot_volume=bool(boot_volume),
+                                        terminate_boot_volume=boot_volume.get("terminate", True),
+                                        volume_size=boot_volume.get("size", 50))
+        self.add_volume_device_info_to_instance(provider, server, instance, name)
 
         configuration["private_v4"] = server["private_v4"]
         self.log.debug(f"Created Server {name}: {server['private_v4']}.")
@@ -239,18 +236,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         image = image_selection.select_image(provider, worker["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
 
-        volumes = self.attach_volumes(provider=provider, instance=worker, name=name)
+        volumes = self.create_server_volumes(provider=provider, instance=worker, name=name)
 
         # create a server and block until it is up and running
+        boot_volume = worker.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
-                                        boot_from_volume=worker.get("bootFromVolume",
-                                                                    configuration.get("bootFromVolume", False)),
-                                        boot_volume=worker.get("bootVolume", configuration.get("bootVolume")),
-                                        terminate_boot_volume=worker.get("terminateBootVolume",
-                                                                         configuration.get("terminateBootVolume",
-                                                                                           True)))
-        self.attached_volumes_ansible_preparation(provider, server, worker, name)
+                                        boot_from_volume=boot_volume.get("bootFromVolume", False),
+                                        boot_volume=bool(boot_volume),
+                                        terminate_boot_volume=boot_volume.get("terminateBoot", True),
+                                        volume_size=boot_volume.get("size", 50))
+        self.add_volume_device_info_to_instance(provider, server, worker, name)
 
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
         with self.worker_thread_lock:
@@ -264,30 +260,31 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
             self.log.debug(f"Added worker {name} to hosts file {a_rp.HOSTS_FILE}.")
 
-    def attach_volumes(self, provider, instance, name):
+    def create_server_volumes(self, provider, instance, name):
         self.log.info("Creating volumes ...")
-        volumes = []
-        for i, attach_volume in enumerate(instance.get("attachVolumes", [])):
+        return_volumes = []
+        for i, volume in enumerate(instance.get("volumes", [])):
             volume_name = f"{name}-{i}"
             self.log.debug(f"Created volume {volume_name}")
-            volume = provider.create_volume(size=attach_volume.get("size", 50), name=volume_name)
-            attach_volume["name"] = volume_name
-            volumes.append(volume)
-        return volumes
+            volume["name"] = volume_name
+            return_volume = provider.create_volume(size=volume.get("size", 50), name=volume_name)
+            return_volumes.append(return_volume)
+        return return_volumes
 
-    def attached_volumes_ansible_preparation(self, provider, server, instance, name):
-        server_volumes = provider.get_mount_info_from_server(server)  # list of attached volumes
-        attach_volumes = instance.get("attachVolumes", [])
-        if attach_volumes:
-            for attach_volume in attach_volumes:
+    def add_volume_device_info_to_instance(self, provider, server, instance, name):
+        server_volumes = provider.get_mount_info_from_server(server)  # list of volumes attachments
+        volumes = instance.get("volumes")
+        if volumes:
+            for volume in volumes:
                 server_volume = next((server_volume for server_volume in server_volumes if
-                                      server_volume["name"] == attach_volume["name"]), None)
-                attach_volume["device"] = server_volume.get("device")
-                self.log.debug(f"Added Configuration: Instance {name} has volume {attach_volume['name']} "
-                               f"as device {attach_volume['device']} that is going to be mounted to "
-                               f"{attach_volume['mountPoint']}")
+                                      server_volume["name"] == volume["name"]), None)
+                volume["device"] = server_volume.get("device")
+
+                self.log.debug(f"Added Configuration: Instance {name} has volume {volume['name']} "
+                               f"as device {volume['device']} that is going to be mounted to "
+                               f"{volume['mountPoint']}")
         else:
-            instance["attachVolumes"] = []
+            instance["volumes"] = []
 
     def prepare_vpn_or_master_args(self, configuration, provider):
         """

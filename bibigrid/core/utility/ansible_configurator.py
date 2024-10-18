@@ -91,7 +91,6 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
                                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
-            worker_count += worker.get('count', 1)
             regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
             worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                            "network": configuration["network"], "flavor": flavor_dict,
@@ -99,6 +98,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "cloud_identifier": configuration["cloud_identifier"],
                            "on_demand": worker.get("onDemand", True), "state": "CLOUD",
                            "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]],
+                           "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {}))
                            }
 
             worker_features = worker.get("features", [])
@@ -111,8 +111,11 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
             pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
             for worker_number in range(worker.get('count', 1)):
-                name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_number)
-                write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), {"volumes": worker.get("attachVolumes", [])}, log)
+                name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count+worker_number)
+                write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), {"volumes": worker.get("volumes", [])},
+                           log)
+            worker_count += worker.get('count', 1)
+
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
             name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
@@ -141,7 +144,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"],
-                           "volumes": configuration["masterInstance"]["attachVolumes"],
+                           "volumes": configuration["masterInstance"]["volumes"],
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
                            "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
                            "on_demand": False,

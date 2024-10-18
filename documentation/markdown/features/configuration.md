@@ -70,38 +70,6 @@ cloudScheduling:
   sshTimeout: 5
 ```
 
-#### masterMounts (optional:False)
-
-`masterMounts` expects a list of volumes and snapshots. Those will be attached to the master. If any snapshots are
-given, volumes are first created from them. Volumes are not deleted after Cluster termination.
-
-```yaml
-masterMounts:
-    - name: test # name of the volume to be attached
-      mountPoint: /vol/spool2 # where attached volume is to be mount to (optional)
-```
-
-`masterMounts` can be combined with [nfsshares](#nfsshares-optional).
-The following example attaches volume test to our master instance and mounts it to `/vol/spool2`.
-Then it creates an nfsshare on `/vol/spool2` allowing workers to access the volume test.
-
-```yaml
-masterMounts:
-  - name: test # name of the volume to be attached
-    mountPoint: /vol/spool2 # where attached volume is to be mount to (optional)
-
-nfsshares:
-  - /vol/spool2
-```
-
-<details>
-<summary>
- What is mounting?
-</summary>
-
-[Mounting](https://man7.org/linux/man-pages/man8/mount.8.html) adds a new filesystem to the file tree allowing access.
-</details>
-
 #### nfsShares (optional)
 
 `nfsShares` expects a list of folder paths to share over the network using nfs. 
@@ -263,10 +231,14 @@ workerInstance:
     features: # optional
       - hasdatabase
       - holdsinformation
-    bootVolume: False
-    bootFromVolume: True
-    terminateBootVolume: True
-    bootVolumeSize: 50
+    volumes:
+      - mountPoint: /vol/test
+        size: 50
+        fstype: ext4
+    bootVolume:
+      name: False
+      terminate: True
+      size: 50
 ```
 
 - `type` sets the instance's hardware configuration.
@@ -279,7 +251,6 @@ workerInstance:
 - `bootFromVolume` (optional:False) if True, the instance will boot from a volume created for this purpose.
 - `terminateBootVolume` (optional:True) if True, the boot volume will be terminated when the server is terminated.
 - `bootVolumeSize` (optional:50) if a boot volume is created, this sets its size.
-
 ##### Find your active `images`
 
 ```commandline
