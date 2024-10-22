@@ -181,7 +181,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @param provider: provider
         @return:
         """
-        identifier, instance, volumes = self.prepare_vpn_or_master_args(configuration, provider)
+        identifier, instance = self.prepare_vpn_or_master_args(configuration, provider)
         external_network = provider.get_external_network(configuration["network"])
         with self.vpn_master_thread_lock:
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
@@ -264,10 +264,24 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.info("Creating volumes ...")
         return_volumes = []
         for i, volume in enumerate(instance.get("volumes", [])):
-            volume_name = f"{name}-{i}"
-            self.log.debug(f"Created volume {volume_name}")
-            volume["name"] = volume_name
-            return_volume = provider.create_volume(size=volume.get("size", 50), name=volume_name)
+            base_volume_name = f"{name}-{i}"
+            if volume.get('snapshot'):
+                if not volume.get("name"):
+                    volume["name"] = base_volume_name
+                return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume["name"])
+                if not return_volume:
+                    raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
+            else:
+                if volume.get('name'):
+                    self.log.debug(f"Trying to find volume {volume['name']}")
+                    return_volume = provider.get_volume_by_id_or_name(volume["name"])
+                    if not return_volume:
+                        raise ConfigurationException(f"Couldn't find volume {volume['name']}")
+                    return_volume["name"] = volume["name"]
+                else:
+                    volume["name"] = base_volume_name
+                    self.log.debug(f"Creating volume {volume['name']}")
+                    return_volume = provider.create_volume(size=volume.get("size", 50), name=volume['name'])
             return_volumes.append(return_volume)
         return return_volumes
 
@@ -296,16 +310,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if configuration.get("masterInstance"):
             instance_type = configuration["masterInstance"]
             identifier = MASTER_IDENTIFIER
-            master_mounts_src = [master_mount["name"] for master_mount in configuration.get("masterMounts", [])]
-            volumes = self.prepare_volumes(provider, master_mounts_src)
         elif configuration.get("vpnInstance"):
             instance_type = configuration["vpnInstance"]
             identifier = VPN_WORKER_IDENTIFIER
-            volumes = []  # only master has volumes
         else:
             self.log.warning("Configuration %s has no vpngtw or master and is therefore unreachable.", configuration)
             raise KeyError
-        return identifier, instance_type, volumes
+        return identifier, instance_type
 
     def initialize_instances(self):
         """
@@ -328,33 +339,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             elif configuration.get("vpnInstance"):
                 ssh_data["commands"] = ssh_handler.VPN_SETUP
                 ssh_handler.execute_ssh(ssh_data, self.log)
-
-    def prepare_volumes(self, provider, mounts):
-        """
-        Creates volumes from snapshots and returns all volumes (pre-existing and newly created)
-        @param provider: provider on which the volumes and snapshots exist
-        @param mounts: volumes or snapshots
-        @return: list of pre-existing and newly created volumes
-        """
-        if mounts:
-            self.log.info("Preparing volumes")
-        volumes = []
-        for mount in mounts:
-            volume_id = provider.get_volume_by_id_or_name(mount)["id"]
-            if volume_id:
-                volumes.append(volume_id)
-            else:
-                self.log.debug("Volume %s does not exist. Checking for snapshot.", mount)
-                volume_id = provider.create_volume_from_snapshot(mount)
-                if volume_id:
-                    volumes.append(volume_id)
-                else:
-                    self.log.warning("Mount %s is neither a snapshot nor a volume.", mount)
-        ret_volumes = set(volumes)
-        if len(ret_volumes) < len(volumes):
-            self.log.warning("Identical mounts found in masterMounts list. "
-                             "Trying to set() to save the run. Check configurations!")
-        return ret_volumes
 
     def prepare_configurations(self):
         """

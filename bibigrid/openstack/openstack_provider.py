@@ -193,11 +193,12 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def get_volume_by_id_or_name(self, name_or_id):
         return self.conn.get_volume(name_or_id)
 
-    def create_volume_from_snapshot(self, snapshot_name_or_id):
+    def create_volume_from_snapshot(self, snapshot_name_or_id, volume_name_or_id=None):
         """
         Uses the cinder API to create a volume from snapshot:
         https://github.com/openstack/python-cinderclient/blob/master/cinderclient/v3/volumes.py
         @param snapshot_name_or_id: name or id of snapshot
+        @param volume_name_or_id:
         @return: id of created volume
         """
         LOG.debug("Trying to create volume from snapshot")
@@ -207,11 +208,11 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
             if snapshot["status"] == "available":
                 LOG.debug("Snapshot %s is available.", {snapshot_name_or_id})
                 size = snapshot["size"]
-                name = create.PREFIX_WITH_SEP + snapshot["name"]
+                name = volume_name_or_id or (create.PREFIX_WITH_SEP + snapshot["name"])
                 description = f"Created from snapshot {snapshot_name_or_id} by BiBiGrid"
                 volume = self.cinder.volumes.create(size=size, snapshot_id=snapshot["id"], name=name,
                                                     description=description)
-                return volume.to_dict()["id"]
+                return volume.to_dict()
             LOG.warning("Snapshot %s is %s; must be available.", snapshot_name_or_id, snapshot['status'])
         else:
             LOG.warning("Snapshot %s not found.", snapshot_name_or_id)
