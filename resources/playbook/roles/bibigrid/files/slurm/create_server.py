@@ -25,6 +25,10 @@ class ImageNotFoundException(Exception):
     """ Image not found exception"""
 
 
+class ConfigurationException(Exception):
+    """ Configuration exception """
+
+
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 logging.basicConfig(format=LOGGER_FORMAT, filename="/var/log/slurm/create_server.log", level=logging.INFO)
 # For Debugging
@@ -43,7 +47,6 @@ if len(sys.argv) < 2:
     sys.exit(1)
 start_workers = sys.argv[1].split("\n")
 logging.info("Starting instances %s", start_workers)
-
 
 server_start_data = {"started_servers": [], "other_openstack_exceptions": [], "connection_exceptions": [],
                      "available_servers": [], "openstack_wait_exceptions": []}
@@ -71,6 +74,33 @@ for cloud in clouds:
     connections[cloud] = os_client_config.make_sdk(cloud=cloud, volume_api_version="3")
 
 
+def create_volume_from_snapshot(connection, snapshot_name_or_id, volume_name_or_id=None):
+    """
+    Uses the cinder API to create a volume from snapshot:
+    https://github.com/openstack/python-cinderclient/blob/master/cinderclient/v3/volumes.py
+    @param connection:
+    @param snapshot_name_or_id: name or id of snapshot
+    @param volume_name_or_id:
+    @return: id of created volume
+    """
+    logging.debug("Trying to create volume from snapshot")
+    snapshot = connection.get_volume_snapshot(snapshot_name_or_id)
+    if snapshot:
+        logging.debug(f"Snapshot {snapshot_name_or_id} found.")
+        if snapshot["status"] == "available":
+            logging.debug("Snapshot %s is available.", {snapshot_name_or_id})
+            size = snapshot["size"]
+            name = volume_name_or_id or f"bibigrid-{snapshot['name']}"
+            description = f"Created from snapshot {snapshot_name_or_id} by BiBiGrid"
+            volume = connection.create_volume(size=size, snapshot_id=snapshot["id"], name=name,
+                                              description=description)
+            return volume.toDict()
+        logging.warning("Snapshot %s is %s; must be available.", snapshot_name_or_id, snapshot['status'])
+    else:
+        logging.warning("Snapshot %s not found.", snapshot_name_or_id)
+    return None
+
+
 def get_server_vars(name):
     # loading server_vars
     host_vars_path = f"/opt/playbook/host_vars/{name}.yaml"
@@ -85,7 +115,7 @@ def get_server_vars(name):
     return server_vars
 
 
-def create_server_volumes(provider, host_vars, name):
+def create_server_volumes(connection, host_vars, name):
     logging.info("Creating volumes ...")
     volumes = host_vars.get('volumes', [])
     return_volumes = []
@@ -94,11 +124,24 @@ def create_server_volumes(provider, host_vars, name):
     with FileLock(f"{host_vars_path}.lock"):
         logging.info(f"Instance Volumes {volumes}")
         for i, volume in enumerate(volumes):
-            logging.info(f"{i}: {volume}")
-            volume_name = f"{name}-{i}"
-            logging.info(f"Creating volume {volume_name}")
-            volume["name"] = volume_name
-            return_volume = provider.create_volume(size=volume.get("size", 50), name=volume_name)
+            base_volume_name = f"{name}-{i}"
+            if volume.get('snapshot'):
+                if not volume.get("name"):
+                    volume["name"] = base_volume_name
+                return_volume = create_volume_from_snapshot(connection, volume['snapshot'], volume["name"])
+                if not return_volume:
+                    raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
+            else:
+                if volume.get('name'):
+                    logging.debug(f"Trying to find volume {volume['name']}")
+                    return_volume = connection.get_volume_by_id_or_name(volume["name"])
+                    if not return_volume:
+                        raise ConfigurationException(f"Couldn't find volume {volume['name']}")
+                    return_volume["name"] = volume["name"]
+                else:
+                    volume["name"] = base_volume_name
+                    logging.debug(f"Creating volume {volume['name']}")
+                    return_volume = connection.create_volume(size=volume.get("size", 50), name=volume['name'])
             return_volumes.append(return_volume)
         with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
             yaml.dump(host_vars, host_vars_file)
@@ -129,8 +172,8 @@ def volumes_host_vars_update(connection, server, host_vars):
                 volume["device"] = server_volume.get("device")
 
                 logging.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
-                               f"as device {volume['device']} that is going to be mounted to "
-                               f"{volume['mountPoint']}")
+                              f"as device {volume['device']} that is going to be mounted to "
+                              f"{volume['mountPoint']}")
         with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
             yaml.dump(host_vars, host_vars_file)
     logging.info(f"{host_vars_path}.lock released")
@@ -244,7 +287,7 @@ def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", usernam
             except paramiko.ssh_exception.NoValidConnectionsError as exc:
                 logging.info("Attempting to connect to %s... This might take a while", private_ip)
                 if attempts < common_config["cloud_scheduling"]["sshTimeout"]:
-                    time.sleep(2 ** (2+attempts))
+                    time.sleep(2 ** (2 + attempts))
                     attempts += 1
                 else:
                     logging.warning("Attempt to connect to %s failed.", private_ip)
@@ -309,6 +352,7 @@ def _run_playbook(cmdline_args):
     runner_response = runner.stdout.read()
     runner_error = runner.stderr.read()
     return runner, runner_response, runner_error, runner.rc
+
 
 start_server_threads = []
 for worker_group in worker_groups:
