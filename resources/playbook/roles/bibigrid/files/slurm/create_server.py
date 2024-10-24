@@ -173,7 +173,7 @@ def volumes_host_vars_update(connection, server, host_vars):
 
                 logging.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
                               f"as device {volume['device']} that is going to be mounted to "
-                              f"{volume['mountPoint']}")
+                              f"{volume.get('mountPoint')}")
         with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
             yaml.dump(host_vars, host_vars_file)
     logging.info(f"{host_vars_path}.lock released")

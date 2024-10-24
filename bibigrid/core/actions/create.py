@@ -296,7 +296,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
                 self.log.debug(f"Added Configuration: Instance {name} has volume {volume['name']} "
                                f"as device {volume['device']} that is going to be mounted to "
-                               f"{volume['mountPoint']}")
+                               f"{volume.get('mountPoint')}")
         else:
             instance["volumes"] = []
 
