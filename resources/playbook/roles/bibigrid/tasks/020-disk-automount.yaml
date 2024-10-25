@@ -8,12 +8,12 @@
         force: false
         state: present
 
-    - name: Get the filesystem type of the device using lsblk
+    - name: Get volume filesystem using lsblk
       command: "lsblk -no FSTYPE {{ item.device }}"
       register: filesystem_type
       until: filesystem_type.stdout != ""
-      retries: 5  # Adjust the number of retries as needed
-      delay: 2    # Wait 2 seconds between each retry
+      retries: 5
+      delay: 2
       changed_when: false
 
     - name: Log the filesystem type
