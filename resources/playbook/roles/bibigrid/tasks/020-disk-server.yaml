@@ -19,5 +19,5 @@
 
 - name: Automount
   when: volumes is defined
-  include_tasks: 020-disk-server-automount.yaml
+  include_tasks: 020-disk-automount.yaml
   with_items: "{{ volumes }}"
