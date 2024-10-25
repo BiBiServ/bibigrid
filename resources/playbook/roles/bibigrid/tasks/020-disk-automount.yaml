@@ -3,7 +3,7 @@
     - name: Make sure disks are available
       failed_when: false
       filesystem:
-        fstype: ext4
+        fstype: "{{ item.fstype or ext4 }}"
         dev: "{{ item.device }}"
         force: false
         state: present
@@ -11,6 +11,9 @@
     - name: Get the filesystem type of the device using lsblk
       command: "lsblk -no FSTYPE {{ item.device }}"
       register: filesystem_type
+      until: filesystem_type.stdout != ""
+      retries: 5  # Adjust the number of retries as needed
+      delay: 2    # Wait 2 seconds between each retry
       changed_when: false
 
     - name: Log the filesystem type
