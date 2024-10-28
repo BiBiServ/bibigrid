@@ -268,6 +268,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if volume.get('snapshot'):
                 if not volume.get("name"):
                     volume["name"] = base_volume_name
+                else:
+                    volume["name"] = f"{base_volume_name}-{volume['name']}"
                 return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume["name"])
                 if not return_volume:
                     raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
@@ -276,7 +278,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     self.log.debug(f"Trying to find volume {volume['name']}")
                     return_volume = provider.get_volume_by_id_or_name(volume["name"])
                     if not return_volume:
-                        raise ConfigurationException(f"Couldn't find volume {volume['name']}")
+                        volume["name"] = f"{base_volume_name}-{volume['name']}"
+                        return_volume = provider.create_volume(size=volume.get("size", 50), name=volume['name'])
                     return_volume["name"] = volume["name"]
                 else:
                     volume["name"] = base_volume_name

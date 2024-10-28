@@ -128,6 +128,8 @@ def create_server_volumes(connection, host_vars, name):
             if volume.get('snapshot'):
                 if not volume.get("name"):
                     volume["name"] = base_volume_name
+                else:
+                    volume["name"] = f"{base_volume_name}-{volume['name']}"
                 return_volume = create_volume_from_snapshot(connection, volume['snapshot'], volume["name"])
                 if not return_volume:
                     raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
@@ -136,7 +138,8 @@ def create_server_volumes(connection, host_vars, name):
                     logging.debug(f"Trying to find volume {volume['name']}")
                     return_volume = connection.get_volume_by_id_or_name(volume["name"])
                     if not return_volume:
-                        raise ConfigurationException(f"Couldn't find volume {volume['name']}")
+                        volume["name"] = f"{base_volume_name}-{volume['name']}"
+                        return_volume = connection.create_volume(size=volume.get("size", 50), name=volume['name'])
                     return_volume["name"] = volume["name"]
                 else:
                     volume["name"] = base_volume_name
