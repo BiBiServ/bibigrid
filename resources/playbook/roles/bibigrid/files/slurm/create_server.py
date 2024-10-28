@@ -136,7 +136,7 @@ def create_server_volumes(connection, host_vars, name):
             else:
                 if volume.get('name'):
                     logging.debug(f"Trying to find volume {volume['name']}")
-                    return_volume = connection.get_volume_by_id_or_name(volume["name"])
+                    return_volume = connection.get_volume(volume["name"])
                     if not return_volume:
                         volume["name"] = f"{base_volume_name}-{volume['name']}"
                         return_volume = connection.create_volume(size=volume.get("size", 50), name=volume['name'])
