@@ -1,7 +1,7 @@
-  # See https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/ (after update)
-  # See https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md
+  # For an easy introduction see https://github.com/deNBI/bibigrid_clum
+  # For more detailed information see https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md
   # First configuration also holds general cluster information and must include the master.
-  # All other configurations mustn't include another master, but exactly one vpngtw instead (keys like master).
+  # All other configurations (only needed for hybrid cloud setups) must not include another master, but exactly one vpngtw instead.
 
 - infrastructure: openstack # former mode. Describes what cloud provider is used (others are not implemented yet)
   cloud: openstack # name of clouds.yaml cloud-specification key (which is value to top level key clouds)
@@ -84,7 +84,7 @@
   #    # bootFromVolume: True
   #    # terminateBootVolume: True
   #    # bootVolumeSize: 50
-  #    # attachVolumes:
+  #    # volumes: # see documentation
   #    # - mountPoint:
   #    #   size: 50
   #    #   fstype: ext4
