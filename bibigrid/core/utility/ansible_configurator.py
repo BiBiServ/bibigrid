@@ -202,7 +202,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     if master_configuration.get("nfs"):
         nfs_shares = master_configuration.get("nfsShares", [])
         nfs_shares = nfs_shares + DEFAULT_NFS_SHARES
-        common_configuration_yaml["nfs_mounts"] = [{"src": nfs_share, "dst": nfs_share} for nfs_share in nfs_shares]
+        common_configuration_yaml["nfs_shares"] = [{"src": nfs_share, "dst": nfs_share} for nfs_share in nfs_shares]
         common_configuration_yaml["ext_nfs_mounts"] = [{"src": ext_nfs_share, "dst": ext_nfs_share} for ext_nfs_share in
                                                        (master_configuration.get("extNfsShares", []))]
 
