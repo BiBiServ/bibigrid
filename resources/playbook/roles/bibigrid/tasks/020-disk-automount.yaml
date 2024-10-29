@@ -3,7 +3,7 @@
     - name: Make sure disks are available
       failed_when: false
       filesystem:
-        fstype: "{{ item.fstype or ext4 }}"
+        fstype: "{{ item.fstype | default('ext4') }}"
         dev: "{{ item.device }}"
         force: false
         state: present
