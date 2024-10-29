@@ -231,11 +231,14 @@ workerInstance:
     features: # optional
       - hasdatabase
       - holdsinformation
-    volumes:
-      - mountPoint: /vol/test
+    volumes: # optional
+      - name: volumeName
+        snapshot: snapshotName # to create volume from
+        mountPoint: /vol/test
         size: 50
         fstype: ext4
-    bootVolume:
+        semiPermanent: False
+    bootVolume: # optional
       name: False
       terminate: True
       size: 50
@@ -247,10 +250,24 @@ workerInstance:
 - `onDemand` (optional:False) defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works for single cloud setups for now.
 - `partitions` (optional:[]) allow you to force Slurm to schedule to a group of nodes (partitions) ([more](https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION))
 - `features` (optional:[]) allow you to force Slurm to schedule a job only on nodes that meet certain `bool` constraints. This can be helpful when only certain nodes can access a specific resource - like a database ([more](https://slurm.schedmd.com/slurm.conf.html#OPT_Features)).
-- `bootVolume` (optional:None) takes name or id of a boot volume and boots from that volume if given.
-- `bootFromVolume` (optional:False) if True, the instance will boot from a volume created for this purpose.
-- `terminateBootVolume` (optional:True) if True, the boot volume will be terminated when the server is terminated.
-- `bootVolumeSize` (optional:50) if a boot volume is created, this sets its size.
+- `bootVolume` (optional)
+  - `name` (optional:None) takes name or id of a boot volume and boots from that volume if given.
+  - `terminate` (optional:True) if True, the boot volume will be terminated when the server is terminated.
+  - `size` (optional:50) if a boot volume is created, this sets its size.
+
+##### volumes (optional)
+
+You can create a temporary volume, a semipermanent volume, a permanent volume and you can do all of those from a snapshot, too.
+You can even attach a volume that already exists. 
+In that case, however, you should attach it to only one instance as most volumes can only be attached to one instance at a time. 
+
+- **Temporary** volumes are deleted once their server is destroyed. By not setting a `name` and not setting `semiPermanent`, you create a temporary volume.
+- **Semi-permanent** volumes are deleted once their cluster is destroyed. By setting `semiPermanent: True`, you create a semi-permanent volume. This explicitly means that volumes are not destroyed while scheduling on-demand allowing workers to have the same volume no matter how often they restarted.
+- **Permanent** volumes are deleted once you delete them manually. By setting a `name` and not setting `semiPermanent`, you create a permanent volume. This can be useful if you want to investigate its content after destroying the cluster.
+- **Existing** volumes can be attached by setting the exact name of that volume as `name`. If you use this to attach the volume to a worker, make sure that the worker group's count is 1. Otherwise, BiBiGrid will try to attach that volume to each instance.
+
+Termination of these volumes is done by regex looking for the cluster id. For cluster termination: `^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-(\d+))-(\d+|semiperm.*)$`
+
 ##### Find your active `images`
 
 ```commandline
@@ -275,7 +292,6 @@ There's also a [Fallback Option](#fallbackonotherimage-optionalfalse).
 ```commandline
 openstack flavor list --os-cloud=openstack
 ```
-
 
 #### masterInstance or vpnInstance?
 
