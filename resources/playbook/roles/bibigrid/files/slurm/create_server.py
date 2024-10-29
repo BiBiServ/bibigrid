@@ -124,7 +124,10 @@ def create_server_volumes(connection, host_vars, name):
     with FileLock(f"{host_vars_path}.lock"):
         logging.info(f"Instance Volumes {volumes}")
         for i, volume in enumerate(volumes):
-            base_volume_name = f"{name}-{i}"
+            if volume.get("semiPermanent"):
+                base_volume_name = f"{name}-semiperm-{i}"
+            else:
+                base_volume_name = f"{name}-{i}"
             if volume.get('snapshot'):
                 if not volume.get("name"):
                     volume["name"] = base_volume_name

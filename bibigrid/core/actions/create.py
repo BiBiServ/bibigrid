@@ -264,7 +264,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.info("Creating volumes ...")
         return_volumes = []
         for i, volume in enumerate(instance.get("volumes", [])):
-            base_volume_name = f"{name}-{i}"
+            if volume.get("semiPermanent"):
+                base_volume_name = f"{name}-semiperm-{i}"
+            else:
+                base_volume_name = f"{name}-{i}"
             if volume.get('snapshot'):
                 if not volume.get("name"):
                     volume["name"] = base_volume_name
