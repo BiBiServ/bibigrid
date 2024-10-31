@@ -33,21 +33,6 @@ SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
 CLOUD_SCHEDULING = {"sshTimeout": 5}
 
 
-def delete_old_vars(log):
-    """
-    Deletes host_vars and group_vars
-    @param log:
-    @return:
-    """
-    for folder in [aRP.GROUP_VARS_FOLDER, aRP.HOST_VARS_FOLDER]:
-        for file_name in os.listdir(folder):
-            # construct full file path
-            file = os.path.join(folder, file_name)
-            if os.path.isfile(file):
-                log.debug('Deleting file: %s', file)
-                os.remove(file)
-
-
 def generate_site_file_yaml(user_roles):
     """
     Generates site_yaml (dict).
@@ -110,10 +95,6 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
 
             pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
-            for worker_number in range(worker.get('count', 1)):
-                name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count+worker_number)
-                write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), {"volumes": worker.get("volumes", [])},
-                           log)
             worker_count += worker.get('count', 1)
 
         vpngtw = configuration.get("vpnInstance")
@@ -366,7 +347,6 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
     @param log:
     @return:
     """
-    delete_old_vars(log)
     log.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
     user_roles = configurations[0].get("userRoles", [])

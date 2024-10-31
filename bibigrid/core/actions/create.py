@@ -140,6 +140,19 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
             yaml.safe_dump(data={"cluster_id": self.cluster_id}, stream=cluster_memory_file)
 
+    def delete_old_vars(self):
+        """
+        Deletes host_vars and group_vars
+        @return:
+        """
+        for folder in [a_rp.GROUP_VARS_FOLDER, a_rp.HOST_VARS_FOLDER]:
+            for file_name in os.listdir(folder):
+                # construct full file path
+                file = os.path.join(folder, file_name)
+                if os.path.isfile(file):
+                    self.log.debug('Deleting file: %s', file)
+                    os.remove(file)
+
     def generate_security_groups(self):
         """
         Generate a security groups:
@@ -206,7 +219,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminate", True),
                                         volume_size=boot_volume.get("size", 50))
-        self.add_volume_device_info_to_instance(provider, server, instance, name)
+        self.add_volume_device_info_to_instance(provider, server, instance)
 
         configuration["private_v4"] = server["private_v4"]
         self.log.debug(f"Created Server {name}: {server['private_v4']}.")
@@ -228,7 +241,16 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
 
-    def start_workers(self, worker, worker_count, configuration, provider):  # pylint: disable=too-many-locals
+    def start_worker(self, worker, worker_count, configuration, provider):  # pylint: disable=too-many-locals
+        """
+        Starts a single worker (with onDemand: False) and adds all relevant information to the configuration dictionary.
+        Additionally, a hosts.yaml entry is created for the DNS resolution.
+        @param worker:
+        @param worker_count:
+        @param configuration:
+        @param provider:
+        @return:
+        """
         name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}.")
         flavor = worker["type"]
@@ -238,7 +260,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         volumes = self.create_server_volumes(provider=provider, instance=worker, name=name)
 
-        # create a server and block until it is up and running
+        # create a server and attaches volumes if given; blocks until it is up and running
         boot_volume = worker.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
@@ -246,9 +268,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminateBoot", True),
                                         volume_size=boot_volume.get("size", 50))
-        self.add_volume_device_info_to_instance(provider, server, worker, name)
+        self.add_volume_device_info_to_instance(provider, server, worker)
 
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
+
+        # for DNS resolution an entry in the hosts file is created
         with self.worker_thread_lock:
             self.permanents.append(name)
             with open(a_rp.HOSTS_FILE, mode="r", encoding="utf-8") as hosts_file:
@@ -261,6 +285,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.debug(f"Added worker {name} to hosts file {a_rp.HOSTS_FILE}.")
 
     def create_server_volumes(self, provider, instance, name):
+        """
+        Creates all volumes of a single instance
+        @param provider:
+        @param instance:
+        @param name:
+        @return:
+        """
         self.log.info("Creating volumes ...")
         return_volumes = []
         for i, volume in enumerate(instance.get("volumes", [])):
@@ -288,23 +319,38 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     volume["name"] = base_volume_name
                     self.log.debug(f"Creating volume {volume['name']}")
                     return_volume = provider.create_volume(size=volume.get("size", 50), name=volume['name'])
+                    self.log.debug("Passed the point")
             return_volumes.append(return_volume)
         return return_volumes
 
-    def add_volume_device_info_to_instance(self, provider, server, instance, name):
+    def add_volume_device_info_to_instance(self, provider, server, instance):
+        """
+        Only after attaching the volume to the server it is decided where the device is attached.
+        This method reads that value and stores it in the instance configuration.
+        This method assumes that devices are attached the same on instances with identical images.
+        @param provider:
+        @param server:
+        @param instance:
+        @return:
+        """
+        self.log.info("Adding device info")
         server_volumes = provider.get_mount_info_from_server(server)  # list of volumes attachments
         volumes = instance.get("volumes")
+        final_volumes = []
         if volumes:
             for volume in volumes:
                 server_volume = next((server_volume for server_volume in server_volumes if
                                       server_volume["name"] == volume["name"]), None)
-                volume["device"] = server_volume.get("device")
+                device = server_volume.get("device")
+                final_volumes.append({**volume, "device": device})
 
-                self.log.debug(f"Added Configuration: Instance {name} has volume {volume['name']} "
-                               f"as device {volume['device']} that is going to be mounted to "
+                self.log.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
+                               f"as device {device} that is going to be mounted to "
                                f"{volume.get('mountPoint')}")
-        else:
-            instance["volumes"] = []
+
+            ansible_configurator.write_yaml(os.path.join(a_rp.HOST_VARS_FOLDER, f"{server['name']}.yaml"),
+                                            {"volumes":final_volumes},
+                                            self.log)
 
     def prepare_vpn_or_master_args(self, configuration):
         """
@@ -417,7 +463,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             for worker in configuration.get("workerInstances", []):
                 if not worker.get("onDemand", True):
                     for _ in range(int(worker["count"])):
-                        start_server_thread = return_threading.ReturnThread(target=self.start_workers,
+                        start_server_thread = return_threading.ReturnThread(target=self.start_worker,
                                                                             args=[worker, worker_count, configuration,
                                                                                   provider])
                         start_server_thread.start()
@@ -470,6 +516,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     self.log.info("%s not found. Creating folder.", folder)
                     os.mkdir(folder)
             self.generate_keypair()
+            self.delete_old_vars()
             self.prepare_configurations()
             self.create_defaults()
             self.generate_security_groups()
