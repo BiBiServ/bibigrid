@@ -306,11 +306,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         else:
             instance["volumes"] = []
 
-    def prepare_vpn_or_master_args(self, configuration, provider):
+    def prepare_vpn_or_master_args(self, configuration):
         """
         Prepares start_instance arguments for master/vpn
         @param configuration: configuration (dict) of said master/vpn
-        @param provider: provider
         @return: arguments needed by start_instance
         """
         if configuration.get("masterInstance"):
