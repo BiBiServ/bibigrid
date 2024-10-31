@@ -181,7 +181,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @param provider: provider
         @return:
         """
-        identifier, instance = self.prepare_vpn_or_master_args(configuration, provider)
+        identifier, instance = self.prepare_vpn_or_master_args(configuration)
         external_network = provider.get_external_network(configuration["network"])
         with self.vpn_master_thread_lock:
             if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
