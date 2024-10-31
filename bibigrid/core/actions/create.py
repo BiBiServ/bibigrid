@@ -202,7 +202,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         boot_volume = instance.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
-                                        boot_from_volume=boot_volume.get("bootFromVolume", False),
+                                        boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminate", True),
                                         volume_size=boot_volume.get("size", 50))
@@ -242,7 +242,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         boot_volume = worker.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
-                                        boot_from_volume=boot_volume.get("bootFromVolume", False),
+                                        boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminateBoot", True),
                                         volume_size=boot_volume.get("size", 50))

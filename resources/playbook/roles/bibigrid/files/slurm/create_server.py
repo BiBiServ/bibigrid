@@ -240,7 +240,7 @@ def start_server(name, start_worker_group, start_data):
                                           key_name=f"tempKey_bibi-{common_config['cluster_id']}",
                                           security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata,
                                           volumes=volumes, wait=False,
-                                          boot_from_volume=boot_volume.get("bootFromVolume", False),
+                                          boot_from_volume=boot_volume.get("name", False),
                                           boot_volume=bool(boot_volume),
                                           terminate_volume=boot_volume.get("terminate", True),
                                           volume_size=boot_volume.get("size", 50)
