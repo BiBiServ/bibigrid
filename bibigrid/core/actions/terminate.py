@@ -198,13 +198,15 @@ def delete_tmp_volumes(provider, cluster_id, log):
     log.info("Deleting tmp volumes on provider %s...", provider.cloud_specification['identifier'])
     volume_list = provider.list_volumes()
     cluster_volume_state = []
-    volume_regex = re.compile(fr"^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-(\d+))-(\d+|semiperm.*)$")
+    volume_regex = re.compile(
+        fr"^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-(\d+))-(semiperm|tmp)-\d+(-.+)?$")
     for volume in volume_list:
         if volume_regex.match(volume["name"]):
             log.info("Trying to delete volume %s on cloud %s.", volume['name'], provider.cloud_specification[
                 'identifier'])
             cluster_volume_state.append(provider.delete_volume(volume))
     return cluster_volume_state
+
 
 # pylint: disable=too-many-branches
 def terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, cluster_volume_state,

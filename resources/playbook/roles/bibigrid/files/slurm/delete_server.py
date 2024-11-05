@@ -70,7 +70,7 @@ for worker_group in worker_groups:
             result = connection.delete_server(terminate_worker, wait=True)
             logging.info(f"Deleting Volumes")
             volume_list = connection.list_volumes()
-            volume_regex = re.compile(fr"^{terminate_worker}-(\d+)$")
+            volume_regex = re.compile(fr"^{terminate_worker}-(tmp)-\d+(-.+)?$")
             for volume in volume_list:
                 if volume_regex.match(volume["name"]):
                     logging.info(f"Trying to delete volume {volume['name']}: {connection.delete_volume(volume)}")

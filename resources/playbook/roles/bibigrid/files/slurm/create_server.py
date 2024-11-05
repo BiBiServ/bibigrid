@@ -111,7 +111,7 @@ def get_server_vars(name):
             server_vars = yaml.safe_load(host_vars_file)
             logging.info(f"Loaded Vars: {server_vars}")
     else:
-        logging.info(f"No host vars exist (group vars still apply). Using {server_vars}")
+        logging.info(f"No host vars exist (group vars still apply). Using {server_vars}.")
     return server_vars
 
 
@@ -119,38 +119,35 @@ def create_server_volumes(connection, host_vars, name):
     logging.info("Creating volumes ...")
     volumes = host_vars.get('volumes', [])
     return_volumes = []
-    host_vars_path = f"/opt/playbook/host_vars/{name}.yaml"
 
-    with FileLock(f"{host_vars_path}.lock"):
-        logging.info(f"Instance Volumes {volumes}")
-        for i, volume in enumerate(volumes):
+    logging.info(f"Instance Volumes {volumes}")
+    for i, volume in enumerate(volumes):
+        if not volume.get("exists"):
             if volume.get("semiPermanent"):
-                base_volume_name = f"{name}-semiperm-{i}"
+                infix = "semiperm"
+            elif volume.get("permanent"):
+                infix = "perm"
             else:
-                base_volume_name = f"{name}-{i}"
+                infix = "tmp"
+            volume_name = f"{name}-{infix}-{i}-{volume.get('name')}"
+        else:
+            volume_name = volume["name"]
+
+        logging.debug(f"Trying to find volume {volume['name']}")
+        return_volume = connection.get_volume(volume_name)
+        if not return_volume:
+            logging.debug(f"Volume {volume['name']} not found.")
+
             if volume.get('snapshot'):
-                if not volume.get("name"):
-                    volume["name"] = base_volume_name
-                else:
-                    volume["name"] = f"{base_volume_name}-{volume['name']}"
-                return_volume = create_volume_from_snapshot(connection, volume['snapshot'], volume["name"])
+                logging.debug("Creating volume from snapshot...")
+                return_volume = create_volume_from_snapshot(connection, volume['snapshot'], volume_name)
                 if not return_volume:
                     raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
             else:
-                if volume.get('name'):
-                    logging.debug(f"Trying to find volume {volume['name']}")
-                    return_volume = connection.get_volume(volume["name"])
-                    if not return_volume:
-                        volume["name"] = f"{base_volume_name}-{volume['name']}"
-                        return_volume = connection.create_volume(size=volume.get("size", 50), name=volume['name'])
-                    return_volume["name"] = volume["name"]
-                else:
-                    volume["name"] = base_volume_name
-                    logging.debug(f"Creating volume {volume['name']}")
-                    return_volume = connection.create_volume(size=volume.get("size", 50), name=volume['name'])
-            return_volumes.append(return_volume)
-        with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
-            yaml.dump(host_vars, host_vars_file)
+                logging.debug("Creating volume...")
+                return_volume = connection.create_volume(size=volume.get("size", 50), name=volume_name,
+                                                         description=f"Created for {name}")
+        return_volumes.append(return_volume)
     return return_volumes
 
 
@@ -175,6 +172,9 @@ def volumes_host_vars_update(connection, server, host_vars):
                 logging.info(f"Finding device for {volume['name']}.")
                 server_volume = next((server_volume for server_volume in server_attachment if
                                       server_volume["name"] == volume["name"]), None)
+                if not server_volume:
+                    raise RuntimeError(
+                        f"Created server {server['name']} doesn't have attached volume {volume['name']}.")
                 volume["device"] = server_volume.get("device")
 
                 logging.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "

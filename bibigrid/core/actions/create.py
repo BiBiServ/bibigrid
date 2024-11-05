@@ -8,6 +8,7 @@ import subprocess
 import threading
 import traceback
 from functools import partial
+from itertools import count
 
 import paramiko
 import sympy
@@ -219,6 +220,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminate", True),
                                         volume_size=boot_volume.get("size", 50))
+        # description=instance.get("description", configuration.get("description")))
         self.add_volume_device_info_to_instance(provider, server, instance)
 
         configuration["private_v4"] = server["private_v4"]
@@ -267,7 +269,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminateBoot", True),
-                                        volume_size=boot_volume.get("size", 50))
+                                        volume_size=boot_volume.get("size", 50),
+                                        description=worker.get("description", configuration.get("description")))
         self.add_volume_device_info_to_instance(provider, server, worker)
 
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
@@ -294,32 +297,30 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         self.log.info("Creating volumes ...")
         return_volumes = []
+
         for i, volume in enumerate(instance.get("volumes", [])):
-            if volume.get("semiPermanent"):
-                base_volume_name = f"{name}-semiperm-{i}"
-            else:
-                base_volume_name = f"{name}-{i}"
-            if volume.get('snapshot'):
-                if not volume.get("name"):
-                    volume["name"] = base_volume_name
+            if not volume.get("exists"):
+                if volume.get("semiPermanent"):
+                    infix = "semiperm"
+                elif volume.get("permanent"):
+                    infix = "perm"
                 else:
-                    volume["name"] = f"{base_volume_name}-{volume['name']}"
-                return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume["name"])
-                if not return_volume:
-                    raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
-            else:
-                if volume.get('name'):
-                    self.log.debug(f"Trying to find volume {volume['name']}")
-                    return_volume = provider.get_volume_by_id_or_name(volume["name"])
+                    infix = "tmp"
+                volume["name"] = f"{name}-{infix}-{i}-{volume.get('name')}"
+
+            self.log.debug(f"Trying to find volume {volume['name']}")
+            return_volume = provider.get_volume_by_id_or_name(volume["name"])
+            if not return_volume:
+                self.log.debug(f"Volume {volume['name']} not found.")
+                if volume.get('snapshot'):
+                    self.log.debug("Creating volume from snapshot...")
+                    return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume["name"])
                     if not return_volume:
-                        volume["name"] = f"{base_volume_name}-{volume['name']}"
-                        return_volume = provider.create_volume(size=volume.get("size", 50), name=volume['name'])
-                    return_volume["name"] = volume["name"]
+                        raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
                 else:
-                    volume["name"] = base_volume_name
-                    self.log.debug(f"Creating volume {volume['name']}")
-                    return_volume = provider.create_volume(size=volume.get("size", 50), name=volume['name'])
-                    self.log.debug("Passed the point")
+                    self.log.debug("Creating volume...")
+                    return_volume = provider.create_volume(size=volume.get("size", 50), name=volume["name"],
+                                                           description=f"Created for {name}")
             return_volumes.append(return_volume)
         return return_volumes
 
@@ -341,6 +342,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             for volume in volumes:
                 server_volume = next((server_volume for server_volume in server_volumes if
                                       server_volume["name"] == volume["name"]), None)
+                if not server_volume:
+                    raise RuntimeError(
+                        f"Created server {server['name']} doesn't have attached volume {volume['name']}.")
                 device = server_volume.get("device")
                 final_volumes.append({**volume, "device": device})
 
@@ -349,7 +353,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                f"{volume.get('mountPoint')}")
 
             ansible_configurator.write_yaml(os.path.join(a_rp.HOST_VARS_FOLDER, f"{server['name']}.yaml"),
-                                            {"volumes":final_volumes},
+                                            {"volumes": final_volumes},
                                             self.log)
 
     def prepare_vpn_or_master_args(self, configuration):

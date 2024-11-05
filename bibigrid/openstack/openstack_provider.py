@@ -341,8 +341,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         """
         return self.conn.get_server(name_or_id)
 
-    def create_volume(self, name, size):
-        return self.conn.create_volume(size=size, name=name)
+    def create_volume(self, name, size, description=None):
+        return self.conn.create_volume(size=size, name=name, description=description)
 
     def delete_volume(self, name_or_id):
         return self.conn.delete_volume(name_or_id=name_or_id)

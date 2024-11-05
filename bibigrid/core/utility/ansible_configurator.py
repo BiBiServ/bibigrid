@@ -95,6 +95,16 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
 
             pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
             write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
+            if worker_dict["on_demand"]:
+                for worker_number in range(worker.get('count', 1)):
+                    name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
+                    write_volumes = []
+                    for i, volume in enumerate(worker.get("volumes")):
+                        semiperm_infix = 'semiperm-' if volume.get("semiPermanent") else ''
+                        write_volumes.append({**volume, "name":volume.get("name", f"{name}-{semiperm_infix}{i}")})
+                    write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"),
+                               {"volumes": write_volumes},
+                               log)
             worker_count += worker.get('count', 1)
 
         vpngtw = configuration.get("vpnInstance")
@@ -125,7 +135,6 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                            "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                            "flavor": flavor_dict, "private_v4": configuration["private_v4"],
                            "cloud_identifier": configuration["cloud_identifier"],
-                           "volumes": configuration["masterInstance"]["volumes"],
                            "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
                            "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
                            "on_demand": False,
@@ -212,8 +221,9 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     @return: ansible_hosts yaml (dict)
     """
     log.info("Generating ansible hosts file...")
+    master_name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
     ansible_hosts_yaml = {"vpn": {"hosts": {},
-                                  "children": {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
+                                  "children": {"master": {"hosts": {master_name: to_instance_host_dict(ssh_user)}},
                                                "vpngtw": {"hosts": {}}}}, "workers": {"hosts": {}, "children": {}}}
     # vpngtw are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
