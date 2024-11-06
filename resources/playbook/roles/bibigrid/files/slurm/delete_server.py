@@ -68,7 +68,7 @@ for worker_group in worker_groups:
         if terminate_worker in possible_workers:
             connection = connections[worker_group["cloud_identifier"]]
             result = connection.delete_server(terminate_worker, wait=True)
-            logging.info(f"Deleting Volumes")
+            logging.info("Deleting Volumes")
             volume_list = connection.list_volumes()
             volume_regex = re.compile(fr"^{terminate_worker}-(tmp)-\d+(-.+)?$")
             for volume in volume_list:

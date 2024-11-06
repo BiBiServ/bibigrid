@@ -8,7 +8,6 @@ import subprocess
 import threading
 import traceback
 from functools import partial
-from itertools import count
 
 import paramiko
 import sympy
@@ -65,7 +64,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     The class Create holds necessary methods to execute the Create-Action
     """
 
-    def __init__(self, providers, configurations, config_path, log, debug=False, cluster_id=None):
+    def __init__(self, providers, configurations, config_path, log, debug=False, cluster_id=None):  # pylint: disable=too-many-positional-arguments
         """
         Additionally sets (unique) cluster_id, public_key_commands (to copy public keys to master) and key_name.
         Call create() to actually start server.
@@ -306,7 +305,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     infix = "perm"
                 else:
                     infix = "tmp"
-                volume["name"] = f"{name}-{infix}-{i}-{volume.get('name')}"
+                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
+                volume["name"] = f"{name}-{infix}-{i}{postfix}"
 
             self.log.debug(f"Trying to find volume {volume['name']}")
             return_volume = provider.get_volume_by_id_or_name(volume["name"])

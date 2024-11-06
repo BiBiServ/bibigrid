@@ -53,7 +53,7 @@ def generate_site_file_yaml(user_roles):
     return site_yaml
 
 
-def write_host_and_group_vars(configurations, providers, cluster_id, log):  # pylint: disable=too-many-locals
+def write_host_and_group_vars(configurations, providers, cluster_id, log):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-positional-arguments
     """
     Filters unnecessary information
     @param log:
@@ -66,7 +66,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
     flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
     worker_count = 0
     vpn_count = 0
-    for configuration, provider in zip(configurations, providers):
+    for configuration, provider in zip(configurations, providers):  # pylint: disable=too-many-nested-blocks
         configuration_features = configuration.get("features", [])
         if isinstance(configuration_features, str):
             configuration_features = [configuration_features]
@@ -100,8 +100,18 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                     name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
                     write_volumes = []
                     for i, volume in enumerate(worker.get("volumes")):
-                        semiperm_infix = 'semiperm-' if volume.get("semiPermanent") else ''
-                        write_volumes.append({**volume, "name":volume.get("name", f"{name}-{semiperm_infix}{i}")})
+                        if not volume.get("exists"):
+                            if volume.get("semiPermanent"):
+                                infix = "semiperm"
+                            elif volume.get("permanent"):
+                                infix = "perm"
+                            else:
+                                infix = "tmp"
+                            postfix = f"-{volume.get('name')}" if volume.get('name') else ''
+                            volume_name = f"{name}-{infix}-{i}{postfix}"
+                        else:
+                            volume_name = volume["name"]
+                        write_volumes.append({**volume, "name":volume_name})
                     write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"),
                                {"volumes": write_volumes},
                                log)
@@ -160,7 +170,7 @@ def pass_through(dict_from, dict_to, key_from, key_to=None):
         dict_to[key_to] = dict_from[key_from]
 
 
-def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user, log):
+def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user, log):  # pylint: disable=too-many-positional-arguments
     """
     Generates common_configuration yaml (dict)
     @param cidrs: str subnet cidrs (provider generated)

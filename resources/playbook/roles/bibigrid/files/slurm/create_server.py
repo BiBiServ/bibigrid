@@ -121,31 +121,20 @@ def create_server_volumes(connection, host_vars, name):
     return_volumes = []
 
     logging.info(f"Instance Volumes {volumes}")
-    for i, volume in enumerate(volumes):
-        if not volume.get("exists"):
-            if volume.get("semiPermanent"):
-                infix = "semiperm"
-            elif volume.get("permanent"):
-                infix = "perm"
-            else:
-                infix = "tmp"
-            volume_name = f"{name}-{infix}-{i}-{volume.get('name')}"
-        else:
-            volume_name = volume["name"]
-
+    for volume in volumes:
         logging.debug(f"Trying to find volume {volume['name']}")
-        return_volume = connection.get_volume(volume_name)
+        return_volume = connection.get_volume(volume['name'])
         if not return_volume:
             logging.debug(f"Volume {volume['name']} not found.")
 
             if volume.get('snapshot'):
                 logging.debug("Creating volume from snapshot...")
-                return_volume = create_volume_from_snapshot(connection, volume['snapshot'], volume_name)
+                return_volume = create_volume_from_snapshot(connection, volume['snapshot'], volume['name'])
                 if not return_volume:
                     raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
             else:
                 logging.debug("Creating volume...")
-                return_volume = connection.create_volume(size=volume.get("size", 50), name=volume_name,
+                return_volume = connection.create_volume(size=volume.get("size", 50), name=volume['name'],
                                                          description=f"Created for {name}")
         return_volumes.append(return_volume)
     return return_volumes
