@@ -64,7 +64,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     The class Create holds necessary methods to execute the Create-Action
     """
 
-    def __init__(self, providers, configurations, config_path, log, debug=False, cluster_id=None):  # pylint: disable=too-many-positional-arguments
+    def __init__(self, providers, configurations, config_path, log, debug=False,  # pylint: disable=too-many-positional-arguments
+                 cluster_id=None):
         """
         Additionally sets (unique) cluster_id, public_key_commands (to copy public keys to master) and key_name.
         Call create() to actually start server.
@@ -286,6 +287,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
             self.log.debug(f"Added worker {name} to hosts file {a_rp.HOSTS_FILE}.")
 
+    # pylint: disable=duplicate-code
     def create_server_volumes(self, provider, instance, name):
         """
         Creates all volumes of a single instance
@@ -299,10 +301,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         for i, volume in enumerate(instance.get("volumes", [])):
             if not volume.get("exists"):
-                if volume.get("semiPermanent"):
-                    infix = "semiperm"
-                elif volume.get("permanent"):
+                if volume.get("permanent"):
                     infix = "perm"
+                elif volume.get("semiPermanent"):
+                    infix = "semiperm"
                 else:
                     infix = "tmp"
                 postfix = f"-{volume.get('name')}" if volume.get('name') else ''
@@ -320,6 +322,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 else:
                     self.log.debug("Creating volume...")
                     return_volume = provider.create_volume(size=volume.get("size", 50), name=volume["name"],
+                                                           volume_type=volume.get("type"),
                                                            description=f"Created for {name}")
             return_volumes.append(return_volume)
         return return_volumes

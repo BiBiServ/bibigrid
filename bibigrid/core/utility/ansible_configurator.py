@@ -101,10 +101,10 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
                     write_volumes = []
                     for i, volume in enumerate(worker.get("volumes")):
                         if not volume.get("exists"):
-                            if volume.get("semiPermanent"):
-                                infix = "semiperm"
-                            elif volume.get("permanent"):
+                            if volume.get("permanent"):
                                 infix = "perm"
+                            elif volume.get("semiPermanent"):
+                                infix = "semiperm"
                             else:
                                 infix = "tmp"
                             postfix = f"-{volume.get('name')}" if volume.get('name') else ''

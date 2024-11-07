@@ -234,10 +234,13 @@ workerInstance:
     volumes: # optional
       - name: volumeName
         snapshot: snapshotName # to create volume from
+        # one or none of these
+        # permanent: False
+        # semiPermanent: False
         mountPoint: /vol/test
         size: 50
         fstype: ext4
-        semiPermanent: False
+        type: None
     bootVolume: # optional
       name: False
       terminate: True
@@ -257,16 +260,17 @@ workerInstance:
 
 ##### volumes (optional)
 
-You can create a temporary volume, a semipermanent volume, a permanent volume and you can do all of those from a snapshot, too.
-You can even attach a volume that already exists. 
-In that case, however, you should attach it to only one instance as most volumes can only be attached to one instance at a time. 
+You can create a temporary volume (default), a semipermanent volume, a permanent volume and you can do all of those from a snapshot, too.
+You can even attach a volume that already exists. However, don't try to add a single existing volume to a group with count >1 as most volumes can't be attached to more than one instance.
 
-- **Temporary** volumes are deleted once their server is destroyed. By not setting a `name` and not setting `semiPermanent`, you create a temporary volume.
-- **Semi-permanent** volumes are deleted once their cluster is destroyed. By setting `semiPermanent: True`, you create a semi-permanent volume. This explicitly means that volumes are not destroyed while scheduling on-demand allowing workers to have the same volume no matter how often they restarted.
-- **Permanent** volumes are deleted once you delete them manually. By setting a `name` and not setting `semiPermanent`, you create a permanent volume. This can be useful if you want to investigate its content after destroying the cluster.
-- **Existing** volumes can be attached by setting the exact name of that volume as `name`. If you use this to attach the volume to a worker, make sure that the worker group's count is 1. Otherwise, BiBiGrid will try to attach that volume to each instance.
+- **Semi-permanent** volumes are deleted once their cluster is destroyed not when their server is powered down during the cluster's runtime. By setting `semiPermanent: True`, you create a semi-permanent volume.
+- **Permanent** volumes are deleted once you delete them manually. By setting `permanent: True`, you create a permanent volume.
+- **Temporary** volumes are deleted once their server is destroyed. By setting `permanent: False` and `semiPermanent: False` (their default value), you create a temporary volume.
+- **Existing** volumes can be attached by setting the exact name of that volume as `name` and setting `exists: True`. If you use this to attach the volume to a worker, make sure that the worker group's count is 1. Otherwise, BiBiGrid will try to attach that volume to each instance.
+- You can create volumes from **snapshots** by setting `snapshot` to your snapshot's name. You can create all kinds of volumes of them.
+- `type` allows you to set the storage option. For Bielefeld there are `CEPH_HDD` (HDD) and `CEPH_NVME` (SSD). 
 
-Termination of these volumes is done by regex looking for the cluster id. For cluster termination: `^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-(\d+))-(\d+|semiperm.*)$`
+Termination of these volumes is done by regex looking for the cluster id. For cluster termination: `^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-(\d+))-(semiperm|tmp)-\d+(-.+)?$`
 
 ##### Find your active `images`
 

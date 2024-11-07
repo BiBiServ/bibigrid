@@ -74,6 +74,7 @@ for cloud in clouds:
     connections[cloud] = os_client_config.make_sdk(cloud=cloud, volume_api_version="3")
 
 
+# pylint: disable=duplicate-code
 def create_volume_from_snapshot(connection, snapshot_name_or_id, volume_name_or_id=None):
     """
     Uses the cinder API to create a volume from snapshot:
@@ -115,6 +116,7 @@ def get_server_vars(name):
     return server_vars
 
 
+# pylint: disable=duplicate-code
 def create_server_volumes(connection, host_vars, name):
     logging.info("Creating volumes ...")
     volumes = host_vars.get('volumes', [])
@@ -135,6 +137,7 @@ def create_server_volumes(connection, host_vars, name):
             else:
                 logging.debug("Creating volume...")
                 return_volume = connection.create_volume(size=volume.get("size", 50), name=volume['name'],
+                                                         volume_type=volume.get("type"),
                                                          description=f"Created for {name}")
         return_volumes.append(return_volume)
     return return_volumes

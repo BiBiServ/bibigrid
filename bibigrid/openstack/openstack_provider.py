@@ -114,7 +114,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def list_servers(self):
         return [elem.toDict() for elem in self.conn.list_servers()]
 
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None,
+    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None, # pylint: disable=too-many-positional-arguments
                       boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50):
         try:
             server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
@@ -193,12 +193,14 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def get_volume_by_id_or_name(self, name_or_id):
         return self.conn.get_volume(name_or_id)
 
-    def create_volume_from_snapshot(self, snapshot_name_or_id, volume_name_or_id=None):
+    def create_volume_from_snapshot(self, snapshot_name_or_id, volume_name_or_id=None,
+                                    description=None):
         """
         Uses the cinder API to create a volume from snapshot:
         https://github.com/openstack/python-cinderclient/blob/master/cinderclient/v3/volumes.py
         @param snapshot_name_or_id: name or id of snapshot
         @param volume_name_or_id:
+        @param description:
         @return: id of created volume
         """
         LOG.debug("Trying to create volume from snapshot")
@@ -209,7 +211,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                 LOG.debug("Snapshot %s is available.", {snapshot_name_or_id})
                 size = snapshot["size"]
                 name = volume_name_or_id or (create.PREFIX_WITH_SEP + snapshot["name"])
-                description = f"Created from snapshot {snapshot_name_or_id} by BiBiGrid"
+                description = description or f"Created from snapshot {snapshot_name_or_id} by BiBiGrid"
                 volume = self.cinder.volumes.create(size=size, snapshot_id=snapshot["id"], name=name,
                                                     description=description)
                 return volume.to_dict()
@@ -341,8 +343,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         """
         return self.conn.get_server(name_or_id)
 
-    def create_volume(self, name, size, description=None):
-        return self.conn.create_volume(size=size, name=name, description=description)
+    def create_volume(self, name, size, volume_type=None, description=None):
+        return self.conn.create_volume(size=size, name=name, volume_type=volume_type, description=description)
 
     def delete_volume(self, name_or_id):
         return self.conn.delete_volume(name_or_id=name_or_id)
