@@ -233,10 +233,11 @@ workerInstance:
       - holdsinformation
     volumes: # optional
       - name: volumeName
-        snapshot: snapshotName # to create volume from
+        snapshot: snapshotName # optional; to create volume from
         # one or none of these
         # permanent: False
         # semiPermanent: False
+        # exists: False
         mountPoint: /vol/test
         size: 50
         fstype: ext4

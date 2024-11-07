@@ -11,6 +11,17 @@ WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'
               Optional('terminate'): bool,
               Optional('size'): int
           },
+          Optional('volumes'): [{
+              Optional('name'): str,
+              Optional('snapshot'): str,  # optional; to create volume from
+              # one or none of these
+              Optional('permanent'): bool,
+              Optional('semiPermanent'): bool,
+              Optional('exists'): bool,
+              Optional('mountPoint'): str,
+              Optional('size'): int,
+              Optional('fstype'): str,
+              Optional('type'): str}]
           }
 MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional('partitions'): [str],
                 Optional('features'): [str],
@@ -19,6 +30,15 @@ MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional(
                     Optional('terminate'): bool,
                     Optional('size'): int
                 },
+                Optional('volumes'): {
+                    Optional('snapshot'): str,  # optional; to create volume from
+                    # one or none of these
+                    Optional('permanent'): bool,
+                    Optional('semiPermanent'): bool,
+                    Optional('mountPoint'): str,
+                    Optional('size'): int,
+                    Optional('fstype'): str,
+                    Optional('type'): str}
                 }
 
 # Define the schema for the configuration file
