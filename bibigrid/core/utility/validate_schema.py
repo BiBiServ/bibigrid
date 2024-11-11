@@ -30,7 +30,7 @@ MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional(
                     Optional('terminate'): bool,
                     Optional('size'): int
                 },
-                Optional('volumes'): {
+                Optional('volumes'): [{
                     Optional('snapshot'): str,  # optional; to create volume from
                     # one or none of these
                     Optional('permanent'): bool,
@@ -38,7 +38,7 @@ MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional(
                     Optional('mountPoint'): str,
                     Optional('size'): int,
                     Optional('fstype'): str,
-                    Optional('type'): str}
+                    Optional('type'): str}]
                 }
 
 # Define the schema for the configuration file

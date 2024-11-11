@@ -325,38 +325,63 @@ class ValidateConfiguration:
         self.required_resources_dict[provider.cloud_specification['identifier']]["total_cores"] += flavor["vcpus"]
         return success
 
-    def check_volumes(self):
+    def check_volumes(self): # pylint: disable=too-many-branches
         """
         Checking if volume or snapshot exists for all volumes
         @return: True if all snapshot and volumes are found. Else false.
         """
         self.log.info("Checking volumes...")
         success = True
-        for configuration, provider in zip(self.configurations, self.providers):
-            volume_identifiers = [masterMount["name"] for masterMount in configuration.get("masterMounts", [])]
-            if volume_identifiers:
-                # check individually if volumes exist
-                for volume_identifier in volume_identifiers:
-                    if ":" in volume_identifier:
-                        volume_name_or_id = volume_identifier[:volume_identifier.index(":")]
-                    else:
-                        volume_name_or_id = volume_identifier
-                    volume = provider.get_volume_by_id_or_name(volume_name_or_id)
-                    if not volume:
-                        snapshot = provider.get_volume_snapshot_by_id_or_name(volume_name_or_id)
-                        if not snapshot:
-                            self.log.warning(f"Neither Volume nor Snapshot '{volume_name_or_id}' found on "
-                                             f"{provider.cloud_specification['identifier']}")
-                            success = False
+        for configuration, provider in zip(self.configurations, self.providers): # pylint: disable=too-many-nested-blocks,too-many-branches
+            master_volumes = (
+                1, configuration.get("masterInstance", []) and configuration["masterInstance"].get("volumes",
+                                                                                                   []))
+            worker_volumes = configuration.get("workerInstances", (1, [])) and [
+                (worker_instance.get("count", 1), worker_instance.get("volumes", [])) for
+                worker_instance in configuration["workerInstances"]]
+            volume_groups = [master_volumes] + worker_volumes
+
+            for count, volume_group in volume_groups:
+                for volume in volume_group:
+                    if volume.get("exists"):
+                        if volume.get("name"):
+                            volume_object = provider.get_volume_by_id_or_name(volume["name"])
+                            if volume_object:
+                                self.log.debug(
+                                    f"Found volume {volume['name']} on cloud "
+                                    f"{provider.cloud_specification['identifier']}.")
+                            else:
+                                self.log.warning(
+                                    f"Couldn't find volume {volume['name']} on cloud "
+                                    f"{provider.cloud_specification['identifier']}. "
+                                    "No size added to resource requirements dict."
+                                )
+                                success = False
                         else:
-                            self.log.info(f"Snapshot '{volume_name_or_id}' found on "
-                                          f"{provider.cloud_specification['identifier']}.")
-                            self.required_resources_dict[provider.cloud_specification['identifier']]["volumes"] += 1
-                            self.required_resources_dict[provider.cloud_specification['identifier']][
-                                "volume_gigabytes"] += snapshot["size"]
+                            self.log.warning(
+                                f"Key exists is set, but no name is given for {volume}. "
+                                "No size added to resource requirements dict.")
+                            success = False
                     else:
-                        self.log.info(f"Volume '{volume_name_or_id}' found on "
-                                      f"{provider.cloud_specification['identifier']}.")
+                        self.required_resources_dict[provider.cloud_specification['identifier']]["volumes"] += count
+
+                        if volume.get("snapshot"):
+                            snapshot_object = provider.get_volume_snapshot_by_id_or_name(volume["snapshot"])
+                            if snapshot_object:
+                                self.log.debug(
+                                    f"Found snapshot {volume['snapshot']} on cloud "
+                                    f"{provider.cloud_specification['identifier']}.")
+                                self.required_resources_dict[provider.cloud_specification['identifier']][
+                                    "volume_gigabytes"] += snapshot_object["size"] * count
+                            else:
+                                self.log.warning(
+                                    f"Couldn't find snapshot {volume['snapshot']} on cloud "
+                                    f"{provider.cloud_specification['identifier']}. "
+                                    "No size added to resource requirements dict.")
+                                success = False
+                        else:
+                            self.required_resources_dict[provider.cloud_specification['identifier']][
+                                "volume_gigabytes"] += volume.get("size", 50) * count
         return success
 
     def check_network(self):
@@ -424,6 +449,7 @@ class ValidateConfiguration:
         self.log.info("required/available")
         for provider in self.providers:
             free_resources_dict = provider.get_free_resources()
+            print("REQ_REC", self.required_resources_dict)
             for key, value in self.required_resources_dict[provider.cloud_specification['identifier']].items():
                 success = has_enough(free_resources_dict[key], value,
                                      f"Project {provider.cloud_specification['identifier']}", key, self.log) and success
