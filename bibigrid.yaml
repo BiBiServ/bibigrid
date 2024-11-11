@@ -11,6 +11,8 @@
   # sshPublicKeyFiles:
   #   - [public key one]
 
+  # masterMounts: DEPRECATED -- see `volumes` key for each instance instead
+
   # nfsShares: # list of nfs shares. /vol/spool/ is automatically created as an nfs if nfs is true
   #   - [nfsShare one]
 
@@ -75,6 +77,10 @@
     #   mountPoint: /vol/mountPath
     #   size: 50
     #   fstype: ext4 # must support chown
+    #   type: # storage type; available values depend on your location; for Bielefeld CEPH_HDD, CEPH_NVME
+    ## Select up to one of the following options; otherwise temporary is picked
+    #   exists: False # if True looks for existing volume with exact name. count must be 1. Volume is never deleted.
+    #   permanent: False # if True volume is never deleted; overwrites semiPermanent if both are given
     #   semiPermanent: False # if True volume is only deleted during cluster termination
 
   # fallbackOnOtherImage: False # if True, most similar image by name will be picked. A regex can also be given instead.
@@ -96,10 +102,11 @@
   #    #   mountPoint: /vol/mountPath # optional; not mounted if no path is given
   #    #   size: 50
   #    #   fstype: ext4 # must support chown
-  #    #   semiPermanent: False # if True volume is only deleted during cluster termination
-  #    #   permanent: False # if True volume is not deleted; overwrites semiPermanent if both are given
-  #    #   exists: False # if True looks for existing volume with exact name. count must be 1.
   #    #   type: # storage type; available values depend on your location; for Bielefeld CEPH_HDD, CEPH_NVME
+  #    ## Select up to one of the following options; otherwise temporary is picked
+  #    #   exists: False # if True looks for existing volume with exact name. count must be 1. Volume is never deleted.
+  #    #   permanent: False # if True volume is never deleted; overwrites semiPermanent if both are given
+  #    #   semiPermanent: False # if True volume is only deleted during cluster termination
 
   # Depends on image
   sshUser: # for example 'ubuntu'
