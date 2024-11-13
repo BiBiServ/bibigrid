@@ -260,7 +260,7 @@ def start_server(name, start_worker_group, start_data):
 
     except OpenStackCloudException as exc:
         logging.warning("While creating %s the OpenStackCloudException %s occurred. Worker ignored.", name, exc)
-        server_start_data["other_openstack_exception"].append(name)
+        server_start_data["other_openstack_exceptions"].append(name)
 
 
 def check_ssh_active(private_ip, private_key="/opt/slurm/.ssh/id_ecdsa", username="ubuntu"):
