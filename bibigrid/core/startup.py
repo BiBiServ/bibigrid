@@ -27,6 +27,7 @@ def get_cluster_id_from_mem():
     @return: cluster_id. If no mem file can be found, the file is not a valid yaml file or doesn't contain a cluster_id,
     it returns none.
     """
+    print(create.CLUSTER_MEMORY_PATH)
     if os.path.isfile(create.CLUSTER_MEMORY_PATH):
         try:
             with open(create.CLUSTER_MEMORY_PATH, mode="r", encoding="UTF-8") as cluster_memory_file:
@@ -34,6 +35,7 @@ def get_cluster_id_from_mem():
                 return mem_dict.get("cluster_id")
         except yaml.YAMLError as exc:
             LOG.warning("Couldn't read configuration %s: %s", create.CLUSTER_MEMORY_PATH, exc)
+    LOG.warning(f"Couldn't find cluster memory path {create.CLUSTER_MEMORY_PATH}")
     return None
 
 

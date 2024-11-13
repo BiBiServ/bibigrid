@@ -49,12 +49,13 @@ WORKER_IDENTIFIER = partial(get_identifier, identifier="worker")
 VPN_WORKER_IDENTIFIER = partial(get_identifier, identifier="vpngtw")
 
 KEY_PREFIX = "tempKey_bibi"
-KEY_FOLDER = os.path.expanduser("~/.config/bibigrid/keys/")
+CONFIG_FOLDER = os.path.expanduser("~/.config/bibigrid/")
+KEY_FOLDER = os.path.join(CONFIG_FOLDER, "keys/")
 AC_NAME = "ac" + SEPARATOR + "{cluster_id}"
 KEY_NAME = KEY_PREFIX + SEPARATOR + "{cluster_id}"
 CLUSTER_MEMORY_FOLDER = KEY_FOLDER
 CLUSTER_MEMORY_FILE = ".bibigrid.mem"
-CLUSTER_MEMORY_PATH = os.path.join(CLUSTER_MEMORY_FOLDER, CLUSTER_MEMORY_FILE)
+CLUSTER_MEMORY_PATH = os.path.join(CONFIG_FOLDER, CLUSTER_MEMORY_FILE)
 DEFAULT_SECURITY_GROUP_NAME = "default" + SEPARATOR + "{cluster_id}"
 WIREGUARD_SECURITY_GROUP_NAME = "wireguard" + SEPARATOR + "{cluster_id}"
 
@@ -64,7 +65,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     The class Create holds necessary methods to execute the Create-Action
     """
 
-    def __init__(self, providers, configurations, config_path, log, debug=False,  # pylint: disable=too-many-positional-arguments
+    def __init__(self, providers, configurations, config_path, log, debug=False,
+                 # pylint: disable=too-many-positional-arguments
                  cluster_id=None):
         """
         Additionally sets (unique) cluster_id, public_key_commands (to copy public keys to master) and key_name.
@@ -96,7 +98,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # permanents holds groups or single nodes that ansible playbook should be run for during startup
         self.permanents = ["vpn"]
         self.vpn_counter = 0
-        self.vpn_master_thread_lock = threading.Lock()
+        self.vpn_counter_thread_lock = threading.Lock()
         self.worker_thread_lock = threading.Lock()
         self.use_master_with_public_ip = not configurations[0].get("gateway") and configurations[0].get(
             "useMasterWithPublicIp", True)
@@ -197,12 +199,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         identifier, instance = self.prepare_vpn_or_master_args(configuration)
         external_network = provider.get_external_network(configuration["network"])
-        with self.vpn_master_thread_lock:
-            if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
-                name = identifier(cluster_id=self.cluster_id)
-            else:
-                name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
-                                  additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
+        if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
+            name = identifier(cluster_id=self.cluster_id)
+        else:
+            name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
+                              additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
+            with self.vpn_counter_thread_lock:
                 self.vpn_counter += 1
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance["type"]
@@ -239,6 +241,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if identifier == VPN_WORKER_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
             configuration["floating_ip"] = \
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
+            if identifier == MASTER_IDENTIFIER:
+                with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
+                    yaml.safe_dump(
+                        data={"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"], "name": name},
+                        stream=cluster_memory_file)
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
