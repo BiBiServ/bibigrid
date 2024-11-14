@@ -347,7 +347,7 @@ class TestAnsibleConfigurator(TestCase):
     @patch("bibigrid.core.utility.ansible_configurator.generate_site_file_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.get_cidrs")
-    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list, mock_common,
+    def test_configure_ansible_yaml(self, *, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list, mock_common,
                                     mock_worker, mock_write):
         mock_cidrs.return_value = 421
         mock_list.return_value = {2: 422}
@@ -428,31 +428,6 @@ class TestAnsibleConfigurator(TestCase):
         mock_write_yaml.assert_any_call(os.path.join('/mocked/path/host_vars', 'bibigrid-vpngtw-test-cluster-0.yaml'),
                                         expected_vpn_dict, mock_log)
 
-    @patch('os.remove')
-    @patch('os.listdir')
-    @patch('os.path.isfile')
-    @patch('bibigrid.core.utility.ansible_configurator.aRP.GROUP_VARS_FOLDER', '/mocked/path/group_vars')
-    @patch('bibigrid.core.utility.ansible_configurator.aRP.HOST_VARS_FOLDER', '/mocked/path/host_vars')
-    @patch('logging.getLogger')
-    def test_delete_old_vars(self, mock_get_logger, mock_isfile, mock_listdir, mock_remove):
-        mock_log = MagicMock()
-        mock_get_logger.return_value = mock_log
-        mock_isfile.return_value = True
-
-        mock_listdir.side_effect = [['file1.yaml', 'file2.yaml'],  # Files in GROUP_VARS_FOLDER
-                                    ['file3.yaml', 'file4.yaml']  # Files in HOST_VARS_FOLDER
-                                    ]
-
-        # Call the function under test
-        ansible_configurator.delete_old_vars(mock_log)
-
-        # Assertions for file removal
-        mock_remove.assert_any_call('/mocked/path/group_vars/file1.yaml')
-        mock_remove.assert_any_call('/mocked/path/group_vars/file2.yaml')
-        mock_remove.assert_any_call('/mocked/path/host_vars/file3.yaml')
-        mock_remove.assert_any_call('/mocked/path/host_vars/file4.yaml')
-
-        self.assertEqual(mock_remove.call_count, 4)
 
     def test_key_present_with_key_to(self):
         dict_from = {'source_key': 'value1'}

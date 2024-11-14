@@ -82,7 +82,7 @@ class TestCreate(TestCase):
         volume_return = [42]
         with patch.object(creator, "prepare_volumes", return_value=volume_return) as prepare_mock:
             self.assertEqual((create.MASTER_IDENTIFIER, configuration["masterInstance"], volume_return),
-                             creator.prepare_vpn_or_master_args(configuration, provider))
+                             creator.prepare_vpn_or_master_args(configuration))
             prepare_mock.assert_called_with(provider, [])
 
     def test_prepare_vpn_args(self):
@@ -95,7 +95,7 @@ class TestCreate(TestCase):
         volume_return = [42]
         with patch.object(creator, "prepare_volumes", return_value=volume_return) as prepare_mock:
             self.assertEqual((create.VPN_WORKER_IDENTIFIER, configuration["vpnInstance"], []),
-                             creator.prepare_vpn_or_master_args(configuration, provider))
+                             creator.prepare_vpn_or_master_args(configuration))
             prepare_mock.assert_not_called()
 
     def test_prepare_args_keyerror(self):
@@ -218,7 +218,7 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_non_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
+    def test_create_non_debug(self, *, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {"floating_ip": 42}
@@ -233,7 +233,7 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "start_start_server_threads")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_non_debug_upload_raise(self, mock_terminate, mock_info, mock_start, mock_conf, mock_key):
+    def test_create_non_debug_upload_raise(self, *, mock_terminate, mock_info, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
@@ -252,7 +252,7 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
+    def test_create_debug(self, *, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {"floating_ip": 42}
