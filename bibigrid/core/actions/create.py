@@ -141,7 +141,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         # write cluster_id to automatically read it on following calls if no cid is given
         with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
-            yaml.safe_dump(data={"cluster_id": self.cluster_id}, stream=cluster_memory_file)
+            yaml.safe_dump(data={"cluster_id": self.cluster_id, "ssh_user": self.ssh_user}, stream=cluster_memory_file)
 
     def delete_old_vars(self):
         """
@@ -244,7 +244,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             if identifier == MASTER_IDENTIFIER:
                 with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
                     yaml.safe_dump(
-                        data={"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"], "name": name},
+                        data={"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"]},
                         stream=cluster_memory_file)
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
         elif identifier == MASTER_IDENTIFIER:
