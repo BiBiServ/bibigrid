@@ -1,4 +1,4 @@
-python-openstackclient==6.0.0
+python-openstackclient==6.3.0
 openstacksdk==0.62
 ipython
 os_client_config
