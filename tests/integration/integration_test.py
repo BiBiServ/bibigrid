@@ -1,6 +1,7 @@
 """
 Integration test module that assumes that one cluster is started at a time.
 For multiple clusters the .bibigrid.mem structure needs to be updated TODO
+This is not ready yet.
 """
 
 import os
