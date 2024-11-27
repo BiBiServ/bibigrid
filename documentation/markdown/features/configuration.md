@@ -369,14 +369,18 @@ If both [worker group](#workerinstances) or [master features](#masterInstance) a
 they are merged. If you only have a single cloud and therefore a single configuration, this key is not helpful as a feature
 that is present at all nodes can be omitted as it can't influence the scheduling.
 
-#### bootFromVolume (optional:False)
-If True, the instance will boot from a volume created for this purpose. Keep in mind that on demand scheduling can lead
-to multiple boots of the same configurated node. If you don't make use of [terminateBootVolume](#terminatebootvolume-optionaltrue)
-this will lead to many created volumes.
+#### bootVolume (optional)
 
-#### bootVolumeSize (optional:50)
-The created volume's size if you use [bootFromVolume](#bootfromvolume-optionalfalse).
+Instead of setting the `bootVolume` for every instance you can also set it cloud wide:
 
-#### terminateBootVolume (optional:True)
-If True, once the instance is shut down, boot volume is destroyed. This does not affect other attached volumes. 
-Only the boot volume is affected.
+- `bootVolume` (optional)
+  - `name` (optional:None) takes name or id of a boot volume and boots from that volume if given.
+  - `terminate` (optional:True) if True, the boot volume will be terminated when the server is terminated.
+  - `size` (optional:50) if a boot volume is created, this sets its size.
+
+```yaml
+bootVolume:
+      name: False
+      terminate: True
+      size: 50
+```
