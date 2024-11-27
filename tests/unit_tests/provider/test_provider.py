@@ -227,6 +227,16 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 self.assertIsNone(provider.get_image_by_id_or_name("NONE"))
 
+    def test_create_delete_volume(self):
+        for provider in PROVIDERS:
+            volume_id = provider.create_volume(name="ProviderTestVolume")
+            self.assertTrue(volume_id)
+            volume = provider.get_volume_by_id_or_name(volume_id)
+            self.assertTrue(volume)
+            self.assertEqual("ProviderTestVolume", volume["name"])
+            self.assertTrue(provider.delete_volume(volume_id))
+
+
     # TODO test_get_images
     # TODO test_get_flavors
     # TODO test_set_allowed_addresses
@@ -243,9 +253,10 @@ class TestProvider(unittest.TestCase):
                     self.assertEqual(SNAPSHOT_KEYS, set(provider.get_volume_snapshot_by_id_or_name(
                         configuration["snapshotImage"]).keys()))
 
-        def test_create_volume_from_snapshot(self):
+        def test_create_volume_from_snapshot_with_delete(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):
                     volume_id = provider.create_volume_from_snapshot(configuration["snapshotImage"])
                     volume = provider.get_volume_by_id_or_name(volume_id)
                     self.assertEqual(VOLUME_KEYS, set(volume.keys()))
+                provider.delete_volume(volume_id)

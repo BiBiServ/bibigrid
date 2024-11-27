@@ -24,6 +24,8 @@ class TestTerminate(TestCase):
         provider.list_servers.return_value = [{"name": create.MASTER_IDENTIFIER(cluster_id=str(cluster_id)), "id": 21}]
         provider.delete_server.return_value = True
         provider.delete_keypair.return_value = True
+        provider.delete_volume.return_value = True
+        provider.list_volumes([{"name": "bibigrid-master-i950vaoqzfbwpnq-tmp-0"}])
         provider.delete_security_group.return_value = True
         provider.delete_application_credentials.return_value = True
         terminate.terminate(str(cluster_id), [provider], startup.LOG, False, True)

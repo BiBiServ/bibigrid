@@ -338,7 +338,7 @@ class ValidateConfiguration:
                                                                                                    []))
             worker_volumes = configuration.get("workerInstances", (1, [])) and [
                 (worker_instance.get("count", 1), worker_instance.get("volumes", [])) for
-                worker_instance in configuration["workerInstances"]]
+                worker_instance in configuration.get("workerInstances", [])]
             volume_groups = [master_volumes] + worker_volumes
 
             for count, volume_group in volume_groups:
@@ -449,7 +449,6 @@ class ValidateConfiguration:
         self.log.info("required/available")
         for provider in self.providers:
             free_resources_dict = provider.get_free_resources()
-            print("REQ_REC", self.required_resources_dict)
             for key, value in self.required_resources_dict[provider.cloud_specification['identifier']].items():
                 success = has_enough(free_resources_dict[key], value,
                                      f"Project {provider.cloud_specification['identifier']}", key, self.log) and success
