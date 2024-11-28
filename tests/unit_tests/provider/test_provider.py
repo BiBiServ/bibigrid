@@ -5,6 +5,7 @@ Module containing integration and unit tests regarding the provider
 import logging
 import os
 import unittest
+import time # TODO remove dirty test
 
 import bibigrid.core.utility.paths.basic_path as bP
 from bibigrid.core import startup
@@ -53,12 +54,9 @@ IMAGE_KEYS = {'location', 'created_at', 'updated_at', 'checksum', 'container_for
 SNAPSHOT_KEYS = {'id', 'created_at', 'updated_at', 'name', 'description', 'volume_id', 'status', 'size', 'metadata',
                  'os-extended-snapshot-attributes:project_id', 'os-extended-snapshot-attributes:progress'}
 
-VOLUME_KEYS = {'location', 'id', 'name', 'description', 'size', 'attachments', 'status', 'migration_status', 'host',
-               'replication_driver', 'replication_status', 'replication_extended_status', 'snapshot_id', 'created_at',
-               'updated_at', 'source_volume_id', 'consistencygroup_id', 'volume_type', 'metadata', 'is_bootable',
-               'is_encrypted', 'can_multiattach', 'properties', 'display_name', 'display_description', 'bootable',
-               'encrypted', 'multiattach', 'availability_zone', 'source_volid', 'user_id',
-               'os-vol-tenant-attr:tenant_id'}
+VOLUME_KEYS = {'description', 'id', 'metadata', 'availability_zone', 'replication_status', 'status', 'links', 'size',
+               'snapshot_id', 'attachments', 'encrypted', 'bootable', 'name', 'source_volid', 'updated_at',
+               'volume_type', 'user_id', 'created_at', 'multiattach', 'consistencygroup_id'}
 
 FREE_RESOURCES_KEYS = {'total_cores', 'floating_ips', 'instances', 'total_ram', 'volumes', 'volume_gigabytes',
                        'snapshots', 'backups', 'backup_gigabytes'}
@@ -164,8 +162,8 @@ class TestProvider(unittest.TestCase):
                 self.assertEqual("bibigrid_test_keypair", provider_server["key_name"])
                 self.assertEqual(FLOATING_IP_KEYS, set(floating_ip.keys()))
                 list_server = next(server for server in server_list if
-                                    server["name"] == "bibigrid_test_server" and server[
-                                        "public_v4"] == floating_ip.floating_ip_address)
+                                   server["name"] == "bibigrid_test_server" and server[
+                                       "public_v4"] == floating_ip.floating_ip_address)
                 self.assertEqual("bibigrid_test_server", get_server["name"])
                 self.assertEqual(get_server, list_server)
             provider.delete_keypair("bibigrid_test_keypair")
@@ -233,13 +231,13 @@ class TestProvider(unittest.TestCase):
         @return:
         """
         for provider in PROVIDERS:
-            volume_id = provider.create_volume(name="test_create_delete_volume", size=1)
+            volume_id = provider.create_volume(name="test_create_delete_volume", size=1, description="Test run")
             self.assertTrue(volume_id)
             volume = provider.get_volume_by_id_or_name(volume_id)
-            self.assertTrue(volume)
+            self.assertEqual(VOLUME_KEYS, set(volume))
             self.assertEqual("test_create_delete_volume", volume["name"])
             self.assertTrue(provider.delete_volume(volume_id))
-
+            # maybe explicitly look up that the volume has been deleted
 
     # TODO test_get_images
     # TODO test_get_flavors
@@ -260,7 +258,12 @@ class TestProvider(unittest.TestCase):
         def test_create_volume_from_snapshot_with_delete(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):
-                    volume_id = provider.create_volume_from_snapshot(configuration["snapshotImage"])
+                    volume_name = "test_create_volume_from_snapshot_with_delete"
+                    volume_id = provider.create_volume_from_snapshot(snapshot_name_or_id=configuration["snapshotImage"],
+                                                                     volume_name_or_id=volume_name,
+                                                                     description="Test run")
                     volume = provider.get_volume_by_id_or_name(volume_id)
                     self.assertEqual(VOLUME_KEYS, set(volume.keys()))
-                provider.delete_volume(volume_id)
+                    self.assertEqual(volume_name, volume["name"])
+                time.sleep(1) # TODO remove dirty test
+                self.assertTrue(provider.delete_volume(volume_id))

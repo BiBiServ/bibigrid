@@ -93,8 +93,7 @@ def create_volume_from_snapshot(connection, snapshot_name_or_id, volume_name_or_
             size = snapshot["size"]
             name = volume_name_or_id or f"bibigrid-{snapshot['name']}"
             description = f"Created from snapshot {snapshot_name_or_id} by BiBiGrid"
-            volume = connection.create_volume(size=size, snapshot_id=snapshot["id"], name=name,
-                                              description=description)
+            volume = connection.create_volume(name=name, size=size, description=description)
             return volume.toDict()
         logging.warning("Snapshot %s is %s; must be available.", snapshot_name_or_id, snapshot['status'])
     else:
@@ -136,7 +135,7 @@ def create_server_volumes(connection, host_vars, name):
                     raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
             else:
                 logging.debug("Creating volume...")
-                return_volume = connection.create_volume(size=volume.get("size", 50), name=volume['name'],
+                return_volume = connection.create_volume(name=volume['name'], size=volume.get("size", 50),
                                                          volume_type=volume.get("type"),
                                                          description=f"Created for {name}")
         return_volumes.append(return_volume)

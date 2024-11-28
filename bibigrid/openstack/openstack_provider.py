@@ -114,7 +114,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def list_servers(self):
         return [elem.toDict() for elem in self.conn.list_servers()]
 
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None, # pylint: disable=too-many-positional-arguments
+    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None,
+                      # pylint: disable=too-many-positional-arguments
                       boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50):
         try:
             server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
@@ -343,16 +344,18 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         """
         return self.conn.get_server(name_or_id)
 
-    def create_volume(self, name, size, volume_type=None, description=None):
+    def create_volume(self, *, name, size, wait=True, volume_type=None, description=None):
         """
         Creates a volume
         @param name: name of the created volume
         @param size: size of the created volume in GB
+        @param wait: if true waits for volume to be created
         @param volume_type: depends on the location, but for example NVME or HDD
         @param description: a non-functional description to help dashboard users
         @return: the created volume
         """
-        return self.conn.create_volume(size=size, name=name, volume_type=volume_type, description=description)
+        return self.conn.create_volume(size=size, name=name, wait=wait, volume_type=volume_type,
+                                       description=description)
 
     def delete_volume(self, name_or_id):
         """

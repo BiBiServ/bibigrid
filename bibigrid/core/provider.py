@@ -279,11 +279,12 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         """
 
     @abstractmethod
-    def create_volume(self, name, size, volume_type=None, description=None):
+    def create_volume(self, *, name, size, wait=True, volume_type=None, description=None):
         """
         Creates a volume
         @param name: name of the created volume
         @param size: size of the created volume in GB
+        @param wait: if true waits for volume to be created
         @param volume_type: depends on the location, but for example NVME or HDD
         @param description: a non-functional description to help dashboard users
         @return: the created volume

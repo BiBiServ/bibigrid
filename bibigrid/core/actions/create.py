@@ -328,7 +328,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
                 else:
                     self.log.debug("Creating volume...")
-                    return_volume = provider.create_volume(size=volume.get("size", 50), name=volume["name"],
+                    return_volume = provider.create_volume(name=volume["name"], size=volume.get("size", 50),
                                                            volume_type=volume.get("type"),
                                                            description=f"Created for {name}")
             return_volumes.append(return_volume)
