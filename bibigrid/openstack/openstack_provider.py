@@ -344,10 +344,27 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         return self.conn.get_server(name_or_id)
 
     def create_volume(self, name, size, volume_type=None, description=None):
+        """
+        Creates a volume
+        @param name: name of the created volume
+        @param size: size of the created volume in GB
+        @param volume_type: depends on the location, but for example NVME or HDD
+        @param description: a non-functional description to help dashboard users
+        @return: the created volume
+        """
         return self.conn.create_volume(size=size, name=name, volume_type=volume_type, description=description)
 
     def delete_volume(self, name_or_id):
+        """
+        Deletes the volume that has name_or_id.
+        @param name_or_id:
+        @return: True if deletion was successful, else False
+        """
         return self.conn.delete_volume(name_or_id=name_or_id)
 
     def list_volumes(self):
+        """
+        Returns a list of all volumes on the provider.
+        @return: list of volumes
+        """
         return self.conn.list_volumes()

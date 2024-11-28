@@ -278,14 +278,45 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         @return:
         """
 
+    @abstractmethod
+    def create_volume(self, name, size, volume_type=None, description=None):
+        """
+        Creates a volume
+        @param name: name of the created volume
+        @param size: size of the created volume in GB
+        @param volume_type: depends on the location, but for example NVME or HDD
+        @param description: a non-functional description to help dashboard users
+        @return: the created volume
+        """
+
+    @abstractmethod
     def get_server(self, name_or_id):
         """
         Returns server if found else None.
         @param name_or_id:
         @return:
-        """  # TODO Test
+        """
+
+    @abstractmethod
+    def delete_volume(self, name_or_id):
+        """
+        Deletes the volume that has name_or_id.
+        @param name_or_id:
+        @return: True if deletion was successful, else False
+        """
+
+    @abstractmethod
+    def list_volumes(self):
+        """
+        Returns a list of all volumes on the provider.
+        @return: list of volumes
+        """
 
     def get_mount_info_from_server(self, server):
+        """
+        @param server: server to get the attachment list from
+        @return: list of dicts containing name and device node of all attached volumes
+        """
         volumes = []
         for server_volume in server["volumes"]:
             volume = self.get_volume_by_id_or_name(server_volume["id"])

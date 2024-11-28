@@ -228,12 +228,16 @@ class TestProvider(unittest.TestCase):
                 self.assertIsNone(provider.get_image_by_id_or_name("NONE"))
 
     def test_create_delete_volume(self):
+        """
+        Checks whether creation and deletion of volumes works
+        @return:
+        """
         for provider in PROVIDERS:
-            volume_id = provider.create_volume(name="ProviderTestVolume")
+            volume_id = provider.create_volume(name="test_create_delete_volume", size=1)
             self.assertTrue(volume_id)
             volume = provider.get_volume_by_id_or_name(volume_id)
             self.assertTrue(volume)
-            self.assertEqual("ProviderTestVolume", volume["name"])
+            self.assertEqual("test_create_delete_volume", volume["name"])
             self.assertTrue(provider.delete_volume(volume_id))
 
 
