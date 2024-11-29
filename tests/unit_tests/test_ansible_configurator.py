@@ -158,7 +158,7 @@ class TestAnsibleConfigurator(TestCase):
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False, 'ext_nfs_mounts': [],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'},
+                                     'nfs_shares': [{'dst': '/vil/mil', 'src': '/vil/mil'},
                                                     {'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
                                                     'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
@@ -183,7 +183,7 @@ class TestAnsibleConfigurator(TestCase):
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False, 'ext_nfs_mounts': [],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
+                                     'nfs_shares': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
                                                     'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
@@ -208,7 +208,7 @@ class TestAnsibleConfigurator(TestCase):
                                      'enable_slurm': False, 'enable_zabbix': False,
                                      'ext_nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'}],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
+                                     'nfs_shares': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
                                                     'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
@@ -257,7 +257,7 @@ class TestAnsibleConfigurator(TestCase):
                          {'vpnInstance': {'type': 'mini', 'image': 'Ubuntu'}, 'workerInstances': [
                              {'type': 'tiny', 'image': 'Ubuntu', 'count': 2, 'features': ['holdsinformation']},
                              {'type': 'small', 'image': 'Ubuntu', 'count': 2}], 'floating_ip': "42"}]
-        expected = {'vpn': {'children': {'master': {'hosts': {'localhost': 0}},
+        expected = {'vpn': {'children': {'master': {'hosts': {'bibigrid-master-21': 0}},
                                          'vpngtw': {'hosts': {'bibigrid-vpngtw-21-0': {'ansible_host': '42'}}}},
                             'hosts': {}}, 'workers': {
             'children': {'bibigrid_worker_21_0_1': {'hosts': {'bibigrid-worker-21-[0:1]': 1}},
@@ -347,7 +347,7 @@ class TestAnsibleConfigurator(TestCase):
     @patch("bibigrid.core.utility.ansible_configurator.generate_site_file_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     @patch("bibigrid.core.utility.ansible_configurator.get_cidrs")
-    def test_configure_ansible_yaml(self, *, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list, mock_common,
+    def test_configure_ansible_yaml(self, mock_cidrs, mock_yaml, mock_site, mock_hosts, mock_list, mock_common,
                                     mock_worker, mock_write):
         mock_cidrs.return_value = 421
         mock_list.return_value = {2: 422}
@@ -368,6 +368,7 @@ class TestAnsibleConfigurator(TestCase):
                     call(aRP.HOSTS_CONFIG_FILE, mock_hosts(), startup.LOG, False),
                     call(aRP.SITE_CONFIG_FILE, mock_site(), startup.LOG, False)]
         self.assertEqual(expected, mock_yaml.call_args_list)
+
 
     @patch('bibigrid.core.utility.ansible_configurator.write_yaml')
     @patch('bibigrid.core.utility.ansible_configurator.aRP.GROUP_VARS_FOLDER', '/mocked/path/group_vars')
@@ -403,6 +404,7 @@ class TestAnsibleConfigurator(TestCase):
                                 "gateway_ip": "10.0.0.1", "cloud_identifier": "cloud-1", "on_demand": True,
                                 "state": "CLOUD", "partitions": ["partition1", "all", "cloud-1"],
                                 "features": {"feature1", "feature2", "worker-feature"}}
+
         mock_write_yaml.assert_any_call(
             os.path.join('/mocked/path/group_vars', 'bibigrid_worker_test_cluster_0_1.yaml'), expected_worker_dict,
             mock_log)

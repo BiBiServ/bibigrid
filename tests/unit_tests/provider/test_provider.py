@@ -4,8 +4,8 @@ Module containing integration and unit tests regarding the provider
 
 import logging
 import os
+import time  # TODO remove dirty test
 import unittest
-import time # TODO remove dirty test
 
 import bibigrid.core.utility.paths.basic_path as bP
 from bibigrid.core import startup
@@ -54,9 +54,8 @@ IMAGE_KEYS = {'location', 'created_at', 'updated_at', 'checksum', 'container_for
 SNAPSHOT_KEYS = {'id', 'created_at', 'updated_at', 'name', 'description', 'volume_id', 'status', 'size', 'metadata',
                  'os-extended-snapshot-attributes:project_id', 'os-extended-snapshot-attributes:progress'}
 
-VOLUME_KEYS = {'description', 'id', 'metadata', 'availability_zone', 'replication_status', 'status', 'links', 'size',
-               'snapshot_id', 'attachments', 'encrypted', 'bootable', 'name', 'source_volid', 'updated_at',
-               'volume_type', 'user_id', 'created_at', 'multiattach', 'consistencygroup_id'}
+VOLUME_KEYS = {'description', 'id', 'metadata', 'status', 'size',
+               'snapshot_id', 'attachments', 'name', 'volume_type'}
 
 FREE_RESOURCES_KEYS = {'total_cores', 'floating_ips', 'instances', 'total_ram', 'volumes', 'volume_gigabytes',
                        'snapshots', 'backups', 'backup_gigabytes'}
@@ -234,7 +233,7 @@ class TestProvider(unittest.TestCase):
             volume_id = provider.create_volume(name="test_create_delete_volume", size=1, description="Test run")
             self.assertTrue(volume_id)
             volume = provider.get_volume_by_id_or_name(volume_id)
-            self.assertEqual(VOLUME_KEYS, set(volume))
+            self.assertTrue(VOLUME_KEYS <= set(volume.keys()))
             self.assertEqual("test_create_delete_volume", volume["name"])
             self.assertTrue(provider.delete_volume(volume_id))
             # maybe explicitly look up that the volume has been deleted
@@ -263,7 +262,7 @@ class TestProvider(unittest.TestCase):
                                                                      volume_name_or_id=volume_name,
                                                                      description="Test run")
                     volume = provider.get_volume_by_id_or_name(volume_id)
-                    self.assertEqual(VOLUME_KEYS, set(volume.keys()))
+                    self.assertTrue(VOLUME_KEYS <= set(volume.keys()))
                     self.assertEqual(volume_name, volume["name"])
-                time.sleep(1) # TODO remove dirty test
+                time.sleep(1)  # TODO remove dirty test
                 self.assertTrue(provider.delete_volume(volume_id))

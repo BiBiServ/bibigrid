@@ -3,6 +3,8 @@ Holds the abstract class Provider
 """
 from abc import ABC, abstractmethod
 
+FLAVOR_KEYS = ["name", "ram", "vcpus", "disk", "ephemeral"]
+
 
 class Provider(ABC):  # pylint: disable=too-many-public-methods
     """
@@ -326,3 +328,12 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
                     volumes.append({"name": volume["name"], "device": attachment["device"]})
                     break
         return volumes
+
+    def create_flavor_dict(self, flavor):
+        """
+
+        @param flavor: an existing flavor on the provider's cloud
+        @return: a dictionary containing only the FLAVOR_KEYS
+        """
+        flavor = self.get_flavor(flavor)
+        return {key: flavor[key] for key in FLAVOR_KEYS}
