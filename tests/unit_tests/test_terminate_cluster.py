@@ -33,10 +33,13 @@ class TestTerminate(TestCase):
         terminate.terminate(str(cluster_id), [provider], startup.LOG, False, True)
         provider.delete_server.assert_called_with(21)
         provider.delete_keypair.assert_called_with(create.KEY_NAME.format(cluster_id=cluster_id))
-        mock_output.assert_called_with([provider.delete_server.return_value], [provider.delete_keypair.return_value],
-                                       [provider.delete_security_group.return_value], [[True]],
-                                       provider.delete_application_credentials.return_value, str(cluster_id),
-                                       startup.LOG)
+        mock_output.assert_called_with(cluster_server_state=[provider.delete_server.return_value],
+                                       cluster_keypair_state=[provider.delete_keypair.return_value],
+                                       cluster_security_group_state=[provider.delete_security_group.return_value],
+                                       cluster_volume_state=[[True]],
+                                       ac_state=provider.delete_application_credentials.return_value,
+                                       cluster_id=str(cluster_id),
+                                       log=startup.LOG)
 
     @patch("bibigrid.core.actions.terminate.delete_local_keypairs")
     @patch("logging.info")
