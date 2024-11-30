@@ -60,7 +60,6 @@ def write_worker_host_vars(*, cluster_id, worker, worker_dict, worker_count, log
         for worker_number in range(worker.get('count', 1)):
             name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
             write_volumes = []
-            print("Worker", name, "Volumes", worker.get("volumes", []))
             for i, volume in enumerate(worker.get("volumes", [])):
                 if not volume.get("exists"):
                     if volume.get("permanent"):
@@ -74,7 +73,6 @@ def write_worker_host_vars(*, cluster_id, worker, worker_dict, worker_count, log
                 else:
                     volume_name = volume["name"]
                 write_volumes.append({**volume, "name": volume_name})
-            print(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"))
             write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"),
                        {"volumes": write_volumes},
                        log)
@@ -159,9 +157,7 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):
     worker_count = 0
     vpn_count = 0
     for configuration, provider in zip(configurations, providers):  # pylint: disable=too-many-nested-blocks
-        print("workerInstances", configuration.get("workerInstances", []))
         for worker in configuration.get("workerInstances", []):
-            print("worker_count", worker_count)
             write_worker_vars(provider=provider, configuration=configuration, cluster_id=cluster_id, worker=worker,
                               worker_count=worker_count, log=log)
 
