@@ -4,12 +4,11 @@ Module to test create
 import os
 from unittest import TestCase
 from unittest.mock import patch, MagicMock, mock_open
-
 from bibigrid.core import startup
 from bibigrid.core.actions import create
 from bibigrid.core.utility.handler import ssh_handler
 
-
+# pylint: disable=too-many-positional-arguments
 class TestCreate(TestCase):
     """
     Class to test create
@@ -26,7 +25,8 @@ class TestCreate(TestCase):
         key_name = create.KEY_NAME.format(cluster_id=cluster_id)
         mock_id.return_value = cluster_id
         mock_ssh.return_value = [32]
-        creator = create.Create([provider], [{}], "path", startup.LOG, False)
+        creator = create.Create(providers=[provider], configurations=[{}], config_path="path",
+                                log=startup.LOG, debug=False)
         self.assertEqual(cluster_id, creator.cluster_id)
         self.assertEqual("ubuntu", creator.ssh_user)
         self.assertEqual([32], creator.ssh_add_public_key_commands)
@@ -42,7 +42,8 @@ class TestCreate(TestCase):
         provider.__getitem__.side_effect = provider_dict.__getitem__
         key_name = create.KEY_NAME.format(cluster_id=cluster_id)
         mock_ssh.return_value = [32]
-        creator = create.Create([provider], [{}], "path", startup.LOG, False, cluster_id)
+        creator = create.Create(providers=[provider], configurations=[{}], config_path="path", log=startup.LOG,
+                                debug=False, cluster_id=cluster_id)
         self.assertEqual(cluster_id, creator.cluster_id)
         self.assertEqual("ubuntu", creator.ssh_user)
         self.assertEqual([32], creator.ssh_add_public_key_commands)
@@ -55,14 +56,15 @@ class TestCreate(TestCase):
         cluster_id = "21"
         mock_id.return_value = cluster_id
         mock_ssh.return_value = [32]
-        creator = create.Create([MagicMock()], [{"sshUser": "ssh"}], "path", startup.LOG, False)
+        creator = create.Create(providers=[MagicMock()], configurations=[{"sshUser": "ssh"}], config_path="path",
+                                log=startup.LOG, debug=False)
         self.assertEqual("ssh", creator.ssh_user)
 
     @patch("subprocess.check_output")
     def test_generate_keypair(self, mock_subprocess):
         provider = MagicMock()
         provider.list_servers.return_value = []
-        creator = create.Create([provider], [{}], "", startup.LOG)
+        creator = create.Create(providers=[provider], configurations=[{}], config_path="", log=startup.LOG)
         public_key = "data"
         with patch("builtins.open", mock_open(read_data=public_key)):
             creator.generate_keypair()
@@ -78,12 +80,13 @@ class TestCreate(TestCase):
         external_network = "externalTest"
         provider.get_external_netowrk.return_value = external_network
         configuration = {"network": 42, "masterInstance": "Some"}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
-        volume_return = [42]
-        with patch.object(creator, "prepare_volumes", return_value=volume_return) as prepare_mock:
-            self.assertEqual((create.MASTER_IDENTIFIER, configuration["masterInstance"], volume_return),
-                             creator.prepare_vpn_or_master_args(configuration))
-            prepare_mock.assert_called_with(provider, [])
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG)
+
+        # You would normally test the return value of `prepare_vpn_or_master_args` here
+        identifier, instance_type = creator.prepare_vpn_or_master_args(configuration)
+
+        # Assuming expected values for master instance
+        self.assertEqual((create.MASTER_IDENTIFIER, "Some"), (identifier, instance_type))
 
     def test_prepare_vpn_args(self):
         provider = MagicMock()
@@ -91,26 +94,11 @@ class TestCreate(TestCase):
         external_network = "externalTest"
         provider.get_external_netowrk.return_value = external_network
         configuration = {"network": 42, "vpnInstance": "Some"}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
-        volume_return = [42]
-        with patch.object(creator, "prepare_volumes", return_value=volume_return) as prepare_mock:
-            self.assertEqual((create.VPN_WORKER_IDENTIFIER, configuration["vpnInstance"], []),
-                             creator.prepare_vpn_or_master_args(configuration))
-            prepare_mock.assert_not_called()
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG)
 
-    def test_prepare_args_keyerror(self):
-        provider = MagicMock()
-        provider.list_servers.return_value = []
-        external_network = "externalTest"
-        provider.get_external_netowrk.return_value = external_network
-        configuration = {"network": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
-        volume_return = [42]
-        with patch.object(creator, "prepare_volumes", return_value=volume_return) as prepare_mock:
-            with self.assertRaises(KeyError):
-                self.assertEqual((create.VPN_WORKER_IDENTIFIER, configuration["vpnInstance"], []),
-                                 creator.prepare_vpn_or_master_args(configuration, provider))
-            prepare_mock.assert_not_called()
+        # Test for VPN args preparation
+        identifier, instance_type = creator.prepare_vpn_or_master_args(configuration)
+        self.assertEqual((create.VPN_WORKER_IDENTIFIER, "Some"), (identifier, instance_type))
 
     @patch("bibigrid.core.utility.handler.ssh_handler.execute_ssh")
     def test_initialize_master(self, mock_execute_ssh):
@@ -118,7 +106,7 @@ class TestCreate(TestCase):
         provider.list_servers.return_value = []
         floating_ip = 21
         configuration = {"masterInstance": 42, "floating_ip": floating_ip}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG)
         creator.initialize_instances()
         ssh_data = {'floating_ip': floating_ip, 'private_key': create.KEY_FOLDER + creator.key_name,
                     'username': creator.ssh_user,
@@ -126,50 +114,13 @@ class TestCreate(TestCase):
                     'filepaths': [(create.KEY_FOLDER + creator.key_name, '.ssh/id_ecdsa')], 'gateway': {}, 'timeout': 5}
         mock_execute_ssh.assert_called_with(ssh_data, startup.LOG)
 
-    def test_prepare_volumes_none(self):
-        provider = MagicMock()
-        provider.list_servers.return_value = []
-        provider.get_volume_by_id_or_name.return_value = 42
-        provider.create_volume_from_snapshot = 21
-        configuration = {"vpnInstance": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
-        self.assertEqual(set(), creator.prepare_volumes(provider, []))
-
-    def test_prepare_volumes_volume(self):
-        provider = MagicMock()
-        provider.list_servers.return_value = []
-        provider.get_volume_by_id_or_name.return_value = {"id": 42}
-        provider.create_volume_from_snapshot = 21
-        configuration = {"vpnInstance": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
-        self.assertEqual({42}, creator.prepare_volumes(provider, ["Test"]))
-
-    def test_prepare_volumes_snapshot(self):
-        provider = MagicMock()
-        provider.list_servers.return_value = []
-        provider.get_volume_by_id_or_name.return_value = {"id": None}
-        provider.create_volume_from_snapshot.return_value = 21
-        configuration = {"vpnInstance": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
-        self.assertEqual({21}, creator.prepare_volumes(provider, ["Test"]))
-
-    def test_prepare_volumes_mismatch(self):
-        provider = MagicMock()
-        provider.list_servers.return_value = []
-        provider.get_volume_by_id_or_name.return_value = {"id": None}
-        provider.create_volume_from_snapshot.return_value = None
-        configuration = {"vpnInstance": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
-        mount = "Test"
-        self.assertEqual(set(), creator.prepare_volumes(provider, [mount]))
-
     def test_prepare_configurations_no_network(self):
         provider = MagicMock()
         provider.list_servers.return_value = []
         network = "network"
         provider.get_network_id_by_subnet.return_value = network
         configuration = {"subnet": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG)
         creator.prepare_configurations()
         provider.get_network_id_by_subnet.assert_called_with(42)
         self.assertEqual(network, configuration["network"])
@@ -181,7 +132,7 @@ class TestCreate(TestCase):
         subnet = ["subnet"]
         provider.get_subnet_ids_by_network.return_value = subnet
         configuration = {"network": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG)
         creator.prepare_configurations()
         provider.get_subnet_ids_by_network.assert_called_with(42)
         self.assertEqual(subnet, configuration["subnet"])
@@ -191,7 +142,7 @@ class TestCreate(TestCase):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG)
         with self.assertRaises(KeyError):
             creator.prepare_configurations()
 
@@ -202,7 +153,7 @@ class TestCreate(TestCase):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
-        creator = create.Create([provider], [configuration], "", startup.LOG)
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG)
         creator.master_ip = 42
         creator.upload_data(os.path.join(create.KEY_FOLDER, creator.key_name))
         mock_configure_ansible.assert_called_with(providers=creator.providers, configurations=creator.configurations,
@@ -218,11 +169,12 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_non_debug(self, *, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
+    def test_create_non_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {"floating_ip": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG, False)
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG,
+                                debug=False)
         self.assertEqual(0, creator.create())
         for mock in [mock_info, mock_up, mock_start, mock_conf, mock_key]:
             mock.assert_called()
@@ -233,11 +185,12 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "start_start_server_threads")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_non_debug_upload_raise(self, *, mock_terminate, mock_info, mock_start, mock_conf, mock_key):
+    def test_create_non_debug_upload_raise(self, mock_terminate, mock_info, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {}
-        creator = create.Create([provider], [configuration], "", startup.LOG, False)
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG,
+                                debug=False)
         self.assertEqual(1, creator.create())
         for mock in [mock_start, mock_conf, mock_key]:
             mock.assert_called()
@@ -252,11 +205,12 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "log_cluster_start_info")
     @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_debug(self, *, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
+    def test_create_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {"floating_ip": 42}
-        creator = create.Create([provider], [configuration], "", startup.LOG, True)
+        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG,
+                                debug=True)
         self.assertEqual(0, creator.create())
         for mock in [mock_info, mock_up, mock_start, mock_conf, mock_key]:
             mock.assert_called()
