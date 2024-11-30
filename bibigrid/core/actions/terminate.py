@@ -45,10 +45,12 @@ def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
             cluster_server_state += terminate_servers(cluster_id, provider, log)
             cluster_keypair_state.append(delete_keypairs(provider, tmp_keyname, log))
             cluster_security_group_state.append(delete_security_groups(provider, cluster_id, security_groups, log))
-            cluster_volume_state.append(delete_tmp_volumes(provider, cluster_id, log))
+            cluster_volume_state.append(delete_non_permanent_volumes(provider, cluster_id, log))
         ac_state = delete_application_credentials(providers[0], cluster_id, log)
-        terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state,
-                         cluster_volume_state, ac_state, cluster_id, log)
+        terminate_output(cluster_server_state=cluster_server_state, cluster_keypair_state=cluster_keypair_state,
+                         cluster_security_group_state=cluster_security_group_state,
+                         cluster_volume_state=cluster_volume_state, ac_state=ac_state, cluster_id=cluster_id,
+                         log=log)
     return 0
 
 
@@ -65,6 +67,7 @@ def terminate_servers(cluster_id, provider, log):
     cluster_server_state = []
     server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-\d+)$")
     for server in server_list:
+        print(server["name"])
         if server_regex.match(server["name"]):
             log.info("Trying to terminate Server %s on cloud %s.", server['name'],
                      provider.cloud_specification['identifier'])
@@ -187,9 +190,9 @@ def delete_application_credentials(master_provider, cluster_id, log):
     return True
 
 
-def delete_tmp_volumes(provider, cluster_id, log):
+def delete_non_permanent_volumes(provider, cluster_id, log):
     """
-    Terminates all temporary volumes that match the regex.
+    Terminates all temporary and semiperm volumes that match the regex.
     @param cluster_id: id of cluster to terminate
     @param provider: provider that holds all servers in server_list
     @param log:
@@ -209,7 +212,7 @@ def delete_tmp_volumes(provider, cluster_id, log):
 
 
 # pylint: disable=too-many-branches
-def terminate_output(cluster_server_state, cluster_keypair_state, cluster_security_group_state, cluster_volume_state,
+def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_security_group_state, cluster_volume_state,
                      ac_state, cluster_id, log):
     """
     Logs the termination result in detail
