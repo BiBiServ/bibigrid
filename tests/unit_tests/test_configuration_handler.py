@@ -4,7 +4,7 @@ Module to test configuration_handler
 
 import os
 from unittest import TestCase
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch, mock_open, MagicMock, ANY
 
 from bibigrid.core import startup
 from bibigrid.core.utility.handler import configuration_handler
@@ -28,17 +28,25 @@ class TestConfigurationHandler(TestCase):
         self.assertEqual(["value1", None], configuration_handler.get_list_by_key(configurations, "key2"))
         self.assertEqual(["value1"], configuration_handler.get_list_by_key(configurations, "key2", False))
 
-    @patch("os.path.isfile")
-    def test_read_configuration_no_file(self, mock_isfile):
-        mock_isfile.return_value = False
-        test_open = MagicMock()
-        configuration = "Test: 42"
-        expected_result = [None]
-        with patch("builtins.open", mock_open(test_open, read_data=configuration)):
-            result = configuration_handler.read_configuration(startup.LOG, "path")
-        mock_isfile.assert_called_with("path")
-        test_open.assert_not_called()
-        self.assertEqual(expected_result, result)
+    def test_read_configuration_file_not_found(self):
+        """
+        Assures that BiBiGrid exits without other errors when the configuration file is not found
+        @return:
+        """
+        log_mock = MagicMock()
+
+        with patch("os.path.isfile") as mock_isfile, self.assertRaises(SystemExit) as cm:
+            # Mock `os.path.isfile` to return False, simulating a missing file
+            mock_isfile.return_value = False
+
+            # Call the function, expecting a SystemExit
+            configuration_handler.read_configuration(log_mock, "nonexistent_file.yaml")
+
+        # Assert sys.exit(1) was called (exit code 1)
+        self.assertEqual(cm.exception.code, 1)
+
+        # Verify the log message for the missing file
+        log_mock.warning.assert_called_with("No such configuration file %s.", "nonexistent_file.yaml")
 
     @patch("os.path.isfile")
     def test_read_configuration_file(self, mock_isfile):
@@ -54,15 +62,33 @@ class TestConfigurationHandler(TestCase):
 
     @patch("os.path.isfile")
     def test_read_configuration_file_yaml_exception(self, mock_isfile):
+        """
+        Tests that BiBiGrid handles exceptions nicely and gives the user info
+        @param mock_isfile:
+        @return:
+        """
+        # Mock `os.path.isfile` to return True, simulating the file exists
         mock_isfile.return_value = True
-        opener = MagicMock()
-        configuration = "]unbalanced brackets["
-        expected_result = [None]
-        with patch("builtins.open", mock_open(opener, read_data=configuration)):
-            result = configuration_handler.read_configuration(startup.LOG, "path")
+
+        # Create a mock for the file opener and provide invalid YAML data
+        mock_file = mock_open(read_data="]unbalanced brackets[")
+        log_mock = MagicMock()
+
+        # Test for SystemExit when the YAML is invalid
+        with patch("builtins.open", mock_file), self.assertRaises(SystemExit) as cm:
+            configuration_handler.read_configuration(log_mock, "path")
+
+        # Assert sys.exit(1) was called
+        self.assertEqual(cm.exception.code, 1)
+
+        # Verify the log warning for YAML error
+        log_mock.warning.assert_called_with(
+            "Couldn't read configuration %s: %s", "path", ANY
+        )
+
+        # Check that `os.path.isfile` and `open` were called as expected
         mock_isfile.assert_called_with("path")
-        opener.assert_called_with("path", mode="r", encoding="UTF-8")
-        self.assertEqual(expected_result, result)
+        mock_file.assert_called_with("path", mode="r", encoding="UTF-8")
 
     def test_find_file_in_folders_not_found_no_folder(self):
         expected_result = None
@@ -74,8 +100,9 @@ class TestConfigurationHandler(TestCase):
         with patch("os.path.isfile") as mock_isfile:
             mock_isfile.return_value = False
             result = configuration_handler.find_file_in_folders("false_file", ["or_false_folder"], startup.LOG)
+            mock_isfile.assert_called_with(os.path.expanduser(os.path.join("or_false_folder", "false_file")))
         self.assertEqual(expected_result, result)
-        mock_isfile.called_with(os.path.expanduser(os.path.join("or_false_folder", "false_file")))
+
 
     @patch("os.path.isfile")
     @patch("bibigrid.core.utility.handler.configuration_handler.read_configuration")
