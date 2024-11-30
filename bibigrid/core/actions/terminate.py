@@ -67,7 +67,6 @@ def terminate_servers(cluster_id, provider, log):
     cluster_server_state = []
     server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-\d+)$")
     for server in server_list:
-        print(server["name"])
         if server_regex.match(server["name"]):
             log.info("Trying to terminate Server %s on cloud %s.", server['name'],
                      provider.cloud_specification['identifier'])
