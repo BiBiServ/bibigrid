@@ -65,8 +65,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     The class Create holds necessary methods to execute the Create-Action
     """
 
-    def __init__(self, providers, configurations, config_path, log, debug=False,
-                 # pylint: disable=too-many-positional-arguments
+    def __init__(self, *, providers, configurations, config_path, log, debug=False,
                  cluster_id=None):
         """
         Additionally sets (unique) cluster_id, public_key_commands (to copy public keys to master) and key_name.
@@ -379,8 +378,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             instance_type = configuration["vpnInstance"]
             identifier = VPN_WORKER_IDENTIFIER
         else:
-            self.log.warning("Configuration %s has no vpngtw or master and is therefore unreachable.", configuration)
-            raise KeyError
+            self.log.warning(
+                f"Configuration {configuration['cloud_identifier']} "
+                f"has no vpngtw or master and is therefore unreachable.")
+            raise ConfigurationException(
+                f"Configuration {configuration['cloud_identifier']} has neither vpngtw nor masterInstance")
         return identifier, instance_type
 
     def initialize_instances(self):
