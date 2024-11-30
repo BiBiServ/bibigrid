@@ -31,10 +31,12 @@ MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional(
                     Optional('size'): int
                 },
                 Optional('volumes'): [{
+                    Optional('name'): str,
                     Optional('snapshot'): str,  # optional; to create volume from
                     # one or none of these
                     Optional('permanent'): bool,
                     Optional('semiPermanent'): bool,
+                    Optional('exists'): bool,
                     Optional('mountPoint'): str,
                     Optional('size'): int,
                     Optional('fstype'): str,
