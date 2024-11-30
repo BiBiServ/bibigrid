@@ -25,6 +25,8 @@ class TestTerminate(TestCase):
         provider.delete_server.return_value = True
         provider.delete_keypair.return_value = True
         provider.delete_volume.return_value = True
+        provider.list_volumes.return_value = [
+            {"name": f"{create.MASTER_IDENTIFIER(cluster_id=str(cluster_id))}-tmp-0", "id": 42}]
         provider.list_volumes([{"name": "bibigrid-master-i950vaoqzfbwpnq-tmp-0"}])
         provider.delete_security_group.return_value = True
         provider.delete_application_credentials.return_value = True
@@ -32,7 +34,7 @@ class TestTerminate(TestCase):
         provider.delete_server.assert_called_with(21)
         provider.delete_keypair.assert_called_with(create.KEY_NAME.format(cluster_id=cluster_id))
         mock_output.assert_called_with([provider.delete_server.return_value], [provider.delete_keypair.return_value],
-                                       [provider.delete_security_group.return_value],
+                                       [provider.delete_security_group.return_value], [[True]],
                                        provider.delete_application_credentials.return_value, str(cluster_id),
                                        startup.LOG)
 
