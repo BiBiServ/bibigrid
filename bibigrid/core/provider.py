@@ -90,12 +90,15 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         """
 
     @abstractmethod
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None,
+    def create_server(self, *, name, flavor, image, network, key_name=None, wait=True, volumes=None,
+                      security_groups=None,
                       boot_volume=None, boot_from_volume=False,
-                      terminate_boot_volume=False, volume_size=50):  # pylint: disable=too-many-arguments
+                      terminate_boot_volume=False, volume_size=50,
+                      description=""):  # pylint: disable=too-many-arguments
         """
         Creates a new server and waits for it to be accessible if wait=True. If volumes are given, they are attached.
         Returns said server (dict)
+        @param description: server description; ignored by some providers
         @param volume_size: Size of boot volume if set. Defaults to 50.
         @param terminate_boot_volume: if True, boot volume gets terminated on server termination
         @param boot_from_volume: if True, a boot volume is created from the image
