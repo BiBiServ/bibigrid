@@ -13,7 +13,7 @@ class ReturnThread(threading.Thread):
     """
 
     # pylint: disable=dangerous-default-value
-    def __init__(self, group=None, target=None, name=None, args=(),
+    def __init__(self, *, group=None, target=None, name=None, args=(),
                  kwargs={}):
         threading.Thread.__init__(self, group, target, name, args, kwargs)
         self._return = None
