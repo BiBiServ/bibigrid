@@ -55,27 +55,26 @@ def generate_site_file_yaml(user_roles):
     return site_yaml
 
 
-def write_worker_host_vars(*, cluster_id, worker, worker_dict, worker_count, log):
-    if worker_dict["on_demand"]:
-        for worker_number in range(worker.get('count', 1)):
-            name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
-            write_volumes = []
-            for i, volume in enumerate(worker.get("volumes", [])):
-                if not volume.get("exists"):
-                    if volume.get("permanent"):
-                        infix = "perm"
-                    elif volume.get("semiPermanent"):
-                        infix = "semiperm"
-                    else:
-                        infix = "tmp"
-                    postfix = f"-{volume.get('name')}" if volume.get('name') else ''
-                    volume_name = f"{name}-{infix}-{i}{postfix}"
+def write_worker_host_vars(*, cluster_id, worker, worker_count, log):
+    for worker_number in range(worker.get('count', 1)):
+        name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
+        write_volumes = []
+        for i, volume in enumerate(worker.get("volumes", [])):
+            if not volume.get("exists"):
+                if volume.get("permanent"):
+                    infix = "perm"
+                elif volume.get("semiPermanent"):
+                    infix = "semiperm"
                 else:
-                    volume_name = volume["name"]
-                write_volumes.append({**volume, "name": volume_name})
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"),
-                       {"volumes": write_volumes},
-                       log)
+                    infix = "tmp"
+                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
+                volume_name = f"{name}-{infix}-{i}{postfix}"
+            else:
+                volume_name = volume["name"]
+            write_volumes.append({**volume, "name": volume_name})
+        write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"),
+                   {"volumes": write_volumes},
+                   log)
 
 
 def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_count, log):
@@ -103,9 +102,12 @@ def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_cou
 
     pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
     write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
-    write_worker_host_vars(cluster_id=cluster_id, worker=worker, worker_dict=worker_dict, worker_count=worker_count,
-                           log=log)
+    if worker_dict["on_demand"]:  # not on demand instances host_vars are created in create
+        write_worker_host_vars(cluster_id=cluster_id, worker=worker, worker_count=worker_count,
+                               log=log)
     worker_count += worker.get('count', 1)
+    return worker_count
+
 
 def write_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count, log):
     name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
@@ -158,8 +160,8 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):
     vpn_count = 0
     for configuration, provider in zip(configurations, providers):  # pylint: disable=too-many-nested-blocks
         for worker in configuration.get("workerInstances", []):
-            write_worker_vars(provider=provider, configuration=configuration, cluster_id=cluster_id, worker=worker,
-                              worker_count=worker_count, log=log)
+            worker_count = write_worker_vars(provider=provider, configuration=configuration, cluster_id=cluster_id,
+                                             worker=worker, worker_count=worker_count, log=log)
 
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
@@ -184,7 +186,8 @@ def pass_through(dict_from, dict_to, key_from, key_to=None):
         dict_to[key_to] = dict_from[key_from]
 
 
-def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user, log):  # pylint: disable=too-many-positional-arguments
+def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user,
+                                       log):  # pylint: disable=too-many-positional-arguments
     """
     Generates common_configuration yaml (dict)
     @param cidrs: str subnet cidrs (provider generated)

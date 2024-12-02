@@ -298,14 +298,16 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         Creates all volumes of a single instance
         @param provider:
-        @param instance:
-        @param name:
+        @param instance: flavor, image, ... description
+        @param name: sever name
         @return:
         """
         self.log.info("Creating volumes ...")
         return_volumes = []
 
         for i, volume in enumerate(instance.get("volumes", [])):
+            group_instance = {"volumes": []}
+            instance["group_instances"] = {name: group_instance}
             if not volume.get("exists"):
                 if volume.get("permanent"):
                     infix = "perm"
@@ -314,20 +316,23 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 else:
                     infix = "tmp"
                 postfix = f"-{volume.get('name')}" if volume.get('name') else ''
-                volume["name"] = f"{name}-{infix}-{i}{postfix}"
+                volume_name = f"{name}-{infix}-{i}{postfix}"
+            else:
+                volume_name = volume["name"]
+            group_instance["volumes"].append({**volume, "name": volume_name})
 
-            self.log.debug(f"Trying to find volume {volume['name']}")
-            return_volume = provider.get_volume_by_id_or_name(volume["name"])
+            self.log.debug(f"Trying to find volume {volume_name}")
+            return_volume = provider.get_volume_by_id_or_name(volume_name)
             if not return_volume:
-                self.log.debug(f"Volume {volume['name']} not found.")
+                self.log.debug(f"Volume {volume_name} not found.")
                 if volume.get('snapshot'):
                     self.log.debug("Creating volume from snapshot...")
-                    return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume["name"])
+                    return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume_name)
                     if not return_volume:
                         raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
                 else:
                     self.log.debug("Creating volume...")
-                    return_volume = provider.create_volume(name=volume["name"], size=volume.get("size", 50),
+                    return_volume = provider.create_volume(name=volume_name, size=volume.get("size", 50),
                                                            volume_type=volume.get("type"),
                                                            description=f"Created for {name}")
             return_volumes.append(return_volume)
@@ -345,10 +350,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         self.log.info("Adding device info")
         server_volumes = provider.get_mount_info_from_server(server)  # list of volumes attachments
-        volumes = instance.get("volumes")
+        group_instance_volumes = instance["group_instances"][server["name"]].get("volumes")
         final_volumes = []
-        if volumes:
-            for volume in volumes:
+        if group_instance_volumes:
+            for volume in group_instance_volumes:
                 server_volume = next((server_volume for server_volume in server_volumes if
                                       server_volume["name"] == volume["name"]), None)
                 if not server_volume:
