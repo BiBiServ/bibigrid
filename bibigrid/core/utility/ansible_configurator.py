@@ -186,8 +186,8 @@ def pass_through(dict_from, dict_to, key_from, key_to=None):
         dict_to[key_to] = dict_from[key_from]
 
 
-def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user,
-                                       log):  # pylint: disable=too-many-positional-arguments
+def generate_common_configuration_yaml(*, cidrs, configurations, cluster_id, ssh_user, default_user,
+                                       log):
     """
     Generates common_configuration yaml (dict)
     @param cidrs: str subnet cidrs (provider generated)
