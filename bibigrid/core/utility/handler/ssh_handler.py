@@ -116,7 +116,7 @@ def is_active(client, paramiko_key, ssh_data, log):
             log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
             if attempts < ssh_data['timeout']:
-                sleep_time = 2 ** (attempts+2)
+                sleep_time = 2 ** (attempts + 2)
                 time.sleep(sleep_time)
                 log.info(f"Waiting {sleep_time} before attempting to reconnect.")
                 attempts += 1
@@ -155,6 +155,7 @@ def line_buffered(f):
 def execute_ssh_cml_commands(client, commands, log):
     """
     Executes commands and logs exit_status accordingly.
+    Do not log commands as they contain cloud credentials.
     @param client: Client with connection to remote
     @param commands: Commands to execute on remote
     @param log:
@@ -187,11 +188,14 @@ def execute_ssh_cml_commands(client, commands, log):
 def execute_ssh(ssh_data, log):
     """
     Executes commands on remote and copies files given in filepaths
-
+    Do not log commands as they contain cloud credentials.
     @param ssh_data: Dict containing floating_ip, private_key, username, commands, filepaths, gateway, timeout
     @param log:
     """
-    log.debug(f"Running execute_sshc with ssh_data: {ssh_data}.")
+    log.debug("Running execute_ssh")
+    for key in ssh_data:
+        if key not in ["commands", "filepaths"]:
+            log.debug(f"{key}: {ssh_data[key]}")
     if ssh_data.get("filepaths") is None:
         ssh_data["filepaths"] = []
     if ssh_data.get("commands") is None:
@@ -205,14 +209,14 @@ def execute_ssh(ssh_data, log):
             log.error(f"Couldn't connect to ip {ssh_data['gateway'] or ssh_data['floating_ip']} using private key "
                       f"{ssh_data['private_key']}.")
             raise exc
-        else:
-            log.debug(f"Setting up {ssh_data['floating_ip']}")
-            if ssh_data['filepaths']:
-                log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")
-                sftp = client.open_sftp()
-                for local_path, remote_path in ssh_data['filepaths']:
-                    copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
-                log.debug("SFTP: Files %s copied.", ssh_data['filepaths'])
-            if ssh_data["floating_ip"]:
-                log.debug(f"Setting up commands for {ssh_data['floating_ip']}")
-                execute_ssh_cml_commands(client=client, commands=ssh_data["commands"], log=log)
+
+        log.debug(f"Setting up {ssh_data['floating_ip']}")
+        if ssh_data['filepaths']:
+            log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")
+            sftp = client.open_sftp()
+            for local_path, remote_path in ssh_data['filepaths']:
+                copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
+            log.debug("SFTP: Files %s copied.", ssh_data['filepaths'])
+        if ssh_data["floating_ip"]:
+            log.debug(f"Setting up commands for {ssh_data['floating_ip']}")
+            execute_ssh_cml_commands(client=client, commands=ssh_data["commands"], log=log)

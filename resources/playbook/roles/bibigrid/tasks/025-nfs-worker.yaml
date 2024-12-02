@@ -10,7 +10,7 @@
     delay: 2
     state: started
 
-- name: Create mount points
+- name: Create shared directories
   file:
     path: "{{ item.dst }}"
     state: directory
@@ -18,7 +18,7 @@
     group: root
     mode: "0o777"
   with_items:
-    - "{{ nfs_mounts }}"
+    - "{{ nfs_shares }}"
 
 - name: Mount shares
   mount:
@@ -27,4 +27,4 @@
     fstype: nfs4
     state: mounted
   with_items:
-    - "{{ nfs_mounts }}"
+    - "{{ nfs_shares }}"

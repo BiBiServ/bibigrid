@@ -34,6 +34,7 @@ def get_cluster_id_from_mem():
                 return mem_dict.get("cluster_id")
         except yaml.YAMLError as exc:
             LOG.warning("Couldn't read configuration %s: %s", create.CLUSTER_MEMORY_PATH, exc)
+    LOG.warning(f"Couldn't find cluster memory path {create.CLUSTER_MEMORY_PATH}")
     return None
 
 

@@ -1,7 +1,6 @@
 """
 Tests for ansible_configurator
 """
-import os
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch, call, mock_open, ANY
 
@@ -12,6 +11,7 @@ from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility.yaml_dumper import NoAliasSafeDumper
 
 
+# pylint: disable=too-many-positional-arguments
 class TestAnsibleConfigurator(TestCase):
     """
     Test ansible configurator test class
@@ -158,7 +158,7 @@ class TestAnsibleConfigurator(TestCase):
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False, 'ext_nfs_mounts': [],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'},
+                                     'nfs_shares': [{'dst': '/vil/mil', 'src': '/vil/mil'},
                                                     {'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
                                                     'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
@@ -183,7 +183,7 @@ class TestAnsibleConfigurator(TestCase):
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': 'True',
                                      'enable_slurm': False, 'enable_zabbix': False, 'ext_nfs_mounts': [],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
+                                     'nfs_shares': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
                                                     'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
@@ -208,7 +208,7 @@ class TestAnsibleConfigurator(TestCase):
                                      'enable_slurm': False, 'enable_zabbix': False,
                                      'ext_nfs_mounts': [{'dst': '/vil/mil', 'src': '/vil/mil'}],
                                      'local_dns_lookup': False, 'local_fs': False,
-                                     'nfs_mounts': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
+                                     'nfs_shares': [{'dst': '/vol/spool', 'src': '/vol/spool'}], 'slurm': True,
                                      'slurm_conf': {'db': 'slurm', 'db_password': 'changeme', 'db_user': 'slurm',
                                                     'elastic_scheduling': {'ResumeTimeout': 1200, 'SuspendTime': 3600,
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
@@ -257,7 +257,7 @@ class TestAnsibleConfigurator(TestCase):
                          {'vpnInstance': {'type': 'mini', 'image': 'Ubuntu'}, 'workerInstances': [
                              {'type': 'tiny', 'image': 'Ubuntu', 'count': 2, 'features': ['holdsinformation']},
                              {'type': 'small', 'image': 'Ubuntu', 'count': 2}], 'floating_ip': "42"}]
-        expected = {'vpn': {'children': {'master': {'hosts': {'localhost': 0}},
+        expected = {'vpn': {'children': {'master': {'hosts': {'bibigrid-master-21': 0}},
                                          'vpngtw': {'hosts': {'bibigrid-vpngtw-21-0': {'ansible_host': '42'}}}},
                             'hosts': {}}, 'workers': {
             'children': {'bibigrid_worker_21_0_1': {'hosts': {'bibigrid-worker-21-[0:1]': 1}},
@@ -369,90 +369,268 @@ class TestAnsibleConfigurator(TestCase):
                     call(aRP.SITE_CONFIG_FILE, mock_site(), startup.LOG, False)]
         self.assertEqual(expected, mock_yaml.call_args_list)
 
-    @patch('bibigrid.core.utility.ansible_configurator.write_yaml')
-    @patch('bibigrid.core.utility.ansible_configurator.aRP.GROUP_VARS_FOLDER', '/mocked/path/group_vars')
-    @patch('bibigrid.core.utility.ansible_configurator.aRP.HOST_VARS_FOLDER', '/mocked/path/host_vars')
-    def test_write_host_and_group_vars(self, mock_write_yaml):
-        mock_log = MagicMock()
+    @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
+    @patch("bibigrid.core.utility.ansible_configurator.create.WORKER_IDENTIFIER")
+    def test_write_worker_host_vars(self, mock_worker_identifier, mock_write_yaml):
+        mock_worker_identifier.side_effect = lambda cluster_id, additional: f"worker-{cluster_id}-{additional}"
 
-        mock_provider = MagicMock()
-        mock_provider.get_flavor.return_value = {"name": "flavor-name", "ram": 4096, "vcpus": 2, "disk": 40,
-                                                 "ephemeral": 0}
+        cluster_id = "foo"
+        worker_count = 0
+        log = MagicMock()
 
-        # Define configurations and providers for the test
-        configurations = [{"features": ["feature1", "feature2"], "workerInstances": [
-            {"type": "m1.small", "count": 2, "image": "worker-image", "onDemand": True, "partitions": ["partition1"],
-             "features": "worker-feature"}], "masterInstance": {"type": "m1.large", "image": "master-image"},
-                           "network": "private-network", "subnet_cidrs": ["10.0.0.0/24"], "floating_ip": "1.2.3.4",
-                           "private_v4": "10.0.0.1", "cloud_identifier": "cloud-1", "volumes": ["volume1"],
-                           "fallbackOnOtherImage": False, "wireguard_peer": "peer1"},
-                          {"vpnInstance": {"type": "vpn-type", "image": "vpn-image"}, "network": "private-network",
-                           "subnet_cidrs": ["10.0.0.0/24"], "floating_ip": "1.2.3.4", "private_v4": "10.0.0.1",
-                           "cloud_identifier": "cloud-1", "fallbackOnOtherImage": False, "wireguard_peer": "peer1"}]
+        worker = {
+            "count": 2,
+            "volumes": [
+                {"name": "volume1", "exists": True},
+                {"permanent": True, "name": "volume2"},
+                {"tmp": True},
+            ],
+        }
+        worker_dict = {
+            "on_demand": True,
+        }
 
-        providers = [mock_provider, mock_provider]
-        cluster_id = "test-cluster"
+        expected_calls = [
+            call(
+                "/home/xaver/Documents/Repos/bibigrid/resources/playbook/host_vars/worker-foo-0.yaml",
+                {
+                    "volumes": [
+                        {"name": "volume1", "exists": True},
+                        {"permanent": True, "name": "worker-foo-0-perm-1-volume2"},
+                        {"tmp": True, "name": "worker-foo-0-tmp-2"},
+                    ]
+                },
+                log,
+            ),
+            call(
+                "/home/xaver/Documents/Repos/bibigrid/resources/playbook/host_vars/worker-foo-1.yaml",
+                {
+                    "volumes": [
+                        {"name": "volume1", "exists": True},
+                        {"permanent": True, "name": "worker-foo-1-perm-1-volume2"},
+                        {"tmp": True, "name": "worker-foo-1-tmp-2"},
+                    ]
+                },
+                log,
+            ),
+        ]
 
-        # Call the function under test
-        ansible_configurator.write_host_and_group_vars(configurations, providers, cluster_id, mock_log)
+        # Call the function
+        ansible_configurator.write_worker_host_vars(
+            cluster_id=cluster_id,
+            worker=worker,
+            worker_dict=worker_dict,
+            worker_count=worker_count,
+            log=log,
+        )
 
-        expected_worker_dict = {"name": "bibigrid-worker-test-cluster-[0-1]",
-                                "regexp": "bibigrid-worker-test-cluster-\\d+", "image": "worker-image",
-                                "network": "private-network",
-                                "flavor": {"name": "flavor-name", "ram": 4096, "vcpus": 2, "disk": 40, "ephemeral": 0},
-                                "gateway_ip": "10.0.0.1", "cloud_identifier": "cloud-1", "on_demand": True,
-                                "state": "CLOUD", "partitions": ["partition1", "all", "cloud-1"],
-                                "features": {"feature1", "feature2", "worker-feature"}}
+        # Validate WORKER_IDENTIFIER calls
+        mock_worker_identifier.assert_has_calls(
+            [call(cluster_id="foo", additional=0), call(cluster_id="foo", additional=1)],
+            any_order=False,
+        )
+
+        # Validate write_yaml calls
+        mock_write_yaml.assert_has_calls(expected_calls, any_order=False)
+
+    @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
+    def test_write_worker_host_vars_on_demand_false(self, mock_write_yaml):
+        """
+        This tests that no host_vars is written if on_demand is false.
+        Currently, that would result in an empty host vars that is not needed.
+        @param mock_write_yaml:
+        @return:
+        """
+        cluster_id = "foo"
+        worker_count = 0
+        log = MagicMock()
+
+        worker = {"count": 2, "volumes": [{"name": "volume1", "exists": True}]}
+        worker_dict = {"on_demand": False}
+
+        # Call the function
+        ansible_configurator.write_worker_host_vars(
+            cluster_id=cluster_id,
+            worker=worker,
+            worker_dict=worker_dict,
+            worker_count=worker_count,
+            log=log,
+        )
+
+        # Assert no write_yaml calls were made
+        mock_write_yaml.assert_not_called()
+
+    @patch("bibigrid.core.utility.ansible_configurator.write_worker_host_vars")
+    @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
+    def test_write_worker_vars(self, mock_write_yaml, mock_write_worker_host_vars):
+        provider = MagicMock()
+        provider.create_flavor_dict.return_value = {"flavor_key": "flavor_value"}
+
+        configuration = {
+            "network": "net1",
+            "private_v4": "10.1.1.1",
+            "cloud_identifier": "cloud1",
+            "features": ["feature1"],
+        }
+
+        worker = {
+            "type": "worker-type",
+            "image": "worker-image",
+            "onDemand": True,
+            "bootVolume": {"size": 10},
+            "features": ["feature1"],
+            "count": 2
+        }
+
+        cluster_id = "foo"
+        worker_count = 0
+        log = MagicMock()
+
+        expected_group_vars = {
+            "name": "bibigrid-worker-foo-[0-1]",
+            "regexp": "bibigrid-worker-foo-\\d+",
+            "image": "worker-image",
+            "network": "net1",
+            "flavor": {"flavor_key": "flavor_value"},
+            "gateway_ip": "10.1.1.1",
+            "cloud_identifier": "cloud1",
+            "on_demand": True,
+            "state": "CLOUD",
+            "partitions": ["all", "cloud1"],
+            "boot_volume": {"size": 10},
+            "features": {"feature1"},
+        }
+
+        ansible_configurator.write_worker_vars(
+            provider=provider,
+            configuration=configuration,
+            cluster_id=cluster_id,
+            worker=worker,
+            worker_count=worker_count,
+            log=log
+        )
+        # Assert group_vars were written correctly
         mock_write_yaml.assert_any_call(
-            os.path.join('/mocked/path/group_vars', 'bibigrid_worker_test_cluster_0_1.yaml'), expected_worker_dict,
-            mock_log)
+            "/home/xaver/Documents/Repos/bibigrid/resources/playbook/group_vars/bibigrid_worker_foo_0_1.yaml",
+            expected_group_vars,
+            log
+        )
 
-        # Assertions for masterInstance
-        expected_master_dict = {"name": "bibigrid-master-test-cluster", "image": "master-image",
-                                "network": "private-network", "network_cidrs": ["10.0.0.0/24"],
-                                "floating_ip": "1.2.3.4",
-                                "flavor": {"name": "flavor-name", "ram": 4096, "vcpus": 2, "disk": 40, "ephemeral": 0},
-                                "private_v4": "10.0.0.1", "cloud_identifier": "cloud-1", "volumes": ["volume1"],
-                                "fallback_on_other_image": False, "state": "UNKNOWN", "on_demand": False,
-                                "partitions": ["all", "cloud-1"], "wireguard": {"ip": "10.0.0.1", "peer": "peer1"}}
-        mock_write_yaml.assert_any_call(os.path.join('/mocked/path/group_vars', 'master.yaml'), expected_master_dict,
-                                        mock_log)
+        # Ensure write_worker_host_vars was called
+        mock_write_worker_host_vars.assert_called_once_with(
+            cluster_id=cluster_id,
+            worker=worker,
+            worker_dict=expected_group_vars,
+            worker_count=worker_count,
+            log=log
+        )
 
-        expected_vpn_dict = {"name": "bibigrid-vpngtw-test-cluster-0", "regexp": "bibigrid-worker-test-cluster-\\d+",
-                             "image": "vpn-image", "network": "private-network", "network_cidrs": ["10.0.0.0/24"],
-                             "floating_ip": "1.2.3.4", "private_v4": "10.0.0.1",
-                             "flavor": {"name": "flavor-name", "ram": 4096, "vcpus": 2, "disk": 40, "ephemeral": 0},
-                             "wireguard_ip": "10.0.0.2", "cloud_identifier": "cloud-1",
-                             "fallback_on_other_image": False, "on_demand": False,
-                             "wireguard": {"ip": "10.0.0.2", "peer": "peer1"}}
-        mock_write_yaml.assert_any_call(os.path.join('/mocked/path/host_vars', 'bibigrid-vpngtw-test-cluster-0.yaml'),
-                                        expected_vpn_dict, mock_log)
+    @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
+    def test_write_vpn_var(self, mock_write_yaml):
+        provider = MagicMock()
+        provider.create_flavor_dict.return_value = {"flavor_key": "flavor_value"}
 
-    @patch('os.remove')
-    @patch('os.listdir')
-    @patch('os.path.isfile')
-    @patch('bibigrid.core.utility.ansible_configurator.aRP.GROUP_VARS_FOLDER', '/mocked/path/group_vars')
-    @patch('bibigrid.core.utility.ansible_configurator.aRP.HOST_VARS_FOLDER', '/mocked/path/host_vars')
-    @patch('logging.getLogger')
-    def test_delete_old_vars(self, mock_get_logger, mock_isfile, mock_listdir, mock_remove):
-        mock_log = MagicMock()
-        mock_get_logger.return_value = mock_log
-        mock_isfile.return_value = True
+        configuration = {
+            "network": "net1",
+            "subnet_cidrs": ["10.0.0.0/16"],
+            "floating_ip": "10.1.1.2",
+            "private_v4": "10.1.1.1",
+            "cloud_identifier": "cloud1",
+            "wireguard_peer": "peer-ip",
+        }
 
-        mock_listdir.side_effect = [['file1.yaml', 'file2.yaml'],  # Files in GROUP_VARS_FOLDER
-                                    ['file3.yaml', 'file4.yaml']  # Files in HOST_VARS_FOLDER
-                                    ]
+        vpngtw = {
+            "type": "vpn-type",
+            "image": "vpn-image",
+        }
 
-        # Call the function under test
-        ansible_configurator.delete_old_vars(mock_log)
+        cluster_id = "foo"
+        vpn_count = 0
+        log = MagicMock()
 
-        # Assertions for file removal
-        mock_remove.assert_any_call('/mocked/path/group_vars/file1.yaml')
-        mock_remove.assert_any_call('/mocked/path/group_vars/file2.yaml')
-        mock_remove.assert_any_call('/mocked/path/host_vars/file3.yaml')
-        mock_remove.assert_any_call('/mocked/path/host_vars/file4.yaml')
+        expected_host_vars = {
+            "name": "bibigrid-vpngtw-foo-0",
+            "regexp": "bibigrid-worker-foo-\\d+",  # this is known bug behavior that needs to be fixed
+            "image": "vpn-image",
+            "network": "net1",
+            "network_cidrs": ["10.0.0.0/16"],
+            "floating_ip": "10.1.1.2",
+            "private_v4": "10.1.1.1",
+            "flavor": {"flavor_key": "flavor_value"},
+            "wireguard_ip": "10.0.0.2",
+            "cloud_identifier": "cloud1",
+            "fallback_on_other_image": False,
+            "on_demand": False,
+            "wireguard": {"ip": "10.0.0.2", "peer": "peer-ip"},
+        }
 
-        self.assertEqual(mock_remove.call_count, 4)
+        ansible_configurator.write_vpn_var(
+            provider=provider,
+            configuration=configuration,
+            cluster_id=cluster_id,
+            vpngtw=vpngtw,
+            vpn_count=vpn_count,
+            log=log,
+        )
+
+        mock_write_yaml.assert_called_once_with(
+            "/home/xaver/Documents/Repos/bibigrid/resources/playbook/host_vars/bibigrid-vpngtw-foo-0.yaml",
+            expected_host_vars,
+            log
+        )
+
+    @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
+    def test_write_master_var(self, mock_write_yaml):
+        provider = MagicMock()
+        provider.create_flavor_dict.return_value = {"flavor_key": "flavor_value"}
+
+        configuration = {
+            "network": "net1",
+            "subnet_cidrs": ["10.0.0.0/24"],
+            "floating_ip": True,
+            "private_v4": "10.1.1.1",
+            "cloud_identifier": "cloud1",
+            "fallbackOnOtherImage": False,
+            "useMasterAsCompute": True,
+            "masterInstance": {
+                "type": "master-type",
+                "image": "master-image",
+                "partitions": ["control"],
+            },
+        }
+
+        cluster_id = "foo"
+        log = MagicMock()
+
+        expected_master_vars = {
+            "name": "bibigrid-master-foo",
+            "image": "master-image",
+            "network": "net1",
+            "network_cidrs": ["10.0.0.0/24"],
+            "floating_ip": True,
+            "flavor": {"flavor_key": "flavor_value"},
+            "private_v4": "10.1.1.1",
+            "cloud_identifier": "cloud1",
+            "fallback_on_other_image": False,
+            "state": "UNKNOWN",  # Based on useMasterAsCompute = True
+            "on_demand": False,
+            "partitions": ["control", "all", "cloud1"],
+        }
+
+        # Call the function
+        ansible_configurator.write_master_var(
+            provider=provider,
+            configuration=configuration,
+            cluster_id=cluster_id,
+            log=log,
+        )
+
+        # Validate the output
+        mock_write_yaml.assert_called_once_with(
+            "/home/xaver/Documents/Repos/bibigrid/resources/playbook/group_vars/master.yaml",
+            expected_master_vars,
+            log,
+        )
 
     def test_key_present_with_key_to(self):
         dict_from = {'source_key': 'value1'}
@@ -490,7 +668,7 @@ class TestAnsibleConfigurator(TestCase):
         mock_generate.return_value = ('private_key_example', 'public_key_example')
 
         configurations = [{"cloud_identifier": "cloud-1", "floating_ip": "10.0.0.1", "subnet_cidrs": ["10.0.0.0/24"]},
-            {"cloud_identifier": "cloud-2", "floating_ip": "10.0.0.2", "subnet_cidrs": ["10.0.1.0/24"]}]
+                          {"cloud_identifier": "cloud-2", "floating_ip": "10.0.0.2", "subnet_cidrs": ["10.0.1.0/24"]}]
 
         # Call the function
         ansible_configurator.add_wireguard_peers(configurations)

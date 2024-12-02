@@ -3,6 +3,8 @@ Holds the abstract class Provider
 """
 from abc import ABC, abstractmethod
 
+FLAVOR_KEYS = ["name", "ram", "vcpus", "disk", "ephemeral"]
+
 
 class Provider(ABC):  # pylint: disable=too-many-public-methods
     """
@@ -88,12 +90,15 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         """
 
     @abstractmethod
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None,
+    def create_server(self, *, name, flavor, image, network, key_name=None, wait=True, volumes=None,
+                      security_groups=None,
                       boot_volume=None, boot_from_volume=False,
-                      terminate_boot_volume=False, volume_size=50):  # pylint: disable=too-many-arguments
+                      terminate_boot_volume=False, volume_size=50,
+                      description=""):  # pylint: disable=too-many-arguments
         """
         Creates a new server and waits for it to be accessible if wait=True. If volumes are given, they are attached.
         Returns said server (dict)
+        @param description: server description; ignored by some providers
         @param volume_size: Size of boot volume if set. Defaults to 50.
         @param terminate_boot_volume: if True, boot volume gets terminated on server termination
         @param boot_from_volume: if True, a boot volume is created from the image
@@ -278,14 +283,46 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         @return:
         """
 
+    @abstractmethod
+    def create_volume(self, *, name, size, wait=True, volume_type=None, description=None):
+        """
+        Creates a volume
+        @param name: name of the created volume
+        @param size: size of the created volume in GB
+        @param wait: if true waits for volume to be created
+        @param volume_type: depends on the location, but for example NVME or HDD
+        @param description: a non-functional description to help dashboard users
+        @return: the created volume
+        """
+
+    @abstractmethod
     def get_server(self, name_or_id):
         """
         Returns server if found else None.
         @param name_or_id:
         @return:
-        """  # TODO Test
+        """
+
+    @abstractmethod
+    def delete_volume(self, name_or_id):
+        """
+        Deletes the volume that has name_or_id.
+        @param name_or_id:
+        @return: True if deletion was successful, else False
+        """
+
+    @abstractmethod
+    def list_volumes(self):
+        """
+        Returns a list of all volumes on the provider.
+        @return: list of volumes
+        """
 
     def get_mount_info_from_server(self, server):
+        """
+        @param server: server to get the attachment list from
+        @return: list of dicts containing name and device node of all attached volumes
+        """
         volumes = []
         for server_volume in server["volumes"]:
             volume = self.get_volume_by_id_or_name(server_volume["id"])
@@ -294,3 +331,12 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
                     volumes.append({"name": volume["name"], "device": attachment["device"]})
                     break
         return volumes
+
+    def create_flavor_dict(self, flavor):
+        """
+
+        @param flavor: an existing flavor on the provider's cloud
+        @return: a dictionary containing only the FLAVOR_KEYS
+        """
+        flavor = self.get_flavor(flavor)
+        return {key: flavor[key] for key in FLAVOR_KEYS}

@@ -49,12 +49,13 @@ WORKER_IDENTIFIER = partial(get_identifier, identifier="worker")
 VPN_WORKER_IDENTIFIER = partial(get_identifier, identifier="vpngtw")
 
 KEY_PREFIX = "tempKey_bibi"
-KEY_FOLDER = os.path.expanduser("~/.config/bibigrid/keys/")
+CONFIG_FOLDER = os.path.expanduser("~/.config/bibigrid/")
+KEY_FOLDER = os.path.join(CONFIG_FOLDER, "keys/")
 AC_NAME = "ac" + SEPARATOR + "{cluster_id}"
 KEY_NAME = KEY_PREFIX + SEPARATOR + "{cluster_id}"
 CLUSTER_MEMORY_FOLDER = KEY_FOLDER
 CLUSTER_MEMORY_FILE = ".bibigrid.mem"
-CLUSTER_MEMORY_PATH = os.path.join(CLUSTER_MEMORY_FOLDER, CLUSTER_MEMORY_FILE)
+CLUSTER_MEMORY_PATH = os.path.join(CONFIG_FOLDER, CLUSTER_MEMORY_FILE)
 DEFAULT_SECURITY_GROUP_NAME = "default" + SEPARATOR + "{cluster_id}"
 WIREGUARD_SECURITY_GROUP_NAME = "wireguard" + SEPARATOR + "{cluster_id}"
 
@@ -64,7 +65,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     The class Create holds necessary methods to execute the Create-Action
     """
 
-    def __init__(self, providers, configurations, config_path, log, debug=False, cluster_id=None):
+    def __init__(self, *, providers, configurations, config_path, log, debug=False,
+                 cluster_id=None):
         """
         Additionally sets (unique) cluster_id, public_key_commands (to copy public keys to master) and key_name.
         Call create() to actually start server.
@@ -95,7 +97,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # permanents holds groups or single nodes that ansible playbook should be run for during startup
         self.permanents = ["vpn"]
         self.vpn_counter = 0
-        self.vpn_master_thread_lock = threading.Lock()
+        self.vpn_counter_thread_lock = threading.Lock()
         self.worker_thread_lock = threading.Lock()
         self.use_master_with_public_ip = not configurations[0].get("gateway") and configurations[0].get(
             "useMasterWithPublicIp", True)
@@ -138,7 +140,20 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         # write cluster_id to automatically read it on following calls if no cid is given
         with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
-            yaml.safe_dump(data={"cluster_id": self.cluster_id}, stream=cluster_memory_file)
+            yaml.safe_dump(data={"cluster_id": self.cluster_id, "ssh_user": self.ssh_user}, stream=cluster_memory_file)
+
+    def delete_old_vars(self):
+        """
+        Deletes host_vars and group_vars
+        @return:
+        """
+        for folder in [a_rp.GROUP_VARS_FOLDER, a_rp.HOST_VARS_FOLDER]:
+            for file_name in os.listdir(folder):
+                # construct full file path
+                file = os.path.join(folder, file_name)
+                if os.path.isfile(file):
+                    self.log.debug('Deleting file: %s', file)
+                    os.remove(file)
 
     def generate_security_groups(self):
         """
@@ -174,21 +189,21 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
                 configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
 
-    def start_vpn_or_master(self, configuration, provider): # pylint: disable=too-many-locals
+    def start_vpn_or_master(self, configuration, provider):  # pylint: disable=too-many-locals
         """
         Start master/vpn-worker of a provider
         @param configuration: dict configuration of said provider.
         @param provider: provider
         @return:
         """
-        identifier, instance, volumes = self.prepare_vpn_or_master_args(configuration, provider)
+        identifier, instance = self.prepare_vpn_or_master_args(configuration)
         external_network = provider.get_external_network(configuration["network"])
-        with self.vpn_master_thread_lock:
-            if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
-                name = identifier(cluster_id=self.cluster_id)
-            else:
-                name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
-                                  additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
+        if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
+            name = identifier(cluster_id=self.cluster_id)
+        else:
+            name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
+                              additional=self.vpn_counter)  # pylint: disable=redundant-keyword-arg
+            with self.vpn_counter_thread_lock:
                 self.vpn_counter += 1
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}")
         flavor = instance["type"]
@@ -196,16 +211,19 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         image = image_selection.select_image(provider, instance["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
 
+        volumes = self.create_server_volumes(provider=provider, instance=instance, name=name)
+
         # create a server and block until it is up and running
+        boot_volume = instance.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
-                                        boot_from_volume=instance.get("bootFromVolume",
-                                                                      configuration.get("bootFromVolume", False)),
-                                        boot_volume=instance.get("bootVolume", configuration.get("bootVolume")),
-                                        terminate_boot_volume=instance.get("terminateBootVolume",
-                                                                           configuration.get("terminateBootVolume",
-                                                                                             True)),
-                                        volume_size=instance.get("volumeSize", configuration.get("volumeSize", 50)))
+                                        boot_from_volume=boot_volume.get("name", False),
+                                        boot_volume=bool(boot_volume),
+                                        terminate_boot_volume=boot_volume.get("terminate", True),
+                                        volume_size=boot_volume.get("size", 50))
+        # description=instance.get("description", configuration.get("description")))
+        self.add_volume_device_info_to_instance(provider, server, instance)
+
         configuration["private_v4"] = server["private_v4"]
         self.log.debug(f"Created Server {name}: {server['private_v4']}.")
         # get mac address for given private address
@@ -222,19 +240,25 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if identifier == VPN_WORKER_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
             configuration["floating_ip"] = \
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
+            if identifier == MASTER_IDENTIFIER:
+                with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
+                    yaml.safe_dump(
+                        data={"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"]},
+                        stream=cluster_memory_file)
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
-        configuration["volumes"] = provider.get_mount_info_from_server(server)
-        master_mounts = configuration.get("masterMounts", [])
-        if master_mounts:
-            for volume in configuration["volumes"]:
-                mount = next((mount for mount in master_mounts if mount["name"] == volume["name"]), None)
-                if mount and mount.get("mountPoint"):
-                    volume["mount_point"] = mount["mountPoint"]
-                    self.log.debug(f"Added mount point {mount['mountPoint']} of attached volume to configuration.")
 
-    def start_workers(self, worker, worker_count, configuration, provider):
+    def start_worker(self, worker, worker_count, configuration, provider):  # pylint: disable=too-many-locals
+        """
+        Starts a single worker (with onDemand: False) and adds all relevant information to the configuration dictionary.
+        Additionally, a hosts.yaml entry is created for the DNS resolution.
+        @param worker:
+        @param worker_count:
+        @param configuration:
+        @param provider:
+        @return:
+        """
         name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}.")
         flavor = worker["type"]
@@ -242,16 +266,22 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         image = image_selection.select_image(provider, worker["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
 
-        # create a server and block until it is up and running
+        volumes = self.create_server_volumes(provider=provider, instance=worker, name=name)
+
+        # create a server and attaches volumes if given; blocks until it is up and running
+        boot_volume = worker.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=None, security_groups=configuration["security_groups"], wait=True,
-                                        boot_from_volume=worker.get("bootFromVolume",
-                                                                    configuration.get("bootFromVolume", False)),
-                                        boot_volume=worker.get("bootVolume", configuration.get("bootVolume")),
-                                        terminate_boot_volume=worker.get("terminateBootVolume",
-                                                                         configuration.get("terminateBootVolume",
-                                                                                           True)))
+                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True,
+                                        boot_from_volume=boot_volume.get("name", False),
+                                        boot_volume=bool(boot_volume),
+                                        terminate_boot_volume=boot_volume.get("terminateBoot", True),
+                                        volume_size=boot_volume.get("size", 50),
+                                        description=worker.get("description", configuration.get("description")))
+        self.add_volume_device_info_to_instance(provider, server, worker)
+
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
+
+        # for DNS resolution an entry in the hosts file is created
         with self.worker_thread_lock:
             self.permanents.append(name)
             with open(a_rp.HOSTS_FILE, mode="r", encoding="utf-8") as hosts_file:
@@ -263,26 +293,102 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
             self.log.debug(f"Added worker {name} to hosts file {a_rp.HOSTS_FILE}.")
 
-    def prepare_vpn_or_master_args(self, configuration, provider):
+    # pylint: disable=duplicate-code
+    def create_server_volumes(self, provider, instance, name):
+        """
+        Creates all volumes of a single instance
+        @param provider:
+        @param instance: flavor, image, ... description
+        @param name: sever name
+        @return:
+        """
+        self.log.info("Creating volumes ...")
+        return_volumes = []
+
+        for i, volume in enumerate(instance.get("volumes", [])):
+            group_instance = {"volumes": []}
+            instance["group_instances"] = {name: group_instance}
+            if not volume.get("exists"):
+                if volume.get("permanent"):
+                    infix = "perm"
+                elif volume.get("semiPermanent"):
+                    infix = "semiperm"
+                else:
+                    infix = "tmp"
+                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
+                volume_name = f"{name}-{infix}-{i}{postfix}"
+            else:
+                volume_name = volume["name"]
+            group_instance["volumes"].append({**volume, "name": volume_name})
+
+            self.log.debug(f"Trying to find volume {volume_name}")
+            return_volume = provider.get_volume_by_id_or_name(volume_name)
+            if not return_volume:
+                self.log.debug(f"Volume {volume_name} not found.")
+                if volume.get('snapshot'):
+                    self.log.debug("Creating volume from snapshot...")
+                    return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume_name)
+                    if not return_volume:
+                        raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
+                else:
+                    self.log.debug("Creating volume...")
+                    return_volume = provider.create_volume(name=volume_name, size=volume.get("size", 50),
+                                                           volume_type=volume.get("type"),
+                                                           description=f"Created for {name}")
+            return_volumes.append(return_volume)
+        return return_volumes
+
+    def add_volume_device_info_to_instance(self, provider, server, instance):
+        """
+        Only after attaching the volume to the server it is decided where the device is attached.
+        This method reads that value and stores it in the instance configuration.
+        This method assumes that devices are attached the same on instances with identical images.
+        @param provider:
+        @param server:
+        @param instance:
+        @return:
+        """
+        self.log.info("Adding device info")
+        server_volumes = provider.get_mount_info_from_server(server)  # list of volumes attachments
+        group_instance_volumes = instance["group_instances"][server["name"]].get("volumes")
+        final_volumes = []
+        if group_instance_volumes:
+            for volume in group_instance_volumes:
+                server_volume = next((server_volume for server_volume in server_volumes if
+                                      server_volume["name"] == volume["name"]), None)
+                if not server_volume:
+                    raise RuntimeError(
+                        f"Created server {server['name']} doesn't have attached volume {volume['name']}.")
+                device = server_volume.get("device")
+                final_volumes.append({**volume, "device": device})
+
+                self.log.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
+                               f"as device {device} that is going to be mounted to "
+                               f"{volume.get('mountPoint')}")
+
+            ansible_configurator.write_yaml(os.path.join(a_rp.HOST_VARS_FOLDER, f"{server['name']}.yaml"),
+                                            {"volumes": final_volumes},
+                                            self.log)
+
+    def prepare_vpn_or_master_args(self, configuration):
         """
         Prepares start_instance arguments for master/vpn
         @param configuration: configuration (dict) of said master/vpn
-        @param provider: provider
         @return: arguments needed by start_instance
         """
         if configuration.get("masterInstance"):
             instance_type = configuration["masterInstance"]
             identifier = MASTER_IDENTIFIER
-            master_mounts_src = [master_mount["name"] for master_mount in configuration.get("masterMounts", [])]
-            volumes = self.prepare_volumes(provider, master_mounts_src)
         elif configuration.get("vpnInstance"):
             instance_type = configuration["vpnInstance"]
             identifier = VPN_WORKER_IDENTIFIER
-            volumes = []  # only master has volumes
         else:
-            self.log.warning("Configuration %s has no vpngtw or master and is therefore unreachable.", configuration)
-            raise KeyError
-        return identifier, instance_type, volumes
+            self.log.warning(
+                f"Configuration {configuration['cloud_identifier']} "
+                f"has no vpngtw or master and is therefore unreachable.")
+            raise ConfigurationException(
+                f"Configuration {configuration['cloud_identifier']} has neither vpngtw nor masterInstance")
+        return identifier, instance_type
 
     def initialize_instances(self):
         """
@@ -305,33 +411,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             elif configuration.get("vpnInstance"):
                 ssh_data["commands"] = ssh_handler.VPN_SETUP
                 ssh_handler.execute_ssh(ssh_data, self.log)
-
-    def prepare_volumes(self, provider, mounts):
-        """
-        Creates volumes from snapshots and returns all volumes (pre-existing and newly created)
-        @param provider: provider on which the volumes and snapshots exist
-        @param mounts: volumes or snapshots
-        @return: list of pre-existing and newly created volumes
-        """
-        if mounts:
-            self.log.info("Preparing volumes")
-        volumes = []
-        for mount in mounts:
-            volume_id = provider.get_volume_by_id_or_name(mount)["id"]
-            if volume_id:
-                volumes.append(volume_id)
-            else:
-                self.log.debug("Volume %s does not exist. Checking for snapshot.", mount)
-                volume_id = provider.create_volume_from_snapshot(mount)
-                if volume_id:
-                    volumes.append(volume_id)
-                else:
-                    self.log.warning("Mount %s is neither a snapshot nor a volume.", mount)
-        ret_volumes = set(volumes)
-        if len(ret_volumes) < len(volumes):
-            self.log.warning("Identical mounts found in masterMounts list. "
-                             "Trying to set() to save the run. Check configurations!")
-        return ret_volumes
 
     def prepare_configurations(self):
         """
@@ -405,7 +484,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             for worker in configuration.get("workerInstances", []):
                 if not worker.get("onDemand", True):
                     for _ in range(int(worker["count"])):
-                        start_server_thread = return_threading.ReturnThread(target=self.start_workers,
+                        start_server_thread = return_threading.ReturnThread(target=self.start_worker,
                                                                             args=[worker, worker_count, configuration,
                                                                                   provider])
                         start_server_thread.start()
@@ -458,6 +537,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     self.log.info("%s not found. Creating folder.", folder)
                     os.mkdir(folder)
             self.generate_keypair()
+            self.delete_old_vars()
             self.prepare_configurations()
             self.create_defaults()
             self.generate_security_groups()

@@ -34,12 +34,9 @@ def suppress_stdout():
 logging.basicConfig(level=logging.ERROR)
 if __name__ == '__main__':
     # Unittests
-    suite = unittest.TestLoader().discover("./", pattern='test_*.py')
-    with suppress_stdout():
-        unittest.TextTestRunner(verbosity=2).run(suite)
-
-    # Provider-Test
-    # Configuration needs to contain providers and infrastructures
-    suite = unittest.TestLoader().discover("./provider", pattern='test_*.py')
+    # Configuration at resources/tests/bibigrid_test.yaml
+    # Needs to contain providers and infrastructures for the provider tests
+    # You can use bibigrid_test_exmaple.yaml as the basis
+    suite = unittest.TestLoader().discover(start_dir=".", pattern='test_*.py')
     with suppress_stdout():
         unittest.TextTestRunner(verbosity=2).run(suite)

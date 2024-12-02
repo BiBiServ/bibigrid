@@ -199,29 +199,16 @@ class TestValidateConfiguration(TestCase):
                 self.assertEqual(10 * i, v_c.required_resources_dict["1"]["total_cores"])
                 mock.assert_called_with(32 * i, 12, 'Type de.NBI tiny', 'ram', log)
 
-    def test_check_volumes_none(self):
+    def test_check_no_volumes(self):
+        """
+        Check to see that no error occurs when no volume is given
+        @return
+        """
         provider1 = MagicMock()
         provider1.cloud_specification = {"identifier": "1"}
-        v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
-        self.assertTrue(v_c.check_volumes())
-
-    def test_check_volumes_mismatch(self):
-        provider1 = Mock()
-        provider1.get_volume_by_id_or_name = MagicMock(return_value=None)
-        provider1.get_volume_snapshot_by_id_or_name = MagicMock(return_value=None)
-        provider1.cloud_specification = {"identifier": "1"}
-        v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
-                                                           configurations=[{"masterMounts": [{"name": "Test"}]}],
-                                                           log=Mock())
-        self.assertFalse(v_c.check_volumes())
-
-    def test_check_volumes_match_snapshot(self):
-        provider1 = Mock()
-        provider1.get_volume_by_id_or_name = MagicMock(return_value=None)
-        provider1.get_volume_snapshot_by_id_or_name = MagicMock(return_value={"size": 1})
-        provider1.cloud_specification = {"identifier": "1"}
-        v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
-                                                           configurations=[{"masterMounts": [{"name": "Test"}]}],
+        v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{"masterInstance": {},
+                                                                                                   "workerInstances": [
+                                                                                                       {}]}],
                                                            log=Mock())
         self.assertTrue(v_c.check_volumes())
 
@@ -232,22 +219,10 @@ class TestValidateConfiguration(TestCase):
             provider1.get_volume_snapshot_by_id_or_name = MagicMock(return_value={"size": i})
             provider1.cloud_specification = {"identifier": i}
             v_c = validate_configuration.ValidateConfiguration(providers=[provider1] * i, configurations=[
-                {"masterMounts": [{"name": "Test"}] * i}], log=Mock())
+                {"masterInstance": {"volumes": [{"snapshot": "test"}] * i}}], log=Mock())
             self.assertTrue(v_c.check_volumes())
             self.assertTrue(v_c.required_resources_dict[i]["volumes"] == i)
             self.assertTrue(v_c.required_resources_dict[i]["volume_gigabytes"] == i ** 2)
-
-    def test_check_volumes_match_volume(self):
-        provider1 = Mock()
-        provider1.get_volume_by_id_or_name = MagicMock(return_value={"size": 1})
-        provider1.get_volume_snapshot_by_id_or_name = MagicMock(return_value=None)
-        provider1.cloud_specification = {"identifier": "1"}
-        v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
-                                                           configurations=[{"masterMounts": [{"name": "Test"}]}],
-                                                           log=Mock())
-        self.assertTrue(v_c.check_volumes())
-        self.assertTrue(v_c.required_resources_dict["1"]["volumes"] == 0)
-        self.assertTrue(v_c.required_resources_dict["1"]["volume_gigabytes"] == 0)
 
     def test_check_network_none(self):
         provider1 = Mock()

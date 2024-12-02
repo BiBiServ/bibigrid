@@ -1,8 +1,16 @@
-- name: Change group ownership of OpenStack credentials file to slurm
-  file:
-    path: /etc/openstack/clouds.yaml
-    group: slurm
-    mode: "0o640"  # (owner can read/write, group can read, others have no access)
+- name: Change group ownership of OpenStack credentials file to slurm if it exists
+  block:
+    - name: Check if the OpenStack credentials file exists
+      stat:
+        path: /etc/openstack/clouds.yaml
+      register: file_stat
+
+    - name: Change group ownership of OpenStack credentials file to slurm
+      file:
+        path: /etc/openstack/clouds.yaml
+        group: slurm
+        mode: "0o640"  # (owner can read/write, group can read, others have no access)
+      when: file_stat.stat.exists
 
 - name: Create slurm db
   mysql_db:

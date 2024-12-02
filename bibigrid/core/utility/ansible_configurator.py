@@ -16,8 +16,10 @@ from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.wireguard import wireguard_keys
 
-DEFAULT_NFS_SHARES = ["/vol/spool"]
 PYTHON_INTERPRETER = "/usr/bin/python3"
+
+DEFAULT_NFS_SHARES = ["/vol/spool"]
+
 VPNGTW_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-vpngtw"]}]
 MASTER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-master"]}]
 WORKER_ROLES = [{"role": "bibigrid", "tags": ["bibigrid", "bibigrid-worker"]}]
@@ -31,21 +33,6 @@ SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 1200, "SuspendTimeout": 60,
                                      "TreeWidth": 128}}
 CLOUD_SCHEDULING = {"sshTimeout": 5}
-
-
-def delete_old_vars(log):
-    """
-    Deletes host_vars and group_vars
-    @param log:
-    @return:
-    """
-    for folder in [aRP.GROUP_VARS_FOLDER, aRP.HOST_VARS_FOLDER]:
-        for file_name in os.listdir(folder):
-            # construct full file path
-            file = os.path.join(folder, file_name)
-            if os.path.isfile(file):
-                log.debug('Deleting file: %s', file)
-                os.remove(file)
 
 
 def generate_site_file_yaml(user_roles):
@@ -68,7 +55,98 @@ def generate_site_file_yaml(user_roles):
     return site_yaml
 
 
-def write_host_and_group_vars(configurations, providers, cluster_id, log):  # pylint: disable=too-many-locals
+def write_worker_host_vars(*, cluster_id, worker, worker_count, log):
+    for worker_number in range(worker.get('count', 1)):
+        name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
+        write_volumes = []
+        for i, volume in enumerate(worker.get("volumes", [])):
+            if not volume.get("exists"):
+                if volume.get("permanent"):
+                    infix = "perm"
+                elif volume.get("semiPermanent"):
+                    infix = "semiperm"
+                else:
+                    infix = "tmp"
+                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
+                volume_name = f"{name}-{infix}-{i}{postfix}"
+            else:
+                volume_name = volume["name"]
+            write_volumes.append({**volume, "name": volume_name})
+        write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"),
+                   {"volumes": write_volumes},
+                   log)
+
+
+def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_count, log):
+    flavor_dict = provider.create_flavor_dict(flavor=worker["type"])
+    name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
+                                    additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
+    group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
+    regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
+    worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
+                   "network": configuration["network"], "flavor": flavor_dict,
+                   "gateway_ip": configuration["private_v4"],
+                   "cloud_identifier": configuration["cloud_identifier"],
+                   "on_demand": worker.get("onDemand", True), "state": "CLOUD",
+                   "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]],
+                   "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {}))
+                   }
+
+    worker_features = worker.get("features", [])
+    configuration_features = configuration.get("features", [])
+    if isinstance(worker_features, str):
+        worker_features = [worker_features]
+    features = set(configuration_features + worker_features)
+    if features:
+        worker_dict["features"] = features
+
+    pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
+    write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
+    if worker_dict["on_demand"]:  # not on demand instances host_vars are created in create
+        write_worker_host_vars(cluster_id=cluster_id, worker=worker, worker_count=worker_count,
+                               log=log)
+    worker_count += worker.get('count', 1)
+    return worker_count
+
+
+def write_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count, log):
+    name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
+    wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
+    vpn_count += 1
+    flavor_dict = provider.create_flavor_dict(flavor=vpngtw["type"])
+    regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
+    vpngtw_dict = {"name": name, "regexp": regexp, "image": vpngtw["image"],
+                   "network": configuration["network"], "network_cidrs": configuration["subnet_cidrs"],
+                   "floating_ip": configuration["floating_ip"], "private_v4": configuration["private_v4"],
+                   "flavor": flavor_dict, "wireguard_ip": wireguard_ip,
+                   "cloud_identifier": configuration["cloud_identifier"],
+                   "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
+                   "on_demand": False}
+    if configuration.get("wireguard_peer"):
+        vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
+    pass_through(configuration, vpngtw_dict, "waitForServices", "wait_for_services")
+    write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), vpngtw_dict, log)
+
+
+def write_master_var(provider, configuration, cluster_id, log):
+    master = configuration["masterInstance"]
+    name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
+    flavor_dict = provider.create_flavor_dict(flavor=master["type"])
+    master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
+                   "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
+                   "flavor": flavor_dict, "private_v4": configuration["private_v4"],
+                   "cloud_identifier": configuration["cloud_identifier"],
+                   "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
+                   "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
+                   "on_demand": False,
+                   "partitions": master.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
+    if configuration.get("wireguard_peer"):
+        master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
+    pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
+    write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yaml"), master_dict, log)
+
+
+def write_host_and_group_vars(configurations, providers, cluster_id, log):
     """
     Filters unnecessary information
     @param log:
@@ -78,73 +156,19 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):  # py
     @return: filtered information (dict)
     """
     log.info("Generating instances file...")
-    flavor_keys = ["name", "ram", "vcpus", "disk", "ephemeral"]
     worker_count = 0
     vpn_count = 0
-    for configuration, provider in zip(configurations, providers):
-        configuration_features = configuration.get("features", [])
-        if isinstance(configuration_features, str):
-            configuration_features = [configuration_features]
+    for configuration, provider in zip(configurations, providers):  # pylint: disable=too-many-nested-blocks
         for worker in configuration.get("workerInstances", []):
-            flavor = provider.get_flavor(worker["type"])
-            flavor_dict = {key: flavor[key] for key in flavor_keys}
-            name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
-                                            additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
-            group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
-            worker_count += worker.get('count', 1)
-            regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
-                           "network": configuration["network"], "flavor": flavor_dict,
-                           "gateway_ip": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"],
-                           "on_demand": worker.get("onDemand", True), "state": "CLOUD",
-                           "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
+            worker_count = write_worker_vars(provider=provider, configuration=configuration, cluster_id=cluster_id,
+                                             worker=worker, worker_count=worker_count, log=log)
 
-            worker_features = worker.get("features", [])
-            if isinstance(worker_features, str):
-                worker_features = [worker_features]
-            features = set(configuration_features + worker_features)
-            if features:
-                worker_dict["features"] = features
-
-            pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
-            name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
-            wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
-            vpn_count += 1
-            flavor = provider.get_flavor(vpngtw["type"])
-            flavor_dict = {key: flavor[key] for key in flavor_keys}
-            regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
-            vpngtw_dict = {"name": name, "regexp": regexp, "image": vpngtw["image"],
-                           "network": configuration["network"], "network_cidrs": configuration["subnet_cidrs"],
-                           "floating_ip": configuration["floating_ip"], "private_v4": configuration["private_v4"],
-                           "flavor": flavor_dict, "wireguard_ip": wireguard_ip,
-                           "cloud_identifier": configuration["cloud_identifier"],
-                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
-                           "on_demand": False}
-            if configuration.get("wireguard_peer"):
-                vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
-            pass_through(configuration, vpngtw_dict, "waitForServices", "wait_for_services")
-            write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), vpngtw_dict, log)
+            write_vpn_var(provider=provider, configuration=configuration, cluster_id=cluster_id, vpngtw=vpngtw,
+                          vpn_count=vpn_count, log=log)
         else:
-            master = configuration["masterInstance"]
-            name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
-            flavor = provider.get_flavor(master["type"])
-            flavor_dict = {key: flavor[key] for key in flavor_keys}
-            master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
-                           "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
-                           "flavor": flavor_dict, "private_v4": configuration["private_v4"],
-                           "cloud_identifier": configuration["cloud_identifier"], "volumes": configuration["volumes"],
-                           "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
-                           "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
-                           "on_demand": False,
-                           "partitions": master.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
-            if configuration.get("wireguard_peer"):
-                master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
-            pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
-            write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yaml"), master_dict, log)
+            write_master_var(provider, configuration, cluster_id, log)
 
 
 def pass_through(dict_from, dict_to, key_from, key_to=None):
@@ -162,7 +186,8 @@ def pass_through(dict_from, dict_to, key_from, key_to=None):
         dict_to[key_to] = dict_from[key_from]
 
 
-def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_user, default_user, log):
+def generate_common_configuration_yaml(*, cidrs, configurations, cluster_id, ssh_user, default_user,
+                                       log):
     """
     Generates common_configuration yaml (dict)
     @param cidrs: str subnet cidrs (provider generated)
@@ -194,7 +219,7 @@ def generate_common_configuration_yaml(cidrs, configurations, cluster_id, ssh_us
     if master_configuration.get("nfs"):
         nfs_shares = master_configuration.get("nfsShares", [])
         nfs_shares = nfs_shares + DEFAULT_NFS_SHARES
-        common_configuration_yaml["nfs_mounts"] = [{"src": nfs_share, "dst": nfs_share} for nfs_share in nfs_shares]
+        common_configuration_yaml["nfs_shares"] = [{"src": nfs_share, "dst": nfs_share} for nfs_share in nfs_shares]
         common_configuration_yaml["ext_nfs_mounts"] = [{"src": ext_nfs_share, "dst": ext_nfs_share} for ext_nfs_share in
                                                        (master_configuration.get("extNfsShares", []))]
 
@@ -223,8 +248,9 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     @return: ansible_hosts yaml (dict)
     """
     log.info("Generating ansible hosts file...")
+    master_name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
     ansible_hosts_yaml = {"vpn": {"hosts": {},
-                                  "children": {"master": {"hosts": {"localhost": to_instance_host_dict(ssh_user)}},
+                                  "children": {"master": {"hosts": {master_name: to_instance_host_dict(ssh_user)}},
                                                "vpngtw": {"hosts": {}}}}, "workers": {"hosts": {}, "children": {}}}
     # vpngtw are handled like workers on this level
     workers = ansible_hosts_yaml["workers"]
@@ -358,7 +384,6 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
     @param log:
     @return:
     """
-    delete_old_vars(log)
     log.info("Writing ansible files...")
     alias = configurations[0].get("aliasDumper", False)
     user_roles = configurations[0].get("userRoles", [])

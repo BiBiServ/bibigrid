@@ -114,8 +114,11 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def list_servers(self):
         return [elem.toDict() for elem in self.conn.list_servers()]
 
-    def create_server(self, name, flavor, image, network, key_name=None, wait=True, volumes=None, security_groups=None,
-                      boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50):
+    def create_server(self, *, name, flavor, image, network, key_name=None, wait=True, volumes=None,
+                      security_groups=None,
+                      # pylint: disable=too-many-positional-arguments,too-many-locals
+                      boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50,
+                      description=""):
         try:
             server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
                                              volumes=volumes, security_groups=security_groups, boot_volume=boot_volume,
@@ -193,11 +196,14 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
     def get_volume_by_id_or_name(self, name_or_id):
         return self.conn.get_volume(name_or_id)
 
-    def create_volume_from_snapshot(self, snapshot_name_or_id):
+    def create_volume_from_snapshot(self, snapshot_name_or_id, volume_name_or_id=None,
+                                    description=None):
         """
         Uses the cinder API to create a volume from snapshot:
         https://github.com/openstack/python-cinderclient/blob/master/cinderclient/v3/volumes.py
         @param snapshot_name_or_id: name or id of snapshot
+        @param volume_name_or_id:
+        @param description:
         @return: id of created volume
         """
         LOG.debug("Trying to create volume from snapshot")
@@ -207,11 +213,11 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
             if snapshot["status"] == "available":
                 LOG.debug("Snapshot %s is available.", {snapshot_name_or_id})
                 size = snapshot["size"]
-                name = create.PREFIX_WITH_SEP + snapshot["name"]
-                description = f"Created from snapshot {snapshot_name_or_id} by BiBiGrid"
+                name = volume_name_or_id or (create.PREFIX_WITH_SEP + snapshot["name"])
+                description = description or f"Created from snapshot {snapshot_name_or_id} by BiBiGrid"
                 volume = self.cinder.volumes.create(size=size, snapshot_id=snapshot["id"], name=name,
                                                     description=description)
-                return volume.to_dict()["id"]
+                return volume.to_dict()
             LOG.warning("Snapshot %s is %s; must be available.", snapshot_name_or_id, snapshot['status'])
         else:
             LOG.warning("Snapshot %s not found.", snapshot_name_or_id)
@@ -339,3 +345,31 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @return:
         """
         return self.conn.get_server(name_or_id)
+
+    def create_volume(self, *, name, size, wait=True, volume_type=None, description=None):
+        """
+        Creates a volume
+        @param name: name of the created volume
+        @param size: size of the created volume in GB
+        @param wait: if true waits for volume to be created
+        @param volume_type: depends on the location, but for example NVME or HDD
+        @param description: a non-functional description to help dashboard users
+        @return: the created volume
+        """
+        return self.conn.create_volume(size=size, name=name, wait=wait, volume_type=volume_type,
+                                       description=description)
+
+    def delete_volume(self, name_or_id):
+        """
+        Deletes the volume that has name_or_id.
+        @param name_or_id:
+        @return: True if deletion was successful, else False
+        """
+        return self.conn.delete_volume(name_or_id=name_or_id)
+
+    def list_volumes(self):
+        """
+        Returns a list of all volumes on the provider.
+        @return: list of volumes
+        """
+        return self.conn.list_volumes()
