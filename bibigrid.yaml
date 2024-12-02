@@ -1,29 +1,23 @@
-  # See https://cloud.denbi.de/wiki/Tutorials/BiBiGrid/ (after update)
-  # See https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md
-  # First configuration also holds general cluster information and must include the master.
-  # All other configurations mustn't include another master, but exactly one vpngtw instead (keys like master).
+  # For an easy introduction see https://github.com/deNBI/bibigrid_clum
+  # For more detailed information see https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md
 
-- infrastructure: openstack # former mode. Describes what cloud provider is used (others are not implemented yet)
-  cloud: openstack # name of clouds.yaml cloud-specification key (which is value to top level key clouds)
+- # -- BEGIN: GENERAL CLUSTER INFORMATION --
+  # The following options configure cluster wide keys
+  # Modify these according to your requirements
 
-  # -- BEGIN: GENERAL CLUSTER INFORMATION --
   # sshTimeout: 5 # number of attempts to connect to instances during startup with delay in between
-  # cloudScheduling:
-  #    sshTimeout: 5 # like sshTimeout but during the on demand scheduling on the running cluster
 
-  ## sshPublicKeyFiles listed here will be added to access the cluster. A temporary key is created by bibigrid itself.
-  #sshPublicKeyFiles:
-  #  - [public key one]
+  ## sshPublicKeyFiles listed here will be added to the master's authorized_keys. A temporary key is stored at ~/.config/bibigrid/keys
+  # sshPublicKeyFiles:
+  #   - [public key one]
 
-  ## Volumes and snapshots that will be mounted to master
-  #masterMounts: (optional) # WARNING: will overwrite unidentified filesystems
-  #  - name: [volume name]
-  #    mountPoint: [where to mount to] # (optional)
+  # masterMounts: DEPRECATED -- see `volumes` key for each instance instead
 
-  #nfsShares: /vol/spool/ is automatically created as a nfs
-  #  - [nfsShare one]
+  # nfsShares: # list of nfs shares. /vol/spool/ is automatically created as an nfs if nfs is true
+  #   - [nfsShare one]
 
-  # userRoles: # see ansible_hosts for all options
+  ## Ansible Related
+  # userRoles: # see ansible_hosts for all 'hosts' options
   #  - hosts:
   #    - "master"
   #    roles: # roles placed in resources/playbook/roles_user
@@ -31,75 +25,102 @@
   #    varsFiles: # (optional)
   #    - [...]
 
-  ## Uncomment if you don't want assign a public ip to the master; for internal cluster (Tuebingen).
+  ## If you use a gateway or start a cluster from the cloud, your master does not need a public ip.
   # useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
   # gateway: # if you want to use a gateway for create.
   # ip: # IP of gateway to use
   # portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4
 
-  # deleteTmpKeypairAfter: False
-  # dontUploadCredentials: False
+  ## Only relevant for specific projects (e.g. SimpleVM)
+  # deleteTmpKeypairAfter: False # warning: if you don't pass a key via sshPublicKeyFiles you lose access!
+  # dontUploadCredentials: False # warning: enabling this prevents you from scheduling on demand!
 
-  # Other keys - these are default False
-  # Usually Ignored
-  ##localFS: True
-  ##localDNSlookup: True
+  ## Additional Software
+  # zabbix: False
+  # nfs: False
+  # ide: False # installs a web ide on the master node. A nice way to view your cluster (like Visual Studio Code)
 
-  #zabbix: True
-  #nfs: True
-  #ide: True # A nice way to view your cluster as if you were using Visual Studio Code
-
-  useMasterAsCompute: True
-
-  # bootFromVolume: False
-  # terminateBootVolume: True
-  # volumeSize: 50
-  
-  # waitForServices:  # existing service name that runs after an instance is launched. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
-  #  - de.NBI_Bielefeld_environment.service  # uncomment for cloud site Bielefeld
-
-  # master configuration
-  masterInstance:
-    type: # existing type/flavor on your cloud. See launch instance>flavor for options
-    image: # existing active image on your cloud. Consider using regex to prevent image updates from breaking your running cluster
-    # features: # list
-    # partitions: # list
-    # bootVolume: None
-    # bootFromVolume: True
-    # terminateBootVolume: True
-    # volumeSize: 50
-
-  # -- END: GENERAL CLUSTER INFORMATION --
-
-  # fallbackOnOtherImage: False # if True, most similar image by name will be picked. A regex can also be given instead.
-
-  # worker configuration
-  # workerInstances:
-  #  - type: # existing type/flavor on your cloud. See launch instance>flavor for options
-  #    image: # same as master. Consider using regex to prevent image updates from breaking your running cluster
-  #    count: # any number of workers you would like to create with set type, image combination
-  #    # features: # list
-  #    # partitions: # list
-  #    # bootVolume: None
-  #    # bootFromVolume: True
-  #    # terminateBootVolume: True
-  #    # volumeSize: 50
-
-  # Depends on cloud image
-  sshUser: # for example ubuntu
-
-  # Depends on cloud site and project
-  subnet: # existing subnet on your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/networks/
-  # or network:
-
-  # Uncomment if no full DNS service for started instances is available.
-  # Currently, the case in Berlin, DKFZ, Heidelberg and Tuebingen.
-  #localDNSLookup: True
-
-  #features: # list
-
+  ### Slurm Related
   # elastic_scheduling: # for large or slow clusters increasing these timeouts might be necessary to avoid failures
   #   SuspendTimeout: 60 # after SuspendTimeout seconds, slurm allows to power up the node again
   #   ResumeTimeout: 1200 # if a node doesn't start in ResumeTimeout seconds, the start is considered failed.
+
+  # cloudScheduling:
+  #    sshTimeout: 5 # like sshTimeout but during the on demand scheduling on the running cluster
+
+  # useMasterAsCompute: True
+
+  # -- END: GENERAL CLUSTER INFORMATION --
+
+  # -- BEGIN: MASTER CLOUD INFORMATION --
+  infrastructure: openstack # former mode. Describes what cloud provider is used (others are not implemented yet)
+  cloud: openstack # name of clouds.yaml cloud-specification key (which is value to top level key clouds)
+
+  # waitForServices:  # list of existing service names that affect apt. BiBiGrid's playbook will wait until service is "stopped" to avoid issues
+  #  - de.NBI_Bielefeld_environment.service  # uncomment for cloud site Bielefeld
+
+  ## master configuration
+  masterInstance:
+    type: # existing type/flavor from your cloud. See launch instance>flavor for options
+    image: # existing active image from your cloud. Consider using regex to prevent image updates from breaking your running cluster
+    # features: # list
+    # - feature1
+    # partitions: # list
+    # - partition1
+    # bootVolume: # optional
+    #   name: # optional; if you want to boot from a specific volume
+    #   terminate: True # whether the volume is terminated on server termination
+    #   size: 50
+    # volumes: # optional
+    # - name: volumeName # empty for temporary volumes
+    #   snapshot: snapshotName # optional; to create volume from a snapshot
+    #   mountPoint: /vol/mountPath
+    #   size: 50
+    #   fstype: ext4 # must support chown
+    #   type: # storage type; available values depend on your location; for Bielefeld CEPH_HDD, CEPH_NVME
+    ## Select up to one of the following options; otherwise temporary is picked
+    #   exists: False # if True looks for existing volume with exact name. count must be 1. Volume is never deleted.
+    #   permanent: False # if True volume is never deleted; overwrites semiPermanent if both are given
+    #   semiPermanent: False # if True volume is only deleted during cluster termination
+
+  # fallbackOnOtherImage: False # if True, most similar image by name will be picked. A regex can also be given instead.
+
+  ## worker configuration
+  # workerInstances:
+  #  - type: # existing type/flavor from your cloud. See launch instance>flavor for options
+  #    image: # same as master. Consider using regex to prevent image updates from breaking your running cluster
+  #    count: 1 # number of workers you would like to create with set type, image combination
+  #    # features: # list
+  #    # partitions: # list of slurm features that all nodes of this group have
+  #    # bootVolume: # optional
+  #    #   name: # optional; if you want to boot from a specific volume
+  #    #   terminate: True # whether the volume is terminated on server termination
+  #    #   size: 50
+  #    # volumes: # optional
+  #    # - name: volumeName # optional
+  #    #   snapshot: snapshotName # optional; to create volume from a snapshot
+  #    #   mountPoint: /vol/mountPath # optional; not mounted if no path is given
+  #    #   size: 50
+  #    #   fstype: ext4 # must support chown
+  #    #   type: # storage type; available values depend on your location; for Bielefeld CEPH_HDD, CEPH_NVME
+  #    ## Select up to one of the following options; otherwise temporary is picked
+  #    #   exists: False # if True looks for existing volume with exact name. count must be 1. Volume is never deleted.
+  #    #   permanent: False # if True volume is never deleted; overwrites semiPermanent if both are given
+  #    #   semiPermanent: False # if True volume is only deleted during cluster termination
+
+  # Depends on image
+  sshUser: # for example 'ubuntu'
+
+  # Depends on project
+  subnet: # existing subnet from your cloud. See https://openstack.cebitec.uni-bielefeld.de/project/networks/
+  # network: # only if no subnet is given
+
+  # features: # list of slurm features that all nodes of this cloud have
+  # - feature1
+
+  # bootVolume: # optional (cloud wide)
+  #   name: # optional; if you want to boot from a specific volume
+  #   terminate: True # whether the volume is terminated on server termination
+  #   size: 50
 
   #- [next configurations]

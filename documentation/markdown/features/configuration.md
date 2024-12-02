@@ -70,38 +70,6 @@ cloudScheduling:
   sshTimeout: 5
 ```
 
-#### masterMounts (optional:False)
-
-`masterMounts` expects a list of volumes and snapshots. Those will be attached to the master. If any snapshots are
-given, volumes are first created from them. Volumes are not deleted after Cluster termination.
-
-```yaml
-masterMounts:
-    - name: test # name of the volume to be attached
-      mountPoint: /vol/spool2 # where attached volume is to be mount to (optional)
-```
-
-`masterMounts` can be combined with [nfsshares](#nfsshares-optional).
-The following example attaches volume test to our master instance and mounts it to `/vol/spool2`.
-Then it creates an nfsshare on `/vol/spool2` allowing workers to access the volume test.
-
-```yaml
-masterMounts:
-  - name: test # name of the volume to be attached
-    mountPoint: /vol/spool2 # where attached volume is to be mount to (optional)
-
-nfsshares:
-  - /vol/spool2
-```
-
-<details>
-<summary>
- What is mounting?
-</summary>
-
-[Mounting](https://man7.org/linux/man-pages/man8/mount.8.html) adds a new filesystem to the file tree allowing access.
-</details>
-
 #### nfsShares (optional)
 
 `nfsShares` expects a list of folder paths to share over the network using nfs. 
@@ -263,10 +231,21 @@ workerInstance:
     features: # optional
       - hasdatabase
       - holdsinformation
-    bootVolume: False
-    bootFromVolume: True
-    terminateBootVolume: True
-    volumeSize: 50
+    volumes: # optional
+      - name: volumeName
+        snapshot: snapshotName # optional; to create volume from
+        # one or none of these
+        # permanent: False
+        # semiPermanent: False
+        # exists: False
+        mountPoint: /vol/test
+        size: 50
+        fstype: ext4
+        type: None
+    bootVolume: # optional
+      name: False
+      terminate: True
+      size: 50
 ```
 
 - `type` sets the instance's hardware configuration.
@@ -275,10 +254,24 @@ workerInstance:
 - `onDemand` (optional:False) defines whether nodes in the worker group are scheduled on demand (True) or are started permanently (False). Please only use if necessary. On Demand Scheduling improves resource availability for all users. This option only works for single cloud setups for now.
 - `partitions` (optional:[]) allow you to force Slurm to schedule to a group of nodes (partitions) ([more](https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION))
 - `features` (optional:[]) allow you to force Slurm to schedule a job only on nodes that meet certain `bool` constraints. This can be helpful when only certain nodes can access a specific resource - like a database ([more](https://slurm.schedmd.com/slurm.conf.html#OPT_Features)).
-- `bootVolume` (optional:None) takes name or id of a boot volume and boots from that volume if given.
-- `bootFromVolume` (optional:False) if True, the instance will boot from a volume created for this purpose.
-- `terminateBootVolume` (optional:True) if True, the boot volume will be terminated when the server is terminated.
-- `volumeSize` (optional:50) if a boot volume is created, this sets its size.
+- `bootVolume` (optional)
+  - `name` (optional:None) takes name or id of a boot volume and boots from that volume if given.
+  - `terminate` (optional:True) if True, the boot volume will be terminated when the server is terminated.
+  - `size` (optional:50) if a boot volume is created, this sets its size.
+
+##### volumes (optional)
+
+You can create a temporary volume (default), a semipermanent volume, a permanent volume and you can do all of those from a snapshot, too.
+You can even attach a volume that already exists. However, don't try to add a single existing volume to a group with count >1 as most volumes can't be attached to more than one instance.
+
+- **Semi-permanent** volumes are deleted once their cluster is destroyed not when their server is powered down during the cluster's runtime. By setting `semiPermanent: True`, you create a semi-permanent volume.
+- **Permanent** volumes are deleted once you delete them manually. By setting `permanent: True`, you create a permanent volume.
+- **Temporary** volumes are deleted once their server is destroyed. By setting `permanent: False` and `semiPermanent: False` (their default value), you create a temporary volume.
+- **Existing** volumes can be attached by setting the exact name of that volume as `name` and setting `exists: True`. If you use this to attach the volume to a worker, make sure that the worker group's count is 1. Otherwise, BiBiGrid will try to attach that volume to each instance.
+- You can create volumes from **snapshots** by setting `snapshot` to your snapshot's name. You can create all kinds of volumes of them.
+- `type` allows you to set the storage option. For Bielefeld there are `CEPH_HDD` (HDD) and `CEPH_NVME` (SSD). 
+
+Termination of these volumes is done by regex looking for the cluster id. For cluster termination: `^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-(\d+))-(semiperm|tmp)-\d+(-.+)?$`
 
 ##### Find your active `images`
 
@@ -305,7 +298,6 @@ There's also a [Fallback Option](#fallbackonotherimage-optionalfalse).
 openstack flavor list --os-cloud=openstack
 ```
 
-
 #### masterInstance or vpnInstance?
 
 ##### masterInstance
@@ -319,7 +311,7 @@ Only in the first configuration and only one:
     bootVolume: False
     bootFromVolume: True
     terminateBootVolume: False
-    volumeSize: 50
+    bootVolumeSize: 50
 ```
 
 You can create features for the master [in the same way](#features-optional) as for the workers:
@@ -377,14 +369,18 @@ If both [worker group](#workerinstances) or [master features](#masterInstance) a
 they are merged. If you only have a single cloud and therefore a single configuration, this key is not helpful as a feature
 that is present at all nodes can be omitted as it can't influence the scheduling.
 
-#### bootFromVolume (optional:False)
-If True, the instance will boot from a volume created for this purpose. Keep in mind that on demand scheduling can lead
-to multiple boots of the same configurated node. If you don't make use of [terminateBootVolume](#terminatebootvolume-optionaltrue)
-this will lead to many created volumes.
+#### bootVolume (optional)
 
-#### volumeSize (optional:50)
-The created volume's size if you use [bootFromVolume](#bootfromvolume-optionalfalse).
+Instead of setting the `bootVolume` for every instance you can also set it cloud wide:
 
-#### terminateBootVolume (optional:True)
-If True, once the instance is shut down, boot volume is destroyed. This does not affect other attached volumes. 
-Only the boot volume is affected.
+- `bootVolume` (optional)
+  - `name` (optional:None) takes name or id of a boot volume and boots from that volume if given.
+  - `terminate` (optional:True) if True, the boot volume will be terminated when the server is terminated.
+  - `size` (optional:50) if a boot volume is created, this sets its size.
+
+```yaml
+bootVolume:
+      name: False
+      terminate: True
+      size: 50
+```
