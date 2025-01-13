@@ -305,9 +305,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.info("Creating volumes ...")
         return_volumes = []
 
+        group_instance = {"volumes": []}
+        instance["group_instances"] = {name: group_instance}
         for i, volume in enumerate(instance.get("volumes", [])):
-            group_instance = {"volumes": []}
-            instance["group_instances"] = {name: group_instance}
             if not volume.get("exists"):
                 if volume.get("permanent"):
                     infix = "perm"
