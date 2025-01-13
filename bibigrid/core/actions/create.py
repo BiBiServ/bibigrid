@@ -214,6 +214,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         volumes = self.create_server_volumes(provider=provider, instance=instance, name=name)
 
         # create a server and block until it is up and running
+        self.log.debug("Creating server...")
         boot_volume = instance.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
