@@ -214,6 +214,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         volumes = self.create_server_volumes(provider=provider, instance=instance, name=name)
 
         # create a server and block until it is up and running
+        self.log.debug("Creating server...")
         boot_volume = instance.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=configuration["security_groups"], wait=True,
@@ -305,9 +306,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.info("Creating volumes ...")
         return_volumes = []
 
+        group_instance = {"volumes": []}
+        instance["group_instances"] = {name: group_instance}
         for i, volume in enumerate(instance.get("volumes", [])):
-            group_instance = {"volumes": []}
-            instance["group_instances"] = {name: group_instance}
             if not volume.get("exists"):
                 if volume.get("permanent"):
                     infix = "perm"
