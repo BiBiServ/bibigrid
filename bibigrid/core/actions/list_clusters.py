@@ -6,7 +6,7 @@ This includes a method to create a dictionary containing all running clusters an
 import pprint
 import re
 
-from bibigrid.core.actions import create
+from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER
 
 SERVER_REGEX = re.compile(r"^bibigrid-((master)-([a-zA-Z0-9]+)|(worker|vpngtw)-([a-zA-Z0-9]+)-\d+)$")
 
@@ -148,7 +148,7 @@ def get_master_access_ip(cluster_id, master_provider, log):
     """
     # TODO: maybe move the method from list_clusters as it is now independent of list_clusters
     log.info("Finding master ip for cluster %s...", cluster_id)
-    master = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
+    master = MASTER_IDENTIFIER(cluster_id=cluster_id)
     server = master_provider.get_server(master)
     if server:
         return server.get("public_v4") or server.get("public_v6") or server.get("private_v4")
