@@ -154,7 +154,8 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
             try:
                 tmp_success = provider.delete_security_group(security_group_name)
             except ConflictException:
-                tmp_success = Falseall
+                log.info(f"ConflictException on deletion attempt on {provider.cloud_specification['identifier']}.")
+                tmp_success = False
             if tmp_success:
                 break
             if attempts < timeout:

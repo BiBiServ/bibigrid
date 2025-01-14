@@ -431,7 +431,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
         self.log.info("Uploading Data")
         ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
-                    "commands": commands, "filepaths": UPLOAD_FILEPATHS, "gateway": self.configurations[0].get("gateway", {}),
+                    "commands": commands, "filepaths": UPLOAD_FILEPATHS,
+                    "gateway": self.configurations[0].get("gateway", {}),
                     "timeout": self.ssh_timeout}
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 
