@@ -154,7 +154,7 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
             try:
                 tmp_success = provider.delete_security_group(security_group_name)
             except ConflictException:
-                tmp_success = False
+                tmp_success = Falseall
             if tmp_success:
                 break
             if attempts < timeout:
@@ -228,7 +228,7 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
     cluster_server_terminated = all(cluster_server_state)
     cluster_keypair_deleted = all(cluster_keypair_state)
     cluster_security_group_deleted = all(cluster_security_group_state)
-    cluster_volume_deleted = all([all(instance_volume_states) for instance_volume_states in cluster_volume_state])
+    cluster_volume_deleted = all(all(instance_volume_states) for instance_volume_states in cluster_volume_state)
     if cluster_existed:
         if cluster_server_terminated:
             log.info("Terminated all servers of cluster %s.", cluster_id)
