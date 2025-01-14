@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import threading
 import traceback
+import os
 
 import paramiko
 import sympy
@@ -19,7 +20,10 @@ from bibigrid.core.utility.handler import ssh_handler
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
 from bibigrid.models.exceptions import ExecutionException, ConfigurationException
-from bibigrid.core.utility.statics.create_statics import *
+from bibigrid.core.utility.paths import ansible_resources_path as a_rp
+from bibigrid.core.utility.statics.create_statics import AC_NAME, KEY_NAME, DEFAULT_SECURITY_GROUP_NAME, \
+    WIREGUARD_SECURITY_GROUP_NAME, KEY_FOLDER, CLUSTER_MEMORY_PATH, MASTER_IDENTIFIER, WORKER_IDENTIFIER, \
+    VPNGTW_IDENTIFIER, UPLOAD_FILEPATHS
 
 
 class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
@@ -427,7 +431,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
         self.log.info("Uploading Data")
         ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
-                    "commands": commands, "filepaths": FILEPATHS, "gateway": self.configurations[0].get("gateway", {}),
+                    "commands": commands, "filepaths": UPLOAD_FILEPATHS, "gateway": self.configurations[0].get("gateway", {}),
                     "timeout": self.ssh_timeout}
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 

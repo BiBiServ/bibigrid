@@ -26,7 +26,7 @@ def get_identifier(identifier, cluster_id, additional=""):
 PREFIX = "bibigrid"
 SEPARATOR = "-"
 PREFIX_WITH_SEP = PREFIX + SEPARATOR
-FILEPATHS = [(a_rp.PLAYBOOK_PATH, a_rp.PLAYBOOK_PATH_REMOTE), (bin_path.BIN_PATH, bin_path.BIN_PATH_REMOTE)]
+UPLOAD_FILEPATHS = [(a_rp.PLAYBOOK_PATH, a_rp.PLAYBOOK_PATH_REMOTE), (bin_path.BIN_PATH, bin_path.BIN_PATH_REMOTE)]
 MASTER_IDENTIFIER = partial(get_identifier, identifier="master", additional="")
 WORKER_IDENTIFIER = partial(get_identifier, identifier="worker")
 VPNGTW_IDENTIFIER = partial(get_identifier, identifier="vpngtw")

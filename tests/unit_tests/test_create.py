@@ -160,7 +160,7 @@ class TestCreate(TestCase):
                                                   cluster_id=creator.cluster_id, log=startup.LOG)
         ssh_data = {'floating_ip': creator.master_ip, 'private_key': create.KEY_FOLDER + creator.key_name,
                     'username': creator.ssh_user, 'commands': [mock_ac_ssh()] + ssh_handler.ANSIBLE_START,
-                    'filepaths': create.FILEPATHS, 'gateway': {}, 'timeout': 5}
+                    'filepaths': create.UPLOAD_FILEPATHS, 'gateway': {}, 'timeout': 5}
         mock_execute_ssh.assert_called_with(ssh_data=ssh_data, log=startup.LOG)
 
     @patch.object(create.Create, "generate_keypair")
