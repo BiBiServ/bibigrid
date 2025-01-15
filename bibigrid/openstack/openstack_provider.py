@@ -13,7 +13,7 @@ from keystoneauth1.exceptions.http import NotFound
 from keystoneauth1.identity import v3
 
 from bibigrid.core import provider
-from bibigrid.core.actions import create
+from bibigrid.core.utility.statics.create_statics import PREFIX_WITH_SEP
 from bibigrid.core.actions import version
 from bibigrid.models.exceptions import ExecutionException, ConflictException, ImageDeactivatedException
 
@@ -213,7 +213,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
             if snapshot["status"] == "available":
                 LOG.debug("Snapshot %s is available.", {snapshot_name_or_id})
                 size = snapshot["size"]
-                name = volume_name_or_id or (create.PREFIX_WITH_SEP + snapshot["name"])
+                name = volume_name_or_id or (PREFIX_WITH_SEP + snapshot["name"])
                 description = description or f"Created from snapshot {snapshot_name_or_id} by BiBiGrid"
                 volume = self.cinder.volumes.create(size=size, snapshot_id=snapshot["id"], name=name,
                                                     description=description)

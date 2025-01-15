@@ -2,12 +2,11 @@
 The cluster creation (master's creation, key creation, ansible setup and execution, ...) is done here
 """
 
-import os
 import shutil
 import subprocess
 import threading
 import traceback
-from functools import partial
+import os
 
 import paramiko
 import sympy
@@ -18,46 +17,13 @@ from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import image_selection
 from bibigrid.core.utility.handler import ssh_handler
-from bibigrid.core.utility.paths import ansible_resources_path as a_rp
-from bibigrid.core.utility.paths import bin_path
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
 from bibigrid.models.exceptions import ExecutionException, ConfigurationException
-
-PREFIX = "bibigrid"
-SEPARATOR = "-"
-PREFIX_WITH_SEP = PREFIX + SEPARATOR
-FILEPATHS = [(a_rp.PLAYBOOK_PATH, a_rp.PLAYBOOK_PATH_REMOTE), (bin_path.BIN_PATH, bin_path.BIN_PATH_REMOTE)]
-
-
-def get_identifier(identifier, cluster_id, additional=""):
-    """
-    This method does more advanced string formatting to generate master, vpngtw and worker names
-    @param identifier: master|vpngtw|worker
-    @param cluster_id: id of cluster
-    @param additional: an additional string to be added at the end
-    @return: the generated string
-    """
-    general = PREFIX_WITH_SEP + identifier + SEPARATOR + cluster_id
-    if additional or additional == 0:
-        return general + SEPARATOR + str(additional)
-    return general
-
-
-MASTER_IDENTIFIER = partial(get_identifier, identifier="master", additional="")
-WORKER_IDENTIFIER = partial(get_identifier, identifier="worker")
-VPN_WORKER_IDENTIFIER = partial(get_identifier, identifier="vpngtw")
-
-KEY_PREFIX = "tempKey_bibi"
-CONFIG_FOLDER = os.path.expanduser("~/.config/bibigrid/")
-KEY_FOLDER = os.path.join(CONFIG_FOLDER, "keys/")
-AC_NAME = "ac" + SEPARATOR + "{cluster_id}"
-KEY_NAME = KEY_PREFIX + SEPARATOR + "{cluster_id}"
-CLUSTER_MEMORY_FOLDER = KEY_FOLDER
-CLUSTER_MEMORY_FILE = ".bibigrid.mem"
-CLUSTER_MEMORY_PATH = os.path.join(CONFIG_FOLDER, CLUSTER_MEMORY_FILE)
-DEFAULT_SECURITY_GROUP_NAME = "default" + SEPARATOR + "{cluster_id}"
-WIREGUARD_SECURITY_GROUP_NAME = "wireguard" + SEPARATOR + "{cluster_id}"
+from bibigrid.core.utility.paths import ansible_resources_path as a_rp
+from bibigrid.core.utility.statics.create_statics import AC_NAME, KEY_NAME, DEFAULT_SECURITY_GROUP_NAME, \
+    WIREGUARD_SECURITY_GROUP_NAME, KEY_FOLDER, CLUSTER_MEMORY_PATH, MASTER_IDENTIFIER, WORKER_IDENTIFIER, \
+    VPNGTW_IDENTIFIER, UPLOAD_FILEPATHS
 
 
 class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
@@ -238,7 +204,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             raise ConfigurationException(f"MAC address for ip {configuration['private_v4']} not found.")
 
         # pylint: disable=comparison-with-callable
-        if identifier == VPN_WORKER_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
+        if identifier == VPNGTW_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
             configuration["floating_ip"] = \
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
             if identifier == MASTER_IDENTIFIER:
@@ -303,12 +269,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @param name: sever name
         @return:
         """
-        self.log.info("Creating volumes ...")
+        self.log.info(f"Creating volumes for {name}...")
         return_volumes = []
-
         group_instance = {"volumes": []}
         instance["group_instances"] = {name: group_instance}
+
         for i, volume in enumerate(instance.get("volumes", [])):
+            self.log.debug(f"Volume {i}: {volume}")
             if not volume.get("exists"):
                 if volume.get("permanent"):
                     infix = "perm"
@@ -332,10 +299,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     if not return_volume:
                         raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
                 else:
-                    self.log.debug("Creating volume...")
                     return_volume = provider.create_volume(name=volume_name, size=volume.get("size", 50),
                                                            volume_type=volume.get("type"),
                                                            description=f"Created for {name}")
+                    self.log.info(f"Volumes {i} created for {name}...")
             return_volumes.append(return_volume)
         return return_volumes
 
@@ -382,7 +349,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             identifier = MASTER_IDENTIFIER
         elif configuration.get("vpnInstance"):
             instance_type = configuration["vpnInstance"]
-            identifier = VPN_WORKER_IDENTIFIER
+            identifier = VPNGTW_IDENTIFIER
         else:
             self.log.warning(
                 f"Configuration {configuration['cloud_identifier']} "
@@ -464,7 +431,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
         self.log.info("Uploading Data")
         ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
-                    "commands": commands, "filepaths": FILEPATHS, "gateway": self.configurations[0].get("gateway", {}),
+                    "commands": commands, "filepaths": UPLOAD_FILEPATHS,
+                    "gateway": self.configurations[0].get("gateway", {}),
                     "timeout": self.ssh_timeout}
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 

@@ -5,7 +5,7 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 from bibigrid.core import startup
-from bibigrid.core.actions import create
+from bibigrid.core.utility.statics.create_statics import WORKER_IDENTIFIER, VPNGTW_IDENTIFIER, MASTER_IDENTIFIER
 from bibigrid.core.actions import list_clusters
 
 
@@ -15,7 +15,7 @@ class TestList(TestCase):
     """
 
     def test_setup(self):
-        for identifier in [create.WORKER_IDENTIFIER, create.VPN_WORKER_IDENTIFIER, create.MASTER_IDENTIFIER]:
+        for identifier in [WORKER_IDENTIFIER, VPNGTW_IDENTIFIER, MASTER_IDENTIFIER]:
             cluster_id = "42"
             provider = Mock()
             provider.name = "name"
@@ -29,7 +29,7 @@ class TestList(TestCase):
             self.assertEqual("21", server["cloud_specification"])
 
     def test_setup_already(self):
-        for identifier in [create.WORKER_IDENTIFIER, create.VPN_WORKER_IDENTIFIER, create.MASTER_IDENTIFIER]:
+        for identifier in [WORKER_IDENTIFIER, VPNGTW_IDENTIFIER, MASTER_IDENTIFIER]:
             cluster_id = "42"
             provider = Mock()
             provider.name = "name"
@@ -52,6 +52,6 @@ class TestList(TestCase):
         provider.NAME = "Mock"
         provider.cloud_specification = {"identifier": "21"}
         provider.list_servers.return_value = [{'name': identifier(cluster_id=cluster_id) + "-0"} for identifier in
-                                              [create.WORKER_IDENTIFIER, create.VPN_WORKER_IDENTIFIER]] + [
-                                                 {'name': create.MASTER_IDENTIFIER(cluster_id=cluster_id)}]
+                                              [WORKER_IDENTIFIER, VPNGTW_IDENTIFIER]] + [
+                                                 {'name': MASTER_IDENTIFIER(cluster_id=cluster_id)}]
         self.assertEqual(expected, list_clusters.dict_clusters([provider], startup.LOG))
