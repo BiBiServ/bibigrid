@@ -18,7 +18,7 @@ from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import provider_handler
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ReadyResponseModel
+    InfoResponseModel, LogResponseModel, ReadyResponseModel, ConfigurationsModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -130,7 +130,7 @@ async def validate_configuration(cluster_id: str = None, config_file: UploadFile
 
 
 @app.post("/bibigrid/create", response_model=CreateResponseModel)
-async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(...)):
+async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: str = None):
     """
     Expects an optional cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
@@ -150,11 +150,10 @@ async def create_cluster(cluster_id: str = None, config_file: UploadFile = File(
         creator.create()
 
     try:
-        content = await config_file.read()
-        configurations = yaml.safe_load(content.decode())
+        configurations = configurations_json.model_dump()
         providers = provider_handler.get_providers(configurations, log)
         creator = create.Create(providers=providers, configurations=configurations, log=log,
-                                config_path=config_file.filename, cluster_id=cluster_id)
+                                config_path=None, cluster_id=cluster_id)
         cluster_id = creator.cluster_id
         asyncio.create_task(create_async())
         return JSONResponse(content={"message": "Cluster creation started.", "cluster_id": cluster_id}, status_code=202)
@@ -272,7 +271,7 @@ async def ready(cluster_id: str):
 
 
 # outdated tests
-client = TestClient(app)
+# client = TestClient(app)
 
 
 def test_validate():
@@ -313,12 +312,6 @@ def test_get_nonexistent_configuration_info():
     response = client.get("/bibigrid/info/999")
     assert response.status_code == 404
     assert response.json() == {"error": "Configuration not found"}
-
-
-# test_validate()
-# test_create()  # test_info()
-# test_terminate_cluster()
-# test_get_nonexistent_configuration_info()
 
 
 if __name__ == "__main__":

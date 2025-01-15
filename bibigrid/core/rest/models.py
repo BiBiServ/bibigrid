@@ -1,15 +1,25 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic import BaseModel, Field
 
 
 # pylint: disable=too-few-public-methods
 
+class Role(BaseModel):
+    name: str
+    tags: Optional[List[str]]
+
+class UserRole(BaseModel):
+    hosts: List[str]
+    roles: List[Role]
+    varsFiles: Optional[List[str]]
+
+class CloudScheduling(BaseModel):
+    sshTimeout: Optional[int]
 
 class BootVolume(BaseModel):
     name: Optional[str]
     terminate: Optional[bool]
     size: Optional[int]
-
 
 class Volume(BaseModel):
     name: Optional[str]
@@ -22,30 +32,20 @@ class Volume(BaseModel):
     fstype: Optional[str]
     type: Optional[str]
 
-
 class Instance(BaseModel):
     type: str
     image: str
-    count: Optional[int]
     onDemand: Optional[bool]
     partitions: Optional[List[str]]
     features: Optional[List[str]]
     bootVolume: Optional[BootVolume]
     volumes: Optional[List[Volume]]
 
-
-class UserRole(BaseModel):
-    hosts: List[str]
-    roles: List[dict]  # Replace 'dict' with more specific type if possible
-    varsFiles: Optional[List[str]]
-
-
 class ElasticScheduling(BaseModel):
     SuspendTime: Optional[int]
     SuspendTimeout: Optional[int]
     ResumeTimeout: Optional[int]
     TreeWidth: Optional[int]
-
 
 class SlurmConf(BaseModel):
     db: Optional[str]
@@ -54,13 +54,11 @@ class SlurmConf(BaseModel):
     munge_key: Optional[str]
     elastic_scheduling: Optional[ElasticScheduling]
 
-
 class Gateway(BaseModel):
     ip: str
     portFunction: str
 
-
-class ConfigModel(BaseModel):
+class MasterConfig(BaseModel):
     infrastructure: str
     cloud: str
     sshUser: str
@@ -69,7 +67,7 @@ class ConfigModel(BaseModel):
     cloud_identifier: str
     sshPublicKeyFiles: Optional[List[str]]
     sshTimeout: Optional[int]
-    cloudScheduling: Optional[dict]  # Modify if you have a more definite structure
+    cloudScheduling: Optional[CloudScheduling]
     autoMount: Optional[bool]
     nfsShares: Optional[List[str]]
     userRoles: Optional[List[UserRole]]
@@ -90,12 +88,24 @@ class ConfigModel(BaseModel):
     features: Optional[List[str]]
     workerInstances: List[Instance]
     masterInstance: Instance
-    vpngtw: Optional[Instance]
     bootVolume: Optional[BootVolume]
 
-
-class OtherConfigModel(ConfigModel):
+class OtherConfig(BaseModel):
+    infrastructure: str
+    cloud: str
+    sshUser: str
+    subnet: Optional[str] = Field(default=None)
+    network: Optional[str] = Field(default=None)
+    cloud_identifier: str
+    waitForServices: Optional[List[str]]
+    features: Optional[List[str]]
+    workerInstances: List[Instance]
     vpnInstance: Instance
+    bootVolume: Optional[BootVolume]
+
+class ConfigurationsModel(BaseModel):
+    configurations: List[Union[MasterConfig, OtherConfig]]
+
 
 
 class ValidationResponseModel(BaseModel):

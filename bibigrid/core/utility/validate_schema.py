@@ -23,6 +23,7 @@ WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'
               Optional('fstype'): str,
               Optional('type'): str}]
           }
+
 MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional('partitions'): [str],
                 Optional('features'): [str],
                 Optional('bootVolume'): {
@@ -49,7 +50,8 @@ master_schema = Schema(
      Optional('sshPublicKeyFiles'): [str], Optional('sshTimeout'): int,
      Optional('cloudScheduling'): {Optional('sshTimeout'): int}, Optional('autoMount'): bool,
      Optional('nfsShares'): [str],
-     Optional('userRoles'): [{'hosts': [str], 'roles': [{'name': str, Optional('tags'): [str]}], Optional('varsFiles'): [str]}],
+     Optional('userRoles'): [
+         {'hosts': [str], 'roles': [{'name': str, Optional('tags'): [str]}], Optional('varsFiles'): [str]}],
      Optional('localFS'): bool, Optional('localDNSlookup'): bool, Optional('slurm'): bool,
      Optional('slurmConf'): {Optional('db'): str, Optional('db_user'): str, Optional('db_password'): str,
                              Optional('munge_key'): str, Optional('elastic_scheduling'): {Optional('SuspendTime'): int,
@@ -65,7 +67,6 @@ master_schema = Schema(
      Optional('localDNSLookup'): bool, Optional('features'): [str], 'workerInstances': [
         WORKER],
      'masterInstance': MASTER,
-     Optional('vpngtw'): {'type': str, 'image': str},
      Optional('bootVolume'): {
          Optional('name'): str,
          Optional('terminate'): bool,
