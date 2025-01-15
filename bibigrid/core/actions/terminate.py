@@ -7,7 +7,8 @@ import os
 import re
 import time
 
-from bibigrid.core.actions import create
+from bibigrid.core.utility.statics.create_statics import DEFAULT_SECURITY_GROUP_NAME, WIREGUARD_SECURITY_GROUP_NAME, \
+    KEY_NAME, KEY_FOLDER, AC_NAME
 from bibigrid.models.exceptions import ConflictException
 
 
@@ -26,14 +27,14 @@ def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
         if not input(f"DEBUG MODE: Any non-empty input to shutdown cluster {cluster_id}. "
                      "Empty input to exit with cluster still alive:"):
             return 0
-    security_groups = [create.DEFAULT_SECURITY_GROUP_NAME]
+    security_groups = [DEFAULT_SECURITY_GROUP_NAME]
     if len(providers) > 1:
-        security_groups.append(create.WIREGUARD_SECURITY_GROUP_NAME)
+        security_groups.append(WIREGUARD_SECURITY_GROUP_NAME)
     cluster_server_state = []
     cluster_keypair_state = []
     cluster_security_group_state = []
     cluster_volume_state = []
-    tmp_keyname = create.KEY_NAME.format(cluster_id=cluster_id)
+    tmp_keyname = KEY_NAME.format(cluster_id=cluster_id)
     local_keypairs_deleted = delete_local_keypairs(tmp_keyname, log)
     if assume_yes or local_keypairs_deleted or input(
             f"WARNING: No local temporary keyfiles found for cluster {cluster_id}. "
@@ -117,7 +118,7 @@ def delete_local_keypairs(tmp_keyname, log):
     """
     success = False
     log.info("Deleting Keypair locally...")
-    tmp_keypath = os.path.join(create.KEY_FOLDER, tmp_keyname)
+    tmp_keypath = os.path.join(KEY_FOLDER, tmp_keyname)
     pub_tmp_keypath = tmp_keypath + ".pub"
     if os.path.isfile(tmp_keypath):
         os.remove(tmp_keypath)
@@ -148,14 +149,14 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
     for security_group_format in security_groups:
         security_group_name = security_group_format.format(cluster_id=cluster_id)
         attempts = 0
-        tmp_success = False
+        tmp_success = not provider.get_security_group(security_group_name)
         while not tmp_success:
             try:
-                not_found = not provider.get_security_group(security_group_name)
                 tmp_success = provider.delete_security_group(security_group_name)
             except ConflictException:
+                log.info(f"ConflictException on deletion attempt on {provider.cloud_specification['identifier']}.")
                 tmp_success = False
-            if tmp_success or not_found:
+            if tmp_success:
                 break
             if attempts < timeout:
                 attempts += 1
@@ -166,7 +167,7 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
                 log.error(f"Attempt to delete security group {security_group_name} on "
                           f"{provider.cloud_specification['identifier']} failed.")
                 break
-        log.info(f"Delete security_group {security_group_name} -> {tmp_success or not_found} on "
+        log.info(f"Delete security_group {security_group_name} -> {tmp_success} on "
                  f"{provider.cloud_specification['identifier']}.")
         success = success and tmp_success
     return success
@@ -183,7 +184,7 @@ def delete_application_credentials(master_provider, cluster_id, log):
     # implement deletion
     auth = master_provider.cloud_specification["auth"]
     if not auth.get("application_credential_id") or not auth.get("application_credential_secret"):
-        return master_provider.delete_application_credential_by_id_or_name(create.AC_NAME.format(cluster_id=cluster_id))
+        return master_provider.delete_application_credential_by_id_or_name(AC_NAME.format(cluster_id=cluster_id))
     log.info("Because you used application credentials to authenticate, "
              "no created application credentials need deletion.")
     return True
@@ -197,7 +198,7 @@ def delete_non_permanent_volumes(provider, cluster_id, log):
     @param log:
     @return: a list of the servers' (that were to be terminated) termination states
     """
-    log.info("Deleting tmp volumes on provider %s...", provider.cloud_specification['identifier'])
+    log.info("Deleting non permanent volumes on provider %s...", provider.cloud_specification['identifier'])
     volume_list = provider.list_volumes()
     cluster_volume_state = []
     volume_regex = re.compile(
@@ -228,7 +229,7 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
     cluster_server_terminated = all(cluster_server_state)
     cluster_keypair_deleted = all(cluster_keypair_state)
     cluster_security_group_deleted = all(cluster_security_group_state)
-    cluster_volume_deleted = all(cluster_volume_state)
+    cluster_volume_deleted = all(all(instance_volume_states) for instance_volume_states in cluster_volume_state)
     if cluster_existed:
         if cluster_server_terminated:
             log.info("Terminated all servers of cluster %s.", cluster_id)
@@ -254,7 +255,7 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
                         "\nAll servers terminated: %s"
                         "\nAll keys deleted: %s"
                         "\nAll security groups deleted: %s"
-                        "\nAll security groups deleted: %s", cluster_id, cluster_server_terminated,
+                        "\nAll volumes deleted: %s", cluster_id, cluster_server_terminated,
                         cluster_keypair_deleted, cluster_security_group_deleted, cluster_volume_deleted)
         if ac_state:
             log.info("Successfully handled application credential of cluster %s.", cluster_id)

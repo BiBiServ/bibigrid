@@ -13,11 +13,12 @@ from fastapi import FastAPI, File, UploadFile, status, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
-from pydantic import BaseModel
 
 from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import provider_handler
+from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
+    InfoResponseModel, LogResponseModel, ReadyResponseModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -41,63 +42,6 @@ file_handler.setFormatter(LOG_FORMATTER)
 LOG.addHandler(file_handler)
 logging.addLevelName(42, "PRINT")
 LOG.setLevel(logging.DEBUG)
-
-
-# pylint: disable=too-few-public-methods
-class ValidationResponseModel(BaseModel):
-    """
-    ResponseModel for validate
-    """
-    message: str
-    cluster_id: str
-    success: bool
-
-
-# pylint: disable=too-few-public-methods
-class CreateResponseModel(BaseModel):
-    """
-    ResponseModel for create
-    """
-    message: str
-    cluster_id: str
-
-
-# pylint: disable=too-few-public-methods
-class TerminateResponseModel(BaseModel):
-    """
-    ResponseModel for terminate
-    """
-    message: str
-
-
-# pylint: disable=too-few-public-methods
-class InfoResponseModel(BaseModel):
-    """
-    ResponseModel for info
-    """
-    workers: list
-    vpngtws: list
-    master: dict
-    message: str
-    ready: bool
-
-
-# pylint: disable=too-few-public-methods
-class LogResponseModel(BaseModel):
-    """
-    ResponseModel for get_log
-    """
-    message: str
-    log: str
-
-
-# pylint: disable=too-few-public-methods
-class ReadyResponseModel(BaseModel):
-    """
-    ResponseModel for ready
-    """
-    message: str
-    ready: bool
 
 
 def tail(file_path, lines):
