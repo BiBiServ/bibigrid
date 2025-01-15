@@ -48,7 +48,7 @@ MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional(
 master_schema = Schema(
     {'infrastructure': str, 'cloud': str, 'sshUser': str, Or('subnet', 'network'): str, 'cloud_identifier': str,
      Optional('sshPublicKeyFiles'): [str], Optional('sshTimeout'): int,
-     Optional('cloudScheduling'): {Optional('sshTimeout'): int}, Optional('autoMount'): bool,
+     Optional('cloudScheduling'): {Optional('sshTimeout'): int},
      Optional('nfsShares'): [str],
      Optional('userRoles'): [
          {'hosts': [str], 'roles': [{'name': str, Optional('tags'): [str]}], Optional('varsFiles'): [str]}],
