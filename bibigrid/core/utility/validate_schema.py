@@ -49,7 +49,7 @@ master_schema = Schema(
      Optional('sshPublicKeyFiles'): [str], Optional('sshTimeout'): int,
      Optional('cloudScheduling'): {Optional('sshTimeout'): int}, Optional('autoMount'): bool,
      Optional('nfsShares'): [str],
-     Optional('userRoles'): [{'hosts': [str], 'roles': [{'name': str, Optional('tags'): [str]}]}],
+     Optional('userRoles'): [{'hosts': [str], 'roles': [{'name': str, Optional('tags'): [str]}], Optional('varsFiles'): [str]}],
      Optional('localFS'): bool, Optional('localDNSlookup'): bool, Optional('slurm'): bool,
      Optional('slurmConf'): {Optional('db'): str, Optional('db_user'): str, Optional('db_password'): str,
                              Optional('munge_key'): str, Optional('elastic_scheduling'): {Optional('SuspendTime'): int,
