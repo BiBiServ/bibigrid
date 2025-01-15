@@ -484,7 +484,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             start_server_threads.append(start_server_thread)
             for worker in configuration.get("workerInstances", []):
                 if not worker.get("onDemand", True):
-                    for _ in range(int(worker["count"])):
+                    for _ in range(int(worker.get("count", 1))):
                         start_server_thread = return_threading.ReturnThread(target=self.start_worker,
                                                                             args=[worker, worker_count, configuration,
                                                                                   provider])
@@ -492,7 +492,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         start_server_threads.append(start_server_thread)
                         worker_count += 1
                 else:
-                    worker_count += worker["count"]
+                    worker_count += worker.get("count", 1)
         for start_server_thread in start_server_threads:
             start_server_thread.join()
 

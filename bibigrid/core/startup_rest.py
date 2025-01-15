@@ -150,7 +150,7 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
         creator.create()
 
     try:
-        configurations = configurations_json.model_dump()
+        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         providers = provider_handler.get_providers(configurations, log)
         creator = create.Create(providers=providers, configurations=configurations, log=log,
                                 config_path=None, cluster_id=cluster_id)
