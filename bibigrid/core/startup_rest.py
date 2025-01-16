@@ -8,17 +8,17 @@ import os
 import subprocess
 
 import uvicorn
-import yaml
-from fastapi import FastAPI, File, UploadFile, status, Request
+from fastapi import FastAPI, status, Request, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
+from typing import List
 
 from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import provider_handler
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ReadyResponseModel, ConfigurationsModel
+    InfoResponseModel, LogResponseModel, ReadyResponseModel, ConfigurationsModel, MinimalConfigurationsModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -98,7 +98,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.post("/bibigrid/validate", response_model=ValidationResponseModel)
-async def validate_configuration(cluster_id: str = None, config_file: UploadFile = File(...)):
+async def validate_configuration(configurations_json: ConfigurationsModel, cluster_id: str = None):
     """
     Expects a cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
@@ -114,8 +114,7 @@ async def validate_configuration(cluster_id: str = None, config_file: UploadFile
     cluster_id, log = setup(cluster_id)
     LOG.info(f"Requested validation on {cluster_id}")
     try:
-        content = await config_file.read()
-        configurations = yaml.safe_load(content.decode())
+        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         providers = provider_handler.get_providers(configurations, log)
         exit_state = check.check(configurations, providers, log)
         if exit_state:
@@ -150,7 +149,7 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
         creator.create()
 
     try:
-        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
+        configurations = configurations_json.model_dump(exclude_none=True)
         providers = provider_handler.get_providers(configurations, log)
         creator = create.Create(providers=providers, configurations=configurations, log=log,
                                 config_path=None, cluster_id=cluster_id)
@@ -161,8 +160,8 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.post("/bibigrid/terminate", response_model=TerminateResponseModel)
-async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)):
+@app.post("/bibigrid/terminate/{cluster_id}", response_model=TerminateResponseModel)
+async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigurationsModel):
     """
     Expects a cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
@@ -181,9 +180,7 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
         terminate.terminate(cluster_id, providers, log)
 
     try:
-        # Rewrite: Maybe load a configuration file stored somewhere locally to just define access
-        content = await config_file.read()
-        configurations = yaml.safe_load(content.decode())
+        configurations = configurations_json.model_dump()["configurations"]
         providers = provider_handler.get_providers(configurations, log)
         asyncio.create_task(terminate_async())
 
@@ -192,8 +189,8 @@ async def terminate_cluster(cluster_id: str, config_file: UploadFile = File(...)
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.post("/bibigrid/info/", response_model=InfoResponseModel)
-async def info(cluster_id: str, config_file: UploadFile):
+@app.get("/bibigrid/info/", response_model=InfoResponseModel)
+async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel):
     """
     Expects a cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
@@ -207,9 +204,8 @@ async def info(cluster_id: str, config_file: UploadFile):
     """
     LOG.debug(f"Requested info on {cluster_id}.")
     cluster_id, log = setup(cluster_id)
-    content = await config_file.read()
-    configurations = yaml.safe_load(content.decode())
     try:
+        configurations = configurations_json.model_dump()["configurations"]
         providers = provider_handler.get_providers(configurations, log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id, {})  # add information filtering
         if cluster_dict:

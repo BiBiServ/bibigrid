@@ -104,7 +104,12 @@ class OtherConfig(BaseModel):
 class ConfigurationsModel(BaseModel):
     configurations: List[Union[MasterConfig, OtherConfig]]
 
+class MinimalConfigurationModel(BaseModel):
+    infrastructure: str
+    cloud: str
 
+class MinimalConfigurationsModel(BaseModel):
+    configurations: List[MinimalConfigurationModel]
 
 class ValidationResponseModel(BaseModel):
     """
