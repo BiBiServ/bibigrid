@@ -36,7 +36,7 @@
     group: munge
     mode: "0o600"
   notify:
-    - munge
+    - Munge
 
 - name: Ensures slurm directories exists
   file:

@@ -26,4 +26,4 @@
   with_items:
     - "{{ nfs_shares }}"
   notify:
-    - nfs-server
+    - Nfs-server
