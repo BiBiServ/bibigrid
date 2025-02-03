@@ -18,7 +18,7 @@ from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import provider_handler
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ReadyResponseModel
+    InfoResponseModel, LogResponseModel, ClusterStateResponseModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """

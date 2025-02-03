@@ -1,5 +1,5 @@
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import List, Optional, Literal
+from pydantic import BaseModel, Field, IPvAnyAddress
 
 
 # pylint: disable=too-few-public-methods
@@ -141,9 +141,9 @@ class LogResponseModel(BaseModel):
     log: str
 
 
-class ReadyResponseModel(BaseModel):
-    """
-    ResponseModel for ready
-    """
+class ClusterStateResponseModel(BaseModel):
+    cluster_id: str
+    floating_ip: IPvAnyAddress
     message: str
-    ready: bool
+    ssh_user: str
+    state: Literal[200, 201, 204, 404, 500]

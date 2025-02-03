@@ -20,7 +20,7 @@
 
 - name: Install slurm-bibigrid package
   apt:
-    name: slurm-bibigrid-24.11 # slurm-bibigrid
+    name: slurm-bibigrid-24.11
     state: present
 
 - name: Install Slurm package dependencies

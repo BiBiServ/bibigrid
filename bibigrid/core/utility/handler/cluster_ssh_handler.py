@@ -5,7 +5,8 @@ This module gets information about ssh connection.
 import os
 
 from bibigrid.core.actions import list_clusters
-from bibigrid.core.utility.statics.create_statics import KEY_FOLDER, KEY_NAME
+from bibigrid.core.utility.statics.create_statics import KEY_NAME
+from bibigrid.core.utility.paths.basic_path import KEY_FOLDER
 
 
 def get_ssh_connection_info(cluster_id, master_provider, master_configuration, log):
