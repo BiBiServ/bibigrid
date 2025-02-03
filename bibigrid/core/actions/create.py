@@ -524,7 +524,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.start_start_server_threads()
             self.extended_network_configuration()
             self.initialize_instances()
-            raise FileNotFoundError("WHAT!")
             self.upload_data(os.path.join(KEY_FOLDER, self.key_name))
             self.log_cluster_start_info()
             if self.configurations[0].get("deleteTmpKeypairAfter"):

@@ -32,7 +32,7 @@
 
 - name: Install docker-api via PIP
   pip:
-    name: [ 'docker', 'docker-compose' ] # reevaluate
+    name: ['docker', 'docker-compose'] # reevaluate
 
 - name: (Re-)start docker socket
   systemd:
