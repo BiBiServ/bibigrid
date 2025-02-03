@@ -20,10 +20,11 @@ def write_cluster_state(cluster_id, state):
     with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
         yaml.safe_dump(data=state, stream=cluster_memory_file)
     # all clusters
-    with open(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"), mode="w+",
-              encoding="UTF-8") as cluster_info_file:
+    cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
+    if not cluster_info_path.startswith(CLUSTER_INFO_FOLDER):
+        raise Exception("Invalid cluster_id")
+    with open(cluster_info_path, mode="w+", encoding="UTF-8") as cluster_info_file:
         yaml.safe_dump(data=state, stream=cluster_info_file)
-
 
 def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
     """
