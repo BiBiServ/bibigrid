@@ -1,3 +1,7 @@
+"""
+This module contains models used by the REST api
+"""
+
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field, IPvAnyAddress
 
