@@ -248,7 +248,7 @@ async def get_log(cluster_id: str, lines: int = None):
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/ready/", response_model=ReadyResponseModel)
+@app.get("/bibigrid/ready/", response_model=ClusterStateResponseModel)
 async def ready(cluster_id: str):
     """
     Expects a cluster id.

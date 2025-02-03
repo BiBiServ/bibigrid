@@ -2,7 +2,6 @@
 Containg static variables for create.py to avoid cyclic imports
 """
 
-import os
 from functools import partial
 
 from bibigrid.core.utility.paths import ansible_resources_path as a_rp
