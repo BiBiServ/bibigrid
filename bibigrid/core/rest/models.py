@@ -1,14 +1,24 @@
-from typing import List, Optional, Union
-from pydantic import BaseModel, Field
+"""
+This module contains models used by the REST api
+"""
+
+from typing import List, Optional, Literal, Union
+from pydantic import BaseModel, Field, IPvAnyAddress
 
 
 # pylint: disable=too-few-public-methods
 
 class Role(BaseModel):
+    """
+    Ansible Role
+    """
     name: str
     tags: Optional[List[str]]
 
 class UserRole(BaseModel):
+    """
+        Allows users to add custom ansible roles
+    """
     hosts: List[str]
     roles: List[Role]
     varsFiles: Optional[List[str]] = Field(default=[])
@@ -17,11 +27,17 @@ class CloudScheduling(BaseModel):
     sshTimeout: Optional[int] = 5
 
 class BootVolume(BaseModel):
+    """
+    Holds information about where the server boots from
+    """
     name: Optional[str] = None
     terminate: Optional[bool] = True
     size: Optional[int] = 50
 
 class Volume(BaseModel):
+    """
+        Holds volume/attached storage information
+    """
     name: Optional[str] = None
     snapshot: Optional[str] = None
     permanent: Optional[bool] = False
@@ -31,23 +47,53 @@ class Volume(BaseModel):
     size: Optional[int] = 50
     fstype: Optional[str] = None
     type: Optional[str] = None
+    name: Optional[str]
+    snapshot: Optional[str]
+    permanent: Optional[bool]
+    semiPermanent: Optional[bool]
+    exists: Optional[bool]
+    mountPoint: Optional[str]
+    size: Optional[int]
+    fstype: Optional[str]
+    type: Optional[str]
+
 
 class Instance(BaseModel):
+    """
+        Holds instance/server information
+    """
     type: str
     image: str
+    count: Optional[int]
     onDemand: Optional[bool] = True
     partitions: Optional[List[str]] = Field(default=[])
     features: Optional[List[str]] = Field(default=[])
     bootVolume: Optional[BootVolume] = None
     volumes: Optional[List[Volume]] = Field(default=[])
 
+
+class UserRole(BaseModel):
+    """
+        Allows users to add custom ansible roles
+    """
+    hosts: List[str]
+    roles: List[dict]  # Replace 'dict' with more specific type if possible
+    varsFiles: Optional[List[str]]
+
+
 class ElasticScheduling(BaseModel):
+    """
+        Holds info on Slurms scheduling
+    """
     SuspendTime: Optional[int] = 1800
     SuspendTimeout: Optional[int] = 90
     ResumeTimeout: Optional[int] = 1800
     TreeWidth: Optional[int] = 128
 
 class SlurmConf(BaseModel):
+    """
+    Holds info on basic Slurm settings
+    """
     db: Optional[str] = "slurm"
     db_user: Optional[str] = "slurm"
     db_password: Optional[str] = "changeme"
@@ -55,10 +101,16 @@ class SlurmConf(BaseModel):
     elastic_scheduling: Optional[ElasticScheduling] = None
 
 class Gateway(BaseModel):
+    """
+        Holds info regarding whether a gateway is used to connect to the master
+    """
     ip: str
     portFunction: str
 
 class MasterConfig(BaseModel):
+    """
+        Holds info regarding the configuration
+    """
     infrastructure: str
     cloud: str
     sshUser: str
@@ -89,6 +141,9 @@ class MasterConfig(BaseModel):
     bootVolume: Optional[BootVolume] = None
 
 class OtherConfig(BaseModel):
+    """
+        Holds info about other configurations
+    """
     infrastructure: str
     cloud: str
     sshUser: str
@@ -154,9 +209,12 @@ class LogResponseModel(BaseModel):
     log: str
 
 
-class ReadyResponseModel(BaseModel):
+class ClusterStateResponseModel(BaseModel):
     """
-    ResponseModel for ready
+    Response model for state
     """
+    cluster_id: str
+    floating_ip: IPvAnyAddress
     message: str
-    ready: bool
+    ssh_user: str
+    state: Literal[200, 201, 204, 404, 500]

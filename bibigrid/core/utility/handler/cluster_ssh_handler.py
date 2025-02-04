@@ -4,7 +4,9 @@ This module gets information about ssh connection.
 
 import os
 
-from bibigrid.core.actions import create, list_clusters
+from bibigrid.core.actions import list_clusters
+from bibigrid.core.utility.statics.create_statics import KEY_NAME
+from bibigrid.core.utility.paths.basic_path import KEY_FOLDER
 
 
 def get_ssh_connection_info(cluster_id, master_provider, master_configuration, log):
@@ -34,7 +36,7 @@ def get_ssh_connection_info(cluster_id, master_provider, master_configuration, l
                 used_private_key = private_key
                 break
     if not used_private_key:
-        private_key = os.path.join(create.KEY_FOLDER, create.KEY_NAME.format(cluster_id=cluster_id))
+        private_key = os.path.join(KEY_FOLDER, KEY_NAME.format(cluster_id=cluster_id))
         if os.path.isfile(private_key):
             used_private_key = private_key
     return master_ip, ssh_user, used_private_key

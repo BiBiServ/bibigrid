@@ -4,7 +4,7 @@ Module to test id_generation
 from unittest import TestCase
 from unittest.mock import Mock, MagicMock, patch
 
-from bibigrid.core.actions import create
+from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER
 from bibigrid.core.utility import id_generation
 
 
@@ -35,7 +35,7 @@ class TestIDGeneration(TestCase):
         cluster_id = "42"
         provider = Mock()
         provider.list_servers = MagicMock(
-            return_value=[{"name": create.MASTER_IDENTIFIER(cluster_id=cluster_id)}])
+            return_value=[{"name": MASTER_IDENTIFIER(cluster_id=cluster_id)}])
         self.assertFalse(id_generation.is_unique_cluster_id(str(cluster_id), [provider]))
         provider.list_servers.assert_called()
 
@@ -43,6 +43,6 @@ class TestIDGeneration(TestCase):
         cluster_id = 42
         provider = Mock()
         provider.list_servers = MagicMock(
-            return_value=[{"name": create.MASTER_IDENTIFIER(cluster_id=str(cluster_id + 1))}])
+            return_value=[{"name": MASTER_IDENTIFIER(cluster_id=str(cluster_id + 1))}])
         self.assertTrue(id_generation.is_unique_cluster_id(str(cluster_id), [provider]))
         provider.list_servers.assert_called()

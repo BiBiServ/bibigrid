@@ -3,6 +3,7 @@ Tests for ansible_configurator
 """
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch, call, mock_open, ANY
+import os
 
 import bibigrid.core.utility.paths.ansible_resources_path as aRP
 from bibigrid.core import startup
@@ -99,7 +100,7 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        configuration = [{}]
+        configurations = [{}]
         common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': False, 'enable_nfs': False,
@@ -110,10 +111,12 @@ class TestAnsibleConfigurator(TestCase):
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': True}
-        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
-                                                                                                 cluster_id, ssh_user,
-                                                                                                 default_user,
-                                                                                                 startup.LOG)
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs=cidrs,
+                                                                                                 configurations=configurations,
+                                                                                                 cluster_id=cluster_id,
+                                                                                                 ssh_user=ssh_user,
+                                                                                                 default_user=default_user,
+                                                                                                 log=startup.LOG)
         # munge key is randomly generated
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
@@ -123,7 +126,7 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        configuration = [
+        configurations = [
             {elem: "True" for elem in ["localFS", "localDNSlookup", "useMasterAsCompute", "slurm", "zabbix", "ide"]}]
         common_configuration_yaml = {'bibigrid_version': version.__version__, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': cidrs, 'cluster_id': cluster_id, 'default_user': default_user,
@@ -140,15 +143,17 @@ class TestAnsibleConfigurator(TestCase):
                                      'zabbix_conf': {'admin_password': 'bibigrid', 'db': 'zabbix',
                                                      'db_password': 'zabbix', 'db_user': 'zabbix',
                                                      'server_name': 'bibigrid', 'timezone': 'Europe/Berlin'}}
-        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
-                                                                                                 cluster_id, ssh_user,
-                                                                                                 default_user,
-                                                                                                 startup.LOG)
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs=cidrs,
+                                                                                                 configurations=configurations,
+                                                                                                 cluster_id=cluster_id,
+                                                                                                 ssh_user=ssh_user,
+                                                                                                 default_user=default_user,
+                                                                                                 log=startup.LOG)
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_nfs_shares(self):
-        configuration = [{"nfs": "True", "nfsShares": ["/vil/mil"]}]
+        configurations = [{"nfs": "True", "nfsShares": ["/vil/mil"]}]
         cidrs = "42"
         cluster_id = "21"
         default_user = "ubuntu"
@@ -165,15 +170,17 @@ class TestAnsibleConfigurator(TestCase):
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': True}
-        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
-                                                                                                 cluster_id, ssh_user,
-                                                                                                 default_user,
-                                                                                                 startup.LOG)
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs=cidrs,
+                                                                                                 configurations=configurations,
+                                                                                                 cluster_id=cluster_id,
+                                                                                                 ssh_user=ssh_user,
+                                                                                                 default_user=default_user,
+                                                                                                 log=startup.LOG)
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_nfs(self):
-        configuration = [{"nfs": "True"}]
+        configurations = [{"nfs": "True"}]
         cidrs = "42"
         cluster_id = "21"
         default_user = "ubuntu"
@@ -189,15 +196,17 @@ class TestAnsibleConfigurator(TestCase):
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'TO_BE_FILLED'}, 'ssh_user': ssh_user,
                                      'use_master_as_compute': True}
-        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
-                                                                                                 cluster_id, ssh_user,
-                                                                                                 default_user,
-                                                                                                 startup.LOG)
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs=cidrs,
+                                                                                                 configurations=configurations,
+                                                                                                 cluster_id=cluster_id,
+                                                                                                 ssh_user=ssh_user,
+                                                                                                 default_user=default_user,
+                                                                                                 log=startup.LOG)
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_ext_nfs_shares(self):
-        configuration = [{"nfs": "True", "extNfsShares": ["/vil/mil"]}]
+        configurations = [{"nfs": "True", "extNfsShares": ["/vil/mil"]}]
         cidrs = "42"
         cluster_id = "21"
         default_user = "ubuntu"
@@ -214,15 +223,17 @@ class TestAnsibleConfigurator(TestCase):
                                                                            'SuspendTimeout': 60, 'TreeWidth': 128},
                                                     'munge_key': 'YryJVnqgg24Ksf8zXQtbct3nuXrMSi9N'},
                                      'ssh_user': ssh_user, 'use_master_as_compute': True}
-        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
-                                                                                                 cluster_id, ssh_user,
-                                                                                                 default_user,
-                                                                                                 startup.LOG)
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs=cidrs,
+                                                                                                 configurations=configurations,
+                                                                                                 cluster_id=cluster_id,
+                                                                                                 ssh_user=ssh_user,
+                                                                                                 default_user=default_user,
+                                                                                                 log=startup.LOG)
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
     def test_generate_common_configuration_ide_and_wireguard(self):
-        configuration = [{"ide": "Some1", "ideConf": {"key1": "Some2"}, "wireguard_peer": 21}, {"wireguard_peer": 42}]
+        configurations = [{"ide": "Some1", "ideConf": {"key1": "Some2"}, "wireguard_peer": 21}, {"wireguard_peer": 42}]
         cidrs = "42"
         cluster_id = "21"
         default_user = "ubuntu"
@@ -240,10 +251,12 @@ class TestAnsibleConfigurator(TestCase):
                                                     'munge_key': 'b4pPb7bQTHzTDtGsqo2pYkGdpa87TtPD'},
                                      'ssh_user': 'test', 'use_master_as_compute': True,
                                      'wireguard_common': {'listen_port': 51820, 'mask_bits': 24, 'peers': [21, 42]}}
-        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs, configuration,
-                                                                                                 cluster_id, ssh_user,
-                                                                                                 default_user,
-                                                                                                 startup.LOG)
+        generated_common_configuration = ansible_configurator.generate_common_configuration_yaml(cidrs=cidrs,
+                                                                                                 configurations=configurations,
+                                                                                                 cluster_id=cluster_id,
+                                                                                                 ssh_user=ssh_user,
+                                                                                                 default_user=default_user,
+                                                                                                 log=startup.LOG)
         common_configuration_yaml["slurm_conf"]["munge_key"] = generated_common_configuration["slurm_conf"]["munge_key"]
         self.assertEqual(common_configuration_yaml, generated_common_configuration)
 
@@ -369,15 +382,12 @@ class TestAnsibleConfigurator(TestCase):
                     call(aRP.SITE_CONFIG_FILE, mock_site(), startup.LOG, False)]
         self.assertEqual(expected, mock_yaml.call_args_list)
 
+    @patch("bibigrid.core.utility.paths.ansible_resources_path.HOST_VARS_FOLDER", "mock_path")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
-    @patch("bibigrid.core.utility.ansible_configurator.create.WORKER_IDENTIFIER")
-    def test_write_worker_host_vars(self, mock_worker_identifier, mock_write_yaml):
-        mock_worker_identifier.side_effect = lambda cluster_id, additional: f"worker-{cluster_id}-{additional}"
-
+    def test_write_worker_host_vars(self, mock_write_yaml):
         cluster_id = "foo"
         worker_count = 0
         log = MagicMock()
-
         worker = {
             "count": 2,
             "volumes": [
@@ -392,23 +402,23 @@ class TestAnsibleConfigurator(TestCase):
 
         expected_calls = [
             call(
-                "/home/xaver/Documents/Repos/bibigrid/resources/playbook/host_vars/worker-foo-0.yaml",
+                os.path.join("mock_path", "bibigrid-worker-foo-0.yaml"),
                 {
                     "volumes": [
                         {"name": "volume1", "exists": True},
-                        {"permanent": True, "name": "worker-foo-0-perm-1-volume2"},
-                        {"tmp": True, "name": "worker-foo-0-tmp-2"},
+                        {"permanent": True, "name": "bibigrid-worker-foo-0-perm-1-volume2"},
+                        {"tmp": True, "name": "bibigrid-worker-foo-0-tmp-2"},
                     ]
                 },
                 log,
             ),
             call(
-                "/home/xaver/Documents/Repos/bibigrid/resources/playbook/host_vars/worker-foo-1.yaml",
+                os.path.join("mock_path", "bibigrid-worker-foo-1.yaml"),
                 {
                     "volumes": [
                         {"name": "volume1", "exists": True},
-                        {"permanent": True, "name": "worker-foo-1-perm-1-volume2"},
-                        {"tmp": True, "name": "worker-foo-1-tmp-2"},
+                        {"permanent": True, "name": "bibigrid-worker-foo-1-perm-1-volume2"},
+                        {"tmp": True, "name": "bibigrid-worker-foo-1-tmp-2"},
                     ]
                 },
                 log,
@@ -419,47 +429,14 @@ class TestAnsibleConfigurator(TestCase):
         ansible_configurator.write_worker_host_vars(
             cluster_id=cluster_id,
             worker=worker,
-            worker_dict=worker_dict,
             worker_count=worker_count,
             log=log,
-        )
-
-        # Validate WORKER_IDENTIFIER calls
-        mock_worker_identifier.assert_has_calls(
-            [call(cluster_id="foo", additional=0), call(cluster_id="foo", additional=1)],
-            any_order=False,
         )
 
         # Validate write_yaml calls
         mock_write_yaml.assert_has_calls(expected_calls, any_order=False)
 
-    @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
-    def test_write_worker_host_vars_on_demand_false(self, mock_write_yaml):
-        """
-        This tests that no host_vars is written if on_demand is false.
-        Currently, that would result in an empty host vars that is not needed.
-        @param mock_write_yaml:
-        @return:
-        """
-        cluster_id = "foo"
-        worker_count = 0
-        log = MagicMock()
-
-        worker = {"count": 2, "volumes": [{"name": "volume1", "exists": True}]}
-        worker_dict = {"on_demand": False}
-
-        # Call the function
-        ansible_configurator.write_worker_host_vars(
-            cluster_id=cluster_id,
-            worker=worker,
-            worker_dict=worker_dict,
-            worker_count=worker_count,
-            log=log,
-        )
-
-        # Assert no write_yaml calls were made
-        mock_write_yaml.assert_not_called()
-
+    @patch("bibigrid.core.utility.paths.ansible_resources_path.GROUP_VARS_FOLDER", "mock_path")
     @patch("bibigrid.core.utility.ansible_configurator.write_worker_host_vars")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     def test_write_worker_vars(self, mock_write_yaml, mock_write_worker_host_vars):
@@ -511,20 +488,19 @@ class TestAnsibleConfigurator(TestCase):
         )
         # Assert group_vars were written correctly
         mock_write_yaml.assert_any_call(
-            "/home/xaver/Documents/Repos/bibigrid/resources/playbook/group_vars/bibigrid_worker_foo_0_1.yaml",
+            os.path.join("mock_path", "bibigrid_worker_foo_0_1.yaml"),
             expected_group_vars,
             log
         )
-
         # Ensure write_worker_host_vars was called
         mock_write_worker_host_vars.assert_called_once_with(
             cluster_id=cluster_id,
             worker=worker,
-            worker_dict=expected_group_vars,
             worker_count=worker_count,
             log=log
         )
 
+    @patch("bibigrid.core.utility.paths.ansible_resources_path.HOST_VARS_FOLDER", "mock_path")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     def test_write_vpn_var(self, mock_write_yaml):
         provider = MagicMock()
@@ -574,11 +550,12 @@ class TestAnsibleConfigurator(TestCase):
         )
 
         mock_write_yaml.assert_called_once_with(
-            "/home/xaver/Documents/Repos/bibigrid/resources/playbook/host_vars/bibigrid-vpngtw-foo-0.yaml",
+            os.path.join("mock_path", "bibigrid-vpngtw-foo-0.yaml"),
             expected_host_vars,
             log
         )
 
+    @patch("bibigrid.core.utility.paths.ansible_resources_path.GROUP_VARS_FOLDER", "mock_path")
     @patch("bibigrid.core.utility.ansible_configurator.write_yaml")
     def test_write_master_var(self, mock_write_yaml):
         provider = MagicMock()
@@ -627,7 +604,7 @@ class TestAnsibleConfigurator(TestCase):
 
         # Validate the output
         mock_write_yaml.assert_called_once_with(
-            "/home/xaver/Documents/Repos/bibigrid/resources/playbook/group_vars/master.yaml",
+            os.path.join("mock_path", "master.yaml"),
             expected_master_vars,
             log,
         )

@@ -70,7 +70,7 @@
     src: zabbix/zabbix_server.conf.j2
     dest: /etc/zabbix/zabbix_server.conf
     mode: "0o644"
-  notify: zabbix-server
+  notify: Zabbix-server
 
 - name: Start and Enable zabbix-server
   systemd:
@@ -124,7 +124,7 @@
     mode: "0o755"
 
 - name: Adjust zabbix web frontend configuration
-  notify: apache2
+  notify: Apache2
   block:
     - name: Adjust apache.conf
       template:

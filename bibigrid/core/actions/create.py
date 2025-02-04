@@ -7,7 +7,6 @@ import shutil
 import subprocess
 import threading
 import traceback
-from functools import partial
 
 import paramiko
 import sympy
@@ -19,45 +18,13 @@ from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import image_selection
 from bibigrid.core.utility.handler import ssh_handler
 from bibigrid.core.utility.paths import ansible_resources_path as a_rp
-from bibigrid.core.utility.paths import bin_path
+from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, KEY_FOLDER, CLUSTER_MEMORY_PATH
+from bibigrid.core.utility.statics.create_statics import AC_NAME, KEY_NAME, DEFAULT_SECURITY_GROUP_NAME, \
+    WIREGUARD_SECURITY_GROUP_NAME, MASTER_IDENTIFIER, WORKER_IDENTIFIER, \
+    VPNGTW_IDENTIFIER, UPLOAD_FILEPATHS
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
 from bibigrid.models.exceptions import ExecutionException, ConfigurationException
-
-PREFIX = "bibigrid"
-SEPARATOR = "-"
-PREFIX_WITH_SEP = PREFIX + SEPARATOR
-FILEPATHS = [(a_rp.PLAYBOOK_PATH, a_rp.PLAYBOOK_PATH_REMOTE), (bin_path.BIN_PATH, bin_path.BIN_PATH_REMOTE)]
-
-
-def get_identifier(identifier, cluster_id, additional=""):
-    """
-    This method does more advanced string formatting to generate master, vpngtw and worker names
-    @param identifier: master|vpngtw|worker
-    @param cluster_id: id of cluster
-    @param additional: an additional string to be added at the end
-    @return: the generated string
-    """
-    general = PREFIX_WITH_SEP + identifier + SEPARATOR + cluster_id
-    if additional or additional == 0:
-        return general + SEPARATOR + str(additional)
-    return general
-
-
-MASTER_IDENTIFIER = partial(get_identifier, identifier="master", additional="")
-WORKER_IDENTIFIER = partial(get_identifier, identifier="worker")
-VPN_WORKER_IDENTIFIER = partial(get_identifier, identifier="vpngtw")
-
-KEY_PREFIX = "tempKey_bibi"
-CONFIG_FOLDER = os.path.expanduser("~/.config/bibigrid/")
-KEY_FOLDER = os.path.join(CONFIG_FOLDER, "keys/")
-AC_NAME = "ac" + SEPARATOR + "{cluster_id}"
-KEY_NAME = KEY_PREFIX + SEPARATOR + "{cluster_id}"
-CLUSTER_MEMORY_FOLDER = KEY_FOLDER
-CLUSTER_MEMORY_FILE = ".bibigrid.mem"
-CLUSTER_MEMORY_PATH = os.path.join(CONFIG_FOLDER, CLUSTER_MEMORY_FILE)
-DEFAULT_SECURITY_GROUP_NAME = "default" + SEPARATOR + "{cluster_id}"
-WIREGUARD_SECURITY_GROUP_NAME = "wireguard" + SEPARATOR + "{cluster_id}"
 
 
 class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
@@ -103,6 +70,22 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             "useMasterWithPublicIp", True)
         self.log.debug("Keyname: %s", self.key_name)
 
+        os.makedirs(os.path.join(CLUSTER_INFO_FOLDER), exist_ok=True)
+        self.write_cluster_state({"floating_ip": None, "state": 202,
+                                  "message": "Create process has been started."})
+
+    def write_cluster_state(self, state):
+        state = {"cluster_id": self.cluster_id, "ssh_user": self.ssh_user, **state}
+        # last cluster
+        with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
+            yaml.safe_dump(data=state, stream=cluster_memory_file)
+        # all clusters
+        cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{self.cluster_id}.yaml"))
+        if not cluster_info_path.startswith(os.path.normpath(CLUSTER_INFO_FOLDER)):
+            raise ValueError("Invalid cluster_id resulting in path traversal")
+        with open(cluster_info_path, mode="w+", encoding="UTF-8") as cluster_info_file:
+            yaml.safe_dump(data=state, stream=cluster_info_file)
+
     def create_defaults(self):
         self.log.debug("Creating default files")
         if not self.configurations[0].get("customAnsibleCfg", False) or not os.path.isfile(a_rp.ANSIBLE_CFG_PATH):
@@ -137,10 +120,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # upload keyfiles
         for provider in self.providers:
             provider.create_keypair(name=self.key_name, public_key=public_key)
-
-        # write cluster_id to automatically read it on following calls if no cid is given
-        with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
-            yaml.safe_dump(data={"cluster_id": self.cluster_id, "ssh_user": self.ssh_user}, stream=cluster_memory_file)
 
     def delete_old_vars(self):
         """
@@ -238,14 +217,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             raise ConfigurationException(f"MAC address for ip {configuration['private_v4']} not found.")
 
         # pylint: disable=comparison-with-callable
-        if identifier == VPN_WORKER_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
+        if identifier == VPNGTW_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
             configuration["floating_ip"] = \
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
             if identifier == MASTER_IDENTIFIER:
-                with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
-                    yaml.safe_dump(
-                        data={"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"]},
-                        stream=cluster_memory_file)
+                self.write_cluster_state({"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"],
+                                          "state": 202,
+                                          "message": "Create process has been started. Master has been created."
+                                          })
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
@@ -303,12 +282,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @param name: sever name
         @return:
         """
-        self.log.info("Creating volumes ...")
+        self.log.info(f"Creating volumes for {name}...")
         return_volumes = []
-
         group_instance = {"volumes": []}
         instance["group_instances"] = {name: group_instance}
+
         for i, volume in enumerate(instance.get("volumes", [])):
+            self.log.debug(f"Volume {i}: {volume}")
             if not volume.get("exists"):
                 if volume.get("permanent"):
                     infix = "perm"
@@ -332,10 +312,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     if not return_volume:
                         raise ConfigurationException(f"Snapshot {volume['snapshot']} not found!")
                 else:
-                    self.log.debug("Creating volume...")
                     return_volume = provider.create_volume(name=volume_name, size=volume.get("size", 50),
                                                            volume_type=volume.get("type"),
                                                            description=f"Created for {name}")
+                    self.log.info(f"Volumes {i} created for {name}...")
             return_volumes.append(return_volume)
         return return_volumes
 
@@ -382,7 +362,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             identifier = MASTER_IDENTIFIER
         elif configuration.get("vpnInstance"):
             instance_type = configuration["vpnInstance"]
-            identifier = VPN_WORKER_IDENTIFIER
+            identifier = VPNGTW_IDENTIFIER
         else:
             self.log.warning(
                 f"Configuration {configuration['cloud_identifier']} "
@@ -464,7 +444,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
         self.log.info("Uploading Data")
         ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
-                    "commands": commands, "filepaths": FILEPATHS, "gateway": self.configurations[0].get("gateway", {}),
+                    "commands": commands, "filepaths": UPLOAD_FILEPATHS,
+                    "gateway": self.configurations[0].get("gateway", {}),
                     "timeout": self.ssh_timeout}
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 
@@ -592,6 +573,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         else:
             return 0  # will be called if no exception occurred
         terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
+        self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
+                                  "state": 500,
+                                  "message": "Cluster creation failed. Terminated remains."})
         return 1
 
     def log_cluster_start_info(self):
@@ -616,3 +600,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.log(42, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
         if self.configurations[0].get("ide"):
             self.log.log(42, f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")
+        self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
+                                  "state": 201,
+                                  "message": "Cluster successfully created."})

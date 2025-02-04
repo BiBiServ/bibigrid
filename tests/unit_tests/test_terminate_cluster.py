@@ -5,7 +5,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch, call
 
 from bibigrid.core import startup
-from bibigrid.core.actions import create
+from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER, KEY_NAME
 from bibigrid.core.actions import terminate
 
 
@@ -21,18 +21,18 @@ class TestTerminate(TestCase):
         provider = MagicMock()
         provider.cloud_specification["auth"]["project_name"] = 32
         cluster_id = 42
-        provider.list_servers.return_value = [{"name": create.MASTER_IDENTIFIER(cluster_id=str(cluster_id)), "id": 21}]
+        provider.list_servers.return_value = [{"name": MASTER_IDENTIFIER(cluster_id=str(cluster_id)), "id": 21}]
         provider.delete_server.return_value = True
         provider.delete_keypair.return_value = True
         provider.delete_volume.return_value = True
         provider.list_volumes.return_value = [
-            {"name": f"{create.MASTER_IDENTIFIER(cluster_id=str(cluster_id))}-tmp-0", "id": 42}]
+            {"name": f"{MASTER_IDENTIFIER(cluster_id=str(cluster_id))}-tmp-0", "id": 42}]
         provider.list_volumes([{"name": "bibigrid-master-i950vaoqzfbwpnq-tmp-0"}])
         provider.delete_security_group.return_value = True
         provider.delete_application_credentials.return_value = True
         terminate.terminate(str(cluster_id), [provider], startup.LOG, False, True)
         provider.delete_server.assert_called_with(21)
-        provider.delete_keypair.assert_called_with(create.KEY_NAME.format(cluster_id=cluster_id))
+        provider.delete_keypair.assert_called_with(KEY_NAME.format(cluster_id=cluster_id))
         mock_output.assert_called_with(cluster_server_state=[provider.delete_server.return_value],
                                        cluster_keypair_state=[provider.delete_keypair.return_value],
                                        cluster_security_group_state=[provider.delete_security_group.return_value],
@@ -49,18 +49,18 @@ class TestTerminate(TestCase):
         provider[0].specification["auth"]["project_name"] = "test_project_name"
         cluster_id = 42
         provider.list_servers.return_value = [
-            {"name": create.MASTER_IDENTIFIER(cluster_id=str(cluster_id + 1)), "id": 21}]
+            {"name": MASTER_IDENTIFIER(cluster_id=str(cluster_id + 1)), "id": 21}]
         provider.delete_keypair.return_value = False
         terminate.terminate(str(cluster_id), [provider], startup.LOG, False, True)
         provider.delete_server.assert_not_called()
         provider.delete_keypair.assert_called_with(
-            create.KEY_NAME.format(cluster_id=str(cluster_id)))  # since keypair is not called
+            KEY_NAME.format(cluster_id=str(cluster_id)))  # since keypair is not called
 
     def test_delete_non_pemanent_volumes(self):
         cluster_id = "1234"
         provider = MagicMock()
         log = MagicMock()
-        cluster_id=21
+        cluster_id = 21
 
         # List of test volumes
         volumes = [

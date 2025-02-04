@@ -7,7 +7,7 @@ import os
 import mergedeep
 import yaml
 
-from bibigrid.core.actions import create
+from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER, VPNGTW_IDENTIFIER, WORKER_IDENTIFIER
 from bibigrid.core.actions import ide
 from bibigrid.core.actions.version import __version__
 from bibigrid.core.utility import id_generation
@@ -57,7 +57,7 @@ def generate_site_file_yaml(user_roles):
 
 def write_worker_host_vars(*, cluster_id, worker, worker_count, log):
     for worker_number in range(worker.get('count', 1)):
-        name = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
+        name = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
         write_volumes = []
         for i, volume in enumerate(worker.get("volumes", [])):
             if not volume.get("exists"):
@@ -79,10 +79,10 @@ def write_worker_host_vars(*, cluster_id, worker, worker_count, log):
 
 def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_count, log):
     flavor_dict = provider.create_flavor_dict(flavor=worker["type"])
-    name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
+    name = WORKER_IDENTIFIER(cluster_id=cluster_id,
                                     additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
     group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
-    regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
+    regexp = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
     worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                    "network": configuration["network"], "flavor": flavor_dict,
                    "gateway_ip": configuration["private_v4"],
@@ -110,11 +110,11 @@ def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_cou
 
 
 def write_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count, log):
-    name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
+    name = VPNGTW_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
     wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
     vpn_count += 1
     flavor_dict = provider.create_flavor_dict(flavor=vpngtw["type"])
-    regexp = create.WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
+    regexp = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
     vpngtw_dict = {"name": name, "regexp": regexp, "image": vpngtw["image"],
                    "network": configuration["network"], "network_cidrs": configuration["subnet_cidrs"],
                    "floating_ip": configuration["floating_ip"], "private_v4": configuration["private_v4"],
@@ -130,7 +130,7 @@ def write_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count, log
 
 def write_master_var(provider, configuration, cluster_id, log):
     master = configuration["masterInstance"]
-    name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
+    name = MASTER_IDENTIFIER(cluster_id=cluster_id)
     flavor_dict = provider.create_flavor_dict(flavor=master["type"])
     master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
                    "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
@@ -248,7 +248,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     @return: ansible_hosts yaml (dict)
     """
     log.info("Generating ansible hosts file...")
-    master_name = create.MASTER_IDENTIFIER(cluster_id=cluster_id)
+    master_name = MASTER_IDENTIFIER(cluster_id=cluster_id)
     ansible_hosts_yaml = {"vpn": {"hosts": {},
                                   "children": {"master": {"hosts": {master_name: to_instance_host_dict(ssh_user)}},
                                                "vpngtw": {"hosts": {}}}}, "workers": {"hosts": {}, "children": {}}}
@@ -259,7 +259,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     vpngtw_count = 0
     for configuration in configurations:
         for worker in configuration.get("workerInstances", []):
-            name = create.WORKER_IDENTIFIER(cluster_id=cluster_id,
+            name = WORKER_IDENTIFIER(cluster_id=cluster_id,
                                             additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
@@ -269,7 +269,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
             worker_count += worker.get('count', 1)
 
         if configuration.get("vpnInstance"):
-            name = create.VPN_WORKER_IDENTIFIER(cluster_id=cluster_id, additional=vpngtw_count)
+            name = VPNGTW_IDENTIFIER(cluster_id=cluster_id, additional=vpngtw_count)
             vpngtw_dict = to_instance_host_dict(ssh_user, ip="")
             vpngtw_dict["ansible_host"] = configuration["floating_ip"]
             vpngtws[name] = vpngtw_dict
