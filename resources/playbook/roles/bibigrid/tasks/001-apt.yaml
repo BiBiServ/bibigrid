@@ -48,6 +48,7 @@
 
 - name: Add zabbix repositories # noqa: line-length
   apt:
+    # yamllint disable-line
     deb: "https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+{{ ansible_distribution | lower }}{{ ansible_distribution_version }}_all.deb"
     state: present
     force: true
