@@ -7,10 +7,24 @@ import os
 import re
 import time
 
+import yaml
+
+from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLUSTER_MEMORY_PATH, KEY_FOLDER
 from bibigrid.core.utility.statics.create_statics import DEFAULT_SECURITY_GROUP_NAME, WIREGUARD_SECURITY_GROUP_NAME, \
-    KEY_NAME, KEY_FOLDER, AC_NAME
+    KEY_NAME, AC_NAME
 from bibigrid.models.exceptions import ConflictException
 
+
+def write_cluster_state(cluster_id, state):
+    # last cluster
+    with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
+        yaml.safe_dump(data=state, stream=cluster_memory_file)
+    # all clusters
+    cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
+    if not cluster_info_path.startswith(CLUSTER_INFO_FOLDER):
+        raise ValueError("Invalid cluster_id resulting in path traversal")
+    with open(cluster_info_path, mode="w+", encoding="UTF-8") as cluster_info_file:
+        yaml.safe_dump(data=state, stream=cluster_info_file)
 
 def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
     """
@@ -230,6 +244,8 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
     cluster_keypair_deleted = all(cluster_keypair_state)
     cluster_security_group_deleted = all(cluster_security_group_state)
     cluster_volume_deleted = all(all(instance_volume_states) for instance_volume_states in cluster_volume_state)
+    message = "Cluster terminated."
+    state = 200
     if cluster_existed:
         if cluster_server_terminated:
             log.info("Terminated all servers of cluster %s.", cluster_id)
@@ -249,18 +265,27 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
             log.warning("Unable to delete all volumes of cluster %s.", cluster_id)
         if (cluster_server_terminated and cluster_keypair_deleted and cluster_security_group_deleted and
                 cluster_volume_deleted):
-            log.log(42, f"Successfully terminated cluster {cluster_id}.")
+            message = f"Successfully terminated cluster {cluster_id}."
+            log.log(42, message)
         else:
-            log.warning("Unable to terminate cluster %s properly."
-                        "\nAll servers terminated: %s"
-                        "\nAll keys deleted: %s"
-                        "\nAll security groups deleted: %s"
-                        "\nAll volumes deleted: %s", cluster_id, cluster_server_terminated,
-                        cluster_keypair_deleted, cluster_security_group_deleted, cluster_volume_deleted)
+            message = (f"Unable to terminate cluster {cluster_id} properly."
+                       f"\nAll servers terminated: {cluster_server_terminated}"
+                       f"\nAll keys deleted: {cluster_keypair_deleted}"
+                       f"\nAll security groups deleted: {cluster_security_group_deleted}"
+                       f"\nAll volumes deleted: {cluster_volume_deleted}")
+            log.warning(message)
         if ac_state:
             log.info("Successfully handled application credential of cluster %s.", cluster_id)
         else:
             log.warning("Unable to delete application credential of cluster %s", cluster_id)
     else:
-        log.warning("Unable to find any servers for cluster-id %s. "
-                    "Check cluster-id and configuration.\nAll keys deleted: %s", cluster_id, cluster_keypair_deleted)
+        message = "Cluster does not exist."
+        state = 404
+        log.warning(f"Unable to find any servers for cluster-id {cluster_id}. "
+                    f"Check cluster-id and configuration.\nAll keys deleted: {cluster_keypair_deleted}")
+
+    write_cluster_state(cluster_id, {"cluster_id": cluster_id,
+                                     "floating_ip": None,
+                                     "ssh_user": None,
+                                     "state": state,
+                                     "message": message})

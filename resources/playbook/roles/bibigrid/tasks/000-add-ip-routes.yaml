@@ -1,6 +1,6 @@
 - name: Disable netplan configuration files
   notify:
-    - netplan apply
+    - Netplan apply
   block:
     - name: Collect files
       find:
@@ -42,7 +42,7 @@
     mode: "0o640"
   become: true
   notify:
-    - systemd-networkd restart
+    - Systemd-networkd restart
 
 - name: Generate location specific worker userdata
   template:
@@ -53,4 +53,4 @@
     mode: "0o640"
   become: true
   notify:
-    - systemd-networkd restart
+    - Systemd-networkd restart

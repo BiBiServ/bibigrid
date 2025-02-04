@@ -6,8 +6,8 @@ import argparse
 import logging
 import os
 
-INPUT_PATH = "~/.config/bibigrid"
-STANDARD_CONFIG_INPUT_PATH = os.path.expanduser(INPUT_PATH)
+from bibigrid.core.utility.paths.basic_path import CONFIG_FOLDER
+
 FOLDER_START = ("~/", "/")
 LOG = logging.getLogger("bibigrid")
 
@@ -39,9 +39,9 @@ def interpret_command_line():
                                                                    "Offers termination after successful create")
     parser.add_argument("-i", "--config_input", metavar="<path>", help="Path to YAML configurations file. "
                                                                        "Relative paths can be used and start "
-                                                                       f"at '{INPUT_PATH}'. "
+                                                                       f"at '{CONFIG_FOLDER}'. "
                                                                        "Required for all actions but '--version'",
-                        type=lambda s: s if s.startswith(FOLDER_START) else os.path.join(STANDARD_CONFIG_INPUT_PATH, s))
+                        type=lambda s: s if s.startswith(FOLDER_START) else os.path.join(CONFIG_FOLDER, s))
     parser.add_argument("-cid", "--cluster_id", metavar="<cluster-id>", type=check_cid, default="",
                         help="Cluster id is needed for '--ide', '--terminate_cluster' and '--update'. "
                              "If not set, last created cluster's id is used")

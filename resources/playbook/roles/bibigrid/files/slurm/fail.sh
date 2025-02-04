@@ -40,7 +40,7 @@ hosts=$(scontrol show hostnames "$1")
 log "Hosts $hosts used"
 
 # $1 is in slurm node format for example: bibigrid-worker0-cid-[0-1],bibigrid-worker1-cid-0 and needs no converting
-scontrol update NodeName="$1" state=POWER_DOWN reason=FailedStartup # no sudo needed cause executed by slurm user
+scontrol update NodeName="$1" state=POWER_DOWN reason=ResumeFail # no sudo needed cause executed by slurm user
 
 log "Nodes $1 set to POWER_DOWN."
 

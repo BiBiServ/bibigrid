@@ -26,7 +26,7 @@
     src: zabbix/zabbix_agentd.conf.j2
     dest: /etc/zabbix/zabbix_agentd.conf
     mode: "0o644"
-  notify: zabbix-agent
+  notify: Zabbix-agent
 
 - name: Copy Zabbix Host delete script
   copy:
