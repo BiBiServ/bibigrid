@@ -118,4 +118,3 @@
         port: 10050
   become: false
   when: "'master' in group_names"
-  
