@@ -71,7 +71,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.debug("Keyname: %s", self.key_name)
 
         os.makedirs(os.path.join(CLUSTER_INFO_FOLDER), exist_ok=True)
-        self.write_cluster_state({"floating_ip": None, "state": 202,
+        self.write_cluster_state({"floating_ip": None, "state": "starting",
                                   "message": "Create process has been started."})
 
     def write_cluster_state(self, state):
@@ -222,7 +222,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
             if identifier == MASTER_IDENTIFIER:
                 self.write_cluster_state({"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"],
-                                          "state": 202,
+                                          "state": "starting",
                                           "message": "Create process has been started. Master has been created."
                                           })
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
@@ -574,7 +574,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             return 0  # will be called if no exception occurred
         terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
         self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
-                                  "state": 500,
+                                  "state": "failed",
                                   "message": "Cluster creation failed. Terminated remains."})
         return 1
 
@@ -601,5 +601,5 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if self.configurations[0].get("ide"):
             self.log.log(42, f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")
         self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
-                                  "state": 201,
+                                  "state": "running",
                                   "message": "Cluster successfully created."})

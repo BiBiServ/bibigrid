@@ -230,4 +230,4 @@ class ClusterStateResponseModel(BaseModel):
     floating_ip: IPvAnyAddress
     message: str
     ssh_user: str
-    state: Literal[200, 201, 204, 404, 500]
+    state: Literal["starting", "running", "terminated", "failed"]

@@ -8,17 +8,17 @@ import os
 import subprocess
 
 import uvicorn
-from fastapi import FastAPI, status, Request, Query
+import yaml
+from fastapi import FastAPI, status, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi.testclient import TestClient
-from typing import List
 
 from bibigrid.core.actions import check, create, terminate, list_clusters
-from bibigrid.core.utility import id_generation
-from bibigrid.core.utility.handler import provider_handler
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
     InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel
+from bibigrid.core.utility import id_generation
+from bibigrid.core.utility.handler import provider_handler
+from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -65,30 +65,6 @@ def setup(cluster_id):
     return cluster_id, log
 
 
-def is_up(cluster_id, log):
-    """
-    Checks if cluster with cluster_id is up and running
-    @param cluster_id:
-    @param log:
-    @return:
-    """
-    file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
-    if os.path.isfile(file_name):
-        log.debug(f"Log for {cluster_id} found.")
-        with open(file_name, "r", encoding="utf8") as log_file:
-            for line in reversed(log_file.readlines()):
-                if "up and running" in line:
-                    log.debug(f"Found running cluster for {cluster_id}.")
-                    return True
-                if "Successfully terminated cluster" in line:
-                    log.debug(f"Found cluster termination for {cluster_id}.")
-                    return False
-    else:
-        log.debug(f"Log for {cluster_id} not found.")
-    log.debug(f"Found neither a running nor a terminated cluster for {cluster_id}.")
-    return False
-
-
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
@@ -119,10 +95,10 @@ async def validate_configuration(configurations_json: ConfigurationsModel, clust
         exit_state = check.check(configurations, providers, log)
         if exit_state:
             return JSONResponse(
-                content={"message": "Validation failed", "cluster_id": cluster_id, "success": exit_state},
+                content={"message": "Validation failed", "cluster_id": cluster_id, "success": not bool(exit_state)},
                 status_code=420)
         return JSONResponse(
-            content={"message": "Validation successful", "cluster_id": cluster_id, "success": exit_state},
+            content={"message": "Validation successful", "cluster_id": cluster_id, "success": not bool(exit_state)},
             status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
@@ -149,14 +125,14 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
         creator.create()
 
     try:
-        configurations = configurations_json.model_dump(exclude_none=True)
+        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         providers = provider_handler.get_providers(configurations, log)
         creator = create.Create(providers=providers, configurations=configurations, log=log,
                                 config_path=None, cluster_id=cluster_id)
         cluster_id = creator.cluster_id
         asyncio.create_task(create_async())
         return JSONResponse(content={"message": "Cluster creation started.", "cluster_id": cluster_id}, status_code=202)
-    except Exception as exc:  # pylint: disable=broad-except
+    except ValueError as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
@@ -210,7 +186,6 @@ async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id, {})  # add information filtering
         if cluster_dict:
             cluster_dict["message"] = "Cluster found."
-            cluster_dict["ready"] = is_up(cluster_id, log)
             return JSONResponse(content=cluster_dict, status_code=200)
         return JSONResponse(content={"message": "Cluster not found.", "ready": False}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
@@ -225,7 +200,7 @@ async def get_log(cluster_id: str, lines: int = None):
     Returns last lines of the .log for the given cluster id. If no lines are specified, all lines are returned.
     * @param cluster_id: id of cluster to get .log from
     * @param lines: lines to read from the end
-    * @return: Message whether the log has been found and if found, the las lines lines of the logged text
+    * @return: Message whether the log has been found and if found, the last lines of the logged text
     (or everything if lines were omitted).
     """
     LOG.debug(f"Requested log on {cluster_id}.")
@@ -243,12 +218,12 @@ async def get_log(cluster_id: str, lines: int = None):
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/ready/", response_model=ClusterStateResponseModel)
-async def ready(cluster_id: str):
+@app.get("/bibigrid/state/", response_model=ClusterStateResponseModel)
+async def state(cluster_id: str):
     """
     Expects a cluster id.
 
-    Returns whether the cluster with cluster id is ready according to the log file.
+    Returns whether the cluster's state according to the log file.
     If the running state of the cluster has been changed outside BiBiGrid REST, this method cannot detect this.
 
     In such cases checking [info](#info)'s ready value is more reliable as it includes a check whether the cluster
@@ -259,9 +234,17 @@ async def ready(cluster_id: str):
     LOG.debug(f"Requested log on {cluster_id}.")
     try:
         cluster_id, log = setup(cluster_id)
-        result = is_up(cluster_id, log)
-        return JSONResponse(content={"message": "Cluster is up" if result else "Cluster is down.", "ready": result},
-                            status_code=200)
+        cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
+        if not cluster_info_path.startswith(os.path.normpath(CLUSTER_INFO_FOLDER)):
+            raise ValueError("Invalid cluster_id resulting in path traversal")
+        if os.path.isfile(cluster_info_path):
+            with open(cluster_info_path, mode="r", encoding="UTF-8") as cluster_info_file:
+                cluster_state = yaml.safe_load(cluster_info_file)
+            return JSONResponse(content=cluster_state,
+                                status_code=200)
+        else:
+            return JSONResponse(content={"message": "Cluster not found.", "cluster_id": None, "floating_ip": None,
+                                         "ssh_user":None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
