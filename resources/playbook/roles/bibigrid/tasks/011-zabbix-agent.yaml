@@ -67,7 +67,7 @@
     ansible_httpapi_port: 80
     ansible_http_use_ssl: false
     ansible_user: Admin
-    ansible_httpapi_pass: "{{ zabbix_conf.admin_password }}"  
+    ansible_httpapi_pass: "{{ zabbix_conf.admin_password }}"
   zabbix_host:
     host_name: "{{ ansible_hostname }}"
     visible_name: "{{ ansible_hostname }}"
@@ -118,3 +118,4 @@
         port: 10050
   become: false
   when: "'master' in group_names"
+  
