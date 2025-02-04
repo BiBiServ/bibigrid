@@ -3,6 +3,7 @@ This module contains models used by the REST api
 """
 
 from typing import List, Optional, Literal, Union
+
 from pydantic import BaseModel, Field, IPvAnyAddress
 
 
@@ -15,6 +16,7 @@ class Role(BaseModel):
     name: str
     tags: Optional[List[str]]
 
+
 class UserRole(BaseModel):
     """
         Allows users to add custom ansible roles
@@ -23,8 +25,10 @@ class UserRole(BaseModel):
     roles: List[Role]
     varsFiles: Optional[List[str]] = Field(default=[])
 
+
 class CloudScheduling(BaseModel):
     sshTimeout: Optional[int] = 5
+
 
 class BootVolume(BaseModel):
     """
@@ -33,6 +37,7 @@ class BootVolume(BaseModel):
     name: Optional[str] = None
     terminate: Optional[bool] = True
     size: Optional[int] = 50
+
 
 class Volume(BaseModel):
     """
@@ -90,6 +95,7 @@ class ElasticScheduling(BaseModel):
     ResumeTimeout: Optional[int] = 1800
     TreeWidth: Optional[int] = 128
 
+
 class SlurmConf(BaseModel):
     """
     Holds info on basic Slurm settings
@@ -100,12 +106,14 @@ class SlurmConf(BaseModel):
     munge_key: Optional[str] = None
     elastic_scheduling: Optional[ElasticScheduling] = None
 
+
 class Gateway(BaseModel):
     """
         Holds info regarding whether a gateway is used to connect to the master
     """
     ip: str
     portFunction: str
+
 
 class MasterConfig(BaseModel):
     """
@@ -140,6 +148,7 @@ class MasterConfig(BaseModel):
     masterInstance: Instance
     bootVolume: Optional[BootVolume] = None
 
+
 class OtherConfig(BaseModel):
     """
         Holds info about other configurations
@@ -156,15 +165,19 @@ class OtherConfig(BaseModel):
     vpnInstance: Instance
     bootVolume: Optional[BootVolume] = None
 
+
 class ConfigurationsModel(BaseModel):
     configurations: List[Union[MasterConfig, OtherConfig]]
+
 
 class MinimalConfigurationModel(BaseModel):
     infrastructure: str
     cloud: str
 
+
 class MinimalConfigurationsModel(BaseModel):
     configurations: List[MinimalConfigurationModel]
+
 
 class ValidationResponseModel(BaseModel):
     """
