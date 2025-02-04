@@ -94,14 +94,14 @@
         msg: "[BIBIGRID] Setup additional binary executables /usr/local/bin/"
     - import_tasks: 010-bin-server.yaml
 
-- name: Setup Zabbix Agent
+- name: Setup Zabbix
   when:
     - enable_zabbix|default(false)|bool
   tags:
     - "zabbix"
   block:
     - debug:
-        msg: "[BIBIGRID] Setup Zabbix Agent"
+        msg: "[BIBIGRID] Setup Zabbix"
     - import_tasks: 011-zabbix-server.yaml
       when: "'master' in group_names"
     - import_tasks: 011-zabbix-agent.yaml

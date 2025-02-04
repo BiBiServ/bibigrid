@@ -341,7 +341,7 @@ def _run_playbook(cmdline_args):
     @param cmdline_args:
     @return
     """
-    executable_cmd = '/usr/local/bin/ansible-playbook'
+    executable_cmd = '/opt/bibigrid-venv/bin/ansible-playbook'
     logging.info(f"run_command...\nexecutable_cmd: {executable_cmd}\ncmdline_args: {cmdline_args}")
     runner = ansible_runner.interface.init_command_config(executable_cmd=executable_cmd, cmdline_args=cmdline_args)
 
