@@ -126,12 +126,12 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                                              terminate_volume=terminate_boot_volume, volume_size=volume_size)
         except openstack.exceptions.BadRequestException as exc:
             if "is not active" in str(exc):
-                raise ImageDeactivatedException() from exc
+                raise ImageDeactivatedException("Image not active") from exc
             if "Invalid key_name provided" in str(exc):
-                raise ExecutionException() from exc
+                raise ExecutionException("Invalid key_name provided") from exc
             raise ConnectionError() from exc
         except openstack.exceptions.SDKException as exc:
-            raise ExecutionException() from exc
+            raise ExecutionException("SDKException") from exc
         except AttributeError as exc:
             raise ExecutionException("Unable to create server due to faulty configuration.\n"
                                      "Check your configuration using `-ch` instead of `-c`.") from exc
