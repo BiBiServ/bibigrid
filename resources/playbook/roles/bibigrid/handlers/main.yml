@@ -42,7 +42,7 @@
 
 - name: Zabbix-server
   systemd:
-    name: Zabbix-server
+    name: zabbix-server
     state: restarted
 
 - name: Apache2
