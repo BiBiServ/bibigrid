@@ -14,6 +14,9 @@ scontrol update NodeName="$1" state=RESUME reason=SuspendProgram # no sudo neede
 
 hosts=$(scontrol show hostnames "$1")
 
+# use python bibigrid environment
+source /opt/bibigrid-venv/bin/activate
+
 # delete servers
 python3 /usr/local/bin/delete_server.py "${hosts}"
 

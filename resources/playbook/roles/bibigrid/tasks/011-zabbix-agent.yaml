@@ -21,12 +21,12 @@
     group: zabbix
     mode: "0o755"
 
-- name: Adjust zabbix agent configuration
+- name: Adjust zabbix agent2 configuration
   template:
-    src: zabbix/zabbix_agentd.conf.j2
-    dest: /etc/zabbix/zabbix_agentd.conf
+    src: zabbix/zabbix_agent2.conf.j2
+    dest: /etc/zabbix/zabbix_agent2.conf
     mode: "0o644"
-  notify: Zabbix-agent
+  notify: zabbix-agent2
 
 - name: Copy Zabbix Host delete script
   copy:
@@ -38,9 +38,9 @@
   pip:
     name: zabbix-api
 
-- name: Install zabbix agent
+- name: Install zabbix agent2
   apt:
-    name: zabbix-agent
+    name: zabbix-agent2
     state: present
   when: "ansible_distribution_file_variety == 'Debian'"
 
@@ -50,9 +50,9 @@
     state: present
   when: "ansible_distribution_file_variety == 'RedHat'"
 
-- name: Start and Enable zabbix-agent
+- name: Start and Enable zabbix-agent2
   systemd:
-    name: zabbix-agent
+    name: zabbix-agent2
     state: started
     enabled: true
 
@@ -61,10 +61,14 @@
 # --------------------------------------
 
 - name: Add worker node to zabbix hosts
+  vars:
+    ansible_network_os: community.zabbix.zabbix
+    ansible_connection: httpapi
+    ansible_httpapi_port: 80
+    ansible_http_use_ssl: false
+    ansible_user: Admin
+    ansible_httpapi_pass: "{{ zabbix_conf.admin_password }}"
   zabbix_host:
-    server_url: "http://127.0.0.1/zabbix/"
-    login_user: Admin
-    login_password: "{{ zabbix_conf.admin_password }}"
     host_name: "{{ ansible_hostname }}"
     visible_name: "{{ ansible_hostname }}"
     description: add by ansible
@@ -84,11 +88,19 @@
   when: "'master' not in group_names"
   delegate_to: localhost
 
+# --------------------------------------
+# -- Add master node as zabbix hosts --
+# --------------------------------------
+
 - name: Add master node to zabbix hosts
+  vars:
+    ansible_network_os: community.zabbix.zabbix
+    ansible_connection: httpapi
+    ansible_httpapi_port: 80
+    ansible_http_use_ssl: false
+    ansible_user: Admin
+    ansible_httpapi_pass: "{{ zabbix_conf.admin_password }}"
   zabbix_host:
-    server_url: "http://127.0.0.1/zabbix/"
-    login_user: Admin
-    login_password: "{{ zabbix_conf.admin_password }}"
     host_name: "{{ ansible_hostname }}"
     visible_name: "{{ ansible_hostname }}"
     description: add by ansible
