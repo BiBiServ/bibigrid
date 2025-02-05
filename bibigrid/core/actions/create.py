@@ -50,7 +50,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.cluster_id = cluster_id or id_generation.generate_safe_cluster_id(providers)
         self.ssh_user = configurations[0].get("sshUser") or "ubuntu"
         self.ssh_add_public_key_commands = ssh_handler.get_add_ssh_public_key_commands(
-            configurations[0].get("sshPublicKeyFiles"))
+            configurations[0].get("sshPublicKeyFiles"), configurations[0].get("sshPublicKeys")) # TODO: Document
         self.ssh_timeout = configurations[0].get("sshTimeout", 5)
         self.config_path = config_path
         self.master_ip = None
