@@ -69,7 +69,7 @@ class Instance(BaseModel):
     """
     type: str
     image: str
-    count: Optional[int]
+    count: Optional[int] = 1
     onDemand: Optional[bool] = True
     partitions: Optional[List[str]] = Field(default=[])
     features: Optional[List[str]] = Field(default=[])
@@ -110,8 +110,8 @@ class MasterConfig(BaseModel):
     """
         Holds info regarding the configuration
     """
-    infrastructure: str
-    cloud: str
+    infrastructure: Literal["openstack"] # currently limited to openstack
+    cloud: str = "openstack"
     sshUser: str
     subnet: Optional[str] = Field(default=None)
     network: Optional[str] = Field(default=None)
@@ -144,8 +144,8 @@ class OtherConfig(BaseModel):
     """
         Holds info about other configurations
     """
-    infrastructure: str
-    cloud: str
+    infrastructure: Literal["openstack"] # currently limited to openstack
+    cloud: str = "openstack"
     sshUser: str
     subnet: Optional[str] = Field(default=None)
     network: Optional[str] = Field(default=None)
@@ -162,8 +162,8 @@ class ConfigurationsModel(BaseModel):
 
 
 class MinimalConfigurationModel(BaseModel):
-    infrastructure: str
-    cloud: str
+    infrastructure: Literal["openstack"]
+    cloud: str = "openstack"
 
 
 class MinimalConfigurationsModel(BaseModel):
