@@ -101,7 +101,7 @@ async def validate_configuration(configurations_json: ConfigurationsModel, clust
             content={"message": "Validation successful", "cluster_id": cluster_id, "success": not bool(exit_state)},
             status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": str(exc)}, status_code=400)
+        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
 @app.post("/bibigrid/create", response_model=CreateResponseModel)
@@ -162,10 +162,10 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
 
         return JSONResponse(content={"message": "Termination successfully requested."}, status_code=202)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": str(exc)}, status_code=400)
+        return JSONResponse(content={"error": type(exc).__name__, "message":str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/info/", response_model=InfoResponseModel)
+@app.post("/bibigrid/info/", response_model=InfoResponseModel)
 async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel):
     """
     Expects a cluster id and a
@@ -189,7 +189,7 @@ async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel)
             return JSONResponse(content=cluster_dict, status_code=200)
         return JSONResponse(content={"message": "Cluster not found.", "ready": False}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": str(exc)}, status_code=400)
+        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
 @app.get("/bibigrid/log/", response_model=LogResponseModel)
@@ -215,7 +215,7 @@ async def get_log(cluster_id: str, lines: int = None):
             return JSONResponse(content={"message": "Log found", "log": response}, status_code=200)
         return JSONResponse(content={"message": "Log not found.", "log": None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": str(exc)}, status_code=400)
+        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
 @app.get("/bibigrid/state/", response_model=ClusterStateResponseModel)
@@ -246,7 +246,7 @@ async def state(cluster_id: str):
             return JSONResponse(content={"message": "Cluster not found.", "cluster_id": None, "floating_ip": None,
                                          "ssh_user":None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": str(exc)}, status_code=400)
+        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
 # outdated tests
