@@ -9,18 +9,18 @@
     uid: 64030
     group: slurm
 
-- name: Create pinning configuration for slurm-bibigrid version 23.11.*
-  copy:
-    content: |
-      Package: slurm-bibigrid
-      Pin: version 23.11.*
-      Pin-Priority: 1001
-    dest: /etc/apt/preferences.d/slurm-bibigrid
-    mode: "0o311"
+# - name: Create pinning configuration for slurm-bibigrid version 23.11.*
+#   copy:
+#     content: |
+#       Package: slurm-bibigrid
+#       Pin: version 23.11.*
+#       Pin-Priority: 1001
+#     dest: /etc/apt/preferences.d/slurm-bibigrid
+#     mode: "0o311"
 
 - name: Install slurm-bibigrid package
   apt:
-    name: slurm-bibigrid
+    name: slurm-bibigrid-24.11
     state: present
 
 - name: Install Slurm package dependencies
@@ -36,7 +36,7 @@
     group: munge
     mode: "0o600"
   notify:
-    - munge
+    - Munge
 
 - name: Ensures slurm directories exists
   file:

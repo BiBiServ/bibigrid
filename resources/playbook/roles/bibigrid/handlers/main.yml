@@ -1,36 +1,36 @@
-- name: nfs-server
+- name: Nfs-server
   systemd:
     name: nfs-kernel-server
     state: restarted
 
-- name: docker
+- name: Docker
   systemd:
     name: docker
     state: restarted
 
-- name: munge
+- name: Munge
   systemd:
     name: munge
     state: restarted
 
-- name: slurmdbd
+- name: Slurmdbd
   systemd:
     name: slurmdbd
     state: restarted
 
-- name: slurmrestd
+- name: Slurmrestd
   systemd:
     name: slurmrestd
     state: restarted
     daemon_reload: true
 
-- name: slurmctld
+- name: Slurmctld
   systemd:
     name: slurmctld
     state: restarted
   when: "'master' in group_names"
 
-- name: slurmd
+- name: Slurmd
   systemd:
     name: slurmd
     state: restarted
@@ -40,33 +40,33 @@
     name: zabbix-agent2
     state: restarted
 
-- name: zabbix-server
+- name: Zabbix-server
   systemd:
-    name: zabbix-server
+    name: Zabbix-server
     state: restarted
 
-- name: apache2
+- name: Apache2
   systemd:
     name: apache2
     state: restarted
 
-- name: systemd-networkd restart
+- name: Systemd-networkd restart
   service:
     name: systemd-networkd
     state: restarted
     enabled: true
   become: true
 
-- name: reload wireguard configuration
+- name: Reload wireguard configuration
   when: "'wg0' in ansible_interfaces"
   become: true
   shell:
     cmd: "bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'"
 
-- name: dnsmasq
+- name: Dnsmasq
   systemd:
     name: dnsmasq
     state: restarted
 
-- name: netplan apply
+- name: Netplan apply
   command: netplan apply

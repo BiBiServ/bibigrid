@@ -1,5 +1,5 @@
-  # For an easy introduction see https://github.com/deNBI/bibigrid_clum
-  # For more detailed information see https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md
+# For an easy introduction see https://github.com/deNBI/bibigrid_clum
+# For more detailed information see https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md
 
 - # -- BEGIN: GENERAL CLUSTER INFORMATION --
   # The following options configure cluster wide keys
@@ -123,4 +123,4 @@
   #   terminate: True # whether the volume is terminated on server termination
   #   size: 50
 
-  #- [next configurations]
+  # - [next configurations]

@@ -18,7 +18,7 @@ from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import provider_handler
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ReadyResponseModel
+    InfoResponseModel, LogResponseModel, ClusterStateResponseModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -248,7 +248,7 @@ async def get_log(cluster_id: str, lines: int = None):
         return JSONResponse(content={"error": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/ready/", response_model=ReadyResponseModel)
+@app.get("/bibigrid/ready/", response_model=ClusterStateResponseModel)
 async def ready(cluster_id: str):
     """
     Expects a cluster id.

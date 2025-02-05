@@ -2,7 +2,6 @@
 Containg static variables for create.py to avoid cyclic imports
 """
 
-import os
 from functools import partial
 
 from bibigrid.core.utility.paths import ansible_resources_path as a_rp
@@ -32,12 +31,7 @@ WORKER_IDENTIFIER = partial(get_identifier, identifier="worker")
 VPNGTW_IDENTIFIER = partial(get_identifier, identifier="vpngtw")
 
 KEY_PREFIX = "tempKey_bibi"
-CONFIG_FOLDER = os.path.expanduser("~/.config/bibigrid/")
-KEY_FOLDER = os.path.join(CONFIG_FOLDER, "keys/")
 AC_NAME = "ac" + SEPARATOR + "{cluster_id}"
 KEY_NAME = KEY_PREFIX + SEPARATOR + "{cluster_id}"
-CLUSTER_MEMORY_FOLDER = KEY_FOLDER
-CLUSTER_MEMORY_FILE = ".bibigrid.mem"
-CLUSTER_MEMORY_PATH = os.path.join(CONFIG_FOLDER, CLUSTER_MEMORY_FILE)
 DEFAULT_SECURITY_GROUP_NAME = "default" + SEPARATOR + "{cluster_id}"
 WIREGUARD_SECURITY_GROUP_NAME = "wireguard" + SEPARATOR + "{cluster_id}"

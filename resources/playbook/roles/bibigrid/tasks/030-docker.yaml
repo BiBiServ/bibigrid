@@ -7,15 +7,15 @@
 - name: Configure Docker
   copy:
     content: |-
-             {
-                "mtu":{{ ansible_default_ipv4.mtu }}
-             }
+      {
+         "mtu":{{ ansible_default_ipv4.mtu }}
+      }
     dest: /etc/docker/daemon.json
     owner: root
     group: root
     mode: "0o644"
   notify:
-    docker
+    Docker
 
 - name: Create docker group and change GID
   group:

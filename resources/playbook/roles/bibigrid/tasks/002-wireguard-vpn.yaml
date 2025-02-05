@@ -12,7 +12,7 @@
     mode: "0o640"
   become: true
   notify:
-    - systemd-networkd restart
+    - Systemd-networkd restart
 
 - name: Setup wg0 network
   template:
@@ -22,7 +22,8 @@
     group: systemd-network
     mode: "0o640"
   become: true
-  notify: systemd-networkd restart
+  notify:
+    - Systemd-networkd restart
 
 - name: Enable ip forwarding
   sysctl:

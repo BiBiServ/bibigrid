@@ -1,17 +1,27 @@
-from typing import List, Optional
-from pydantic import BaseModel, Field
+"""
+This module contains models used by the REST api
+"""
+
+from typing import List, Optional, Literal
+from pydantic import BaseModel, Field, IPvAnyAddress
 
 
 # pylint: disable=too-few-public-methods
 
 
 class BootVolume(BaseModel):
+    """
+    Holds information about where the server boots from
+    """
     name: Optional[str]
     terminate: Optional[bool]
     size: Optional[int]
 
 
 class Volume(BaseModel):
+    """
+        Holds volume/attached storage information
+    """
     name: Optional[str]
     snapshot: Optional[str]
     permanent: Optional[bool]
@@ -24,6 +34,9 @@ class Volume(BaseModel):
 
 
 class Instance(BaseModel):
+    """
+        Holds instance/server information
+    """
     type: str
     image: str
     count: Optional[int]
@@ -35,12 +48,18 @@ class Instance(BaseModel):
 
 
 class UserRole(BaseModel):
+    """
+        Allows users to add custom ansible roles
+    """
     hosts: List[str]
     roles: List[dict]  # Replace 'dict' with more specific type if possible
     varsFiles: Optional[List[str]]
 
 
 class ElasticScheduling(BaseModel):
+    """
+        Holds info on Slurms scheduling
+    """
     SuspendTime: Optional[int]
     SuspendTimeout: Optional[int]
     ResumeTimeout: Optional[int]
@@ -48,6 +67,9 @@ class ElasticScheduling(BaseModel):
 
 
 class SlurmConf(BaseModel):
+    """
+    Holds info on basic Slurm settings
+    """
     db: Optional[str]
     db_user: Optional[str]
     db_password: Optional[str]
@@ -56,11 +78,17 @@ class SlurmConf(BaseModel):
 
 
 class Gateway(BaseModel):
+    """
+    Holds info regarding whether a gateway is used to connect to the master
+    """
     ip: str
     portFunction: str
 
 
 class ConfigModel(BaseModel):
+    """
+    Holds info regarding the configuration
+    """
     infrastructure: str
     cloud: str
     sshUser: str
@@ -95,6 +123,10 @@ class ConfigModel(BaseModel):
 
 
 class OtherConfigModel(ConfigModel):
+    """
+    Holds info about other configurations
+    TODO: Fill in the missing bits
+    """
     vpnInstance: Instance
 
 
@@ -141,9 +173,12 @@ class LogResponseModel(BaseModel):
     log: str
 
 
-class ReadyResponseModel(BaseModel):
+class ClusterStateResponseModel(BaseModel):
     """
-    ResponseModel for ready
+    Response model for state
     """
+    cluster_id: str
+    floating_ip: IPvAnyAddress
     message: str
-    ready: bool
+    ssh_user: str
+    state: Literal[200, 201, 204, 404, 500]
