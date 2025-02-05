@@ -77,15 +77,6 @@ class Instance(BaseModel):
     volumes: Optional[List[Volume]] = Field(default=[])
 
 
-class UserRole(BaseModel):
-    """
-        Allows users to add custom ansible roles
-    """
-    hosts: List[str]
-    roles: List[dict]  # Replace 'dict' with more specific type if possible
-    varsFiles: Optional[List[str]]
-
-
 class ElasticScheduling(BaseModel):
     """
         Holds info on Slurms scheduling
