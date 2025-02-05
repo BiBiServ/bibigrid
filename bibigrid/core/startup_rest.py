@@ -223,13 +223,10 @@ async def state(cluster_id: str):
     """
     Expects a cluster id.
 
-    Returns whether the cluster's state according to the log file.
-    If the running state of the cluster has been changed outside BiBiGrid REST, this method cannot detect this.
-
-    In such cases checking [info](#info)'s ready value is more reliable as it includes a check whether the cluster
-    actually exists on the provider. Ready omits checking the provider and is therefore less reliable, but faster.
-    * @param cluster_id: id of cluster to get ready state from
-    * @return: Message whether cluster is down or up and a bool "ready" whether the cluster is ready.
+    Returns the cluster's state according to the ~/.config/bibigrid/cluster_info/{cluster_id}.yaml file.
+    If the running state of the cluster has been changed outside BiBiGrid, this method cannot detect that.
+    * @param cluster_id: id of cluster to get state from
+    * @return: cluster state
     """
     LOG.debug(f"Requested log on {cluster_id}.")
     try:
