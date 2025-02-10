@@ -117,7 +117,7 @@ class MasterConfig(BaseModel):
     network: Optional[str] = Field(default=None)
     cloud_identifier: Optional[str] = None
     sshPublicKeyFiles: Optional[List[str]] = Field(default=[])
-    sshPublicKeys: Optional[str] = Field(default=None)
+    sshPublicKeys: Optional[List[str]] = Field(default=None)
     sshTimeout: Optional[int] = 5
     cloudScheduling: Optional[CloudScheduling] = None
     nfsShares: Optional[List[str]] = Field(default=[])

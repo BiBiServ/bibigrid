@@ -539,35 +539,28 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug,
                                     log=self.log)
         except exceptions.ConnectionException:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error("Connection couldn't be established. Check Provider connection.")
         except paramiko.ssh_exception.NoValidConnectionsError:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error("SSH connection couldn't be established. Check keypair.")
         except KeyError as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(
                 f"Tried to access dictionary key {str(exc)}, but couldn't. Please check your configurations.")
         except FileNotFoundError as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Tried to access resource files but couldn't. No such file or directory: {str(exc)}")
         except TimeoutError as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Timeout while connecting to master. Maybe you are trying to create a master without "
                            f"public ip "
                            f"while not being in the same network: {str(exc)}")
         except ExecutionException as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Execution of cmd on remote host fails: {str(exc)}")
         except ConfigurationException as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Configuration invalid: {str(exc)}")
         except Exception as exc:  # pylint: disable=broad-except
             self.log.error(traceback.format_exc())
