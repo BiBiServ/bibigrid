@@ -75,6 +75,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                   "message": "Create process has been started."})
 
     def write_cluster_state(self, state):
+        self.log.debug(f"Writing cluster state {state}.")
         state = {"cluster_id": self.cluster_id, "ssh_user": self.ssh_user, **state}
         # last cluster
         with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
@@ -598,4 +599,3 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
                                   "state": "running",
                                   "message": "Cluster successfully created."})
-        self.log.log(42, self.configurations[0])
