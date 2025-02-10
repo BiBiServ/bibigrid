@@ -245,7 +245,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         network = configuration["network"]
         image = image_selection.select_image(provider, worker["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
-
         volumes = self.create_server_volumes(provider=provider, instance=worker, name=name)
 
         # create a server and attaches volumes if given; blocks until it is up and running
@@ -284,8 +283,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         self.log.info(f"Creating volumes for {name}...")
         return_volumes = []
-        group_instance = {"volumes": []}
-        instance["group_instances"] = {name: group_instance}
+        group_instance = {"volumes": []} # TODO rethink naming
+        if not instance.get("group_instances"):
+            instance["group_instances"] = {name: group_instance}
+        else:
+            instance["group_instances"][name] = group_instance
 
         for i, volume in enumerate(instance.get("volumes", [])):
             self.log.debug(f"Volume {i}: {volume}")
@@ -603,3 +605,4 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
                                   "state": "running",
                                   "message": "Cluster successfully created."})
+        self.log.log(42, self.configurations[0])
