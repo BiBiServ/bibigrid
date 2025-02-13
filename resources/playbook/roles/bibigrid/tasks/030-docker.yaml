@@ -1,6 +1,10 @@
 - name: Install Docker
   apt:
-    name: docker.io
+    name: 
+      - docker.io
+      - python3-docker
+      - python3-compose       # legacy python compose
+      - docker-compose-v2
     state: present
   tags: install
 
@@ -29,10 +33,6 @@
     append: true
     groups: docker
     # Add when condition in case of debian
-
-- name: Install docker-api via PIP
-  pip:
-    name: ['docker', 'docker-compose'] # reevaluate
 
 - name: (Re-)start docker socket
   systemd:
