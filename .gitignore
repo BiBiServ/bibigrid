@@ -1,6 +1,7 @@
 # complete idea
 .idea/
 .run/
+.vscode/
 
 # variable resources
 resources/playbook/ansible.cfg
