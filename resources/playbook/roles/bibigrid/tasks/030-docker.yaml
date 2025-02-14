@@ -3,7 +3,7 @@
     name:
       - docker.io
       - python3-docker
-      - python3-compose       # legacy python compose
+      - docker-compose
       - docker-compose-v2
     state: present
   tags: install
