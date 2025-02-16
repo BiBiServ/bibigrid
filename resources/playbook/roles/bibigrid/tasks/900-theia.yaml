@@ -39,7 +39,8 @@
 
 - name: Install nvm
   shell: |
-    set -o pipefail && curl -o- https://raw.githubusercontent.com/creationix/nvm/{{ bibigrid_nvm_version }}/install.sh | NVM_DIR={{ bibigrid_nvm_install_dir }} /bin/bash
+    set -o pipefail && \
+    curl -o- https://raw.githubusercontent.com/creationix/nvm/{{ bibigrid_nvm_version }}/install.sh | NVM_DIR={{ bibigrid_nvm_install_dir }} /bin/bash
   args:
     creates: "{{ bibigrid_nvm_install_dir }}/nvm.sh"
     executable: bash
