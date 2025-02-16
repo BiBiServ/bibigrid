@@ -10,7 +10,7 @@
 
 - name: Create NVM install dir
   file:
-    path: "{{ nvm_install_dir }}"
+    path: "{{ bibigrid_nvm_install_dir }}"
     state: directory
     mode: "0o755"
 
