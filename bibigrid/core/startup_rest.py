@@ -78,13 +78,13 @@ async def validate_configuration(configurations_json: ConfigurationsModel, clust
     """
     Expects a cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
-    file.
+    as json.
 
     Returns validation result (success, or failure)
     * @param cluster_id: optional id of to be created cluster in order to log into the same file.
     If not given, one is generated.
-    * @param config_file: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
-    /features/configuration.md) yaml file
+    * @param configurations_json: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
+    /features/configuration.md)
     * @return: success or failure of the validation
     """
     cluster_id, log = setup(cluster_id)
@@ -104,18 +104,18 @@ async def validate_configuration(configurations_json: ConfigurationsModel, clust
         return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
-@app.post("/bibigrid/create", response_model=CreateResponseModel)
+@app.post("/bibigrid/create/", response_model=CreateResponseModel)
 async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: str = None):
     """
     Expects an optional cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
-    file.
+    as json.
 
     Returns the cluster id and whether cluster creation (according to the configuration) has started.
-    The user then can check via [ready](#ready) if the cluster is ready.
-    * @param cluster_id: UUID with 15 letters. if not given, one is generated
-    * @param config_file: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
-    /features/configuration.md) yaml file
+    Using '/state' you can see if the cluster is ready.
+    * @param cluster_id: optional UUID with 15 letters. if not given, one is generated
+    * @param configurations_json: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
+    /features/configuration.md)
     * @return: message whether the cluster creation has been started and cluster id
     """
     LOG.debug(f"Requested creation on {cluster_id}")
@@ -141,12 +141,13 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
     """
     Expects a cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
-    file.
+    as json.
 
     Returns whether cluster termination (according to the configuration) has started.
+    Using '/state' you can see if the cluster has been terminated.
     * @param cluster_id: id of cluster to terminate
-    * @param config_file: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
-    /features/configuration.md) yaml file
+    * @param configurations_json: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
+    /features/configuration.md)
     * @return: message whether the cluster termination has been started.
     """
     cluster_id, log = setup(cluster_id)
@@ -165,14 +166,14 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
         return JSONResponse(content={"error": type(exc).__name__, "message":str(exc)}, status_code=400)
 
 
-@app.post("/bibigrid/info/", response_model=InfoResponseModel)
+@app.post("/bibigrid/info/{cluster_id}", response_model=InfoResponseModel)
 async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel):
     """
     Expects a cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
-    file.
+    as json.
 
-    Returns detailed cluster information, including whether the cluster is "ready".
+    Returns detailed cluster information.
     * @param cluster_id: id of cluster to get info on
     * @param config_file: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
     /features/configuration.md) yaml file
@@ -192,16 +193,16 @@ async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel)
         return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/log/", response_model=LogResponseModel)
+@app.get("/bibigrid/log/{cluster_id}", response_model=LogResponseModel)
 async def get_log(cluster_id: str, lines: int = None):
     """
-    Expects a cluster id and optional lines.
+    Expects a cluster id and, optional, lines.
 
     Returns last lines of the .log for the given cluster id. If no lines are specified, all lines are returned.
     * @param cluster_id: id of cluster to get .log from
     * @param lines: lines to read from the end
     * @return: Message whether the log has been found and if found, the last lines of the logged text
-    (or everything if lines were omitted).
+    (or everything if lines has been omitted).
     """
     LOG.debug(f"Requested log on {cluster_id}.")
     try:
@@ -218,7 +219,7 @@ async def get_log(cluster_id: str, lines: int = None):
         return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
-@app.get("/bibigrid/state/", response_model=ClusterStateResponseModel)
+@app.get("/bibigrid/state/{cluster_id}", response_model=ClusterStateResponseModel)
 async def state(cluster_id: str):
     """
     Expects a cluster id.
@@ -244,56 +245,6 @@ async def state(cluster_id: str):
                                          "ssh_user":None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
-
-
-# outdated tests
-# client = TestClient(app)
-
-
-def test_validate():
-    with open('test.yaml', 'rb') as file:
-        response = client.post("/bibigrid/validate", files={"config_file": file})
-    assert response.status_code == 200
-    response_data = response.json()
-    assert response_data["message"] == "Validation successful"
-    assert "cluster_id" in response_data
-
-
-def test_create():
-    with open('test.yaml', 'rb') as file:
-        response = client.post("/bibigrid/create", files={"config_file": file})
-    assert response.status_code == 200
-    response_data = response.json()
-    assert "cluster_id" in response_data
-
-
-def test_terminate_cluster():
-    with open('test.yaml', 'rb') as file:
-        response = client.post("/bibigrid/terminate", params={"cluster_id": "2uiy5ka2c5y1k8o"},
-                               files={"config_file": file})
-    assert response.status_code == 200
-    response_data = response.json()
-    assert "message" in response_data
-
-
-def test_info():
-    # Assuming you've previously created a configuration with ID 1
-    response = client.get("/bibigrid/info/1")
-    assert response.status_code == 200
-    response_data = response.json()
-    assert bool(response_data)
-
-
-def test_get_nonexistent_configuration_info():
-    response = client.get("/bibigrid/info/999")
-    assert response.status_code == 404
-    assert response.json() == {"error": "Configuration not found"}
-
-
-# test_validate()
-# test_create()  # test_info()
-# test_terminate_cluster()
-# test_get_nonexistent_configuration_info()
 
 
 if __name__ == "__main__":
