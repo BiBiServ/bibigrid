@@ -37,6 +37,8 @@ log "Create-Script started"
 
 hosts=$(scontrol show hostnames "$1")
 
+# use python bibigrid environment
+source /opt/bibigrid-venv/bin/activate
 
 # create and configure requested instances
 python3 /usr/local/bin/create_server.py "${hosts}"

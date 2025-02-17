@@ -1,13 +1,12 @@
 # BiBiGrid
+
 BiBiGrid is a framework for creating and managing cloud clusters, currently supporting OpenStack. 
 Future versions will support additional cloud providers.
 
-BiBiGrid uses Ansible to configure standard Ubuntu 20.04/22.04 LTS as 
-well as Debian 11 cloud images. Depending on your configuration BiBiGrid
-can set up an HCP cluster for grid computing (Slurm Workload Manager, 
-a shared filesystem (on local discs and attached volumes), 
+BiBiGrid uses Ansible to configure standard Ubuntu 22.04/24.04 LTS cloud images. Depending on your configuration BiBiGrid
+can set up an HCP cluster for grid computing (Slurm Workload Manager,
+a shared filesystem (on local discs and attached volumes),
 a cloud IDE for writing, running and debugging (Theia Web IDE) and many more.
-
 
 > **Note**
 > The latest version is currently work in progress. Future changes are likely.
@@ -16,6 +15,7 @@ a cloud IDE for writing, running and debugging (Theia Web IDE) and many more.
 > but not maintained anymore.
 
 ## Getting Started
+
 For most users the [Hands-On BiBiGrid Tutorial](https://github.com/deNBI/bibigrid_clum2022) 
 is the best entry point.
 
@@ -26,7 +26,9 @@ might be just what you need.
 <summary> Brief, technical BiBiGrid overview </summary>
 
 ### How to configure a cluster?
+
 #### Configuration File: bibigrid.yaml
+
 A [template](bibigrid.yaml) file is included in the repository ([bibigrid.yaml](bibigrid.yaml)). 
 
 
@@ -39,6 +41,7 @@ The configuration template [bibigrid.yaml](bibigrid.yaml) contains many helpful 
 [You need more details?](documentation/markdown/features/configuration.md)
 
 #### Cloud Specification Data: clouds.yaml
+
 To access the cloud, authentication information is required.
 You can download your `clouds.yaml` from OpenStack.
 
@@ -47,10 +50,12 @@ Place the `clouds.yaml` file in the `~/.config/bibigrid/` directory. BiBiGrid wi
 [You need more details?](documentation/markdown/features/cloud_specification_data.md)
 
 ### Quick First Time Usage
+
 If you haven't used BiBiGrid1 in the past or are unfamiliar with OpenStack, we heavily recommend following the 
 [tutorial](https://github.com/deNBI/bibigrid_clum2022) instead.
 
 #### Preparation
+
 1. Download (or create) your `clouds.yaml` file (and optionally `clouds-public.yaml`) as described [above](#cloud-specification-data-cloudsyaml). 
 2. Place the `clouds.yaml` into `~/.config/bibigrid`
 3. Fill in the `bibigrid.yaml` configuration file with your specifics. At a minimum you need to specify: a master instance with valid type and image, 
@@ -63,6 +68,7 @@ See [here](https://www.akamai.com/blog/developers/how-building-virtual-python-en
 6. Take a look at [First execution](#first-execution)
 
 #### First execution
+
 Before proceeding, ensure you have completed the steps described in the [Preparation section](#preparation).
 
 After cloning the repository, navigate to the bibigrid directory. 
@@ -70,6 +76,7 @@ Source the virtual environment created during [preparation](#preparation) to exe
 Refer to BiBiGrid's [Command Line Interface documentation](documentation/markdown/features/CLI.md) if you want to explore additional options.
 
 A first execution run through could be:
+
 1. `./bibigrid.sh -i [path-to-bibigrid.yaml] -ch`: checks the configuration
 2. `./bibigrid.sh -i 'bibigrid.yaml -i [path-to-bibigrid.yaml] -c'`: creates the cluster (execute only if check was successful)
 3. Use **BiBiGrid's create output** to investigate the created cluster further. Especially connecting to the ide might be helpful. 
@@ -85,6 +92,7 @@ Great! You've just started and terminated your first cluster using BiBiGrid!
 </details>
 
 ### Troubleshooting
+
 If your cluster doesn't start up, first ensure your configuration file is valid using the `-ch` option.
 If the configuration is invalid, modify the file as needed.
 Use the `-v` or `-vv` options for more verbose output to help identify the issue faster.
@@ -95,29 +103,34 @@ Additionally, manually check if your quotas are exceeded, as some quotas cannot 
 **Whenever you contact a developer, please send your logfile along.**
 
 # Documentation
+
 For more information about BiBiGrid, please visit the following links:
+
 - [BiBiGrid Features](documentation/markdown/bibigrid_feature_list.md)
 - [Software used by BiBiGrid](documentation/markdown/bibigrid_software_list.md)
 
 <details>
 <summary> Differences to old Java BiBiGrid</summary>
 
-* BiBiGrid no longer uses RC- but cloud.yaml-files for cloud-specification data. Environment variables are no longer used (or supported).
+- BiBiGrid no longer uses RC- but cloud.yaml-files for cloud-specification data. Environment variables are no longer used (or supported).
 See [Cloud Specification Data](documentation/markdown/features/cloud_specification_data.md).
-* BiBiGrid has a largely reworked configurations file, because BiBiGrid core supports multiple providers this step was necessary.
+- BiBiGrid has a largely reworked configurations file, because BiBiGrid core supports multiple providers this step was necessary.
 See [Configuration](documentation/markdown/features/configuration.md)
-* BiBiGrid currently only implements the provider OpenStack.
-* BiBiGrid only starts the master and will dynamically start workers using slurm when they are needed. 
+- BiBiGrid currently only implements the provider OpenStack.
+- BiBiGrid only starts the master and will dynamically start workers using slurm when they are needed. 
 Workers are powered down once they are not used for a longer period.
-* BiBiGrid lays the foundation for clusters that are spread over multiple providers, but Hybrid Clouds aren't fully implemented yet.
+- BiBiGrid lays the foundation for clusters that are spread over multiple providers, but Hybrid Clouds aren't fully implemented yet.
+  
 </details>
 
 # Development
+
 ## Development-Guidelines
 
 [https://github.com/BiBiServ/Development-Guidelines](https://github.com/BiBiServ/Development-Guidelines)
 
 ## On implementing concrete providers
+
 Implementing new cloud providers is straightforward. 
 Copy the `provider.py` file and implement all necessary methods for your cloud provider.
 Inherit from the `provider` class.

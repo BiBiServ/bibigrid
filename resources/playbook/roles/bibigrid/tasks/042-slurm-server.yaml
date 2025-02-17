@@ -170,7 +170,7 @@
     mode: "0o750"
 
 - name: Install python dependencies
-  pip:
+  ansible.builtin.pip:
     name:
       - python-openstackclient==6.0.0
       - openstacksdk==0.62.0
@@ -179,6 +179,7 @@
       - paramiko
       - ansible-runner
       - pyzabbix
+    virtualenv: /opt/bibigrid-venv
 
 - name: 'Add default user to ansible group'
   user:

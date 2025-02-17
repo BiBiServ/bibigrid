@@ -8,6 +8,7 @@
       - mariadb-server
       - zabbix-server-mysql
       - zabbix-sql-scripts
+      - python3-pymysql
     state: present
     update_cache: true
   when: "ansible_distribution_file_variety == 'Debian' or ansible_distribution == 'Ubuntu'"
@@ -18,12 +19,9 @@
       - mariadb
       - zabbix-server-mysql
       - zabbix-sql-scripts
+      - python3-pymysql
     state: present
   when: "ansible_distribution_file_variety == 'RedHat' "
-
-- name: Install python modul 'PyMySQL'
-  pip:
-    name: PyMySQL
 
 - name: Create zabbix database
   mysql_db:
@@ -113,7 +111,6 @@
           - zabbix-frontend-php
           - zabbix-apache-conf
         state: present
-
 
 - name: Create Zabbix web dir (if not exists)
   file:

@@ -46,11 +46,10 @@
       - "python3-setuptools"
     state: "present"
 
-- name: Add zabbix repositories
+- name: Add zabbix repositories # noqa: line-length
   apt:
-    deb: "https://repo.zabbix.com/zabbix/6.2/{{ ansible_distribution | lower }}\
-    /pool/main/z/zabbix-release/zabbix-release_6.2-1%2B{{ ansible_distribution | lower }}\
-    {{ ansible_distribution_version }}_all.deb"
+    # yamllint disable-line
+    deb: "https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+{{ ansible_distribution | lower }}{{ ansible_distribution_version }}_all.deb"
     state: present
     force: true
   tags:

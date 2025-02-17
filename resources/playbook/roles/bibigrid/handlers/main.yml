@@ -35,9 +35,9 @@
     name: slurmd
     state: restarted
 
-- name: Zabbix-agent
+- name: Zabbix-agent2
   systemd:
-    name: zabbix-agent
+    name: zabbix-agent2
     state: restarted
 
 - name: Zabbix-server
