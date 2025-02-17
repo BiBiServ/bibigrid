@@ -35,14 +35,14 @@
     name: slurmd
     state: restarted
 
-- name: zabbix-agent2
+- name: Zabbix-agent2
   systemd:
     name: zabbix-agent2
     state: restarted
 
 - name: Zabbix-server
   systemd:
-    name: Zabbix-server
+    name: zabbix-server
     state: restarted
 
 - name: Apache2

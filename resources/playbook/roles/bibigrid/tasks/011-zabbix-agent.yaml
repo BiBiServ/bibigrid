@@ -26,7 +26,7 @@
     src: zabbix/zabbix_agent2.conf.j2
     dest: /etc/zabbix/zabbix_agent2.conf
     mode: "0o644"
-  notify: zabbix-agent2
+  notify: Zabbix-agent2
 
 - name: Copy Zabbix Host delete script
   copy:
@@ -34,9 +34,10 @@
     dest: /usr/local/bin/zabbix_host_delete.py
     mode: "0o755"
 
-- name: Install zabbix python-api
-  pip:
+- name: Install zabbix python-api in BiBiGrid virtual environment
+  ansible.builtin.pip:
     name: zabbix-api
+    virtualenv: /opt/bibigrid-venv
 
 - name: Install zabbix agent2
   apt:
