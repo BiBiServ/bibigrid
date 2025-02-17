@@ -8,7 +8,7 @@ import os
 
 from bibigrid.core.utility.paths.basic_path import CONFIG_FOLDER
 
-FOLDER_START = ("~/", "/")
+FOLDER_START = ("~/", "/", "./")
 LOG = logging.getLogger("bibigrid")
 
 
@@ -41,7 +41,7 @@ def interpret_command_line():
                                                                        "Relative paths can be used and start "
                                                                        f"at '{CONFIG_FOLDER}'. "
                                                                        "Required for all actions but '--version'",
-                        type=lambda s: s if s.startswith(FOLDER_START) else os.path.join(CONFIG_FOLDER, s))
+                        type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else os.path.join(CONFIG_FOLDER, s))
     parser.add_argument("-cid", "--cluster_id", metavar="<cluster-id>", type=check_cid, default="",
                         help="Cluster id is needed for '--ide', '--terminate_cluster' and '--update'. "
                              "If not set, last created cluster's id is used")
