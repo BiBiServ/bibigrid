@@ -249,12 +249,8 @@ async def state(cluster_id: str):
         return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='BiBiGrid REST easily sets up clusters within a cloud environment')
-    parser.add_argument("-c", "--clouds", default=["openstack"], nargs="+",
-                        help="Name of clouds.yaml entries to check on startup.")
-    args = parser.parse_args()
-    clouds_yaml_check = validate_configuration.ValidateConfiguration([{"cloud": cloud} for cloud in args.clouds], None,
+def check_clouds_yaml(clouds):
+    clouds_yaml_check = validate_configuration.ValidateConfiguration([{"cloud": cloud} for cloud in clouds], None,
                                                                      LOG).check_clouds_yamls()
     clouds_yaml_security_check = validate_configuration.check_clouds_yaml_security(LOG)
     if clouds_yaml_check and clouds_yaml_security_check:
@@ -266,5 +262,14 @@ if __name__ == "__main__":
         LOG.warning(message)
         print(message)
         exit(0)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='BiBiGrid REST easily sets up clusters within a cloud environment')
+    parser.add_argument("-c", "--clouds", default=["openstack"], nargs="+",
+                        help="Name of clouds.yaml entries to check on startup.")
+    args = parser.parse_args()
+
+    check_clouds_yaml(args.clouds)
+
     uvicorn.run("bibigrid.core.startup_rest:app", host="0.0.0.0", port=8000,
                 workers=multiprocessing.cpu_count() * 2 + 1)
