@@ -1,6 +1,7 @@
 """
 Contains main method. Interprets command line, sets logging and starts corresponding action.
 """
+import argparse
 import asyncio
 import logging
 import multiprocessing
@@ -17,6 +18,7 @@ from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
     InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel
 from bibigrid.core.utility import id_generation
+from bibigrid.core.utility import validate_configuration
 from bibigrid.core.utility.handler import provider_handler
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER
 
@@ -74,7 +76,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.post("/bibigrid/validate", response_model=ValidationResponseModel)
-async def validate_configuration(configurations_json: ConfigurationsModel, cluster_id: str = None):
+async def validate_configuration_json(configurations_json: ConfigurationsModel, cluster_id: str = None):
     """
     Expects a cluster id and a
     [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
@@ -163,7 +165,7 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
 
         return JSONResponse(content={"message": "Termination successfully requested."}, status_code=202)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": type(exc).__name__, "message":str(exc)}, status_code=400)
+        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
 @app.post("/bibigrid/info/{cluster_id}", response_model=InfoResponseModel)
@@ -242,11 +244,27 @@ async def state(cluster_id: str):
                                 status_code=200)
         else:
             return JSONResponse(content={"message": "Cluster not found.", "cluster_id": None, "floating_ip": None,
-                                         "ssh_user":None}, status_code=404)
+                                         "ssh_user": None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='BiBiGrid REST easily sets up clusters within a cloud environment')
+    parser.add_argument("-c", "--clouds", default=["openstack"], nargs="+",
+                        help="Name of clouds.yaml entries to check on startup.")
+    args = parser.parse_args()
+    clouds_yaml_check = validate_configuration.ValidateConfiguration([{"cloud": cloud} for cloud in args.clouds], None,
+                                                                     LOG).check_clouds_yamls()
+    clouds_yaml_security_check = validate_configuration.check_clouds_yaml_security(LOG)
+    if clouds_yaml_check and clouds_yaml_security_check:
+        LOG.info(
+            f"Clouds yaml check successful.")
+    else:
+        message = (f"Clouds yaml check failed! Aborting. Clouds yaml check successful: {clouds_yaml_check}. "
+                   f"Security check successful: {clouds_yaml_security_check}.")
+        LOG.warning(message)
+        print(message)
+        exit(0)
     uvicorn.run("bibigrid.core.startup_rest:app", host="0.0.0.0", port=8000,
-                workers=multiprocessing.cpu_count() * 2 + 1)  # Use the on_starting event
+                workers=multiprocessing.cpu_count() * 2 + 1)
