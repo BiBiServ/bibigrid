@@ -2,7 +2,7 @@
 This module contains models used by the REST api
 """
 
-from typing import List, Optional, Literal, Union
+from typing import Dict, List, Optional, Literal, Union
 
 from pydantic import BaseModel, Field, IPvAnyAddress
 
@@ -237,11 +237,15 @@ class ClusterStateResponseModel(BaseModel):
     state: Literal["starting", "running", "terminated", "failed"]
 
 
+class OsModel(BaseModel):
+    os_versions: List[str]
+
+
 class CloudNodeRequirementsModel(BaseModel):
     """
     Model for cloud_node_requirements.yaml
     """
-    os: List[str]
+    os_distro: List[Dict[str, OsModel]]
 
 
 class RequirementsModel(BaseModel):
