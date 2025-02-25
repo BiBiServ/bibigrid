@@ -26,7 +26,7 @@ def version(log):
     for directory in configuration_handler.CLOUDS_YAML_PATHS:
         if os.path.isdir(os.path.expanduser(directory)):
             log.log(42, f"## '{directory}'\n")
-            dir_print = seedir.seedir(directory, exclude_folders=["keys"], printout=False)
+            dir_print = seedir.seedir(directory, exclude_folders=["keys", "cluster_info"], printout=False)
             log.log(42, dir_print)
     log.log(42, "# cloud_node_requirements.yaml")
 
