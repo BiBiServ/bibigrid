@@ -94,8 +94,8 @@ async def validate_configuration_json(configurations_json: ConfigurationsModel, 
     Returns validation result (success, or failure)
     * @param cluster_id: optional id of to be created cluster in order to log into the same file.
     If not given, one is generated.
-    * @param configurations_json: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
-    /features/configuration.md)
+    * @param configurations_json:
+    [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
     * @return: success or failure of the validation
     """
     cluster_id, log = setup(cluster_id)
@@ -125,8 +125,8 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
     Returns the cluster id and whether cluster creation (according to the configuration) has started.
     Using '/state' you can see if the cluster is ready.
     * @param cluster_id: optional UUID with 15 letters. if not given, one is generated
-    * @param configurations_json: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
-    /features/configuration.md)
+    * @param configurations_json:
+    [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
     * @return: message whether the cluster creation has been started and cluster id
     """
     LOG.debug(f"Requested creation on {cluster_id}")
@@ -157,8 +157,8 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
     Returns whether cluster termination (according to the configuration) has started.
     Using '/state' you can see if the cluster has been terminated.
     * @param cluster_id: id of cluster to terminate
-    * @param configurations_json: [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown
-    /features/configuration.md)
+    * @param configurations_json:
+    [configuration](https://github.com/BiBiServ/bibigrid/blob/master/documentation/markdown/features/configuration.md)
     * @return: message whether the cluster termination has been started.
     """
     cluster_id, log = setup(cluster_id)
@@ -266,7 +266,7 @@ def check_clouds_yaml(clouds):
     clouds_yaml_security_check = validate_configuration.check_clouds_yaml_security(LOG)
     if clouds_yaml_check and clouds_yaml_security_check:
         LOG.info(
-            f"Clouds yaml check successful.")
+            "Clouds yaml check successful.")
     else:
         message = (f"Clouds yaml check failed! Aborting. Clouds yaml check successful: {clouds_yaml_check}. "
                    f"Security check successful: {clouds_yaml_security_check}.")
