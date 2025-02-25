@@ -208,7 +208,7 @@ class InfoResponseModel(BaseModel):
 
 class LogResponseModel(BaseModel):
     """
-    ResponseModel for get_log
+    Model for get_log
     """
     message: str
     log: str
@@ -223,3 +223,16 @@ class ClusterStateResponseModel(BaseModel):
     message: str
     ssh_user: str
     state: Literal["starting", "running", "terminated", "failed"]
+
+class CloudNodeRequirementsModel(BaseModel):
+    """
+    Model for cloud_node_requirements.yaml
+    """
+    os: List[str]
+
+class RequirementsModel(BaseModel):
+    """
+    Response model for requirements
+    """
+    cloud_node_requirements: CloudNodeRequirementsModel
+

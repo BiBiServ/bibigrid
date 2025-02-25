@@ -10,6 +10,9 @@ RESOURCES = "resources"
 ROOT_PATH = Path(__file__).absolute().parents[4]
 RESOURCES_PATH = os.path.join(ROOT_PATH, RESOURCES)
 
+CLOUD_NODE_REQUIREMENTS_FILE = "cloud_node_requirements.yaml"
+CLOUD_NODE_REQUIREMENTS_PATH = os.path.join(RESOURCES_PATH, CLOUD_NODE_REQUIREMENTS_FILE)
+
 STANDARD_CONFIG_PATH = "~/.config/bibigrid"
 CLUSTER_INFO = "cluster_info"
 CONFIG_FOLDER = os.path.expanduser(STANDARD_CONFIG_PATH)

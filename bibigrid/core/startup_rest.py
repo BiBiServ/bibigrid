@@ -16,11 +16,12 @@ from fastapi.responses import JSONResponse
 
 from bibigrid.core.actions import check, create, terminate, list_clusters
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel
+    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
+    RequirementsModel
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import validate_configuration
 from bibigrid.core.utility.handler import provider_handler
-from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER
+from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLOUD_NODE_REQUIREMENTS_PATH
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -73,6 +74,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logging.error(f"{request}: {exc_str}")
     content = {'status_code': 10422, 'message': exc_str, 'data': None}
     return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@app.get("/bibigrid/requirements", response_model=RequirementsModel)
+async def get_requirements():
+    with open(CLOUD_NODE_REQUIREMENTS_PATH, "r") as cloud_node_requirements_file:
+        cloud_node_requirements = yaml.safe_load(cloud_node_requirements_file)
+    return JSONResponse(content={"cloud_node_requirements": cloud_node_requirements}, status_code=200)
 
 
 @app.post("/bibigrid/validate", response_model=ValidationResponseModel)
@@ -262,6 +270,7 @@ def check_clouds_yaml(clouds):
         LOG.warning(message)
         print(message)
         exit(0)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='BiBiGrid REST easily sets up clusters within a cloud environment')
