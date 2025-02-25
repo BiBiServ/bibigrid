@@ -2,11 +2,12 @@ import json
 import logging
 import os
 import time
+import yaml
 
 from fastapi.testclient import TestClient
 
 from bibigrid.core.startup_rest import app
-from bibigrid.core.utility.paths.basic_path import ROOT_PATH
+from bibigrid.core.utility.paths.basic_path import ROOT_PATH, CLOUD_NODE_REQUIREMENTS_PATH
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -16,7 +17,20 @@ with open(os.path.join(ROOT_PATH, "resources/tests/rest_test.json"), 'r', encodi
 CLUSTER_ID = "4242424242"
 
 client = TestClient(app)
+# Read the cloud_node_requirements YAML file and load it into a dictionary
 
+with open(CLOUD_NODE_REQUIREMENTS_PATH, "r", encoding="utf-8") as cloud_node_requirements_file:
+    cloud_node_requirements = yaml.safe_load(cloud_node_requirements_file)
+
+def test_get_requirements():
+    response = client.get("/bibigrid/requirements")
+
+    # Assert the response status code is 200
+    assert response.status_code == 200
+
+    # Assert the structure of the returned JSON content
+    assert response.json() == {"cloud_node_requirements": cloud_node_requirements}
+    logging.info(f"Response: {response.json()}")
 
 def test_validate():
     response = client.post(f"/bibigrid/validate?cluster_id={CLUSTER_ID}", json=configurations_json)
@@ -65,6 +79,7 @@ def test_state(state):
 
 # Run tests
 if __name__ == "__main__":
+    test_get_requirements()
     test_validate()
     test_create()
     test_state("starting")
