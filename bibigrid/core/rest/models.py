@@ -238,6 +238,9 @@ class ClusterStateResponseModel(BaseModel):
 
 
 class OsModel(BaseModel):
+    """
+    Model for operating system requirements description
+    """
     os_versions: List[str]
 
 
