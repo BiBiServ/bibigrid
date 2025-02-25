@@ -30,6 +30,6 @@ def version(log):
             log.log(42, dir_print)
     log.log(42, "# cloud_node_requirements.yaml")
 
-    with open(CLOUD_NODE_REQUIREMENTS_PATH, "r") as cloud_node_requirements_file:
+    with open(CLOUD_NODE_REQUIREMENTS_PATH, "r", encoding="UTF-8") as cloud_node_requirements_file:
         cloud_node_requirements = yaml.safe_load(cloud_node_requirements_file)
     log.log(42, cloud_node_requirements)

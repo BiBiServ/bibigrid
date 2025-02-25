@@ -7,6 +7,7 @@ import logging
 import multiprocessing
 import os
 import subprocess
+import sys
 
 import uvicorn
 import yaml
@@ -244,15 +245,17 @@ async def state(cluster_id: str):
         cluster_id, log = setup(cluster_id)
         cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
         if not cluster_info_path.startswith(os.path.normpath(CLUSTER_INFO_FOLDER)):
+            log.warning("Invalid cluster_id resulting in path traversal")
             raise ValueError("Invalid cluster_id resulting in path traversal")
         if os.path.isfile(cluster_info_path):
+            log.debug(f"Found cluster state for cluster_id {cluster_id}")
             with open(cluster_info_path, mode="r", encoding="UTF-8") as cluster_info_file:
                 cluster_state = yaml.safe_load(cluster_info_file)
             return JSONResponse(content=cluster_state,
                                 status_code=200)
-        else:
-            return JSONResponse(content={"message": "Cluster not found.", "cluster_id": None, "floating_ip": None,
-                                         "ssh_user": None}, status_code=404)
+        log.info(f"Couldn't find cluster state for cluster_id {cluster_id}")
+        return JSONResponse(content={"message": "Cluster not found.", "cluster_id": None, "floating_ip": None,
+                                     "ssh_user": None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
 
@@ -269,7 +272,7 @@ def check_clouds_yaml(clouds):
                    f"Security check successful: {clouds_yaml_security_check}.")
         LOG.warning(message)
         print(message)
-        exit(0)
+        sys.exit(0)
 
 
 if __name__ == "__main__":

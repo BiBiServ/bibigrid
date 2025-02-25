@@ -19,7 +19,7 @@ class Role(BaseModel):
 
 class UserRole(BaseModel):
     """
-        Allows users to add custom ansible roles
+    Allows users to add custom ansible roles
     """
     hosts: List[str]
     roles: List[Role]
@@ -27,6 +27,9 @@ class UserRole(BaseModel):
 
 
 class CloudScheduling(BaseModel):
+    """
+    Model for cloud scheduling
+    """
     sshTimeout: Optional[int] = 5
 
 
@@ -41,7 +44,7 @@ class BootVolume(BaseModel):
 
 class Volume(BaseModel):
     """
-        Holds volume/attached storage information
+    Holds volume/attached storage information
     """
     name: Optional[str] = None
     snapshot: Optional[str] = None
@@ -65,7 +68,7 @@ class Volume(BaseModel):
 
 class Instance(BaseModel):
     """
-        Holds instance/server information
+    Holds instance/server information
     """
     type: str
     image: str
@@ -79,7 +82,7 @@ class Instance(BaseModel):
 
 class ElasticScheduling(BaseModel):
     """
-        Holds info on Slurms scheduling
+    Holds info on Slurms scheduling
     """
     SuspendTime: Optional[int] = 1800
     SuspendTimeout: Optional[int] = 90
@@ -100,7 +103,7 @@ class SlurmConf(BaseModel):
 
 class Gateway(BaseModel):
     """
-        Holds info regarding whether a gateway is used to connect to the master
+    Holds info regarding whether a gateway is used to connect to the master
     """
     ip: str
     portFunction: str
@@ -108,9 +111,9 @@ class Gateway(BaseModel):
 
 class MasterConfig(BaseModel):
     """
-        Holds info regarding the configuration
+    Holds info regarding the configuration
     """
-    infrastructure: Literal["openstack"] # currently limited to openstack
+    infrastructure: Literal["openstack"]  # currently limited to openstack
     cloud: str = "openstack"
     sshUser: str
     subnet: Optional[str] = Field(default=None)
@@ -143,9 +146,9 @@ class MasterConfig(BaseModel):
 
 class OtherConfig(BaseModel):
     """
-        Holds info about other configurations
+    Holds info about other configurations
     """
-    infrastructure: Literal["openstack"] # currently limited to openstack
+    infrastructure: Literal["openstack"]  # currently limited to openstack
     cloud: str = "openstack"
     sshUser: str
     subnet: Optional[str] = Field(default=None)
@@ -159,15 +162,24 @@ class OtherConfig(BaseModel):
 
 
 class ConfigurationsModel(BaseModel):
+    """
+    Model for configurations
+    """
     configurations: List[Union[MasterConfig, OtherConfig]]
 
 
 class MinimalConfigurationModel(BaseModel):
+    """
+    Minimal model for a configuration. Containing only info to load clouds.yaml and to connect to provider.
+    """
     infrastructure: Literal["openstack"]
     cloud: str = "openstack"
 
 
 class MinimalConfigurationsModel(BaseModel):
+    """
+    Minimal model for configurations.
+    """
     configurations: List[MinimalConfigurationModel]
 
 
@@ -224,15 +236,16 @@ class ClusterStateResponseModel(BaseModel):
     ssh_user: str
     state: Literal["starting", "running", "terminated", "failed"]
 
+
 class CloudNodeRequirementsModel(BaseModel):
     """
     Model for cloud_node_requirements.yaml
     """
     os: List[str]
 
+
 class RequirementsModel(BaseModel):
     """
     Response model for requirements
     """
     cloud_node_requirements: CloudNodeRequirementsModel
-

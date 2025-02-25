@@ -571,7 +571,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
         self.write_cluster_state({"floating_ip": self.configurations[0].get("floating_ip"),
                                   "state": "failed",
-                                  "message": f"Cluster creation failed. Terminated remains."})
+                                  "message": "Cluster creation failed. Terminated remains."})
         return 1
 
     def log_cluster_start_info(self):
