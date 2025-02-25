@@ -264,7 +264,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # for DNS resolution an entry in the hosts file is created
         with self.worker_thread_lock:
             self.permanents.append(name)
-            with open(a_rp.HOSTS_FILE, mode="r", encoding="utf-8") as hosts_file:
+            with open(a_rp.HOSTS_FILE, mode="r", encoding="UTF-8") as hosts_file:
                 hosts = yaml.safe_load(hosts_file)
             if not hosts or "host_entries" not in hosts:
                 self.log.warning("Hosts file is broken.")

@@ -58,15 +58,15 @@ for filename in os.listdir(GROUP_VARS_PATH):
         worker_group_yaml_file = os.path.join(GROUP_VARS_PATH, filename)
         # checking if it is a file
         if os.path.isfile(worker_group_yaml_file):
-            with open(worker_group_yaml_file, mode="r", encoding="utf-8") as worker_group_yaml:
+            with open(worker_group_yaml_file, mode="r", encoding="UTF-8") as worker_group_yaml:
                 worker_groups.append(yaml.safe_load(worker_group_yaml))
 
 # read common configuration
-with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="utf-8") as common_configuration_file:
+with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="UTF-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
 logging.info(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['sshTimeout']}")
 # read clouds.yaml
-with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
+with open("/etc/openstack/clouds.yaml", mode="r", encoding="UTF-8") as clouds_file:
     clouds = yaml.safe_load(clouds_file)["clouds"]
 
 connections = {}  # connections to cloud providers
@@ -107,7 +107,7 @@ def get_server_vars(name):
     server_vars = {"volumes": []}
     if os.path.isfile(host_vars_path):
         logging.info(f"Found host_vars file {host_vars_path}.")
-        with open(host_vars_path, mode="r", encoding="utf-8") as host_vars_file:
+        with open(host_vars_path, mode="r", encoding="UTF-8") as host_vars_file:
             server_vars = yaml.safe_load(host_vars_file)
             logging.info(f"Loaded Vars: {server_vars}")
     else:
@@ -171,7 +171,7 @@ def volumes_host_vars_update(connection, server, host_vars):
                 logging.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
                               f"as device {volume['device']} that is going to be mounted to "
                               f"{volume.get('mountPoint')}")
-        with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
+        with open(host_vars_path, mode="w+", encoding="UTF-8") as host_vars_file:
             yaml.dump(host_vars, host_vars_file)
     logging.info(f"{host_vars_path}.lock released")
 
@@ -219,7 +219,7 @@ def start_server(name, start_worker_group, start_data):
         userdata = ""
         userdata_file_path = f"/opt/slurm/userdata_{start_worker_group['cloud_identifier']}.txt"
         if os.path.isfile(userdata_file_path):
-            with open(userdata_file_path, mode="r", encoding="utf-8") as userdata_file:
+            with open(userdata_file_path, mode="r", encoding="UTF-8") as userdata_file:
                 userdata = userdata_file.read()
         # create server and ...
         image = select_image(start_worker_group, connection)
@@ -301,7 +301,7 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
     logging.info("Updating hosts.yaml")
     with FileLock("hosts.yaml.lock"):
         logging.info("Lock acquired")
-        with open(HOSTS_FILE_PATH, mode="r", encoding="utf-8") as hosts_file:
+        with open(HOSTS_FILE_PATH, mode="r", encoding="UTF-8") as hosts_file:
             hosts = yaml.safe_load(hosts_file)
         logging.info(f"Existing hosts {hosts}")
         if not hosts or "host_entries" not in hosts:
@@ -309,7 +309,7 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
             hosts = {"host_entries": {}}
         hosts["host_entries"][name] = ip
         logging.info(f"Added host {name} with ip {hosts['host_entries'][name]}")
-        with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
+        with open(HOSTS_FILE_PATH, mode="w", encoding="UTF-8") as hosts_file:
             yaml.dump(hosts, hosts_file)
     logging.info("Wrote hosts file. Released hosts.yaml.lock.")
 

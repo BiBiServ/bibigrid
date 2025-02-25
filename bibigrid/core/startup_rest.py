@@ -78,7 +78,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.get("/bibigrid/requirements", response_model=RequirementsModel)
 async def get_requirements():
-    with open(CLOUD_NODE_REQUIREMENTS_PATH, "r") as cloud_node_requirements_file:
+    with open(CLOUD_NODE_REQUIREMENTS_PATH, "r", encoding="UTF-8") as cloud_node_requirements_file:
         cloud_node_requirements = yaml.safe_load(cloud_node_requirements_file)
     return JSONResponse(content={"cloud_node_requirements": cloud_node_requirements}, status_code=200)
 
@@ -219,7 +219,7 @@ async def get_log(cluster_id: str, lines: int = None):
         file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
         if os.path.isfile(file_name):
             if not lines:
-                with open(file_name, "r", encoding="utf8") as log_file:
+                with open(file_name, "r", encoding="UTF-8") as log_file:
                     response = log_file.read()
             else:
                 response = tail(file_name, lines)
