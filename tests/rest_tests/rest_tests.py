@@ -82,32 +82,9 @@ if __name__ == "__main__":
     test_get_requirements()
     test_validate()
     test_create()
-    test_state("starting")
-
-    minute_counter = 0
-    max_min = 25
-    while client.get(f"/bibigrid/state/?cluster_id={CLUSTER_ID}").json()["state"] not in ["running", "terminated",
-                                                                                          "failed"]:
-        if minute_counter > max_min:
-            logging.error("Server state stuck in 'starting'. This shouldn't happen!")
-            exit(0)
-        time.sleep(60)
-        minute_counter += 1
-        logging.debug(f"Waited {minute_counter}m/{max_min}")
-
+    # cannot test test_state("starting") because TestClient only runs with one worker
     test_state("running")
     test_terminate_cluster()
-
-    second_counter = 0
-    max_sec = 25
-    while client.get(f"/bibigrid/state/?cluster_id={CLUSTER_ID}").json()["state"] != "terminated":
-        if second_counter > max_sec:
-            logging.error("Server state stuck. This shouldn't happen!")
-            exit(0)
-        time.sleep(2)
-        logging.debug(f"Waited {second_counter * 2}s/{max_sec}")
-        second_counter += 1
-
     test_state("terminated")
     test_info()
     test_get_log()
