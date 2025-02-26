@@ -50,7 +50,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.cluster_id = cluster_id or id_generation.generate_safe_cluster_id(providers)
         self.ssh_user = configurations[0].get("sshUser") or "ubuntu"
         self.ssh_add_public_key_commands = ssh_handler.get_add_ssh_public_key_commands(
-            configurations[0].get("sshPublicKeyFiles"))
+            configurations[0].get("sshPublicKeyFiles"), configurations[0].get("sshPublicKeys")) # TODO: Document
         self.ssh_timeout = configurations[0].get("sshTimeout", 5)
         self.config_path = config_path
         self.master_ip = None
@@ -71,10 +71,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.debug("Keyname: %s", self.key_name)
 
         os.makedirs(os.path.join(CLUSTER_INFO_FOLDER), exist_ok=True)
-        self.write_cluster_state({"floating_ip": None, "state": 202,
+        self.write_cluster_state({"floating_ip": None, "state": "starting",
                                   "message": "Create process has been started."})
 
     def write_cluster_state(self, state):
+        self.log.debug(f"Writing cluster state {state}.")
         state = {"cluster_id": self.cluster_id, "ssh_user": self.ssh_user, **state}
         # last cluster
         with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
@@ -222,7 +223,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
             if identifier == MASTER_IDENTIFIER:
                 self.write_cluster_state({"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"],
-                                          "state": 202,
+                                          "state": "starting",
                                           "message": "Create process has been started. Master has been created."
                                           })
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
@@ -245,7 +246,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         network = configuration["network"]
         image = image_selection.select_image(provider, worker["image"], self.log,
                                              configuration.get("fallbackOnOtherImage"))
-
         volumes = self.create_server_volumes(provider=provider, instance=worker, name=name)
 
         # create a server and attaches volumes if given; blocks until it is up and running
@@ -264,7 +264,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # for DNS resolution an entry in the hosts file is created
         with self.worker_thread_lock:
             self.permanents.append(name)
-            with open(a_rp.HOSTS_FILE, mode="r", encoding="utf-8") as hosts_file:
+            with open(a_rp.HOSTS_FILE, mode="r", encoding="UTF-8") as hosts_file:
                 hosts = yaml.safe_load(hosts_file)
             if not hosts or "host_entries" not in hosts:
                 self.log.warning("Hosts file is broken.")
@@ -284,8 +284,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         self.log.info(f"Creating volumes for {name}...")
         return_volumes = []
-        group_instance = {"volumes": []}
-        instance["group_instances"] = {name: group_instance}
+        group_instance = {"volumes": []} # TODO rethink naming
+        if not instance.get("group_instances"):
+            instance["group_instances"] = {name: group_instance}
+        else:
+            instance["group_instances"][name] = group_instance
 
         for i, volume in enumerate(instance.get("volumes", [])):
             self.log.debug(f"Volume {i}: {volume}")
@@ -465,7 +468,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             start_server_threads.append(start_server_thread)
             for worker in configuration.get("workerInstances", []):
                 if not worker.get("onDemand", True):
-                    for _ in range(int(worker["count"])):
+                    for _ in range(int(worker.get("count", 1))):
                         start_server_thread = return_threading.ReturnThread(target=self.start_worker,
                                                                             args=[worker, worker_count, configuration,
                                                                                   provider])
@@ -473,7 +476,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         start_server_threads.append(start_server_thread)
                         worker_count += 1
                 else:
-                    worker_count += worker["count"]
+                    worker_count += worker.get("count", 1)
         for start_server_thread in start_server_threads:
             start_server_thread.join()
 
@@ -537,35 +540,28 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug,
                                     log=self.log)
         except exceptions.ConnectionException:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error("Connection couldn't be established. Check Provider connection.")
         except paramiko.ssh_exception.NoValidConnectionsError:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error("SSH connection couldn't be established. Check keypair.")
         except KeyError as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(
                 f"Tried to access dictionary key {str(exc)}, but couldn't. Please check your configurations.")
         except FileNotFoundError as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Tried to access resource files but couldn't. No such file or directory: {str(exc)}")
         except TimeoutError as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Timeout while connecting to master. Maybe you are trying to create a master without "
                            f"public ip "
                            f"while not being in the same network: {str(exc)}")
         except ExecutionException as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Execution of cmd on remote host fails: {str(exc)}")
         except ConfigurationException as exc:
-            if self.debug:
-                self.log.error(traceback.format_exc())
+            self.log.error(traceback.format_exc())
             self.log.error(f"Configuration invalid: {str(exc)}")
         except Exception as exc:  # pylint: disable=broad-except
             self.log.error(traceback.format_exc())
@@ -573,8 +569,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         else:
             return 0  # will be called if no exception occurred
         terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
-        self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
-                                  "state": 500,
+        self.write_cluster_state({"floating_ip": self.configurations[0].get("floating_ip"),
+                                  "state": "failed",
                                   "message": "Cluster creation failed. Terminated remains."})
         return 1
 
@@ -601,5 +597,5 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if self.configurations[0].get("ide"):
             self.log.log(42, f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")
         self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
-                                  "state": 201,
+                                  "state": "running",
                                   "message": "Cluster successfully created."})

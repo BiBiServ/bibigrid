@@ -50,18 +50,23 @@ def get_ac_command(providers, name):
             "Copy application credentials.")
 
 
-def get_add_ssh_public_key_commands(ssh_public_key_files):
+def get_add_ssh_public_key_commands(ssh_public_key_files=None, ssh_public_keys=None):
     """
     Builds and returns the necessary commands to add given public keys to remote for additional access.
-    @param ssh_public_key_files: public keys to add
+    @param ssh_public_keys: public keys to add
+    @param ssh_public_key_files: public keys to add from file
     @return: list of public key add commands
     """
     commands = []
     if ssh_public_key_files:
         for ssh_public_key_file in ssh_public_key_files:
-            with open(ssh_public_key_file, mode="r", encoding="UTF-8") as ssh_public_key:
-                commands.append((f"echo {ssh_public_key.readline().strip()} >> .ssh/authorized_keys",
+            with open(ssh_public_key_file, mode="r", encoding="UTF-8") as ssh_public_key_stream:
+                commands.append((f"echo {ssh_public_key_stream.readline().strip()} >> .ssh/authorized_keys",
                                  f"Add SSH Key {ssh_public_key_file}."))
+    if ssh_public_keys:
+        for i, ssh_public_key in enumerate(ssh_public_keys):
+            commands.append((f"echo {ssh_public_key} >> .ssh/authorized_keys",
+                             f"Add SSH Key {i}."))
     return commands
 
 

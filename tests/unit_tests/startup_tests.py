@@ -22,7 +22,7 @@ def suppress_stdout():
     Suppresses stdout within it
     @return:
     """
-    with open(os.devnull, "w", encoding="utf-8") as devnull:
+    with open(os.devnull, "w", encoding="UTF-8") as devnull:
         old_stdout = sys.stdout
         sys.stdout = devnull
         try:

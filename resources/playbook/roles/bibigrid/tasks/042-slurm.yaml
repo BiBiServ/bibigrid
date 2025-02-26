@@ -50,38 +50,29 @@
     - /var/lib/slurm
     - /var/log/slurm
 
-- name: Create system overrides directories (slurmd, slurmctld)
+- name: Create system overrides directories (slurmd)
   file:
-    path: "/etc/systemd/system/{{ item }}.service.d"
+    path: "/etc/systemd/system/slurmd.service.d"
     group: root
     owner: root
     mode: "0o755"
     state: directory
-  with_items:
-    - slurmd
-    - slurmctld
 
-- name: Copy system overrides (slurmd, slurmctld)
+- name: Copy system overrides (slurmd)
   copy:
-    src: "slurm/systemd/{{ item }}.override"
-    dest: "/etc/systemd/system/{{ item }}.service.d/override.conf"
+    src: "slurm/systemd/slurmd.override"
+    dest: "/etc/systemd/system/slurmd.service.d/override.conf"
     mode: "0o644"
     owner: root
     group: root
-  with_items:
-    - slurmd
-    - slurmctld
 
-- name: Enable slurmctld and slurmd services
+- name: Enable slurmd services
   systemd:
-    name: "{{ item }}"
+    name: "slurmd"
     enabled: true
     masked: false
     state: started
     daemon_reload: true
-  with_items:
-    - slurmctld
-    - slurmd
 
 - name: Create Slurm configuration
   template:

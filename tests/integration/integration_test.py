@@ -32,7 +32,7 @@ def start_cluster():
 
 def read_cluster_info():
     """Read last cluster information from bibigrid.mem file."""
-    with open(MEM_FILE, "r", encoding="utf8") as f:
+    with open(MEM_FILE, "r", encoding="UTF-8") as f:
         cluster_data = yaml.safe_load(f)
     return cluster_data["cluster_id"], cluster_data["floating_ip"], cluster_data["ssh_user"]
 

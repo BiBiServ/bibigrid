@@ -23,6 +23,7 @@ WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'
               Optional('fstype'): str,
               Optional('type'): str}]
           }
+
 MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional('partitions'): [str],
                 Optional('features'): [str],
                 Optional('bootVolume'): {
@@ -47,7 +48,7 @@ MASTER = VPN = {'type': str, 'image': str, Optional('onDemand'): bool, Optional(
 master_schema = Schema(
     {'infrastructure': str, 'cloud': str, 'sshUser': str, Or('subnet', 'network'): str, 'cloud_identifier': str,
      Optional('sshPublicKeyFiles'): [str], Optional('sshTimeout'): int,
-     Optional('cloudScheduling'): {Optional('sshTimeout'): int}, Optional('autoMount'): bool,
+     Optional('cloudScheduling'): {Optional('sshTimeout'): int},
      Optional('nfsShares'): [str],
      Optional('userRoles'): [
          {'hosts': [str], 'roles': [{'name': str, Optional('tags'): [str]}], Optional('varsFiles'): [str]}],
@@ -66,7 +67,6 @@ master_schema = Schema(
      Optional('localDNSLookup'): bool, Optional('features'): [str], 'workerInstances': [
         WORKER],
      'masterInstance': MASTER,
-     Optional('vpngtw'): {'type': str, 'image': str},
      Optional('bootVolume'): {
          Optional('name'): str,
          Optional('terminate'): bool,

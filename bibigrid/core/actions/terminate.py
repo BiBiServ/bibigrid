@@ -26,6 +26,7 @@ def write_cluster_state(cluster_id, state):
     with open(cluster_info_path, mode="w+", encoding="UTF-8") as cluster_info_file:
         yaml.safe_dump(data=state, stream=cluster_info_file)
 
+
 def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
     """
     Goes through all providers and gets info of all servers which name contains cluster ID.
@@ -244,8 +245,10 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
     cluster_keypair_deleted = all(cluster_keypair_state)
     cluster_security_group_deleted = all(cluster_security_group_state)
     cluster_volume_deleted = all(all(instance_volume_states) for instance_volume_states in cluster_volume_state)
-    message = "Cluster terminated."
-    state = 200
+    success = (cluster_server_terminated and cluster_keypair_deleted and
+               cluster_security_group_deleted and cluster_volume_deleted)
+    # message = "Cluster terminated."
+    state = "terminated"
     if cluster_existed:
         if cluster_server_terminated:
             log.info("Terminated all servers of cluster %s.", cluster_id)
@@ -263,8 +266,7 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
             log.info("Deleted all volumes of cluster %s", cluster_id)
         else:
             log.warning("Unable to delete all volumes of cluster %s.", cluster_id)
-        if (cluster_server_terminated and cluster_keypair_deleted and cluster_security_group_deleted and
-                cluster_volume_deleted):
+        if success:
             message = f"Successfully terminated cluster {cluster_id}."
             log.log(42, message)
         else:
@@ -278,14 +280,12 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
             log.info("Successfully handled application credential of cluster %s.", cluster_id)
         else:
             log.warning("Unable to delete application credential of cluster %s", cluster_id)
+
+        write_cluster_state(cluster_id, {"cluster_id": cluster_id,
+                                         "floating_ip": None,
+                                         "ssh_user": None,
+                                         "state": state,
+                                         "message": message})
     else:
-        message = "Cluster does not exist."
-        state = 404
         log.warning(f"Unable to find any servers for cluster-id {cluster_id}. "
                     f"Check cluster-id and configuration.\nAll keys deleted: {cluster_keypair_deleted}")
-
-    write_cluster_state(cluster_id, {"cluster_id": cluster_id,
-                                     "floating_ip": None,
-                                     "ssh_user": None,
-                                     "state": state,
-                                     "message": message})

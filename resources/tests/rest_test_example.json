@@ -1,0 +1,25 @@
+{
+  "configurations": [
+    {
+      "infrastructure": "openstack",
+      "cloud": "openstack",
+      "sshUser": "ubuntu",
+      "subnet": "YOUR SUBNET",
+      "sshTimeout": 5,
+      "waitForServices": [
+        "YOUR SERVICE IF NECESSARY"
+      ],
+      "workerInstances": [
+        {
+          "type": "YOUR TYPE",
+          "image": "YOUR IMAGE",
+          "count": 1
+        }
+      ],
+      "masterInstance": {
+        "type": "YOUR TYPE",
+        "image": "YOUR IMAGE"
+      }
+    }
+  ]
+}

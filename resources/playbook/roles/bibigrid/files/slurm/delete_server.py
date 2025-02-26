@@ -44,15 +44,15 @@ for filename in os.listdir(GROUP_VARS_PATH):
         f = os.path.join(GROUP_VARS_PATH, filename)
         # checking if it is a file
         if os.path.isfile(f):
-            with open(f, mode="r", encoding="utf-8") as worker_group:
+            with open(f, mode="r", encoding="UTF-8") as worker_group:
                 worker_groups.append(yaml.safe_load(worker_group))
 
 # read common configuration
-with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="utf-8") as common_configuration_file:
+with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="UTF-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
 
 # read clouds.yaml
-with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
+with open("/etc/openstack/clouds.yaml", mode="r", encoding="UTF-8") as clouds_file:
     clouds = yaml.safe_load(clouds_file)["clouds"]
 
 connections = {}  # connections to cloud providers

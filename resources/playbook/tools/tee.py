@@ -36,7 +36,7 @@ with Popen(cmds, shell=False, stdout=PIPE, stderr=PIPE, bufsize=1) as p:
     Thread(target=reader, args=[p.stdout, q]).start()
     Thread(target=reader, args=[p.stderr, q]).start()
 
-    with open(args.outfile, "w", encoding="utf-8") as outfile:
+    with open(args.outfile, "w", encoding="UTF-8") as outfile:
         for line in iter(q.get, None):
             # print to stdout
             sys.stdout.write(line)

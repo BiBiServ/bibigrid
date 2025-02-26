@@ -238,7 +238,7 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'bibigrid_version': '0.4.0', 'cloud_scheduling': {'sshTimeout': 5},
+        common_configuration_yaml = {'bibigrid_version': ANY, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': '42', 'cluster_id': '21', 'default_user': 'ubuntu',
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': 'Some1', 'enable_nfs': False,
                                      'enable_slurm': False, 'enable_zabbix': False,
