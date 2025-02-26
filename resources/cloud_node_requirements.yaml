@@ -1,5 +1,5 @@
 os_distro:
-  - ubuntu:
-      os_versions:
-        - "22.04"
-        - "20.04"
+  ubuntu:
+    os_versions:
+      - "22.04"
+      - "20.04"

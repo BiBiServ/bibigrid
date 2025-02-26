@@ -248,7 +248,7 @@ class CloudNodeRequirementsModel(BaseModel):
     """
     Model for cloud_node_requirements.yaml
     """
-    os_distro: List[Dict[str, OsModel]]
+    os_distro: Dict[str, OsModel]
 
 
 class RequirementsModel(BaseModel):
