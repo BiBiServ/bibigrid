@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from bibigrid.core.startup_rest import app
 from bibigrid.core.utility.paths.basic_path import ROOT_PATH, CLOUD_NODE_REQUIREMENTS_PATH
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 with open(os.path.join(ROOT_PATH, "resources/tests/rest_test.json"), 'r', encoding='utf-8') as file:
     configurations_json = json.load(file)
@@ -36,6 +36,7 @@ def test_validate():
     response = client.post(f"/bibigrid/validate?cluster_id={CLUSTER_ID}", json=configurations_json)
     assert response.status_code == 200
     response_data = response.json()
+    print(response_data["success"])
     assert response_data["success"] is True
     assert "cluster_id" in response_data
 
@@ -79,6 +80,7 @@ def test_state(state):
 
 # Run tests
 if __name__ == "__main__":
+    start_time = time.time()
     test_get_requirements()
     test_validate()
     test_create()
@@ -86,5 +88,7 @@ if __name__ == "__main__":
     test_state("running")
     test_terminate_cluster()
     test_state("terminated")
-    test_info()
     test_get_log()
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time/60} minutes")
