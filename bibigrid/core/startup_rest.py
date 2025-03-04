@@ -103,13 +103,13 @@ async def validate_configuration_json(configurations_json: ConfigurationsModel, 
     try:
         configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         providers = provider_handler.get_providers(configurations, log)
-        exit_state = check.check(configurations, providers, log)
-        if exit_state:
+        success = validate_configuration.ValidateConfiguration(configurations, providers, log).validate()
+        if not success:
             return JSONResponse(
-                content={"message": "Validation failed", "cluster_id": cluster_id, "success": not bool(exit_state)},
+                content={"message": "Validation failed", "cluster_id": cluster_id, "success": success},
                 status_code=420)
         return JSONResponse(
-            content={"message": "Validation successful", "cluster_id": cluster_id, "success": not bool(exit_state)},
+            content={"message": "Validation successful", "cluster_id": cluster_id, "success": success},
             status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
