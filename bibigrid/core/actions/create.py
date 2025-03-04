@@ -50,7 +50,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.cluster_id = cluster_id or id_generation.generate_safe_cluster_id(providers)
         self.ssh_user = configurations[0].get("sshUser") or "ubuntu"
         self.ssh_add_public_key_commands = ssh_handler.get_add_ssh_public_key_commands(
-            configurations[0].get("sshPublicKeyFiles"), configurations[0].get("sshPublicKeys")) # TODO: Document
+            configurations[0].get("sshPublicKeyFiles"), configurations[0].get("sshPublicKeys"))  # TODO: Document
         self.ssh_timeout = configurations[0].get("sshTimeout", 5)
         self.config_path = config_path
         self.master_ip = None
@@ -113,7 +113,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.debug("%s not found. Creating folder.", KEY_FOLDER)
             os.mkdir(KEY_FOLDER)
         # generate keyfile
-        res = subprocess.check_output(f'ssh-keygen -t ecdsa -f {KEY_FOLDER}{self.key_name} -P ""', shell=True).decode()
+        res = subprocess.check_output(
+            ['ssh-keygen', '-t', 'ecdsa', '-f', f'{KEY_FOLDER}{self.key_name}', '-P', '']).decode()
         self.log.debug(res)
         # read private keyfile
         with open(f"{os.path.join(KEY_FOLDER, self.key_name)}.pub", mode="r", encoding="UTF-8") as key_file:
@@ -284,7 +285,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         self.log.info(f"Creating volumes for {name}...")
         return_volumes = []
-        group_instance = {"volumes": []} # TODO rethink naming
+        group_instance = {"volumes": []}  # TODO rethink naming
         if not instance.get("group_instances"):
             instance["group_instances"] = {name: group_instance}
         else:
