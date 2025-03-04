@@ -109,7 +109,8 @@ async def validate_configuration_json(configurations_json: ConfigurationsModel, 
             content={"message": "Validation successful", "cluster_id": cluster_id, "success": success},
             status_code=200)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
+        log.error(f"{type(exc).__name__}: {str(exc)}")
+        return JSONResponse(content={"message": "Internal server error."}, status_code=400)
 
 
 @app.post("/bibigrid/create/", response_model=CreateResponseModel)
@@ -136,7 +137,8 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
         asyncio.create_task(create_async())
         return JSONResponse(content={"message": "Cluster creation started.", "cluster_id": cluster_id}, status_code=202)
     except ValueError as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": str(exc)}, status_code=400)
+        log.error(f"{type(exc).__name__}: {str(exc)}")
+        return JSONResponse(content={"message": "Internal server error."}, status_code=400)
 
 
 @app.post("/bibigrid/terminate/{cluster_id}", response_model=TerminateResponseModel)
@@ -161,7 +163,8 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
 
         return JSONResponse(content={"message": "Termination successfully requested."}, status_code=202)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
+        log.error(f"{type(exc).__name__}: {str(exc)}")
+        return JSONResponse(content={"message": "Internal server error."}, status_code=400)
 
 
 @app.post("/bibigrid/info/{cluster_id}", response_model=InfoResponseModel)
@@ -184,7 +187,8 @@ async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel)
             return JSONResponse(content=cluster_dict, status_code=200)
         return JSONResponse(content={"message": "Cluster not found.", "ready": False}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
+        log.error(f"{type(exc).__name__}: {str(exc)}")
+        return JSONResponse(content={"message": "Internal server error."}, status_code=400)
 
 
 @app.get("/bibigrid/log/{cluster_id}", response_model=LogResponseModel)
@@ -197,8 +201,12 @@ async def get_log(cluster_id: str, lines: int = None):
     @return: A JSON response containing the log text.
     """
     LOG.debug(f"Requested log on {cluster_id}.")
+    cluster_id, log = setup(cluster_id)
     try:
-        file_name = os.path.join(LOG_FOLDER, f"{cluster_id}.log")
+        base_path = os.path.normpath(LOG_FOLDER)
+        file_name = os.path.normpath(os.path.join(base_path, f"{cluster_id}.log"))
+        if not file_name.startswith(base_path):
+            raise Exception("Invalid file path")
         if os.path.isfile(file_name):
             if not lines:
                 with open(file_name, "r", encoding="UTF-8") as log_file:
@@ -208,7 +216,8 @@ async def get_log(cluster_id: str, lines: int = None):
             return JSONResponse(content={"message": "Log found", "log": response}, status_code=200)
         return JSONResponse(content={"message": "Log not found.", "log": None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
+        log.error(f"{type(exc).__name__}: {str(exc)}")
+        return JSONResponse(content={"message": "Internal server error."}, status_code=400)
 
 
 @app.get("/bibigrid/state/{cluster_id}", response_model=ClusterStateResponseModel)
@@ -221,8 +230,8 @@ async def state(cluster_id: str):
     @return: A JSON response containing the cluster state.
     """
     LOG.debug(f"Requested log on {cluster_id}.")
+    cluster_id, log = setup(cluster_id)
     try:
-        cluster_id, log = setup(cluster_id)
         cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
         if not cluster_info_path.startswith(os.path.normpath(CLUSTER_INFO_FOLDER)):
             log.warning("Invalid cluster_id resulting in path traversal")
@@ -237,7 +246,8 @@ async def state(cluster_id: str):
         return JSONResponse(content={"message": "Cluster not found.", "cluster_id": None, "floating_ip": None,
                                      "ssh_user": None}, status_code=404)
     except Exception as exc:  # pylint: disable=broad-except
-        return JSONResponse(content={"error": type(exc).__name__, "message": str(exc)}, status_code=400)
+        log.error(f"{type(exc).__name__}: {str(exc)}")
+        return JSONResponse(content={"message": "Internal server error."}, status_code=400)
 
 
 def check_clouds_yaml(clouds):

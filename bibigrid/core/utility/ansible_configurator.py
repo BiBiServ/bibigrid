@@ -14,6 +14,7 @@ from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
+from bibigrid.core.utility.paths.basic_path import ROOT_PATH
 from bibigrid.core.utility.wireguard import wireguard_keys
 
 PYTHON_INTERPRETER = "/usr/bin/python3"
@@ -354,7 +355,11 @@ def write_yaml(path, generated_yaml, log, alias=False):
     @return:
     """
     log.debug("Writing yaml %s", path)
-    with open(path, mode="w+", encoding="UTF-8") as file:
+
+    normalized_path = os.path.normpath(path)
+    if not normalized_path.startswith(str(ROOT_PATH)):
+        raise Exception("Invalid path: Path traversal detected")
+    with open(normalized_path, mode="w+", encoding="UTF-8") as file:
         if alias:
             yaml.safe_dump(data=generated_yaml, stream=file)
         else:
