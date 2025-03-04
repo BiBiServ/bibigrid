@@ -214,7 +214,8 @@ async def get_log(cluster_id: str, lines: int = None):
 @app.get("/bibigrid/state/{cluster_id}", response_model=ClusterStateResponseModel)
 async def state(cluster_id: str):
     """
-    Retrieves the state of the specified cluster. The state can be used to determine whether create has finished already.
+    Retrieves the state of the specified cluster.
+    The state can be used to determine whether create has finished already.
 
     @param cluster_id: The cluster ID to get the state from.
     @return: A JSON response containing the cluster state.
