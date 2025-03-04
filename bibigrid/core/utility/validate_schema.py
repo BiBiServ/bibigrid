@@ -24,7 +24,8 @@ WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'
               Optional('type'): str}]
           }
 
-MASTER = VPN = {'type': str, 'image': str, Optional('count'): 1, Optional('onDemand'): bool, Optional('partitions'): [str],
+MASTER = VPN = {'type': str, 'image': str, Optional('count'): 1, Optional('onDemand'): bool,
+                Optional('partitions'): [str],
                 Optional('features'): [str],
                 Optional('bootVolume'): {
                     Optional('name'): str,
