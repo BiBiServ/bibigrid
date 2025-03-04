@@ -15,5 +15,6 @@
 |              [Multi Cloud](features/multi_cloud.md)              |                                    Explanation how BiBiGrid's multi-cloud approach works                                    |
 |    [BiBiGrid Cluster Commands](features/cluster_commands.md)     |                                   Short useful commands to get information on the cluster                                   |
 |     [Other Configurations](features/other_configurations.md)     |                                      Info about custom `ansible.cfg` and `slurm.conf`                                       |
+|          [BiBiGrid REST API](features/bibigrid_rest.md)          |                                         Info about custom how to run BiBiGrid REST.                                         |
 
 ![](../images/actions.jpg)
