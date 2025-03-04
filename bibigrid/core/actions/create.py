@@ -47,6 +47,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.providers = providers
         self.configurations = configurations
         self.debug = debug
+        if cluster_id:
+            if len(cluster_id) > id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
+                    id_generation.CLUSTER_UUID_ALPHABET):
+                self.log.warning("Cluster id doesn't fit length or defined alphabet. Aborting.")
+            raise RuntimeError("Cluster id doesn't fit length or defined alphabet. Aborting.")
         self.cluster_id = cluster_id or id_generation.generate_safe_cluster_id(providers)
         self.ssh_user = configurations[0].get("sshUser") or "ubuntu"
         self.ssh_add_public_key_commands = ssh_handler.get_add_ssh_public_key_commands(

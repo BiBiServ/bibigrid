@@ -134,18 +134,15 @@ def delete_local_keypairs(tmp_keyname, log):
     """
     success = False
     log.info("Deleting Keypair locally...")
-    tmp_keypath = os.path.join(KEY_FOLDER, tmp_keyname)
-    pub_tmp_keypath = tmp_keypath + ".pub"
-    if os.path.isfile(tmp_keypath):
-        os.remove(tmp_keypath)
-        success = True
-    else:
-        log.warning(f"Unable to find private keyfile '{tmp_keypath}' locally. No local private keyfile deleted.")
-    if os.path.isfile(pub_tmp_keypath):
-        os.remove(pub_tmp_keypath)
-        success = True
-    else:
-        log.warning(f"Unable to find public keyfile '{pub_tmp_keypath}' locally. No local public keyfile deleted.")
+    tmp_keypath = os.path.normpath(os.path.join(KEY_FOLDER, tmp_keyname))
+    pub_tmp_keypath = os.path.normpath(tmp_keypath + ".pub")
+
+    for key_path in [tmp_keypath, pub_tmp_keypath]:
+        if key_path.startswith(KEY_FOLDER) and os.path.isfile(key_path):
+            os.remove(key_path)
+            success = True
+        else:
+            log.warning(f"Unable to find keyfile '{key_path}' locally or invalid path.")
     return success
 
 

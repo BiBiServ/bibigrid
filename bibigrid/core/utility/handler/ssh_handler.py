@@ -11,6 +11,7 @@ import sympy
 import yaml
 
 from bibigrid.core.utility import ansible_commands as a_c
+from bibigrid.core.utility.paths.basic_path import RESOURCES_PATH, CONFIG_FOLDER
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
@@ -81,6 +82,10 @@ def copy_to_server(sftp, local_path, remote_path, log):
     @return:
     """
     log.debug("Copy %s to %s...", local_path, remote_path)
+    local_path = os.path.normpath(local_path)
+    if not local_path.startswith(os.path.abspath(RESOURCES_PATH)) and not local_path.startswith(
+            os.path.abspath(CONFIG_FOLDER)):
+        raise ValueError("Invalid local path")
     if os.path.isfile(local_path):
         sftp.put(local_path, remote_path)
     else:
