@@ -206,7 +206,7 @@ async def get_log(cluster_id: str, lines: int = None):
         base_path = os.path.normpath(LOG_FOLDER)
         file_name = os.path.normpath(os.path.join(base_path, f"{cluster_id}.log"))
         if not file_name.startswith(base_path):
-            raise Exception("Invalid file path")
+            raise ValueError(f"Invalid file path. Must start with {base_path}.")
         if os.path.isfile(file_name):
             if not lines:
                 with open(file_name, "r", encoding="UTF-8") as log_file:
