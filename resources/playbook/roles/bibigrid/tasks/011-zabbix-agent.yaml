@@ -34,11 +34,6 @@
     dest: /usr/local/bin/zabbix_host_delete.py
     mode: "0o755"
 
-- name: Install zabbix python-api in BiBiGrid virtual environment
-  ansible.builtin.pip:
-    name: zabbix-api
-    virtualenv: /opt/bibigrid-venv
-
 - name: Install zabbix agent2
   apt:
     name: zabbix-agent2
