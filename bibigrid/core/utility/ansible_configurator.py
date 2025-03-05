@@ -358,7 +358,7 @@ def write_yaml(path, generated_yaml, log, alias=False):
 
     normalized_path = os.path.normpath(path)
     if not normalized_path.startswith(str(ROOT_PATH)):
-        raise Exception("Invalid path: Path traversal detected")
+        raise ValueError("Invalid path: Path traversal detected")
     with open(normalized_path, mode="w+", encoding="UTF-8") as file:
         if alias:
             yaml.safe_dump(data=generated_yaml, stream=file)
