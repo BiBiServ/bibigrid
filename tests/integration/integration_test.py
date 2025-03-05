@@ -26,7 +26,7 @@ def start_cluster():
         # print(result.stdout)
     else:
         print("Failed to start the cluster.")
-        # print(result.stderr)
+        print(result.stderr)
         raise Exception("Cluster start failed")
 
 
