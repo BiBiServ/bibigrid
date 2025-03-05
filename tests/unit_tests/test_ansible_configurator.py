@@ -341,15 +341,15 @@ class TestAnsibleConfigurator(TestCase):
     @patch("yaml.dump")
     def test_write_yaml_no_alias(self, mock_yaml):
         with patch('builtins.open', mock_open()) as output_mock:
-            ansible_configurator.write_yaml("here", {"some": "yaml"}, startup.LOG, False)
-            output_mock.assert_called_once_with("here", mode="w+", encoding="UTF-8")
+            ansible_configurator.write_yaml(aRP.HOSTS_CONFIG_FILE, {"some": "yaml"}, startup.LOG, False)
+            output_mock.assert_called_once_with(aRP.HOSTS_CONFIG_FILE, mode="w+", encoding="UTF-8")
             mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY, Dumper=NoAliasSafeDumper)
 
     @patch("yaml.safe_dump")
     def test_write_yaml_alias(self, mock_yaml):
         with patch('builtins.open', mock_open()) as output_mock:
-            ansible_configurator.write_yaml("here", {"some": "yaml"}, startup.LOG, True)
-            output_mock.assert_called_once_with("here", mode="w+", encoding="UTF-8")
+            ansible_configurator.write_yaml(aRP.HOSTS_CONFIG_FILE, {"some": "yaml"}, startup.LOG, True)
+            output_mock.assert_called_once_with(aRP.HOSTS_CONFIG_FILE, mode="w+", encoding="UTF-8")
             mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY)
 
     @patch("bibigrid.core.utility.ansible_configurator.write_host_and_group_vars")

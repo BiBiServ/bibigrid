@@ -69,8 +69,7 @@ class TestCreate(TestCase):
         with patch("builtins.open", mock_open(read_data=public_key)):
             creator.generate_keypair()
         provider.create_keypair.assert_called_with(name=creator.key_name, public_key=public_key)
-        mock_subprocess.assert_called_with(f'ssh-keygen -t ecdsa -f {create.KEY_FOLDER}{creator.key_name} -P ""',
-                                           shell=True)
+        mock_subprocess.assert_called_with(['ssh-keygen', '-t', 'ecdsa', '-f', f'{create.KEY_FOLDER}{creator.key_name}', '-P', ''])
 
     # TODO: Rewrite start instance tests
 

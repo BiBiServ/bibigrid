@@ -85,7 +85,7 @@ def copy_to_server(sftp, local_path, remote_path, log):
     local_path = os.path.normpath(local_path)
     if not local_path.startswith(os.path.abspath(RESOURCES_PATH)) and not local_path.startswith(
             os.path.abspath(CONFIG_FOLDER)):
-        raise ValueError("Invalid local path")
+        raise ValueError(f"Invalid local path: Only paths in {RESOURCES_PATH} or {CONFIG_FOLDER} are allowed.")
     if os.path.isfile(local_path):
         sftp.put(local_path, remote_path)
     else:
