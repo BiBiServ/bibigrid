@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 with open(os.path.join(ROOT_PATH, "resources/tests/rest_test.json"), 'r', encoding='utf-8') as file:
     configurations_json = json.load(file)
 
-CLUSTER_ID = "4242424242"
+CLUSTER_ID = "123456789123456"
 
 client = TestClient(app)
 # Read the cloud_node_requirements YAML file and load it into a dictionary
@@ -36,7 +36,6 @@ def test_validate():
     response = client.post(f"/bibigrid/validate?cluster_id={CLUSTER_ID}", json=configurations_json)
     assert response.status_code == 200
     response_data = response.json()
-    print(response_data["success"])
     assert response_data["success"] is True
     assert "cluster_id" in response_data
 
