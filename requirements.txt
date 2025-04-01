@@ -17,3 +17,4 @@ pydantic~=2.10.6
 keystoneauth1~=5.1.0
 filelock~=3.16.1
 schema~=0.7.7
+Werkzeug==3.1.3

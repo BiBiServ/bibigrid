@@ -11,6 +11,7 @@ import traceback
 import paramiko
 import sympy
 import yaml
+from werkzeug.utils import secure_filename
 
 from bibigrid.core.actions import terminate
 from bibigrid.core.utility import ansible_configurator
@@ -51,7 +52,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     id_generation.CLUSTER_UUID_ALPHABET)):
             self.log.warning("Cluster id doesn't fit length or defined alphabet. Aborting.")
             raise RuntimeError("Cluster id doesn't fit length or defined alphabet. Aborting.")
-        self.cluster_id = cluster_id or id_generation.generate_safe_cluster_id(providers)
+        if cluster_id:
+            self.cluster_id = secure_filename(cluster_id)
+        else:
+            self.cluster_id = id_generation.generate_safe_cluster_id(providers)
         self.ssh_user = configurations[0].get("sshUser") or "ubuntu"
         self.ssh_add_public_key_commands = ssh_handler.get_add_ssh_public_key_commands(
             configurations[0].get("sshPublicKeyFiles"), configurations[0].get("sshPublicKeys"))  # TODO: Document

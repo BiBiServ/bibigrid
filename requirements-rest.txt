@@ -12,3 +12,4 @@ python-multipart
 uvicorn~=0.34.0
 fastapi~=0.115.11
 httpx
+Werkzeug==3.1.3

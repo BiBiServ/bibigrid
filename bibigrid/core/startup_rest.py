@@ -15,6 +15,7 @@ import yaml
 from fastapi import FastAPI, status, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from werkzeug.utils import secure_filename
 
 from bibigrid.core.actions import create, terminate, list_clusters
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
@@ -61,7 +62,10 @@ def setup(cluster_id):
     @param cluster_id: The cluster ID or None.
     @return: A tuple containing the cluster_id and the configured logger.
     """
-    cluster_id = cluster_id or id_generation.generate_cluster_id()
+    if cluster_id:
+        cluster_id = secure_filename(cluster_id)
+    else:
+        cluster_id = id_generation.generate_cluster_id()
     log = logging.getLogger(cluster_id)
     log.setLevel(logging.DEBUG)
     if not log.handlers:
