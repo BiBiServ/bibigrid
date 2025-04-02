@@ -12,12 +12,12 @@ import subprocess
 import sys
 import threading
 import time
-from filelock import FileLock
 
 import ansible_runner
 import os_client_config
 import paramiko
 import yaml
+from filelock import FileLock
 from openstack.exceptions import OpenStackCloudException
 
 
