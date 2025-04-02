@@ -352,18 +352,25 @@ def _run_playbook(cmdline_args):
 
 
 start_server_threads = []
-for worker_group in worker_groups:
-    for worker_name in start_workers:
+for worker_name in start_workers:
+    found_match = False
+    for worker_group in worker_groups:
+        logging.debug(f"Trying to start worker {worker_name}.")
         # start all servers that are part of the current worker group
         result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]], stdout=subprocess.PIPE,
                                 check=True)  # get all workers in worker_type
         possible_workers = result.stdout.decode("utf-8").strip().split("\n")
         if worker_name in possible_workers:
+            found_match = True
+            logging.debug(f"Worker_group entry found")
             start_worker_thread = threading.Thread(target=start_server,
                                                    kwargs={"name": worker_name, "start_worker_group": worker_group,
                                                            "start_data": server_start_data})
             start_worker_thread.start()
             start_server_threads.append(start_worker_thread)
+            break
+    if not found_match:
+        logging.warning(f"Couldn't find a work_group entry for {worker_name}")
 
 for start_server_thread in start_server_threads:
     start_server_thread.join()
