@@ -44,6 +44,17 @@ def interpret_command_line():
                                                                        "Required for all actions but '--version'",
                         type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
                         os.path.join(CONFIG_FOLDER, s))
+    parser.add_argument("-di", "--default_config_input", metavar="<path>", help="Path to default YAML configurations file. "
+                                                                       "Relative paths can be used and start "
+                                                                       f"at '{CONFIG_FOLDER}'.",
+                        type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
+                        os.path.join(CONFIG_FOLDER, s), default="default_bibigrid.yaml")
+    parser.add_argument("-ei", "--enforced_config_input", metavar="<path>",
+                        help="Path to default YAML configurations file. "
+                             "Relative paths can be used and start "
+                             f"at '{CONFIG_FOLDER}'.",
+                        type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
+                        os.path.join(CONFIG_FOLDER, s), default="enforced_bibigrid.yaml")
     parser.add_argument("-cid", "--cluster_id", metavar="<cluster-id>", type=check_cid, default="",
                         help="Cluster id is needed for '--ide', '--terminate_cluster' and '--update'. "
                              "If not set, last created cluster's id is used")

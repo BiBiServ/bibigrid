@@ -156,3 +156,43 @@ def get_cloud_specifications(configurations, log):
                 cloud_specifications.append(cloud_specification)  # might be None if not found
                 configuration["cloud_identifier"] = cloud_specification["identifier"]
     return cloud_specifications
+
+
+def load_merge_config(path, log):
+    """
+
+    :param path: path of configuration to load
+    :param log:
+    :return: master_config, vpn_configs
+    """
+    print("path", path)
+    print("isfile", os.path.isfile(path))
+    if not os.path.isfile(path):
+        return {},{}
+    log.info(f"Merge Configurations: Found {path}")
+    config = read_configuration(log, path)
+    return config[0], config[1] if len(config) > 1 else {}
+
+
+def merge_configurations(user_config, default_config_path, enforced_config_path, log):
+    """
+    Merge user, default, and enforced configurations.
+
+    :param user_config: List of configurations
+    :param default_config_path: Path to default configuration
+    :param enforced_config_path: Path to enforced configuration
+    :param log:
+    :return: List of merged configurations. Enforced overwrites all, user overwrites default.
+    """
+
+    default_config, default_vpn_config = load_merge_config(default_config_path, log)
+    enforced_config, enforced_vpn_config = load_merge_config(enforced_config_path, log)
+    print(default_config)
+
+    master_config = mergedeep.merge({}, default_config, user_config[0], enforced_config)
+    vpn_configs = [
+        mergedeep.merge({}, default_vpn_config, vpn_config, enforced_vpn_config)
+        for vpn_config in user_config[1:]
+    ]
+
+    return [master_config] + vpn_configs

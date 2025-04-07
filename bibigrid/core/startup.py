@@ -130,10 +130,21 @@ def main():
     LOG.addHandler(logging.FileHandler("bibigrid.log"))  # file
     args = command_line_interpreter.interpret_command_line()
     set_logger_verbosity(args.verbose)
+
     configurations = configuration_handler.read_configuration(LOG, args.config_input)
+    if not configurations:
+        sys.exit(1)
+    print(configurations)
+    print("------")
+    configurations = configuration_handler.merge_configurations(
+        user_config=configurations,
+        default_config_path=args.default_config_input,
+        enforced_config_path=args.enforced_config_input,
+        log=LOG
+    )
+    print(configurations)
     if configurations:
         sys.exit(run_action(args, configurations, args.config_input))
-    sys.exit(1)
 
 
 if __name__ == "__main__":
