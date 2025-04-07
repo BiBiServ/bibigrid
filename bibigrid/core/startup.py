@@ -134,15 +134,12 @@ def main():
     configurations = configuration_handler.read_configuration(LOG, args.config_input)
     if not configurations:
         sys.exit(1)
-    print(configurations)
-    print("------")
     configurations = configuration_handler.merge_configurations(
         user_config=configurations,
         default_config_path=args.default_config_input,
         enforced_config_path=args.enforced_config_input,
         log=LOG
     )
-    print(configurations)
     if configurations:
         sys.exit(run_action(args, configurations, args.config_input))
 

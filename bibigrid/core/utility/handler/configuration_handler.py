@@ -165,8 +165,6 @@ def load_merge_config(path, log):
     :param log:
     :return: master_config, vpn_configs
     """
-    print("path", path)
-    print("isfile", os.path.isfile(path))
     if not os.path.isfile(path):
         return {},{}
     log.info(f"Merge Configurations: Found {path}")
@@ -187,7 +185,6 @@ def merge_configurations(user_config, default_config_path, enforced_config_path,
 
     default_config, default_vpn_config = load_merge_config(default_config_path, log)
     enforced_config, enforced_vpn_config = load_merge_config(enforced_config_path, log)
-    print(default_config)
 
     master_config = mergedeep.merge({}, default_config, user_config[0], enforced_config)
     vpn_configs = [
