@@ -44,9 +44,10 @@ def interpret_command_line():
                                                                        "Required for all actions but '--version'",
                         type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
                         os.path.join(CONFIG_FOLDER, s))
-    parser.add_argument("-di", "--default_config_input", metavar="<path>", help="Path to default YAML configurations file. "
-                                                                       "Relative paths can be used and start "
-                                                                       f"at '{CONFIG_FOLDER}'.",
+    parser.add_argument("-di", "--default_config_input", metavar="<path>",
+                        help="Path to default YAML configurations file. "
+                             "Relative paths can be used and start "
+                             f"at '{CONFIG_FOLDER}'.",
                         type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
                         os.path.join(CONFIG_FOLDER, s), default=DEFAULT_CONFIG_PATH)
     parser.add_argument("-ei", "--enforced_config_input", metavar="<path>",
