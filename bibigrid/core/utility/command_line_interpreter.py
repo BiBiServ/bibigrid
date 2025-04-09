@@ -6,7 +6,7 @@ import argparse
 import logging
 import os
 
-from bibigrid.core.utility.paths.basic_path import CONFIG_FOLDER
+from bibigrid.core.utility.paths.basic_path import CONFIG_FOLDER, ENFORCED_CONFIG_PATH, DEFAULT_CONFIG_PATH
 
 FOLDER_START = ("~/", "/", "./")
 LOG = logging.getLogger("bibigrid")
@@ -48,13 +48,13 @@ def interpret_command_line():
                                                                        "Relative paths can be used and start "
                                                                        f"at '{CONFIG_FOLDER}'.",
                         type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
-                        os.path.join(CONFIG_FOLDER, s), default="default_bibigrid.yaml")
+                        os.path.join(CONFIG_FOLDER, s), default=DEFAULT_CONFIG_PATH)
     parser.add_argument("-ei", "--enforced_config_input", metavar="<path>",
                         help="Path to default YAML configurations file. "
                              "Relative paths can be used and start "
                              f"at '{CONFIG_FOLDER}'.",
                         type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
-                        os.path.join(CONFIG_FOLDER, s), default="enforced_bibigrid.yaml")
+                        os.path.join(CONFIG_FOLDER, s), default=ENFORCED_CONFIG_PATH)
     parser.add_argument("-cid", "--cluster_id", metavar="<cluster-id>", type=check_cid, default="",
                         help="Cluster id is needed for '--ide', '--terminate_cluster' and '--update'. "
                              "If not set, last created cluster's id is used")
