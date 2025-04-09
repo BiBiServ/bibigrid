@@ -6,6 +6,7 @@ and application credentials used by it.
 import os
 import re
 import time
+from datetime import datetime
 
 import yaml
 
@@ -15,12 +16,13 @@ from bibigrid.core.utility.statics.create_statics import DEFAULT_SECURITY_GROUP_
 from bibigrid.models.exceptions import ConflictException
 
 
-def write_cluster_state(cluster_id, state):
+def write_cluster_state(state):
     # last cluster
+    state["last_changed"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
         yaml.safe_dump(data=state, stream=cluster_memory_file)
     # all clusters
-    cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
+    cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{state['cluster_id']}.yaml"))
     if not cluster_info_path.startswith(CLUSTER_INFO_FOLDER):
         raise ValueError("Invalid cluster_id resulting in path traversal")
     with open(cluster_info_path, mode="w+", encoding="UTF-8") as cluster_info_file:
@@ -279,11 +281,11 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
         else:
             log.warning("Unable to delete application credential of cluster %s", cluster_id)
 
-        write_cluster_state(cluster_id, {"cluster_id": cluster_id,
-                                         "floating_ip": None,
-                                         "ssh_user": None,
-                                         "state": state,
-                                         "message": message})
+        write_cluster_state({"cluster_id": cluster_id,
+                             "floating_ip": None,
+                             "ssh_user": None,
+                             "state": state,
+                             "message": message})
     else:
         log.warning(f"Unable to find any servers for cluster-id {cluster_id}. "
                     f"Check cluster-id and configuration.\nAll keys deleted: {cluster_keypair_deleted}")
