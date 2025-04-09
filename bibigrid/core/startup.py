@@ -13,6 +13,7 @@ import yaml
 from bibigrid.core.actions import check, create, ide, list_clusters, terminate, update, version
 from bibigrid.core.utility import command_line_interpreter
 from bibigrid.core.utility.handler import configuration_handler, provider_handler
+from bibigrid.core.utility.paths.basic_path import CLUSTER_MEMORY_PATH
 
 VERBOSITY_LIST = [logging.WARNING, logging.INFO, logging.DEBUG]
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
@@ -27,14 +28,14 @@ def get_cluster_id_from_mem():
     @return: cluster_id. If no mem file can be found, the file is not a valid yaml file or doesn't contain a cluster_id,
     it returns none.
     """
-    if os.path.isfile(create.CLUSTER_MEMORY_PATH):
+    if os.path.isfile(CLUSTER_MEMORY_PATH):
         try:
-            with open(create.CLUSTER_MEMORY_PATH, mode="r", encoding="UTF-8") as cluster_memory_file:
+            with open(CLUSTER_MEMORY_PATH, mode="r", encoding="UTF-8") as cluster_memory_file:
                 mem_dict = yaml.safe_load(stream=cluster_memory_file)
                 return mem_dict.get("cluster_id")
         except yaml.YAMLError as exc:
-            LOG.warning("Couldn't read configuration %s: %s", create.CLUSTER_MEMORY_PATH, exc)
-    LOG.warning(f"Couldn't find cluster memory path {create.CLUSTER_MEMORY_PATH}")
+            LOG.warning("Couldn't read configuration %s: %s", CLUSTER_MEMORY_PATH, exc)
+    LOG.warning(f"Couldn't find cluster memory path {CLUSTER_MEMORY_PATH}")
     return None
 
 
