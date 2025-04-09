@@ -13,9 +13,11 @@ RESOURCES_PATH = os.path.join(ROOT_PATH, RESOURCES)
 CLOUD_NODE_REQUIREMENTS_FILE = "cloud_node_requirements.yaml"
 CLOUD_NODE_REQUIREMENTS_PATH = os.path.join(RESOURCES_PATH, CLOUD_NODE_REQUIREMENTS_FILE)
 
-STANDARD_CONFIG_PATH = "~/.config/bibigrid"
+CONFIG_PATH = os.path.expanduser("~/.config")
+CONFIG_FOLDER = os.path.join(CONFIG_PATH, "bibigrid")
+ENFORCED_CONFIG_PATH = os.path.join(CONFIG_FOLDER, "enforced_bibigrid.yaml")
+DEFAULT_CONFIG_PATH = os.path.join(CONFIG_FOLDER, "default_bibigrid.yaml")
 CLUSTER_INFO = "cluster_info"
-CONFIG_FOLDER = os.path.expanduser(STANDARD_CONFIG_PATH)
 CLUSTER_INFO_FOLDER = os.path.join(CONFIG_FOLDER, CLUSTER_INFO)
 
 KEY_FOLDER = os.path.join(CONFIG_FOLDER, "keys/")
