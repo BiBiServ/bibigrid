@@ -235,6 +235,7 @@ class ClusterStateResponseModel(BaseModel):
     message: str
     ssh_user: str
     state: Literal["starting", "running", "terminated", "failed"]
+    last_changed: str
 
 
 class OsModel(BaseModel):
