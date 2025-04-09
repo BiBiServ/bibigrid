@@ -72,7 +72,7 @@ def test_get_log():
     assert response.status_code == 200  # Depending on whether the log exists
     response_data = response.json()
     assert "log" in response_data
-    print(f"Response: {response_data}")
+    # print(f"Response: {response_data}")
 
 
 def test_state(state, do_assert=False):
