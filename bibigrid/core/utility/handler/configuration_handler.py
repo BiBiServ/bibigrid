@@ -166,7 +166,7 @@ def load_merge_config(path, log):
     :return: master_config, vpn_configs
     """
     if not os.path.isfile(path):
-        return {},{}
+        return {}, {}
     log.info(f"Merge Configurations: Found {path}")
     config = read_configuration(log, path)
     return config[0], config[1] if len(config) > 1 else {}
@@ -182,7 +182,6 @@ def merge_configurations(user_config, default_config_path, enforced_config_path,
     :param log:
     :return: List of merged configurations. Enforced overwrites all, user overwrites default.
     """
-
     default_config, default_vpn_config = load_merge_config(default_config_path, log)
     enforced_config, enforced_vpn_config = load_merge_config(enforced_config_path, log)
 
