@@ -13,13 +13,13 @@ import sympy
 import yaml
 from werkzeug.utils import secure_filename
 
-from bibigrid.core.actions import terminate
+from bibigrid.core.actions.terminate import delete_keypairs, delete_local_keypairs, terminate, write_cluster_state
 from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import image_selection
 from bibigrid.core.utility.handler import ssh_handler
 from bibigrid.core.utility.paths import ansible_resources_path as a_rp
-from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, KEY_FOLDER, CLUSTER_MEMORY_PATH
+from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, KEY_FOLDER
 from bibigrid.core.utility.statics.create_statics import AC_NAME, KEY_NAME, DEFAULT_SECURITY_GROUP_NAME, \
     WIREGUARD_SECURITY_GROUP_NAME, MASTER_IDENTIFIER, WORKER_IDENTIFIER, \
     VPNGTW_IDENTIFIER, UPLOAD_FILEPATHS
@@ -79,21 +79,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.debug("Keyname: %s", self.key_name)
 
         os.makedirs(os.path.join(CLUSTER_INFO_FOLDER), exist_ok=True)
-        self.write_cluster_state({"floating_ip": None, "state": "starting",
-                                  "message": "Create process has been started."})
-
-    def write_cluster_state(self, state):
-        self.log.debug(f"Writing cluster state {state}.")
-        state = {"cluster_id": self.cluster_id, "ssh_user": self.ssh_user, **state}
-        # last cluster
-        with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
-            yaml.safe_dump(data=state, stream=cluster_memory_file)
-        # all clusters
-        cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{self.cluster_id}.yaml"))
-        if not cluster_info_path.startswith(os.path.normpath(CLUSTER_INFO_FOLDER)):
-            raise ValueError("Invalid cluster_id resulting in path traversal")
-        with open(cluster_info_path, mode="w+", encoding="UTF-8") as cluster_info_file:
-            yaml.safe_dump(data=state, stream=cluster_info_file)
+        write_cluster_state(
+            {"cluster_id": self.cluster_id, "ssh_user": self.ssh_user, "floating_ip": None, "state": "starting",
+             "message": "Create process has been started."})
 
     def create_defaults(self):
         self.log.debug("Creating default files")
@@ -231,10 +219,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             configuration["floating_ip"] = \
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
             if identifier == MASTER_IDENTIFIER:
-                self.write_cluster_state({"cluster_id": self.cluster_id, "floating_ip": configuration["floating_ip"],
-                                          "state": "starting",
-                                          "message": "Create process has been started. Master has been created."
-                                          })
+                write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
+                                     "floating_ip": configuration["floating_ip"],
+                                     "state": "starting",
+                                     "message": "Create process has been started. Master has been created."
+                                     })
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
         elif identifier == MASTER_IDENTIFIER:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
@@ -542,12 +531,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log_cluster_start_info()
             if self.configurations[0].get("deleteTmpKeypairAfter"):
                 for provider in self.providers:
-                    terminate.delete_keypairs(provider=provider, tmp_keyname=self.key_name, log=self.log)
-                terminate.delete_local_keypairs(tmp_keyname=self.key_name, log=self.log)
+                    delete_keypairs(provider=provider, tmp_keyname=self.key_name, log=self.log)
+                delete_local_keypairs(tmp_keyname=self.key_name, log=self.log)
             if self.debug:
                 self.log.info("DEBUG MODE: Entering termination...")
-                terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug,
-                                    log=self.log)
+                terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug,
+                          log=self.log)
         except exceptions.ConnectionException:
             self.log.error(traceback.format_exc())
             self.log.error("Connection couldn't be established. Check Provider connection.")
@@ -577,10 +566,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
-        terminate.terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
-        self.write_cluster_state({"floating_ip": self.configurations[0].get("floating_ip"),
-                                  "state": "failed",
-                                  "message": "Cluster creation failed. Terminated remains."})
+        terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
+        write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
+                             "floating_ip": self.configurations[0].get("floating_ip"),
+                             "state": "failed",
+                             "message": "Cluster creation failed. Terminated remains."})
         return 1
 
     def log_cluster_start_info(self):
@@ -605,6 +595,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.log(42, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
         if self.configurations[0].get("ide"):
             self.log.log(42, f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")
-        self.write_cluster_state({"floating_ip": self.configurations[0]["floating_ip"],
-                                  "state": "running",
-                                  "message": "Cluster successfully created."})
+        write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
+                             "floating_ip": self.configurations[0]["floating_ip"],
+                             "state": "running",
+                             "message": "Cluster successfully created."})
