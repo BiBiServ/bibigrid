@@ -80,7 +80,7 @@ def setup(cluster_id, configurations_json=None):
                                                                            enforced_config_path=ENFORCED_CONFIG_PATH,
                                                                            log=log)
         return cluster_id, log, configurations
-    return cluster_id, log
+    return cluster_id, log, None
 
 
 @app.exception_handler(RequestValidationError)
@@ -204,7 +204,7 @@ async def get_log(cluster_id: str, lines: int = None):
     @return: A JSON response containing the log text.
     """
     LOG.debug(f"Requested log on {cluster_id}.")
-    cluster_id, log = setup(cluster_id)
+    cluster_id, log, _ = setup(cluster_id)
     try:
         base_path = os.path.normpath(LOG_FOLDER)
         file_name = os.path.normpath(os.path.join(base_path, f"{cluster_id}.log"))
@@ -233,7 +233,7 @@ async def state(cluster_id: str):
     @return: A JSON response containing the cluster state.
     """
     LOG.debug(f"Requested log on {cluster_id}.")
-    cluster_id, log = setup(cluster_id)
+    cluster_id, log, _ = setup(cluster_id)
     try:
         cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
         if not cluster_info_path.startswith(os.path.normpath(CLUSTER_INFO_FOLDER)):
