@@ -3,12 +3,12 @@ Contains the main method for the BiBiGrid REST API. Interprets command line argu
 and starts the corresponding action based on the provided arguments.
 """
 import argparse
-import asyncio
 import logging
 import multiprocessing
 import os
 import subprocess
 import sys
+import threading
 
 import uvicorn
 import yaml
@@ -23,8 +23,9 @@ from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseMod
     RequirementsModel
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import validate_configuration
-from bibigrid.core.utility.handler import provider_handler
-from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLOUD_NODE_REQUIREMENTS_PATH
+from bibigrid.core.utility.handler import provider_handler, configuration_handler
+from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLOUD_NODE_REQUIREMENTS_PATH, \
+    ENFORCED_CONFIG_PATH, DEFAULT_CONFIG_PATH
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -54,7 +55,7 @@ def tail(file_path, lines):
     return subprocess.check_output(['tail', '-n', str(lines), file_path], universal_newlines=True)
 
 
-def setup(cluster_id):
+def setup(cluster_id, configurations_json=None):
     """
     Sets up the logger for the given cluster_id. If cluster_id is None, generates a new cluster ID.
     The logger is named after the cluster_id and logs to a file named cluster_id.log.
@@ -72,6 +73,13 @@ def setup(cluster_id):
         log_handler = logging.FileHandler(os.path.join(LOG_FOLDER, f"{cluster_id}.log"))
         log_handler.setFormatter(LOG_FORMATTER)
         log.addHandler(log_handler)
+    if configurations_json:
+        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
+        configurations = configuration_handler.merge_configurations(user_config=configurations,
+                                                                           default_config_path=DEFAULT_CONFIG_PATH,
+                                                                           enforced_config_path=ENFORCED_CONFIG_PATH,
+                                                                           log=log)
+        return cluster_id, log, configurations
     return cluster_id, log
 
 
@@ -99,10 +107,9 @@ async def validate_configuration_json(configurations_json: ConfigurationsModel, 
     @param configurations_json: The configuration JSON to be validated.
     @return: A JSON response indicating the success or failure of the validation.
     """
-    cluster_id, log = setup(cluster_id)
+    cluster_id, log, configurations = setup(cluster_id, configurations_json)
     LOG.info(f"Requested validation on {cluster_id}")
     try:
-        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         providers = provider_handler.get_providers(configurations, log)
         success = validate_configuration.ValidateConfiguration(configurations, providers, log).validate()
         if not success:
@@ -127,18 +134,15 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
     @return: A JSON response indicating whether the cluster creation has started and the cluster ID.
     """
     LOG.debug(f"Requested creation on {cluster_id}")
-    cluster_id, log = setup(cluster_id)
-
-    async def create_async():
-        creator.create()
+    cluster_id, log, configurations = setup(cluster_id, configurations_json)
 
     try:
-        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         providers = provider_handler.get_providers(configurations, log)
         creator = create.Create(providers=providers, configurations=configurations, log=log,
                                 config_path=None, cluster_id=cluster_id)
         cluster_id = creator.cluster_id
-        asyncio.create_task(create_async())
+        thread = threading.Thread(target=creator.create, args=())
+        thread.start()
         return JSONResponse(content={"message": "Cluster creation started.", "cluster_id": cluster_id}, status_code=202)
     except ValueError as exc:  # pylint: disable=broad-except
         log.error(f"{type(exc).__name__}: {str(exc)}")
@@ -154,17 +158,13 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
     @param configurations_json: The configuration JSON for the cluster.
     @return: A JSON response indicating whether the cluster termination has started.
     """
-    cluster_id, log = setup(cluster_id)
+    cluster_id, log, configurations = setup(cluster_id, configurations_json)
     LOG.debug(f"Requested termination on {cluster_id}")
 
-    async def terminate_async():
-        terminate.terminate(cluster_id, providers, log)
-
     try:
-        configurations = configurations_json.model_dump()["configurations"]
         providers = provider_handler.get_providers(configurations, log)
-        asyncio.create_task(terminate_async())
-
+        thread = threading.Thread(target=terminate.terminate, args=(cluster_id, providers, log))
+        thread.start()
         return JSONResponse(content={"message": "Termination successfully requested."}, status_code=202)
     except Exception as exc:  # pylint: disable=broad-except
         log.error(f"{type(exc).__name__}: {str(exc)}")
@@ -181,9 +181,8 @@ async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel)
     @return: A JSON response containing detailed cluster information.
     """
     LOG.debug(f"Requested info on {cluster_id}.")
-    cluster_id, log = setup(cluster_id)
+    cluster_id, log, configurations = setup(cluster_id, configurations_json)
     try:
-        configurations = configurations_json.model_dump()["configurations"]
         providers = provider_handler.get_providers(configurations, log)
         cluster_dict = list_clusters.dict_clusters(providers, log).get(cluster_id, {})  # add information filtering
         if cluster_dict:
