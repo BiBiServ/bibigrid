@@ -198,7 +198,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminate", True),
-                                        volume_size=boot_volume.get("size", 50))
+                                        volume_size=boot_volume.get("size", 50),
+                                        meta=instance.get("meta", configuration.get("meta")))
         # description=instance.get("description", configuration.get("description")))
         self.add_volume_device_info_to_instance(provider, server, instance)
 
@@ -254,7 +255,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminateBoot", True),
                                         volume_size=boot_volume.get("size", 50),
-                                        description=worker.get("description", configuration.get("description")))
+                                        description=worker.get("description", configuration.get("description")),
+                                        meta=worker.get("meta", configuration.get("meta")))
         self.add_volume_device_info_to_instance(provider, server, worker)
 
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")

@@ -118,12 +118,12 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                       security_groups=None,
                       # pylint: disable=too-many-positional-arguments,too-many-locals
                       boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50,
-                      description=""):
+                      description="", meta=None):
         try:
             server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
                                              volumes=volumes, security_groups=security_groups, boot_volume=boot_volume,
                                              boot_from_volume=boot_from_volume,
-                                             terminate_volume=terminate_boot_volume, volume_size=volume_size)
+                                             terminate_volume=terminate_boot_volume, volume_size=volume_size, meta=meta)
         except openstack.exceptions.BadRequestException as exc:
             if "is not active" in str(exc):
                 raise ImageDeactivatedException("Image not active") from exc
