@@ -234,7 +234,8 @@ def start_server(name, start_worker_group, start_data):
                                           boot_from_volume=boot_volume.get("name", False),
                                           boot_volume=bool(boot_volume),
                                           terminate_volume=boot_volume.get("terminate", True),
-                                          volume_size=boot_volume.get("size", 50)
+                                          volume_size=boot_volume.get("size", 50),
+                                          meta=start_worker_group["meta"]
                                           )
         # ... add it to server
         start_data["started_servers"].append(server)
