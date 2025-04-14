@@ -197,8 +197,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # create a server and block until it is up and running
         self.log.debug("Creating server...")
         boot_volume = instance.get("bootVolume", configuration.get("bootVolume", {}))
+        security_groups = list(set(configuration["securityGroups"] + instance.get("securityGroups", [])))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=volumes, security_groups=configuration["securityGroups"], wait=True,
+                                        volumes=volumes, security_groups=security_groups, wait=True,
                                         boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminate", True),
@@ -253,8 +254,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         # create a server and attaches volumes if given; blocks until it is up and running
         boot_volume = worker.get("bootVolume", configuration.get("bootVolume", {}))
+        security_groups = list(set(configuration["securityGroups"] + worker.get("securityGroups", [])))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=volumes, security_groups=configuration["securityGroups"], wait=True,
+                                        volumes=volumes, security_groups=security_groups, wait=True,
                                         boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminateBoot", True),
