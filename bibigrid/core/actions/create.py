@@ -160,11 +160,15 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                 {"direction": "ingress", "ethertype": "IPv4", "protocol": "tcp", "port_range_min": None,
                                  "port_range_max": None, "remote_ip_prefix": cidr, "remote_group_id": None})
             provider.append_rules_to_security_group(default_security_group_id, rules)
-            configuration["security_groups"] = [self.default_security_group_name]  # store in configuration
+
+            if not configuration.get("securityGroups"):
+                configuration["securityGroups"] = [self.default_security_group_name]  # store in configuration
+            else:
+                configuration["securityGroups"] = [self.default_security_group_name] + configuration["securityGroups"]
             # when running a multi-cloud setup create an additional wireguard group
             if len(self.providers) > 1:
                 _ = provider.create_security_group(name=self.wireguard_security_group_name)["id"]
-                configuration["security_groups"].append(self.wireguard_security_group_name)  # store in configuration
+                configuration["securityGroups"].append(self.wireguard_security_group_name)  # store in configuration
 
     def start_vpn_or_master(self, configuration, provider):  # pylint: disable=too-many-locals
         """
@@ -194,7 +198,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.debug("Creating server...")
         boot_volume = instance.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True,
+                                        volumes=volumes, security_groups=configuration["securityGroups"], wait=True,
                                         boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminate", True),
@@ -250,7 +254,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # create a server and attaches volumes if given; blocks until it is up and running
         boot_volume = worker.get("bootVolume", configuration.get("bootVolume", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
-                                        volumes=volumes, security_groups=configuration["security_groups"], wait=True,
+                                        volumes=volumes, security_groups=configuration["securityGroups"], wait=True,
                                         boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminateBoot", True),

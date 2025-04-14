@@ -229,7 +229,7 @@ def start_server(name, start_worker_group, start_data):
         server = connection.create_server(name=name, flavor=start_worker_group["flavor"]["name"], image=image,
                                           network=start_worker_group["network"],
                                           key_name=f"tempKey_bibi-{common_config['cluster_id']}",
-                                          security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata,
+                                          security_groups=start_worker_group["security_groups"], userdata=userdata,
                                           volumes=volumes, wait=False,
                                           boot_from_volume=boot_volume.get("name", False),
                                           boot_volume=bool(boot_volume),
