@@ -4,6 +4,7 @@ Handles the schema validation for BiBiGrid's configuration yaml.
 
 from schema import Schema, Optional, SchemaError, Use
 
+
 def str_dict_or_none(d):
     if d is None:
         return d
@@ -12,10 +13,11 @@ def str_dict_or_none(d):
     for k, v in d.items():
         if not isinstance(k, str) or not isinstance(v, str):
             raise SchemaError("All 'meta' dictionary keys and values must be strings")
-        for text in k,v:
-            if len(text) > 255: # OpenStack limitation
+        for text in k, v:
+            if len(text) > 255:  # OpenStack limitation
                 raise SchemaError(f"All 'meta' keys and values must be of length <= 255, but {text} isn't.")
     return d
+
 
 WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'): bool, Optional('partitions'): [str],
           Optional('features'): [str],
@@ -62,7 +64,8 @@ MASTER = VPN = {'type': str, 'image': str, Optional('count'): 1, Optional('onDem
 
 # Define the schema for the configuration file
 master_schema = Schema(
-    {'infrastructure': str, 'cloud': str, 'sshUser': str, Optional('network'): str, Optional('subnet'): str, 'cloud_identifier': str,
+    {'infrastructure': str, 'cloud': str, 'sshUser': str, Optional('network'): str, Optional('subnet'): str,
+     'cloud_identifier': str,
      Optional('sshPublicKeyFiles'): [str], Optional('sshTimeout'): int,
      Optional('cloudScheduling'): {Optional('sshTimeout'): int},
      Optional('nfsShares'): [str],

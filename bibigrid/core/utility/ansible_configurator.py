@@ -7,7 +7,6 @@ import os
 import mergedeep
 import yaml
 
-from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER, VPNGTW_IDENTIFIER, WORKER_IDENTIFIER
 from bibigrid.core.actions import ide
 from bibigrid.core.actions.version import __version__
 from bibigrid.core.utility import id_generation
@@ -15,6 +14,7 @@ from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.paths.basic_path import ROOT_PATH
+from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER, VPNGTW_IDENTIFIER, WORKER_IDENTIFIER
 from bibigrid.core.utility.wireguard import wireguard_keys
 
 PYTHON_INTERPRETER = "/usr/bin/python3"
@@ -81,7 +81,7 @@ def write_worker_host_vars(*, cluster_id, worker, worker_count, log):
 def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_count, log):
     flavor_dict = provider.create_flavor_dict(flavor=worker["type"])
     name = WORKER_IDENTIFIER(cluster_id=cluster_id,
-                                    additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
+                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
     group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
     regexp = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
     worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
@@ -262,7 +262,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     for configuration in configurations:
         for worker in configuration.get("workerInstances", []):
             name = WORKER_IDENTIFIER(cluster_id=cluster_id,
-                                            additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
+                                     additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
             # if not workers["children"].get(group_name): # in the current setup this is not needed
