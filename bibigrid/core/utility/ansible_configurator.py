@@ -90,7 +90,8 @@ def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_cou
                    "cloud_identifier": configuration["cloud_identifier"],
                    "on_demand": worker.get("onDemand", True), "state": "CLOUD",
                    "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]],
-                   "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {}))
+                   "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {})),
+                   "meta": worker.get("meta", configuration.get("meta"))
                    }
 
     worker_features = worker.get("features", [])
