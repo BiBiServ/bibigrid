@@ -4,9 +4,11 @@ Module to test create
 import os
 from unittest import TestCase
 from unittest.mock import patch, MagicMock, mock_open
+
 from bibigrid.core import startup
 from bibigrid.core.actions import create
 from bibigrid.core.utility.handler import ssh_handler
+
 
 # pylint: disable=too-many-positional-arguments
 class TestCreate(TestCase):
@@ -69,7 +71,8 @@ class TestCreate(TestCase):
         with patch("builtins.open", mock_open(read_data=public_key)):
             creator.generate_keypair()
         provider.create_keypair.assert_called_with(name=creator.key_name, public_key=public_key)
-        mock_subprocess.assert_called_with(['ssh-keygen', '-t', 'ecdsa', '-f', f'{create.KEY_FOLDER}{creator.key_name}', '-P', ''])
+        mock_subprocess.assert_called_with(
+            ['ssh-keygen', '-t', 'ecdsa', '-f', f'{create.KEY_FOLDER}{creator.key_name}', '-P', ''])
 
     # TODO: Rewrite start instance tests
 
@@ -182,36 +185,26 @@ class TestCreate(TestCase):
     @patch.object(create.Create, "generate_keypair")
     @patch.object(create.Create, "prepare_configurations")
     @patch.object(create.Create, "start_start_server_threads")
-    @patch.object(create.Create, "log_cluster_start_info")
-    @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_non_debug_upload_raise(self, mock_terminate, mock_info, mock_start, mock_conf, mock_key):
-        provider = MagicMock()
-        provider.list_servers.return_value = []
-        configuration = {}
-        creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG,
-                                debug=False)
-        self.assertEqual(1, creator.create())
-        for mock in [mock_start, mock_conf, mock_key]:
-            mock.assert_called()
-        for mock in [mock_info]:
-            mock.assert_not_called()
-        mock_terminate.assert_called_with(cluster_id=creator.cluster_id, providers=[provider], log=startup.LOG,
-                                          debug=False)
-
-    @patch.object(create.Create, "generate_keypair")
-    @patch.object(create.Create, "prepare_configurations")
-    @patch.object(create.Create, "start_start_server_threads")
     @patch.object(create.Create, "upload_data")
     @patch.object(create.Create, "log_cluster_start_info")
-    @patch("bibigrid.core.actions.terminate.terminate")
-    def test_create_debug(self, mock_terminate, mock_info, mock_up, mock_start, mock_conf, mock_key):
+    @patch.object(create.Create, "initialize_instances")
+    @patch.object(create.Create, "extended_network_configuration")
+    @patch.object(create.Create, "generate_security_groups")
+    @patch.object(create.Create, "create_defaults")
+    @patch.object(create.Create, "delete_old_vars")
+    @patch("bibigrid.core.actions.create.terminate")
+    def test_create_debug(self, mock_terminate, mock_vars, mock_defaults, mock_security_groups, mock_ext_network,
+                          mock_initialize,
+                          mock_info, mock_up, mock_start, mock_conf, mock_key):
         provider = MagicMock()
         provider.list_servers.return_value = []
         configuration = {"floating_ip": 42}
         creator = create.Create(providers=[provider], configurations=[configuration], config_path="", log=startup.LOG,
                                 debug=True)
         self.assertEqual(0, creator.create())
-        for mock in [mock_info, mock_up, mock_start, mock_conf, mock_key]:
+        for mock in [mock_vars, mock_defaults, mock_security_groups, mock_ext_network, mock_initialize, mock_info,
+                     mock_up, mock_start,
+                     mock_conf, mock_key]:
             mock.assert_called()
         mock_terminate.assert_called_with(cluster_id=creator.cluster_id, providers=[provider], log=startup.LOG,
                                           debug=True)

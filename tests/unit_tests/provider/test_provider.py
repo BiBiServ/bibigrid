@@ -85,7 +85,7 @@ class ProviderServer:
                                                               log=self.log)
         self.server_dict = provider.create_server(name=self.name, flavor=configuration["flavor"],
                                                   image=configuration["image"], network=configuration["network"],
-                                                  key_name=key_name, security_groups=[])
+                                                  key_name=key_name, security_groups=[], meta={"test": "test"})
 
     def __enter__(self):
         return self.server_dict
@@ -157,6 +157,7 @@ class TestProvider(unittest.TestCase):
                         provider.get_external_network(configuration["network"]), provider_server)
                     server_list = provider.list_servers()
                     get_server = provider.get_server("bibigrid_test_server")
+                self.assertEqual({"test":"test"}, provider_server.get("metadata"))
                 self.assertEqual(SERVER_KEYS, set(provider_server.keys()))
                 self.assertEqual("bibigrid_test_keypair", provider_server["key_name"])
                 self.assertEqual(FLOATING_IP_KEYS, set(floating_ip.keys()))
