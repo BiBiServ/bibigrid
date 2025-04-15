@@ -106,6 +106,7 @@ Additionally, manually check if your quotas are exceeded, as some quotas cannot 
 
 For more information about BiBiGrid, please visit the following links:
 
+- [BiBiGrid Configuration](documentation/markdown/features/configuration.md)
 - [BiBiGrid Features](documentation/markdown/bibigrid_feature_list.md)
 - [Software used by BiBiGrid](documentation/markdown/bibigrid_software_list.md)
 
