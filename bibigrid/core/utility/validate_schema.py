@@ -21,6 +21,7 @@ def str_dict_or_none(d):
 
 WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'): bool, Optional('partitions'): [str],
           Optional('features'): [str],
+          Optional('securityGroups'): [str],
           Optional('bootVolume'): {
               Optional('name'): str,
               Optional('terminate'): bool,
@@ -43,6 +44,7 @@ WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'
 MASTER = VPN = {'type': str, 'image': str, Optional('count'): 1, Optional('onDemand'): bool,
                 Optional('partitions'): [str],
                 Optional('features'): [str],
+                Optional('securityGroups'): [str],
                 Optional('bootVolume'): {
                     Optional('name'): str,
                     Optional('terminate'): bool,
@@ -83,8 +85,9 @@ master_schema = Schema(
      Optional('useMasterWithPublicIp'): bool, Optional('waitForServices'): [str],
      Optional('gateway'): {'ip': str, 'portFunction': str}, Optional('dontUploadCredentials'): bool,
      Optional('fallbackOnOtherImage'): bool,
-     Optional('localDNSLookup'): bool, Optional('features'): [str], 'workerInstances': [
-        WORKER],
+     Optional('localDNSLookup'): bool, Optional('features'): [str], Optional('securityGroups'): [str],
+     'workerInstances': [
+         WORKER],
      'masterInstance': MASTER,
      Optional('bootVolume'): {
          Optional('name'): str,
@@ -96,8 +99,9 @@ master_schema = Schema(
 
 other_schema = Schema(
     {'infrastructure': str, 'cloud': str, 'sshUser': str, 'subnet': str, 'cloud_identifier': str,
-     Optional('waitForServices'): [str], Optional('features'): [str], 'workerInstances': [
-        WORKER], 'vpnInstance': VPN,
+     Optional('waitForServices'): [str], Optional('features'): [str], Optional('securityGroups'): [str],
+     'workerInstances': [
+         WORKER], 'vpnInstance': VPN,
      Optional('bootVolume'): {
          Optional('name'): str,
          Optional('terminate'): bool,

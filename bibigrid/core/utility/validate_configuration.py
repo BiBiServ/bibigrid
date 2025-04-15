@@ -4,8 +4,8 @@ Validates configuration and cloud_specification
 
 import os
 
-from bibigrid.core.utility import validate_schema
 from bibigrid.core.utility import image_selection
+from bibigrid.core.utility import validate_schema
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.models.exceptions import ImageNotActiveException
 
@@ -208,10 +208,32 @@ class ValidateConfiguration:
         checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),
                   ("instances", self.check_instances), ("volumes", self.check_volumes), ("network", self.check_network),
                   ("quotas", self.check_quotas), ("sshPublicKeyFiles", self.check_ssh_public_key_files),
-                  ("cloudYamls", self.check_clouds_yamls), ("nfs", self.check_nfs)]
+                  ("cloudYamls", self.check_clouds_yamls), ("nfs", self.check_nfs), ("global security groups",
+                  self.check_configurations_security_groups)]
         if success:
             for check_name, check_function in checks:
                 success = evaluate(check_name, check_function(), self.log) and success
+        return success
+
+    def check_security_groups(self, provider, security_groups):
+        success = True
+        if not security_groups:
+            return success
+        for security_group_name in security_groups:
+            security_group = provider.get_security_group(security_group_name)
+            if not security_group:
+                self.log.warning(f"Couldn't find security group {security_group} on "
+                      f"cloud {provider.cloud_specification['identifier']}")
+                success = False
+            else:
+                self.log.debug(f"Found {security_group_name} on cloud {provider.cloud_specification['identifier']}")
+        return success
+
+    def check_configurations_security_groups(self):
+        self.log.info("Checking configurations security groups!")
+        success = True
+        for configuration, provider in zip(self.configurations, self.providers):
+            success = self.check_security_groups(provider, configuration.get("securityGroups"))
         return success
 
     def check_master_vpn_worker(self):
@@ -260,12 +282,17 @@ class ValidateConfiguration:
         for configuration, provider in zip(self.configurations, self.providers):
             try:
                 self.required_resources_dict[provider.cloud_specification['identifier']]["floating_ips"] += 1
-                if configuration.get("masterInstance"):
-                    success = self.check_instance("masterInstance", configuration["masterInstance"],
+                master_instance = configuration.get("masterInstance")
+                if master_instance:
+                    success = self.check_security_groups(provider, master_instance.get("securityGroups"))
+                    success = self.check_instance("masterInstance", master_instance,
                                                   provider) and success
                 else:
-                    success = self.check_instance("vpnInstance", configuration["vpnInstance"], provider) and success
+                    vpn_instance = configuration["vpnInstance"]
+                    success = self.check_security_groups(provider, vpn_instance.get("securityGroups"))
+                    success = self.check_instance("vpnInstance", vpn_instance, provider) and success
                 for worker in configuration.get("workerInstances", []):
+                    success = self.check_security_groups(provider, worker.get("securityGroups"))
                     success = self.check_instance("workerInstance", worker, provider) and success
             except KeyError as exc:
                 self.log.warning("Not found %s, but required on %s.", str(exc),
@@ -326,14 +353,15 @@ class ValidateConfiguration:
         self.required_resources_dict[provider.cloud_specification['identifier']]["total_cores"] += flavor["vcpus"]
         return success
 
-    def check_volumes(self): # pylint: disable=too-many-branches
+    def check_volumes(self):  # pylint: disable=too-many-branches
         """
         Checking if volume or snapshot exists for all volumes
         @return: True if all snapshot and volumes are found. Else false.
         """
         self.log.info("Checking volumes...")
         success = True
-        for configuration, provider in zip(self.configurations, self.providers): # pylint: disable=too-many-nested-blocks,too-many-branches
+        for configuration, provider in zip(self.configurations,
+                                           self.providers):  # pylint: disable=too-many-nested-blocks,too-many-branches
             master_volumes = (
                 1, configuration.get("masterInstance", []) and configuration["masterInstance"].get("volumes",
                                                                                                    []))
