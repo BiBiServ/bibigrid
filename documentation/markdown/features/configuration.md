@@ -224,7 +224,7 @@ workerInstance:
   - type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
     count: 2
-    onDemand: True # optional only on master cloud for now. Default True.
+    onDemand: True # optional only on master cloud for now and only for workers. Default True.
     partitions: # optional. Always adds "all" and the cloud identifier as partitions
       - small
       - onDemand
@@ -246,6 +246,10 @@ workerInstance:
       name: False
       terminate: True
       size: 50
+    securityGroups: # optional
+      - list of existing security groups
+    meta: # optional (no key or value longer than 256)
+      meta_key: meta_value
 ```
 
 - `type` sets the instance's hardware configuration.
@@ -258,7 +262,9 @@ workerInstance:
   - `name` (optional:None) takes name or id of a boot volume and boots from that volume if given.
   - `terminate` (optional:True) if True, the boot volume will be terminated when the server is terminated.
   - `size` (optional:50) if a boot volume is created, this sets its size.
-
+- `volumes`
+- `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances
+- `meta` a dict of meta key value pairs (no key or value longer than 256)
 ##### volumes (optional)
 
 You can create a temporary volume (default), a semipermanent volume, a permanent volume and you can do all of those from a snapshot, too.
@@ -308,13 +314,10 @@ Only in the first configuration and only one:
   masterInstance:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14)
-    bootVolume: False
-    bootFromVolume: True
-    terminateBootVolume: False
-    bootVolumeSize: 50
+    # ... (see workerInstance)
 ```
 
-You can create features for the master [in the same way](#features-optional) as for the workers:
+You can apply most keys [in the same way](#features-optional) as for the workers for example create features:
 
 ```yaml
   masterInstance:
@@ -324,6 +327,18 @@ You can create features for the master [in the same way](#features-optional) as 
       - hasdatabase
       - holdsinformation
 ```
+
+- `type` sets the instance's hardware configuration.
+- `image` sets the bootable operating system to be installed on the instance.
+- `partitions` (optional:[]) allow you to force Slurm to schedule to a group of nodes (partitions) ([more](https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION))
+- `features` (optional:[]) allow you to force Slurm to schedule a job only on nodes that meet certain `bool` constraints. This can be helpful when only certain nodes can access a specific resource - like a database ([more](https://slurm.schedmd.com/slurm.conf.html#OPT_Features)).
+- `bootVolume` (optional)
+  - `name` (optional:None) takes name or id of a boot volume and boots from that volume if given.
+  - `terminate` (optional:True) if True, the boot volume will be terminated when the server is terminated.
+  - `size` (optional:50) if a boot volume is created, this sets its size.
+- `volumes`
+- `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances
+- `meta` a dict of meta key value pairs (no key or value longer than 256)
 
 ##### vpnInstance:
 
@@ -383,4 +398,14 @@ bootVolume:
       name: False
       terminate: True
       size: 50
+```
+
+#### securityGroups (optional)
+
+Instead of setting the `securityGroups` for every instance you can also set them cloud wide as a list:
+
+```yaml
+securityGroups:
+  - securityGroup1
+  - securityGroup2 
 ```
