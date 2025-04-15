@@ -21,8 +21,7 @@ from bibigrid.core.actions import create, terminate, list_clusters
 from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
     InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
     RequirementsModel
-from bibigrid.core.utility import id_generation
-from bibigrid.core.utility import validate_configuration
+from bibigrid.core.utility import validate_configuration, id_generation
 from bibigrid.core.utility.handler import provider_handler, configuration_handler
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLOUD_NODE_REQUIREMENTS_PATH, \
     ENFORCED_CONFIG_PATH, DEFAULT_CONFIG_PATH
@@ -76,9 +75,9 @@ def setup(cluster_id, configurations_json=None):
     if configurations_json:
         configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         configurations = configuration_handler.merge_configurations(user_config=configurations,
-                                                                           default_config_path=DEFAULT_CONFIG_PATH,
-                                                                           enforced_config_path=ENFORCED_CONFIG_PATH,
-                                                                           log=log)
+                                                                    default_config_path=DEFAULT_CONFIG_PATH,
+                                                                    enforced_config_path=ENFORCED_CONFIG_PATH,
+                                                                    log=log)
         return cluster_id, log, configurations
     return cluster_id, log, None
 
@@ -138,6 +137,9 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
 
     try:
         providers = provider_handler.get_providers(configurations, log)
+        if not id_generation.is_unique_cluster_id(cluster_id=cluster_id, providers=providers):
+            return JSONResponse(content={"message": f"Cluster with cluster id {cluster_id} is already running."},
+                                status_code=400)
         creator = create.Create(providers=providers, configurations=configurations, log=log,
                                 config_path=None, cluster_id=cluster_id)
         cluster_id = creator.cluster_id
