@@ -215,7 +215,7 @@ class ValidateConfiguration:
                 success = evaluate(check_name, check_function(), self.log) and success
         return success
 
-    def check_security_groups(self, provider, security_groups):
+    def _check_security_groups(self, provider, security_groups):
         success = True
         if not security_groups:
             return success
@@ -233,7 +233,7 @@ class ValidateConfiguration:
         self.log.info("Checking configurations security groups!")
         success = True
         for configuration, provider in zip(self.configurations, self.providers):
-            success = self.check_security_groups(provider, configuration.get("securityGroups"))
+            success = self._check_security_groups(provider, configuration.get("securityGroups")) or success
         return success
 
     def check_master_vpn_worker(self):
@@ -284,15 +284,15 @@ class ValidateConfiguration:
                 self.required_resources_dict[provider.cloud_specification['identifier']]["floating_ips"] += 1
                 master_instance = configuration.get("masterInstance")
                 if master_instance:
-                    success = self.check_security_groups(provider, master_instance.get("securityGroups"))
+                    success = self._check_security_groups(provider, master_instance.get("securityGroups"))
                     success = self.check_instance("masterInstance", master_instance,
                                                   provider) and success
                 else:
                     vpn_instance = configuration["vpnInstance"]
-                    success = self.check_security_groups(provider, vpn_instance.get("securityGroups"))
+                    success = self._check_security_groups(provider, vpn_instance.get("securityGroups"))
                     success = self.check_instance("vpnInstance", vpn_instance, provider) and success
                 for worker in configuration.get("workerInstances", []):
-                    success = self.check_security_groups(provider, worker.get("securityGroups"))
+                    success = self._check_security_groups(provider, worker.get("securityGroups"))
                     success = self.check_instance("workerInstance", worker, provider) and success
             except KeyError as exc:
                 self.log.warning("Not found %s, but required on %s.", str(exc),
@@ -353,6 +353,49 @@ class ValidateConfiguration:
         self.required_resources_dict[provider.cloud_specification['identifier']]["total_cores"] += flavor["vcpus"]
         return success
 
+    def _check_volume(self, provider, volume, count):
+        success = True
+        if volume.get("exists"):
+            if volume.get("name"):
+                volume_object = provider.get_volume_by_id_or_name(volume["name"])
+                if volume_object:
+                    self.log.debug(
+                        f"Found volume {volume['name']} on cloud "
+                        f"{provider.cloud_specification['identifier']}.")
+                else:
+                    self.log.warning(
+                        f"Couldn't find volume {volume['name']} on cloud "
+                        f"{provider.cloud_specification['identifier']}. "
+                        "No size added to resource requirements dict."
+                    )
+                    success = False
+            else:
+                self.log.warning(
+                    f"Key exists is set, but no name is given for {volume}. "
+                    "No size added to resource requirements dict.")
+                success = False
+        else:
+            self.required_resources_dict[provider.cloud_specification['identifier']]["volumes"] += count
+
+            if volume.get("snapshot"):
+                snapshot_object = provider.get_volume_snapshot_by_id_or_name(volume["snapshot"])
+                if snapshot_object:
+                    self.log.debug(
+                        f"Found snapshot {volume['snapshot']} on cloud "
+                        f"{provider.cloud_specification['identifier']}.")
+                    self.required_resources_dict[provider.cloud_specification['identifier']][
+                        "volume_gigabytes"] += snapshot_object["size"] * count
+                else:
+                    self.log.warning(
+                        f"Couldn't find snapshot {volume['snapshot']} on cloud "
+                        f"{provider.cloud_specification['identifier']}. "
+                        "No size added to resource requirements dict.")
+                    success = False
+            else:
+                self.required_resources_dict[provider.cloud_specification['identifier']][
+                    "volume_gigabytes"] += volume.get("size", 50) * count
+        return success
+
     def check_volumes(self):  # pylint: disable=too-many-nested-blocks,too-many-branches
         """
         Checking if volume or snapshot exists for all volumes
@@ -372,45 +415,7 @@ class ValidateConfiguration:
 
             for count, volume_group in volume_groups:
                 for volume in volume_group:
-                    if volume.get("exists"):
-                        if volume.get("name"):
-                            volume_object = provider.get_volume_by_id_or_name(volume["name"])
-                            if volume_object:
-                                self.log.debug(
-                                    f"Found volume {volume['name']} on cloud "
-                                    f"{provider.cloud_specification['identifier']}.")
-                            else:
-                                self.log.warning(
-                                    f"Couldn't find volume {volume['name']} on cloud "
-                                    f"{provider.cloud_specification['identifier']}. "
-                                    "No size added to resource requirements dict."
-                                )
-                                success = False
-                        else:
-                            self.log.warning(
-                                f"Key exists is set, but no name is given for {volume}. "
-                                "No size added to resource requirements dict.")
-                            success = False
-                    else:
-                        self.required_resources_dict[provider.cloud_specification['identifier']]["volumes"] += count
-
-                        if volume.get("snapshot"):
-                            snapshot_object = provider.get_volume_snapshot_by_id_or_name(volume["snapshot"])
-                            if snapshot_object:
-                                self.log.debug(
-                                    f"Found snapshot {volume['snapshot']} on cloud "
-                                    f"{provider.cloud_specification['identifier']}.")
-                                self.required_resources_dict[provider.cloud_specification['identifier']][
-                                    "volume_gigabytes"] += snapshot_object["size"] * count
-                            else:
-                                self.log.warning(
-                                    f"Couldn't find snapshot {volume['snapshot']} on cloud "
-                                    f"{provider.cloud_specification['identifier']}. "
-                                    "No size added to resource requirements dict.")
-                                success = False
-                        else:
-                            self.required_resources_dict[provider.cloud_specification['identifier']][
-                                "volume_gigabytes"] += volume.get("size", 50) * count
+                    success = self._check_volume(provider, volume, count) and success
         return success
 
     def check_network(self):
