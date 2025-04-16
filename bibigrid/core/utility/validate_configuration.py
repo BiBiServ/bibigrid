@@ -353,7 +353,7 @@ class ValidateConfiguration:
         self.required_resources_dict[provider.cloud_specification['identifier']]["total_cores"] += flavor["vcpus"]
         return success
 
-    def check_volumes(self):  # pylint: disable=too-many-branches
+    def check_volumes(self):  # pylint: disable=too-many-nested-blocks,too-many-branches
         """
         Checking if volume or snapshot exists for all volumes
         @return: True if all snapshot and volumes are found. Else false.
@@ -361,7 +361,7 @@ class ValidateConfiguration:
         self.log.info("Checking volumes...")
         success = True
         for configuration, provider in zip(self.configurations,
-                                           self.providers):  # pylint: disable=too-many-nested-blocks,too-many-branches
+                                           self.providers):
             master_volumes = (
                 1, configuration.get("masterInstance", []) and configuration["masterInstance"].get("volumes",
                                                                                                    []))
