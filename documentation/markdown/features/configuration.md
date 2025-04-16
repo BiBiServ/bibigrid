@@ -264,7 +264,7 @@ workerInstance:
   - `size` (optional:50) if a boot volume is created, this sets its size.
 - `volumes`
 - `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances
-- `meta` a dict of meta key value pairs (no key or value longer than 256)
+- `meta` a dict of meta key value pairs (no key or value longer than 256) overwrites global meta key value pairs where conflicts arise.
 ##### volumes (optional)
 
 You can create a temporary volume (default), a semipermanent volume, a permanent volume and you can do all of those from a snapshot, too.
@@ -338,7 +338,7 @@ You can apply most keys [in the same way](#features-optional) as for the workers
   - `size` (optional:50) if a boot volume is created, this sets its size.
 - `volumes`
 - `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances
-- `meta` a dict of meta key value pairs (no key or value longer than 256)
+- `meta` a dict of meta key value pairs (no key or value longer than 256) overwrites global meta key value pairs where conflicts arise
 
 ##### vpnInstance:
 
@@ -409,3 +409,8 @@ securityGroups:
   - securityGroup1
   - securityGroup2 
 ```
+
+#### meta (optional)
+
+Takes a dict of key value pairs (no key/value is allowed to be longer than 256) and adds it to all instances of that cloud.
+Gets merged with instances metadata and is overwritten where conflicts arise.

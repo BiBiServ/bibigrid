@@ -8,6 +8,7 @@ import subprocess
 import threading
 import traceback
 
+import mergedeep
 import paramiko
 import sympy
 import yaml
@@ -198,13 +199,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.debug("Creating server...")
         boot_volume = instance.get("bootVolume", configuration.get("bootVolume", {}))
         security_groups = list(set(configuration["securityGroups"] + instance.get("securityGroups", [])))
+        meta = mergedeep.merge({}, instance.get("meta", {}), configuration.get("meta", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=security_groups, wait=True,
                                         boot_from_volume=boot_volume.get("name", False),
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminate", True),
                                         volume_size=boot_volume.get("size", 50),
-                                        meta=instance.get("meta", configuration.get("meta")))
+                                        meta=meta)
         # description=instance.get("description", configuration.get("description")))
         self.add_volume_device_info_to_instance(provider, server, instance)
 
@@ -255,6 +257,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # create a server and attaches volumes if given; blocks until it is up and running
         boot_volume = worker.get("bootVolume", configuration.get("bootVolume", {}))
         security_groups = list(set(configuration["securityGroups"] + worker.get("securityGroups", [])))
+        meta = mergedeep.merge({}, worker.get("meta", {}), configuration.get("meta", {}))
         server = provider.create_server(name=name, flavor=flavor, key_name=self.key_name, image=image, network=network,
                                         volumes=volumes, security_groups=security_groups, wait=True,
                                         boot_from_volume=boot_volume.get("name", False),
@@ -262,7 +265,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         terminate_boot_volume=boot_volume.get("terminateBoot", True),
                                         volume_size=boot_volume.get("size", 50),
                                         description=worker.get("description", configuration.get("description")),
-                                        meta=worker.get("meta", configuration.get("meta")))
+                                        meta=meta)
         self.add_volume_device_info_to_instance(provider, server, worker)
 
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
