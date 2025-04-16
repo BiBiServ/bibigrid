@@ -273,7 +273,7 @@ def check_clouds_yaml(clouds):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='BiBiGrid REST easily sets up clusters within a cloud environment')
     parser.add_argument("-c", "--clouds", default=["openstack"], nargs="+",
-                        help="Name of clouds.yaml entries to check on startup.")
+                        help="Names of clouds.yaml entries to check on startup.")
     args = parser.parse_args()
 
     check_clouds_yaml(args.clouds)
