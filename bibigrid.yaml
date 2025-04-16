@@ -65,6 +65,8 @@
     image: # existing active image from your cloud. Consider using regex to prevent image updates from breaking your running cluster
     # features: # list
     # - feature1
+    # meta: # dict; keys and values of length <=256
+    # securityGroups: # list
     # partitions: # list
     # - partition1
     # bootVolume: # optional
@@ -91,6 +93,8 @@
   #    image: # same as master. Consider using regex to prevent image updates from breaking your running cluster
   #    count: 1 # number of workers you would like to create with set type, image combination
   #    # features: # list
+  #    # meta: # dict; keys and values of length <=256
+  #    # securityGroups: # list
   #    # partitions: # list of slurm features that all nodes of this group have
   #    # bootVolume: # optional
   #    #   name: # optional; if you want to boot from a specific volume
@@ -122,5 +126,7 @@
   #   name: # optional; if you want to boot from a specific volume
   #   terminate: True # whether the volume is terminated on server termination
   #   size: 50
+
+  # securityGroups: # list
 
   # - [next configurations]
