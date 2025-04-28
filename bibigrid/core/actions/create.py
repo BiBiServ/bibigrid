@@ -491,12 +491,12 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         for start_server_thread in start_server_threads:
             try:
                 start_server_thread.join()
-            except Exception as e:
-               self.log.warning(f"Worker thread {start_server_thread} raised exception {e}.")
-               worker_exceptions.append(e)
+            except Exception as e: # pylint: disable=broad-except
+                self.log.warning(f"Worker thread {start_server_thread} raised exception {e}.")
+                worker_exceptions.append(e)
         if worker_exceptions:
             # You can choose to raise the first exception, or handle them differently
-            raise ExceptionGroup(f"One or more exceptions occurred during worker start.", worker_exceptions)
+            raise ExceptionGroup("One or more exceptions occurred during worker start.", worker_exceptions)
 
     def extended_network_configuration(self):
         """
