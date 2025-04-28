@@ -233,7 +233,7 @@ class ValidateConfiguration:
         self.log.info("Checking configurations security groups!")
         success = True
         for configuration, provider in zip(self.configurations, self.providers):
-            success = self._check_security_groups(provider, configuration.get("securityGroups")) or success
+            success = self._check_security_groups(provider, configuration.get("securityGroups")) and success
         return success
 
     def check_master_vpn_worker(self):
@@ -284,15 +284,15 @@ class ValidateConfiguration:
                 self.required_resources_dict[provider.cloud_specification['identifier']]["floating_ips"] += 1
                 master_instance = configuration.get("masterInstance")
                 if master_instance:
-                    success = self._check_security_groups(provider, master_instance.get("securityGroups"))
+                    success = self._check_security_groups(provider, master_instance.get("securityGroups")) and success
                     success = self.check_instance("masterInstance", master_instance,
                                                   provider) and success
                 else:
                     vpn_instance = configuration["vpnInstance"]
-                    success = self._check_security_groups(provider, vpn_instance.get("securityGroups"))
+                    success = self._check_security_groups(provider, vpn_instance.get("securityGroups")) and success
                     success = self.check_instance("vpnInstance", vpn_instance, provider) and success
                 for worker in configuration.get("workerInstances", []):
-                    success = self._check_security_groups(provider, worker.get("securityGroups"))
+                    success = self._check_security_groups(provider, worker.get("securityGroups")) and success
                     success = self.check_instance("workerInstance", worker, provider) and success
             except KeyError as exc:
                 self.log.warning("Not found %s, but required on %s.", str(exc),

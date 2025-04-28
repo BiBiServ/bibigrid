@@ -44,7 +44,6 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param app_version:
         @return: session
         """
-        # print(v3)
         auth = self.cloud_specification["auth"]
         if all(key in auth for key in ["auth_url", "application_credential_id", "application_credential_secret"]):
             auth_session = v3.ApplicationCredential(auth_url=auth["auth_url"],

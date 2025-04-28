@@ -476,7 +476,7 @@ class TestAnsibleConfigurator(TestCase):
             "partitions": ["all", "cloud1"],
             "boot_volume": {"size": 10},
             "features": {"feature1"},
-            "meta": None,
+            "meta": {},
             "security_groups": []
         }
 
@@ -489,7 +489,7 @@ class TestAnsibleConfigurator(TestCase):
             log=log
         )
         # Assert group_vars were written correctly
-        print(mock_write_yaml.mock_calls)
+        # print(mock_write_yaml.mock_calls)
         mock_write_yaml.assert_any_call(
             os.path.join("mock_path", "bibigrid_worker_foo_0_1.yaml"),
             expected_group_vars,

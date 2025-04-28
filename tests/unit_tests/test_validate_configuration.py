@@ -79,28 +79,28 @@ class TestValidateConfiguration(TestCase):
         provider1 = Mock()
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
-                                                           configurations=[{"masterInstance": "42"}], log=Mock())
+                                                           configurations=[{"masterInstance": {42:42}}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
             v_c.check_instances()
-            mock.assert_called_with("masterInstance", "42", provider1)
+            mock.assert_called_with("masterInstance", {42:42}, provider1)
 
     def test_check_instances_vpn(self):
         provider1 = Mock()
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
-                                                           configurations=[{"vpnInstance": "42"}], log=Mock())
+                                                           configurations=[{"vpnInstance": {42:42}}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
             v_c.check_instances()
-            mock.assert_called_with("vpnInstance", "42", provider1)
+            mock.assert_called_with("vpnInstance", {42:42}, provider1)
 
-    def test_check_instances_vpn_worker(self):
+    def test_check_instance_worker(self):
         provider1 = Mock()
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[
-            {"masterInstance": "42", "workerInstances": ["42"]}], log=Mock())
+            {"masterInstance": {42:42}, "workerInstances": [{42:42}]}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
             v_c.check_instances()
-            mock.assert_called_with("workerInstance", "42", provider1)
+            mock.assert_called_with("workerInstance", {42:42}, provider1)
 
     def test_check_instances_vpn_master_missing(self):
         provider1 = Mock()
@@ -108,7 +108,7 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
         self.assertFalse(v_c.check_instances())
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
-                                                           configurations=[{"workerInstances": ["42"]}], log=Mock())
+                                                           configurations=[{"workerInstances": [{42:42}]}], log=Mock())
         self.assertFalse(v_c.check_instances())
 
     def test_check_instances_vpn_master_count(self):
@@ -336,3 +336,54 @@ class TestValidateConfiguration(TestCase):
 
     def test_has_enough_higher(self):
         self.assertFalse(validate_configuration.has_enough(1, 2, "", "", log=Mock()))
+
+    def test_check_security_groups_groups_found(self):
+        provider1 = MagicMock()
+        provider1.cloud_specification = {"identifier": "1"}
+        provider1.get_security_group.return_value = True
+        os.environ['OS_PROJECT_NAME'] = "name"
+        v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
+        self.assertTrue(v_c.check_configurations_security_groups())
+
+    def test_check_security_groups_not_found(self):
+        provider1 = MagicMock()
+        provider1.cloud_specification = {"identifier": "1"}
+        provider1.get_security_group.return_value = False
+        os.environ['OS_PROJECT_NAME'] = "name"
+        v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
+        self.assertTrue(v_c.check_configurations_security_groups())
+
+    def test_check_configurations_security_groups(self):
+        provider1 = MagicMock()
+        provider1.cloud_specification = {"identifier": "1"}
+        provider1.get_security_group.return_value = False
+        os.environ['OS_PROJECT_NAME'] = "name"
+        v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
+        self.assertTrue(v_c.check_configurations_security_groups())
+
+    def test_check_instance_security_group_not_found_worker(self):
+        provider1 = Mock()
+        provider1.cloud_specification = {"identifier": "1"}
+        provider1.get_security_group.return_value = False
+        v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[
+            {"masterInstance": {42:42}, "workerInstances": [{42:42, "securityGroups": [42]}]}], log=Mock())
+        with patch.object(v_c, "check_instance") as mock:
+            self.assertFalse(v_c.check_instances())
+
+    def test_check_instance_security_group_not_found_master(self):
+        provider1 = Mock()
+        provider1.cloud_specification = {"identifier": "1"}
+        provider1.get_security_group.return_value = False
+        v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[
+            {"masterInstance": {42:42, "securityGroups": [42]}, "workerInstances": [{42:42}]}], log=Mock())
+        with patch.object(v_c, "check_instance") as mock:
+            self.assertFalse(v_c.check_instances())
+
+    def test_check_instance_security_group_not_found_vpn(self):
+        provider1 = Mock()
+        provider1.cloud_specification = {"identifier": "1"}
+        provider1.get_security_group.return_value = False
+        v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[
+            {"vpnInstance": {42:42, "securityGroups": [42]}, "workerInstances": [{42:42}]}], log=Mock())
+        with patch.object(v_c, "check_instance") as mock:
+            self.assertFalse(v_c.check_instances())
