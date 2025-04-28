@@ -84,12 +84,15 @@ def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_cou
                              additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
     group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
     regexp = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
+    partitions = worker.get("partitions", []) + [configuration["cloud_identifier"]]
+    if not configuration.get("noAllPartition"):
+        partitions.append("all")
     worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                    "network": configuration["network"], "flavor": flavor_dict,
                    "gateway_ip": configuration["private_v4"],
                    "cloud_identifier": configuration["cloud_identifier"],
                    "on_demand": worker.get("onDemand", True), "state": "CLOUD",
-                   "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]],
+                   "partitions": partitions,
                    "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {})),
                    "meta": mergedeep.merge({}, worker.get("meta", {}), configuration.get("meta", {})),
                    "security_groups": list(
@@ -135,6 +138,9 @@ def write_master_var(provider, configuration, cluster_id, log):
     master = configuration["masterInstance"]
     name = MASTER_IDENTIFIER(cluster_id=cluster_id)
     flavor_dict = provider.create_flavor_dict(flavor=master["type"])
+    partitions = master.get("partitions", []) + [configuration["cloud_identifier"]]
+    if not configuration.get("noAllPartition"):
+        partitions.append("all")
     master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
                    "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                    "flavor": flavor_dict, "private_v4": configuration["private_v4"],
@@ -142,7 +148,7 @@ def write_master_var(provider, configuration, cluster_id, log):
                    "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
                    "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
                    "on_demand": False,
-                   "partitions": master.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
+                   "partitions": partitions}
     if configuration.get("wireguard_peer"):
         master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
     pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
