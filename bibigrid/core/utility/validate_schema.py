@@ -94,7 +94,8 @@ master_schema = Schema(
          Optional('terminate'): bool,
          Optional('size'): int
      },
-     Optional('meta'): Use(str_dict_or_none)
+     Optional('meta'): Use(str_dict_or_none),
+     Optional('noAllPartition'): bool,
      })
 
 other_schema = Schema(
