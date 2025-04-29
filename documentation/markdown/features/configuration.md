@@ -34,6 +34,10 @@ Therefore, it is stored within the master configuration.
 
 ### Global
 
+#### noAllPartition (optional:False)
+
+If set to True, no `all` partition containing all nodes is created within slurm.conf.
+
 #### sshPublicKeyFiles (optional)
 
 `sshPublicKeyFiles` expects a list of public keyfiles to be registered on every instance. After cluster creation, you
@@ -414,3 +418,5 @@ securityGroups:
 
 Takes a dict of key value pairs (no key/value is allowed to be longer than 256) and adds it to all instances of that cloud.
 Gets merged with instances metadata and is overwritten where conflicts arise.
+
+####
