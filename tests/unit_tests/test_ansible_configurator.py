@@ -473,7 +473,7 @@ class TestAnsibleConfigurator(TestCase):
             "cloud_identifier": "cloud1",
             "on_demand": True,
             "state": "CLOUD",
-            "partitions": ["all", "cloud1"],
+            "partitions": ["cloud1", "all"],
             "boot_volume": {"size": 10},
             "features": {"feature1"},
             "meta": {},
@@ -594,7 +594,7 @@ class TestAnsibleConfigurator(TestCase):
             "fallback_on_other_image": False,
             "state": "UNKNOWN",  # Based on useMasterAsCompute = True
             "on_demand": False,
-            "partitions": ["control", "all", "cloud1"],
+            "partitions": ["control", "cloud1", "all"],
         }
 
         # Call the function
