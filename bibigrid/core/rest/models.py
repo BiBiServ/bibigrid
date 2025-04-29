@@ -142,6 +142,7 @@ class MasterConfig(BaseModel):
     workerInstances: List[Instance]
     masterInstance: Instance
     bootVolume: Optional[BootVolume] = None
+    noAllPartition: Optional[bool] = False
 
 
 class OtherConfig(BaseModel):
