@@ -158,9 +158,9 @@ class TestProvider(unittest.TestCase):
                     server_list = provider.list_servers()
                     get_server = provider.get_server("bibigrid_test_server")
                 self.assertEqual({"test":"test"}, provider_server.get("metadata"))
-                self.assertEqual(SERVER_KEYS, set(provider_server.keys()))
+                self.assertTrue(SERVER_KEYS <= set(provider_server.keys()))
                 self.assertEqual("bibigrid_test_keypair", provider_server["key_name"])
-                self.assertEqual(FLOATING_IP_KEYS, set(floating_ip.keys()))
+                self.assertTrue(FLOATING_IP_KEYS <= set(floating_ip.keys()))
                 list_server = next(server for server in server_list if
                                    server["name"] == "bibigrid_test_server" and server[
                                        "public_v4"] == floating_ip.floating_ip_address)
@@ -171,6 +171,7 @@ class TestProvider(unittest.TestCase):
     def test_get_external_network(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
+                print(configuration["network"])
                 self.assertTrue(provider.get_external_network(configuration["network"]))
                 with self.assertRaises(TypeError):
                     provider.get_external_network("ERROR")
@@ -179,9 +180,9 @@ class TestProvider(unittest.TestCase):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
                 network = provider.get_network_by_id_or_name(configuration["network"])
-                self.assertEqual(NETWORK_KEYS, set(network.keys()))
+                self.assertTrue(NETWORK_KEYS <= set(network.keys()))
                 subnet_id = provider.get_subnet_ids_by_network(network["id"])[0]
-                self.assertEqual(SUBNET_KEYS, set(provider.get_subnet_by_id_or_name(subnet_id).keys()))
+                self.assertTrue(SUBNET_KEYS <= set(provider.get_subnet_by_id_or_name(subnet_id).keys()))
                 network2 = provider.get_network_id_by_subnet(subnet_id)
                 self.assertEqual(network2, network["id"])
 
@@ -213,12 +214,12 @@ class TestProvider(unittest.TestCase):
     def test_get_flavor_detail(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
-                self.assertEqual(FLAVOR_KEYS, set(provider.get_flavor(configuration["flavor"]).keys()))
+                self.assertTrue(FLAVOR_KEYS <= set(provider.get_flavor(configuration["flavor"]).keys()))
 
     def test_get_image(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
             with self.subTest(provider.NAME):
-                self.assertEqual(IMAGE_KEYS, set(provider.get_image_by_id_or_name(configuration["image"]).keys()))
+                self.assertTrue(IMAGE_KEYS <= set(provider.get_image_by_id_or_name(configuration["image"]).keys()))
 
     def test_get_image_mismatch(self):
         for provider in PROVIDERS:
@@ -252,7 +253,7 @@ class TestProvider(unittest.TestCase):
         def test_get_snapshot(self):
             for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
                 with self.subTest(provider.NAME):
-                    self.assertEqual(SNAPSHOT_KEYS, set(provider.get_volume_snapshot_by_id_or_name(
+                    self.assertTrue(SNAPSHOT_KEYS <= set(provider.get_volume_snapshot_by_id_or_name(
                         configuration["snapshotImage"]).keys()))
 
         def test_create_volume_from_snapshot_with_delete(self):

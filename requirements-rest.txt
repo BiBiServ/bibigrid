@@ -1,15 +1,3 @@
-openstacksdk==0.62
-mergedeep~=1.3.4
-paramiko~=3.4.0
-python-cinderclient
-python-keystoneclient
-python-novaclient
-python-openstackclient==6.0.0
-PyYAML~=6.0
-shortuuid~=1.0.13
-sshtunnel~=0.4.0
-python-multipart
-uvicorn~=0.34.0
-fastapi~=0.115.11
-httpx
-Werkzeug==3.1.3
+-r requirements.txt
+fastapi~=0.115.12
+uvicorn~=0.34.1
