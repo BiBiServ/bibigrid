@@ -6,6 +6,7 @@ and application credentials used by it.
 import os
 import re
 import time
+from datetime import datetime
 
 import yaml
 
@@ -15,16 +16,18 @@ from bibigrid.core.utility.statics.create_statics import DEFAULT_SECURITY_GROUP_
 from bibigrid.models.exceptions import ConflictException
 
 
-def write_cluster_state(cluster_id, state):
+def write_cluster_state(state):
     # last cluster
+    state["last_changed"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(CLUSTER_MEMORY_PATH, mode="w+", encoding="UTF-8") as cluster_memory_file:
         yaml.safe_dump(data=state, stream=cluster_memory_file)
     # all clusters
-    cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
+    cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{state['cluster_id']}.yaml"))
     if not cluster_info_path.startswith(CLUSTER_INFO_FOLDER):
         raise ValueError("Invalid cluster_id resulting in path traversal")
     with open(cluster_info_path, mode="w+", encoding="UTF-8") as cluster_info_file:
         yaml.safe_dump(data=state, stream=cluster_info_file)
+
 
 def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
     """
@@ -80,7 +83,8 @@ def terminate_servers(cluster_id, provider, log):
     log.info("Deleting servers on provider %s...", provider.cloud_specification['identifier'])
     server_list = provider.list_servers()
     cluster_server_state = []
-    server_regex = re.compile(fr"^bibigrid-(master-{cluster_id}|(worker|vpngtw)-{cluster_id}-\d+)$")
+    safe_cluster_id = re.escape(cluster_id)
+    server_regex = re.compile(fr"^bibigrid-(master-{safe_cluster_id}|(worker|vpngtw)-{safe_cluster_id}-\d+)$")
     for server in server_list:
         if server_regex.match(server["name"]):
             log.info("Trying to terminate Server %s on cloud %s.", server['name'],
@@ -134,16 +138,13 @@ def delete_local_keypairs(tmp_keyname, log):
     log.info("Deleting Keypair locally...")
     tmp_keypath = os.path.normpath(os.path.join(KEY_FOLDER, tmp_keyname))
     pub_tmp_keypath = os.path.normpath(tmp_keypath + ".pub")
-    if tmp_keypath.startswith(KEY_FOLDER) and os.path.isfile(tmp_keypath):
-        os.remove(tmp_keypath)
-        success = True
-    else:
-        log.warning(f"Unable to find private keyfile '{tmp_keypath}' locally or path is invalid. No local private keyfile deleted.")
-    if pub_tmp_keypath.startswith(KEY_FOLDER) and os.path.isfile(pub_tmp_keypath):
-        os.remove(pub_tmp_keypath)
-        success = True
-    else:
-        log.warning(f"Unable to find public keyfile '{pub_tmp_keypath}' locally or path is invalid. No local public keyfile deleted.")
+
+    for key_path in [tmp_keypath, pub_tmp_keypath]:
+        if key_path.startswith(KEY_FOLDER) and os.path.isfile(key_path):
+            os.remove(key_path)
+            success = True
+        else:
+            log.warning(f"Unable to find keyfile '{key_path}' locally or invalid path.")
     return success
 
 
@@ -244,8 +245,10 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
     cluster_keypair_deleted = all(cluster_keypair_state)
     cluster_security_group_deleted = all(cluster_security_group_state)
     cluster_volume_deleted = all(all(instance_volume_states) for instance_volume_states in cluster_volume_state)
-    message = "Cluster terminated."
-    state = 200
+    success = (cluster_server_terminated and cluster_keypair_deleted and
+               cluster_security_group_deleted and cluster_volume_deleted)
+    # message = "Cluster terminated."
+    state = "terminated"
     if cluster_existed:
         if cluster_server_terminated:
             log.info("Terminated all servers of cluster %s.", cluster_id)
@@ -263,8 +266,7 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
             log.info("Deleted all volumes of cluster %s", cluster_id)
         else:
             log.warning("Unable to delete all volumes of cluster %s.", cluster_id)
-        if (cluster_server_terminated and cluster_keypair_deleted and cluster_security_group_deleted and
-                cluster_volume_deleted):
+        if success:
             message = f"Successfully terminated cluster {cluster_id}."
             log.log(42, message)
         else:
@@ -278,14 +280,12 @@ def terminate_output(*, cluster_server_state, cluster_keypair_state, cluster_sec
             log.info("Successfully handled application credential of cluster %s.", cluster_id)
         else:
             log.warning("Unable to delete application credential of cluster %s", cluster_id)
+
+        write_cluster_state({"cluster_id": cluster_id,
+                             "floating_ip": None,
+                             "ssh_user": None,
+                             "state": state,
+                             "message": message})
     else:
-        message = "Cluster does not exist."
-        state = 404
         log.warning(f"Unable to find any servers for cluster-id {cluster_id}. "
                     f"Check cluster-id and configuration.\nAll keys deleted: {cluster_keypair_deleted}")
-
-    write_cluster_state(cluster_id, {"cluster_id": cluster_id,
-                                     "floating_ip": None,
-                                     "ssh_user": None,
-                                     "state": state,
-                                     "message": message})

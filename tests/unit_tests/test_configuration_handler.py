@@ -234,3 +234,56 @@ class TestConfigurationHandler(TestCase):
                                                                {"name2": {42: 21, "test": ["recursive", 22],
                                                                           "additional": "value"}}, startup.LOG)
         self.assertEqual({}, result)
+
+    @patch('os.path.isfile')
+    @patch('bibigrid.core.utility.handler.configuration_handler.read_configuration')
+    def test_load_merge_config_file_found(self, mock_read_configuration, mock_isfile):
+        log = MagicMock()
+        config_path = 'path/to/config.json'
+        mock_isfile.return_value = True  # Set the return value of os.path.isfile to True
+        mock_read_configuration.return_value = [{'master': 'config'}, {'vpn': 'config'}]
+        master_config, vpn_config = configuration_handler.load_merge_config(config_path, log)
+        self.assertEqual(master_config, {'master': 'config'})
+        self.assertEqual(vpn_config, {'vpn': 'config'})
+
+    @patch('bibigrid.core.utility.handler.configuration_handler.read_configuration')
+    def test_load_merge_config_file_not_found(self, mock_read_configuration):
+        log = MagicMock()
+        config_path = 'path/to/config.json'
+        master_config, vpn_config = configuration_handler.load_merge_config(config_path, log)
+        self.assertEqual({}, master_config)
+        self.assertEqual({}, vpn_config)
+
+    @patch('bibigrid.core.utility.handler.configuration_handler.load_merge_config')
+    def test_merge_configurations(self, mock_load_merge_config):
+        user_config = [{'A': 1, 'B': 2, 'C': 3}, {'A': 4, 'B': 5, 'C': 6}, {'A': 7, 'B': 8, 'C': 9}]
+        default_config_path = 'path/to/default/config.json'
+        enforced_config_path = 'path/to/enforced/config.json'
+        log = MagicMock()
+        mock_load_merge_config.side_effect = [
+            ({'A': 42, 'D': 1}, {'B': 42, 'D': 2}),
+            ({'C': 21, 'E': 1}, {'C': 22, 'E': 2})
+        ]
+        result = configuration_handler.merge_configurations(user_config, default_config_path, enforced_config_path, log)
+        self.assertEqual(3, len(result))  # master config + 2 vpn configs
+        self.assertEqual({
+            'A': 1,
+            'B': 2,
+            'C': 21,
+            'D': 1,
+            'E': 1
+        }, result[0])
+        self.assertEqual({
+            'A': 4,
+            'B': 5,
+            'C': 22,
+            'D': 2,
+            'E': 2
+        }, result[1])
+        self.assertEqual({
+            'A': 7,
+            'B': 8,
+            'C': 22,
+            'D': 2,
+            'E': 2
+        }, result[2])

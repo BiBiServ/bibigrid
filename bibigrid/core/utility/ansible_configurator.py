@@ -7,13 +7,14 @@ import os
 import mergedeep
 import yaml
 
-from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER, VPNGTW_IDENTIFIER, WORKER_IDENTIFIER
 from bibigrid.core.actions import ide
 from bibigrid.core.actions.version import __version__
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
+from bibigrid.core.utility.paths.basic_path import ROOT_PATH
+from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER, VPNGTW_IDENTIFIER, WORKER_IDENTIFIER
 from bibigrid.core.utility.wireguard import wireguard_keys
 
 PYTHON_INTERPRETER = "/usr/bin/python3"
@@ -80,18 +81,23 @@ def write_worker_host_vars(*, cluster_id, worker, worker_count, log):
 def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_count, log):
     flavor_dict = provider.create_flavor_dict(flavor=worker["type"])
     name = WORKER_IDENTIFIER(cluster_id=cluster_id,
-                                    additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
+                             additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
     group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
     regexp = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
+    partitions = worker.get("partitions", []) + [configuration["cloud_identifier"]]
+    if not configuration.get("noAllPartition"):
+        partitions.append("all")
     worker_dict = {"name": name, "regexp": regexp, "image": worker["image"],
                    "network": configuration["network"], "flavor": flavor_dict,
                    "gateway_ip": configuration["private_v4"],
                    "cloud_identifier": configuration["cloud_identifier"],
                    "on_demand": worker.get("onDemand", True), "state": "CLOUD",
-                   "partitions": worker.get("partitions", []) + ["all", configuration["cloud_identifier"]],
-                   "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {}))
+                   "partitions": partitions,
+                   "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {})),
+                   "meta": mergedeep.merge({}, worker.get("meta", {}), configuration.get("meta", {})),
+                   "security_groups": list(
+                       set(worker.get("securityGroups", []) + configuration.get("securityGroups", [])))
                    }
-
     worker_features = worker.get("features", [])
     configuration_features = configuration.get("features", [])
     if isinstance(worker_features, str):
@@ -132,6 +138,9 @@ def write_master_var(provider, configuration, cluster_id, log):
     master = configuration["masterInstance"]
     name = MASTER_IDENTIFIER(cluster_id=cluster_id)
     flavor_dict = provider.create_flavor_dict(flavor=master["type"])
+    partitions = master.get("partitions", []) + [configuration["cloud_identifier"]]
+    if not configuration.get("noAllPartition"):
+        partitions.append("all")
     master_dict = {"name": name, "image": master["image"], "network": configuration["network"],
                    "network_cidrs": configuration["subnet_cidrs"], "floating_ip": configuration["floating_ip"],
                    "flavor": flavor_dict, "private_v4": configuration["private_v4"],
@@ -139,7 +148,7 @@ def write_master_var(provider, configuration, cluster_id, log):
                    "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
                    "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
                    "on_demand": False,
-                   "partitions": master.get("partitions", []) + ["all", configuration["cloud_identifier"]]}
+                   "partitions": partitions}
     if configuration.get("wireguard_peer"):
         master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
     pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
@@ -260,7 +269,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     for configuration in configurations:
         for worker in configuration.get("workerInstances", []):
             name = WORKER_IDENTIFIER(cluster_id=cluster_id,
-                                            additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
+                                     additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
             # if not workers["children"].get(group_name): # in the current setup this is not needed
@@ -354,7 +363,11 @@ def write_yaml(path, generated_yaml, log, alias=False):
     @return:
     """
     log.debug("Writing yaml %s", path)
-    with open(path, mode="w+", encoding="UTF-8") as file:
+
+    normalized_path = os.path.normpath(path)
+    if not normalized_path.startswith(str(ROOT_PATH)):
+        raise ValueError("Invalid path: Path traversal detected")
+    with open(normalized_path, mode="w+", encoding="UTF-8") as file:
         if alias:
             yaml.safe_dump(data=generated_yaml, stream=file)
         else:

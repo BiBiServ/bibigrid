@@ -94,7 +94,7 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
                       security_groups=None,
                       boot_volume=None, boot_from_volume=False,
                       terminate_boot_volume=False, volume_size=50,
-                      description=""):  # pylint: disable=too-many-arguments
+                      description="", meta=None):  # pylint: disable=too-many-arguments
         """
         Creates a new server and waits for it to be accessible if wait=True. If volumes are given, they are attached.
         Returns said server (dict)

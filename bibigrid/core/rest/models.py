@@ -2,26 +2,59 @@
 This module contains models used by the REST api
 """
 
-from typing import List, Optional, Literal
+from typing import Dict, List, Optional, Literal, Union
+
 from pydantic import BaseModel, Field, IPvAnyAddress
 
 
 # pylint: disable=too-few-public-methods
+
+class Role(BaseModel):
+    """
+    Ansible Role
+    """
+    name: str
+    tags: Optional[List[str]]
+
+
+class UserRole(BaseModel):
+    """
+    Allows users to add custom ansible roles
+    """
+    hosts: List[str]
+    roles: List[Role]
+    varsFiles: Optional[List[str]] = Field(default=[])
+
+
+class CloudScheduling(BaseModel):
+    """
+    Model for cloud scheduling
+    """
+    sshTimeout: Optional[int] = 5
 
 
 class BootVolume(BaseModel):
     """
     Holds information about where the server boots from
     """
-    name: Optional[str]
-    terminate: Optional[bool]
-    size: Optional[int]
+    name: Optional[str] = None
+    terminate: Optional[bool] = True
+    size: Optional[int] = 50
 
 
 class Volume(BaseModel):
     """
-        Holds volume/attached storage information
+    Holds volume/attached storage information
     """
+    name: Optional[str] = None
+    snapshot: Optional[str] = None
+    permanent: Optional[bool] = False
+    semiPermanent: Optional[bool] = False
+    exists: Optional[bool] = False
+    mountPoint: Optional[str] = None
+    size: Optional[int] = 50
+    fstype: Optional[str] = None
+    type: Optional[str] = None
     name: Optional[str]
     snapshot: Optional[str]
     permanent: Optional[bool]
@@ -35,46 +68,37 @@ class Volume(BaseModel):
 
 class Instance(BaseModel):
     """
-        Holds instance/server information
+    Holds instance/server information
     """
     type: str
     image: str
-    count: Optional[int]
-    onDemand: Optional[bool]
-    partitions: Optional[List[str]]
-    features: Optional[List[str]]
-    bootVolume: Optional[BootVolume]
-    volumes: Optional[List[Volume]]
-
-
-class UserRole(BaseModel):
-    """
-        Allows users to add custom ansible roles
-    """
-    hosts: List[str]
-    roles: List[dict]  # Replace 'dict' with more specific type if possible
-    varsFiles: Optional[List[str]]
+    count: Optional[int] = 1
+    onDemand: Optional[bool] = True
+    partitions: Optional[List[str]] = Field(default=[])
+    features: Optional[List[str]] = Field(default=[])
+    bootVolume: Optional[BootVolume] = None
+    volumes: Optional[List[Volume]] = Field(default=[])
 
 
 class ElasticScheduling(BaseModel):
     """
-        Holds info on Slurms scheduling
+    Holds info on Slurms scheduling
     """
-    SuspendTime: Optional[int]
-    SuspendTimeout: Optional[int]
-    ResumeTimeout: Optional[int]
-    TreeWidth: Optional[int]
+    SuspendTime: Optional[int] = 1800
+    SuspendTimeout: Optional[int] = 90
+    ResumeTimeout: Optional[int] = 1800
+    TreeWidth: Optional[int] = 128
 
 
 class SlurmConf(BaseModel):
     """
     Holds info on basic Slurm settings
     """
-    db: Optional[str]
-    db_user: Optional[str]
-    db_password: Optional[str]
-    munge_key: Optional[str]
-    elastic_scheduling: Optional[ElasticScheduling]
+    db: Optional[str] = "slurm"
+    db_user: Optional[str] = "slurm"
+    db_password: Optional[str] = "changeme"
+    munge_key: Optional[str] = None
+    elastic_scheduling: Optional[ElasticScheduling] = None
 
 
 class Gateway(BaseModel):
@@ -85,49 +109,79 @@ class Gateway(BaseModel):
     portFunction: str
 
 
-class ConfigModel(BaseModel):
+class MasterConfig(BaseModel):
     """
     Holds info regarding the configuration
     """
-    infrastructure: str
-    cloud: str
+    infrastructure: Literal["openstack"]  # currently limited to openstack
+    cloud: str = "openstack"
     sshUser: str
     subnet: Optional[str] = Field(default=None)
     network: Optional[str] = Field(default=None)
-    cloud_identifier: str
-    sshPublicKeyFiles: Optional[List[str]]
-    sshTimeout: Optional[int]
-    cloudScheduling: Optional[dict]  # Modify if you have a more definite structure
-    autoMount: Optional[bool]
-    nfsShares: Optional[List[str]]
-    userRoles: Optional[List[UserRole]]
-    localFS: Optional[bool]
-    localDNSlookup: Optional[bool]
-    slurm: Optional[bool]
-    slurmConf: Optional[SlurmConf]
-    zabbix: Optional[bool]
-    nfs: Optional[bool]
-    ide: Optional[bool]
-    useMasterAsCompute: Optional[bool]
-    useMasterWithPublicIp: Optional[bool]
-    waitForServices: Optional[List[str]]
-    gateway: Optional[Gateway]
-    dontUploadCredentials: Optional[bool]
-    fallbackOnOtherImage: Optional[bool]
-    localDNSLookup: Optional[bool]
-    features: Optional[List[str]]
+    cloud_identifier: Optional[str] = None
+    sshPublicKeyFiles: Optional[List[str]] = Field(default=[])
+    sshPublicKeys: Optional[List[str]] = Field(default=None)
+    sshTimeout: Optional[int] = 5
+    cloudScheduling: Optional[CloudScheduling] = None
+    nfsShares: Optional[List[str]] = Field(default=[])
+    userRoles: Optional[List[UserRole]] = Field(default=[])
+    localFS: Optional[bool] = False
+    localDNSlookup: Optional[bool] = False
+    slurm: Optional[bool] = True
+    slurmConf: Optional[SlurmConf] = None
+    zabbix: Optional[bool] = False
+    nfs: Optional[bool] = False
+    ide: Optional[bool] = False
+    useMasterAsCompute: Optional[bool] = True
+    useMasterWithPublicIp: Optional[bool] = True
+    waitForServices: Optional[List[str]] = Field(default=[])
+    gateway: Optional[Gateway] = None
+    dontUploadCredentials: Optional[bool] = False
+    fallbackOnOtherImage: Optional[bool] = False
+    features: Optional[List[str]] = Field(default=[])
     workerInstances: List[Instance]
     masterInstance: Instance
-    vpngtw: Optional[Instance]
-    bootVolume: Optional[BootVolume]
+    bootVolume: Optional[BootVolume] = None
+    noAllPartition: Optional[bool] = False
 
 
-class OtherConfigModel(ConfigModel):
+class OtherConfig(BaseModel):
     """
     Holds info about other configurations
-    TODO: Fill in the missing bits
     """
+    infrastructure: Literal["openstack"]  # currently limited to openstack
+    cloud: str = "openstack"
+    sshUser: str
+    subnet: Optional[str] = Field(default=None)
+    network: Optional[str] = Field(default=None)
+    cloud_identifier: Optional[str] = None
+    waitForServices: Optional[List[str]] = Field(default=[])
+    features: Optional[List[str]] = Field(default=[])
+    workerInstances: List[Instance]
     vpnInstance: Instance
+    bootVolume: Optional[BootVolume] = None
+
+
+class ConfigurationsModel(BaseModel):
+    """
+    Model for configurations
+    """
+    configurations: List[Union[MasterConfig, OtherConfig]]
+
+
+class MinimalConfigurationModel(BaseModel):
+    """
+    Minimal model for a configuration. Containing only info to load clouds.yaml and to connect to provider.
+    """
+    infrastructure: Literal["openstack"]
+    cloud: str = "openstack"
+
+
+class MinimalConfigurationsModel(BaseModel):
+    """
+    Minimal model for configurations.
+    """
+    configurations: List[MinimalConfigurationModel]
 
 
 class ValidationResponseModel(BaseModel):
@@ -167,7 +221,7 @@ class InfoResponseModel(BaseModel):
 
 class LogResponseModel(BaseModel):
     """
-    ResponseModel for get_log
+    Model for get_log
     """
     message: str
     log: str
@@ -181,4 +235,26 @@ class ClusterStateResponseModel(BaseModel):
     floating_ip: IPvAnyAddress
     message: str
     ssh_user: str
-    state: Literal[200, 201, 204, 404, 500]
+    state: Literal["starting", "running", "terminated", "failed"]
+    last_changed: str
+
+
+class OsModel(BaseModel):
+    """
+    Model for operating system requirements description
+    """
+    os_versions: List[str]
+
+
+class CloudNodeRequirementsModel(BaseModel):
+    """
+    Model for cloud_node_requirements.yaml
+    """
+    os_distro: Dict[str, OsModel]
+
+
+class RequirementsModel(BaseModel):
+    """
+    Response model for requirements
+    """
+    cloud_node_requirements: CloudNodeRequirementsModel

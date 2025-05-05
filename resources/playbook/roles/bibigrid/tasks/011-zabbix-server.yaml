@@ -1,6 +1,10 @@
 # -------------------
 # -- Zabbix Server --
 # -------------------
+- name: Install zabbix python-api in BiBiGrid virtual environment
+  ansible.builtin.pip:
+    name: zabbix-api
+    virtualenv: /opt/bibigrid-venv
 
 - name: Debian based OS (Install database & Zabbix server)
   apt:

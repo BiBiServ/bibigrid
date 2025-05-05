@@ -6,6 +6,7 @@ from unittest.mock import mock_open, Mock, MagicMock, patch, call
 
 from bibigrid.core import startup
 from bibigrid.core.utility.handler import ssh_handler
+from bibigrid.core.utility.paths.basic_path import CLUSTER_MEMORY_PATH
 from bibigrid.models.exceptions import ExecutionException
 
 
@@ -32,8 +33,8 @@ class TestSshHandler(TestCase):
         sftp.put = MagicMock(return_value=True)
         with patch("os.path.isfile") as mock_isfile:
             mock_isfile.return_value = True
-            ssh_handler.copy_to_server(sftp, "Jim", "Joe", startup.LOG)
-        sftp.put.assert_called_with("Jim", "Joe")
+            ssh_handler.copy_to_server(sftp, CLUSTER_MEMORY_PATH, "foo", startup.LOG)
+        sftp.put.assert_called_with(CLUSTER_MEMORY_PATH, "foo")
 
     @patch("os.listdir")
     def test_copy_to_server_folder(self, mock_listdir):
@@ -42,9 +43,9 @@ class TestSshHandler(TestCase):
         mock_listdir.return_value = []
         with patch("os.path.isfile") as mock_isfile:
             mock_isfile.return_value = False
-            ssh_handler.copy_to_server(sftp, "Jim", "Joe", startup.LOG)
-        mock_listdir.assert_called_with("Jim")
-        sftp.mkdir.assert_called_with("Joe")
+            ssh_handler.copy_to_server(sftp, CLUSTER_MEMORY_PATH, "foo", startup.LOG)
+        mock_listdir.assert_called_with(CLUSTER_MEMORY_PATH)
+        sftp.mkdir.assert_called_with("foo")
 
     @patch("bibigrid.core.utility.handler.ssh_handler.execute_ssh_cml_commands")
     @patch("paramiko.ECDSAKey.from_private_key_file")

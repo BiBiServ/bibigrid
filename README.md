@@ -4,7 +4,7 @@ BiBiGrid is a framework for creating and managing cloud clusters, currently supp
 Future versions will support additional cloud providers.
 
 BiBiGrid uses Ansible to configure standard Ubuntu 22.04/24.04 LTS cloud images. Depending on your configuration BiBiGrid
-can set up an HCP cluster for grid computing (Slurm Workload Manager,
+can set up an on demand HCP cluster for grid computing (Slurm Workload Manager,
 a shared filesystem (on local discs and attached volumes),
 a cloud IDE for writing, running and debugging (Theia Web IDE) and many more.
 
@@ -21,6 +21,8 @@ is the best entry point.
 
 However, if you are already quite experienced with *OpenStack* and the previous *BiBiGrid* the following brief explanation
 might be just what you need.
+
+Be aware that this version of BiBiGrid on default schedules workers [on demand](documentation/markdown/features/configuration.md#workerinstances); workers are powered down when not in use.
 
 <details>
 <summary> Brief, technical BiBiGrid overview </summary>
@@ -106,6 +108,7 @@ Additionally, manually check if your quotas are exceeded, as some quotas cannot 
 
 For more information about BiBiGrid, please visit the following links:
 
+- [BiBiGrid Configuration](documentation/markdown/features/configuration.md)
 - [BiBiGrid Features](documentation/markdown/bibigrid_feature_list.md)
 - [Software used by BiBiGrid](documentation/markdown/bibigrid_software_list.md)
 
