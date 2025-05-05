@@ -11,10 +11,11 @@ import sympy
 import yaml
 
 from bibigrid.core.utility import ansible_commands as a_c
+from bibigrid.core.utility.paths.basic_path import RESOURCES_PATH, CONFIG_FOLDER
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
-ANSIBLE_SETUP = [a_c.NO_UPDATE, a_c.UPDATE, a_c.PYTHON3_PIP, a_c.ANSIBLE_PASSLIB,
+ANSIBLE_SETUP = [a_c.NO_UPDATE, a_c.UPDATE, a_c.PYTHON3_PIP, a_c.VENV_SETUP, a_c.ANSIBLE_PASSLIB, a_c.ANSIBLE_GALAXY,
                  (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."), a_c.PLAYBOOK_HOME,
                  a_c.PLAYBOOK_HOME_RIGHTS, a_c.ADD_PLAYBOOK_TO_LINUX_HOME]
 # ANSIBLE_START = [aC.WAIT_READY, aC.UPDATE, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]  # another UPDATE seems to not necessary.
@@ -50,18 +51,23 @@ def get_ac_command(providers, name):
             "Copy application credentials.")
 
 
-def get_add_ssh_public_key_commands(ssh_public_key_files):
+def get_add_ssh_public_key_commands(ssh_public_key_files=None, ssh_public_keys=None):
     """
     Builds and returns the necessary commands to add given public keys to remote for additional access.
-    @param ssh_public_key_files: public keys to add
+    @param ssh_public_keys: public keys to add
+    @param ssh_public_key_files: public keys to add from file
     @return: list of public key add commands
     """
     commands = []
     if ssh_public_key_files:
         for ssh_public_key_file in ssh_public_key_files:
-            with open(ssh_public_key_file, mode="r", encoding="UTF-8") as ssh_public_key:
-                commands.append((f"echo {ssh_public_key.readline().strip()} >> .ssh/authorized_keys",
+            with open(ssh_public_key_file, mode="r", encoding="UTF-8") as ssh_public_key_stream:
+                commands.append((f"echo {ssh_public_key_stream.readline().strip()} >> .ssh/authorized_keys",
                                  f"Add SSH Key {ssh_public_key_file}."))
+    if ssh_public_keys:
+        for i, ssh_public_key in enumerate(ssh_public_keys):
+            commands.append((f"echo {ssh_public_key} >> .ssh/authorized_keys",
+                             f"Add SSH Key {i}."))
     return commands
 
 
@@ -76,6 +82,10 @@ def copy_to_server(sftp, local_path, remote_path, log):
     @return:
     """
     log.debug("Copy %s to %s...", local_path, remote_path)
+    local_path = os.path.normpath(local_path)
+    if not local_path.startswith(os.path.abspath(RESOURCES_PATH)) and not local_path.startswith(
+            os.path.abspath(CONFIG_FOLDER)):
+        raise ValueError(f"Invalid local path: Only paths in {RESOURCES_PATH} or {CONFIG_FOLDER} are allowed.")
     if os.path.isfile(local_path):
         sftp.put(local_path, remote_path)
     else:

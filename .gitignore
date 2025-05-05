@@ -1,6 +1,7 @@
 # complete idea
 .idea/
 .run/
+.vscode/
 
 # variable resources
 resources/playbook/ansible.cfg
@@ -11,6 +12,7 @@ resources/playbook/vars/
 resources/playbook/host_vars/
 resources/playbook/group_vars/
 resources/tests/bibigrid_test.yaml
+resources/tests/rest_test.json
 
 # Roles
 resources/playbook/roles_galaxy/*

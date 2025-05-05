@@ -1,6 +1,9 @@
-nvm_install_dir: /opt/nvm
+bibigrid_node_version: 22
 
-theia_version: "next"
-theia_ide_install_dir: /opt/theia-ide
-theia_ide_bind_address: localhost
-theia_ide_bind_port: 8181
+bibigrid_nvm_install_dir: /opt/nvm
+bibigrid_nvm_version: v0.40.1
+
+bibigrid_theia_version: 1.58.1
+bibigrid_theia_ide_install_dir: /opt/theia-ide
+bibigrid_theia_ide_bind_address: localhost
+bibigrid_theia_ide_bind_port: 8181

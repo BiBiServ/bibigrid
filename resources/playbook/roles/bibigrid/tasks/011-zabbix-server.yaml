@@ -1,6 +1,10 @@
 # -------------------
 # -- Zabbix Server --
 # -------------------
+- name: Install zabbix python-api in BiBiGrid virtual environment
+  ansible.builtin.pip:
+    name: zabbix-api
+    virtualenv: /opt/bibigrid-venv
 
 - name: Debian based OS (Install database & Zabbix server)
   apt:
@@ -8,6 +12,7 @@
       - mariadb-server
       - zabbix-server-mysql
       - zabbix-sql-scripts
+      - python3-pymysql
     state: present
     update_cache: true
   when: "ansible_distribution_file_variety == 'Debian' or ansible_distribution == 'Ubuntu'"
@@ -18,12 +23,9 @@
       - mariadb
       - zabbix-server-mysql
       - zabbix-sql-scripts
+      - python3-pymysql
     state: present
   when: "ansible_distribution_file_variety == 'RedHat' "
-
-- name: Install python modul 'PyMySQL'
-  pip:
-    name: PyMySQL
 
 - name: Create zabbix database
   mysql_db:
@@ -70,7 +72,7 @@
     src: zabbix/zabbix_server.conf.j2
     dest: /etc/zabbix/zabbix_server.conf
     mode: "0o644"
-  notify: zabbix-server
+  notify: Zabbix-server
 
 - name: Start and Enable zabbix-server
   systemd:
@@ -114,7 +116,6 @@
           - zabbix-apache-conf
         state: present
 
-
 - name: Create Zabbix web dir (if not exists)
   file:
     path: /etc/zabbix/web
@@ -124,7 +125,7 @@
     mode: "0o755"
 
 - name: Adjust zabbix web frontend configuration
-  notify: apache2
+  notify: Apache2
   block:
     - name: Adjust apache.conf
       template:

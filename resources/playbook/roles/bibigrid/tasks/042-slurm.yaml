@@ -9,18 +9,18 @@
     uid: 64030
     group: slurm
 
-- name: Create pinning configuration for slurm-bibigrid version 23.11.*
-  copy:
-    content: |
-      Package: slurm-bibigrid
-      Pin: version 23.11.*
-      Pin-Priority: 1001
-    dest: /etc/apt/preferences.d/slurm-bibigrid
-    mode: "0o311"
+# - name: Create pinning configuration for slurm-bibigrid version 23.11.*
+#   copy:
+#     content: |
+#       Package: slurm-bibigrid
+#       Pin: version 23.11.*
+#       Pin-Priority: 1001
+#     dest: /etc/apt/preferences.d/slurm-bibigrid
+#     mode: "0o311"
 
 - name: Install slurm-bibigrid package
   apt:
-    name: slurm-bibigrid
+    name: slurm-bibigrid-24.11
     state: present
 
 - name: Install Slurm package dependencies
@@ -36,7 +36,7 @@
     group: munge
     mode: "0o600"
   notify:
-    - munge
+    - Munge
 
 - name: Ensures slurm directories exists
   file:
@@ -50,38 +50,29 @@
     - /var/lib/slurm
     - /var/log/slurm
 
-- name: Create system overrides directories (slurmd, slurmctld)
+- name: Create system overrides directories (slurmd)
   file:
-    path: "/etc/systemd/system/{{ item }}.service.d"
+    path: "/etc/systemd/system/slurmd.service.d"
     group: root
     owner: root
     mode: "0o755"
     state: directory
-  with_items:
-    - slurmd
-    - slurmctld
 
-- name: Copy system overrides (slurmd, slurmctld)
+- name: Copy system overrides (slurmd)
   copy:
-    src: "slurm/systemd/{{ item }}.override"
-    dest: "/etc/systemd/system/{{ item }}.service.d/override.conf"
+    src: "slurm/systemd/slurmd.override"
+    dest: "/etc/systemd/system/slurmd.service.d/override.conf"
     mode: "0o644"
     owner: root
     group: root
-  with_items:
-    - slurmd
-    - slurmctld
 
-- name: Enable slurmctld and slurmd services
+- name: Enable slurmd services
   systemd:
-    name: "{{ item }}"
+    name: "slurmd"
     enabled: true
     masked: false
     state: started
     daemon_reload: true
-  with_items:
-    - slurmctld
-    - slurmd
 
 - name: Create Slurm configuration
   template:

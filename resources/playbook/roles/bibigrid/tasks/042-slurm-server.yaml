@@ -1,3 +1,19 @@
+- name: Create system overrides directories (slurmctld)
+  file:
+    path: "/etc/systemd/system/slurmctld.service.d"
+    group: root
+    owner: root
+    mode: "0o755"
+    state: directory
+
+- name: Copy system overrides (slurmctld)
+  copy:
+    src: "slurm/systemd/slurmctld.override"
+    dest: "/etc/systemd/system/slurmctld.service.d/override.conf"
+    mode: "0o644"
+    owner: root
+    group: root
+
 - name: Change group ownership of OpenStack credentials file to slurm if it exists
   block:
     - name: Check if the OpenStack credentials file exists
@@ -154,7 +170,7 @@
     mode: "0o750"
 
 - name: Install python dependencies
-  pip:
+  ansible.builtin.pip:
     name:
       - python-openstackclient==6.0.0
       - openstacksdk==0.62.0
@@ -163,6 +179,7 @@
       - paramiko
       - ansible-runner
       - pyzabbix
+    virtualenv: /opt/bibigrid-venv
 
 - name: 'Add default user to ansible group'
   user:
@@ -191,10 +208,13 @@
     - slurmdbd
     - slurmrestd
 
-- name: Start slurm explicit after all dependencies are configured
+- name: Enable slurmctld service
   systemd:
-    name: slurmctld
+    name: "slurmctld"
+    enabled: true
+    masked: false
     state: started
+    daemon_reload: true
 
 
 - when: slurm_home.stdout != '/opt/slurm'

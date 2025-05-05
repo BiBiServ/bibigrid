@@ -1,29 +1,3 @@
-- name: Install WireGuard
-  apt:
-    name: wireguard
-    state: present
-
-- name: Setup wg0 device
-  template:
-    src: wireguard/device.j2
-    dest: /etc/systemd/network/wg0.netdev
-    owner: root
-    group: systemd-network
-    mode: "0o640"
-  become: true
-  notify:
-    - systemd-networkd restart
-
-- name: Setup wg0 network
-  template:
-    src: wireguard/network.j2
-    dest: /etc/systemd/network/wg0.network
-    owner: root
-    group: systemd-network
-    mode: "0o640"
-  become: true
-  notify: systemd-networkd restart
-
 - name: Enable ip forwarding
   sysctl:
     name: net.ipv4.ip_forward
@@ -39,3 +13,33 @@
     sysctl_set: true
     state: present
     reload: true
+
+- name: Install WireGuard
+  apt:
+    name: wireguard
+    state: present
+
+- name: Setup wg0 device
+  template:
+    src: wireguard/device.j2
+    dest: /etc/systemd/network/wg0.netdev
+    owner: root
+    group: systemd-network
+    mode: "0o640"
+  become: true
+  notify:
+    - Systemd-networkd restart
+
+- name: Setup wg0 network
+  template:
+    src: wireguard/network.j2
+    dest: /etc/systemd/network/wg0.network
+    owner: root
+    group: systemd-network
+    mode: "0o640"
+  become: true
+  notify:
+    - Systemd-networkd restart
+
+- name: Flush handlers
+  meta: flush_handlers

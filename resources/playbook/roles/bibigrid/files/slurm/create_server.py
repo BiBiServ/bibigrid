@@ -12,12 +12,12 @@ import subprocess
 import sys
 import threading
 import time
-from filelock import FileLock
 
 import ansible_runner
 import os_client_config
 import paramiko
 import yaml
+from filelock import FileLock
 from openstack.exceptions import OpenStackCloudException
 
 
@@ -58,15 +58,15 @@ for filename in os.listdir(GROUP_VARS_PATH):
         worker_group_yaml_file = os.path.join(GROUP_VARS_PATH, filename)
         # checking if it is a file
         if os.path.isfile(worker_group_yaml_file):
-            with open(worker_group_yaml_file, mode="r", encoding="utf-8") as worker_group_yaml:
+            with open(worker_group_yaml_file, mode="r", encoding="UTF-8") as worker_group_yaml:
                 worker_groups.append(yaml.safe_load(worker_group_yaml))
 
 # read common configuration
-with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="utf-8") as common_configuration_file:
+with open("/opt/playbook/vars/common_configuration.yaml", mode="r", encoding="UTF-8") as common_configuration_file:
     common_config = yaml.safe_load(common_configuration_file)
 logging.info(f"Maximum 'is active' attempts: {common_config['cloud_scheduling']['sshTimeout']}")
 # read clouds.yaml
-with open("/etc/openstack/clouds.yaml", mode="r", encoding="utf-8") as clouds_file:
+with open("/etc/openstack/clouds.yaml", mode="r", encoding="UTF-8") as clouds_file:
     clouds = yaml.safe_load(clouds_file)["clouds"]
 
 connections = {}  # connections to cloud providers
@@ -107,7 +107,7 @@ def get_server_vars(name):
     server_vars = {"volumes": []}
     if os.path.isfile(host_vars_path):
         logging.info(f"Found host_vars file {host_vars_path}.")
-        with open(host_vars_path, mode="r", encoding="utf-8") as host_vars_file:
+        with open(host_vars_path, mode="r", encoding="UTF-8") as host_vars_file:
             server_vars = yaml.safe_load(host_vars_file)
             logging.info(f"Loaded Vars: {server_vars}")
     else:
@@ -171,7 +171,7 @@ def volumes_host_vars_update(connection, server, host_vars):
                 logging.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
                               f"as device {volume['device']} that is going to be mounted to "
                               f"{volume.get('mountPoint')}")
-        with open(host_vars_path, mode="w+", encoding="utf-8") as host_vars_file:
+        with open(host_vars_path, mode="w+", encoding="UTF-8") as host_vars_file:
             yaml.dump(host_vars, host_vars_file)
     logging.info(f"{host_vars_path}.lock released")
 
@@ -219,7 +219,7 @@ def start_server(name, start_worker_group, start_data):
         userdata = ""
         userdata_file_path = f"/opt/slurm/userdata_{start_worker_group['cloud_identifier']}.txt"
         if os.path.isfile(userdata_file_path):
-            with open(userdata_file_path, mode="r", encoding="utf-8") as userdata_file:
+            with open(userdata_file_path, mode="r", encoding="UTF-8") as userdata_file:
                 userdata = userdata_file.read()
         # create server and ...
         image = select_image(start_worker_group, connection)
@@ -229,12 +229,13 @@ def start_server(name, start_worker_group, start_data):
         server = connection.create_server(name=name, flavor=start_worker_group["flavor"]["name"], image=image,
                                           network=start_worker_group["network"],
                                           key_name=f"tempKey_bibi-{common_config['cluster_id']}",
-                                          security_groups=[f"default-{common_config['cluster_id']}"], userdata=userdata,
+                                          security_groups=start_worker_group["security_groups"], userdata=userdata,
                                           volumes=volumes, wait=False,
                                           boot_from_volume=boot_volume.get("name", False),
                                           boot_volume=bool(boot_volume),
                                           terminate_volume=boot_volume.get("terminate", True),
-                                          volume_size=boot_volume.get("size", 50)
+                                          volume_size=boot_volume.get("size", 50),
+                                          meta=start_worker_group["meta"]
                                           )
         # ... add it to server
         start_data["started_servers"].append(server)
@@ -301,7 +302,7 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
     logging.info("Updating hosts.yaml")
     with FileLock("hosts.yaml.lock"):
         logging.info("Lock acquired")
-        with open(HOSTS_FILE_PATH, mode="r", encoding="utf-8") as hosts_file:
+        with open(HOSTS_FILE_PATH, mode="r", encoding="UTF-8") as hosts_file:
             hosts = yaml.safe_load(hosts_file)
         logging.info(f"Existing hosts {hosts}")
         if not hosts or "host_entries" not in hosts:
@@ -309,7 +310,7 @@ def update_hosts(name, ip):  # pylint: disable=invalid-name
             hosts = {"host_entries": {}}
         hosts["host_entries"][name] = ip
         logging.info(f"Added host {name} with ip {hosts['host_entries'][name]}")
-        with open(HOSTS_FILE_PATH, mode="w", encoding="utf-8") as hosts_file:
+        with open(HOSTS_FILE_PATH, mode="w", encoding="UTF-8") as hosts_file:
             yaml.dump(hosts, hosts_file)
     logging.info("Wrote hosts file. Released hosts.yaml.lock.")
 
@@ -341,7 +342,7 @@ def _run_playbook(cmdline_args):
     @param cmdline_args:
     @return
     """
-    executable_cmd = '/usr/local/bin/ansible-playbook'
+    executable_cmd = '/opt/bibigrid-venv/bin/ansible-playbook'
     logging.info(f"run_command...\nexecutable_cmd: {executable_cmd}\ncmdline_args: {cmdline_args}")
     runner = ansible_runner.interface.init_command_config(executable_cmd=executable_cmd, cmdline_args=cmdline_args)
 
@@ -352,18 +353,25 @@ def _run_playbook(cmdline_args):
 
 
 start_server_threads = []
-for worker_group in worker_groups:
-    for worker_name in start_workers:
+for worker_name in start_workers:
+    found_match = False
+    for worker_group in worker_groups:
+        logging.debug(f"Trying to start worker {worker_name}.")
         # start all servers that are part of the current worker group
         result = subprocess.run(["scontrol", "show", "hostname", worker_group["name"]], stdout=subprocess.PIPE,
                                 check=True)  # get all workers in worker_type
         possible_workers = result.stdout.decode("utf-8").strip().split("\n")
         if worker_name in possible_workers:
+            found_match = True
+            logging.debug(f"Worker_group entry found")
             start_worker_thread = threading.Thread(target=start_server,
                                                    kwargs={"name": worker_name, "start_worker_group": worker_group,
                                                            "start_data": server_start_data})
             start_worker_thread.start()
             start_server_threads.append(start_worker_thread)
+            break
+    if not found_match:
+        logging.warning(f"Couldn't find a work_group entry for {worker_name}")
 
 for start_server_thread in start_server_threads:
     start_server_thread.join()

@@ -6,9 +6,9 @@ import argparse
 import logging
 import os
 
-INPUT_PATH = "~/.config/bibigrid"
-STANDARD_CONFIG_INPUT_PATH = os.path.expanduser(INPUT_PATH)
-FOLDER_START = ("~/", "/")
+from bibigrid.core.utility.paths.basic_path import CONFIG_FOLDER, ENFORCED_CONFIG_PATH, DEFAULT_CONFIG_PATH
+
+FOLDER_START = ("~/", "/", "./")
 LOG = logging.getLogger("bibigrid")
 
 
@@ -34,14 +34,28 @@ def interpret_command_line():
     parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Increases logging verbosity. `-v` adds more info to the logfile, "
                              "`-vv` adds debug information to the logfile")
-    parser.add_argument("-d", "--debug", action='store_true', help="Keeps cluster active even when crashing. "
-                                                                   "Asks before shutdown. "
-                                                                   "Offers termination after successful create")
+    parser.add_argument("-d", "--debug", action='store_true',
+                        help="Keeps cluster active even when crashing. "
+                             "Asks before shutdown. "
+                             "Offers termination after successful create")
     parser.add_argument("-i", "--config_input", metavar="<path>", help="Path to YAML configurations file. "
                                                                        "Relative paths can be used and start "
-                                                                       f"at '{INPUT_PATH}'. "
+                                                                       f"at '{CONFIG_FOLDER}'. "
                                                                        "Required for all actions but '--version'",
-                        type=lambda s: s if s.startswith(FOLDER_START) else os.path.join(STANDARD_CONFIG_INPUT_PATH, s))
+                        type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
+                        os.path.join(CONFIG_FOLDER, s))
+    parser.add_argument("-di", "--default_config_input", metavar="<path>",
+                        help="Path to default YAML configurations file. "
+                             "Relative paths can be used and start "
+                             f"at '{CONFIG_FOLDER}'.",
+                        type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
+                        os.path.join(CONFIG_FOLDER, s), default=DEFAULT_CONFIG_PATH)
+    parser.add_argument("-ei", "--enforced_config_input", metavar="<path>",
+                        help="Path to default YAML configurations file. "
+                             "Relative paths can be used and start "
+                             f"at '{CONFIG_FOLDER}'.",
+                        type=lambda s: os.path.expanduser(s) if s.startswith(FOLDER_START) else
+                        os.path.join(CONFIG_FOLDER, s), default=ENFORCED_CONFIG_PATH)
     parser.add_argument("-cid", "--cluster_id", metavar="<cluster-id>", type=check_cid, default="",
                         help="Cluster id is needed for '--ide', '--terminate_cluster' and '--update'. "
                              "If not set, last created cluster's id is used")

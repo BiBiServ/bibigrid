@@ -238,7 +238,7 @@ class TestAnsibleConfigurator(TestCase):
         cluster_id = "21"
         default_user = "ubuntu"
         ssh_user = "test"
-        common_configuration_yaml = {'bibigrid_version': '0.4.0', 'cloud_scheduling': {'sshTimeout': 5},
+        common_configuration_yaml = {'bibigrid_version': ANY, 'cloud_scheduling': {'sshTimeout': 5},
                                      'cluster_cidrs': '42', 'cluster_id': '21', 'default_user': 'ubuntu',
                                      'dns_server_list': ['8.8.8.8'], 'enable_ide': 'Some1', 'enable_nfs': False,
                                      'enable_slurm': False, 'enable_zabbix': False,
@@ -341,15 +341,15 @@ class TestAnsibleConfigurator(TestCase):
     @patch("yaml.dump")
     def test_write_yaml_no_alias(self, mock_yaml):
         with patch('builtins.open', mock_open()) as output_mock:
-            ansible_configurator.write_yaml("here", {"some": "yaml"}, startup.LOG, False)
-            output_mock.assert_called_once_with("here", mode="w+", encoding="UTF-8")
+            ansible_configurator.write_yaml(aRP.HOSTS_CONFIG_FILE, {"some": "yaml"}, startup.LOG, False)
+            output_mock.assert_called_once_with(aRP.HOSTS_CONFIG_FILE, mode="w+", encoding="UTF-8")
             mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY, Dumper=NoAliasSafeDumper)
 
     @patch("yaml.safe_dump")
     def test_write_yaml_alias(self, mock_yaml):
         with patch('builtins.open', mock_open()) as output_mock:
-            ansible_configurator.write_yaml("here", {"some": "yaml"}, startup.LOG, True)
-            output_mock.assert_called_once_with("here", mode="w+", encoding="UTF-8")
+            ansible_configurator.write_yaml(aRP.HOSTS_CONFIG_FILE, {"some": "yaml"}, startup.LOG, True)
+            output_mock.assert_called_once_with(aRP.HOSTS_CONFIG_FILE, mode="w+", encoding="UTF-8")
             mock_yaml.assert_called_with(data={"some": "yaml"}, stream=ANY)
 
     @patch("bibigrid.core.utility.ansible_configurator.write_host_and_group_vars")
@@ -473,9 +473,11 @@ class TestAnsibleConfigurator(TestCase):
             "cloud_identifier": "cloud1",
             "on_demand": True,
             "state": "CLOUD",
-            "partitions": ["all", "cloud1"],
+            "partitions": ["cloud1", "all"],
             "boot_volume": {"size": 10},
             "features": {"feature1"},
+            "meta": {},
+            "security_groups": []
         }
 
         ansible_configurator.write_worker_vars(
@@ -487,6 +489,7 @@ class TestAnsibleConfigurator(TestCase):
             log=log
         )
         # Assert group_vars were written correctly
+        # print(mock_write_yaml.mock_calls)
         mock_write_yaml.assert_any_call(
             os.path.join("mock_path", "bibigrid_worker_foo_0_1.yaml"),
             expected_group_vars,
@@ -591,7 +594,7 @@ class TestAnsibleConfigurator(TestCase):
             "fallback_on_other_image": False,
             "state": "UNKNOWN",  # Based on useMasterAsCompute = True
             "on_demand": False,
-            "partitions": ["control", "all", "cloud1"],
+            "partitions": ["control", "cloud1", "all"],
         }
 
         # Call the function

@@ -26,13 +26,13 @@ def start_cluster():
         # print(result.stdout)
     else:
         print("Failed to start the cluster.")
-        # print(result.stderr)
+        print(result.stderr)
         raise Exception("Cluster start failed")
 
 
 def read_cluster_info():
     """Read last cluster information from bibigrid.mem file."""
-    with open(MEM_FILE, "r", encoding="utf8") as f:
+    with open(MEM_FILE, "r", encoding="UTF-8") as f:
         cluster_data = yaml.safe_load(f)
     return cluster_data["cluster_id"], cluster_data["floating_ip"], cluster_data["ssh_user"]
 
@@ -48,6 +48,7 @@ def ssh_command(master_ip, keyfile, command, ssh_user):
         "ssh",
         "-i", keyfile,
         "-o", "StrictHostKeyChecking=no",
+        "-o", "UserKnownHostsFile=/dev/null",
         f"{ssh_user}@{master_ip}",
         command
     ]
@@ -80,7 +81,7 @@ def main():
     print(f"Using keyfile: {keyfile}")
 
     # Step 3: Check worker nodes by running srun from master node
-    check_command = "srun -N2 hostname>"
+    check_command = "srun -N2 hostname"
     print(f"Running on master: {check_command}")
 
     # Run the command on the master instance

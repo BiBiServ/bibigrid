@@ -10,9 +10,12 @@ function log {
 log "Terminate-Script started"
 
 # $1 is in slurm node format for example: bibigrid-worker0-cid-[0-1],bibigrid-worker1-cid-0 and needs no converting
-scontrol update NodeName="$1" state=RESUME reason=FailedStartup # no sudo needed cause executed by slurm user
+scontrol update NodeName="$1" state=RESUME reason=SuspendProgram # no sudo needed cause executed by slurm user
 
 hosts=$(scontrol show hostnames "$1")
+
+# use python bibigrid environment
+source /opt/bibigrid-venv/bin/activate
 
 # delete servers
 python3 /usr/local/bin/delete_server.py "${hosts}"
