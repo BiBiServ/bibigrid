@@ -368,6 +368,8 @@ def write_yaml(path, generated_yaml, log, alias=False):
     @param log:
     @param alias:
     @return:
+    TODO: This method should be moved to a different file as it is no longer used here but at other places
+    which are not related to ansible_configurator
     """
     log.debug("Writing yaml %s", path)
 
