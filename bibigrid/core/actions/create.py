@@ -13,6 +13,7 @@ import paramiko
 import sympy
 import yaml
 from werkzeug.utils import secure_filename
+from filelock import FileLock
 
 from bibigrid.core.actions.terminate import delete_keypairs, delete_local_keypairs, terminate, write_cluster_state
 from bibigrid.core.utility import ansible_configurator
@@ -544,10 +545,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.prepare_configurations()
             self.create_defaults()
             self.generate_security_groups()
-            self.start_start_server_threads()
-            self.extended_network_configuration()
-            self.initialize_instances()
-            self.upload_data(os.path.join(KEY_FOLDER, self.key_name))
+            with FileLock(f"bibigrid_parallel_configuration.lock"):
+                self.start_start_server_threads()
+                self.extended_network_configuration()
+                self.initialize_instances()
+                self.upload_data(os.path.join(KEY_FOLDER, self.key_name))
             self.log_cluster_start_info()
             if self.configurations[0].get("deleteTmpKeypairAfter"):
                 for provider in self.providers:
