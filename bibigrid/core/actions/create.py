@@ -438,8 +438,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             with open(a_rp.HOSTS_FILE, 'a', encoding='utf-8') as hosts_file:
                 hosts_file.write("# placeholder file for worker DNS entries (see 003-dns)")
 
-        ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
-                                                    cluster_id=self.cluster_id, log=self.log)
+        write_remote = ansible_configurator.configure_ansible_yaml(providers=self.providers,
+                                                                  configurations=self.configurations,
+                                                                  cluster_id=self.cluster_id, log=self.log)
         ansible_start = ssh_handler.ANSIBLE_START
         ansible_start[-1] = (ansible_start[-1][0].format(",".join(self.permanents)), ansible_start[-1][1])
         self.log.debug(f"Starting playbook with {ansible_start}.")
@@ -491,7 +492,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         for start_server_thread in start_server_threads:
             try:
                 start_server_thread.join()
-            except Exception as e: # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
                 self.log.warning(f"Worker thread {start_server_thread} raised exception {e}.")
                 worker_exceptions.append(e)
         if worker_exceptions:

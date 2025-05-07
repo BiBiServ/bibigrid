@@ -223,16 +223,16 @@ def execute_ssh(ssh_data, log):
             raise exc
 
         log.debug(f"Setting up {ssh_data['floating_ip']}")
-        if ssh_data['filepaths'] or ssh_data["write_files"]:
+        if ssh_data['filepaths'] or ssh_data["write_remote"]:
             sftp = client.open_sftp()
             if ssh_data['filepaths']:
                 log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")
                 for local_path, remote_path in ssh_data['filepaths']:
                     copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
                 log.debug("SFTP: Files %s copied.", ssh_data['filepaths'])
-            if ssh_data["write_files"]:
+            if ssh_data["write_remote"]:
                 log.debug(f"Writing files for {ssh_data['floating_ip']}")
-                for data, remote_path in ssh_data['write_files']:
+                for data, remote_path in ssh_data['write_remote']:
                     write_to_remote_file(sftp=sftp, data=data, remote_path=remote_path, log=log)
                 log.debug("SFTP: Files %s created.", ssh_data['filepaths'])
         if ssh_data["floating_ip"]:
