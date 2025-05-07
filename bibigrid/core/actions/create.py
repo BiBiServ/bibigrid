@@ -545,11 +545,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.prepare_configurations()
             self.create_defaults()
             self.generate_security_groups()
-            with FileLock(f"bibigrid_parallel_configuration.lock"):
+            with FileLock("bibigrid_parallel_configuration.lock"):
+                self.log.warning("Lock bibigrid_parallel_configuration.lock enabled: This is a hotfix!")
                 self.start_start_server_threads()
                 self.extended_network_configuration()
                 self.initialize_instances()
                 self.upload_data(os.path.join(KEY_FOLDER, self.key_name))
+            self.log.warning("Lock bibigrid_parallel_configuration.lock released: This is a hotfix!")
             self.log_cluster_start_info()
             if self.configurations[0].get("deleteTmpKeypairAfter"):
                 for provider in self.providers:
