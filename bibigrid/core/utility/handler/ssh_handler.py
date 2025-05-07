@@ -12,6 +12,7 @@ import yaml
 
 from bibigrid.core.utility import ansible_commands as a_c
 from bibigrid.core.utility import yaml_dumper
+from bibigrid.core.utility.paths import ansible_resources_path as a_rp
 from bibigrid.core.utility.paths.basic_path import RESOURCES_PATH, CONFIG_FOLDER
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
@@ -19,9 +20,14 @@ PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on 
 ANSIBLE_SETUP = [a_c.NO_UPDATE, a_c.UPDATE, a_c.PYTHON3_PIP, a_c.VENV_SETUP, a_c.ANSIBLE_PASSLIB, a_c.ANSIBLE_GALAXY,
                  (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."), a_c.PLAYBOOK_HOME,
                  a_c.PLAYBOOK_HOME_RIGHTS, a_c.ADD_PLAYBOOK_TO_LINUX_HOME]
-# ANSIBLE_START = [aC.WAIT_READY, aC.UPDATE, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]  # another UPDATE seems to not necessary.
-ANSIBLE_START = [a_c.WAIT_READY, a_c.MV_ANSIBLE_CONFIG, a_c.EXECUTE]
 VPN_SETUP = [("echo Example", "Echos an Example")]
+
+
+def ansible_start(ansible_run_node_list):
+    return [a_c.WAIT_READY, a_c.MV_ANSIBLE_CONFIG,
+            (f"/opt/bibigrid-venv/bin/ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE_YAML)} -i "
+             f"{os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.ANSIBLE_HOSTS)} -l {ansible_run_node_list}",
+             "Execute ansible playbook. Be patient.")]
 
 
 def get_ac_command(providers, name):

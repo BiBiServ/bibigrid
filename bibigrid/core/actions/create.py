@@ -437,14 +437,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                                                             cluster_id=self.cluster_id,
                                                                                             log=self.log)
         self.write_remote.append((self.host_vars, a_rp.HOSTS_FILE_REMOTE))
-        ansible_start = ssh_handler.ANSIBLE_START
-        ansible_start[-1] = (ansible_start[-1][0].format(",".join(self.permanents)), ansible_start[-1][1])
+        ansible_start = ssh_handler.ansible_start(",".join(self.permanents))
         self.log.debug(f"Starting playbook with {ansible_start}.")
         if self.configurations[0].get("dontUploadCredentials"):
             commands = ansible_start
         else:
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
-                cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
+                cluster_id=self.cluster_id))] + ansible_start
         if clean_playbook:
             self.log.info("Cleaning Playbook")
             ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,

@@ -49,9 +49,6 @@ PLAYBOOK_HOME_RIGHTS = ("uid=$(id -u); gid=$(id -g); sudo chown ${uid}:${gid} /o
                         "Adjust playbook home permission.")
 MV_ANSIBLE_CONFIG = (
     "sudo install -D /opt/playbook/ansible.cfg /etc/ansible/ansible.cfg", "Move ansible configuration.")
-EXECUTE = (f"/opt/bibigrid-venv/bin/ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE_YAML)} -i "
-           f"{os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.ANSIBLE_HOSTS)} -l {{}}",
-           "Execute ansible playbook. Be patient.")
 
 # ansible setup
 WAIT_FOR_SERVICES = (
