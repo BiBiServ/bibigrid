@@ -11,6 +11,7 @@ import sympy
 import yaml
 
 from bibigrid.core.utility import ansible_commands as a_c
+from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.paths.basic_path import RESOURCES_PATH, CONFIG_FOLDER
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
@@ -210,8 +211,8 @@ def execute_ssh(ssh_data, log):
         ssh_data["filepaths"] = []
     if ssh_data.get("commands") is None:
         ssh_data["commands"] = []
-    if ssh_data.get("write_files") is None:
-        ssh_data["write_files"] = []
+    if ssh_data.get("write_remote") is None:
+        ssh_data["write_remote"] = []
     paramiko_key = paramiko.ECDSAKey.from_private_key_file(ssh_data["private_key"])
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -239,6 +240,7 @@ def execute_ssh(ssh_data, log):
             log.debug(f"Setting up commands for {ssh_data['floating_ip']}")
             execute_ssh_cml_commands(client=client, commands=ssh_data["commands"], log=log)
 
+
 def write_to_remote_file(sftp, remote_path, data, log):
     """
     Writes data to a file on the server.
@@ -252,7 +254,7 @@ def write_to_remote_file(sftp, remote_path, data, log):
 
     try:
         with sftp.file(remote_path, 'w') as remote_file:
-            remote_file.write(data)
+            remote_file.write(yaml.dump(data=data, Dumper=yaml_dumper.NoAliasSafeDumper))
         log.debug("Successfully wrote data to %s", remote_path)
     except Exception as e:
         log.error("Failed to write data to %s: %s", remote_path, str(e))

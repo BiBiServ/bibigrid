@@ -109,7 +109,7 @@ def get_worker_vars(*, provider, configuration, cluster_id, worker, worker_count
         worker_dict["features"] = features
 
     pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
-    write_worker_vars_remote.append((worker_dict, os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml")))
+    write_worker_vars_remote.append((worker_dict, os.path.join(aRP.GROUP_VARS_FOLDER_REMOTE, f"{group_name}.yaml")))
     if worker_dict["on_demand"]:  # not on demand instances host_vars are created in create
         write_worker_vars_remote = write_worker_vars_remote + get_worker_host_vars(cluster_id=cluster_id, worker=worker,
                                                                                    worker_count=worker_count,
@@ -417,7 +417,7 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
                                             default_user=default_user, log=log), aRP.COMMONS_CONFIG_FILE_REMOTE),
         (generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations, cluster_id, log),
          aRP.HOSTS_CONFIG_FILE_REMOTE),
-        (generate_site_file_yaml(user_roles), aRP.SITE_CONFIG_FILE)]:
+        (generate_site_file_yaml(user_roles), aRP.SITE_CONFIG_FILE_REMOTE)]:
         write_remote.append(write_remote_tuple)
     write_remote = write_remote + get_host_and_group_vars(configurations, providers, cluster_id,
                                                           log)
