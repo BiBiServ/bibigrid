@@ -210,6 +210,8 @@ def execute_ssh(ssh_data, log):
         ssh_data["filepaths"] = []
     if ssh_data.get("commands") is None:
         ssh_data["commands"] = []
+    if ssh_data.get("write_files") is None:
+        ssh_data["write_files"] = []
     paramiko_key = paramiko.ECDSAKey.from_private_key_file(ssh_data["private_key"])
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -221,12 +223,37 @@ def execute_ssh(ssh_data, log):
             raise exc
 
         log.debug(f"Setting up {ssh_data['floating_ip']}")
-        if ssh_data['filepaths']:
-            log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")
+        if ssh_data['filepaths'] or ssh_data["write_files"]:
             sftp = client.open_sftp()
-            for local_path, remote_path in ssh_data['filepaths']:
-                copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
-            log.debug("SFTP: Files %s copied.", ssh_data['filepaths'])
+            if ssh_data['filepaths']:
+                log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")
+                for local_path, remote_path in ssh_data['filepaths']:
+                    copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
+                log.debug("SFTP: Files %s copied.", ssh_data['filepaths'])
+            if ssh_data["write_files"]:
+                log.debug(f"Writing files for {ssh_data['floating_ip']}")
+                for data, remote_path in ssh_data['write_files']:
+                    write_to_remote_file(sftp=sftp, data=data, remote_path=remote_path, log=log)
+                log.debug("SFTP: Files %s created.", ssh_data['filepaths'])
         if ssh_data["floating_ip"]:
             log.debug(f"Setting up commands for {ssh_data['floating_ip']}")
             execute_ssh_cml_commands(client=client, commands=ssh_data["commands"], log=log)
+
+def write_to_remote_file(sftp, remote_path, data, log):
+    """
+    Writes data to a file on the server.
+
+    @param sftp: sftp connection
+    @param remote_path: path to the file on the remote server
+    @param data: data to be written to the file
+    @param log: logger for logging activities
+    """
+    log.debug("Writing data to %s...", remote_path)
+
+    try:
+        with sftp.file(remote_path, 'w') as remote_file:
+            remote_file.write(data)
+        log.debug("Successfully wrote data to %s", remote_path)
+    except Exception as e:
+        log.error("Failed to write data to %s: %s", remote_path, str(e))
+        raise
