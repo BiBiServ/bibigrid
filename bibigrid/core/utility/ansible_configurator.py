@@ -56,7 +56,7 @@ def generate_site_file_yaml(user_roles):
     return site_yaml
 
 
-def get_worker_host_vars(*, cluster_id, worker, worker_count, log):
+def get_worker_host_vars(*, cluster_id, worker, worker_count):
     write_host_vars_remote = []
     for worker_number in range(worker.get('count', 1)):
         name = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
@@ -79,7 +79,8 @@ def get_worker_host_vars(*, cluster_id, worker, worker_count, log):
     return write_host_vars_remote
 
 
-def get_worker_vars(*, provider, configuration, cluster_id, worker, worker_count, log):
+def get_worker_vars(*, provider, configuration, cluster_id, worker,
+                    worker_count):  # pylint: disable-msg=too-many-locals
     write_worker_vars_remote = []
     flavor_dict = provider.create_flavor_dict(flavor=worker["type"])
     name = WORKER_IDENTIFIER(cluster_id=cluster_id,
@@ -113,13 +114,12 @@ def get_worker_vars(*, provider, configuration, cluster_id, worker, worker_count
     write_worker_vars_remote.append((worker_dict, os.path.join(aRP.GROUP_VARS_FOLDER_REMOTE, f"{group_name}.yaml")))
     if worker_dict["on_demand"]:  # not on demand instances host_vars are created in create
         write_worker_vars_remote = write_worker_vars_remote + get_worker_host_vars(cluster_id=cluster_id, worker=worker,
-                                                                                   worker_count=worker_count,
-                                                                                   log=log)
+                                                                                   worker_count=worker_count)
     worker_count += worker.get('count', 1)
     return worker_count, write_worker_vars_remote
 
 
-def get_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count, log):
+def get_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count):
     name = VPNGTW_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
     wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
     vpn_count += 1
@@ -176,13 +176,13 @@ def get_host_and_group_vars(configurations, providers, cluster_id, log):
         for worker in configuration.get("workerInstances", []):
             worker_count, write_worker_vars_remote = get_worker_vars(provider=provider, configuration=configuration,
                                                                      cluster_id=cluster_id,
-                                                                     worker=worker, worker_count=worker_count, log=log)
+                                                                     worker=worker, worker_count=worker_count)
             write_remote = write_remote + write_worker_vars_remote
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
             write_remote.append(
                 get_vpn_var(provider=provider, configuration=configuration, cluster_id=cluster_id, vpngtw=vpngtw,
-                            vpn_count=vpn_count, log=log))
+                            vpn_count=vpn_count))
         else:
             write_remote.append(get_master_var(provider, configuration, cluster_id, log))
     return write_remote
