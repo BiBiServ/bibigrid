@@ -432,10 +432,11 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         self.log.debug("Running upload_data")
 
-        self.write_remote = self.write_remote + ansible_configurator.configure_ansible_yaml(providers=self.providers,
-                                                                                            configurations=self.configurations,
-                                                                                            cluster_id=self.cluster_id,
-                                                                                            log=self.log)
+        self.write_remote = (self.write_remote +
+                             ansible_configurator.configure_ansible_yaml(providers=self.providers,
+                                                                         configurations=self.configurations,
+                                                                         cluster_id=self.cluster_id,
+                                                                         log=self.log))
         self.write_remote.append((self.host_vars, a_rp.HOSTS_FILE_REMOTE))
         ansible_start = ssh_handler.ansible_start(",".join(self.permanents))
         self.log.debug(f"Starting playbook with {ansible_start}.")

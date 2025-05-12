@@ -138,7 +138,7 @@ def get_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count):
     return vpngtw_dict, os.path.join(aRP.HOST_VARS_FOLDER_REMOTE, f"{name}.yaml")
 
 
-def get_master_var(provider, configuration, cluster_id, log):
+def get_master_var(provider, configuration, cluster_id):
     master = configuration["masterInstance"]
     name = MASTER_IDENTIFIER(cluster_id=cluster_id)
     flavor_dict = provider.create_flavor_dict(flavor=master["type"])
@@ -184,7 +184,7 @@ def get_host_and_group_vars(configurations, providers, cluster_id, log):
                 get_vpn_var(provider=provider, configuration=configuration, cluster_id=cluster_id, vpngtw=vpngtw,
                             vpn_count=vpn_count))
         else:
-            write_remote.append(get_master_var(provider, configuration, cluster_id, log))
+            write_remote.append(get_master_var(provider, configuration, cluster_id))
     return write_remote
 
 
@@ -408,7 +408,6 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
     @return:
     """
     log.info("Writing ansible files...")
-    alias = configurations[0].get("aliasDumper", False)
     user_roles = configurations[0].get("userRoles", [])
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
     add_wireguard_peers(configurations)

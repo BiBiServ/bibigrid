@@ -2,9 +2,6 @@
 Module containing a bunch of useful commands to be used by sshHandler.py for cluster setup
 """
 
-import os
-import bibigrid.core.utility.paths.ansible_resources_path as a_rp
-
 # TO_LOG = "| sudo tee -a /var/log/ansible.log"
 # AIY = "apt-get -y install"
 # SAU = "sudo apt-get update"
@@ -56,9 +53,9 @@ WAIT_FOR_SERVICES = (
     "Waiting for service {service}.")
 UPDATE = ("sudo apt-get update", "Update apt repository lists.")
 PYTHON3_PIP = ("sudo apt-get install -y python3-pip python3-venv", "Install python3 pip and venv using apt.")
-VENV_SETUP = ("sudo python3 -m venv /opt/bibigrid-venv"," Create bibigrid virtual environment.")
+VENV_SETUP = ("sudo python3 -m venv /opt/bibigrid-venv", " Create bibigrid virtual environment.")
 ANSIBLE_PASSLIB = ("sudo /opt/bibigrid-venv/bin/pip install ansible==10.7 passlib",
                    "Install Ansible 10.7 and Passlib using pip.")
-ANSIBLE_GALAXY = ("sudo /opt/bibigrid-venv/bin/ansible-galaxy collection install "+
+ANSIBLE_GALAXY = ("sudo /opt/bibigrid-venv/bin/ansible-galaxy collection install " +
                   "-p /usr/share/ansible/collections community.zabbix==3.2.0",
                   "Install necessary ansible-galaxy modules.")
