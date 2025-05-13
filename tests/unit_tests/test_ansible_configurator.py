@@ -426,7 +426,7 @@ class TestAnsibleConfigurator(TestCase):
         ]
 
         # Call the function
-        ansible_configurator.write_worker_host_vars(
+        ansible_configurator.get_worker_host_vars(
             cluster_id=cluster_id,
             worker=worker,
             worker_count=worker_count,
@@ -480,7 +480,7 @@ class TestAnsibleConfigurator(TestCase):
             "security_groups": []
         }
 
-        ansible_configurator.write_worker_vars(
+        ansible_configurator.get_worker_vars(
             provider=provider,
             configuration=configuration,
             cluster_id=cluster_id,
@@ -543,7 +543,7 @@ class TestAnsibleConfigurator(TestCase):
             "wireguard": {"ip": "10.0.0.2", "peer": "peer-ip"},
         }
 
-        ansible_configurator.write_vpn_var(
+        ansible_configurator.get_vpn_var(
             provider=provider,
             configuration=configuration,
             cluster_id=cluster_id,
@@ -598,7 +598,7 @@ class TestAnsibleConfigurator(TestCase):
         }
 
         # Call the function
-        ansible_configurator.write_master_var(
+        ansible_configurator.get_master_var(
             provider=provider,
             configuration=configuration,
             cluster_id=cluster_id,

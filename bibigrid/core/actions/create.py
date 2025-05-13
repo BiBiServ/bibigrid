@@ -11,7 +11,6 @@ import traceback
 import mergedeep
 import paramiko
 import sympy
-import yaml
 from werkzeug.utils import secure_filename
 
 from bibigrid.core.actions.terminate import delete_keypairs, delete_local_keypairs, terminate, write_cluster_state
@@ -78,6 +77,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.use_master_with_public_ip = not configurations[0].get("gateway") and configurations[0].get(
             "useMasterWithPublicIp", True)
         self.log.debug("Keyname: %s", self.key_name)
+        self.host_vars = {"host_entries": {}}
+        self.host_vars_lock = threading.Lock()
+        self.write_remote = []
 
         os.makedirs(os.path.join(CLUSTER_INFO_FOLDER), exist_ok=True)
         write_cluster_state(
@@ -273,14 +275,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # for DNS resolution an entry in the hosts file is created
         with self.worker_thread_lock:
             self.permanents.append(name)
-            with open(a_rp.HOSTS_FILE, mode="r", encoding="UTF-8") as hosts_file:
-                hosts = yaml.safe_load(hosts_file)
-            if not hosts or "host_entries" not in hosts:
-                self.log.warning("Hosts file is broken.")
-                hosts = {"host_entries": {}}
-            hosts["host_entries"][name] = server["private_v4"]
-            ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
-            self.log.debug(f"Added worker {name} to hosts file {a_rp.HOSTS_FILE}.")
+            with self.host_vars_lock:
+                self.host_vars["host_entries"][name] = server["private_v4"]
+            self.log.debug(f"Added worker {name} to host vars.")
 
     # pylint: disable=duplicate-code
     def create_server_volumes(self, provider, instance, name):
@@ -359,9 +356,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                f"as device {device} that is going to be mounted to "
                                f"{volume.get('mountPoint')}")
 
-            ansible_configurator.write_yaml(os.path.join(a_rp.HOST_VARS_FOLDER, f"{server['name']}.yaml"),
-                                            {"volumes": final_volumes},
-                                            self.log)
+            self.write_remote.append(
+                ({"volumes": final_volumes}, os.path.join(a_rp.HOST_VARS_FOLDER_REMOTE, f"{server['name']}.yaml"),
+                 ))
 
     def prepare_vpn_or_master_args(self, configuration):
         """
@@ -434,20 +431,20 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @return:
         """
         self.log.debug("Running upload_data")
-        if not os.path.isfile(a_rp.HOSTS_FILE):
-            with open(a_rp.HOSTS_FILE, 'a', encoding='utf-8') as hosts_file:
-                hosts_file.write("# placeholder file for worker DNS entries (see 003-dns)")
 
-        ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
-                                                    cluster_id=self.cluster_id, log=self.log)
-        ansible_start = ssh_handler.ANSIBLE_START
-        ansible_start[-1] = (ansible_start[-1][0].format(",".join(self.permanents)), ansible_start[-1][1])
+        self.write_remote = (self.write_remote +
+                             ansible_configurator.configure_ansible_yaml(providers=self.providers,
+                                                                         configurations=self.configurations,
+                                                                         cluster_id=self.cluster_id,
+                                                                         log=self.log))
+        self.write_remote.append((self.host_vars, a_rp.HOSTS_FILE_REMOTE))
+        ansible_start = ssh_handler.ansible_start(",".join(self.permanents))
         self.log.debug(f"Starting playbook with {ansible_start}.")
         if self.configurations[0].get("dontUploadCredentials"):
             commands = ansible_start
         else:
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
-                cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
+                cluster_id=self.cluster_id))] + ansible_start
         if clean_playbook:
             self.log.info("Cleaning Playbook")
             ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
@@ -456,7 +453,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
         self.log.info("Uploading Data")
         ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
-                    "commands": commands, "filepaths": UPLOAD_FILEPATHS,
+                    "commands": commands, "filepaths": UPLOAD_FILEPATHS, "write_remote": self.write_remote,
                     "gateway": self.configurations[0].get("gateway", {}),
                     "timeout": self.ssh_timeout}
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
@@ -469,7 +466,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.debug("Running start_start_server_threads")
         start_server_threads = []
         worker_count = 0
-        ansible_configurator.write_yaml(a_rp.HOSTS_FILE, {"host_entries": {}}, self.log)
         for configuration, provider in zip(self.configurations, self.providers):
             start_server_thread = return_threading.ReturnThread(target=self.start_vpn_or_master,
                                                                 args=[configuration, provider])
@@ -491,7 +487,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         for start_server_thread in start_server_threads:
             try:
                 start_server_thread.join()
-            except Exception as e: # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
                 self.log.warning(f"Worker thread {start_server_thread} raised exception {e}.")
                 worker_exceptions.append(e)
         if worker_exceptions:
