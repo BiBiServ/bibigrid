@@ -14,7 +14,7 @@ from bibigrid.core.utility.paths.basic_path import CLOUD_NODE_REQUIREMENTS_PATH
 
 LOG = logging.getLogger("bibigrid")
 
-__version__ = "0.5.0"
+__version__ = "3.0.1-hotfix"
 RELEASE_DATE = "2025"
 GIT_HUB = "https://github.com/BiBiServ/bibigrid"
 
