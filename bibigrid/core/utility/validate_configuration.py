@@ -209,7 +209,7 @@ class ValidateConfiguration:
                   ("instances", self.check_instances), ("volumes", self.check_volumes), ("network", self.check_network),
                   ("quotas", self.check_quotas), ("sshPublicKeyFiles", self.check_ssh_public_key_files),
                   ("cloudYamls", self.check_clouds_yamls), ("nfs", self.check_nfs), ("global security groups",
-                  self.check_configurations_security_groups)]
+                                                                                     self.check_configurations_security_groups)]
         if success:
             for check_name, check_function in checks:
                 success = evaluate(check_name, check_function(), self.log) and success
@@ -223,7 +223,7 @@ class ValidateConfiguration:
             security_group = provider.get_security_group(security_group_name)
             if not security_group:
                 self.log.warning(f"Couldn't find security group {security_group} on "
-                      f"cloud {provider.cloud_specification['identifier']}")
+                                 f"cloud {provider.cloud_specification['identifier']}")
                 success = False
             else:
                 self.log.debug(f"Found {security_group_name} on cloud {provider.cloud_specification['identifier']}")
@@ -349,6 +349,10 @@ class ValidateConfiguration:
                                        (type_max_ram, image_min_ram, "ram")]:
             success = has_enough(maximum, needed, f"Type {instance_type}", thing, self.log) and success
         # prepare check quotas
+        if type_max_ram < 4096:
+            self.log.warning(
+                f"Flavor {instance_type} on {provider.cloud_specification['identifier']} has {type_max_ram} but should "
+                f"at least have 4096 to efficiently run slurm and jobs")
         self.required_resources_dict[provider.cloud_specification['identifier']]["total_ram"] += type_max_ram
         self.required_resources_dict[provider.cloud_specification['identifier']]["total_cores"] += flavor["vcpus"]
         return success
