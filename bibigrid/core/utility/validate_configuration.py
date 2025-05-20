@@ -208,8 +208,8 @@ class ValidateConfiguration:
         checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),
                   ("instances", self.check_instances), ("volumes", self.check_volumes), ("network", self.check_network),
                   ("quotas", self.check_quotas), ("sshPublicKeyFiles", self.check_ssh_public_key_files),
-                  ("cloudYamls", self.check_clouds_yamls), ("nfs", self.check_nfs), ("global security groups",
-                                                                                     self.check_configurations_security_groups)]
+                  ("cloudYamls", self.check_clouds_yamls), ("nfs", self.check_nfs),
+                  ("global security groups", self.check_configurations_security_groups)]
         if success:
             for check_name, check_function in checks:
                 success = evaluate(check_name, check_function(), self.log) and success
