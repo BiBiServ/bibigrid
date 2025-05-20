@@ -352,7 +352,7 @@ class ValidateConfiguration:
         if type_max_ram < 4096:
             self.log.warning(
                 f"Flavor {instance_type} on {provider.cloud_specification['identifier']} has {type_max_ram} but should "
-                f"at least have 4096 to efficiently run slurm and jobs")
+                f"at least have 4096 MiB of RAM to efficiently run slurm and jobs!")
         self.required_resources_dict[provider.cloud_specification['identifier']]["total_ram"] += type_max_ram
         self.required_resources_dict[provider.cloud_specification['identifier']]["total_cores"] += flavor["vcpus"]
         return success
