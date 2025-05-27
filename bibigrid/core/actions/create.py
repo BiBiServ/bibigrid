@@ -280,7 +280,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.host_vars["host_entries"][name] = server["private_v4"]
             self.log.debug(f"Added worker {name} to host vars.")
 
-    # pylint: disable=duplicate-code
+    # pylint: disable=too-many-branches
     def create_server_volumes(self, provider, instance, name):
         """
         Creates all volumes of a single instance
@@ -298,7 +298,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         for i, volume in enumerate(instance.get("volumes", [])):
             self.log.debug(f"Volume {i}: {volume}")
-            if not volume.get("exists"):
+            if volume.get("exists"):
+                volume_name = volume.get("name")
+            else:
                 if volume.get("permanent"):
                     infix = "perm"
                 elif volume.get("semiPermanent"):
@@ -307,8 +309,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     infix = "tmp"
                 postfix = f"-{volume.get('name')}" if volume.get('name') else ''
                 volume_name = f"{name}-{infix}-{i}{postfix}"
-            else:
-                volume_name = volume.get("name")
             volume_name_or_id = volume.get("id", volume_name)
             self.log.debug(f"Checking if volume {volume_name_or_id} exists")
             return_volume = provider.get_volume_by_id_or_name(volume_name_or_id)
