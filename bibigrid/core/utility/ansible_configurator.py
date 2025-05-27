@@ -56,24 +56,27 @@ def generate_site_file_yaml(user_roles):
     return site_yaml
 
 
-# pylint: disable=duplicate-code
+def get_full_volume_name(volume, name, count):
+    if volume.get("exists"):
+        return volume["name"]
+
+    if volume.get("permanent"):
+        infix = "perm"
+    elif volume.get("semiPermanent"):
+        infix = "semiperm"
+    else:
+        infix = "tmp"
+    postfix = f"-{volume.get('name')}" if volume.get('name') else ''
+    return f"{name}-{infix}-{count}{postfix}"
+
+
 def get_worker_host_vars(*, cluster_id, worker, worker_count):
     write_host_vars_remote = []
     for worker_number in range(worker.get('count', 1)):
         name = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
         write_volumes = []
         for i, volume in enumerate(worker.get("volumes", [])):
-            if not volume.get("exists"):
-                if volume.get("permanent"):
-                    infix = "perm"
-                elif volume.get("semiPermanent"):
-                    infix = "semiperm"
-                else:
-                    infix = "tmp"
-                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
-                volume_name = f"{name}-{infix}-{i}{postfix}"
-            else:
-                volume_name = volume["name"]
+            volume_name = get_full_volume_name(volume, name, i)
             write_volumes.append({**volume, "name": volume_name})
         write_host_vars_remote.append(
             ({"volumes": write_volumes}, os.path.join(aRP.HOST_VARS_FOLDER_REMOTE, f"{name}.yaml")))
