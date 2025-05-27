@@ -56,6 +56,7 @@ def generate_site_file_yaml(user_roles):
     return site_yaml
 
 
+# pylint: disable=duplicate-code
 def get_worker_host_vars(*, cluster_id, worker, worker_count):
     write_host_vars_remote = []
     for worker_number in range(worker.get('count', 1)):
