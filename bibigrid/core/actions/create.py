@@ -280,7 +280,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.host_vars["host_entries"][name] = server["private_v4"]
             self.log.debug(f"Added worker {name} to host vars.")
 
-    # pylint: disable=too-many-branches
+    # pylint: disable=duplicate-code,too-many-branches
     def create_server_volumes(self, provider, instance, name):
         """
         Creates all volumes of a single instance
