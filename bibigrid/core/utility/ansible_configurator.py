@@ -58,8 +58,7 @@ def generate_site_file_yaml(user_roles):
 
 def get_full_volume_name(volume, name, count):
     if volume.get("exists"):
-        return volume["name"]
-
+        return volume.get("name")
     if volume.get("permanent"):
         infix = "perm"
     elif volume.get("semiPermanent"):
