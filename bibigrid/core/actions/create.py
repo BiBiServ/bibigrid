@@ -268,6 +268,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         volume_size=boot_volume.get("size", 50),
                                         description=worker.get("description", configuration.get("description")),
                                         meta=meta)
+
         self.add_volume_device_info_to_instance(provider, server, worker)
 
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
@@ -279,7 +280,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 self.host_vars["host_entries"][name] = server["private_v4"]
             self.log.debug(f"Added worker {name} to host vars.")
 
-    # pylint: disable=duplicate-code
     def create_server_volumes(self, provider, instance, name):
         """
         Creates all volumes of a single instance
@@ -288,7 +288,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @param name: sever name
         @return:
         """
-        self.log.info(f"Creating volumes for {name}...")
         return_volumes = []
         group_instance = {"volumes": []}  # TODO rethink naming
         if not instance.get("group_instances"):
@@ -298,23 +297,15 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         for i, volume in enumerate(instance.get("volumes", [])):
             self.log.debug(f"Volume {i}: {volume}")
-            if not volume.get("exists"):
-                if volume.get("permanent"):
-                    infix = "perm"
-                elif volume.get("semiPermanent"):
-                    infix = "semiperm"
-                else:
-                    infix = "tmp"
-                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
-                volume_name = f"{name}-{infix}-{i}{postfix}"
-            else:
-                volume_name = volume["name"]
-            group_instance["volumes"].append({**volume, "name": volume_name})
-
-            self.log.debug(f"Trying to find volume {volume_name}")
-            return_volume = provider.get_volume_by_id_or_name(volume_name)
+            volume_name = ansible_configurator.get_full_volume_name(volume, name, i)
+            volume_name_or_id = volume.get("id", volume_name)
+            self.log.debug(f"Checking if volume {volume_name_or_id} exists")
+            return_volume = provider.get_volume_by_id_or_name(volume_name_or_id)
             if not return_volume:
-                self.log.debug(f"Volume {volume_name} not found.")
+                if volume.get("exists"):
+                    raise ValueError(
+                        f"Volume {volume_name_or_id} doesn't exist but should. Please select an existing volume.")
+                self.log.debug(f"Volume {volume_name_or_id} not found.")
                 if volume.get('snapshot'):
                     self.log.debug("Creating volume from snapshot...")
                     return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume_name)
@@ -325,6 +316,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                            volume_type=volume.get("type"),
                                                            description=f"Created for {name}")
                     self.log.info(f"Volumes {i} created for {name}...")
+            group_instance["volumes"].append({**volume, "name": volume_name, "id": return_volume["id"]})
             return_volumes.append(return_volume)
         return return_volumes
 
@@ -345,7 +337,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if group_instance_volumes:
             for volume in group_instance_volumes:
                 server_volume = next((server_volume for server_volume in server_volumes if
-                                      server_volume["name"] == volume["name"]), None)
+                                      server_volume["id"] == volume["id"]), None)
                 if not server_volume:
                     raise RuntimeError(
                         f"Created server {server['name']} doesn't have attached volume {volume['name']}.")

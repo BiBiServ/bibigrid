@@ -56,23 +56,26 @@ def generate_site_file_yaml(user_roles):
     return site_yaml
 
 
+def get_full_volume_name(volume, name, count):
+    if volume.get("exists"):
+        return volume.get("name")
+    if volume.get("permanent"):
+        infix = "perm"
+    elif volume.get("semiPermanent"):
+        infix = "semiperm"
+    else:
+        infix = "tmp"
+    postfix = f"-{volume.get('name')}" if volume.get('name') else ''
+    return f"{name}-{infix}-{count}{postfix}"
+
+
 def get_worker_host_vars(*, cluster_id, worker, worker_count):
     write_host_vars_remote = []
     for worker_number in range(worker.get('count', 1)):
         name = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
         write_volumes = []
         for i, volume in enumerate(worker.get("volumes", [])):
-            if not volume.get("exists"):
-                if volume.get("permanent"):
-                    infix = "perm"
-                elif volume.get("semiPermanent"):
-                    infix = "semiperm"
-                else:
-                    infix = "tmp"
-                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
-                volume_name = f"{name}-{infix}-{i}{postfix}"
-            else:
-                volume_name = volume["name"]
+            volume_name = get_full_volume_name(volume, name, i)
             write_volumes.append({**volume, "name": volume_name})
         write_host_vars_remote.append(
             ({"volumes": write_volumes}, os.path.join(aRP.HOST_VARS_FOLDER_REMOTE, f"{name}.yaml")))
@@ -119,7 +122,7 @@ def get_worker_vars(*, provider, configuration, cluster_id, worker,
     return worker_count, write_worker_vars_remote
 
 
-def get_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count):
+def get_vpn_vars(*, provider, configuration, cluster_id, vpngtw, vpn_count):
     name = VPNGTW_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
     wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
     vpn_count += 1
@@ -138,7 +141,7 @@ def get_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count):
     return vpngtw_dict, os.path.join(aRP.HOST_VARS_FOLDER_REMOTE, f"{name}.yaml")
 
 
-def get_master_var(provider, configuration, cluster_id):
+def get_master_vars(provider, configuration, cluster_id):
     master = configuration["masterInstance"]
     name = MASTER_IDENTIFIER(cluster_id=cluster_id)
     flavor_dict = provider.create_flavor_dict(flavor=master["type"])
@@ -181,10 +184,10 @@ def get_host_and_group_vars(configurations, providers, cluster_id, log):
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
             write_remote.append(
-                get_vpn_var(provider=provider, configuration=configuration, cluster_id=cluster_id, vpngtw=vpngtw,
-                            vpn_count=vpn_count))
+                get_vpn_vars(provider=provider, configuration=configuration, cluster_id=cluster_id, vpngtw=vpngtw,
+                             vpn_count=vpn_count))
         else:
-            write_remote.append(get_master_var(provider, configuration, cluster_id))
+            write_remote.append(get_master_vars(provider, configuration, cluster_id))
     return write_remote
 
 
