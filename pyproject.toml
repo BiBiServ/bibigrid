@@ -50,6 +50,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["bibigrid", "resources"]
+include = ["bibigrid*", "resources"]
 exclude = ["tests*"]
 
+[tool.setuptools]
+packages = ["bibigrid"]
