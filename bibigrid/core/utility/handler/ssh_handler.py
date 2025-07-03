@@ -121,7 +121,7 @@ def is_active(client, paramiko_key, ssh_data, log):
             log.info(f"Attempt {attempts}/{ssh_data['timeout']}. Connecting to {ssh_data['floating_ip']}")
             client.connect(hostname=ssh_data['gateway'].get("ip") or ssh_data['floating_ip'],
                            username=ssh_data['username'], pkey=paramiko_key, timeout=7,
-                           auth_timeout=ssh_data['timeout'], port=port, look_for_keys=False, allow_agent=False)
+                           auth_timeout=ssh_data['timeout'], port=port, look_for_keys=False, allow_agent=False, sock=ssh_data.get('socks5', None))
             establishing_connection = False
             log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
         except paramiko.ssh_exception.NoValidConnectionsError as exc:
@@ -219,7 +219,6 @@ def execute_ssh(ssh_data, log):
             log.error(f"Couldn't connect to ip {ssh_data['gateway'] or ssh_data['floating_ip']} using private key "
                       f"{ssh_data['private_key']}.")
             raise exc
-
         log.debug(f"Setting up {ssh_data['floating_ip']}")
         if ssh_data['filepaths']:
             log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")

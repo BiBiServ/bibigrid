@@ -5,8 +5,12 @@ The cluster creation (master's creation, key creation, ansible setup and executi
 import os
 import shutil
 import subprocess
+import socks
+import socket
+import time
 import threading
 import traceback
+from urllib.parse import urlparse
 
 import mergedeep
 import paramiko
@@ -383,6 +387,33 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 f"Configuration {configuration['cloud_identifier']} has neither vpngtw nor masterInstance")
         return identifier, instance_type
 
+    def get_sock(self, configuration, ssh_data):
+        sock = socks.socksocket()
+        socks_uri = urlparse(configuration['socks5Proxy'])
+        if ":" in socks_uri.netloc and socks_uri.scheme == 'socks5':
+            proxy_host, proxy_port = socks_uri.netloc.split(":")
+        else:
+            raise Exception("socks5Proxy must be a valid URL, e.g. socks5://localhost:1234")
+
+        sock.set_proxy(
+            proxy_type=socks.SOCKS5,
+            addr=proxy_host,
+            port=int(proxy_port)
+        )
+        sock.settimeout(10)
+        max_wait = 300  # total seconds to wait
+        start_time = time.time()
+
+        while True:
+            try:
+                sock.connect((ssh_data['gateway'].get("ip") or ssh_data['floating_ip'], 22))
+                break  # success
+            except (socket.timeout, socket.error) as e:
+                if time.time() - start_time > max_wait:
+                    raise TimeoutError(f"Could not connect within {max_wait} seconds") from e
+                time.sleep(0.5)  # wait a bit before retrying
+        return sock
+
     def initialize_instances(self):
         """
         Setup all servers
@@ -391,6 +422,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ssh_data = {"floating_ip": configuration["floating_ip"], "private_key": KEY_FOLDER + self.key_name,
                         "username": self.ssh_user, "commands": None, "filepaths": None,
                         "gateway": configuration.get("gateway", {}), "timeout": self.ssh_timeout}
+            if configuration.get("socks5Proxy"):
+                sock = self.get_sock(configuration, ssh_data)
+                ssh_data['socks5'] = sock
             if configuration.get("masterInstance"):
                 self.master_ip = configuration["floating_ip"]
                 wait_for_service_command, wait_for_service_message = ssh_handler.a_c.WAIT_FOR_SERVICES
@@ -453,12 +487,18 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
                         "commands": [("rm -rf ~/playbook/*", "Remove Playbook")], "filepaths": [],
                         "gateway": self.configurations[0].get("gateway", {}), "timeout": self.ssh_timeout}
+            if self.configurations[0].get('socks5Proxy'):
+                sock = self.get_sock(self.configurations[0], ssh_data)
+                ssh_data['socks5'] = sock
             ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
         self.log.info("Uploading Data")
         ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
                     "commands": commands, "filepaths": UPLOAD_FILEPATHS,
                     "gateway": self.configurations[0].get("gateway", {}),
                     "timeout": self.ssh_timeout}
+        if self.configurations[0].get('socks5Proxy'):
+            sock = self.get_sock(self.configurations[0], ssh_data)
+            ssh_data['socks5'] = sock
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 
     def start_start_server_threads(self):
