@@ -53,5 +53,3 @@ build-backend = "setuptools.build_meta"
 include = ["bibigrid*", "resources"]
 exclude = ["tests*"]
 
-[tool.setuptools]
-packages = ["bibigrid"]
