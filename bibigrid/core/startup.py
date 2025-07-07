@@ -82,7 +82,7 @@ def run_action(args, configurations, config_path):
             elif args.create:
                 LOG.info("Action create selected")
                 creator = create.Create(providers=providers, configurations=configurations, log=LOG, debug=args.debug,
-                                        config_path=config_path)
+                                        config_path=config_path, cluster_id=args.cluster_id)
                 LOG.log(42, "Creating a new cluster takes about 10 or more minutes depending on your cloud provider "
                             "and your configuration. Please be patient.")
                 exit_state = creator.create()
