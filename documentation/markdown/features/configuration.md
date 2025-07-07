@@ -419,4 +419,19 @@ securityGroups:
 Takes a dict of key value pairs (no key/value is allowed to be longer than 256) and adds it to all instances of that cloud.
 Gets merged with instances metadata and is overwritten where conflicts arise.
 
-####
+#### SOCKS Proxy
+
+In order to execute the SSH command using a SOCKS5 socket, use:
+
+```yaml
+socks5Proxy: socks5://<your-uri>:<your-port>
+```
+
+> [!NOTE]
+> For Example using a local socks5 proxy:
+> ```yaml
+>   - infrastructure: openstack
+>     cloud: openstack
+>     socks5Proxy: socks5://localhost:7777
+>     # other parameters
+> ```

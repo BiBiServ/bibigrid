@@ -1,0 +1,30 @@
+- become: 'yes'
+  hosts: master
+  roles:
+  - role: bibigrid
+    tags:
+    - bibigrid
+    - bibigrid-master
+  vars_files:
+  - vars/common_configuration.yaml
+  - vars/hosts.yaml
+- become: 'yes'
+  hosts: vpngtw
+  roles:
+  - role: bibigrid
+    tags:
+    - bibigrid
+    - bibigrid-vpngtw
+  vars_files:
+  - vars/common_configuration.yaml
+  - vars/hosts.yaml
+- become: 'yes'
+  hosts: workers
+  roles:
+  - role: bibigrid
+    tags:
+    - bibigrid
+    - bibigrid-worker
+  vars_files:
+  - vars/common_configuration.yaml
+  - vars/hosts.yaml
