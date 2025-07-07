@@ -400,18 +400,27 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             addr=proxy_host,
             port=int(proxy_port)
         )
-        sock.settimeout(10)
+        time.sleep(2)
         max_wait = 300  # total seconds to wait
         start_time = time.time()
-
+        count = 0
         while True:
             try:
+                if count > 0:
+                    sock = socks.socksocket()
+                    sock.set_proxy(
+                        proxy_type=socks.SOCKS5,
+                        addr=proxy_host,
+                        port=int(proxy_port)
+                    )
+                    time.sleep(2)
                 sock.connect((ssh_data['gateway'].get("ip") or ssh_data['floating_ip'], 22))
                 break  # success
             except (socket.timeout, socket.error) as e:
                 if time.time() - start_time > max_wait:
                     raise TimeoutError(f"Could not connect within {max_wait} seconds") from e
                 time.sleep(0.5)  # wait a bit before retrying
+                count += 1
         return sock
 
     def initialize_instances(self):
