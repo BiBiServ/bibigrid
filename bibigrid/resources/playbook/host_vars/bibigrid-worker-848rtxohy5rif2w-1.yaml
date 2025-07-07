@@ -1,6 +1,0 @@
-volumes:
-- device: /dev/vdb
-  mountPoint: /vol/semiPermanent
-  name: bibigrid-worker-848rtxohy5rif2w-1-semiperm-0
-  semiPermanent: true
-  size: 25

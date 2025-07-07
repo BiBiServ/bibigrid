@@ -1,6 +1,0 @@
-volumes:
-- device: /dev/vdb
-  mountPoint: /vol/permanent
-  name: bibigrid-master-848rtxohy5rif2w-perm-0-resFinder
-  permanent: true
-  size: 25
