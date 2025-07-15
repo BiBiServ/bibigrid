@@ -141,8 +141,8 @@ def run_action(action, configurations, config_input, cluster_id, debug):
     return exit_state
 
 
-@click.command()
-@click.version_option(version=version.__version__, prog_name=version.PROG_NAME, message=version.MESSAGE)
+@click.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.version_option(version.__version__, "-V", "--version", prog_name=version.PROG_NAME, message=version.MESSAGE)
 @click.option("-v", "--verbose", count=True, help="Increases logging verbosity.")
 @click.option("-d", "--debug", is_flag=True,
               help="Keeps cluster active even when crashing. Asks before shutdown. Offers termination after successful create.")
@@ -151,7 +151,7 @@ def run_action(action, configurations, config_input, cluster_id, debug):
               help="Path to default YAML configurations file.")
 @click.option("-ei", "--enforced_config_input", type=click.Path(), default=ENFORCED_CONFIG_PATH,
               help="Path to enforced YAML configurations file.")
-@click.option("-cid", "--cluster_id", help="Cluster id is needed for certain commands.")
+@click.option("-cid", "--cluster_id", help="Cluster id is needed for certain actions.")
 @click.argument('action',
                 type=click.Choice(['create', 'terminate', 'list', 'check', 'ide', 'update'], case_sensitive=False))
 def cli(verbose, debug, config_input, default_config_input, enforced_config_input, cluster_id, action):

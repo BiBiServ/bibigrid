@@ -1,8 +1,22 @@
 # CLI
 
-Available command line parameters:
+BiBiGrid is either executed with `--version`, that displays BiBiGrid's version and additional information, 
+`--help` to show BiBiGrid's help message or with an action argument.
 
-- `-h, --help`            show help message and exit
+```markdown
+bibigrid.core.startup [OPTIONS] {create|terminate|list|check|ide|update}
+```
+
+## Action Argument
+- `check` Validates cluster configuration.
+- `create` Creates cluster.
+- `terminate` Terminates cluster. Needs option cluster-id
+- `list` Lists all running clusters. If option cluster-id is set, will list this cluster in detail only.
+- `update` Updates master's playbook. Needs option cluster-id, no job running and no workers powered up.
+- `ide` Establishes a secured connection to Theia ide.
+
+## Options
+
 - `-v, --verbose`         Increases output verbosity (can be of great use when cluster fails to start). `-v` adds more
   detailed info to the logfile, `-vv` adds debug information to the logfile.
 - `-d, --debug`           Keeps cluster active in case of an error. Offers termination after successful create. Prints full stack trace on errors.
@@ -10,15 +24,3 @@ Available command line parameters:
   at `~/.config/bibigrid`
 - `-cid <cluster-id>, --cluster_id <cluster-id>` Cluster id is needed for ide and termination. If no cluster id is set,
   the last started cluster's id will be used (except for `list_clusters`).
-
-## Mutually exclusive actions: choose exactly one
-
-- `-V, --version`         Displays version.
-- `-t, --terminate_cluster` Terminates cluster. Needs cluster-id set.
-- `-c, --create`          Creates cluster.
-- `-l, --list_clusters`   Lists all running clusters. If cluster-id is
-  set, will list this cluster in detail only.
-- `-ch, --check`          Validates cluster configuration.
-- `-ide, --ide`           Establishes a secured connection to ide.
-  Needs cluster-id set.
-- `-u, --update`        Updates master's playbook. Needs cluster-id set, no job running and no workers powered up.
