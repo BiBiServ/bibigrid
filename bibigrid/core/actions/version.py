@@ -18,4 +18,4 @@ MESSAGE = f"""{PROG_NAME} {__version__} ({RELEASE_DATE})
 Bielefeld University
 {GIT_HUB}
 # Configuration Folders
-{[directory for directory in configuration_handler.CLOUDS_YAML_PATHS]}"""
+{configuration_handler.CLOUDS_YAML_PATHS}"""

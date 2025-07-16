@@ -105,7 +105,8 @@ def run_action(action, configurations, config_input, cluster_id, debug):
                     creator = create.Create(providers=providers, configurations=configurations, log=LOG, debug=debug,
                                             config_path=config_input)
                     LOG.log(42,
-                            "Creating a new cluster takes about 10 or more minutes depending on your cloud provider and your configuration. Please be patient.")
+                            "Creating a new cluster takes about 10 or more minutes depending on your cloud "
+                            "provider and your configuration. Please be patient.")
                     exit_state = creator.create()
                 case _:
                     if not cluster_id:
@@ -131,7 +132,7 @@ def run_action(action, configurations, config_input, cluster_id, debug):
             for provider in providers:
                 provider.close()
 
-    except Exception as err:
+    except Exception as _: # pylint: disable=broad-exception-caught
         exc_type, exc_value, exc_traceback = sys.exc_info()
         LOG.error("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
         exit_state = 2
@@ -140,12 +141,13 @@ def run_action(action, configurations, config_input, cluster_id, debug):
     LOG.log(42, f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
     return exit_state
 
-
-@click.command(context_settings=dict(help_option_names=['-h', '--help']))
+# pylint: disable=no-value-for-parameter
+@click.command(context_settings={"help_option_names":['-h', '--help']})
 @click.version_option(version.__version__, "-V", "--version", prog_name=version.PROG_NAME, message=version.MESSAGE)
 @click.option("-v", "--verbose", count=True, help="Increases logging verbosity.")
 @click.option("-d", "--debug", is_flag=True,
-              help="Keeps cluster active even when crashing. Asks before shutdown. Offers termination after successful create.")
+              help="Keeps cluster active even when crashing. Asks before shutdown. "
+                   "Offers termination after successful create.")
 @click.option("-i", "--config_input", type=click.Path(), required=True, help="Path to YAML configurations file.")
 @click.option("-di", "--default_config_input", type=click.Path(), default=DEFAULT_CONFIG_PATH,
               help="Path to default YAML configurations file.")
