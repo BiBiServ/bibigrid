@@ -16,6 +16,8 @@ a cloud IDE for writing, running and debugging (Theia Web IDE) and many more.
 
 ## Getting Started
 
+You can install BiBiGrid as a package via `pip install -e .` while being in the bibigrid repository folder.
+
 For most users the [Hands-On BiBiGrid Tutorial](https://github.com/deNBI/bibigrid_clum2022) 
 is the best entry point.
 
