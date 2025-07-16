@@ -156,7 +156,7 @@ def run_action(action, configurations, config_input, cluster_id, debug):
 @click.option("-cid", "--cluster_id", help="Cluster id is needed for certain actions.")
 @click.argument('action',
                 type=click.Choice(['create', 'terminate', 'list', 'check', 'ide', 'update'], case_sensitive=False))
-def cli(verbose, debug, config_input, default_config_input, enforced_config_input, cluster_id, action):
+def main(verbose, debug, config_input, default_config_input, enforced_config_input, cluster_id, action):
     """Interprets command line for BiBiGrid."""
     logging.basicConfig(format=LOGGER_FORMAT)
     LOG.addHandler(logging.FileHandler("bibigrid.log"))
@@ -185,4 +185,4 @@ def cli(verbose, debug, config_input, default_config_input, enforced_config_inpu
 
 
 if __name__ == '__main__':
-    cli()
+    main()
