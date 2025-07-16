@@ -79,8 +79,8 @@ Refer to BiBiGrid's [Command Line Interface documentation](documentation/markdow
 
 A first execution run through could be:
 
-1. `./bibigrid.sh -i [path-to-bibigrid.yaml] -ch`: checks the configuration
-2. `./bibigrid.sh -i 'bibigrid.yaml -i [path-to-bibigrid.yaml] -c'`: creates the cluster (execute only if check was successful)
+1. `./bibigrid.sh create -i [path-to-bibigrid.yaml]`: checks the configuration
+2. `./bibigrid.sh create -i 'bibigrid.yaml -i [path-to-bibigrid.yaml]'`: creates the cluster (execute only if check was successful)
 3. Use **BiBiGrid's create output** to investigate the created cluster further. Especially connecting to the ide might be helpful. 
 Otherwise, connect using ssh.
 4. While in ssh try `sinfo` to printing node info
