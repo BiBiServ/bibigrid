@@ -328,7 +328,7 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
             volume = self.get_volume_by_id_or_name(server_volume["id"])
             for attachment in volume["attachments"]:
                 if attachment["server_id"] == server["id"]:
-                    volumes.append({"name": volume["name"], "device": attachment["device"]})
+                    volumes.append({"id": volume["id"], "device": attachment["device"]})
                     break
         return volumes
 

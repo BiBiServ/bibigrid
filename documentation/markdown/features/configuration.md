@@ -242,6 +242,7 @@ workerInstance:
         # permanent: False
         # semiPermanent: False
         # exists: False
+        # id: # id of volume if exists: True
         mountPoint: /vol/test
         size: 50
         fstype: ext4
@@ -277,7 +278,7 @@ You can even attach a volume that already exists. However, don't try to add a si
 - **Semi-permanent** volumes are deleted once their cluster is destroyed not when their server is powered down during the cluster's runtime. By setting `semiPermanent: True`, you create a semi-permanent volume.
 - **Permanent** volumes are deleted once you delete them manually. By setting `permanent: True`, you create a permanent volume.
 - **Temporary** volumes are deleted once their server is destroyed. By setting `permanent: False` and `semiPermanent: False` (their default value), you create a temporary volume.
-- **Existing** volumes can be attached by setting the exact name of that volume as `name` and setting `exists: True`. If you use this to attach the volume to a worker, make sure that the worker group's count is 1. Otherwise, BiBiGrid will try to attach that volume to each instance.
+- **Existing** volumes can be attached by setting the exact name of that volume as `name` and setting `exists: True`. If you use this to attach the volume to a worker, make sure that the worker group's count is 1. Otherwise, BiBiGrid will try to attach that volume to each instance. You should also set `id:` to the volume's id.
 - You can create volumes from **snapshots** by setting `snapshot` to your snapshot's name. You can create all kinds of volumes of them.
 - `type` allows you to set the storage option. For Bielefeld there are `CEPH_HDD` (HDD) and `CEPH_NVME` (SSD). 
 
