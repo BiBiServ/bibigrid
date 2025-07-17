@@ -54,7 +54,7 @@
     force: true
   tags:
     - skip_ansible_lint
-  notify: Apt udpate
+  notify: Apt update
 
 - name: Add apt.bi.denbi.de repository key
   apt_key:
@@ -64,4 +64,7 @@
 - name: Add apt.bi.denbi.de repository
   apt_repository:
     repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
-    notify: Apt update
+  notify: Apt update
+
+- name: Flush handlers
+  meta: flush_handlers
