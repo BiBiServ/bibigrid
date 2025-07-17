@@ -30,7 +30,7 @@
   when:
     - wait_for_services is defined
 
-- name: Update
+- name: Update & Upgrade before installing packages
   apt:
     update_cache: "yes"
     upgrade: "yes"
@@ -54,6 +54,7 @@
     force: true
   tags:
     - skip_ansible_lint
+  notify: Apt udpate
 
 - name: Add apt.bi.denbi.de repository key
   apt_key:
@@ -63,8 +64,4 @@
 - name: Add apt.bi.denbi.de repository
   apt_repository:
     repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
-
-- name: Update apt cache
-  apt:
-    upgrade: 'yes'
-    update_cache: 'yes'
+    notify: Apt update
