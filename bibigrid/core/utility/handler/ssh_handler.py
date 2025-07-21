@@ -7,6 +7,7 @@ import socket
 import time
 
 import paramiko
+import socks
 import sympy
 import yaml
 
@@ -118,20 +119,31 @@ def is_active(client, paramiko_key, ssh_data, log):
     establishing_connection = True
     log.info(f"Attempting to connect to {ssh_data['floating_ip']}... This might take a while")
     port = 22
+
+    sock = None
+
     if ssh_data.get('gateway'):
         log.info(f"Using SSH Gateway {ssh_data['gateway'].get('ip')}")
         octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(ssh_data['floating_ip'].split("."))}
         port = int(sympy.sympify(ssh_data['gateway']["portFunction"]).subs(dict(octets)))
         log.info(f"Port {port} will be used (see {ssh_data['gateway']['portFunction']} and octets {octets}).")
+
     while establishing_connection:
         try:
             log.info(f"Attempt {attempts}/{ssh_data['timeout']}. Connecting to {ssh_data['floating_ip']}")
+            if ssh_data.get('sock5_proxy'):
+                log.debug("Trying to connect socket.")
+                sock = socks.socksocket()
+                sock.set_proxy(socks.SOCKS5, addr=ssh_data["sock5_proxy"]["address"],
+                               port=ssh_data["sock5_proxy"]["port"])
+                sock.connect((ssh_data['gateway'].get("ip") or ssh_data['floating_ip'], 22))
             client.connect(hostname=ssh_data['gateway'].get("ip") or ssh_data['floating_ip'],
                            username=ssh_data['username'], pkey=paramiko_key, timeout=7,
-                           auth_timeout=ssh_data['timeout'], port=port, look_for_keys=False, allow_agent=False, sock=ssh_data.get('socks5', None))
+                           auth_timeout=ssh_data['timeout'], port=port, look_for_keys=False, allow_agent=False,
+                           sock=sock)
             establishing_connection = False
             log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
-        except paramiko.ssh_exception.NoValidConnectionsError as exc:
+        except (paramiko.ssh_exception.NoValidConnectionsError, socket.timeout, socket.error) as exc:
             if attempts < ssh_data['timeout']:
                 sleep_time = 2 ** (attempts + 2)
                 time.sleep(sleep_time)
@@ -151,6 +163,9 @@ def is_active(client, paramiko_key, ssh_data, log):
             log.error("The attempt to connect to %s failed. Possible known reasons:"
                       "\n\t-Your network's security group doesn't allow SSH.", ssh_data['floating_ip'])
             raise ConnectionException(exc) from exc
+    print("Connection established")
+    stdin, stdout, stderr = client.exec_command('echo hoei $(hostname)')
+    input("I am waiting...")
 
 
 def line_buffered(f):
@@ -228,6 +243,7 @@ def execute_ssh(ssh_data, log):
             log.error(f"Couldn't connect to ip {ssh_data['gateway'] or ssh_data['floating_ip']} using private key "
                       f"{ssh_data['private_key']}.")
             raise exc
+
         log.debug(f"Setting up {ssh_data['floating_ip']}")
         if ssh_data['filepaths'] or ssh_data["write_remote"]:
             sftp = client.open_sftp()
