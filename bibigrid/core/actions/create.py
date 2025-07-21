@@ -15,7 +15,6 @@ from urllib.parse import urlparse
 import mergedeep
 import paramiko
 import sympy
-import yaml
 from werkzeug.utils import secure_filename
 
 from bibigrid.core.actions.terminate import delete_keypairs, delete_local_keypairs, terminate, write_cluster_state
@@ -82,6 +81,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.use_master_with_public_ip = not configurations[0].get("gateway") and configurations[0].get(
             "useMasterWithPublicIp", True)
         self.log.debug("Keyname: %s", self.key_name)
+        self.host_vars = {"host_entries": {}}
+        self.host_vars_lock = threading.Lock()
+        self.write_remote = []
 
         os.makedirs(os.path.join(CLUSTER_INFO_FOLDER), exist_ok=True)
         write_cluster_state(
@@ -270,6 +272,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         volume_size=boot_volume.get("size", 50),
                                         description=worker.get("description", configuration.get("description")),
                                         meta=meta)
+
         self.add_volume_device_info_to_instance(provider, server, worker)
 
         self.log.info(f"Worker {name} started on {provider.cloud_specification['identifier']}.")
@@ -277,16 +280,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # for DNS resolution an entry in the hosts file is created
         with self.worker_thread_lock:
             self.permanents.append(name)
-            with open(a_rp.HOSTS_FILE, mode="r", encoding="UTF-8") as hosts_file:
-                hosts = yaml.safe_load(hosts_file)
-            if not hosts or "host_entries" not in hosts:
-                self.log.warning("Hosts file is broken.")
-                hosts = {"host_entries": {}}
-            hosts["host_entries"][name] = server["private_v4"]
-            ansible_configurator.write_yaml(a_rp.HOSTS_FILE, hosts, self.log)
-            self.log.debug(f"Added worker {name} to hosts file {a_rp.HOSTS_FILE}.")
+            with self.host_vars_lock:
+                self.host_vars["host_entries"][name] = server["private_v4"]
+            self.log.debug(f"Added worker {name} to host vars.")
 
-    # pylint: disable=duplicate-code
     def create_server_volumes(self, provider, instance, name):
         """
         Creates all volumes of a single instance
@@ -295,7 +292,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @param name: sever name
         @return:
         """
-        self.log.info(f"Creating volumes for {name}...")
         return_volumes = []
         group_instance = {"volumes": []}  # TODO rethink naming
         if not instance.get("group_instances"):
@@ -305,23 +301,15 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         for i, volume in enumerate(instance.get("volumes", [])):
             self.log.debug(f"Volume {i}: {volume}")
-            if not volume.get("exists"):
-                if volume.get("permanent"):
-                    infix = "perm"
-                elif volume.get("semiPermanent"):
-                    infix = "semiperm"
-                else:
-                    infix = "tmp"
-                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
-                volume_name = f"{name}-{infix}-{i}{postfix}"
-            else:
-                volume_name = volume["name"]
-            group_instance["volumes"].append({**volume, "name": volume_name})
-
-            self.log.debug(f"Trying to find volume {volume_name}")
-            return_volume = provider.get_volume_by_id_or_name(volume_name)
+            volume_name = ansible_configurator.get_full_volume_name(volume, name, i)
+            volume_name_or_id = volume.get("id", volume_name)
+            self.log.debug(f"Checking if volume {volume_name_or_id} exists")
+            return_volume = provider.get_volume_by_id_or_name(volume_name_or_id)
             if not return_volume:
-                self.log.debug(f"Volume {volume_name} not found.")
+                if volume.get("exists"):
+                    raise ValueError(
+                        f"Volume {volume_name_or_id} doesn't exist but should. Please select an existing volume.")
+                self.log.debug(f"Volume {volume_name_or_id} not found.")
                 if volume.get('snapshot'):
                     self.log.debug("Creating volume from snapshot...")
                     return_volume = provider.create_volume_from_snapshot(volume['snapshot'], volume_name)
@@ -332,6 +320,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                                            volume_type=volume.get("type"),
                                                            description=f"Created for {name}")
                     self.log.info(f"Volumes {i} created for {name}...")
+            group_instance["volumes"].append({**volume, "name": volume_name, "id": return_volume["id"]})
             return_volumes.append(return_volume)
         return return_volumes
 
@@ -352,7 +341,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         if group_instance_volumes:
             for volume in group_instance_volumes:
                 server_volume = next((server_volume for server_volume in server_volumes if
-                                      server_volume["name"] == volume["name"]), None)
+                                      server_volume["id"] == volume["id"]), None)
                 if not server_volume:
                     raise RuntimeError(
                         f"Created server {server['name']} doesn't have attached volume {volume['name']}.")
@@ -363,9 +352,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                f"as device {device} that is going to be mounted to "
                                f"{volume.get('mountPoint')}")
 
-            ansible_configurator.write_yaml(os.path.join(a_rp.HOST_VARS_FOLDER, f"{server['name']}.yaml"),
-                                            {"volumes": final_volumes},
-                                            self.log)
+            self.write_remote.append(
+                ({"volumes": final_volumes}, os.path.join(a_rp.HOST_VARS_FOLDER_REMOTE, f"{server['name']}.yaml"),
+                 ))
 
     def prepare_vpn_or_master_args(self, configuration):
         """
@@ -477,20 +466,20 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @return:
         """
         self.log.debug("Running upload_data")
-        if not os.path.isfile(a_rp.HOSTS_FILE):
-            with open(a_rp.HOSTS_FILE, 'a', encoding='utf-8') as hosts_file:
-                hosts_file.write("# placeholder file for worker DNS entries (see 003-dns)")
 
-        ansible_configurator.configure_ansible_yaml(providers=self.providers, configurations=self.configurations,
-                                                    cluster_id=self.cluster_id, log=self.log)
-        ansible_start = ssh_handler.ANSIBLE_START
-        ansible_start[-1] = (ansible_start[-1][0].format(",".join(self.permanents)), ansible_start[-1][1])
+        self.write_remote = (self.write_remote +
+                             ansible_configurator.configure_ansible_yaml(providers=self.providers,
+                                                                         configurations=self.configurations,
+                                                                         cluster_id=self.cluster_id,
+                                                                         log=self.log))
+        self.write_remote.append((self.host_vars, a_rp.HOSTS_FILE_REMOTE))
+        ansible_start = ssh_handler.ansible_start(",".join(self.permanents))
         self.log.debug(f"Starting playbook with {ansible_start}.")
         if self.configurations[0].get("dontUploadCredentials"):
             commands = ansible_start
         else:
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
-                cluster_id=self.cluster_id))] + ssh_handler.ANSIBLE_START
+                cluster_id=self.cluster_id))] + ansible_start
         if clean_playbook:
             self.log.info("Cleaning Playbook")
             ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
@@ -502,7 +491,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
         self.log.info("Uploading Data")
         ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
-                    "commands": commands, "filepaths": UPLOAD_FILEPATHS,
+                    "commands": commands, "filepaths": UPLOAD_FILEPATHS, "write_remote": self.write_remote,
                     "gateway": self.configurations[0].get("gateway", {}),
                     "timeout": self.ssh_timeout}
         if self.configurations[0].get('socks5Proxy'):
@@ -518,7 +507,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.debug("Running start_start_server_threads")
         start_server_threads = []
         worker_count = 0
-        ansible_configurator.write_yaml(a_rp.HOSTS_FILE, {"host_entries": {}}, self.log)
         for configuration, provider in zip(self.configurations, self.providers):
             start_server_thread = return_threading.ReturnThread(target=self.start_vpn_or_master,
                                                                 args=[configuration, provider])
@@ -540,7 +528,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         for start_server_thread in start_server_threads:
             try:
                 start_server_thread.join()
-            except Exception as e: # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
                 self.log.warning(f"Worker thread {start_server_thread} raised exception {e}.")
                 worker_exceptions.append(e)
         if worker_exceptions:
@@ -660,10 +648,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         self.log.log(42, f"Cluster {self.cluster_id} with master {self.master_ip} up and running!")
         self.log.log(42, f"SSH: ssh -i '{KEY_FOLDER}{self.key_name}' {self.ssh_user}@{ssh_ip}"
                          f"{f' -p {port}' if gateway else ''}")
-        self.log.log(42, f"Terminate cluster: ./bibigrid.sh -i '{self.config_path}' -t -cid {self.cluster_id}")
-        self.log.log(42, f"Detailed cluster info: ./bibigrid.sh -i '{self.config_path}' -l -cid {self.cluster_id}")
+        self.log.log(42, f"Terminate cluster: ./bibigrid.sh terminate -i '{self.config_path}' -cid {self.cluster_id}")
+        self.log.log(42, f"Detailed cluster info: ./bibigrid.sh list -i '{self.config_path}' -cid {self.cluster_id}")
         if self.configurations[0].get("ide"):
-            self.log.log(42, f"IDE Port Forwarding: ./bibigrid.sh -i '{self.config_path}' -ide -cid {self.cluster_id}")
+            self.log.log(42, f"IDE Port Forwarding: ./bibigrid.sh ide -i '{self.config_path}' -cid {self.cluster_id}")
         write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
                              "floating_ip": self.configurations[0]["floating_ip"],
                              "state": "running",

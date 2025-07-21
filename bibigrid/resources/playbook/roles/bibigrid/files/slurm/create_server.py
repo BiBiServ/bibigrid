@@ -123,10 +123,12 @@ def create_server_volumes(connection, host_vars, name):
 
     logging.info(f"Instance Volumes {volumes}")
     for volume in volumes:
-        logging.debug(f"Trying to find volume {volume['name']}")
-        return_volume = connection.get_volume(volume['name'])
+        volume_id_or_name = volume.get('id', volume["name"])
+        logging.debug(f"Trying to find volume {volume_id_or_name}")
+
+        return_volume = connection.get_volume(volume_id_or_name)
         if not return_volume:
-            logging.debug(f"Volume {volume['name']} not found.")
+            logging.debug(f"Volume {volume_id_or_name} not found.")
 
             if volume.get('snapshot'):
                 logging.debug("Creating volume from snapshot...")
@@ -138,6 +140,7 @@ def create_server_volumes(connection, host_vars, name):
                 return_volume = connection.create_volume(name=volume['name'], size=volume.get("size", 50),
                                                          volume_type=volume.get("type"),
                                                          description=f"Created for {name}")
+        volume["id"] = return_volume["id"]
         return_volumes.append(return_volume)
     return return_volumes
 
@@ -154,21 +157,21 @@ def volumes_host_vars_update(connection, server, host_vars):
             volume = connection.get_volume(server_volume["id"])
             for attachment in volume["attachments"]:
                 if attachment["server_id"] == server["id"]:
-                    server_attachment.append({"name": volume["name"], "device": attachment["device"]})
+                    server_attachment.append({"id": volume["id"], "device": attachment["device"]})
                     break
         # add device info
         volumes = host_vars.get("volumes", [])
         if volumes:
             for volume in volumes:
-                logging.info(f"Finding device for {volume['name']}.")
+                logging.info(f"Finding device for {volume['id']}.")
                 server_volume = next((server_volume for server_volume in server_attachment if
-                                      server_volume["name"] == volume["name"]), None)
+                                      server_volume["id"] == volume["id"]), None)
                 if not server_volume:
                     raise RuntimeError(
-                        f"Created server {server['name']} doesn't have attached volume {volume['name']}.")
+                        f"Created server {server['name']} doesn't have attached volume {volume['id']}.")
                 volume["device"] = server_volume.get("device")
 
-                logging.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
+                logging.debug(f"Added Configuration: Instance {server['name']} has volume {volume['id']} "
                               f"as device {volume['device']} that is going to be mounted to "
                               f"{volume.get('mountPoint')}")
         with open(host_vars_path, mode="w+", encoding="UTF-8") as host_vars_file:

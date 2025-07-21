@@ -7,7 +7,7 @@ from pathlib import Path
 
 RESOURCES = "resources"
 # if the relative path from this file to resources is altered, the next line must be adapted or files will not be found.
-ROOT_PATH = Path(__file__).absolute().parents[4]
+ROOT_PATH = Path(__file__).absolute().parents[3]
 RESOURCES_PATH = os.path.join(ROOT_PATH, RESOURCES)
 
 CLOUD_NODE_REQUIREMENTS_FILE = "cloud_node_requirements.yaml"

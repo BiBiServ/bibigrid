@@ -4,22 +4,22 @@
 .vscode/
 
 # variable resources
-resources/playbook/ansible.cfg
-resources/playbook/roles/bibigrid/templates/slurm/slurm.j2
-resources/playbook/site.yaml
-resources/playbook/ansible_hosts
-resources/playbook/vars/
-resources/playbook/host_vars/
-resources/playbook/group_vars/
-resources/tests/bibigrid_test.yaml
-resources/tests/rest_test.json
+bibigrid/resources/playbook/ansible.cfg
+bibigrid/resources/playbook/roles/bibigrid/templates/slurm/slurm.j2
+bibigrid/resources/playbook/site.yaml
+bibigrid/resources/playbook/ansible_hosts
+bibigrid/resources/playbook/vars/
+bibigrid/resources/playbook/host_vars/
+bibigrid/resources/playbook/group_vars/
+bibigrid/resources/tests/bibigrid_test.yaml
+bibigrid/resources/tests/rest_test.json
 
 # Roles
-resources/playbook/roles_galaxy/*
-!resources/playbook/roles_galaxy/README
-resources/playbook/roles_user/*
-!resources/playbook/roles_user/README
-!resources/playbook/roles_user/resistance_nextflow
+bibigrid/resources/playbook/roles_galaxy/*
+!bibigrid/resources/playbook/roles_galaxy/README
+bibigrid/resources/playbook/roles_user/*
+!bibigrid/resources/playbook/roles_user/README
+!bibigrid/resources/playbook/roles_user/resistance_nextflow
 # any log files
 *.log
 log/
