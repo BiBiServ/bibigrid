@@ -141,7 +141,7 @@ def run_action(action, configurations, config_input, cluster_id, debug):
     LOG.log(42, f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
     return exit_state
 
-# pylint: disable=no-value-for-parameter
+# pylint: disable=no-value-for-parameter,too-many-positional-arguments
 @click.command(context_settings={"help_option_names":['-h', '--help']})
 @click.version_option(version.__version__, "-V", "--version", prog_name=version.PROG_NAME, message=version.MESSAGE)
 @click.option("-v", "--verbose", count=True, help="Increases logging verbosity.")
