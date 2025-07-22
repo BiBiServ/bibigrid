@@ -10,6 +10,7 @@ import sys
 import time
 import webbrowser
 
+import socks
 import sshtunnel
 import sympy
 
@@ -59,12 +60,14 @@ def ide(cluster_id, master_provider, master_configuration, log):
     @param cluster_id: cluster_id or ip
     @param master_provider: master's provider
     @param master_configuration: master's configuration
+    @param sock5_proxy: proxy address and port data
     @param log:
     @return:
     """
     log.info("Starting port forwarding for ide")
     master_ip, ssh_user, used_private_key = cluster_ssh_handler.get_ssh_connection_info(cluster_id, master_provider,
                                                                                         master_configuration, log)
+    sock5_proxy = master_configuration.get("sock5_proxy")
     used_local_bind_address = LOCAL_BIND_ADDRESS
     if master_ip and ssh_user and used_private_key:
         attempts = 0
@@ -77,10 +80,16 @@ def ide(cluster_id, master_provider, master_configuration, log):
         while attempts < 16:
             attempts += 1
             try:
+                sock = None
+                if sock5_proxy:
+                    log.debug("Creating SOCKS5 proxy sock")
+                    sock = socks.socksocket()
+                    sock.set_proxy(socks.SOCKS5, sock5_proxy["address"], sock5_proxy["port"])
                 with sshtunnel.SSHTunnelForwarder(ssh_address_or_host=gateway or master_ip, ssh_username=ssh_user,
                                                   ssh_pkey=used_private_key,
                                                   local_bind_address=(LOCALHOST, used_local_bind_address),
-                                                  remote_bind_address=(LOCALHOST, REMOTE_BIND_ADDRESS)) as server:
+                                                  remote_bind_address=(LOCALHOST, REMOTE_BIND_ADDRESS),
+                                                  ssh_proxy=sock) as server:
                     log.debug(f"Used {used_local_bind_address} as the local binding address")
                     log.log(42, "CTRL+C to close port forwarding when you are done.")
                     with server:
