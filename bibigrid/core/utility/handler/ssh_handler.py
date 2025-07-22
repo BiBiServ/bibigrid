@@ -163,9 +163,6 @@ def is_active(client, paramiko_key, ssh_data, log):
             log.error("The attempt to connect to %s failed. Possible known reasons:"
                       "\n\t-Your network's security group doesn't allow SSH.", ssh_data['floating_ip'])
             raise ConnectionException(exc) from exc
-    print("Connection established")
-    stdin, stdout, stderr = client.exec_command('echo hoei $(hostname)')
-    input("I am waiting...")
 
 
 def line_buffered(f):
