@@ -41,5 +41,15 @@ export https_proxy=socks5h://localhost:7777
 export no_proxy=localhost,127.0.0.1,::1
 ```
 
+and establish the connection:
+
+```shell
+ssh -D 7777 -f -C -q -N ls_username@jumphost_name
+```
+
+
+
+
+
 Make sure to set `sock5_proxy` correctly in the bibigrid.yaml.
 See [socks-proxy](../features/configuration.md#socks-proxy) for more information.
