@@ -115,7 +115,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
 
     def create_server(self, *, name, flavor, image, network, key_name=None, wait=True, volumes=None,
                       security_groups=None,
-                      # pylint: disable=too-many-positional-arguments,too-many-locals
+                      # pylint: disable=too-many-locals
                       boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50,
                       description="", meta=None):
         try:

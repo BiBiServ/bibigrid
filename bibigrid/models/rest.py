@@ -56,6 +56,7 @@ class Volume(BaseModel):
     fstype: Optional[str] = None
     type: Optional[str] = None
     name: Optional[str]
+    id: Optional[str]
     snapshot: Optional[str]
     permanent: Optional[bool]
     semiPermanent: Optional[bool]

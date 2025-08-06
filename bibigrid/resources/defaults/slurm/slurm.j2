@@ -49,7 +49,7 @@ Waittime=0
 # SCHEDULING
 SchedulerType=sched/backfill
 SelectType=select/cons_tres
-SelectTypeParameters=CR_Core
+SelectTypeParameters=CR_Core_Memory
 
 # ACCOUNTING
 AccountingStorageType=accounting_storage/slurmdbd
@@ -75,8 +75,9 @@ SlurmdLogFile=/var/log/slurm/slurmd.log
 {% set _ = exclude_groups.append(node.name) %}
 {% endif %}
 {% set _ = node_groups.append(node.name) %}
-{% set mem = (node.flavor.ram // 1024) * 1000 %}
-NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem - [mem // 2, 16000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) if node.features is defined }}# {{ node.cloud_identifier }}
+{# MiB to MB #}
+{% set mem = (node.flavor.ram * 1.048576) | int %}
+NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem }} MemSpecLimit={{ [mem//4 + 1000, 8000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) if node.features is defined }}# {{ node.cloud_identifier }}
 {% for partition in node.partitions %}
 {% if partition not in partitions %}
 {% set _ = partitions.update({partition: []}) %}

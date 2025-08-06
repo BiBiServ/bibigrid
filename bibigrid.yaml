@@ -81,9 +81,10 @@
     #   fstype: ext4 # must support chown
     #   type: # storage type; available values depend on your location; for Bielefeld CEPH_HDD, CEPH_NVME
     ## Select up to one of the following options; otherwise temporary is picked
-    #   exists: False # if True looks for existing volume with exact name. count must be 1. Volume is never deleted.
     #   permanent: False # if True volume is never deleted; overwrites semiPermanent if both are given
     #   semiPermanent: False # if True volume is only deleted during cluster termination
+    #   exists: False # if True looks for existing volume with exact name. count must be 1. Volume is never deleted.
+    ##   id: # set if exists: True; id of existing volume
 
   # fallbackOnOtherImage: False # if True, most similar image by name will be picked. A regex can also be given instead.
 
@@ -108,9 +109,10 @@
   #    #   fstype: ext4 # must support chown
   #    #   type: # storage type; available values depend on your location; for Bielefeld CEPH_HDD, CEPH_NVME
   #    ## Select up to one of the following options; otherwise temporary is picked
-  #    #   exists: False # if True looks for existing volume with exact name. count must be 1. Volume is never deleted.
   #    #   permanent: False # if True volume is never deleted; overwrites semiPermanent if both are given
   #    #   semiPermanent: False # if True volume is only deleted during cluster termination
+  #    #   exists: False # if True looks for existing volume with exact name. count must be 1. Volume is never deleted.
+  #    ##   id: # set if exists: True; id of existing volume
 
   # Depends on image
   sshUser: # for example 'ubuntu'

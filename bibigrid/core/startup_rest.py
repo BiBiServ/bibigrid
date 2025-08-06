@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from werkzeug.utils import secure_filename
 
 from bibigrid.core.actions import create, terminate, list_clusters
-from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
+from bibigrid.models.rest import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
     InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
     RequirementsModel
 from bibigrid.core.utility import validate_configuration, id_generation
