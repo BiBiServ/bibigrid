@@ -88,7 +88,7 @@ NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=
 {% endfor %}
 
 {% for key, value in partitions.items() %}
-PartitionName={{ key }} Nodes={{ value | join(",") }}
+PartitionName={{ key }} Nodes={{ value | join(",") }}{{ " Default=YES" if loop.last else ""}}
 {% endfor %}
 
 # JobSubmitPlugin
