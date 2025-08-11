@@ -76,7 +76,7 @@ SlurmdLogFile=/var/log/slurm/slurmd.log
 {% endif %}
 {% set _ = node_groups.append(node.name) %}
 {# MiB to MB #}
-{% set mem = (node.flavor.ram * 1.048576) | int %}
+{% set mem = (node.flavor.ram * 0.98 - 150) | int %} # EXPERIMENTAL
 NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem }} MemSpecLimit={{ [mem//4 + 1000, 8000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) if node.features is defined }}# {{ node.cloud_identifier }}
 {% for partition in node.partitions %}
 {% if partition not in partitions %}
