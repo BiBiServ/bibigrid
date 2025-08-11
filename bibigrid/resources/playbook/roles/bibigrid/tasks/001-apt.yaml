@@ -30,7 +30,7 @@
   when:
     - wait_for_services is defined
 
-- name: Update
+- name: Update & Upgrade before installing packages
   apt:
     update_cache: "yes"
     upgrade: "yes"
@@ -54,6 +54,7 @@
     force: true
   tags:
     - skip_ansible_lint
+  notify: Apt update
 
 - name: Add apt.bi.denbi.de repository key
   apt_key:
@@ -63,19 +64,7 @@
 - name: Add apt.bi.denbi.de repository
   apt_repository:
     repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
+  notify: Apt update
 
-- when: ansible_distribution_release == 'focal'
-  block:
-    - name: Add mariadb.org repository key
-      apt_key:
-        url: 'https://mariadb.org/mariadb_release_signing_key.asc'
-        state: present
-
-    - name: Add mariadb.org repository
-      apt_repository:
-        repo: 'deb https://mirror.netcologne.de/mariadb/repo/10.5/ubuntu focal main'
-
-- name: Update apt cache
-  apt:
-    upgrade: 'yes'
-    update_cache: 'yes'
+- name: Flush handlers
+  meta: flush_handlers
