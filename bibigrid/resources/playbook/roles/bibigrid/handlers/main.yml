@@ -70,3 +70,7 @@
 
 - name: Netplan apply
   command: netplan apply
+
+- name: Apt update
+  apt:
+    update_cache: "yes"
