@@ -20,6 +20,7 @@ bibigrid/resources/playbook/roles_galaxy/*
 bibigrid/resources/playbook/roles_user/*
 !bibigrid/resources/playbook/roles_user/README
 !bibigrid/resources/playbook/roles_user/resistance_nextflow
+!bibigrid/resources/playbook/roles_user/nextflow_cluster_test
 # any log files
 *.log
 log/

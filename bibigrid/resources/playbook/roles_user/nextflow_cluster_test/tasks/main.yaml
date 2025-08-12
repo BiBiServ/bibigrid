@@ -1,0 +1,42 @@
+- debug:
+    msg:
+    - "Running Nextflow Cluster Test: https://github.com/SimpleVM/nextflow-cluster-test"
+
+- name: Ensure Git is installed
+  apt:
+    name: git
+    state: present
+    update_cache: yes
+
+- name: Clone the repository
+  git:
+    repo: "https://github.com/SimpleVM/nextflow-cluster-test.git"
+    dest: "/vol/spool/nextflow-cluster-test"
+    version: master
+    force: yes
+
+- name: Install Java JRE on Debian/Ubuntu
+  become: True
+  apt:
+    name: default-jre
+    state: present
+
+- name: Get Nextflow
+  shell: wget -qO- https://get.nextflow.io | bash
+  args:
+    chdir: /vol/spool/
+
+- name: Change file ownership, group and permissions for nextflow
+  file:
+    path: /vol/spool/nextflow
+    owner: ubuntu
+    group: ubuntu
+    mode: '0775'
+
+- name: Change file ownership, group and permissions for cluster test
+  file:
+    path: /vol/spool/nextflow-cluster-test
+    owner: ubuntu
+    group: ubuntu
+    mode: '0775'
+    recurse: yes
