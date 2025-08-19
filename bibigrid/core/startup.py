@@ -115,6 +115,7 @@ def run_action(action, configurations, config_input, cluster_id, debug):
                                  cluster_id or 'None found')
 
                     if cluster_id:
+                        LOG.debug(f"CL Argument Cluster ID: {cluster_id}")
                         match action:
                             case 'terminate':
                                 LOG.info("Action terminate selected")
