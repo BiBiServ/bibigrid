@@ -66,7 +66,8 @@ def setup(cluster_id, configurations_json=None):
         if cluster_id and (
                 len(cluster_id) != id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
             id_generation.CLUSTER_UUID_ALPHABET)):
-            LOG.warning("Cluster id doesn't fit length or defined alphabet. Aborting.")
+            LOG.warning(f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
+            f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
             cluster_id = None # this will lead to an abort
         else:
             cluster_id = secure_filename(cluster_id)
