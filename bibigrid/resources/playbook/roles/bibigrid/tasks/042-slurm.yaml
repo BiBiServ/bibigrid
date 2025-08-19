@@ -81,6 +81,7 @@
     owner: slurm
     group: root
     mode: "0o444"
+    force: true
 
 - name: Create Job Container configuration
   template:
@@ -89,6 +90,7 @@
     owner: slurm
     group: root
     mode: "0o444"
+    force: true
 
 - name: Slurm cgroup configuration
   copy:

@@ -34,6 +34,7 @@ rest = [
     "uvicorn~=0.34.1"
 ]
 dev = [
+    "ansible>=7.0.0",
     "ansible_lint==24.9.0",
     "pylint==3.3",
     "httpx==0.28.1"
