@@ -12,6 +12,7 @@ import click
 import yaml
 
 from bibigrid.core.actions import check, create, ide, list_clusters, terminate, update, version
+from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import configuration_handler, provider_handler
 from bibigrid.core.utility.paths.basic_path import CONFIG_FOLDER, CLUSTER_MEMORY_PATH, ENFORCED_CONFIG_PATH, \
     DEFAULT_CONFIG_PATH
@@ -57,17 +58,21 @@ def set_logger_verbosity(verbosity):
     LOG.debug(f"Logging verbosity set to {capped_verbosity}")
 
 
-def check_cid(cid):
-    if "-" in cid:
-        new_cid = cid.split("-")[-1]
+def check_cid(cluster_id):
+    if "-" in cluster_id:
+        new_cid = cluster_id.split("-")[-1]
         LOG.info("-cid %s is not a cid, but probably the entire master name. Using '%s' as "
-                 "cid instead.", cid, new_cid)
+                 "cid instead.", cluster_id, new_cid)
         return new_cid
-    if "." in cid:
+    if "." in cluster_id:
         LOG.info("-cid %s is not a cid, but probably the master's ip. "
                  "Using the master ip instead of cid only works if a cluster key is in your systems default ssh key "
                  "location (~/.ssh/). Otherwise bibigrid can't identify the cluster key.")
-    return cid
+    if len(cluster_id) != id_generation.MAX_ID_LENGTH and not set(cluster_id).issubset(
+            id_generation.CLUSTER_UUID_ALPHABET):
+        LOG.warning("Cluster id doesn't fit length or defined alphabet. Aborting.")
+        raise RuntimeError("Cluster id doesn't fit length or defined alphabet. Aborting.")
+    return cluster_id
 
 
 def expand_path(path):
@@ -113,7 +118,6 @@ def run_action(action, configurations, config_input, cluster_id, debug):
                         cluster_id = get_cluster_id_from_mem()
                         LOG.info("No cid (cluster_id) specified. Defaulting to last created cluster: %s",
                                  cluster_id or 'None found')
-
                     if cluster_id:
                         LOG.debug(f"CL Argument Cluster ID: {cluster_id}")
                         match action:
@@ -133,7 +137,7 @@ def run_action(action, configurations, config_input, cluster_id, debug):
             for provider in providers:
                 provider.close()
 
-    except Exception as _: # pylint: disable=broad-exception-caught
+    except Exception as _:  # pylint: disable=broad-exception-caught
         exc_type, exc_value, exc_traceback = sys.exc_info()
         LOG.error("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
         exit_state = 2
@@ -142,8 +146,9 @@ def run_action(action, configurations, config_input, cluster_id, debug):
     LOG.log(42, f"--- {math.floor(time_in_s / 60)} minutes and {round(time_in_s % 60, 2)} seconds ---")
     return exit_state
 
+
 # pylint: disable=no-value-for-parameter,too-many-positional-arguments
-@click.command(context_settings={"help_option_names":['-h', '--help']})
+@click.command(context_settings={"help_option_names": ['-h', '--help']})
 @click.version_option(version.__version__, "-V", "--version", prog_name=version.PROG_NAME, message=version.MESSAGE)
 @click.option("-v", "--verbose", count=True, help="Increases logging verbosity.")
 @click.option("-d", "--debug", is_flag=True,
