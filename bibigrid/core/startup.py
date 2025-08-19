@@ -70,7 +70,9 @@ def check_cid(cluster_id):
                  "location (~/.ssh/). Otherwise bibigrid can't identify the cluster key.")
     if len(cluster_id) != id_generation.MAX_ID_LENGTH and not set(cluster_id).issubset(
             id_generation.CLUSTER_UUID_ALPHABET):
-        LOG.warning("Cluster id doesn't fit length or defined alphabet. Aborting.")
+        LOG.warning(
+            f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
+            f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
         raise RuntimeError("Cluster id doesn't fit length or defined alphabet. Aborting.")
     return cluster_id
 
