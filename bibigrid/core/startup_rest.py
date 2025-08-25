@@ -18,13 +18,13 @@ from fastapi.responses import JSONResponse
 from werkzeug.utils import secure_filename
 
 from bibigrid.core.actions import create, terminate, list_clusters
-from bibigrid.models.rest import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
-    RequirementsModel
 from bibigrid.core.utility import validate_configuration, id_generation
 from bibigrid.core.utility.handler import provider_handler, configuration_handler
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLOUD_NODE_REQUIREMENTS_PATH, \
     ENFORCED_CONFIG_PATH, DEFAULT_CONFIG_PATH
+from bibigrid.models.rest import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
+    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
+    RequirementsModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -67,8 +67,8 @@ def setup(cluster_id, configurations_json=None):
                 len(cluster_id) != id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
             id_generation.CLUSTER_UUID_ALPHABET)):
             LOG.warning(f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
-            f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
-            cluster_id = None # this will lead to an abort
+                        f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
+            cluster_id = None  # this will lead to an abort
         else:
             cluster_id = secure_filename(cluster_id)
     else:
@@ -80,8 +80,10 @@ def setup(cluster_id, configurations_json=None):
         log_handler.setFormatter(LOG_FORMATTER)
         log.addHandler(log_handler)
     if cluster_id is None:
-        log.error("Cluster id doesn't fit length or defined alphabet. Aborting.")
-        raise RuntimeError("Cluster id doesn't fit length or defined alphabet. Aborting.")
+        log.error(f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
+                  f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
+        raise RuntimeError(f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
+                           f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
 
     if configurations_json:
         configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
