@@ -68,7 +68,7 @@ def check_cid(cluster_id):
         LOG.info("-cid %s is not a cid, but probably the master's ip. "
                  "Using the master ip instead of cid only works if a cluster key is in your systems default ssh key "
                  "location (~/.ssh/). Otherwise bibigrid can't identify the cluster key.")
-    if len(cluster_id) != id_generation.MAX_ID_LENGTH and not set(cluster_id).issubset(
+    if len(cluster_id) != id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
             id_generation.CLUSTER_UUID_ALPHABET):
         LOG.warning(
             f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
