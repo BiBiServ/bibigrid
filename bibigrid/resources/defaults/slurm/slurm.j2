@@ -16,6 +16,9 @@ TaskPlugin=task/none
 #TaskPlugin=task/cgroup
 JobAcctGatherType=jobacct_gather/linux
 
+# RESOURCES
+GresTypes=gpu
+
 # SlurmctldParameters=cloud_dns
 # didn't work as expected. slurmctld tries to resolve all clients on startup which doesn't work obviously
 
@@ -77,7 +80,7 @@ SlurmdLogFile=/var/log/slurm/slurmd.log
 {% set _ = node_groups.append(node.name) %}
 {# MiB to MB #}
 {% set mem = (node.flavor.ram * 0.98 - 150) | int %} # EXPERIMENTAL
-NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem }} MemSpecLimit={{ [mem//4 + 1000, 8000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) if node.features is defined }}# {{ node.cloud_identifier }}
+NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem }} MemSpecLimit={{ [mem//4 + 1000, 8000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) + " " if node.features is defined}}{% if node.flavor.gres is defined and node.flavor.gres %}Gres={% for g in node.flavor.gres %}{{ g.name }}{% if g.type is defined and g.type %}:{{ g.type }}{% endif %}:{{ g.count }}{% if not loop.last %},{% endif %}{% endfor %} {% endif %}# {{ node.cloud_identifier }}# {{ node.cloud_identifier }}
 {% for partition in node.partitions %}
 {% if partition not in partitions %}
 {% set _ = partitions.update({partition: []}) %}

@@ -1,0 +1,8 @@
+# GRES CONFIG
+{% set device_index = 0 %}
+{% for gres in flavor.gres %}
+    {% for i in range(gres.count | int) %}
+Name={{ gres.name }} Type={{ gres.type }} File=/dev/nvidia{{ device_index }}
+        {% set device_index = device_index + 1 %}
+    {% endfor %}
+{% endfor %}

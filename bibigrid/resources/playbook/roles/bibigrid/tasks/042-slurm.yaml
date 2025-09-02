@@ -66,14 +66,6 @@
     owner: root
     group: root
 
-- name: Enable slurmd services
-  systemd:
-    name: "slurmd"
-    enabled: true
-    masked: false
-    state: started
-    daemon_reload: true
-
 - name: Create Slurm configuration
   template:
     src: slurm/slurm.j2
@@ -100,7 +92,28 @@
     group: root
     mode: "0o444"
 
-- name: Restart slurmd
+- name: Slurm cgroup configuration
+  copy:
+    src: slurm/cgroup.conf
+    dest: /etc/slurm/cgroup.conf
+    owner: slurm
+    group: root
+    mode: "0o444"
+
+- name: Create Slurm gres configuration
+  template:
+    src: slurm/gres.j2
+    dest: /etc/slurm/gres.conf
+    owner: slurm
+    group: root
+    mode: "0o444"
+    force: true
+  when: flavor.gres is defined
+
+- name: Enable slurmd services
   systemd:
-    name: slurmd
-    state: restarted
+    name: "slurmd"
+    enabled: true
+    masked: false
+    state: started
+    daemon_reload: true
