@@ -5,8 +5,12 @@
 
 - name: Docker
   systemd:
-    name: docker
+    name: "{{ item }}"
     state: restarted
+  loop:
+    - docker.socket
+    - docker
+
 
 - name: Munge
   systemd:
