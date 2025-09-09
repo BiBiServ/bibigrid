@@ -37,8 +37,7 @@
     owner: root
     group: root
     mode: "0o644"
-  notify:
-    Docker
+  register: docker_config
 
 - name: Create docker group and change GID
   group:
@@ -56,3 +55,6 @@
   systemd:
     name: docker.socket
     state: restarted
+  notify:
+    Docker
+  when: docker_config is changed
