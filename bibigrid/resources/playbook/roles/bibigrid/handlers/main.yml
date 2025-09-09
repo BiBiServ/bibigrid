@@ -3,10 +3,14 @@
     name: nfs-kernel-server
     state: restarted
 
-- name: Docker
+- name: Restart Docker and its socket
   systemd:
-    name: docker
+    name: "{{ item }}"
     state: restarted
+  loop:
+    - docker.socket
+    - docker
+
 
 - name: Munge
   systemd:
