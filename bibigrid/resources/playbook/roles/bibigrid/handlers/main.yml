@@ -3,7 +3,7 @@
     name: nfs-kernel-server
     state: restarted
 
-- name: Restart Docker and its socket
+- name: Docker
   systemd:
     name: "{{ item }}"
     state: restarted
