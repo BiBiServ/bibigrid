@@ -67,7 +67,7 @@ class TestStartup(TestCase):
             startup.run_action(action="create", configurations=configurations, config_input="", cluster_id=21,
                                debug=True) == 42)
         mock_create.assert_called_with(providers=[provider_mock], configurations=configurations, log=startup.LOG,
-                                       debug=True, config_path="")
+                                       debug=True, config_path="", cluster_id=21)
         creator.create.assert_called()
 
     @patch('bibigrid.core.utility.handler.provider_handler.get_providers')
