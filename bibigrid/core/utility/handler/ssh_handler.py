@@ -17,7 +17,7 @@ from bibigrid.core.utility.paths.basic_path import RESOURCES_PATH, CONFIG_FOLDER
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
-ANSIBLE_SETUP = [a_c.NO_UPDATE, a_c.UPDATE, a_c.PYTHON3_PIP, a_c.VENV_SETUP, a_c.ANSIBLE_PASSLIB, a_c.ANSIBLE_GALAXY,
+ANSIBLE_SETUP = [a_c.NO_UPDATE,a_c.WAIT_READY, a_c.UPDATE, a_c.PYTHON3_PIP, a_c.VENV_SETUP, a_c.ANSIBLE_PASSLIB, a_c.ANSIBLE_GALAXY,
                  (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."), a_c.PLAYBOOK_HOME,
                  a_c.PLAYBOOK_HOME_RIGHTS, a_c.ADD_PLAYBOOK_TO_LINUX_HOME]
 VPN_SETUP = [("echo Example", "Echos an Example")]
