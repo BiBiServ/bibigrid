@@ -12,13 +12,13 @@ bcrypt==4.3.0
     # via paramiko
 certifi==2025.8.3
     # via requests
-cffi==1.17.1
+cffi==2.0.0
     # via
     #   cryptography
     #   pynacl
 charset-normalizer==3.4.3
     # via requests
-click==8.2.1
+click==8.3.0
     # via bibigrid (pyproject.toml)
 cliff==4.11.0
     # via
@@ -26,7 +26,7 @@ cliff==4.11.0
     #   python-openstackclient
 cmd2==2.7.0
     # via cliff
-cryptography==44.0.3
+cryptography==46.0.1
     # via
     #   bibigrid (pyproject.toml)
     #   openstacksdk
@@ -41,17 +41,19 @@ decorator==5.2.1
     #   ipdb
     #   ipython
     #   openstacksdk
-dogpile-cache==1.4.0
+dogpile-cache==1.4.1
     # via openstacksdk
-executing==2.2.0
+executing==2.2.1
     # via stack-data
-filelock==3.16.1
+filelock==3.19.1
     # via bibigrid (pyproject.toml)
 idna==3.10
     # via requests
+invoke==2.2.0
+    # via paramiko
 ipdb==0.13.13
     # via bibigrid (pyproject.toml)
-ipython==9.4.0
+ipython==9.5.0
     # via ipdb
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -115,7 +117,7 @@ osc-lib==4.0.2
     # via python-openstackclient
 oslo-config==10.0.0
     # via python-keystoneclient
-oslo-i18n==6.5.1
+oslo-i18n==6.6.0
     # via
     #   osc-lib
     #   oslo-config
@@ -124,11 +126,11 @@ oslo-i18n==6.5.1
     #   python-keystoneclient
     #   python-novaclient
     #   python-openstackclient
-oslo-serialization==5.7.0
+oslo-serialization==5.8.0
     # via
     #   python-keystoneclient
     #   python-novaclient
-oslo-utils==9.0.0
+oslo-utils==9.1.0
     # via
     #   osc-lib
     #   oslo-serialization
@@ -140,7 +142,7 @@ packaging==25.0
     # via
     #   oslo-utils
     #   python-keystoneclient
-paramiko==3.5.1
+paramiko==4.0.0
     # via
     #   bibigrid (pyproject.toml)
     #   sshtunnel
@@ -158,7 +160,6 @@ pbr==7.0.1
     #   python-keystoneclient
     #   python-novaclient
     #   python-openstackclient
-    #   stevedore
 pexpect==4.9.0
     # via ipython
 prettytable==3.16.0
@@ -166,17 +167,17 @@ prettytable==3.16.0
     #   cliff
     #   python-cinderclient
     #   python-novaclient
-prompt-toolkit==3.0.51
+prompt-toolkit==3.0.52
     # via ipython
-psutil==7.0.0
+psutil==7.1.0
     # via oslo-utils
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pycparser==2.22
+pycparser==2.23
     # via cffi
-pydantic==2.11.7
+pydantic==2.11.9
     # via bibigrid (pyproject.toml)
 pydantic-core==2.33.2
     # via pydantic
@@ -185,11 +186,11 @@ pygments==2.19.2
     #   ipython
     #   ipython-pygments-lexers
     #   rich
-pynacl==1.5.0
+pynacl==1.6.0
     # via paramiko
-pyparsing==3.2.3
+pyparsing==3.2.5
     # via oslo-utils
-pyperclip==1.9.0
+pyperclip==1.10.0
     # via cmd2
 pysocks==1.7.1
     # via bibigrid (pyproject.toml)
@@ -197,11 +198,11 @@ python-cinderclient==9.6.0
     # via
     #   bibigrid (pyproject.toml)
     #   python-openstackclient
-python-keystoneclient==5.6.0
+python-keystoneclient==5.7.0
     # via
     #   bibigrid (pyproject.toml)
     #   python-openstackclient
-python-novaclient==18.10.0
+python-novaclient==18.11.0
     # via
     #   bibigrid (pyproject.toml)
     #   python-openstackclient
@@ -243,7 +244,7 @@ sshtunnel==0.4.0
     # via bibigrid (pyproject.toml)
 stack-data==0.6.3
     # via ipython
-stevedore==5.4.1
+stevedore==5.5.0
     # via
     #   cliff
     #   dogpile-cache
@@ -260,7 +261,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   pydantic
     #   pydantic-core
