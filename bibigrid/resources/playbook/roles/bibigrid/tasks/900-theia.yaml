@@ -16,25 +16,25 @@
 
 - name: Set fact 'theia_ide_user' when not defined
   set_fact:
-    theia_ide_user: "{{ ansible_env.SUDO_USER }}"
-  when: theia_ide_user is not defined
+    bibigrid_theia_ide_user: "{{ ansible_env.SUDO_USER }}"
+  when: bibigrid_theia_ide_user is not defined
 
 - when: ide_conf.workspace is defined and ide_conf.workspace != "${HOME}"
   block:
     - name: Check if given workspace exists
       stat:
         path: "{{ ide_conf.workspace }}"
-      register: workspace_path
+      register: bibigrid_workspace_path
 
     - name: Set fact 'theia_ide_workspace' when defined workspace exists
       set_fact:
-        theia_ide_workspace: "{{ ide_conf.workspace }}"
-      when: workspace_path.stat.exists and workspace.stat.isDir
+        bibigrid_theia_ide_workspace: "{{ ide_conf.workspace }}"
+      when: bibigrid_workspace_path.stat.exists and workspace.stat.isDir
 
 
 - name: Set fact 'theia_ide_workspace' to '${HOME}' when not defined
   set_fact:
-    theia_ide_workspace: "${HOME}"
+    bibigrid_theia_ide_workspace: "${HOME}"
   when: theia_ide_conf.workspace is not defined
 
 - name: Install nvm

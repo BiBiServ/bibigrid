@@ -1,5 +1,5 @@
 [Unit]
-Description=Theia-IDE service for user {{ theia_ide_user }}
+Description=Theia-IDE service for user {{ bibigrid_theia_ide_user }}
 After=network.target
 StartLimitIntervalSec=0
 
@@ -7,8 +7,8 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-User={{ theia_ide_user }}
-ExecStart={{ bibigrid_theia_ide_install_dir }}/theia-ide.sh {{ theia_ide_workspace }} {{ bibigrid_theia_ide_bind_address }} {{ bibigrid_theia_ide_bind_port }}
+User={{ bibigrid_theia_ide_user }}
+ExecStart={{ bibigrid_theia_ide_install_dir }}/theia-ide.sh {{ bibigrid_theia_ide_workspace }} {{ bibigrid_theia_ide_bind_address }} {{ bibigrid_theia_ide_bind_port }}
 
 [Install]
 WantedBy=multi-user.target

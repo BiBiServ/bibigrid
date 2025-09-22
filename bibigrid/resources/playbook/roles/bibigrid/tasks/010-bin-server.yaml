@@ -6,9 +6,9 @@
   delegate_to: localhost
   stat:
     path: "~{{ ansible_facts.env.SUDO_USER }}/bin"
-  register: folder
+  register: bibigrid_folder
 
-- when: folder.stat.exists
+- when: bibigrid_folder.stat.exists
   block:
     - name: Copy bin folder with owner and permission
       copy:

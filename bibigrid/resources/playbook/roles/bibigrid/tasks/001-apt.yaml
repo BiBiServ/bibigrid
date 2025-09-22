@@ -21,8 +21,8 @@
 
 - name: Wait for post-launch services to stop
   service_facts:
-  register: result
-  until: "item not in result.ansible_facts.services or result.ansible_facts.services[item].state == 'stopped'"
+  register: bibigrid_result
+  until: "item not in bibigrid_result.ansible_facts.services or bibigrid_result.ansible_facts.services[item].state == 'stopped'"
   retries: 12
   delay: 30
   with_items:

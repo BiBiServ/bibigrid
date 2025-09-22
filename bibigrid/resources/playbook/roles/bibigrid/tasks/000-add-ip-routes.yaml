@@ -8,7 +8,7 @@
         hidden: true
         recurse: true
         file_type: any
-      register: collected_files
+      register: bibigrid_collected_files
     - name: Copy files
       copy:
         src: "{{ item.path }}"
@@ -17,12 +17,12 @@
         group: root
         mode: "0o644"
         remote_src: true
-      with_items: "{{ collected_files.files }}"
+      with_items: "{{ bibigrid_collected_files.files }}"
     - name: Remove collected files
       file:
         path: "{{ item.path }}"
         state: absent
-      with_items: "{{ collected_files.files }}"
+      with_items: "{{ bibigrid_collected_files.files }}"
 
 - name: Disable cloud network changes after initialization
   lineinfile:
