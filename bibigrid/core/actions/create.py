@@ -375,7 +375,8 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         for configuration in self.configurations:
             ssh_data = {"floating_ip": configuration["floating_ip"], "private_key": KEY_FOLDER + self.key_name,
                         "username": self.ssh_user, "commands": None, "filepaths": None,
-                        "gateway": configuration.get("gateway", {}), "timeout": self.ssh_timeout}
+                        "gateway": configuration.get("gateway", {}), "timeout": self.ssh_timeout,
+                        "sock5_proxy": configuration.get("sock5_proxy")}
             if configuration.get("masterInstance"):
                 self.master_ip = configuration["floating_ip"]
                 wait_for_service_command, wait_for_service_message = ssh_handler.a_c.WAIT_FOR_SERVICES
@@ -433,17 +434,19 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         else:
             commands = [ssh_handler.get_ac_command(self.providers, AC_NAME.format(
                 cluster_id=self.cluster_id))] + ansible_start
+
         if clean_playbook:
             self.log.info("Cleaning Playbook")
             ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
                         "commands": [("rm -rf ~/playbook/*", "Remove Playbook")], "filepaths": [],
-                        "gateway": self.configurations[0].get("gateway", {}), "timeout": self.ssh_timeout}
+                        "gateway": self.configurations[0].get("gateway", {}), "timeout": self.ssh_timeout,
+                        "sock5_proxy": self.configurations[0].get("sock5_proxy")}
             ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
         self.log.info("Uploading Data")
         ssh_data = {"floating_ip": self.master_ip, "private_key": private_key, "username": self.ssh_user,
                     "commands": commands, "filepaths": UPLOAD_FILEPATHS, "write_remote": self.write_remote,
                     "gateway": self.configurations[0].get("gateway", {}),
-                    "timeout": self.ssh_timeout}
+                    "timeout": self.ssh_timeout, "sock5_proxy": self.configurations[0].get("sock5_proxy")}
         ssh_handler.execute_ssh(ssh_data=ssh_data, log=self.log)
 
     def start_start_server_threads(self):

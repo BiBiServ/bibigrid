@@ -113,7 +113,8 @@ class TestCreate(TestCase):
         ssh_data = {'floating_ip': floating_ip, 'private_key': create.KEY_FOLDER + creator.key_name,
                     'username': creator.ssh_user,
                     'commands': creator.ssh_add_public_key_commands + ssh_handler.ANSIBLE_SETUP,
-                    'filepaths': [(create.KEY_FOLDER + creator.key_name, '.ssh/id_ecdsa')], 'gateway': {}, 'timeout': 5}
+                    'filepaths': [(create.KEY_FOLDER + creator.key_name, '.ssh/id_ecdsa')], 'gateway': {},
+                    'sock5_proxy': None, 'timeout': 5}
         mock_execute_ssh.assert_called_with(ssh_data, startup.LOG)
 
     def test_prepare_configurations_no_network(self):
@@ -162,7 +163,8 @@ class TestCreate(TestCase):
                                                   cluster_id=creator.cluster_id, log=startup.LOG)
         ssh_data = {'floating_ip': creator.master_ip, 'private_key': create.KEY_FOLDER + creator.key_name,
                     'username': creator.ssh_user, 'commands': [mock_ac_ssh()] + ssh_handler.ansible_start("vpn"),
-                    'filepaths': create.UPLOAD_FILEPATHS, "write_remote": mock_configure_ansible().__radd__(), 'gateway': {}, 'timeout': 5}
+                    'filepaths': create.UPLOAD_FILEPATHS, "write_remote": mock_configure_ansible().__radd__(),
+                    'gateway': {}, 'timeout': 5, 'sock5_proxy': None}
         mock_execute_ssh.assert_called_with(ssh_data=ssh_data, log=startup.LOG)
 
     @patch.object(create.Create, "generate_keypair")

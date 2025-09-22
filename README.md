@@ -82,11 +82,11 @@ Refer to BiBiGrid's [Command Line Interface documentation](documentation/markdow
 A first execution run through could be:
 
 1. `./bibigrid.sh create -i [path-to-bibigrid.yaml]`: checks the configuration
-2. `./bibigrid.sh create -i 'bibigrid.yaml -i [path-to-bibigrid.yaml]'`: creates the cluster (execute only if check was successful)
+2. `./bibigrid.sh create -i [path-to-bibigrid.yaml]'`: creates the cluster (execute only if check was successful)
 3. Use **BiBiGrid's create output** to investigate the created cluster further. Especially connecting to the ide might be helpful. 
 Otherwise, connect using ssh.
 4. While in ssh try `sinfo` to printing node info
-5. Run `srun -x $(hostname) hostname` to power up a worker and get its hostname.
+5. Run `srun -w $(hostname) hostname` to power up a worker and get its hostname.
 6. Run `sinfo` again to see the node powering up. After a while it will be terminated again.
 7. Use the terminate command from **BiBiGrid's create output** to shut down the cluster again. 
 All floating-ips used will be released.
@@ -97,7 +97,7 @@ Great! You've just started and terminated your first cluster using BiBiGrid!
 
 ### Troubleshooting
 
-If your cluster doesn't start up, first ensure your configuration file is valid using the `-ch` option.
+If your cluster doesn't start up, first ensure your configuration file is valid using the `check` action.
 If the configuration is invalid, modify the file as needed.
 Use the `-v` or `-vv` options for more verbose output to help identify the issue faster.
 Also, double-check that you have sufficient permissions to access the project.
