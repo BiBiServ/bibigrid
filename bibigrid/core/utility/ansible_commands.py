@@ -13,8 +13,14 @@ NO_UPDATE = ("""sudo sed -i 's/APT::Periodic::Unattended-Upgrade "1";/APT::Perio
 # PIP = f"sudo pip3 install --upgrade pip {TO_LOG}"
 # SETUPTOOLS = "sudo pip3 install setuptools"
 # LOG = "export ANSIBLE_LOG_PATH=~/ansible.log"
-WAIT_READY = ('while sudo lsof /var/lib/dpkg/lock 2> null; do echo "/var/lib/dpkg/lock locked - wait for 10 seconds"; '
-              'sleep 10; done', "Wait for dpkg lock removed.")
+WAIT_READY = (
+    'while sudo lsof /var/lib/dpkg/lock '
+    '/var/lib/dpkg/lock-frontend '
+    '/var/cache/apt/archives/lock '
+    '/var/lib/apt/lists/lock 2>/dev/null | grep -q -v "COMMAND"; '
+    'do echo "APT/dpkg locks present - wait for 10 seconds"; sleep 10; done',
+    "Wait for all relevant apt/dpkg locks to be removed."
+)
 # SLEEP_10 = "sleep 10s"
 # RANDOM = "sudo DEBIAN_FRONTEND=noninteractive apt-get --yes  install apt-transport-https ca-certificates " \
 #         "software-properties-common python3 python3-pip libffi-dev libssl-dev"

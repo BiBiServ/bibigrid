@@ -19,14 +19,14 @@
     - name: Check if the OpenStack credentials file exists
       stat:
         path: /etc/openstack/clouds.yaml
-      register: file_stat
+      register: bibigrid_file_stat
 
     - name: Change group ownership of OpenStack credentials file to slurm
       file:
         path: /etc/openstack/clouds.yaml
         group: slurm
         mode: "0o640"  # (owner can read/write, group can read, others have no access)
-      when: file_stat.stat.exists
+      when: bibigrid_file_stat.stat.exists
 
 - name: Create slurm db
   mysql_db:
@@ -94,7 +94,7 @@
 
 - name: Register Slurm users home dir
   shell: "set -o pipefail &&  grep slurm /etc/passwd | cut -d ':' -f 6"
-  register: slurm_home
+  register: bibigrid_slurm_home
   changed_when: false
   args:
     executable: bash
@@ -217,7 +217,7 @@
     daemon_reload: true
 
 
-- when: slurm_home.stdout != '/opt/slurm'
+- when: bibigrid_slurm_home.stdout != '/opt/slurm'
   block:
     - name: Stop Slurm Services
       systemd:

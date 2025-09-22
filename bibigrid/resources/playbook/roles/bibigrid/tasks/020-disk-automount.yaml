@@ -10,15 +10,15 @@
 
     - name: Get volume filesystem using lsblk
       command: "lsblk -no FSTYPE {{ item.device }}"
-      register: filesystem_type
-      until: filesystem_type.stdout != ""
+      register: bibigrid_filesystem_type
+      until: bibigrid_filesystem_type.stdout != ""
       retries: 5
       delay: 2
       changed_when: false
 
     - name: Log the filesystem type
       debug:
-        msg: "Filesystem type is {{ filesystem_type.stdout }}"
+        msg: "Filesystem type is {{ bibigrid_filesystem_type.stdout }}"
 
     - name: Create mount folders if they don't exist
       file:
@@ -33,4 +33,4 @@
         path: "{{ item.mountPoint }}"
         src: "{{ item.device }}"
         state: mounted
-        fstype: "{{ filesystem_type.stdout }}"
+        fstype: "{{ bibigrid_filesystem_type.stdout }}"
