@@ -143,26 +143,15 @@ def is_active(client, paramiko_key, ssh_data, log):
                            sock=sock)
             establishing_connection = False
             log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
-        except (paramiko.ssh_exception.NoValidConnectionsError, socket.timeout, socket.error) as exc:
+        except (TimeoutError, socket.timeout, paramiko.ssh_exception.NoValidConnectionsError, OSError) as exc:
             if attempts < ssh_data['timeout']:
                 sleep_time = 2 ** (attempts + 2)
                 time.sleep(sleep_time)
-                log.info(f"Waiting {sleep_time} before attempting to reconnect.")
+                log.warning(f"Attempt {attempts} failed. Retrying in {sleep_time} seconds...")
                 attempts += 1
             else:
-                log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed.")
+                log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed after {attempts} tries.")
                 raise ConnectionException(exc) from exc
-        except socket.timeout as exc:
-            log.warning("Socket timeout exception occurred. Try again ...")
-            if attempts < ssh_data['timeout']:
-                attempts += 1
-            else:
-                log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed, due to a socket timeout.")
-                raise ConnectionException(exc) from exc
-        except TimeoutError as exc:  # pylint: disable=duplicate-except
-            log.error("The attempt to connect to %s failed. Possible known reasons:"
-                      "\n\t-Your network's security group doesn't allow SSH.", ssh_data['floating_ip'])
-            raise ConnectionException(exc) from exc
 
 
 def line_buffered(f):

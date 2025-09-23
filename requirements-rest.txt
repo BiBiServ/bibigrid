@@ -2,7 +2,7 @@
 #    uv pip compile --extra rest pyproject.toml
 annotated-types==0.7.0
     # via pydantic
-anyio==4.10.0
+anyio==4.11.0
     # via starlette
 appdirs==1.4.4
     # via openstacksdk
@@ -59,8 +59,6 @@ idna==3.10
     # via
     #   anyio
     #   requests
-invoke==2.2.0
-    # via paramiko
 ipdb==0.13.13
     # via bibigrid (pyproject.toml)
 ipython==9.5.0
@@ -152,7 +150,7 @@ packaging==25.0
     # via
     #   oslo-utils
     #   python-keystoneclient
-paramiko==4.0.0
+paramiko==3.5.1
     # via
     #   bibigrid (pyproject.toml)
     #   sshtunnel
@@ -295,7 +293,7 @@ urllib3==2.5.0
     # via requests
 uvicorn==0.36.0
     # via bibigrid (pyproject.toml)
-wcwidth==0.2.13
+wcwidth==0.2.14
     # via
     #   cmd2
     #   prettytable

@@ -13,7 +13,7 @@ ansible-core==2.19.2
     #   ansible-lint
 ansible-lint==25.9.0
     # via bibigrid (pyproject.toml)
-anyio==4.10.0
+anyio==4.11.0
     # via
     #   httpx
     #   starlette
@@ -104,8 +104,6 @@ idna==3.10
     #   requests
 importlib-metadata==8.7.0
     # via ansible-lint
-invoke==2.2.0
-    # via paramiko
 ipdb==0.13.13
     # via bibigrid (pyproject.toml)
 ipython==9.5.0
@@ -217,7 +215,7 @@ packaging==25.0
     #   black
     #   oslo-utils
     #   python-keystoneclient
-paramiko==4.0.0
+paramiko==3.5.1
     # via
     #   bibigrid (pyproject.toml)
     #   sshtunnel
@@ -337,7 +335,7 @@ rpds-py==0.27.1
     #   referencing
 ruamel-yaml==0.18.15
     # via ansible-lint
-ruamel-yaml-clib==0.2.12
+ruamel-yaml-clib==0.2.14
     # via
     #   ansible-lint
     #   ruamel-yaml
@@ -403,7 +401,7 @@ uvicorn==0.36.0
     # via bibigrid (pyproject.toml)
 wcmatch==10.1
     # via ansible-lint
-wcwidth==0.2.13
+wcwidth==0.2.14
     # via
     #   cmd2
     #   prettytable
