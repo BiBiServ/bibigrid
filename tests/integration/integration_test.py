@@ -19,7 +19,7 @@ BIBIGRID_SCRIPT = os.path.abspath("../../bibigrid.sh")
 def start_cluster():
     """Start the cluster by calling bibigrid.sh."""
     print("Starting the cluster...")
-    result = subprocess.run([BIBIGRID_SCRIPT, "-c", "-vv", "-i", "bibigrid.yaml"], capture_output=True, text=True,
+    result = subprocess.run([BIBIGRID_SCRIPT, "create", "-vv", "-i", "bibigrid.yaml"], capture_output=True, text=True,
                             check=False)
     if result.returncode == 0:
         print("Cluster started successfully.")
@@ -58,7 +58,7 @@ def ssh_command(master_ip, keyfile, command, ssh_user):
 def terminate_cluster():
     """Terminate the cluster by calling bibigrid.sh."""
     print("Terminating the cluster...")
-    result = subprocess.run([BIBIGRID_SCRIPT, "-i", "bibigrid.yaml", "-t", "-vv"], capture_output=True, text=True,
+    result = subprocess.run([BIBIGRID_SCRIPT, "terminate", "-i", "bibigrid.yaml", "-vv"], capture_output=True, text=True,
                             check=False)
     if result.returncode == 0:
         print("Cluster terminated successfully.")

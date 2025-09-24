@@ -1,0 +1,36 @@
+- when: item.mountPoint is defined
+  block:
+    - name: Make sure disks are available
+      failed_when: false
+      filesystem:
+        fstype: "{{ item.fstype | default('ext4') }}"
+        dev: "{{ item.device }}"
+        force: false
+        state: present
+
+    - name: Get volume filesystem using lsblk
+      command: "lsblk -no FSTYPE {{ item.device }}"
+      register: bibigrid_filesystem_type
+      until: bibigrid_filesystem_type.stdout != ""
+      retries: 5
+      delay: 2
+      changed_when: false
+
+    - name: Log the filesystem type
+      debug:
+        msg: "Filesystem type is {{ bibigrid_filesystem_type.stdout }}"
+
+    - name: Create mount folders if they don't exist
+      file:
+        path: "{{ item.mountPoint }}"
+        state: directory
+        mode: "0o755"
+        owner: root
+        group: '{{ ansible_distribution | lower }}'
+
+    - name: Mount disks
+      mount:
+        path: "{{ item.mountPoint }}"
+        src: "{{ item.device }}"
+        state: mounted
+        fstype: "{{ bibigrid_filesystem_type.stdout }}"

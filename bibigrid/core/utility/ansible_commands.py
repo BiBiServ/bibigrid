@@ -2,9 +2,6 @@
 Module containing a bunch of useful commands to be used by sshHandler.py for cluster setup
 """
 
-import os
-import bibigrid.core.utility.paths.ansible_resources_path as a_rp
-
 # TO_LOG = "| sudo tee -a /var/log/ansible.log"
 # AIY = "apt-get -y install"
 # SAU = "sudo apt-get update"
@@ -16,8 +13,14 @@ NO_UPDATE = ("""sudo sed -i 's/APT::Periodic::Unattended-Upgrade "1";/APT::Perio
 # PIP = f"sudo pip3 install --upgrade pip {TO_LOG}"
 # SETUPTOOLS = "sudo pip3 install setuptools"
 # LOG = "export ANSIBLE_LOG_PATH=~/ansible.log"
-WAIT_READY = ('while sudo lsof /var/lib/dpkg/lock 2> null; do echo "/var/lib/dpkg/lock locked - wait for 10 seconds"; '
-              'sleep 10; done', "Wait for dpkg lock removed.")
+WAIT_READY = (
+    'while sudo lsof /var/lib/dpkg/lock '
+    '/var/lib/dpkg/lock-frontend '
+    '/var/cache/apt/archives/lock '
+    '/var/lib/apt/lists/lock 2>/dev/null | grep -q -v "COMMAND"; '
+    'do echo "APT/dpkg locks present - wait for 10 seconds"; sleep 10; done',
+    "Wait for all relevant apt/dpkg locks to be removed."
+)
 # SLEEP_10 = "sleep 10s"
 # RANDOM = "sudo DEBIAN_FRONTEND=noninteractive apt-get --yes  install apt-transport-https ca-certificates " \
 #         "software-properties-common python3 python3-pip libffi-dev libssl-dev"
@@ -49,9 +52,6 @@ PLAYBOOK_HOME_RIGHTS = ("uid=$(id -u); gid=$(id -g); sudo chown ${uid}:${gid} /o
                         "Adjust playbook home permission.")
 MV_ANSIBLE_CONFIG = (
     "sudo install -D /opt/playbook/ansible.cfg /etc/ansible/ansible.cfg", "Move ansible configuration.")
-EXECUTE = (f"/opt/bibigrid-venv/bin/ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE_YAML)} -i "
-           f"{os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.ANSIBLE_HOSTS)} -l {{}}",
-           "Execute ansible playbook. Be patient.")
 
 # ansible setup
 WAIT_FOR_SERVICES = (
@@ -59,9 +59,9 @@ WAIT_FOR_SERVICES = (
     "Waiting for service {service}.")
 UPDATE = ("sudo apt-get update", "Update apt repository lists.")
 PYTHON3_PIP = ("sudo apt-get install -y python3-pip python3-venv", "Install python3 pip and venv using apt.")
-VENV_SETUP = ("sudo python3 -m venv /opt/bibigrid-venv"," Create bibigrid virtual environment.")
+VENV_SETUP = ("sudo python3 -m venv /opt/bibigrid-venv", " Create bibigrid virtual environment.")
 ANSIBLE_PASSLIB = ("sudo /opt/bibigrid-venv/bin/pip install ansible==10.7 passlib",
                    "Install Ansible 10.7 and Passlib using pip.")
-ANSIBLE_GALAXY = ("sudo /opt/bibigrid-venv/bin/ansible-galaxy collection install "+
+ANSIBLE_GALAXY = ("sudo /opt/bibigrid-venv/bin/ansible-galaxy collection install " +
                   "-p /usr/share/ansible/collections community.zabbix==3.2.0",
                   "Install necessary ansible-galaxy modules.")

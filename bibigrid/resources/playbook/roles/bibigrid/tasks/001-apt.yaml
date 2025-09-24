@@ -1,0 +1,70 @@
+- name: Debian based system
+  debug:
+    msg: Using apt to install packages
+
+- name: Disable auto-update/upgrade during ansible-run
+  copy:
+    src: disable-auto-upgrades.conf
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0o644"
+
+- name: Wait for cloud-init / user-data to finish
+  command: cloud-init status --wait
+  changed_when: false
+
+- name: Wait for /var/lib/dpkg/lock-frontend to be released
+  shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
+  tags:
+    - skip_ansible_lint
+
+- name: Wait for post-launch services to stop
+  service_facts:
+  register: bibigrid_result
+  until: "item not in bibigrid_result.ansible_facts.services or bibigrid_result.ansible_facts.services[item].state == 'stopped'"
+  retries: 12
+  delay: 30
+  with_items:
+    - "{{ wait_for_services }}"
+  when:
+    - wait_for_services is defined
+
+- name: Update & Upgrade before installing packages
+  apt:
+    update_cache: "yes"
+    upgrade: "yes"
+
+- name: Install common packages
+  apt:
+    name:
+      - "apt-transport-https"
+      - "ca-certificates"
+      - "curl"
+      - "software-properties-common"
+      - "python3-pip"
+      - "python3-setuptools"
+    state: "present"
+
+- name: Add zabbix repositories # noqa: line-length
+  apt:
+    # yamllint disable-line
+    deb: "https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+{{ ansible_distribution | lower }}{{ ansible_distribution_version }}_all.deb"
+    state: present
+    force: true
+  tags:
+    - skip_ansible_lint
+  notify: Apt update
+
+- name: Add apt.bi.denbi.de repository key
+  apt_key:
+    url: 'https://apt.bi.denbi.de/repo_key.key'
+    state: present
+
+- name: Add apt.bi.denbi.de repository
+  apt_repository:
+    repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
+  notify: Apt update
+
+- name: Flush handlers
+  meta: flush_handlers

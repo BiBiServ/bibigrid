@@ -19,6 +19,19 @@ def str_dict_or_none(d):
     return d
 
 
+VOLUMES = [{
+    Optional('name'): str,
+    Optional('id'): str,
+    Optional('snapshot'): str,  # optional; to create volume from
+    # one or none of these
+    Optional('permanent'): bool,
+    Optional('semiPermanent'): bool,
+    Optional('exists'): bool,
+    Optional('mountPoint'): str,
+    Optional('size'): int,
+    Optional('fstype'): str,
+    Optional('type'): str}]
+
 WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'): bool, Optional('partitions'): [str],
           Optional('features'): [str],
           Optional('securityGroups'): [str],
@@ -27,17 +40,7 @@ WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'
               Optional('terminate'): bool,
               Optional('size'): int
           },
-          Optional('volumes'): [{
-              Optional('name'): str,
-              Optional('snapshot'): str,  # optional; to create volume from
-              # one or none of these
-              Optional('permanent'): bool,
-              Optional('semiPermanent'): bool,
-              Optional('exists'): bool,
-              Optional('mountPoint'): str,
-              Optional('size'): int,
-              Optional('fstype'): str,
-              Optional('type'): str}],
+          Optional('volumes'): VOLUMES,
           Optional('meta'): Use(str_dict_or_none)
           }
 
@@ -50,17 +53,7 @@ MASTER = VPN = {'type': str, 'image': str, Optional('count'): 1, Optional('onDem
                     Optional('terminate'): bool,
                     Optional('size'): int
                 },
-                Optional('volumes'): [{
-                    Optional('name'): str,
-                    Optional('snapshot'): str,  # optional; to create volume from
-                    # one or none of these
-                    Optional('permanent'): bool,
-                    Optional('semiPermanent'): bool,
-                    Optional('exists'): bool,
-                    Optional('mountPoint'): str,
-                    Optional('size'): int,
-                    Optional('fstype'): str,
-                    Optional('type'): str}],
+                Optional('volumes'): VOLUMES,
                 Optional('meta'): Use(str_dict_or_none)
                 }
 

@@ -7,20 +7,28 @@ import socket
 import time
 
 import paramiko
+import socks
 import sympy
 import yaml
 
 from bibigrid.core.utility import ansible_commands as a_c
+from bibigrid.core.utility import yaml_dumper
+from bibigrid.core.utility.paths import ansible_resources_path as a_rp
 from bibigrid.core.utility.paths.basic_path import RESOURCES_PATH, CONFIG_FOLDER
 from bibigrid.models.exceptions import ConnectionException, ExecutionException
 
 PRIVATE_KEY_FILE = ".ssh/id_ecdsa"  # to name bibigrid-temp keys identically on remote
-ANSIBLE_SETUP = [a_c.NO_UPDATE, a_c.UPDATE, a_c.PYTHON3_PIP, a_c.VENV_SETUP, a_c.ANSIBLE_PASSLIB, a_c.ANSIBLE_GALAXY,
-                 (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."), a_c.PLAYBOOK_HOME,
-                 a_c.PLAYBOOK_HOME_RIGHTS, a_c.ADD_PLAYBOOK_TO_LINUX_HOME]
-# ANSIBLE_START = [aC.WAIT_READY, aC.UPDATE, aC.MV_ANSIBLE_CONFIG, aC.EXECUTE]  # another UPDATE seems to not necessary.
-ANSIBLE_START = [a_c.WAIT_READY, a_c.MV_ANSIBLE_CONFIG, a_c.EXECUTE]
+ANSIBLE_SETUP = [a_c.NO_UPDATE, a_c.WAIT_READY, a_c.UPDATE, a_c.PYTHON3_PIP, a_c.VENV_SETUP, a_c.ANSIBLE_PASSLIB,
+                 a_c.ANSIBLE_GALAXY, (f"chmod 600 {PRIVATE_KEY_FILE}", "Adjust private key permissions."),
+                 a_c.PLAYBOOK_HOME, a_c.PLAYBOOK_HOME_RIGHTS, a_c.ADD_PLAYBOOK_TO_LINUX_HOME]
 VPN_SETUP = [("echo Example", "Echos an Example")]
+
+
+def ansible_start(ansible_run_node_list):
+    return [a_c.WAIT_READY, a_c.MV_ANSIBLE_CONFIG,
+            (f"/opt/bibigrid-venv/bin/ansible-playbook {os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.SITE_YAML)} -i "
+             f"{os.path.join(a_rp.PLAYBOOK_PATH_REMOTE, a_rp.ANSIBLE_HOSTS)} -l {ansible_run_node_list}",
+             "Execute ansible playbook. Be patient.")]
 
 
 def get_ac_command(providers, name):
@@ -111,39 +119,39 @@ def is_active(client, paramiko_key, ssh_data, log):
     establishing_connection = True
     log.info(f"Attempting to connect to {ssh_data['floating_ip']}... This might take a while")
     port = 22
+
+    sock = None
+
     if ssh_data.get('gateway'):
         log.info(f"Using SSH Gateway {ssh_data['gateway'].get('ip')}")
         octets = {f'oct{enum + 1}': int(elem) for enum, elem in enumerate(ssh_data['floating_ip'].split("."))}
         port = int(sympy.sympify(ssh_data['gateway']["portFunction"]).subs(dict(octets)))
         log.info(f"Port {port} will be used (see {ssh_data['gateway']['portFunction']} and octets {octets}).")
+
     while establishing_connection:
         try:
             log.info(f"Attempt {attempts}/{ssh_data['timeout']}. Connecting to {ssh_data['floating_ip']}")
+            if ssh_data.get('sock5_proxy'):
+                log.debug("Trying to connect socket.")
+                sock = socks.socksocket()
+                sock.set_proxy(socks.SOCKS5, addr=ssh_data["sock5_proxy"]["address"],
+                               port=ssh_data["sock5_proxy"]["port"])
+                sock.connect((ssh_data['gateway'].get("ip") or ssh_data['floating_ip'], 22))
             client.connect(hostname=ssh_data['gateway'].get("ip") or ssh_data['floating_ip'],
                            username=ssh_data['username'], pkey=paramiko_key, timeout=7,
-                           auth_timeout=ssh_data['timeout'], port=port, look_for_keys=False, allow_agent=False)
+                           auth_timeout=ssh_data['timeout'], port=port, look_for_keys=False, allow_agent=False,
+                           sock=sock)
             establishing_connection = False
             log.info(f"Successfully connected to {ssh_data['floating_ip']}.")
-        except paramiko.ssh_exception.NoValidConnectionsError as exc:
+        except (TimeoutError, socket.timeout, paramiko.ssh_exception.NoValidConnectionsError, OSError) as exc:
             if attempts < ssh_data['timeout']:
                 sleep_time = 2 ** (attempts + 2)
                 time.sleep(sleep_time)
-                log.info(f"Waiting {sleep_time} before attempting to reconnect.")
+                log.warning(f"Attempt {attempts} failed. Retrying in {sleep_time} seconds...")
                 attempts += 1
             else:
-                log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed.")
+                log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed after {attempts} tries.")
                 raise ConnectionException(exc) from exc
-        except socket.timeout as exc:
-            log.warning("Socket timeout exception occurred. Try again ...")
-            if attempts < ssh_data['timeout']:
-                attempts += 1
-            else:
-                log.error(f"Attempt to connect to {ssh_data['floating_ip']} failed, due to a socket timeout.")
-                raise ConnectionException(exc) from exc
-        except TimeoutError as exc:  # pylint: disable=duplicate-except
-            log.error("The attempt to connect to %s failed. Possible known reasons:"
-                      "\n\t-Your network's security group doesn't allow SSH.", ssh_data['floating_ip'])
-            raise ConnectionException(exc) from exc
 
 
 def line_buffered(f):
@@ -210,6 +218,8 @@ def execute_ssh(ssh_data, log):
         ssh_data["filepaths"] = []
     if ssh_data.get("commands") is None:
         ssh_data["commands"] = []
+    if ssh_data.get("write_remote") is None:
+        ssh_data["write_remote"] = []
     paramiko_key = paramiko.ECDSAKey.from_private_key_file(ssh_data["private_key"])
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -221,12 +231,38 @@ def execute_ssh(ssh_data, log):
             raise exc
 
         log.debug(f"Setting up {ssh_data['floating_ip']}")
-        if ssh_data['filepaths']:
-            log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")
+        if ssh_data['filepaths'] or ssh_data["write_remote"]:
             sftp = client.open_sftp()
-            for local_path, remote_path in ssh_data['filepaths']:
-                copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
-            log.debug("SFTP: Files %s copied.", ssh_data['filepaths'])
+            if ssh_data['filepaths']:
+                log.debug(f"Setting up filepaths for {ssh_data['floating_ip']}")
+                for local_path, remote_path in ssh_data['filepaths']:
+                    copy_to_server(sftp=sftp, local_path=local_path, remote_path=remote_path, log=log)
+                log.debug("SFTP: Files %s copied.", ssh_data['filepaths'])
+            if ssh_data["write_remote"]:
+                log.debug(f"Writing files for {ssh_data['floating_ip']}")
+                for data, remote_path in ssh_data['write_remote']:
+                    write_to_remote_file(sftp=sftp, data=data, remote_path=remote_path, log=log)
+                log.debug("SFTP: Files %s created.", ssh_data['filepaths'])
         if ssh_data["floating_ip"]:
             log.debug(f"Setting up commands for {ssh_data['floating_ip']}")
             execute_ssh_cml_commands(client=client, commands=ssh_data["commands"], log=log)
+
+
+def write_to_remote_file(sftp, remote_path, data, log):
+    """
+    Writes data to a file on the server.
+
+    @param sftp: sftp connection
+    @param remote_path: path to the file on the remote server
+    @param data: data to be written to the file
+    @param log: logger for logging activities
+    """
+    log.debug("Writing data to %s...", remote_path)
+
+    try:
+        with sftp.file(remote_path, 'w') as remote_file:
+            remote_file.write(yaml.dump(data=data, Dumper=yaml_dumper.NoAliasSafeDumper))
+        log.debug("Successfully wrote data to %s", remote_path)
+    except Exception as e:
+        log.error("Failed to write data to %s: %s", remote_path, str(e))
+        raise

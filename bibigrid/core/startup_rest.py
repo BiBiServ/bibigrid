@@ -18,13 +18,13 @@ from fastapi.responses import JSONResponse
 from werkzeug.utils import secure_filename
 
 from bibigrid.core.actions import create, terminate, list_clusters
-from bibigrid.core.rest.models import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
-    RequirementsModel
 from bibigrid.core.utility import validate_configuration, id_generation
 from bibigrid.core.utility.handler import provider_handler, configuration_handler
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLOUD_NODE_REQUIREMENTS_PATH, \
     ENFORCED_CONFIG_PATH, DEFAULT_CONFIG_PATH
+from bibigrid.models.rest import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
+    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
+    RequirementsModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -63,7 +63,14 @@ def setup(cluster_id, configurations_json=None):
     @return: A tuple containing the cluster_id and the configured logger.
     """
     if cluster_id:
-        cluster_id = secure_filename(cluster_id)
+        if cluster_id and (
+                len(cluster_id) != id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
+            id_generation.CLUSTER_UUID_ALPHABET)):
+            LOG.warning(f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
+                        f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
+            cluster_id = None  # this will lead to an abort
+        else:
+            cluster_id = secure_filename(cluster_id)
     else:
         cluster_id = id_generation.generate_cluster_id()
     log = logging.getLogger(cluster_id)
@@ -72,6 +79,12 @@ def setup(cluster_id, configurations_json=None):
         log_handler = logging.FileHandler(os.path.join(LOG_FOLDER, f"{cluster_id}.log"))
         log_handler.setFormatter(LOG_FORMATTER)
         log.addHandler(log_handler)
+    if cluster_id is None:
+        log.error(f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
+                  f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
+        raise RuntimeError(f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
+                           f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
+
     if configurations_json:
         configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         configurations = configuration_handler.merge_configurations(user_config=configurations,
@@ -106,8 +119,13 @@ async def validate_configuration_json(configurations_json: ConfigurationsModel, 
     @param configurations_json: The configuration JSON to be validated.
     @return: A JSON response indicating the success or failure of the validation.
     """
-    cluster_id, log, configurations = setup(cluster_id, configurations_json)
     LOG.info(f"Requested validation on {cluster_id}")
+
+    try:
+        cluster_id, log, configurations = setup(cluster_id, configurations_json)
+    except RuntimeError:
+        return JSONResponse(content={"message": "Cluster id malformed."}, status_code=422)
+
     try:
         providers = provider_handler.get_providers(configurations, log)
         success = validate_configuration.ValidateConfiguration(configurations, providers, log).validate()
@@ -133,7 +151,11 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
     @return: A JSON response indicating whether the cluster creation has started and the cluster ID.
     """
     LOG.debug(f"Requested creation on {cluster_id}")
-    cluster_id, log, configurations = setup(cluster_id, configurations_json)
+
+    try:
+        cluster_id, log, configurations = setup(cluster_id, configurations_json)
+    except RuntimeError:
+        return JSONResponse(content={"message": "Cluster id malformed."}, status_code=422)
 
     try:
         providers = provider_handler.get_providers(configurations, log)
@@ -160,8 +182,12 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
     @param configurations_json: The configuration JSON for the cluster.
     @return: A JSON response indicating whether the cluster termination has started.
     """
-    cluster_id, log, configurations = setup(cluster_id, configurations_json)
     LOG.debug(f"Requested termination on {cluster_id}")
+
+    try:
+        cluster_id, log, configurations = setup(cluster_id, configurations_json)
+    except RuntimeError:
+        return JSONResponse(content={"message": "Cluster id malformed."}, status_code=422)
 
     try:
         providers = provider_handler.get_providers(configurations, log)
@@ -206,7 +232,12 @@ async def get_log(cluster_id: str, lines: int = None):
     @return: A JSON response containing the log text.
     """
     LOG.debug(f"Requested log on {cluster_id}.")
-    cluster_id, log, _ = setup(cluster_id)
+
+    try:
+        cluster_id, log, _ = setup(cluster_id)
+    except RuntimeError:
+        return JSONResponse(content={"message": "Cluster id malformed."}, status_code=422)
+
     try:
         base_path = os.path.normpath(LOG_FOLDER)
         file_name = os.path.normpath(os.path.join(base_path, f"{cluster_id}.log"))
@@ -235,7 +266,12 @@ async def state(cluster_id: str):
     @return: A JSON response containing the cluster state.
     """
     LOG.debug(f"Requested log on {cluster_id}.")
-    cluster_id, log, _ = setup(cluster_id)
+
+    try:
+        cluster_id, log, _ = setup(cluster_id)
+    except RuntimeError:
+        return JSONResponse(content={"message": "Cluster id malformed."}, status_code=422)
+
     try:
         cluster_info_path = os.path.normpath(os.path.join(CLUSTER_INFO_FOLDER, f"{cluster_id}.yaml"))
         if not cluster_info_path.startswith(os.path.normpath(CLUSTER_INFO_FOLDER)):

@@ -328,7 +328,7 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
             volume = self.get_volume_by_id_or_name(server_volume["id"])
             for attachment in volume["attachments"]:
                 if attachment["server_id"] == server["id"]:
-                    volumes.append({"name": volume["name"], "device": attachment["device"]})
+                    volumes.append({"id": volume["id"], "device": attachment["device"]})
                     break
         return volumes
 
@@ -339,4 +339,8 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         @return: a dictionary containing only the FLAVOR_KEYS
         """
         flavor = self.get_flavor(flavor)
-        return {key: flavor[key] for key in FLAVOR_KEYS}
+        return_flavor = {key: flavor[key] for key in FLAVOR_KEYS}
+        if flavor.get("extra_specs") and flavor["extra_specs"].get("pci_passthrough:alias"):
+            gpu_type, gpu_count = flavor["extra_specs"]['pci_passthrough:alias'].split(":")
+            return_flavor["gres"] = [{"type": gpu_type, "name": "gpu", "count": int(gpu_count)}]
+        return return_flavor

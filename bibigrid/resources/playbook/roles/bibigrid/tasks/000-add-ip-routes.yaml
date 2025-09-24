@@ -1,0 +1,56 @@
+- name: Disable netplan configuration files
+  notify:
+    - Netplan apply
+  block:
+    - name: Collect files
+      find:
+        paths: /etc/netplan/
+        hidden: true
+        recurse: true
+        file_type: any
+      register: bibigrid_collected_files
+    - name: Copy files
+      copy:
+        src: "{{ item.path }}"
+        dest: "{{ item.path }}.disabled"
+        owner: root
+        group: root
+        mode: "0o644"
+        remote_src: true
+      with_items: "{{ bibigrid_collected_files.files }}"
+    - name: Remove collected files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ bibigrid_collected_files.files }}"
+
+- name: Disable cloud network changes after initialization
+  lineinfile:
+    path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    line: "network: {config: disabled}"
+    owner: root
+    group: root
+    mode: "0o644"
+    create: true
+
+- name: Generate location specific worker userdata
+  template:
+    src: networking/bibigrid_ens3.network.j2
+    dest: "/etc/systemd/network/bibigrid_ens3.network"
+    owner: root
+    group: systemd-network
+    mode: "0o640"
+  become: true
+  notify:
+    - Systemd-networkd restart
+
+- name: Generate location specific worker userdata
+  template:
+    src: networking/bibigrid_ens3.link.j2
+    dest: "/etc/systemd/network/bibigrid_ens3.link"
+    owner: root
+    group: systemd-network
+    mode: "0o640"
+  become: true
+  notify:
+    - Systemd-networkd restart

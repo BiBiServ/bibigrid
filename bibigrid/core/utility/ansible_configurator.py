@@ -56,29 +56,35 @@ def generate_site_file_yaml(user_roles):
     return site_yaml
 
 
-def write_worker_host_vars(*, cluster_id, worker, worker_count, log):
+def get_full_volume_name(volume, name, count):
+    if volume.get("exists"):
+        return volume.get("name")
+    if volume.get("permanent"):
+        infix = "perm"
+    elif volume.get("semiPermanent"):
+        infix = "semiperm"
+    else:
+        infix = "tmp"
+    postfix = f"-{volume.get('name')}" if volume.get('name') else ''
+    return f"{name}-{infix}-{count}{postfix}"
+
+
+def get_worker_host_vars(*, cluster_id, worker, worker_count):
+    write_host_vars_remote = []
     for worker_number in range(worker.get('count', 1)):
         name = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
         write_volumes = []
         for i, volume in enumerate(worker.get("volumes", [])):
-            if not volume.get("exists"):
-                if volume.get("permanent"):
-                    infix = "perm"
-                elif volume.get("semiPermanent"):
-                    infix = "semiperm"
-                else:
-                    infix = "tmp"
-                postfix = f"-{volume.get('name')}" if volume.get('name') else ''
-                volume_name = f"{name}-{infix}-{i}{postfix}"
-            else:
-                volume_name = volume["name"]
+            volume_name = get_full_volume_name(volume, name, i)
             write_volumes.append({**volume, "name": volume_name})
-        write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"),
-                   {"volumes": write_volumes},
-                   log)
+        write_host_vars_remote.append(
+            ({"volumes": write_volumes}, os.path.join(aRP.HOST_VARS_FOLDER_REMOTE, f"{name}.yaml")))
+    return write_host_vars_remote
 
 
-def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_count, log):
+def get_worker_vars(*, provider, configuration, cluster_id, worker,
+                    worker_count):  # pylint: disable-msg=too-many-locals
+    write_worker_vars_remote = []
     flavor_dict = provider.create_flavor_dict(flavor=worker["type"])
     name = WORKER_IDENTIFIER(cluster_id=cluster_id,
                              additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
@@ -91,7 +97,8 @@ def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_cou
                    "network": configuration["network"], "flavor": flavor_dict,
                    "gateway_ip": configuration["private_v4"],
                    "cloud_identifier": configuration["cloud_identifier"],
-                   "on_demand": worker.get("onDemand", True), "state": "CLOUD",
+                   "on_demand": worker.get("onDemand", True),
+                   "state": "CLOUD",
                    "partitions": partitions,
                    "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {})),
                    "meta": mergedeep.merge({}, worker.get("meta", {}), configuration.get("meta", {})),
@@ -107,15 +114,15 @@ def write_worker_vars(*, provider, configuration, cluster_id, worker, worker_cou
         worker_dict["features"] = features
 
     pass_through(configuration, worker_dict, "waitForServices", "wait_for_services")
-    write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, f"{group_name}.yaml"), worker_dict, log)
+    write_worker_vars_remote.append((worker_dict, os.path.join(aRP.GROUP_VARS_FOLDER_REMOTE, f"{group_name}.yaml")))
     if worker_dict["on_demand"]:  # not on demand instances host_vars are created in create
-        write_worker_host_vars(cluster_id=cluster_id, worker=worker, worker_count=worker_count,
-                               log=log)
+        write_worker_vars_remote = write_worker_vars_remote + get_worker_host_vars(cluster_id=cluster_id, worker=worker,
+                                                                                   worker_count=worker_count)
     worker_count += worker.get('count', 1)
-    return worker_count
+    return worker_count, write_worker_vars_remote
 
 
-def write_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count, log):
+def get_vpn_vars(*, provider, configuration, cluster_id, vpngtw, vpn_count):
     name = VPNGTW_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
     wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
     vpn_count += 1
@@ -131,10 +138,10 @@ def write_vpn_var(*, provider, configuration, cluster_id, vpngtw, vpn_count, log
     if configuration.get("wireguard_peer"):
         vpngtw_dict["wireguard"] = {"ip": wireguard_ip, "peer": configuration.get("wireguard_peer")}
     pass_through(configuration, vpngtw_dict, "waitForServices", "wait_for_services")
-    write_yaml(os.path.join(aRP.HOST_VARS_FOLDER, f"{name}.yaml"), vpngtw_dict, log)
+    return vpngtw_dict, os.path.join(aRP.HOST_VARS_FOLDER_REMOTE, f"{name}.yaml")
 
 
-def write_master_var(provider, configuration, cluster_id, log):
+def get_master_vars(provider, configuration, cluster_id):
     master = configuration["masterInstance"]
     name = MASTER_IDENTIFIER(cluster_id=cluster_id)
     flavor_dict = provider.create_flavor_dict(flavor=master["type"])
@@ -152,10 +159,10 @@ def write_master_var(provider, configuration, cluster_id, log):
     if configuration.get("wireguard_peer"):
         master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
     pass_through(configuration, master_dict, "waitForServices", "wait_for_services")
-    write_yaml(os.path.join(aRP.GROUP_VARS_FOLDER, "master.yaml"), master_dict, log)
+    return master_dict, os.path.join(aRP.GROUP_VARS_FOLDER_REMOTE, "master.yaml")
 
 
-def write_host_and_group_vars(configurations, providers, cluster_id, log):
+def get_host_and_group_vars(configurations, providers, cluster_id, log):
     """
     Filters unnecessary information
     @param log:
@@ -167,17 +174,21 @@ def write_host_and_group_vars(configurations, providers, cluster_id, log):
     log.info("Generating instances file...")
     worker_count = 0
     vpn_count = 0
+    write_remote = []
     for configuration, provider in zip(configurations, providers):  # pylint: disable=too-many-nested-blocks
         for worker in configuration.get("workerInstances", []):
-            worker_count = write_worker_vars(provider=provider, configuration=configuration, cluster_id=cluster_id,
-                                             worker=worker, worker_count=worker_count, log=log)
-
+            worker_count, write_worker_vars_remote = get_worker_vars(provider=provider, configuration=configuration,
+                                                                     cluster_id=cluster_id,
+                                                                     worker=worker, worker_count=worker_count)
+            write_remote = write_remote + write_worker_vars_remote
         vpngtw = configuration.get("vpnInstance")
         if vpngtw:
-            write_vpn_var(provider=provider, configuration=configuration, cluster_id=cluster_id, vpngtw=vpngtw,
-                          vpn_count=vpn_count, log=log)
+            write_remote.append(
+                get_vpn_vars(provider=provider, configuration=configuration, cluster_id=cluster_id, vpngtw=vpngtw,
+                             vpn_count=vpn_count))
         else:
-            write_master_var(provider, configuration, cluster_id, log)
+            write_remote.append(get_master_vars(provider, configuration, cluster_id))
+    return write_remote
 
 
 def pass_through(dict_from, dict_to, key_from, key_to=None):
@@ -361,6 +372,8 @@ def write_yaml(path, generated_yaml, log, alias=False):
     @param log:
     @param alias:
     @return:
+    TODO: This method should be moved to a different file as it is no longer used here but at other places
+    which are not related to ansible_configurator
     """
     log.debug("Writing yaml %s", path)
 
@@ -398,21 +411,19 @@ def configure_ansible_yaml(providers, configurations, cluster_id, log):
     @return:
     """
     log.info("Writing ansible files...")
-    alias = configurations[0].get("aliasDumper", False)
     user_roles = configurations[0].get("userRoles", [])
     default_user = providers[0].cloud_specification["auth"].get("username", configurations[0].get("sshUser", "Ubuntu"))
     add_wireguard_peers(configurations)
-    for path, generated_yaml in [
-        (aRP.WORKER_SPECIFICATION_FILE, generate_worker_specification_file_yaml(configurations, log)), (
-                aRP.COMMONS_CONFIG_FILE,
-                generate_common_configuration_yaml(cidrs=get_cidrs(configurations), configurations=configurations,
-                                                   cluster_id=cluster_id, ssh_user=configurations[0]["sshUser"],
-                                                   default_user=default_user, log=log)), (aRP.HOSTS_CONFIG_FILE,
-                                                                                          generate_ansible_hosts_yaml(
-                                                                                              configurations[0][
-                                                                                                  "sshUser"],
-                                                                                              configurations,
-                                                                                              cluster_id, log)),
-        (aRP.SITE_CONFIG_FILE, generate_site_file_yaml(user_roles))]:
-        write_yaml(path, generated_yaml, log, alias)
-    write_host_and_group_vars(configurations, providers, cluster_id, log)  # writing included in method
+    write_remote = []
+    for write_remote_tuple in [
+        (generate_worker_specification_file_yaml(configurations, log), aRP.WORKER_SPECIFICATION_FILE_REMOTE),
+        (generate_common_configuration_yaml(cidrs=get_cidrs(configurations), configurations=configurations,
+                                            cluster_id=cluster_id, ssh_user=configurations[0]["sshUser"],
+                                            default_user=default_user, log=log), aRP.COMMONS_CONFIG_FILE_REMOTE),
+        (generate_ansible_hosts_yaml(configurations[0]["sshUser"], configurations, cluster_id, log),
+         aRP.HOSTS_CONFIG_FILE_REMOTE),
+        (generate_site_file_yaml(user_roles), aRP.SITE_CONFIG_FILE_REMOTE)]:
+        write_remote.append(write_remote_tuple)
+    write_remote = write_remote + get_host_and_group_vars(configurations, providers, cluster_id,
+                                                          log)
+    return write_remote
