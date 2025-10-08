@@ -14,6 +14,8 @@ a cloud IDE for writing, running and debugging (Theia Web IDE) and many more.
 > The [previous version](https://github.com/BiBiServ/bibigrid/tree/bibigrid-2.3.1) is still available, 
 > but not maintained anymore.
 
+[![DOI](https://zenodo.org/badge/62865240.svg)](https://doi.org/10.5281/zenodo.17192506)
+
 ## Getting Started
 
 You can install BiBiGrid as a package via `pip install -e .` while being in the bibigrid repository folder.
