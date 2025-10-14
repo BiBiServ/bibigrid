@@ -55,16 +55,7 @@ class Volume(BaseModel):
     size: Optional[int] = 50
     fstype: Optional[str] = None
     type: Optional[str] = None
-    name: Optional[str]
-    id: Optional[str]
-    snapshot: Optional[str]
-    permanent: Optional[bool]
-    semiPermanent: Optional[bool]
-    exists: Optional[bool]
-    mountPoint: Optional[str]
-    size: Optional[int]
-    fstype: Optional[str]
-    type: Optional[str]
+    id: Optional[str] = None
 
 
 class Instance(BaseModel):
