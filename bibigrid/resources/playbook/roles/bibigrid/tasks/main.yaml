@@ -61,7 +61,6 @@
   when: "'master' in group_names"
   tags:
     - "dns"
-    - "always"
   block:
     - debug:
         msg: "[BIBIGRID] Setup DNS"
