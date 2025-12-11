@@ -19,7 +19,7 @@
     - name: Running 000-add-ip-routes.yaml
       debug:
         msg: "[BIBIGRID] Adding ip routes"
-    - import_tasks: 000-add-ip-routes.yaml
+    - include_tasks: 000-add-ip-routes.yaml
 
 - name: Setup common software and dependencies - server rights
   when: "'master' in group_names"
@@ -27,7 +27,7 @@
     - name: Running 000-playbook-rights-server.yaml
       debug:
         msg: "[BIBIGRID] Update permissions"
-    - import_tasks: 000-playbook-rights-server.yaml
+    - include_tasks: 000-playbook-rights-server.yaml
 
 - name: Setup common software and dependencies for Debian
   when: "ansible_distribution_file_variety == 'Debian'"
@@ -38,7 +38,7 @@
     - name: Running 001-apt.yaml
       debug:
         msg: "[BIBIGRID] Setup common software and dependencies"
-    - import_tasks: 001-apt.yaml
+    - include_tasks: 001-apt.yaml
 
 - name: Setup common software and dependencies for RedHat
   when: "ansible_distribution_file_variety == 'RedHat'"
@@ -47,7 +47,7 @@
   block:
     - debug:
         msg: "[BIBIGRID] Setup common software and dependencies"
-    - import_tasks: 001-yum.yaml
+    - include_tasks: 001-yum.yaml
 
 - name: Configure Wireguard for VPNs
   when: "'vpn' in group_names and wireguard is defined"
@@ -55,7 +55,7 @@
   block:
     - debug:
         msg: "[BIBIGRID] Configure Wireguard for VPNs"
-    - import_tasks: 002-wireguard-vpn.yaml
+    - include_tasks: 002-wireguard-vpn.yaml
 
 - name: Setup DNS
   when: "'master' in group_names"
@@ -64,7 +64,7 @@
   block:
     - debug:
         msg: "[BIBIGRID] Setup DNS"
-    - import_tasks: 003-dns.yaml
+    - include_tasks: 003-dns.yaml
 
 - name: Update host file on worker
   when: "'workers' in group_names"
@@ -73,7 +73,7 @@
   block:
     - debug:
         msg: "[BIBIGRID] Update hosts"
-    - import_tasks: 004-update-hosts.yaml
+    - include_tasks: 004-update-hosts.yaml
 
 - name: Configure database
   when: "'master' in group_names"
@@ -83,7 +83,7 @@
   block:
     - debug:
         msg: "[BIBIGRID] Configure database"
-    - import_tasks: 006-database.yaml
+    - include_tasks: 006-database.yaml
 
 - name: Setup additional binary executables /usr/local/bin/
   when:
@@ -93,7 +93,7 @@
   block:
     - debug:
         msg: "[BIBIGRID] Setup additional binary executables /usr/local/bin/"
-    - import_tasks: 010-bin-server.yaml
+    - include_tasks: 010-bin-server.yaml
 
 - name: Setup Zabbix
   when:
@@ -103,14 +103,14 @@
   block:
     - debug:
         msg: "[BIBIGRID] Setup Zabbix"
-    - import_tasks: 011-zabbix-server.yaml
+    - include_tasks: 011-zabbix-server.yaml
       when: "'master' in group_names"
-    - import_tasks: 011-zabbix-agent.yaml
+    - include_tasks: 011-zabbix-agent.yaml
 
 - debug:
     msg: "[BIBIGRID] Generate directory structure available on all hosts"
 - name: Generate general directory structure available on all hosts
-  import_tasks: 020-disk.yaml
+  include_tasks: 020-disk.yaml
   tags:
     - "disk"
 
@@ -122,15 +122,15 @@
   block:
     - debug:
         msg: "[BIBIGRID] Setup NFS"
-    - import_tasks: 025-nfs-server.yaml
+    - include_tasks: 025-nfs-server.yaml
       when: "'master' in group_names"
-    - import_tasks: 025-nfs-worker.yaml
+    - include_tasks: 025-nfs-worker.yaml
       when: "'master' not in group_names"
 
 - name: Setup Docker
   debug:
     msg: "[BIBIGRID] Setup Docker"
-- import_tasks: 030-docker.yaml
+- include_tasks: 030-docker.yaml
   tags:
     - "docker"
 
@@ -140,9 +140,9 @@
   block:
     - debug:
         msg: "[BIBIGRID] Setup Slurm"
-    - import_tasks: 042-slurm.yaml
+    - include_tasks: 042-slurm.yaml
       when: "'vpngtw' not in group_names"
-    - import_tasks: 042-slurm-server.yaml
+    - include_tasks: 042-slurm-server.yaml
       when: "'master' in group_names"
 
 - name: Setup Theia
@@ -154,7 +154,7 @@
   block:
     - debug:
         msg: "[BIBIGRID] Setup Theia"
-    - import_tasks: 900-theia.yaml
+    - include_tasks: 900-theia.yaml
 
 - name: APT Reactivate Auto Update
   when: "ansible_distribution_file_variety == 'Debian'"
@@ -164,4 +164,4 @@
     - name: Running 999-apt-reactivate-auto-update.yaml
       debug:
         msg: "[BIBIGRID] APT Reactivate Auto Update"
-    - import_tasks: 999-apt-reactivate-auto-update.yaml
+    - include_tasks: 999-apt-reactivate-auto-update.yaml
