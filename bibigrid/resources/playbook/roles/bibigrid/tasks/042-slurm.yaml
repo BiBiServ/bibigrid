@@ -22,11 +22,15 @@
   apt:
     name: slurm-bibigrid-24.11
     state: present
+  tags:
+    - "image"
 
 - name: Install Slurm package dependencies
   apt:
     name:
       - munge
+  tags:
+    - "image"
 
 - name: Create new secret (Munge)
   copy:

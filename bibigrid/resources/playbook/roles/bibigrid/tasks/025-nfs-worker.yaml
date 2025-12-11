@@ -2,6 +2,8 @@
   apt:
     name: "nfs-common"
     state: present
+  tags:
+    - "image"
 
 - name: Wait for nfs-server available
   wait_for:

@@ -3,3 +3,5 @@
     name:
       - mariadb-server
       - python3-pymysql
+  tags:
+    - "image"

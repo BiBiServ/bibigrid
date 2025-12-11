@@ -3,6 +3,8 @@
     url: https://download.docker.com/linux/ubuntu/gpg
     keyring: /etc/apt/keyrings/docker.gpg
     state: present
+  tags:
+    - "image"
 
 
 - name: Add Docker repository
@@ -16,6 +18,8 @@
   vars:
     arch_mapping:
       x86_64: amd64
+  tags:
+    - "image"
 
 - name: Install Docker
   apt:
@@ -25,7 +29,9 @@
       - docker-compose
       - docker-compose-plugin
     state: present
-  tags: install
+  tags:
+    - "install"
+    - "image"
 
 - name: Configure Docker
   copy:
