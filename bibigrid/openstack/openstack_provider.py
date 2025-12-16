@@ -242,9 +242,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param server:
         @return:
         """
-        floating_ip = self.conn.available_floating_ip(network=network)
-        if server:
-            self.conn.compute.add_floating_ip_to_server(server, floating_ip["floating_ip_address"])
+        floating_ip = self.conn.available_floating_ip(network=network, server=server)
+        self.conn.add_ip_list(server, [floating_ip["floating_ip_address"]])
         return floating_ip
 
     def get_images(self):
@@ -343,7 +342,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param name_or_id:
         @return:
         """
-        return self.conn.get_server(name_or_id)
+        return self.conn.get_server(name_or_id).to_dict()
 
     def create_volume(self, *, name, size, wait=True, volume_type=None, description=None):
         """
@@ -364,7 +363,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param name_or_id:
         @return: True if deletion was successful, else False
         """
-        return self.conn.delete_volume(name_or_id=name_or_id)
+        return self.conn.delete_volume(name_or_id=name_or_id, wait=True)
 
     def list_volumes(self):
         """

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Creates one or more instances from comma separated name list.
-Is called automatically by create.sh (called by slurm user automatically) which sources a virtual environment.
+Is called automatically by resume.sh (called by slurm user automatically) which sources a virtual environment.
 """
 import difflib
 import logging
