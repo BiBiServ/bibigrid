@@ -41,6 +41,7 @@ WORKER = {'type': str, 'image': str, Optional('count'): int, Optional('onDemand'
               Optional('size'): int
           },
           Optional('volumes'): VOLUMES,
+          Optional('serverGroup'): str,
           Optional('meta'): Use(str_dict_or_none)
           }
 
@@ -54,11 +55,12 @@ MASTER = VPN = {'type': str, 'image': str, Optional('count'): 1, Optional('onDem
                     Optional('size'): int
                 },
                 Optional('volumes'): VOLUMES,
+                Optional('serverGroup'): str,
                 Optional('meta'): Use(str_dict_or_none)
                 }
 
 # Define the schema for the configuration file
-master_schema = Schema(
+master_config_schema = Schema(
     {'infrastructure': str, 'cloud': str, 'sshUser': str, Optional('network'): str, Optional('subnet'): str,
      'cloud_identifier': str,
      Optional('sshPublicKeyFiles'): [str], Optional('sshTimeout'): int,
@@ -87,11 +89,12 @@ master_schema = Schema(
          Optional('terminate'): bool,
          Optional('size'): int
      },
+     Optional('serverGroup'): str,
      Optional('meta'): Use(str_dict_or_none),
      Optional('noAllPartition'): bool,
      })
 
-other_schema = Schema(
+other_configs_schema = Schema(
     {'infrastructure': str, 'cloud': str, 'sshUser': str, 'subnet': str, 'cloud_identifier': str,
      Optional('waitForServices'): [str], Optional('features'): [str], Optional('securityGroups'): [str],
      'workerInstances': [
@@ -101,6 +104,7 @@ other_schema = Schema(
          Optional('terminate'): bool,
          Optional('size'): int
      },
+     Optional('serverGroup'): str,
      Optional('meta'): Use(str_dict_or_none)
      })
 
@@ -114,7 +118,7 @@ def validate_configurations(configurations, log):
             log.warning(
                 "Keys 'region' and 'availabilityZone' are deprecated! Check will return False if you use one of them."
                 "Just remove them. They are no longer required.")
-        master_schema.validate(configuration)
+        master_config_schema.validate(configuration)
         if 'subnet' in configuration and 'network' in configuration:
             raise SchemaError("Either 'subnet' or 'network' must be defined; not both!")
         log.debug(f"Master configuration '{configuration['cloud_identifier']}' valid.")
@@ -123,7 +127,7 @@ def validate_configurations(configurations, log):
                 log.warning(
                     "Keys region and availabilityZone are deprecated! Check will return False if you use one of them."
                     "Just remove them. They are no longer required.")
-            other_schema.validate(configuration)
+            other_configs_schema.validate(configuration)
             log.debug(f"Configuration '{configuration['cloud_identifier']}' schema valid.")
         log.debug("Entire configuration schema valid.")
         return True

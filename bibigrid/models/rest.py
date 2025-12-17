@@ -2,14 +2,25 @@
 This module contains models used by the REST api
 """
 
-from typing import Dict, List, Optional, Literal, Union
+from typing import Dict, List, Optional, Literal, Union, Annotated
 
-from pydantic import BaseModel, Field, IPvAnyAddress
+from pydantic import BaseModel, Field, IPvAnyAddress, StringConstraints, model_validator
+
+MetaKey = Annotated[str, StringConstraints(max_length=255)]
+MetaValue = Annotated[str, StringConstraints(max_length=255)]
+MetaDict = Dict[MetaKey, MetaValue]
+
+
+class StrictModel(BaseModel):
+    model_config = {
+        "extra": "forbid",
+        "strict": True,
+    }
 
 
 # pylint: disable=too-few-public-methods
 
-class Role(BaseModel):
+class Role(StrictModel):
     """
     Ansible Role
     """
@@ -17,23 +28,23 @@ class Role(BaseModel):
     tags: Optional[List[str]]
 
 
-class UserRole(BaseModel):
+class UserRole(StrictModel):
     """
     Allows users to add custom ansible roles
     """
     hosts: List[str]
     roles: List[Role]
-    varsFiles: Optional[List[str]] = Field(default=[])
+    varsFiles: Optional[List[str]] = Field(default_factory=list)
 
 
-class CloudScheduling(BaseModel):
+class CloudScheduling(StrictModel):
     """
     Model for cloud scheduling
     """
     sshTimeout: Optional[int] = 5
 
 
-class BootVolume(BaseModel):
+class BootVolume(StrictModel):
     """
     Holds information about where the server boots from
     """
@@ -42,7 +53,7 @@ class BootVolume(BaseModel):
     size: Optional[int] = 50
 
 
-class Volume(BaseModel):
+class Volume(StrictModel):
     """
     Holds volume/attached storage information
     """
@@ -57,8 +68,17 @@ class Volume(BaseModel):
     type: Optional[str] = None
     id: Optional[str] = None
 
+    @model_validator(mode="after")
+    def only_one_flag(self):
+        flags = [self.permanent, self.semiPermanent, self.exists]
+        if sum(flags) > 1:
+            raise ValueError(
+                "Only one of permanent, semiPermanent, or exists may be true"
+            )
+        return self
 
-class Instance(BaseModel):
+
+class Instance(StrictModel):
     """
     Holds instance/server information
     """
@@ -66,13 +86,16 @@ class Instance(BaseModel):
     image: str
     count: Optional[int] = 1
     onDemand: Optional[bool] = True
-    partitions: Optional[List[str]] = Field(default=[])
-    features: Optional[List[str]] = Field(default=[])
+    partitions: Optional[List[str]] = Field(default_factory=list)
+    features: Optional[List[str]] = Field(default_factory=list)
     bootVolume: Optional[BootVolume] = None
-    volumes: Optional[List[Volume]] = Field(default=[])
+    volumes: Optional[List[Volume]] = Field(default_factory=list)
+    meta: Optional[MetaDict] = None
+    securityGroups: Optional[list[str]] = Field(default_factory=list)
+    serverGroup: Optional[str] = None
 
 
-class ElasticScheduling(BaseModel):
+class ElasticScheduling(StrictModel):
     """
     Holds info on Slurms scheduling
     """
@@ -82,7 +105,7 @@ class ElasticScheduling(BaseModel):
     TreeWidth: Optional[int] = 128
 
 
-class SlurmConf(BaseModel):
+class SlurmConf(StrictModel):
     """
     Holds info on basic Slurm settings
     """
@@ -93,7 +116,7 @@ class SlurmConf(BaseModel):
     elastic_scheduling: Optional[ElasticScheduling] = None
 
 
-class Gateway(BaseModel):
+class Gateway(StrictModel):
     """
     Holds info regarding whether a gateway is used to connect to the master
     """
@@ -101,7 +124,7 @@ class Gateway(BaseModel):
     portFunction: str
 
 
-class MasterConfig(BaseModel):
+class MasterConfig(StrictModel):
     """
     Holds info regarding the configuration
     """
@@ -110,13 +133,15 @@ class MasterConfig(BaseModel):
     sshUser: str
     subnet: Optional[str] = Field(default=None)
     network: Optional[str] = Field(default=None)
-    cloud_identifier: Optional[str] = None
-    sshPublicKeyFiles: Optional[List[str]] = Field(default=[])
-    sshPublicKeys: Optional[List[str]] = Field(default=None)
+    cloud_identifier: str = "openstack"
+    securityGroups: Optional[list[str]] = Field(default_factory=list)
+    serverGroup: Optional[str] = None
+    sshPublicKeyFiles: Optional[List[str]] = Field(default_factory=list)
+    sshPublicKeys: Optional[List[str]] = Field(default_factory=list)
     sshTimeout: Optional[int] = 5
     cloudScheduling: Optional[CloudScheduling] = None
-    nfsShares: Optional[List[str]] = Field(default=[])
-    userRoles: Optional[List[UserRole]] = Field(default=[])
+    nfsShares: Optional[List[str]] = Field(default_factory=list)
+    userRoles: Optional[List[UserRole]] = Field(default_factory=list)
     localFS: Optional[bool] = False
     localDNSlookup: Optional[bool] = False
     slurm: Optional[bool] = True
@@ -126,18 +151,27 @@ class MasterConfig(BaseModel):
     ide: Optional[bool] = False
     useMasterAsCompute: Optional[bool] = True
     useMasterWithPublicIp: Optional[bool] = True
-    waitForServices: Optional[List[str]] = Field(default=[])
+    waitForServices: Optional[List[str]] = Field(default_factory=list)
     gateway: Optional[Gateway] = None
     dontUploadCredentials: Optional[bool] = False
     fallbackOnOtherImage: Optional[bool] = False
-    features: Optional[List[str]] = Field(default=[])
+    features: Optional[List[str]] = Field(default_factory=list)
     workerInstances: List[Instance]
     masterInstance: Instance
     bootVolume: Optional[BootVolume] = None
     noAllPartition: Optional[bool] = False
+    meta: Optional[MetaDict] = None
+
+    @model_validator(mode="after")
+    def subnet_xor_network(self):
+        if not bool(self.subnet) != bool(self.network):
+            raise ValueError(
+                "Either 'subnet' or 'network' must be defined (XOR); neither both, nor none!"
+            )
+        return self
 
 
-class OtherConfig(BaseModel):
+class OtherConfig(StrictModel):
     """
     Holds info about other configurations
     """
@@ -146,22 +180,33 @@ class OtherConfig(BaseModel):
     sshUser: str
     subnet: Optional[str] = Field(default=None)
     network: Optional[str] = Field(default=None)
-    cloud_identifier: Optional[str] = None
-    waitForServices: Optional[List[str]] = Field(default=[])
-    features: Optional[List[str]] = Field(default=[])
+    cloud_identifier: str = "openstack"
+    securityGroups: Optional[list[str]] = None
+    serverGroup: Optional[str] = None
+    waitForServices: Optional[List[str]] = Field(default_factory=list)
+    features: Optional[List[str]] = Field(default_factory=list)
     workerInstances: List[Instance]
     vpnInstance: Instance
     bootVolume: Optional[BootVolume] = None
+    meta: Optional[MetaDict] = None
+
+    @model_validator(mode="after")
+    def subnet_xor_network(self):
+        if not bool(self.subnet) != bool(self.network):
+            raise ValueError(
+                "Either 'subnet' or 'network' must be defined (XOR); neither both, nor none!"
+            )
+        return self
 
 
-class ConfigurationsModel(BaseModel):
+class ConfigurationsModel(StrictModel):
     """
     Model for configurations
     """
     configurations: List[Union[MasterConfig, OtherConfig]]
 
 
-class MinimalConfigurationModel(BaseModel):
+class MinimalConfigurationModel(StrictModel):
     """
     Minimal model for a configuration. Containing only info to load clouds.yaml and to connect to provider.
     """
@@ -169,7 +214,7 @@ class MinimalConfigurationModel(BaseModel):
     cloud: str = "openstack"
 
 
-class MinimalConfigurationsModel(BaseModel):
+class MinimalConfigurationsModel(StrictModel):
     """
     Minimal model for configurations.
     """
