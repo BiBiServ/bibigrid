@@ -22,9 +22,9 @@ from bibigrid.core.utility import validate_configuration, id_generation
 from bibigrid.core.utility.handler import provider_handler, configuration_handler
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLOUD_NODE_REQUIREMENTS_PATH, \
     ENFORCED_CONFIG_PATH, DEFAULT_CONFIG_PATH
-from bibigrid.models.rest import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
-    RequirementsModel
+from bibigrid.models.configuration import ConfigurationsModel, MinimalConfigurationsModel
+from bibigrid.models.rest.response import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
+    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, RequirementsModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -86,7 +86,7 @@ def setup(cluster_id, configurations_json=None):
                            f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
 
     if configurations_json:
-        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
+        configurations = configurations_json.model_dump_custom(exclude_none=True)
         configurations = configuration_handler.merge_configurations(user_config=configurations,
                                                                     default_config_path=DEFAULT_CONFIG_PATH,
                                                                     enforced_config_path=ENFORCED_CONFIG_PATH,

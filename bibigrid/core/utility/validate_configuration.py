@@ -6,7 +6,7 @@ import os
 from pydantic import ValidationError
 
 from bibigrid.core.utility import image_selection
-from bibigrid.models.rest import ConfigurationsModel
+from bibigrid.models.configuration import ConfigurationsModel
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.models.exceptions import ImageNotActiveException
 

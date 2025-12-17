@@ -17,7 +17,7 @@ from bibigrid.core.utility import id_generation
 from bibigrid.core.utility.handler import configuration_handler, provider_handler
 from bibigrid.core.utility.paths.basic_path import CONFIG_FOLDER, CLUSTER_MEMORY_PATH, ENFORCED_CONFIG_PATH, \
     DEFAULT_CONFIG_PATH
-from bibigrid.models.rest import ConfigurationsModel
+from bibigrid.models.configuration import ConfigurationsModel
 
 FOLDER_START = ("~/", "/", "./")
 
@@ -183,8 +183,7 @@ def main(verbose, debug, config_input, default_config_input, enforced_config_inp
     configurations = configuration_handler.read_configuration(LOG, config_input)
 
     try:
-        configs_model = ConfigurationsModel.model_validate({"configurations": configurations})
-        configurations = configs_model.model_dump(exclude_none=True)["configurations"]
+        configurations = ConfigurationsModel.model_validate(configurations).model_custom_dump(exclude_none=True)
     except ValidationError as e:
         LOG.warning(f"Validation error when validating configuration files: {e}")
         sys.exit(1)

@@ -4,7 +4,7 @@ This module contains models used by the REST api
 
 from typing import Dict, List, Optional, Literal, Union, Annotated
 
-from pydantic import BaseModel, Field, IPvAnyAddress, StringConstraints, model_validator
+from pydantic import BaseModel, Field, StringConstraints, model_validator, ValidationError
 
 MetaKey = Annotated[str, StringConstraints(max_length=255)]
 MetaValue = Annotated[str, StringConstraints(max_length=255)]
@@ -203,8 +203,24 @@ class ConfigurationsModel(StrictModel):
     """
     Model for configurations
     """
-    configurations: List[Union[MasterConfig, OtherConfig]]
+    master: MasterConfig
+    others: List[OtherConfig]
 
+    # the following are two "hack" methods until the configuration file is more pydantic
+    @model_validator(mode="before")
+    def split_master_and_other(cls, values):
+        if isinstance(values, list):
+            values = {"configurations": values}
+        configs = values.get("configurations")
+        if not configs:
+            raise ValueError("Configurations list cannot be empty")
+        values["master"] = configs[0]
+        values["others"] = configs[1:]
+        values.pop("configurations", None)
+        return values
+
+    def model_custom_dump(self, **kwargs):
+        return [self.master.model_dump(**kwargs)] + [other.model_dump(**kwargs) for other in self.others]
 
 class MinimalConfigurationModel(StrictModel):
     """
@@ -220,78 +236,3 @@ class MinimalConfigurationsModel(StrictModel):
     """
     configurations: List[MinimalConfigurationModel]
 
-
-class ValidationResponseModel(BaseModel):
-    """
-    ResponseModel for validate
-    """
-    message: str
-    cluster_id: str
-    success: bool
-
-
-class CreateResponseModel(BaseModel):
-    """
-    ResponseModel for create
-    """
-    message: str
-    cluster_id: str
-
-
-class TerminateResponseModel(BaseModel):
-    """
-    ResponseModel for terminate
-    """
-    message: str
-
-
-class InfoResponseModel(BaseModel):
-    """
-    ResponseModel for info
-    """
-    workers: list
-    vpngtws: list
-    master: dict
-    message: str
-    ready: bool
-
-
-class LogResponseModel(BaseModel):
-    """
-    Model for get_log
-    """
-    message: str
-    log: str
-
-
-class ClusterStateResponseModel(BaseModel):
-    """
-    Response model for state
-    """
-    cluster_id: str
-    floating_ip: IPvAnyAddress
-    message: str
-    ssh_user: str
-    state: Literal["starting", "running", "terminated", "failed"]
-    last_changed: str
-
-
-class OsModel(BaseModel):
-    """
-    Model for operating system requirements description
-    """
-    os_versions: List[str]
-
-
-class CloudNodeRequirementsModel(BaseModel):
-    """
-    Model for cloud_node_requirements.yaml
-    """
-    os_distro: Dict[str, OsModel]
-
-
-class RequirementsModel(BaseModel):
-    """
-    Response model for requirements
-    """
-    cloud_node_requirements: CloudNodeRequirementsModel
