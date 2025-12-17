@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import threading
+from typing import Union
 
 import uvicorn
 import yaml
@@ -86,7 +87,7 @@ def setup(cluster_id, configurations_json=None):
                            f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
 
     if configurations_json:
-        configurations = configurations_json.model_dump_custom(exclude_none=True)
+        configurations = configurations_json.model_custom_dump(exclude_none=True)
         configurations = configuration_handler.merge_configurations(user_config=configurations,
                                                                     default_config_path=DEFAULT_CONFIG_PATH,
                                                                     enforced_config_path=ENFORCED_CONFIG_PATH,
@@ -174,7 +175,8 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
 
 
 @app.post("/bibigrid/terminate/{cluster_id}", response_model=TerminateResponseModel)
-async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigurationsModel):
+async def terminate_cluster(cluster_id: str,
+                            configurations_json: Union[ConfigurationsModel, MinimalConfigurationsModel]):
     """
     Initiates the termination of a cluster based on the provided configuration JSON.
 
@@ -200,7 +202,7 @@ async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigu
 
 
 @app.post("/bibigrid/info/{cluster_id}", response_model=InfoResponseModel)
-async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel):
+async def info(cluster_id: str, configurations_json: Union[ConfigurationsModel, MinimalConfigurationsModel]):
     """
     Retrieves detailed information about the specified cluster.
 
