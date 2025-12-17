@@ -1,3 +1,6 @@
+"""
+This module contains response models used by the REST api
+"""
 from typing import Literal, List, Dict
 
 from pydantic import BaseModel, IPvAnyAddress

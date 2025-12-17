@@ -3,11 +3,12 @@ Validates configuration and cloud_specification
 """
 
 import os
+
 from pydantic import ValidationError
 
 from bibigrid.core.utility import image_selection
-from bibigrid.models.configuration import ConfigurationsModel
 from bibigrid.core.utility.handler import configuration_handler
+from bibigrid.models.configuration import ConfigurationsModel
 from bibigrid.models.exceptions import ImageNotActiveException
 
 ACCEPTED_KEY_IDENTIFIERS = {"RSA": 4096, "ECDSA": 521, "ED25519": 256}
@@ -471,9 +472,8 @@ class ValidateConfiguration:
                 self.log.warning(f"ServerGroup '{server_group_name_or_id}' not found on "
                                  f"{provider.cloud_specification['identifier']}")
                 return False
-            else:
-                self.log.info(f"ServerGroup '{server_group_name_or_id}' found on "
-                              f"{provider.cloud_specification['identifier']}")
+            self.log.info(f"ServerGroup '{server_group_name_or_id}' found on "
+                          f"{provider.cloud_specification['identifier']}")
         return True
 
     def _check_server_groups(self):

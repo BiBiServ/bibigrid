@@ -1,8 +1,8 @@
 """
-This module contains models used by the REST api
+This module contains models regarding the configuration yaml
 """
 
-from typing import Dict, List, Optional, Literal, Union, Annotated
+from typing import Dict, List, Optional, Literal, Annotated
 
 from pydantic import BaseModel, Field, StringConstraints, model_validator, ValidationError
 
@@ -12,6 +12,9 @@ MetaDict = Dict[MetaKey, MetaValue]
 
 
 class StrictModel(BaseModel):
+    """
+    Enforces that every key undefined by the corresponding model raises an error
+    """
     model_config = {
         "extra": "forbid",
         "strict": True,
@@ -72,7 +75,7 @@ class Volume(StrictModel):
     def only_one_flag(self):
         flags = [self.permanent, self.semiPermanent, self.exists]
         if sum(flags) > 1:
-            raise ValueError(
+            raise ValidationError(
                 "Only one of permanent, semiPermanent, or exists may be true"
             )
         return self
@@ -124,18 +127,38 @@ class Gateway(StrictModel):
     portFunction: str
 
 
-class MasterConfig(StrictModel):
+class BaseConfig(StrictModel):
     """
-    Holds info regarding the configuration
+    Holds base keys for both master and others
     """
     infrastructure: Literal["openstack"]  # currently limited to openstack
     cloud: str = "openstack"
+    cloud_identifier: Optional[str] = None
     sshUser: str
     subnet: Optional[str] = Field(default=None)
     network: Optional[str] = Field(default=None)
-    cloud_identifier: str = "openstack"
     securityGroups: Optional[list[str]] = Field(default_factory=list)
     serverGroup: Optional[str] = None
+    waitForServices: Optional[List[str]] = Field(default_factory=list)
+    features: Optional[List[str]] = Field(default_factory=list)
+    workerInstances: List[Instance]
+    bootVolume: Optional[BootVolume] = None
+    meta: Optional[MetaDict] = None
+
+    @model_validator(mode="after")
+    def subnet_xor_network(self):
+        if bool(self.subnet) == bool(self.network):
+            raise ValidationError(
+                "Either 'subnet' or 'network' must be defined (XOR); neither both, nor none!"
+            )
+        return self
+
+
+class MasterConfig(BaseConfig):
+    """
+    Holds info regarding the configuration
+    """
+    masterInstance: Instance
     sshPublicKeyFiles: Optional[List[str]] = Field(default_factory=list)
     sshPublicKeys: Optional[List[str]] = Field(default_factory=list)
     sshTimeout: Optional[int] = 5
@@ -151,52 +174,18 @@ class MasterConfig(StrictModel):
     ide: Optional[bool] = False
     useMasterAsCompute: Optional[bool] = True
     useMasterWithPublicIp: Optional[bool] = True
-    waitForServices: Optional[List[str]] = Field(default_factory=list)
     gateway: Optional[Gateway] = None
     dontUploadCredentials: Optional[bool] = False
     fallbackOnOtherImage: Optional[bool] = False
-    features: Optional[List[str]] = Field(default_factory=list)
-    workerInstances: List[Instance]
-    masterInstance: Instance
     bootVolume: Optional[BootVolume] = None
     noAllPartition: Optional[bool] = False
-    meta: Optional[MetaDict] = None
-
-    @model_validator(mode="after")
-    def subnet_xor_network(self):
-        if not bool(self.subnet) != bool(self.network):
-            raise ValueError(
-                "Either 'subnet' or 'network' must be defined (XOR); neither both, nor none!"
-            )
-        return self
 
 
-class OtherConfig(StrictModel):
+class OtherConfig(BaseConfig):
     """
     Holds info about other configurations
     """
-    infrastructure: Literal["openstack"]  # currently limited to openstack
-    cloud: str = "openstack"
-    sshUser: str
-    subnet: Optional[str] = Field(default=None)
-    network: Optional[str] = Field(default=None)
-    cloud_identifier: str = "openstack"
-    securityGroups: Optional[list[str]] = None
-    serverGroup: Optional[str] = None
-    waitForServices: Optional[List[str]] = Field(default_factory=list)
-    features: Optional[List[str]] = Field(default_factory=list)
-    workerInstances: List[Instance]
     vpnInstance: Instance
-    bootVolume: Optional[BootVolume] = None
-    meta: Optional[MetaDict] = None
-
-    @model_validator(mode="after")
-    def subnet_xor_network(self):
-        if not bool(self.subnet) != bool(self.network):
-            raise ValueError(
-                "Either 'subnet' or 'network' must be defined (XOR); neither both, nor none!"
-            )
-        return self
 
 
 class ConfigurationsModel(StrictModel):
@@ -207,7 +196,7 @@ class ConfigurationsModel(StrictModel):
     others: List[OtherConfig]
 
     # the following are two "hack" methods until the configuration file is more pydantic
-    @model_validator(mode="before")
+    @model_validator(mode="before")  # pylint: disable=no-self-argument
     def split_master_and_other(cls, values):
         if isinstance(values, list):
             values = {"configurations": values}
@@ -222,6 +211,7 @@ class ConfigurationsModel(StrictModel):
     def model_custom_dump(self, **kwargs):
         return [self.master.model_dump(**kwargs)] + [other.model_dump(**kwargs) for other in self.others]
 
+
 class MinimalConfigurationModel(StrictModel):
     """
     Minimal model for a configuration. Containing only info to load clouds.yaml and to connect to provider.
@@ -235,4 +225,3 @@ class MinimalConfigurationsModel(StrictModel):
     Minimal model for configurations.
     """
     configurations: List[MinimalConfigurationModel]
-
