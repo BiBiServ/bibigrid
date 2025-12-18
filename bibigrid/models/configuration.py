@@ -196,7 +196,8 @@ class ConfigurationsModel(StrictModel):
     others: List[OtherConfig]
 
     # the following are two "hack" methods until the configuration file is more pydantic
-    @model_validator(mode="before")  # pylint: disable=E0213
+    @model_validator(mode="before")
+    @classmethod
     def split_master_and_other(cls, values):
         if isinstance(values, list):
             values = {"configurations": values}
