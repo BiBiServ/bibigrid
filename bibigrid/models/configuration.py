@@ -4,7 +4,7 @@ This module contains models regarding the configuration yaml
 
 from typing import Dict, List, Optional, Literal, Annotated
 
-from pydantic import BaseModel, Field, StringConstraints, model_validator, ValidationError
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 MetaKey = Annotated[str, StringConstraints(max_length=255)]
 MetaValue = Annotated[str, StringConstraints(max_length=255)]
@@ -75,7 +75,7 @@ class Volume(StrictModel):
     def only_one_flag(self):
         flags = [self.permanent, self.semiPermanent, self.exists]
         if sum(flags) > 1:
-            raise ValidationError(
+            raise ValueError(
                 "Only one of permanent, semiPermanent, or exists may be true"
             )
         return self
@@ -148,7 +148,7 @@ class BaseConfig(StrictModel):
     @model_validator(mode="after")
     def subnet_xor_network(self):
         if bool(self.subnet) == bool(self.network):
-            raise ValidationError(
+            raise ValueError(
                 "Either 'subnet' or 'network' must be defined (XOR); neither both, nor none!"
             )
         return self
