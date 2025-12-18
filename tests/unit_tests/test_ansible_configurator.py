@@ -446,6 +446,7 @@ class TestAnsibleConfigurator(TestCase):
             "image": "worker-image",
             "onDemand": True,
             "bootVolume": {"size": 10},
+            "serverGroup": "myServerGroup",
             "features": ["feature1"],
             "count": 2
         }
@@ -467,7 +468,7 @@ class TestAnsibleConfigurator(TestCase):
                                       'flavor': {'flavor_key': 'flavor_value'}, 'gateway_ip': '10.1.1.1',
                                       'cloud_identifier': 'cloud1', 'on_demand': True, 'state': 'CLOUD',
                                       'partitions': ['cloud1', 'all'], 'boot_volume': {'size': 10}, 'meta': {},
-                                      'security_groups': [], 'features': {'feature1'}},
+                                      'security_groups': [], "server_group": "myServerGroup", 'features': {'feature1'}},
                                      '/opt/playbook/group_vars/bibigrid_worker_foo_0_1.yaml'), (21, 42)])
 
         # Assert group_vars were written correctly
