@@ -4,9 +4,11 @@ Validates configuration and cloud_specification
 
 import os
 
+from pydantic import ValidationError
+
 from bibigrid.core.utility import image_selection
-from bibigrid.core.utility import validate_schema
 from bibigrid.core.utility.handler import configuration_handler
+from bibigrid.models.configuration import ConfigurationsModel
 from bibigrid.models.exceptions import ImageNotActiveException
 
 ACCEPTED_KEY_IDENTIFIERS = {"RSA": 4096, "ECDSA": 521, "ED25519": 256}
@@ -203,13 +205,18 @@ class ValidateConfiguration:
         @return:
         """
         success = bool(self.providers)
-        success = validate_schema.validate_configurations(self.configurations, self.log) and success
+        try:
+            success = ConfigurationsModel.model_validate(self.configurations) and success
+        except ValidationError as e:
+            self.log.error(f"Validation error when validating configuration files: {e}")
+            success = False
 
-        checks = [("master/vpn", self.check_master_vpn_worker), ("servergroup", self.check_server_group),
-                  ("instances", self.check_instances), ("volumes", self.check_volumes), ("network", self.check_network),
-                  ("quotas", self.check_quotas), ("sshPublicKeyFiles", self.check_ssh_public_key_files),
-                  ("cloudYamls", self.check_clouds_yamls), ("nfs", self.check_nfs),
-                  ("global security groups", self.check_configurations_security_groups)]
+        checks = [("master/vpn", self._check_master_vpn_worker), ("servergroup", self._check_server_groups),
+                  ("instances", self._check_instances), ("volumes", self._check_volumes),
+                  ("network", self._check_network),
+                  ("quotas", self._check_quotas), ("sshPublicKeyFiles", self._check_ssh_public_key_files),
+                  ("cloudYamls", self.check_clouds_yamls), ("nfs", self._check_nfs),
+                  ("global security groups", self._check_configurations_security_groups)]
         if success:
             for check_name, check_function in checks:
                 success = evaluate(check_name, check_function(), self.log) and success
@@ -229,14 +236,14 @@ class ValidateConfiguration:
                 self.log.debug(f"Found {security_group_name} on cloud {provider.cloud_specification['identifier']}")
         return success
 
-    def check_configurations_security_groups(self):
+    def _check_configurations_security_groups(self):
         self.log.info("Checking configurations security groups!")
         success = True
         for configuration, provider in zip(self.configurations, self.providers):
             success = self._check_security_groups(provider, configuration.get("securityGroups")) and success
         return success
 
-    def check_master_vpn_worker(self):
+    def _check_master_vpn_worker(self):
         """
         Checks if first configuration has a masterInstance defined
         and every other configuration has a vpnInstance defined.
@@ -272,7 +279,7 @@ class ValidateConfiguration:
             success = False
         return success
 
-    def check_instances(self):
+    def _check_instances(self):
         """
         Checks if all instances exist and image and instance-type are compatible
         @return: true if image and instance-type (flavor) exist for all instances and are compatible
@@ -285,14 +292,17 @@ class ValidateConfiguration:
                 master_instance = configuration.get("masterInstance")
                 if master_instance:
                     success = self._check_security_groups(provider, master_instance.get("securityGroups")) and success
+                    success = self._check_server_group(provider, master_instance.get("serverGroup")) and success
                     success = self.check_instance("masterInstance", master_instance,
                                                   provider) and success
                 else:
                     vpn_instance = configuration["vpnInstance"]
                     success = self._check_security_groups(provider, vpn_instance.get("securityGroups")) and success
+                    success = self._check_server_group(provider, vpn_instance.get("serverGroup")) and success
                     success = self.check_instance("vpnInstance", vpn_instance, provider) and success
                 for worker in configuration.get("workerInstances", []):
                     success = self._check_security_groups(provider, worker.get("securityGroups")) and success
+                    success = self._check_server_group(provider, worker.get("serverGroup")) and success
                     success = self.check_instance("workerInstance", worker, provider) and success
             except KeyError as exc:
                 self.log.warning("Not found %s, but required on %s.", str(exc),
@@ -400,7 +410,7 @@ class ValidateConfiguration:
                     "volume_gigabytes"] += volume.get("size", 50) * count
         return success
 
-    def check_volumes(self):  # pylint: disable=too-many-nested-blocks,too-many-branches
+    def _check_volumes(self):  # pylint: disable=too-many-nested-blocks,too-many-branches
         """
         Checking if volume or snapshot exists for all volumes
         @return: True if all snapshot and volumes are found. Else false.
@@ -422,7 +432,7 @@ class ValidateConfiguration:
                     success = self._check_volume(provider, volume, count) and success
         return success
 
-    def check_network(self):
+    def _check_network(self):
         """
         Check if network (or subnet) is accessible
         @return True if any given network or subnet is accessible by provider
@@ -455,25 +465,28 @@ class ValidateConfiguration:
                 success = False
         return success
 
-    def check_server_group(self):
+    def _check_server_group(self, provider, server_group_name_or_id):
+        if server_group_name_or_id:
+            server_group = provider.get_server_group_by_id_or_name(server_group_name_or_id)
+            if not server_group:
+                self.log.warning(f"ServerGroup '{server_group_name_or_id}' not found on "
+                                 f"{provider.cloud_specification['identifier']}")
+                return False
+            self.log.info(f"ServerGroup '{server_group_name_or_id}' found on "
+                          f"{provider.cloud_specification['identifier']}")
+        return True
+
+    def _check_server_groups(self):
         """
         @return: True if server group accessible
         """
         success = True
         for configuration, provider in zip(self.configurations, self.providers):
             server_group_name_or_id = configuration.get("serverGroup")
-            if server_group_name_or_id:
-                server_group = provider.get_server_group_by_id_or_name(server_group_name_or_id)
-                if not server_group:
-                    self.log.warning(f"ServerGroup '{server_group_name_or_id}' not found on "
-                                     f"{provider.cloud_specification['identifier']}")
-                    success = False
-                else:
-                    self.log.info(f"ServerGroup '{server_group_name_or_id}' found on "
-                                  f"{provider.cloud_specification['identifier']}")
+            success = self._check_server_group(provider, server_group_name_or_id) and success
         return success
 
-    def check_quotas(self):
+    def _check_quotas(self):
         """
         Gets remaining resources from the provider and compares them to the needed resources.
         Needed resources are set during the other checks.
@@ -492,7 +505,7 @@ class ValidateConfiguration:
                                      f"Project {provider.cloud_specification['identifier']}", key, self.log) and success
         return success
 
-    def check_ssh_public_key_files(self):
+    def _check_ssh_public_key_files(self):
         """
         Checks if keys listed in the config exist
         @return: True if check succeeded. Else false.
@@ -524,7 +537,7 @@ class ValidateConfiguration:
             success = check_clouds_yaml_security(self.log) and success
         return success
 
-    def check_nfs(self):
+    def _check_nfs(self):
         """
         Checks whether nfsshares => nfs holds and logs if failed. Returns True in every case as it is not fatale.
         @return: True

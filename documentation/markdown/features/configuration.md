@@ -253,6 +253,7 @@ workerInstance:
       size: 50
     securityGroups: # optional
       - list of existing security groups
+    serverGroup: myServerGroup # optional
     meta: # optional (no key or value longer than 256)
       meta_key: meta_value
 ```
@@ -268,7 +269,8 @@ workerInstance:
   - `terminate` (optional:True) if True, the boot volume will be terminated when the server is terminated.
   - `size` (optional:50) if a boot volume is created, this sets its size.
 - `volumes`
-- `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances
+- `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances.
+- `serverGroup` (optional:None) an existing OpenStack [server group](https://docs.openstack.org/nova/latest/user/server-groups.html).
 - `meta` a dict of meta key value pairs (no key or value longer than 256) overwrites global meta key value pairs where conflicts arise.
 ##### volumes (optional)
 
@@ -343,6 +345,7 @@ You can apply most keys [in the same way](#features-optional) as for the workers
   - `size` (optional:50) if a boot volume is created, this sets its size.
 - `volumes`
 - `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances
+- `serverGroup` (optional:None) an existing OpenStack [server group](https://docs.openstack.org/nova/latest/user/server-groups.html).
 - `meta` a dict of meta key value pairs (no key or value longer than 256) overwrites global meta key value pairs where conflicts arise
 
 ##### vpnInstance:
@@ -413,6 +416,14 @@ Instead of setting the `securityGroups` for every instance you can also set them
 securityGroups:
   - securityGroup1
   - securityGroup2 
+```
+
+#### serverGroup (optional)
+
+Instead of setting the `serverGroup` for every instance you can also set them cloud wide:
+
+```yaml
+serverGroup: myServerGroup
 ```
 
 #### meta (optional)

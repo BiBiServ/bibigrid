@@ -101,6 +101,7 @@ def get_worker_vars(*, provider, configuration, cluster_id, worker,
                    "state": "CLOUD",
                    "partitions": partitions,
                    "boot_volume": worker.get("bootVolume", configuration.get("bootVolume", {})),
+                   "server_group": worker.get("serverGroup", configuration.get("serverGroup")),
                    "meta": mergedeep.merge({}, worker.get("meta", {}), configuration.get("meta", {})),
                    "security_groups": list(
                        set(worker.get("securityGroups", []) + configuration.get("securityGroups", [])))

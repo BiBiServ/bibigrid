@@ -41,13 +41,13 @@ class TestValidateConfiguration(TestCase):
         vpn_master.update(master)
         vpn_master.update(vpn)
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[master], log=Mock())
-        self.assertTrue(v_c.check_master_vpn_worker())
+        self.assertTrue(v_c._check_master_vpn_worker())
         v_c.configurations = [master, vpn]
-        self.assertTrue(v_c.check_master_vpn_worker())
+        self.assertTrue(v_c._check_master_vpn_worker())
         v_c.configurations = [vpn]
-        self.assertFalse(v_c.check_master_vpn_worker())
+        self.assertFalse(v_c._check_master_vpn_worker())
         v_c.configurations = [master, master]
-        self.assertFalse(v_c.check_master_vpn_worker())
+        self.assertFalse(v_c._check_master_vpn_worker())
 
     def test_check_master_vpn_worker_unique(self):
         provider1 = Mock()
@@ -59,9 +59,9 @@ class TestValidateConfiguration(TestCase):
         vpn_master.update(vpn)
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[vpn_master],
                                                            log=Mock())
-        self.assertFalse(v_c.check_master_vpn_worker())
+        self.assertFalse(v_c._check_master_vpn_worker())
         v_c.configurations = [master, vpn_master]
-        self.assertFalse(v_c.check_master_vpn_worker())
+        self.assertFalse(v_c._check_master_vpn_worker())
 
     def test_evaluate(self):
         self.assertTrue(validate_configuration.evaluate("some", True, log=Mock()))
@@ -81,7 +81,7 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"masterInstance": {42:42}}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
-            v_c.check_instances()
+            v_c._check_instances()
             mock.assert_called_with("masterInstance", {42:42}, provider1)
 
     def test_check_instances_vpn(self):
@@ -90,7 +90,7 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"vpnInstance": {42:42}}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
-            v_c.check_instances()
+            v_c._check_instances()
             mock.assert_called_with("vpnInstance", {42:42}, provider1)
 
     def test_check_instance_worker(self):
@@ -99,17 +99,17 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[
             {"masterInstance": {42:42}, "workerInstances": [{42:42}]}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
-            v_c.check_instances()
+            v_c._check_instances()
             mock.assert_called_with("workerInstance", {42:42}, provider1)
 
     def test_check_instances_vpn_master_missing(self):
         provider1 = Mock()
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
-        self.assertFalse(v_c.check_instances())
+        self.assertFalse(v_c._check_instances())
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"workerInstances": [{42:42}]}], log=Mock())
-        self.assertFalse(v_c.check_instances())
+        self.assertFalse(v_c._check_instances())
 
     def test_check_instances_vpn_master_count(self):
         for i in range(1, 4):
@@ -120,7 +120,7 @@ class TestValidateConfiguration(TestCase):
                                                                    {"vpnInstance": {"count": 1}}] * (i - 1), log=Mock())
             # with patch.object(v_c, "check_instance") as mock:
             with patch.object(v_c, "check_instance", return_value=True):
-                v_c.check_instances()
+                v_c._check_instances()
             self.assertTrue(v_c.required_resources_dict[i]["floating_ips"] == i)
 
     @patch("bibigrid.core.utility.image_selection.select_image")
@@ -210,7 +210,7 @@ class TestValidateConfiguration(TestCase):
                                                                                                    "workerInstances": [
                                                                                                        {}]}],
                                                            log=Mock())
-        self.assertTrue(v_c.check_volumes())
+        self.assertTrue(v_c._check_volumes())
 
     def test_check_volumes_match_snapshot_count(self):
         for i in range(1, 3):
@@ -220,7 +220,7 @@ class TestValidateConfiguration(TestCase):
             provider1.cloud_specification = {"identifier": i}
             v_c = validate_configuration.ValidateConfiguration(providers=[provider1] * i, configurations=[
                 {"masterInstance": {"volumes": [{"snapshot": "test"}] * i}}], log=Mock())
-            self.assertTrue(v_c.check_volumes())
+            self.assertTrue(v_c._check_volumes())
             self.assertTrue(v_c.required_resources_dict[i]["volumes"] == i)
             self.assertTrue(v_c.required_resources_dict[i]["volume_gigabytes"] == i ** 2)
 
@@ -229,7 +229,7 @@ class TestValidateConfiguration(TestCase):
         provider1.get_network_by_id_or_name = MagicMock(return_value=None)
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
-        self.assertFalse(v_c.check_network())
+        self.assertFalse(v_c._check_network())
 
     def test_check_network_no_network(self):
         provider1 = Mock()
@@ -237,7 +237,7 @@ class TestValidateConfiguration(TestCase):
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"subnet": "subnet_name"}], log=Mock())
-        self.assertTrue(v_c.check_network())
+        self.assertTrue(v_c._check_network())
         provider1.get_subnet_by_id_or_name.assert_called_with("subnet_name")
 
     def test_check_network_no_network_mismatch_subnet(self):
@@ -246,7 +246,7 @@ class TestValidateConfiguration(TestCase):
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"subnet": "subnet_name"}], log=Mock())
-        self.assertFalse(v_c.check_network())
+        self.assertFalse(v_c._check_network())
         provider1.get_subnet_by_id_or_name.assert_called_with("subnet_name")
 
     def test_check_network_no_subnet_mismatch_network(self):
@@ -255,7 +255,7 @@ class TestValidateConfiguration(TestCase):
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"network": "network_name"}], log=Mock())
-        self.assertFalse(v_c.check_network())
+        self.assertFalse(v_c._check_network())
         provider1.get_network_by_id_or_name.assert_called_with("network_name")
 
     def test_check_network_no_subnet(self):
@@ -264,7 +264,7 @@ class TestValidateConfiguration(TestCase):
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"network": "network_name"}], log=Mock())
-        self.assertTrue(v_c.check_network())
+        self.assertTrue(v_c._check_network())
         provider1.get_network_by_id_or_name.assert_called_with("network_name")
 
     def test_check_network_subnet_network(self):
@@ -274,7 +274,7 @@ class TestValidateConfiguration(TestCase):
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"network": "network_name"}], log=Mock())
-        self.assertTrue(v_c.check_network())
+        self.assertTrue(v_c._check_network())
         provider1.get_network_by_id_or_name.assert_called_with("network_name")
 
     def test_check_server_group_none(self):
@@ -282,7 +282,7 @@ class TestValidateConfiguration(TestCase):
         provider1.get_network_by_id_or_name = MagicMock(return_value=None)
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
-        self.assertTrue(v_c.check_server_group())
+        self.assertTrue(v_c._check_server_groups())
 
     def test_check_server_group_mismatch(self):
         provider1 = Mock()
@@ -290,7 +290,7 @@ class TestValidateConfiguration(TestCase):
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"serverGroup": "GroupName"}], log=Mock())
-        self.assertFalse(v_c.check_server_group())
+        self.assertFalse(v_c._check_server_groups())
         provider1.get_server_group_by_id_or_name.assert_called_with("GroupName")
 
     def test_check_server_group_match(self):
@@ -299,7 +299,7 @@ class TestValidateConfiguration(TestCase):
         provider1.cloud_specification = {"identifier": "1"}
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1],
                                                            configurations=[{"serverGroup": "GroupName"}], log=Mock())
-        self.assertTrue(v_c.check_server_group())
+        self.assertTrue(v_c._check_server_groups())
         provider1.get_server_group_by_id_or_name.assert_called_with("GroupName")
 
     def test_check_quotas_true(self):
@@ -311,7 +311,7 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=None, log=Mock())
         with patch.object(validate_configuration, "has_enough") as mock:
             mock.side_effect = [True] * len(test_dict)
-            self.assertTrue(v_c.check_quotas())
+            self.assertTrue(v_c._check_quotas())
             provider1.get_free_resources.assert_called()
 
     def test_check_quotas_false(self):
@@ -324,7 +324,7 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=None, log=Mock())
         with patch.object(validate_configuration, "has_enough") as mock:
             mock.side_effect = [True] * (len(test_dict) - 1) + [False]
-            self.assertFalse(v_c.check_quotas())
+            self.assertFalse(v_c._check_quotas())
             provider1.get_free_resources.assert_called()
             mock.assert_called()
 
@@ -343,7 +343,7 @@ class TestValidateConfiguration(TestCase):
         provider1.get_security_group.return_value = True
         os.environ['OS_PROJECT_NAME'] = "name"
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
-        self.assertTrue(v_c.check_configurations_security_groups())
+        self.assertTrue(v_c._check_configurations_security_groups())
 
     def test_check_security_groups_not_found(self):
         provider1 = MagicMock()
@@ -351,7 +351,7 @@ class TestValidateConfiguration(TestCase):
         provider1.get_security_group.return_value = False
         os.environ['OS_PROJECT_NAME'] = "name"
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
-        self.assertTrue(v_c.check_configurations_security_groups())
+        self.assertTrue(v_c._check_configurations_security_groups())
 
     def test_check_configurations_security_groups(self):
         provider1 = MagicMock()
@@ -359,7 +359,7 @@ class TestValidateConfiguration(TestCase):
         provider1.get_security_group.return_value = False
         os.environ['OS_PROJECT_NAME'] = "name"
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[{}], log=Mock())
-        self.assertTrue(v_c.check_configurations_security_groups())
+        self.assertTrue(v_c._check_configurations_security_groups())
 
     def test_check_instance_security_group_not_found_worker(self):
         provider1 = Mock()
@@ -368,7 +368,7 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[
             {"masterInstance": {42:42}, "workerInstances": [{42:42, "securityGroups": [42]}]}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
-            self.assertFalse(v_c.check_instances())
+            self.assertFalse(v_c._check_instances())
 
     def test_check_instance_security_group_not_found_master(self):
         provider1 = Mock()
@@ -377,7 +377,7 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[
             {"masterInstance": {42:42, "securityGroups": [42]}, "workerInstances": [{42:42}]}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
-            self.assertFalse(v_c.check_instances())
+            self.assertFalse(v_c._check_instances())
 
     def test_check_instance_security_group_not_found_vpn(self):
         provider1 = Mock()
@@ -386,4 +386,4 @@ class TestValidateConfiguration(TestCase):
         v_c = validate_configuration.ValidateConfiguration(providers=[provider1], configurations=[
             {"vpnInstance": {42:42, "securityGroups": [42]}, "workerInstances": [{42:42}]}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
-            self.assertFalse(v_c.check_instances())
+            self.assertFalse(v_c._check_instances())
