@@ -105,15 +105,6 @@ wheels = [
 ]
 
 [[package]]
-name = "appdirs"
-version = "1.4.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d7/d8/05696357e0311f5b5c316d7b95f46c669dd9c15aaeecbb48c7d0aeb88c40/appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41", size = 13470, upload-time = "2020-05-11T07:59:51.037Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/00/2344469e2084fb287c2e0b57b72910309874c3245463acd6cf5e3db69324/appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128", size = 9566, upload-time = "2020-05-11T07:59:49.499Z" },
-]
-
-[[package]]
 name = "astroid"
 version = "3.3.11"
 source = { registry = "https://pypi.org/simple" }
@@ -199,10 +190,8 @@ version = "3.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "click", marker = "sys_platform != 'win32'" },
-    { name = "cryptography", marker = "sys_platform != 'win32'" },
     { name = "filelock", marker = "sys_platform != 'win32'" },
     { name = "ipdb", marker = "sys_platform != 'win32'" },
-    { name = "keystoneauth1", marker = "sys_platform != 'win32'" },
     { name = "mergedeep", marker = "sys_platform != 'win32'" },
     { name = "openstacksdk", marker = "sys_platform != 'win32'" },
     { name = "paramiko", marker = "sys_platform != 'win32'" },
@@ -212,7 +201,6 @@ dependencies = [
     { name = "python-keystoneclient", marker = "sys_platform != 'win32'" },
     { name = "python-novaclient", marker = "sys_platform != 'win32'" },
     { name = "python-openstackclient", marker = "sys_platform != 'win32'" },
-    { name = "pyyaml", marker = "sys_platform != 'win32'" },
     { name = "schema", marker = "sys_platform != 'win32'" },
     { name = "seedir", marker = "sys_platform != 'win32'" },
     { name = "shortuuid", marker = "sys_platform != 'win32'" },
@@ -235,33 +223,30 @@ rest = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ansible", marker = "extra == 'dev'", specifier = ">=12.0.0" },
+    { name = "ansible", marker = "extra == 'dev'" },
     { name = "ansible-lint", marker = "extra == 'dev'", specifier = "==25.9.0" },
-    { name = "click", specifier = "~=8.3.0" },
-    { name = "cryptography", specifier = "~=46.0.1" },
-    { name = "fastapi", marker = "extra == 'rest'", specifier = "~=0.117.1" },
-    { name = "filelock", specifier = "~=3.19.1" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = "==0.28.1" },
+    { name = "click" },
+    { name = "fastapi", marker = "extra == 'rest'" },
+    { name = "filelock" },
+    { name = "httpx", marker = "extra == 'dev'" },
     { name = "ipdb" },
-    { name = "keystoneauth1", specifier = "~=5.1.0" },
-    { name = "mergedeep", specifier = "~=1.3.4" },
-    { name = "openstacksdk", specifier = "==0.62" },
+    { name = "mergedeep" },
+    { name = "openstacksdk", specifier = "==4.8.0" },
     { name = "paramiko", specifier = "<4.0.0" },
-    { name = "pydantic", specifier = "~=2.11.9" },
-    { name = "pylint", marker = "extra == 'dev'", specifier = "==3.3.8" },
+    { name = "pydantic" },
+    { name = "pylint", marker = "extra == 'dev'" },
     { name = "pysocks" },
     { name = "python-cinderclient" },
     { name = "python-keystoneclient" },
     { name = "python-novaclient" },
-    { name = "python-openstackclient", specifier = "==6.0.0" },
-    { name = "pyyaml", specifier = "~=6.0" },
-    { name = "schema", specifier = "~=0.7.7" },
-    { name = "seedir", specifier = "~=0.5.0" },
-    { name = "shortuuid", specifier = "~=1.0.13" },
-    { name = "sshtunnel", specifier = "~=0.4.0" },
-    { name = "sympy", specifier = "~=1.12" },
-    { name = "uvicorn", marker = "extra == 'rest'", specifier = "~=0.36.0" },
-    { name = "werkzeug", specifier = "==3.1.3" },
+    { name = "python-openstackclient" },
+    { name = "schema" },
+    { name = "seedir" },
+    { name = "shortuuid" },
+    { name = "sshtunnel" },
+    { name = "sympy" },
+    { name = "uvicorn", marker = "extra == 'rest'" },
+    { name = "werkzeug" },
 ]
 provides-extras = ["rest", "dev"]
 
@@ -773,19 +758,19 @@ wheels = [
 
 [[package]]
 name = "keystoneauth1"
-version = "5.1.3"
+version = "5.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "iso8601", marker = "sys_platform != 'win32'" },
     { name = "os-service-types", marker = "sys_platform != 'win32'" },
     { name = "pbr", marker = "sys_platform != 'win32'" },
     { name = "requests", marker = "sys_platform != 'win32'" },
-    { name = "six", marker = "sys_platform != 'win32'" },
     { name = "stevedore", marker = "sys_platform != 'win32'" },
+    { name = "typing-extensions", marker = "sys_platform != 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/17/1bdc203c79fa1d81578e6f5a0b171242c2d92f8cfe4725d713f9fe6cc9f2/keystoneauth1-5.1.3.tar.gz", hash = "sha256:d8c501ec7b76134c78e0cc6a15869493698455006c2c74cab448fab3ae2bbe32", size = 269897, upload-time = "2024-09-06T12:01:54.221Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e5/16/b96df223ca7ea4bfa78034b205e0eaf4875bfecb2f119f375fc5232d2061/keystoneauth1-5.12.0.tar.gz", hash = "sha256:dd113c2f3dcb418d9f761c73b8cd43a96ddfa8a612b51c576822381f39ca4ae8", size = 288504, upload-time = "2025-08-21T09:34:10.767Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/6b/1ed596bb13df922738e1c9fd46347cadba1579c9ececef431350beba0d09/keystoneauth1-5.1.3-py3-none-any.whl", hash = "sha256:c41b041abed17f5ea2cea457a493636b19259f072a8250395f2e5f9520e63f97", size = 318730, upload-time = "2024-09-06T12:01:52.817Z" },
+    { url = "https://files.pythonhosted.org/packages/16/8a/803a45dc660770ac7e2d74fc1260a15ade29d2234120854747491b4a7a02/keystoneauth1-5.12.0-py3-none-any.whl", hash = "sha256:2e514b03615e2d9162f0c07c823a61a636e6d4df38ff4a34b7511a04e8a4166a", size = 343402, upload-time = "2025-08-21T09:34:09.38Z" },
 ]
 
 [[package]]
@@ -905,15 +890,6 @@ wheels = [
 ]
 
 [[package]]
-name = "munch"
-version = "4.0.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e7/2b/45098135b5f9f13221820d90f9e0516e11a2a0f55012c13b081d202b782a/munch-4.0.0.tar.gz", hash = "sha256:542cb151461263216a4e37c3fd9afc425feeaf38aaa3025cd2a981fadb422235", size = 19089, upload-time = "2023-07-01T09:49:35.98Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/b3/7c69b37f03260a061883bec0e7b05be7117c1b1c85f5212c72c8c2bc3c8c/munch-4.0.0-py2.py3-none-any.whl", hash = "sha256:71033c45db9fb677a0b7eb517a4ce70ae09258490e419b0e7f00d1e386ecb1b4", size = 9950, upload-time = "2023-07-01T09:49:34.472Z" },
-]
-
-[[package]]
 name = "mypy-extensions"
 version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -941,17 +917,10 @@ wheels = [
 ]
 
 [[package]]
-name = "netifaces"
-version = "0.11.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a6/91/86a6eac449ddfae239e93ffc1918cf33fd9bab35c04d1e963b311e347a73/netifaces-0.11.0.tar.gz", hash = "sha256:043a79146eb2907edf439899f262b3dfe41717d34124298ed281139a8b93ca32", size = 30106, upload-time = "2021-05-31T08:33:02.506Z" }
-
-[[package]]
 name = "openstacksdk"
-version = "0.62.0"
+version = "4.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "appdirs", marker = "sys_platform != 'win32'" },
     { name = "cryptography", marker = "sys_platform != 'win32'" },
     { name = "decorator", marker = "sys_platform != 'win32'" },
     { name = "dogpile-cache", marker = "sys_platform != 'win32'" },
@@ -959,16 +928,17 @@ dependencies = [
     { name = "jmespath", marker = "sys_platform != 'win32'" },
     { name = "jsonpatch", marker = "sys_platform != 'win32'" },
     { name = "keystoneauth1", marker = "sys_platform != 'win32'" },
-    { name = "munch", marker = "sys_platform != 'win32'" },
-    { name = "netifaces", marker = "sys_platform != 'win32'" },
     { name = "os-service-types", marker = "sys_platform != 'win32'" },
     { name = "pbr", marker = "sys_platform != 'win32'" },
+    { name = "platformdirs", marker = "sys_platform != 'win32'" },
+    { name = "psutil", marker = "sys_platform != 'win32'" },
     { name = "pyyaml", marker = "sys_platform != 'win32'" },
     { name = "requestsexceptions", marker = "sys_platform != 'win32'" },
+    { name = "typing-extensions", marker = "sys_platform != 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/42/56/24e81127c3ff6d6a8928da12be0ef563ecc91e8037de5955433f0a99324b/openstacksdk-0.62.0.tar.gz", hash = "sha256:4c9d5d74f93760d598cea738ae396843b083e92c6b2853378034792ceee306b4", size = 1029395, upload-time = "2023-01-31T15:28:13.561Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/24/1167097740136e302c74043c1c6feecf8d757b052d7b457960e0dc60fa03/openstacksdk-4.8.0.tar.gz", hash = "sha256:4dc038e1c17d893005f3a0a8951456afd9d148f3f65d448f94adcceb278d7f31", size = 1309981, upload-time = "2025-11-13T13:59:59.614Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/ba/d1ff2f74ebdbfd45f24b1b443f919ae30451956405e031082c4599c98a78/openstacksdk-0.62.0-py3-none-any.whl", hash = "sha256:7394cc7caf5ee9f83d9fcd966e342daa98c2bbe71f97f01f2c9105c0af1807dd", size = 1420777, upload-time = "2023-01-31T15:28:11.635Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/45/87fa873f35abdf191d66d4821fe965f781e2d3e37e58883c6e23e95fa794/openstacksdk-4.8.0-py3-none-any.whl", hash = "sha256:7f7c438d418a4ee0c8737b1ac0859b3c1e8e21401677782415d21bce3324b9dd", size = 1849694, upload-time = "2025-11-13T13:59:57.634Z" },
 ]
 
 [[package]]
@@ -1644,15 +1614,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/8c/e2/bcf761f3bff95856203f9559baf3741c416071dd200c0fc19fad7f078f86/shortuuid-1.0.13.tar.gz", hash = "sha256:3bb9cf07f606260584b1df46399c0b87dd84773e7b25912b7e391e30797c5e72", size = 9662, upload-time = "2024-03-11T20:11:06.879Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c0/44/21d6bf170bf40b41396480d8d49ad640bca3f2b02139cd52aa1e272830a5/shortuuid-1.0.13-py3-none-any.whl", hash = "sha256:a482a497300b49b4953e15108a7913244e1bb0d41f9d332f5e9925dba33a3c5a", size = 10529, upload-time = "2024-03-11T20:11:04.807Z" },
-]
-
-[[package]]
-name = "six"
-version = "1.17.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
 ]
 
 [[package]]
