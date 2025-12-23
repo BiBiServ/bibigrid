@@ -133,16 +133,28 @@
   tags:
     - "docker"
 
-- name: Setup Slurm
-  tags:
-    - "slurm"
+- name: Setup Slurm prerequisites
+  tags: ["slurm"]
   block:
     - debug:
-        msg: "[BIBIGRID] Setup Slurm"
-    - import_tasks: 042-slurm.yaml
-      when: "'vpngtw' not in group_names"
-    - import_tasks: 042-slurm-server.yaml
+        msg: "[BIBIGRID] Setup Slurm prerequisites"
+    - import_tasks: 040-slurm.yaml
+
+    - name: Setup Slurm controller
+      tags: ["slurm"]
+      block:
+        - debug:
+            msg: "[BIBIGRID] Setup Slurm controller"
+        - import_tasks: 041-slurm-server.yaml
       when: "'master' in group_names"
+
+    - name: Setup Slurm workers
+      tags: ["slurm"]
+      block:
+        - debug:
+            msg: "[BIBIGRID] Setup Slurm workers"
+        - import_tasks: 042-slurm-worker.yaml
+      when: "'vpngtw' not in group_names and 'master' not in group_names"
 
 - name: Setup Theia
   when:

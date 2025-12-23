@@ -1,3 +1,11 @@
+- name: Copy system overrides (slurmd)
+  copy:
+    src: "slurm/systemd/slurmd_master.override"
+    dest: "/etc/systemd/system/slurmd.service.d/override.conf"
+    mode: "0o644"
+    owner: root
+    group: root
+
 - name: Create system overrides directories (slurmctld)
   file:
     path: "/etc/systemd/system/slurmctld.service.d"
@@ -42,13 +50,51 @@
     state: present
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
-- name: Create slurmdb configuration file
-  template:
-    src: slurm/slurmdbd.j2
-    dest: /etc/slurm/slurmdbd.conf
-    owner: slurm
-    group: root
-    mode: "0o600"
+- name: Slurm configuration files
+  block:
+    - name: Create slurmdb configuration file
+      template:
+        src: slurm/slurmdbd.j2
+        dest: /etc/slurm/slurmdbd.conf
+        owner: slurm
+        group: root
+        mode: "0o600"
+
+    - name: Create Slurm configuration
+      template:
+        src: slurm/slurm.j2
+        dest: /etc/slurm/slurm.conf
+        owner: slurm
+        group: root
+        mode: "0444"
+        force: true
+
+    - name: Create Job Container configuration
+      template:
+        src: slurm/job_container.j2
+        dest: /etc/slurm/job_container.conf
+        owner: slurm
+        group: root
+        mode: "0444"
+        force: true
+
+    - name: Slurm cgroup configuration
+      copy:
+        src: slurm/cgroup.conf
+        dest: /etc/slurm/cgroup.conf
+        owner: slurm
+        group: root
+        mode: "0444"
+
+    - name: Create Slurm gres configuration
+      template:
+        src: slurm/gres.j2
+        dest: /etc/slurm/gres.conf
+        owner: slurm
+        group: root
+        mode: "0444"
+        force: true
+      when: flavor.gres is defined
 
 - name: Generate random JWT Secret
   command:

@@ -19,7 +19,7 @@ JobAcctGatherType=jobacct_gather/linux
 # RESOURCES
 GresTypes=gpu
 
-# SlurmctldParameters=cloud_dns
+SlurmctldParameters=cloud_dns,enable_configless,reconfig_on_restart
 # didn't work as expected. slurmctld tries to resolve all clients on startup which doesn't work obviously
 
 # PRIORITY
