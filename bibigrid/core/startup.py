@@ -7,11 +7,11 @@ import os
 import sys
 import time
 import traceback
+from contextlib import contextmanager
 
 import click
 import yaml
 from pydantic import ValidationError
-from contextlib import contextmanager
 
 from bibigrid.core.actions import check, create, ide, list_clusters, terminate, update, version
 from bibigrid.core.utility import id_generation
@@ -117,7 +117,8 @@ def run_action(action, configurations, config_input, cluster_id, debug):
 
             if action in {'terminate', 'ide', 'update'} and not cluster_id:
                 cluster_id = get_cluster_id_from_mem()
-                LOG.info(f"No cid (cluster_id) specified. Defaulting to last created cluster: {cluster_id or 'None found'}")
+                LOG.info(f"No cid (cluster_id) specified. Defaulting to last created cluster: "
+                         f"{cluster_id or 'None found'}")
                 if not cluster_id:
                     LOG.warning("No cid specified and none found in memory but required. Aborting.")
                     exit_state = 1
@@ -133,8 +134,8 @@ def run_action(action, configurations, config_input, cluster_id, debug):
                         exit_state = check.check(configurations, providers, LOG)
                     case 'create':
                         LOG.info("Action create selected")
-                        creator = create.Create(providers=providers, configurations=configurations, log=LOG, debug=debug,
-                                                config_path=config_input, cluster_id=cluster_id)
+                        creator = create.Create(providers=providers, configurations=configurations, log=LOG,
+                                                debug=debug, config_path=config_input, cluster_id=cluster_id)
                         LOG.log(42,
                                 "Creating a new cluster takes about 10 or more minutes depending on your cloud "
                                 "provider and your configuration. Please be patient.")
