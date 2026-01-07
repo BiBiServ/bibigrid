@@ -194,7 +194,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
             free_resources[key] = volume_limits["max_total_" + key] - volume_limits["total_" + key + "_used"]
         return free_resources
 
-    def get_free_resources_new(self):
+    def get_free_resources_new(self):  # pylint: disable=all
         """
         Returns remaining (free) quota resources for the currently
         authenticated project (from clouds.yaml).

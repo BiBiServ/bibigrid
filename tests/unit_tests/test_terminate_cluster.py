@@ -5,7 +5,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch, call
 
 from bibigrid.core import startup
-from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER, KEY_NAME
+from bibigrid.core.utility.statics.create_statics import master_identifier, KEY_NAME
 from bibigrid.core.actions import terminate
 
 
@@ -21,12 +21,12 @@ class TestTerminate(TestCase):
         provider = MagicMock()
         provider.cloud_specification["auth"]["project_name"] = 32
         cluster_id = 42
-        provider.list_servers.return_value = [{"name": MASTER_IDENTIFIER(cluster_id=str(cluster_id)), "id": 21}]
+        provider.list_servers.return_value = [{"name": master_identifier(cluster_id=str(cluster_id)), "id": 21}]
         provider.delete_server.return_value = True
         provider.delete_keypair.return_value = True
         provider.delete_volume.return_value = True
         provider.list_volumes.return_value = [
-            {"name": f"{MASTER_IDENTIFIER(cluster_id=str(cluster_id))}-tmp-0", "id": 42}]
+            {"name": f"{master_identifier(cluster_id=str(cluster_id))}-tmp-0", "id": 42}]
         provider.list_volumes([{"name": "bibigrid-master-i950vaoqzfbwpnq-tmp-0"}])
         provider.delete_security_group.return_value = True
         provider.delete_application_credentials.return_value = True
@@ -49,7 +49,7 @@ class TestTerminate(TestCase):
         provider[0].specification["auth"]["project_name"] = "test_project_name"
         cluster_id = 42
         provider.list_servers.return_value = [
-            {"name": MASTER_IDENTIFIER(cluster_id=str(cluster_id + 1)), "id": 21}]
+            {"name": master_identifier(cluster_id=str(cluster_id + 1)), "id": 21}]
         provider.delete_keypair.return_value = False
         terminate.terminate(str(cluster_id), [provider], startup.LOG, False, True)
         provider.delete_server.assert_not_called()

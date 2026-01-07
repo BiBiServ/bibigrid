@@ -21,8 +21,8 @@ from bibigrid.core.utility.handler import ssh_handler
 from bibigrid.core.utility.paths import ansible_resources_path as a_rp
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, KEY_FOLDER
 from bibigrid.core.utility.statics.create_statics import AC_NAME, KEY_NAME, DEFAULT_SECURITY_GROUP_NAME, \
-    WIREGUARD_SECURITY_GROUP_NAME, MASTER_IDENTIFIER, WORKER_IDENTIFIER, \
-    VPNGTW_IDENTIFIER, UPLOAD_FILEPATHS
+    WIREGUARD_SECURITY_GROUP_NAME, master_identifier, worker_identifier, \
+    vpngtw_identifier, UPLOAD_FILEPATHS
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
 from bibigrid.models.exceptions import ExecutionException, ConfigurationException
@@ -178,7 +178,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         identifier, instance = self.prepare_vpn_or_master_args(configuration)
         external_network = provider.get_external_network(configuration["network"])
-        if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
+        if identifier == master_identifier:  # pylint: disable=comparison-with-callable
             name = identifier(cluster_id=self.cluster_id)
         else:
             name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
@@ -222,17 +222,17 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             raise ConfigurationException(f"MAC address for ip {configuration['private_v4']} not found.")
 
         # pylint: disable=comparison-with-callable
-        if identifier == VPNGTW_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
+        if identifier == vpngtw_identifier or (identifier == master_identifier and self.use_master_with_public_ip):
             configuration["floating_ip"] = \
                 provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
-            if identifier == MASTER_IDENTIFIER:
+            if identifier == master_identifier:
                 write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
                                      "floating_ip": configuration["floating_ip"],
                                      "state": "starting",
                                      "message": "Create process has been started. Master has been created."
                                      })
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
-        elif identifier == MASTER_IDENTIFIER:
+        elif identifier == master_identifier:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
 
     def start_worker(self, worker, worker_count, configuration, provider):  # pylint: disable=too-many-locals
@@ -245,7 +245,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @param provider:
         @return:
         """
-        name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
+        name = worker_identifier(cluster_id=self.cluster_id, additional=worker_count)
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}.")
         flavor = worker["type"]
         network = configuration["network"]
@@ -358,10 +358,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         if configuration.get("masterInstance"):
             instance_type = configuration["masterInstance"]
-            identifier = MASTER_IDENTIFIER
+            identifier = master_identifier
         elif configuration.get("vpnInstance"):
             instance_type = configuration["vpnInstance"]
-            identifier = VPNGTW_IDENTIFIER
+            identifier = vpngtw_identifier
         else:
             self.log.warning(
                 f"Configuration {configuration['cloud_identifier']} "
