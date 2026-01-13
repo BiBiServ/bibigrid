@@ -88,7 +88,7 @@ class TestCreate(TestCase):
         identifier, instance_type = creator.prepare_vpn_or_master_args(configuration)
 
         # Assuming expected values for master instance
-        self.assertEqual((create.MASTER_IDENTIFIER, "Some"), (identifier, instance_type))
+        self.assertEqual((create.master_identifier, "Some"), (identifier, instance_type))
 
     def test_prepare_vpn_args(self):
         provider = MagicMock()
@@ -100,7 +100,7 @@ class TestCreate(TestCase):
 
         # Test for VPN args preparation
         identifier, instance_type = creator.prepare_vpn_or_master_args(configuration)
-        self.assertEqual((create.VPNGTW_IDENTIFIER, "Some"), (identifier, instance_type))
+        self.assertEqual((create.vpngtw_identifier, "Some"), (identifier, instance_type))
 
     @patch("bibigrid.core.utility.handler.ssh_handler.execute_ssh")
     def test_initialize_master(self, mock_execute_ssh):

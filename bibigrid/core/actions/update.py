@@ -18,7 +18,7 @@ def update(creator, log):
         log.warning(f"There are still workers up! {workers}")
         return 1
     if master_ip and ssh_user and used_private_key:
-        master = creator.MASTER_IDENTIFIER(cluster_id=creator.cluster_id)
+        master = creator.master_identifier(cluster_id=creator.cluster_id)
         server = creator.providers[0].get_server(master)
         creator.master_ip = master_ip
         creator.configurations[0]["private_v4"] = server["private_v4"]

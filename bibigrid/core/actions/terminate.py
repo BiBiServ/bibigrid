@@ -222,7 +222,7 @@ def delete_non_permanent_volumes(provider, cluster_id, log):
         if volume_regex.match(volume["name"]):
             log.info("Trying to delete volume %s on cloud %s.", volume['name'], provider.cloud_specification[
                 'identifier'])
-            cluster_volume_state.append(provider.delete_volume(volume))
+            cluster_volume_state.append(provider.delete_volume(volume["id"]))
     return cluster_volume_state
 
 
