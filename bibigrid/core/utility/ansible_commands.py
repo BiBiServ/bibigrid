@@ -62,7 +62,7 @@ PYTHON3_PIP = ("sudo apt-get install -y python3-pip python3-venv", "Install pyth
 VENV_SETUP = ("sudo python3 -m venv /opt/bibigrid-venv", " Create bibigrid virtual environment.")
 ANSIBLE_PASSLIB = (
     "sudo /opt/bibigrid-venv/bin/pip install "
-    "ansible==10.7 passlib bcrypt==4.3",
+    "ansible==10.7 passlib==1.7.4 bcrypt==4.3",
     "Install Ansible 10.7, Passlib, and a pinned bcrypt version."
 )
 ANSIBLE_GALAXY = ("sudo /opt/bibigrid-venv/bin/ansible-galaxy collection install " +
