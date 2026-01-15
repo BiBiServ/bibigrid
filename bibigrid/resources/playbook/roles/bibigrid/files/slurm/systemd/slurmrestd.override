@@ -4,7 +4,7 @@ After=slurmdbd.service
 [Service]
 EnvironmentFile=
 EnvironmentFile=/etc/default/slurmrestd
-User=nobody
-Group=nogroup
+User=slurm
+Group=slurm
 ExecStart=
 ExecStart=/usr/sbin/slurmrestd $SLURMRESTD_OPTIONS
