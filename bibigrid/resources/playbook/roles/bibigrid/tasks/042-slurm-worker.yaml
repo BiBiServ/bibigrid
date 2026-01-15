@@ -1,4 +1,4 @@
-- name: Copy system overrides (slurmd)
+- name: Copy system worker overrides (slurmd)
   template:
     src: "slurm/systemd/slurmd.override.j2"
     dest: "/etc/systemd/system/slurmd.service.d/override.conf"

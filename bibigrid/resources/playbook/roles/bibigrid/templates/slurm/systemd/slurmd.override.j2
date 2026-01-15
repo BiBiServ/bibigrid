@@ -1,3 +1,4 @@
 # Override systemd service to set conditional path
 [Service]
-ExecStart=/usr/sbin/slurmd --conf-server={{ hostvars[groups.master.0].name }} -D
+ExecStart=
+ExecStart=/usr/sbin/slurmd --conf-server={{ hostvars[groups.master.0].name }}

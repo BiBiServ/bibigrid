@@ -1,4 +1,4 @@
-- name: Copy system overrides (slurmd)
+- name: Copy system master overrides (slurmd)
   copy:
     src: "slurm/systemd/slurmd_master.override"
     dest: "/etc/systemd/system/slurmd.service.d/override.conf"
