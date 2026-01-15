@@ -194,6 +194,57 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
             free_resources[key] = volume_limits["max_total_" + key] - volume_limits["total_" + key + "_used"]
         return free_resources
 
+    def get_free_resources_new(self):  # pylint: disable=all
+        """
+        Returns remaining (free) quota resources for the currently
+        authenticated project (from clouds.yaml).
+
+        Unlimited quotas are returned as 0.
+        """
+        project_id = self.conn.current_project_id
+
+        # Compute Quotas
+        compute_quotas = self.conn.compute.get_quota_set(project_id)
+        # Compute Usage: list servers and sum resources
+        servers = list(self.conn.compute.servers())
+        instances_used = len(servers)
+        vcpus_used = sum(getattr(s, 'flavor', {}).get('vcpus', 0) for s in servers)
+        ram_used = sum(getattr(s, 'flavor', {}).get('ram', 0) for s in servers)  # in MB
+
+        # Volume Quotas
+        volume_quotas = self.conn.volume.get_quota_set(project_id)
+        # Volume Usage: list volumes and sum sizes
+        volumes = list(self.conn.volume.volumes())
+        volumes_used = len(volumes)
+        volume_storage_used = sum(v.size for v in volumes)  # in GB
+
+        # Network Quotas
+        network_quotas = self.conn.network.get_quota(project_id)
+        # Network Usage: count resources
+        floating_ips = len(list(self.conn.network.ips(floating_ip=True)))
+        security_groups = len(list(self.conn.network.security_groups()))
+        security_group_rules = sum(len(sg.security_group_rules) for sg in self.conn.network.security_groups())
+        networks = len(list(self.conn.network.networks()))
+        ports = len(list(self.conn.network.ports()))
+        routers = len(list(self.conn.network.routers()))
+
+        # Format output
+        output = [
+            f"Compute Instances Used {instances_used} of {compute_quotas.instances}",
+            f"VCPUs Used {vcpus_used} of {compute_quotas.cores}",
+            f"RAM Used {ram_used / 1024:.1f}GB of {compute_quotas.ram / 1024:.1f}GB",
+            f"Volume Volumes Used {volumes_used} of {volume_quotas.volumes}",
+            f"Volume Storage Used {volume_storage_used:.1f}GB of {volume_quotas.gigabytes:.1f}GB",
+            f"Network Floating IPs Allocated {floating_ips} of {network_quotas.floating_ips}",
+            f"Security Groups Used {security_groups} of {network_quotas.security_groups}",
+            f"Security Group Rules Used {security_group_rules} of {network_quotas.security_group_rules}",
+            f"Networks Used {networks} of {network_quotas.networks}",
+            f"Ports Used {ports} of {network_quotas.ports}",
+            f"Routers Used {routers} of {network_quotas.routers}",
+        ]
+        print("\n".join(output))
+        exit(0)  # Remove or comment out in production code
+
     def get_volume_by_id_or_name(self, name_or_id):
         return self.conn.get_volume(name_or_id)
 
@@ -244,9 +295,8 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param server:
         @return:
         """
-        floating_ip = self.conn.available_floating_ip(network=network)
-        if server:
-            self.conn.compute.add_floating_ip_to_server(server, floating_ip["floating_ip_address"])
+        floating_ip = self.conn.available_floating_ip(network=network, server=server)
+        self.conn.add_ip_list(server, [floating_ip["floating_ip_address"]])
         return floating_ip
 
     def get_images(self):
@@ -345,7 +395,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param name_or_id:
         @return:
         """
-        return self.conn.get_server(name_or_id)
+        return self.conn.get_server(name_or_id).to_dict()
 
     def create_volume(self, *, name, size, wait=True, volume_type=None, description=None):
         """
@@ -366,7 +416,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param name_or_id:
         @return: True if deletion was successful, else False
         """
-        return self.conn.delete_volume(name_or_id=name_or_id)
+        return self.conn.delete_volume(name_or_id=name_or_id, wait=True)
 
     def list_volumes(self):
         """

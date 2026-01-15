@@ -38,5 +38,5 @@ if __name__ == '__main__':
     # Needs to contain providers and infrastructures for the provider tests
     # You can use bibigrid_test_exmaple.yaml as the basis
     suite = unittest.TestLoader().discover(start_dir=".", pattern='test_*.py')
-    with suppress_stdout():
-        unittest.TextTestRunner(verbosity=2).run(suite)
+    # with suppress_stdout():
+    unittest.TextTestRunner(verbosity=2).run(suite)

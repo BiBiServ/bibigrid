@@ -73,7 +73,7 @@ for worker_group in worker_groups:
             volume_regex = re.compile(fr"^{terminate_worker}-(tmp)-\d+(-.+)?$")
             for volume in volume_list:
                 if volume_regex.match(volume["name"]):
-                    logging.info(f"Trying to delete volume {volume['name']}: {connection.delete_volume(volume)}")
+                    logging.info(f"Trying to delete volume {volume['name']}: {connection.delete_volume(volume['id'])}")
         if not result:
             logging.warning(f"Couldn't delete worker {terminate_worker}: Server doesn't exist")
         else:

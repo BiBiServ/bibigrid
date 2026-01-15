@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import traceback
+from contextlib import contextmanager
 
 import click
 import yaml
@@ -25,6 +26,16 @@ VERBOSITY_LIST = [logging.WARNING, logging.INFO, logging.DEBUG]
 LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG = logging.getLogger("bibigrid")
 logging.addLevelName(42, "PRINT")
+
+
+@contextmanager
+def managed_providers(configurations, log):
+    providers = provider_handler.get_providers(configurations, log)
+    try:
+        yield providers
+    finally:
+        for provider in providers or []:
+            provider.close()
 
 
 def get_cluster_id_from_mem():
@@ -62,12 +73,12 @@ def set_logger_verbosity(verbosity):
 
 def check_cid(cluster_id):
     if "-" in cluster_id:
-        new_cid = cluster_id.split("-")[-1]
-        LOG.info("-cid %s is not a cid, but probably the entire master name. Using '%s' as "
-                 "cid instead.", cluster_id, new_cid)
-        return new_cid
+        real_cid = cluster_id.split("-")[-1]
+        LOG.warning(f"-cid {cluster_id} is not a cid, but probably the entire master name. Using '{real_cid}' as "
+                    "cid instead.")
+        return real_cid
     if "." in cluster_id:
-        LOG.info("-cid %s is not a cid, but probably the master's ip. "
+        LOG.info(f"-cid {cluster_id} is not a cid, but probably the master's ip. "
                  "Using the master ip instead of cid only works if a cluster key is in your systems default ssh key "
                  "location (~/.ssh/). Otherwise bibigrid can't identify the cluster key.")
     if len(cluster_id) != id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
@@ -98,50 +109,52 @@ def run_action(action, configurations, config_input, cluster_id, debug):
     exit_state = 0
 
     try:
-        providers = provider_handler.get_providers(configurations, LOG)
-        if not providers:
-            exit_state = 1
+        with managed_providers(configurations, LOG) as providers:
+            if not providers:
+                LOG.warning("No providers found. Aborting.")
+                exit_state = 1
+                return exit_state
 
-        if providers:
-            match action:
-                case 'list':
-                    LOG.info("Action list selected")
-                    exit_state = list_clusters.log_list(cluster_id, providers, LOG)
-                case 'check':
-                    LOG.info("Action check selected")
-                    exit_state = check.check(configurations, providers, LOG)
-                case 'create':
-                    LOG.info("Action create selected")
-                    creator = create.Create(providers=providers, configurations=configurations, log=LOG, debug=debug,
-                                            config_path=config_input, cluster_id=cluster_id)
-                    LOG.log(42,
-                            "Creating a new cluster takes about 10 or more minutes depending on your cloud "
-                            "provider and your configuration. Please be patient.")
-                    exit_state = creator.create()
-                case _:
-                    if not cluster_id:
-                        cluster_id = get_cluster_id_from_mem()
-                        LOG.info("No cid (cluster_id) specified. Defaulting to last created cluster: %s",
-                                 cluster_id or 'None found')
-                    if cluster_id:
-                        LOG.debug(f"CL Argument Cluster ID: {cluster_id}")
-                        match action:
-                            case 'terminate':
-                                LOG.info("Action terminate selected")
-                                exit_state = terminate.terminate(cluster_id=cluster_id, providers=providers, log=LOG,
-                                                                 debug=debug)
-                            case 'ide':
-                                LOG.info("Action ide selected")
-                                exit_state = ide.ide(cluster_id, providers[0], configurations[0], LOG)
-                            case 'update':
-                                LOG.info("Action update selected")
-                                creator = create.Create(providers=providers, configurations=configurations, log=LOG,
-                                                        debug=debug, config_path=config_input, cluster_id=cluster_id)
-                                exit_state = update.update(creator, LOG)
+            if action in {'terminate', 'ide', 'update'} and not cluster_id:
+                cluster_id = get_cluster_id_from_mem()
+                LOG.info(f"No cid (cluster_id) specified. Defaulting to last created cluster: "
+                         f"{cluster_id or 'None found'}")
+                if not cluster_id:
+                    LOG.warning("No cid specified and none found in memory but required. Aborting.")
+                    exit_state = 1
+                    return exit_state
 
-            for provider in providers:
-                provider.close()
-
+            if not exit_state:
+                match action:
+                    case 'list':
+                        LOG.info("Action list selected")
+                        exit_state = list_clusters.log_list(cluster_id, providers, LOG)
+                    case 'check':
+                        LOG.info("Action check selected")
+                        exit_state = check.check(configurations, providers, LOG)
+                    case 'create':
+                        LOG.info("Action create selected")
+                        creator = create.Create(providers=providers, configurations=configurations, log=LOG,
+                                                debug=debug, config_path=config_input, cluster_id=cluster_id)
+                        LOG.log(42,
+                                "Creating a new cluster takes about 10 or more minutes depending on your cloud "
+                                "provider and your configuration. Please be patient.")
+                        exit_state = creator.create()
+                    case 'terminate':
+                        LOG.info("Action terminate selected")
+                        exit_state = terminate.terminate(cluster_id=cluster_id, providers=providers, log=LOG,
+                                                         debug=debug)
+                    case 'ide':
+                        LOG.info("Action ide selected")
+                        exit_state = ide.ide(cluster_id, providers[0], configurations[0], LOG)
+                    case 'update':
+                        LOG.info("Action update selected")
+                        creator = create.Create(providers=providers, configurations=configurations, log=LOG,
+                                                debug=debug, config_path=config_input, cluster_id=cluster_id)
+                        exit_state = update.update(creator, LOG)
+                    case _:
+                        LOG.warning("Unknown Action. Aborting.")
+                        exit_state = 1
     except Exception as _:  # pylint: disable=broad-exception-caught
         exc_type, exc_value, exc_traceback = sys.exc_info()
         LOG.error("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))

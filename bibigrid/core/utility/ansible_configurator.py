@@ -14,7 +14,7 @@ from bibigrid.core.utility import yaml_dumper
 from bibigrid.core.utility.handler import configuration_handler
 from bibigrid.core.utility.paths import ansible_resources_path as aRP
 from bibigrid.core.utility.paths.basic_path import ROOT_PATH
-from bibigrid.core.utility.statics.create_statics import MASTER_IDENTIFIER, VPNGTW_IDENTIFIER, WORKER_IDENTIFIER
+from bibigrid.core.utility.statics.create_statics import master_identifier, vpngtw_identifier, worker_identifier
 from bibigrid.core.utility.wireguard import wireguard_keys
 
 PYTHON_INTERPRETER = "/usr/bin/python3"
@@ -72,7 +72,7 @@ def get_full_volume_name(volume, name, count):
 def get_worker_host_vars(*, cluster_id, worker, worker_count):
     write_host_vars_remote = []
     for worker_number in range(worker.get('count', 1)):
-        name = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=worker_count + worker_number)
+        name = worker_identifier(cluster_id=cluster_id, additional=worker_count + worker_number)
         write_volumes = []
         for i, volume in enumerate(worker.get("volumes", [])):
             volume_name = get_full_volume_name(volume, name, i)
@@ -86,10 +86,10 @@ def get_worker_vars(*, provider, configuration, cluster_id, worker,
                     worker_count):  # pylint: disable-msg=too-many-locals
     write_worker_vars_remote = []
     flavor_dict = provider.create_flavor_dict(flavor=worker["type"])
-    name = WORKER_IDENTIFIER(cluster_id=cluster_id,
+    name = worker_identifier(cluster_id=cluster_id,
                              additional=f"[{worker_count}-{worker_count + worker.get('count', 1) - 1}]")
     group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
-    regexp = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
+    regexp = worker_identifier(cluster_id=cluster_id, additional=r"\d+")
     partitions = worker.get("partitions", []) + [configuration["cloud_identifier"]]
     if not configuration.get("noAllPartition"):
         partitions.append("all")
@@ -124,11 +124,11 @@ def get_worker_vars(*, provider, configuration, cluster_id, worker,
 
 
 def get_vpn_vars(*, provider, configuration, cluster_id, vpngtw, vpn_count):
-    name = VPNGTW_IDENTIFIER(cluster_id=cluster_id, additional=f"{vpn_count}")
+    name = vpngtw_identifier(cluster_id=cluster_id, additional=f"{vpn_count}")
     wireguard_ip = f"10.0.0.{vpn_count + 2}"  # skipping 0 and 1 (master)
     vpn_count += 1
     flavor_dict = provider.create_flavor_dict(flavor=vpngtw["type"])
-    regexp = WORKER_IDENTIFIER(cluster_id=cluster_id, additional=r"\d+")
+    regexp = worker_identifier(cluster_id=cluster_id, additional=r"\d+")
     vpngtw_dict = {"name": name, "regexp": regexp, "image": vpngtw["image"],
                    "network": configuration["network"], "network_cidrs": configuration["subnet_cidrs"],
                    "floating_ip": configuration["floating_ip"], "private_v4": configuration["private_v4"],
@@ -144,7 +144,7 @@ def get_vpn_vars(*, provider, configuration, cluster_id, vpngtw, vpn_count):
 
 def get_master_vars(provider, configuration, cluster_id):
     master = configuration["masterInstance"]
-    name = MASTER_IDENTIFIER(cluster_id=cluster_id)
+    name = master_identifier(cluster_id=cluster_id)
     flavor_dict = provider.create_flavor_dict(flavor=master["type"])
     partitions = master.get("partitions", []) + [configuration["cloud_identifier"]]
     if not configuration.get("noAllPartition"):
@@ -269,7 +269,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     @return: ansible_hosts yaml (dict)
     """
     log.info("Generating ansible hosts file...")
-    master_name = MASTER_IDENTIFIER(cluster_id=cluster_id)
+    master_name = master_identifier(cluster_id=cluster_id)
     ansible_hosts_yaml = {"vpn": {"hosts": {},
                                   "children": {"master": {"hosts": {master_name: to_instance_host_dict(ssh_user)}},
                                                "vpngtw": {"hosts": {}}}}, "workers": {"hosts": {}, "children": {}}}
@@ -280,7 +280,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
     vpngtw_count = 0
     for configuration in configurations:
         for worker in configuration.get("workerInstances", []):
-            name = WORKER_IDENTIFIER(cluster_id=cluster_id,
+            name = worker_identifier(cluster_id=cluster_id,
                                      additional=f"[{worker_count}:{worker_count + worker.get('count', 1) - 1}]")
             worker_dict = to_instance_host_dict(ssh_user, ip="")
             group_name = name.replace("[", "").replace("]", "").replace(":", "_").replace("-", "_")
@@ -290,7 +290,7 @@ def generate_ansible_hosts_yaml(ssh_user, configurations, cluster_id, log):  # p
             worker_count += worker.get('count', 1)
 
         if configuration.get("vpnInstance"):
-            name = VPNGTW_IDENTIFIER(cluster_id=cluster_id, additional=vpngtw_count)
+            name = vpngtw_identifier(cluster_id=cluster_id, additional=vpngtw_count)
             vpngtw_dict = to_instance_host_dict(ssh_user, ip="")
             vpngtw_dict["ansible_host"] = configuration["floating_ip"]
             vpngtws[name] = vpngtw_dict
