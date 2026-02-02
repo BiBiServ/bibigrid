@@ -66,5 +66,28 @@
     repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
   notify: Apt update
 
+- name: Install Nvidia Drivers
+  block:
+    - name: Install ubuntu-drivers-common
+      apt:
+        name: ubuntu-drivers-common
+        state: present
+        update_cache: yes
+
+    - name: Install recommended NVIDIA driver
+      command: ubuntu-drivers install
+      args:
+        creates: /usr/bin/nvidia-smi
+      register: ubuntu_drivers_result
+
+    - name: Reboot after NVIDIA driver installation
+      reboot:
+        reboot_timeout: 900
+        pre_reboot_delay: 5
+        post_reboot_delay: 20
+        test_command: nvidia-smi
+      when: ubuntu_drivers_result.changed
+  when: flavor.gres is defined
+
 - name: Flush handlers
   meta: flush_handlers
