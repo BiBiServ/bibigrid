@@ -370,15 +370,16 @@ class ValidateConfiguration:
     def _check_volume(self, provider, volume, count):
         success = True
         if volume.get("exists"):
-            if volume.get("name"):
-                volume_object = provider.get_volume_by_id_or_name(volume["name"])
+            volume_name_or_id = volume.get("id", volume.get("name"))
+            if volume_name_or_id:
+                volume_object = provider.get_volume_by_id_or_name(volume_name_or_id)
                 if volume_object:
                     self.log.debug(
-                        f"Found volume {volume['name']} on cloud "
+                        f"Found volume {volume_name_or_id} on cloud "
                         f"{provider.cloud_specification['identifier']}.")
                 else:
                     self.log.warning(
-                        f"Couldn't find volume {volume['name']} on cloud "
+                        f"Couldn't find volume {volume_name_or_id} on cloud "
                         f"{provider.cloud_specification['identifier']}. "
                         "No size added to resource requirements dict."
                     )

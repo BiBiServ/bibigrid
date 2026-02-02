@@ -47,6 +47,7 @@
     state: "present"
 
 - name: Add zabbix repositories # noqa: line-length
+  when: enable_zabbix|default(false)|bool
   apt:
     # yamllint disable-line
     deb: "https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+{{ ansible_distribution | lower }}{{ ansible_distribution_version }}_all.deb"
@@ -67,27 +68,19 @@
   notify: Apt update
 
 - name: Install Nvidia Drivers
+  when: flavor.gres is defined
   block:
     - name: Install ubuntu-drivers-common
       apt:
         name: ubuntu-drivers-common
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Install recommended NVIDIA driver
       command: ubuntu-drivers install
       args:
         creates: /usr/bin/nvidia-smi
-      register: ubuntu_drivers_result
-
-    - name: Reboot after NVIDIA driver installation
-      reboot:
-        reboot_timeout: 900
-        pre_reboot_delay: 5
-        post_reboot_delay: 20
-        test_command: nvidia-smi
-      when: ubuntu_drivers_result.changed
-  when: flavor.gres is defined
+      notify: Nvidia drivers installed
 
 - name: Flush handlers
   meta: flush_handlers

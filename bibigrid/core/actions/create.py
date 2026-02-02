@@ -117,6 +117,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # upload keyfiles
         for provider in self.providers:
             provider.create_keypair(name=self.key_name, public_key=public_key)
+        self.log.debug("Keypair generated - METHOD")
 
     def delete_old_vars(self):
         """
@@ -338,13 +339,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                       server_volume["id"] == volume["id"]), None)
                 if not server_volume:
                     raise RuntimeError(
-                        f"Created server {server['name']} doesn't have attached volume {volume['name']}.")
+                        f"Created server {server['name']} doesn't have attached volume {volume.get('name')} "
+                        f"(volume_id:{volume.get('id')}).")
                 device = server_volume.get("device")
                 final_volumes.append({**volume, "device": device})
 
                 self.log.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
-                               f"as device {device} that is going to be mounted to "
-                               f"{volume.get('mountPoint')}")
+                               f"(volume_id:{volume.get('id')}) "
+                               f"as device {device} (Mount Point {volume.get('mountPoint', 'Will Not Be Mounted')})")
 
             self.write_remote.append(
                 ({"volumes": final_volumes}, os.path.join(a_rp.HOST_VARS_FOLDER_REMOTE, f"{server['name']}.yaml"),
@@ -529,6 +531,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     self.log.info("%s not found. Creating folder.", folder)
                     os.mkdir(folder)
             self.generate_keypair()
+            self.log.debug("Keypair generated")
             self.delete_old_vars()
             self.prepare_configurations()
             self.create_defaults()
