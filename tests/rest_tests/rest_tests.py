@@ -97,7 +97,6 @@ if __name__ == "__main__":
     while test_state("starting"):
         time.sleep(10)
     test_state("running", do_assert=True)
-    input("Waiting...")
     test_terminate_cluster()
     while test_state("running"):
         time.sleep(2)
