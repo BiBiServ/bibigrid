@@ -203,13 +203,42 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         """
 
     @abstractmethod
-    def attach_available_floating_ip(self, network=None, server=None):
+    def add_ip_list(self, server, ips, wait=False, timeout=60, fixed_address=None, nat_destination=None):
         """
-        Get a floating IP from a network or a pool and attach it to the server
-        @param network:
-        @param server:
+        Add ip list to server.
+        :param server:
+        :param ips:
+        :param wait:
+        :param timeout:
+        :param fixed_address:
+        :param nat_destination:
+        :return:
+        """
+
+    @abstractmethod
+    def get_floating_ip(self, id, filters=None):
+        """
+        Get a floating IP by id.
+        @param id:
+        @param filters:
         @return:
         """
+
+    @abstractmethod
+    def create_floating_ip(self, network=None, server=None, fixed_address=None, nat_destination=None, port=None,
+                           wait=False, timeout=60):
+        """
+
+        @param network:
+        @param server:
+        @param fixed_address:
+        @param nat_destination:
+        @param port:
+        @param wait:
+        @param timeout:
+        @return:
+        """
+
 
     @abstractmethod
     def get_images(self):

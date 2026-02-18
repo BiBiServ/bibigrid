@@ -224,8 +224,16 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         # pylint: disable=comparison-with-callable
         if identifier == vpngtw_identifier or (identifier == master_identifier and self.use_master_with_public_ip):
-            configuration["floating_ip"] = \
-                provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
+            if not configuration.get("floatingIpId"):
+                configuration["floating_ip"] = provider.create_floating_ip(network=external_network, server=server)[
+                    "floating_ip_address"]
+            else:
+                configuration["floating_ip"] = provider.get_floating_ip(configuration["floatingIpId"])[
+                    "floating_ip_address"]
+                _ = provider.add_ip_list(server, [configuration["floating_ip"]])
+            self.log.info(
+                f"Server {name} uses floating ip {configuration['floating_ip']} ({'pre-existing'
+                if configuration.get('floatingIpId') else 'created'})")
             if identifier == master_identifier:
                 write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
                                      "floating_ip": configuration["floating_ip"],
