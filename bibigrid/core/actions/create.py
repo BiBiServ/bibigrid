@@ -117,7 +117,6 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         # upload keyfiles
         for provider in self.providers:
             provider.create_keypair(name=self.key_name, public_key=public_key)
-        self.log.debug("Keypair generated - METHOD")
 
     def delete_old_vars(self):
         """
