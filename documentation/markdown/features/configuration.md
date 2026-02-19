@@ -238,7 +238,7 @@ workerInstance:
     volumes: # optional
       - name: volumeName
         snapshot: snapshotName # optional; to create volume from
-        # one or none of these
+        # one or none of these three
         # permanent: False
         # semiPermanent: False
         # exists: False

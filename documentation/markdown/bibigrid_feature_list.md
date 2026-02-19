@@ -3,9 +3,9 @@
 |                               Name                               |                                                           Purpose                                                           |
 |:----------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------------:|
 |                  [Version](features/version.md)                  |                                 Returns BiBiGrid's version for opening issues and the like                                  |
-|        [Terminate Cluster](features/terminate_cluster.md)        |     Terminates the cluster specified by cluster-id i.e. removes key, application credentials, servers and floating-ips.     |
+|            [Terminate](features/terminate_cluster.md)            |     Terminates the cluster specified by cluster-id i.e. removes key, application credentials, servers and floating-ips.     |
 |                   [Create](features/create.md)                   |                                     Creates the cluster specified by the configuration.                                     |
-|            [List Clusters](features/list_clusters.md)            | Shows info of all clusters if no cluster-id is specified. Otherwise the cluster-id's cluster will be shown in great detail. |
+|                [List](features/list_clusters.md)                 | Shows info of all clusters if no cluster-id is specified. Otherwise the cluster-id's cluster will be shown in great detail. |
 |                    [Check](features/check.md)                    |                      Checks if given configuration is valid and necessary security measures are taken.                      |
 |                    [Web IDE](features/ide.md)                    |             Connects to running IDE of cluster-id's cluster. Requires that given cluster was setup with an ide.             |
 |                   [Update](features/update.md)                   |   Updates the master's playbook and runs that playbook for the master. Requires that no job is running and no workers up.   |
@@ -16,5 +16,6 @@
 |    [BiBiGrid Cluster Commands](features/cluster_commands.md)     |                                   Short useful commands to get information on the cluster                                   |
 |     [Other Configurations](features/other_configurations.md)     |                                      Info about custom `ansible.cfg` and `slurm.conf`                                       |
 |          [BiBiGrid REST API](features/bibigrid_rest.md)          |                                         Info about custom how to run BiBiGrid REST.                                         |
+|                  [GPU Nodes](features/gres.md)                   |                                                    Info about gpu nodes.                                                    |
 
 ![](../images/actions.jpg)

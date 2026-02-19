@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 with open(os.path.join(ROOT_PATH, "resources/tests/rest_test.json"), 'r', encoding='utf-8') as file:
     configurations_json = json.load(file)
 
-CLUSTER_ID = "123456789123456"
+CLUSTER_ID = "bibigrid1234567" # "a2ternativetest"
 
 client = TestClient(app)
 # Read the cloud_node_requirements YAML file and load it into a dictionary

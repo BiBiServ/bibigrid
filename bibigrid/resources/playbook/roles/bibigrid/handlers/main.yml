@@ -78,3 +78,10 @@
 - name: Apt update
   apt:
     update_cache: "yes"
+
+- name: Nvidia drivers installed
+  reboot:
+    reboot_timeout: 900
+    pre_reboot_delay: 5
+    post_reboot_delay: 20
+    test_command: nvidia-smi

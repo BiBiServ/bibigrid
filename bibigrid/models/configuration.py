@@ -201,6 +201,8 @@ class ConfigurationsModel(StrictModel):
     def split_master_and_other(cls, values):
         if isinstance(values, list):
             values = {"configurations": values}
+        if values.get("master"):
+            return values
         configs = values.get("configurations")
         if not configs:
             raise ValueError("Configurations list cannot be empty")
