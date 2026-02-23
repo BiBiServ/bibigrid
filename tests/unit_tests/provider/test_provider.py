@@ -81,7 +81,7 @@ class ProviderServer:
         return self.server_dict
 
     def __exit__(self, not_type, value, traceback):  # type
-        self.provider.delete_server(name_or_id=self.name)
+        self.provider.delete_server(name_or_id=self.name, delete_ips=True)
 
 
 class TestProvider(unittest.TestCase):
@@ -169,7 +169,7 @@ class TestProvider(unittest.TestCase):
                 with ProviderServer(provider, "bibigrid_test_server", configuration,
                                     "bibigrid_test_keypair") as provider_server:
                     floating_ip = provider.create_floating_ip(
-                        provider.get_external_network(configuration["network"]), provider_server)
+                        provider.get_external_network(configuration["network"]), provider_server, wait=True)
                     server = provider.get_server("bibigrid_test_server")
                     self.assertEqual(floating_ip["floating_ip_address"], server["access_ipv4"])
 

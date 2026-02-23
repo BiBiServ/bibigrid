@@ -312,7 +312,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                                      nat_destination=nat_destination)
 
     def create_floating_ip(self, network=None, server=None, fixed_address=None, nat_destination=None, port=None,
-                           wait=False, timeout=60):
+                           wait=True, timeout=60):
         """
 
         @param network:
