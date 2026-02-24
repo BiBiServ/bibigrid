@@ -30,7 +30,7 @@ class TestTerminate(TestCase):
         provider.list_volumes([{"name": "bibigrid-master-i950vaoqzfbwpnq-tmp-0"}])
         provider.delete_security_group.return_value = True
         provider.delete_application_credentials.return_value = True
-        terminate.terminate(str(cluster_id), [provider], startup.LOG, [None], False, True)
+        terminate.terminate(str(cluster_id), [provider], [None], startup.LOG, False, True)
         provider.delete_server.assert_called_with(21, delete_ips=True)
         provider.delete_keypair.assert_called_with(KEY_NAME.format(cluster_id=cluster_id))
         mock_output.assert_called_with(cluster_server_state=[provider.delete_server.return_value],
@@ -57,7 +57,7 @@ class TestTerminate(TestCase):
         provider.list_volumes([{"name": "bibigrid-master-i950vaoqzfbwpnq-tmp-0"}])
         provider.delete_security_group.return_value = True
         provider.delete_application_credentials.return_value = True
-        terminate.terminate(str(cluster_id), [provider], startup.LOG, ["123"], False, True)
+        terminate.terminate(str(cluster_id), [provider], ["123"], startup.LOG, False, True)
         provider.delete_server.assert_called_with(21, delete_ips=False)
 
     @patch("bibigrid.core.actions.terminate.delete_local_keypairs")
@@ -70,7 +70,7 @@ class TestTerminate(TestCase):
         provider.list_servers.return_value = [
             {"name": master_identifier(cluster_id=str(cluster_id + 1)), "id": 21}]
         provider.delete_keypair.return_value = False
-        terminate.terminate(str(cluster_id), [provider], startup.LOG, [None], False, True)
+        terminate.terminate(str(cluster_id), [provider], [None], startup.LOG, False, True)
         provider.delete_server.assert_not_called()
         provider.delete_keypair.assert_called_with(
             KEY_NAME.format(cluster_id=str(cluster_id)))  # since keypair is not called

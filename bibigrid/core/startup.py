@@ -144,9 +144,8 @@ def run_action(action, configurations, config_input, cluster_id, debug):
                         LOG.info("Action terminate selected")
                         exit_state = terminate.terminate(cluster_id=cluster_id, providers=providers,
                                                          floating_ip_ids=configuration_handler.get_list_by_key(
-                                                             configurations=configurations,key="floatingIpId"),
-                                                         log=LOG,
-                                                         debug=debug)
+                                                             configurations=configurations, key="floatingIpId"),
+                                                         log=LOG, debug=debug)
                     case 'ide':
                         LOG.info("Action ide selected")
                         exit_state = ide.ide(cluster_id, providers[0], configurations[0], LOG)
