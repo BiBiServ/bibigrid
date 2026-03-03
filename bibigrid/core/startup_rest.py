@@ -54,6 +54,8 @@ LOG.setLevel(logging.DEBUG)
 
 #Uvicorn Logging
 LOGGING_CONFIG["formatters"]["default"]["fmt"] = LOG_FORMAT
+LOGGING_CONFIG["formatters"]["access"]["fmt"] = LOG_FORMAT
+
 
 def tail(file_path, lines):
     return subprocess.check_output(['tail', '-n', str(lines), file_path], universal_newlines=True)
