@@ -203,7 +203,7 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         """
 
     @abstractmethod
-    def add_ip_list(self, server, ips, wait=False, timeout=60, fixed_address=None, nat_destination=None):
+    def add_ip_list(self, *, server, ips, wait=False, timeout=60, fixed_address=None, nat_destination=None):
         """
         Add ip list to server.
         :param server:
@@ -216,16 +216,16 @@ class Provider(ABC):  # pylint: disable=too-many-public-methods
         """
 
     @abstractmethod
-    def get_floating_ip(self, id, filters=None):
+    def get_floating_ip(self, floating_ip_id, filters=None):
         """
         Get a floating IP by id.
-        @param id:
+        @param floating_ip_id:
         @param filters:
         @return:
         """
 
     @abstractmethod
-    def create_floating_ip(self, network=None, server=None, fixed_address=None, nat_destination=None, port=None,
+    def create_floating_ip(self, *, network=None, server=None, fixed_address=None, nat_destination=None, port=None,
                            wait=False, timeout=60):
         """
 

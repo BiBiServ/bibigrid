@@ -29,7 +29,8 @@ def write_cluster_state(state):
         yaml.safe_dump(data=state, stream=cluster_info_file)
 
 
-def terminate(cluster_id, providers, floating_ip_ids, log, debug=False, assume_yes=False):
+# pylint: disable=too-many-locals
+def terminate(*, cluster_id, providers, floating_ip_ids, log, debug=False, assume_yes=False):
     """
     Goes through all providers and gets info of all servers which name contains cluster ID.
     It then checks if any resources are reserved, but not used and frees them that were hold by the cluster.

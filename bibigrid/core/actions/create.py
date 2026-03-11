@@ -233,7 +233,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                         f"Floating ip {configuration['floatingIpId']} does not exist on "
                         f"{provider.cloud_specification['identifier']}!")
                 configuration["floating_ip"] = floating_ip["floating_ip_address"]
-                _ = provider.add_ip_list(server, [configuration["floating_ip"]])
+                _ = provider.add_ip_list(server=server, floating_ip=[configuration["floating_ip"]])
             self.log.info(
                 f"Server {name} uses floating ip {configuration['floating_ip']} ({'pre-existing'
                 if configuration.get('floatingIpId') else 'created'})")
