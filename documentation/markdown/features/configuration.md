@@ -173,7 +173,7 @@ If `False`, master will no longer help workers to process jobs. Default is `True
 
 If `False`, master will not be created with an attached floating ip. Default is `True`.
 
-#### gateway (optional)
+#### gateway (optional: None)
 In order to save valuable floating ips, BiBiGrid can also make use of a gateway to create the cluster.
 For more information on how to set up a gateway, how gateways work and why they save floating ips please continue reading [here](https://cloud.denbi.de/wiki/Tutorials/SaveFloatingIPs/).
 
@@ -201,7 +201,7 @@ This also allows for external node schedulers by using the Slurm REST API to dec
 
 ### Local
 
-#### waitForServices (optional):
+#### waitForServices (optional: None):
 
 Expects a list of services to wait for.
 This is required if your provider has any post-launch services interfering with the package manager. If not set,
@@ -357,6 +357,14 @@ Exactly one in every configuration but the first:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
 ```
+
+### floatingIpId (optional:None)
+
+At most one floatingIpId in each configuration. When set, an existing floating ip is used. 
+The floating ip is not released upon termination. 
+If unset, a new floating ip is created which is released upon termination.
+
+To list existing floating ip ids use `openstack floating ip list`.
 
 ### fallbackOnOtherImage (optional:False)
 If set to `True` and an image is not among the active images, 
