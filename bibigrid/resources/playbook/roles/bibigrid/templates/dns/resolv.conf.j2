@@ -1,3 +1,3 @@
-{% for ip in dns_server_list %}
+{% for ip in dns_server_list + systemd_resolv_lines.stdout_lines %}
 nameserver {{ ip }}
 {% endfor %}

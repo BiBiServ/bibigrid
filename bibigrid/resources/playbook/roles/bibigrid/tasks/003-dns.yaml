@@ -21,6 +21,11 @@
     mode: "0o644"
   notify: Dnsmasq
 
+- name: Read upstream DNS IPs from systemd-resolved
+  ansible.builtin.shell: "awk '/^nameserver/ {print $2}' /run/systemd/resolve/resolv.conf || true"
+  register: systemd_resolv_lines
+  changed_when: false
+
 - name: Adjust dnsmasq.resolv.conf
   template:
     src: dns/resolv.conf.j2
