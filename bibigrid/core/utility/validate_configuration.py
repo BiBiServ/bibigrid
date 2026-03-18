@@ -229,7 +229,7 @@ class ValidateConfiguration:
         for security_group_name in security_groups:
             security_group = provider.get_security_group(security_group_name)
             if not security_group:
-                self.log.warning(f"Couldn't find security group {security_group} on "
+                self.log.warning(f"Couldn't find security group {security_group_name} on "
                                  f"cloud {provider.cloud_specification['identifier']}")
                 success = False
             else:
