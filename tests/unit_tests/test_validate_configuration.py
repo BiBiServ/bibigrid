@@ -387,3 +387,31 @@ class TestValidateConfiguration(TestCase):
             {"vpnInstance": {42:42, "securityGroups": [42]}, "workerInstances": [{42:42}]}], log=Mock())
         with patch.object(v_c, "check_instance") as mock:
             self.assertFalse(v_c._check_instances())
+
+    def test_check_floating_ip_not_found(self):
+        provider1 = Mock()
+        provider1.cloud_specification = {"identifier": "1"}
+        provider1.get_floating_ip.return_value = None
+
+        v_c = validate_configuration.ValidateConfiguration(
+            providers=[provider1],
+            configurations=[{"floatingIpId": "fip-123"}],
+            log=Mock()
+        )
+
+        self.assertFalse(v_c._check_floating_ip())
+        provider1.get_floating_ip.assert_called_once_with(id="fip-123")
+
+    def test_check_floating_ip_found(self):
+        provider1 = Mock()
+        provider1.cloud_specification = {"identifier": "1"}
+        provider1.get_floating_ip.return_value = {"id": "fip-123"}
+
+        v_c = validate_configuration.ValidateConfiguration(
+            providers=[provider1],
+            configurations=[{"floatingIpId": "fip-123"}],
+            log=Mock()
+        )
+
+        self.assertTrue(v_c._check_floating_ip())
+        provider1.get_floating_ip.assert_called_once_with(id="fip-123")

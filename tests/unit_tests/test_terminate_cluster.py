@@ -30,8 +30,8 @@ class TestTerminate(TestCase):
         provider.list_volumes([{"name": "bibigrid-master-i950vaoqzfbwpnq-tmp-0"}])
         provider.delete_security_group.return_value = True
         provider.delete_application_credentials.return_value = True
-        terminate.terminate(str(cluster_id), [provider], startup.LOG, False, True)
-        provider.delete_server.assert_called_with(21)
+        terminate.terminate(str(cluster_id), [provider], [None], startup.LOG, False, True)
+        provider.delete_server.assert_called_with(21, delete_ips=True)
         provider.delete_keypair.assert_called_with(KEY_NAME.format(cluster_id=cluster_id))
         mock_output.assert_called_with(cluster_server_state=[provider.delete_server.return_value],
                                        cluster_keypair_state=[provider.delete_keypair.return_value],
@@ -40,6 +40,25 @@ class TestTerminate(TestCase):
                                        ac_state=provider.delete_application_credentials.return_value,
                                        cluster_id=str(cluster_id),
                                        log=startup.LOG)
+
+    @patch("bibigrid.core.actions.terminate.delete_local_keypairs")
+    @patch("bibigrid.core.actions.terminate.terminate_output")
+    def test_terminate_delete_ip_false(self, mock_output, mock_local):
+        mock_local.return_value = True
+        provider = MagicMock()
+        provider.cloud_specification["auth"]["project_name"] = 32
+        cluster_id = 42
+        provider.list_servers.return_value = [{"name": master_identifier(cluster_id=str(cluster_id)), "id": 21}]
+        provider.delete_server.return_value = True
+        provider.delete_keypair.return_value = True
+        provider.delete_volume.return_value = True
+        provider.list_volumes.return_value = [
+            {"name": f"{master_identifier(cluster_id=str(cluster_id))}-tmp-0", "id": 42}]
+        provider.list_volumes([{"name": "bibigrid-master-i950vaoqzfbwpnq-tmp-0"}])
+        provider.delete_security_group.return_value = True
+        provider.delete_application_credentials.return_value = True
+        terminate.terminate(str(cluster_id), [provider], ["123"], startup.LOG, False, True)
+        provider.delete_server.assert_called_with(21, delete_ips=False)
 
     @patch("bibigrid.core.actions.terminate.delete_local_keypairs")
     @patch("logging.info")
@@ -51,13 +70,12 @@ class TestTerminate(TestCase):
         provider.list_servers.return_value = [
             {"name": master_identifier(cluster_id=str(cluster_id + 1)), "id": 21}]
         provider.delete_keypair.return_value = False
-        terminate.terminate(str(cluster_id), [provider], startup.LOG, False, True)
+        terminate.terminate(str(cluster_id), [provider], [None], startup.LOG, False, True)
         provider.delete_server.assert_not_called()
         provider.delete_keypair.assert_called_with(
             KEY_NAME.format(cluster_id=str(cluster_id)))  # since keypair is not called
 
     def test_delete_non_pemanent_volumes(self):
-        cluster_id = "1234"
         provider = MagicMock()
         log = MagicMock()
         cluster_id = 21
@@ -121,24 +139,16 @@ class TestTerminate(TestCase):
             {"name": "bibigrid-worker-4242-0", "id": 42},
             {"name": "bibigrid-vpngtw-4242-0", "id": 42},
         ]
-
         provider.list_servers.return_value = servers
 
-        # Patch terminate_server from bibigrid.core.actions.terminate
+        expected_calls = [
+            call(provider, servers[0], True, log),
+            call(provider, servers[1], True, log),
+            call(provider, servers[2], True, log),
+            call(provider, servers[3], True, log),
+        ]
+
         with patch("bibigrid.core.actions.terminate.terminate_server") as mock_terminate_server:
-            # Call the method under test
-            _ = terminate.terminate_servers(cluster_id, provider, log)
-
-            # Expected captured servers
-            expected_calls = [
-                call(provider, servers[0], log),
-                call(provider, servers[1], log),
-                call(provider, servers[2], log),
-                call(provider, servers[3], log),
-            ]
-
-            # Assert that terminate_server was called only for the expected servers
+            _ = terminate.terminate_servers(cluster_id, provider, None, log)
             mock_terminate_server.assert_has_calls(expected_calls, any_order=False)
-
-            # Assert that the total number of calls matches the expected calls
             self.assertEqual(mock_terminate_server.call_count, len(expected_calls))

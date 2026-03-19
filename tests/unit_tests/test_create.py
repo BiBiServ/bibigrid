@@ -208,5 +208,6 @@ class TestCreate(TestCase):
                      mock_up, mock_start,
                      mock_conf, mock_key]:
             mock.assert_called()
-        mock_terminate.assert_called_with(cluster_id=creator.cluster_id, providers=[provider], log=startup.LOG,
+        mock_terminate.assert_called_with(cluster_id=creator.cluster_id, providers=[provider], floating_ip_ids=[None],
+                                          log=startup.LOG,
                                           debug=True)

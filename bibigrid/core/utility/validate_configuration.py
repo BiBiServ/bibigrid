@@ -214,12 +214,26 @@ class ValidateConfiguration:
         checks = [("master/vpn", self._check_master_vpn_worker), ("servergroup", self._check_server_groups),
                   ("instances", self._check_instances), ("volumes", self._check_volumes),
                   ("network", self._check_network),
+                  ("floatingIp", self._check_floating_ip),
                   ("quotas", self._check_quotas), ("sshPublicKeyFiles", self._check_ssh_public_key_files),
                   ("cloudYamls", self.check_clouds_yamls), ("nfs", self._check_nfs),
                   ("global security groups", self._check_configurations_security_groups)]
         if success:
             for check_name, check_function in checks:
                 success = evaluate(check_name, check_function(), self.log) and success
+        return success
+
+    def _check_floating_ip(self):
+        success = True
+        for configuration, provider in zip(self.configurations, self.providers):
+            if configuration.get("floatingIpId"):
+                floating_ip = provider.get_floating_ip(id=configuration["floatingIpId"])
+                if not floating_ip:
+                    self.log.warning(f"Couldn't find floating ip {configuration["floatingIpId"]} on cloud "
+                                     f"{provider.cloud_specification['identifier']}.")
+                    success = False
+                else:
+                    self.log.debug(f"Found {floating_ip} on cloud {provider.cloud_specification['identifier']}.")
         return success
 
     def _check_security_groups(self, provider, security_groups):

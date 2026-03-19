@@ -27,6 +27,7 @@
 
   ## If you use a gateway or start a cluster from the cloud, your master does not need a public ip.
   # useMasterWithPublicIp: False # defaults True if False no public-ip (floating-ip) will be allocated
+  # floatingIpId: # if set, uses existing floating ip which will not be deleted on termination.
   # gateway: # if you want to use a gateway for create.
   # ip: # IP of gateway to use
   # portFunction: 30000 + oct4 # variables are called: oct1.oct2.oct3.oct4

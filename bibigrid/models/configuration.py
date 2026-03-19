@@ -137,6 +137,7 @@ class BaseConfig(StrictModel):
     sshUser: str
     subnet: Optional[str] = Field(default=None)
     network: Optional[str] = Field(default=None)
+    floatingIpId: Optional[str] = Field(default=None)
     securityGroups: Optional[list[str]] = Field(default_factory=list)
     serverGroup: Optional[str] = None
     waitForServices: Optional[List[str]] = Field(default_factory=list)

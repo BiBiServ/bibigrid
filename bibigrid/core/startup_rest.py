@@ -193,7 +193,9 @@ async def terminate_cluster(cluster_id: str,
 
     try:
         providers = provider_handler.get_providers(configurations, log)
-        thread = threading.Thread(target=terminate.terminate, args=(cluster_id, providers, log))
+        thread = threading.Thread(target=terminate.terminate,
+                                  args=(cluster_id, providers, configuration_handler.get_list_by_key(
+                                      configurations=configurations, key="floatingIpId"), log))
         thread.start()
         return JSONResponse(content={"message": "Termination successfully requested."}, status_code=202)
     except Exception as exc:  # pylint: disable=broad-except

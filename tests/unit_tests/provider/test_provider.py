@@ -81,7 +81,7 @@ class ProviderServer:
         return self.server_dict
 
     def __exit__(self, not_type, value, traceback):  # type
-        self.provider.delete_server(name_or_id=self.name)
+        self.provider.delete_server(name_or_id=self.name, delete_ips=True)
 
 
 class TestProvider(unittest.TestCase):
@@ -143,8 +143,12 @@ class TestProvider(unittest.TestCase):
             with self.subTest(provider.NAME):
                 with ProviderServer(provider, "bibigrid_test_server", configuration,
                                     "bibigrid_test_keypair") as provider_server:
-                    floating_ip = provider.attach_available_floating_ip(
-                        provider.get_external_network(configuration["network"]), provider_server)
+                    floating_ip = provider.create_floating_ip(
+                        provider.get_external_network(configuration["network"]))
+                    server = provider.add_ip_list(provider_server, [floating_ip["floating_ip_address"]])
+                    server = provider.get_server(server["id"])
+                    self.assertEqual(floating_ip["floating_ip_address"], server["access_ipv4"])
+                    self.assertEqual(floating_ip["id"], provider.get_floating_ip(floating_ip["id"])["id"])
                     server_list = provider.list_servers()
                     get_server = provider.get_server("bibigrid_test_server")
                 self.assertEqual({"test":"test"}, provider_server.get("metadata"))
@@ -157,6 +161,17 @@ class TestProvider(unittest.TestCase):
                 self.assertEqual("bibigrid_test_server", get_server["name"])
                 self.assertEqual(get_server, list_server)
             provider.delete_keypair("bibigrid_test_keypair")
+
+    def test_create_floating_ip_attached_to_server(self):
+        for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):
+            provider.create_keypair("bibigrid_test_keypair", KEYPAIR)
+            with self.subTest(provider.NAME):
+                with ProviderServer(provider, "bibigrid_test_server", configuration,
+                                    "bibigrid_test_keypair") as provider_server:
+                    floating_ip = provider.create_floating_ip(
+                        provider.get_external_network(configuration["network"]), provider_server, wait=True)
+                    server = provider.get_server("bibigrid_test_server")
+                    self.assertEqual(floating_ip["floating_ip_address"], server["access_ipv4"])
 
     def test_get_external_network(self):
         for provider, configuration in zip(PROVIDERS, CONFIGURATIONS):

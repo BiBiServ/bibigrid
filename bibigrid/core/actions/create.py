@@ -17,7 +17,7 @@ from bibigrid.core.actions.terminate import delete_keypairs, delete_local_keypai
 from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import image_selection
-from bibigrid.core.utility.handler import ssh_handler
+from bibigrid.core.utility.handler import ssh_handler, configuration_handler
 from bibigrid.core.utility.paths import ansible_resources_path as a_rp
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, KEY_FOLDER
 from bibigrid.core.utility.statics.create_statics import AC_NAME, KEY_NAME, DEFAULT_SECURITY_GROUP_NAME, \
@@ -223,8 +223,20 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
 
         # pylint: disable=comparison-with-callable
         if identifier == vpngtw_identifier or (identifier == master_identifier and self.use_master_with_public_ip):
-            configuration["floating_ip"] = \
-                provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
+            if not configuration.get("floatingIpId"):
+                configuration["floating_ip"] = provider.create_floating_ip(network=external_network, server=server)[
+                    "floating_ip_address"]
+            else:
+                floating_ip = provider.get_floating_ip(configuration["floatingIpId"])
+                if not floating_ip:
+                    raise ValueError(
+                        f"Floating ip {configuration['floatingIpId']} does not exist on "
+                        f"{provider.cloud_specification['identifier']}!")
+                configuration["floating_ip"] = floating_ip["floating_ip_address"]
+                _ = provider.add_ip_list(server=server, floating_ip=[configuration["floating_ip"]])
+            self.log.info(
+                f"Server {name} uses floating ip {configuration['floating_ip']} ({'pre-existing'
+                if configuration.get('floatingIpId') else 'created'})")
             if identifier == master_identifier:
                 write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
                                      "floating_ip": configuration["floating_ip"],
@@ -546,8 +558,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 delete_local_keypairs(tmp_keyname=self.key_name, log=self.log)
             if self.debug:
                 self.log.info("DEBUG MODE: Entering termination...")
-                terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug,
-                          log=self.log)
+                terminate(cluster_id=self.cluster_id, providers=self.providers,
+                          floating_ip_ids=configuration_handler.get_list_by_key(self.configurations, "floatingIpId"),
+                          log=self.log, debug=self.debug)
         except exceptions.ConnectionException:
             self.log.error(traceback.format_exc())
             self.log.error("Connection couldn't be established. Check Provider connection.")
@@ -577,7 +590,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
-        terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
+        terminate(cluster_id=self.cluster_id, providers=self.providers,
+                  floating_ip_ids=configuration_handler.get_list_by_key(self.configurations, "floatingIpId"),
+                  log=self.log, debug=self.debug)
         write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
                              "floating_ip": self.configurations[0].get("floating_ip"),
                              "state": "failed",

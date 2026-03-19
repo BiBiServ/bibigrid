@@ -288,16 +288,45 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                     return router.external_gateway_info["network_id"]
         return None
 
-    def attach_available_floating_ip(self, network=None, server=None):
+    def get_floating_ip(self, floating_ip_id, filters=None):
         """
-        Get a floating IP from a network or a pool and attach it to the server
-        @param network:
-        @param server:
+        Get a floating IP by id.
+        @param floating_ip_id:
+        @param filters:
         @return:
         """
-        floating_ip = self.conn.available_floating_ip(network=network, server=server)
-        self.conn.add_ip_list(server, [floating_ip["floating_ip_address"]])
-        return floating_ip
+        return self.conn.get_floating_ip(floating_ip_id, filters)
+
+    def add_ip_list(self, *, server, ips, wait=False, timeout=60, fixed_address=None, nat_destination=None):
+        """
+        Add ip list to server.
+        :param server:
+        :param ips:
+        :param wait:
+        :param timeout:
+        :param fixed_address:
+        :param nat_destination:
+        :return:
+        """
+        return self.conn.add_ip_list(server, ips, wait=wait, timeout=timeout, fixed_address=fixed_address,
+                                     nat_destination=nat_destination)
+
+    def create_floating_ip(self, *, network=None, server=None, fixed_address=None, nat_destination=None, port=None,
+                           wait=True, timeout=60):
+        """
+
+        @param network:
+        @param server:
+        @param fixed_address:
+        @param nat_destination:
+        @param port:
+        @param wait:
+        @param timeout:
+        @return:
+        """
+        return self.conn.create_floating_ip(network=network, server=server, fixed_address=fixed_address,
+                                            nat_destination=nat_destination,
+                                            port=port, wait=wait, timeout=timeout)
 
     def get_images(self):
         """

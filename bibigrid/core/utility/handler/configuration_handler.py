@@ -42,15 +42,15 @@ def read_configuration(log, path, configuration_list=True):
     return configuration
 
 
-def get_list_by_key(configurations, key, get_empty=True):
+def get_list_by_key(configurations, key, include_none=True):
     """
     Returns a list of objects which are value to the key.
-    @param get_empty: if true empty configurations return None
+    @param include_none: if true empty configurations return None
     @param configurations: YAML of configuration File containing the configuration-data for each provider
     @param key: Key that is looked out for
     @return: List of values of said key through all configs
     """
-    return [configuration.get(key) for configuration in configurations if configuration.get(key) or get_empty]
+    return [configuration.get(key) for configuration in configurations if configuration.get(key) or include_none]
 
 
 # def get_dict_list_by_key_list(configurations, keys, get_empty=True):
