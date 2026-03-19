@@ -81,6 +81,27 @@
       args:
         creates: /usr/bin/nvidia-smi
       notify: Nvidia drivers installed
+    - name: Install cuda toolkit
+      apt:
+        name: nvidia-cuda-toolkit
+        state: present
+        update_cache: true
+    # Container Toolkit
+    - name: add GPG key for nvidia-container-runtime
+      apt_key:
+        url: https://nvidia.github.io/libnvidia-container/gpgkey
+        keyring: /etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg
+        state: "present"
+    - name: add nvidia-container-runtime repository to apt
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /"
+        state: present
+        filename: nvidia-container-toolkit
+        update_cache: true
+    - name: install nvidia-contaier-toolkit
+      apt:
+        name: nvidia-container-toolkit
+        state: present
 
 - name: Flush handlers
   meta: flush_handlers
