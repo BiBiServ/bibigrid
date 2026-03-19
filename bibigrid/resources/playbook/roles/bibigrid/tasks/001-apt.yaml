@@ -87,18 +87,18 @@
         state: present
         update_cache: true
     # Container Toolkit
-    - name: add GPG key for nvidia-container-runtime
+    - name: Add GPG Key For nvidia-container-runtime
       apt_key:
         url: https://nvidia.github.io/libnvidia-container/gpgkey
         keyring: /etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg
         state: "present"
-    - name: add nvidia-container-runtime repository to apt
+    - name: Add nvidia-container-runtime Repository to Apt
       apt_repository:
         repo: "deb [signed-by=/etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /"
         state: present
         filename: nvidia-container-toolkit
         update_cache: true
-    - name: install nvidia-contaier-toolkit
+    - name: Install nvidia-contaier-toolkit
       apt:
         name: nvidia-container-toolkit
         state: present
