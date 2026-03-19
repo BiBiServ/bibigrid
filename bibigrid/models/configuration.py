@@ -28,7 +28,7 @@ class Role(StrictModel):
     Ansible Role
     """
     name: str
-    tags: Optional[List[str]]
+    tags: Optional[List[str]] = None
 
 
 class UserRole(StrictModel):

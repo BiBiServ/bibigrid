@@ -1,37 +1,40 @@
-- name: Add Docker's official GPG key
-  ansible.builtin.apt_key:
+- name: Ensure Keyring Directory
+  file:
+    group: root
+    owner: root
+    path: "/etc/apt/keyrings"
+    state: "directory"
+    mode: "755"
+
+- name: Add Docker's Official GPG Key
+  get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
-    keyring: /etc/apt/keyrings/docker.gpg
+    group: root
+    owner: root
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "644"
+
+- name: Add docker repository to apt
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
-
-
-- name: Add Docker repository
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [arch={{ arch_mapping[ansible_architecture] | default(ansible_architecture) }}
-      signed-by=/etc/apt/keyrings/docker.gpg]
-      https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
     filename: docker
-    state: present
-  vars:
-    arch_mapping:
-      x86_64: amd64
+    update_cache: true
 
 - name: Install Docker
   apt:
     name:
-      - docker.io
-      - python3-docker
-      - docker-compose
-      - docker-compose-plugin
-    state: present
-  tags: install
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+
 
 - name: Configure Docker
   copy:
     content: |-
       {
-         "mtu":{{ ansible_default_ipv4.mtu }}
+         "mtu": {{ ansible_default_ipv4.mtu }}
       }
     dest: /etc/docker/daemon.json
     owner: root
@@ -39,14 +42,20 @@
     mode: "0o644"
   notify: Docker
 
-- name: Create docker group and change GID
+- name: Create Docker Group and Change GID
   group:
     name: docker
     gid: 1234
     state: present
 
-- name: Append ubuntu user to group docker
+- name: Append Ubuntu User To Group Docker
   user:
     name: ubuntu
     append: true
     groups: docker
+
+- name: Configure docker with nvidia-container-toolkit
+  when: flavor.gres is defined
+  command: nvidia-ctk runtime configure --runtime=docker
+  changed_when: false
+  notify: Docker
