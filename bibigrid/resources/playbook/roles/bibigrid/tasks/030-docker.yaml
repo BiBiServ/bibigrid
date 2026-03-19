@@ -57,4 +57,5 @@
 - name: Configure docker with nvidia-container-toolkit
   when: flavor.gres is defined
   command: nvidia-ctk runtime configure --runtime=docker
+  changed_when: false
   notify: Docker
