@@ -91,7 +91,10 @@ NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=
 {% endfor %}
 
 {% for key, value in partitions.items() %}
-PartitionName={{ key }} Nodes={{ value | join(",") }}{{ " Default=YES" if loop.last else ""}}
+PartitionName={{ key }} Nodes={{ value | join(",") }}{{ " Default=YES"
+   if (slurm_conf.default_partition is defined and key == slurm_conf.default_partition)
+   or (slurm_conf.default_partition is not defined and loop.last)
+   else "" }}
 {% endfor %}
 
 # JobSubmitPlugin
