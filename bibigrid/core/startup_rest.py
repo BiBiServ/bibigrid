@@ -12,6 +12,8 @@ import threading
 from typing import Union
 
 import uvicorn
+from uvicorn.config import LOGGING_CONFIG
+
 import yaml
 from fastapi import FastAPI, status, Request
 from fastapi.exceptions import RequestValidationError
@@ -49,6 +51,10 @@ file_handler.setFormatter(LOG_FORMATTER)
 LOG.addHandler(file_handler)
 logging.addLevelName(42, "PRINT")
 LOG.setLevel(logging.DEBUG)
+
+#Uvicorn Logging
+LOGGING_CONFIG["formatters"]["default"]["fmt"] = LOG_FORMAT
+LOGGING_CONFIG["formatters"]["access"]["fmt"] = LOG_FORMAT
 
 
 def tail(file_path, lines):
