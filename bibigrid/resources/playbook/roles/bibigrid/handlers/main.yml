@@ -34,6 +34,14 @@
     state: restarted
   when: "'master' in group_names"
 
+- name: Enable Slurmd
+  systemd:
+    name: "slurmd"
+    enabled: true
+    masked: false
+    state: started
+    daemon_reload: true
+
 - name: Slurmd
   systemd:
     name: slurmd
