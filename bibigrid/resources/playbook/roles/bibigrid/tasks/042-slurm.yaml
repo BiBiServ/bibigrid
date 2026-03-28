@@ -108,12 +108,4 @@
     group: root
     mode: "0o444"
     force: true
-  when: flavor.gres is defined
-
-- name: Enable slurmd services
-  systemd:
-    name: "slurmd"
-    enabled: true
-    masked: false
-    state: started
-    daemon_reload: true
+  notify: Enable Slurmd

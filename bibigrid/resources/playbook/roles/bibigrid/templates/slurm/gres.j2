@@ -1,8 +1,13 @@
 # GRES CONFIG
+{% for node_name in groups.master + groups.workers %}
+{% set node = hostvars[node_name] %}
 {% set ns = namespace(device_index=0) %}
-{% for gres in flavor.gres %}
+{% if node.flavor.gres is defined %}
+{% for gres in node.flavor.gres %}
 {% for i in range(gres.count | int) %}
-Name={{ gres.name }} Type={{ gres.type }} File=/dev/nvidia{{ ns.device_index }}
+NodeName={{ node.name }} Name={{ gres.name }} Type={{ gres.type }} File=/dev/nvidia{{ ns.device_index }}
 {% set ns.device_index = ns.device_index + 1 %}
 {% endfor %}
+{% endfor %}
+{% endif %}
 {% endfor %}

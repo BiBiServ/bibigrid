@@ -12,8 +12,7 @@ MpiDefault=none
 ProctrackType=proctrack/cgroup # linuxproc # changed for 23.11.0
 # ReturnToService=2
 SwitchType=switch/none
-TaskPlugin=task/none
-#TaskPlugin=task/cgroup
+TaskPlugin=task/cgroup
 JobAcctGatherType=jobacct_gather/linux
 
 # RESOURCES
@@ -65,6 +64,7 @@ SlurmctldDebug=debug # info
 SlurmctldLogFile=/var/log/slurm/slurmctld.log
 SlurmdDebug=info
 SlurmdLogFile=/var/log/slurm/slurmd.log
+DebugFlags=Gres
 
 # COMPUTE NODES
 # use_master_as_compute
@@ -91,7 +91,10 @@ NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=
 {% endfor %}
 
 {% for key, value in partitions.items() %}
-PartitionName={{ key }} Nodes={{ value | join(",") }}{{ " Default=YES" if loop.last else ""}}
+PartitionName={{ key }} Nodes={{ value | join(",") }}{{ " Default=YES"
+   if (slurm_conf.default_partition is defined and key == slurm_conf.default_partition)
+   or (slurm_conf.default_partition is not defined and loop.last)
+   else "" }}
 {% endfor %}
 
 # JobSubmitPlugin

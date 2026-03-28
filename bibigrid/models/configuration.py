@@ -112,6 +112,7 @@ class SlurmConf(StrictModel):
     """
     Holds info on basic Slurm settings
     """
+    default_partition: str
     db: Optional[str] = "slurm"
     db_user: Optional[str] = "slurm"
     db_password: Optional[str] = "changeme"
