@@ -32,7 +32,9 @@ ZABBIX_CONF = {"db": "zabbix", "db_user": "zabbix", "db_password": "zabbix", "ti
 SLURM_CONF = {"db": "slurm", "db_user": "slurm", "db_password": "changeme",
               "munge_key": id_generation.generate_munge_key(),
               "elastic_scheduling": {"SuspendTime": 3600, "ResumeTimeout": 1200, "SuspendTimeout": 60,
-                                     "TreeWidth": 128}}
+                                     "TreeWidth": 128},
+              "package": {"version": "slurm-bibigrid-24.11", "use_experimental": False,
+                          "experimental_url": "https://s3.bi.denbi.de/bibigrid/slurm-bibigrid-experimental.deb"}}
 CLOUD_SCHEDULING = {"sshTimeout": 5}
 
 

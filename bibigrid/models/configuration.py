@@ -108,6 +108,14 @@ class ElasticScheduling(StrictModel):
     TreeWidth: Optional[int] = 128
 
 
+class Package(StrictModel):
+    """
+    Holds info on packages to be installed on the cluster
+    """
+    version: Optional[str] = "slurm-bibigrid-24.11"
+    experimental_url: Optional[str] = "https://s3.bi.denbi.de/bibigrid/slurm-bibigrid-experimental.deb"
+    use_experimental: Optional[bool] = False
+
 class SlurmConf(StrictModel):
     """
     Holds info on basic Slurm settings
@@ -118,7 +126,7 @@ class SlurmConf(StrictModel):
     db_password: Optional[str] = "changeme"
     munge_key: Optional[str] = None
     elastic_scheduling: Optional[ElasticScheduling] = None
-
+    package: Optional[Package] = None
 
 class Gateway(StrictModel):
     """
