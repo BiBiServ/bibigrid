@@ -13,7 +13,8 @@ def update(creator, log):
                                                                                         creator.configurations[0], log)
     log.info(f"Trying to update {master_ip}@{ssh_user} with key {used_private_key}")
 
-    # TODO: Verify that update does not impede running jobs, but waiting for all workers to be down should not be necessary if they are not changed
+    # TODO: Verify that update does not impede running jobs
+    # waiting for all workers to be down should not be necessary if they are not changed
     # cluster_dict = dict_clusters(creator.providers, log)
     # if False and cluster_dict[creator.cluster_id]["workers"]:
     #    workers = [worker['name'] for worker in cluster_dict[creator.cluster_id]["workers"]]
