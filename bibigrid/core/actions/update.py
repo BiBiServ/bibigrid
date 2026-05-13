@@ -2,7 +2,6 @@
 Module that contains methods to update the master playbook
 """
 
-from bibigrid.core.actions.list_clusters import dict_clusters
 from bibigrid.core.utility.handler import cluster_ssh_handler
 from bibigrid.core.utility.statics.create_statics import master_identifier
 
