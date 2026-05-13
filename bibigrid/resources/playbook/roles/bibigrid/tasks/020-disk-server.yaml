@@ -1,8 +1,23 @@
-- name: Create /vol bind mount from /mnt ephemeral
-  mount:
-    path: /vol
-    src: /mnt
-    fstype: none
-    opts: bind,auto
-    state: mounted
-  when: flavor.ephemeral > 0
+- when: flavor.ephemeral | int > 0
+  block:
+    - name: Ensure /vol/ exists
+      file:
+        path: /vol
+        state: directory
+        mode: "0777"
+
+    - name: Mount ephemeral to /mnt cleanly
+      mount:
+        path: /mnt
+        src: LABEL=ephemeral0
+        fstype: ext4
+        opts: defaults,nofail # ,_netdev
+        state: mounted
+
+    - name: Bind /mnt to /vol/
+      mount:
+        path: /vol
+        src: /mnt
+        fstype: none
+        opts: bind,nosuid,nodev
+        state: mounted
