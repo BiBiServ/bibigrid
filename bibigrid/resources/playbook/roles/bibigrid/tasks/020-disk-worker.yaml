@@ -11,7 +11,7 @@
         path: /mnt
         src: LABEL=ephemeral0
         fstype: ext4
-        opts: defaults,nofail # ,_netdev
+        opts: defaults,nofail,_netdev
         state: mounted
 
     - name: Bind /vol/scratch to /mnt
@@ -19,5 +19,5 @@
         path: /vol/scratch
         src: /mnt
         fstype: none
-        opts: bind,nosuid,nodev
+        opts: bind,nosuid,nodev,_netdev
         state: mounted
