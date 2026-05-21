@@ -169,6 +169,7 @@ class MasterConfig(BaseConfig):
     Holds info regarding the configuration
     """
     masterInstance: Instance
+    dns_server_list: Optional[List[str]] = Field(default_factory=list)
     sshPublicKeyFiles: Optional[List[str]] = Field(default_factory=list)
     sshPublicKeys: Optional[List[str]] = Field(default_factory=list)
     sshTimeout: Optional[int] = 5
