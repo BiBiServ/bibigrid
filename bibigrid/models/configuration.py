@@ -96,6 +96,7 @@ class Instance(StrictModel):
     meta: Optional[MetaDict] = None
     securityGroups: Optional[list[str]] = Field(default_factory=list)
     serverGroup: Optional[str] = None
+    weight: Optional[int] = 1
 
 
 class ElasticScheduling(StrictModel):

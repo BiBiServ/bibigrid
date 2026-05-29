@@ -106,7 +106,8 @@ def get_worker_vars(*, provider, configuration, cluster_id, worker,
                    "server_group": worker.get("serverGroup", configuration.get("serverGroup")),
                    "meta": mergedeep.merge({}, worker.get("meta", {}), configuration.get("meta", {})),
                    "security_groups": list(
-                       set(worker.get("securityGroups", []) + configuration.get("securityGroups", [])))
+                       set(worker.get("securityGroups", []) + configuration.get("securityGroups", []))),
+                   "weight": worker.get("weight", 1)
                    }
     worker_features = worker.get("features", [])
     configuration_features = configuration.get("features", [])
@@ -158,7 +159,8 @@ def get_master_vars(provider, configuration, cluster_id):
                    "fallback_on_other_image": configuration.get("fallbackOnOtherImage", False),
                    "state": "UNKNOWN" if configuration.get("useMasterAsCompute", True) else "DRAINED",
                    "on_demand": False,
-                   "partitions": partitions}
+                   "partitions": partitions,
+                   "weight": master.get("weight", 1)}
     if configuration.get("wireguard_peer"):
         master_dict["wireguard"] = {"ip": "10.0.0.1", "peer": configuration.get("wireguard_peer")}
     pass_through(configuration, master_dict, "waitForServices", "wait_for_services")

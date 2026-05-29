@@ -80,7 +80,7 @@ DebugFlags=Gres
 {% set _ = node_groups.append(node.name) %}
 {# MiB to MB #}
 {% set mem = (node.flavor.ram * 0.98 - 150) | int %}
-NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem }} MemSpecLimit={{ [mem//4 + 1000, 4000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) + " " if node.features is defined}}{% if node.flavor.gres is defined and node.flavor.gres %}Gres={% for g in node.flavor.gres %}{{ g.name }}{% if g.type is defined and g.type %}:{{ g.type }}{% endif %}:{{ g.count }}{% if not loop.last %},{% endif %}{% endfor %} {% endif %}# {{ node.cloud_identifier }}# {{ node.cloud_identifier }}
+NodeName={{ node.name }} Weight={{ node.weight | default(1) }} TmpDisk=20000 CPUs={{ node.flavor.vcpus }} Boards={{ node.boards | default(1) }} SocketsPerBoard={{ node.sockets_per_board | default(node.flavor.vcpus) }} CoresPerSocket={{ node.flavor.cores_per_socket | default(1) }} ThreadsPerCore={{ node.flavor.threads_per_core | default(1) }} RealMemory={{ mem }} MemSpecLimit={{ [mem//4 + 1000, 4000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) + " " if node.features is defined}}{% if node.flavor.gres is defined and node.flavor.gres %}Gres={% for g in node.flavor.gres %}{{ g.name }}{% if g.type is defined and g.type %}:{{ g.type }}{% endif %}:{{ g.count }}{% if not loop.last %},{% endif %}{% endfor %} {% endif %}# {{ node.cloud_identifier }}# {{ node.cloud_identifier }}
 {% for partition in node.partitions %}
 {% if partition not in partitions %}
 {% set _ = partitions.update({partition: []}) %}
