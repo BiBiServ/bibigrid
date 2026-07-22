@@ -62,7 +62,7 @@
   block:
     - name: Install prebuild theia
       shell: |
-        curl -o- https://bibiserv.cebitec.uni-bielefeld.de/resources/bibigrid/plugins/theia-ide_node{{ bibigrid_node_version }}.tar.gz | tar -xzf -
+        curl -o- https://s3.bi.denbi.de/bibigrid/theia-ide_node{{ bibigrid_node_version }}.tar.gz | tar -xzf -
       args:
         chdir: "/opt"
         creates: "{{ bibigrid_theia_ide_install_dir }}"
