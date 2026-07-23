@@ -58,7 +58,12 @@ def set_logger_verbosity(verbosity):
     LOG.debug(f"Logging verbosity set to {capped_verbosity}")
 
 
-def check_cid(cluster_id):
+def check_cid(cluster_id, configurations):
+    providers = provider_handler.get_providers(configurations, LOG)
+    if not id_generation.is_unique_cluster_id(cluster_id, providers):
+        msg = f"Cluster id ({cluster_id}) already exists"
+        LOG.error(msg)
+        raise RuntimeError(msg)
     if "-" in cluster_id:
         new_cid = cluster_id.split("-")[-1]
         LOG.info("-cid %s is not a cid, but probably the entire master name. Using '%s' as "
@@ -175,13 +180,13 @@ def main(verbose, debug, config_input, default_config_input, enforced_config_inp
     default_config_input = expand_path(default_config_input)
     enforced_config_input = expand_path(enforced_config_input)
 
-    if cluster_id:
-        cluster_id = check_cid(cluster_id)
-
     configurations = configuration_handler.read_configuration(LOG, config_input)
 
     if not configurations:
         sys.exit(1)
+
+    if cluster_id:
+        cluster_id = check_cid(cluster_id, configurations)
 
     configurations = configuration_handler.merge_configurations(
         user_config=configurations,
