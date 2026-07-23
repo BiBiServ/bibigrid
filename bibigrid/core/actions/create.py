@@ -661,6 +661,23 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.configurations[0]["private_v4"] = server["private_v4"]
             self.configurations[0]["floating_ip"] = master_ip
             self.configurations[0]["volumes"] = server["volumes"]
+
+            # Without this, common_configuration_yaml's default slurmConf (see ansible_configurator.SLURM_CONF)
+            # would hand out a freshly random munge_key on every single grow() run, which then gets deployed to
+            # and restarts munge on the master and every already-running worker touched by this ansible run -
+            # rotating the cluster's munge key out from under anything (e.g. an external client) that still
+            # trusts the old one. Reusing the key already on the master keeps it stable across grows.
+            ssh_data = {"floating_ip": master_ip, "private_key": used_private_key, "username": ssh_user,
+                       "gateway": self.configurations[0].get("gateway", {}), "timeout": self.ssh_timeout,
+                       "sock5_proxy": self.configurations[0].get("sock5_proxy")}
+            existing_munge_key = ssh_handler.read_remote_file(ssh_data, "/etc/munge/munge.key", self.log)
+            if existing_munge_key:
+                self.configurations[0].setdefault("slurmConf", {})["munge_key"] = existing_munge_key
+            else:
+                raise ConfigurationException(
+                    "Unable to read the running cluster's existing munge key from the master. Aborting rather "
+                    "than risk deploying a new, mismatched one to the cluster.")
+
             self.prepare_configurations()
             self.create_defaults()
             # Unlike create(), don't call generate_security_groups() here: the cluster's security group
