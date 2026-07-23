@@ -59,6 +59,9 @@ def set_logger_verbosity(verbosity):
 
 
 def check_cid(cluster_id):
+    # Note: an existing cluster_id is intentionally allowed through here (not an error) - `create` will
+    # grow that cluster instead of recreating it (see Create.grow()), which also validates that the new
+    # configuration is a safe, tail-only append before touching anything.
     if "-" in cluster_id:
         new_cid = cluster_id.split("-")[-1]
         LOG.info("-cid %s is not a cid, but probably the entire master name. Using '%s' as "
@@ -68,7 +71,7 @@ def check_cid(cluster_id):
         LOG.info("-cid %s is not a cid, but probably the master's ip. "
                  "Using the master ip instead of cid only works if a cluster key is in your systems default ssh key "
                  "location (~/.ssh/). Otherwise bibigrid can't identify the cluster key.")
-    if len(cluster_id) != id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
+    if len(cluster_id) > id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
             id_generation.CLUSTER_UUID_ALPHABET):
         LOG.warning(
             f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
@@ -175,13 +178,13 @@ def main(verbose, debug, config_input, default_config_input, enforced_config_inp
     default_config_input = expand_path(default_config_input)
     enforced_config_input = expand_path(enforced_config_input)
 
-    if cluster_id:
-        cluster_id = check_cid(cluster_id)
-
     configurations = configuration_handler.read_configuration(LOG, config_input)
 
     if not configurations:
         sys.exit(1)
+
+    if cluster_id:
+        cluster_id = check_cid(cluster_id)
 
     configurations = configuration_handler.merge_configurations(
         user_config=configurations,

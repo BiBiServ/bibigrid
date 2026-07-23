@@ -13,11 +13,13 @@ import paramiko
 import sympy
 from werkzeug.utils import secure_filename
 
-from bibigrid.core.actions.terminate import delete_keypairs, delete_local_keypairs, terminate, write_cluster_state
+from bibigrid.core.actions import list_clusters
+from bibigrid.core.actions.terminate import delete_keypairs, delete_local_keypairs, terminate, terminate_server, \
+    write_cluster_state
 from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import image_selection
-from bibigrid.core.utility.handler import ssh_handler
+from bibigrid.core.utility.handler import cluster_ssh_handler, ssh_handler
 from bibigrid.core.utility.paths import ansible_resources_path as a_rp
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, KEY_FOLDER
 from bibigrid.core.utility.statics.create_statics import AC_NAME, KEY_NAME, DEFAULT_SECURITY_GROUP_NAME, \
@@ -518,9 +520,13 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
     def create(self):  # pylint: disable=too-many-branches,too-many-statements
         """
         Creates cluster and logs helpful cluster-info afterwards.
+        If a cluster with this cluster_id is already running, grows it instead (see grow()).
         If debug is set True it offers termination after starting the cluster.
         @return: exit_state
         """
+        cluster_dict = list_clusters.dict_clusters(self.providers, self.log)
+        if cluster_dict.get(self.cluster_id, {}).get("master"):
+            return self.grow(cluster_dict[self.cluster_id])
         try:
             for folder in [a_rp.VARS_FOLDER, a_rp.GROUP_VARS_FOLDER, a_rp.HOST_VARS_FOLDER]:
                 if not os.path.isdir(folder):
@@ -578,6 +584,161 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                              "floating_ip": self.configurations[0].get("floating_ip"),
                              "state": "failed",
                              "message": "Cluster creation failed. Terminated remains."})
+        return 1
+
+    def compute_worker_diff(self, cluster):
+        """
+        Walks configurations/workerInstances the same way ansible_configurator and
+        start_start_server_threads do (one running index across all groups, in config order) to figure out
+        which worker slots are new compared to what's actually running.
+        Only a pure, tail-safe append (growing an existing group's count, or adding nothing) is considered
+        safe. Reordering/inserting/removing worker groups, shrinking a count, or flipping onDemand for an
+        already-running worker's slot all raise ConfigurationException before anything is created, because
+        BiBiGrid's worker naming recomputes indices from scratch on every run and doesn't otherwise notice
+        that an already-running instance's expected name changed.
+        @param cluster: this cluster_id's entry from list_clusters.dict_clusters (has a "workers" list)
+        @return: list of (worker, index, configuration, provider) tuples to start, in index order
+        """
+        slots = {}  # index -> (worker, onDemand, configuration, provider)
+        index = 0
+        for configuration, provider in zip(self.configurations, self.providers):
+            for worker in configuration.get("workerInstances", []):
+                for _ in range(int(worker.get("count", 1))):
+                    slots[index] = (worker, worker.get("onDemand", True), configuration, provider)
+                    index += 1
+
+        desired_names_by_index = {i: WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=i) for i in slots}
+        desired_names = set(desired_names_by_index.values())
+        actual_names = {worker["name"] for worker in cluster.get("workers", [])}
+
+        unmatched = actual_names - desired_names
+        if unmatched:
+            raise ConfigurationException(
+                f"Existing worker(s) {sorted(unmatched)} no longer match this configuration's expected worker "
+                "names. Reordering, inserting, or shrinking workerInstances groups on a running cluster isn't "
+                "supported - only appending to an existing group's count is.")
+
+        to_create = []
+        for i, name in desired_names_by_index.items():
+            worker, on_demand, configuration, provider = slots[i]
+            if name in actual_names:
+                if on_demand:
+                    raise ConfigurationException(
+                        f"Worker {name} is already running but its group is now marked onDemand in the "
+                        "configuration. Changing onDemand for an already-running worker isn't supported.")
+                continue
+            if not on_demand:
+                to_create.append((worker, i, configuration, provider))
+        return to_create
+
+    def grow(self, cluster):  # pylint: disable=too-many-branches
+        """
+        Adds newly configured static (onDemand: False) workers to an already running cluster with this
+        cluster_id, leaving the existing master, security groups, keypair and already-running workers
+        untouched. onDemand worker groups need no new instance here - widening their group_vars/slurm.conf
+        range (done below via upload_data) is enough for SLURM's own elastic scheduler to boot them later.
+        On any failure, only rolls back the workers grow() itself created in this run - never the whole
+        cluster (unlike create(), which is safe to fully terminate on failure since nothing else depends on
+        a half-created cluster yet).
+        @param cluster: this cluster_id's entry from list_clusters.dict_clusters (must have a "master")
+        @return: exit_state
+        """
+        self.log.log(42, f"Cluster {self.cluster_id} is already running. Growing it instead of recreating it.")
+        new_worker_names = []
+        try:
+            if len(self.providers) > 1:
+                raise ConfigurationException(
+                    "Growing a multi-provider (multi-cloud/vpngtw) cluster isn't supported yet.")
+            master_ip, ssh_user, used_private_key = cluster_ssh_handler.get_ssh_connection_info(
+                self.cluster_id, self.providers[0], self.configurations[0], self.log)
+            if not (master_ip and ssh_user and used_private_key):
+                raise ConfigurationException(
+                    "Unable to determine master_ip, ssh_user or private key of the running cluster. Aborting.")
+            server = self.providers[0].get_server(MASTER_IDENTIFIER(cluster_id=self.cluster_id))
+            if not server:
+                raise ConfigurationException(f"Master of cluster {self.cluster_id} not found. Aborting.")
+            self.master_ip = master_ip
+            self.configurations[0]["private_v4"] = server["private_v4"]
+            self.configurations[0]["floating_ip"] = master_ip
+            self.configurations[0]["volumes"] = server["volumes"]
+
+            # Without this, common_configuration_yaml's default slurmConf (see ansible_configurator.SLURM_CONF)
+            # would hand out a freshly random munge_key on every single grow() run, which then gets deployed to
+            # and restarts munge on the master and every already-running worker touched by this ansible run -
+            # rotating the cluster's munge key out from under anything (e.g. an external client) that still
+            # trusts the old one. Reusing the key already on the master keeps it stable across grows.
+            ssh_data = {"floating_ip": master_ip, "private_key": used_private_key, "username": ssh_user,
+                       "gateway": self.configurations[0].get("gateway", {}), "timeout": self.ssh_timeout,
+                       "sock5_proxy": self.configurations[0].get("sock5_proxy")}
+            existing_munge_key = ssh_handler.read_remote_file(ssh_data, "/etc/munge/munge.key", self.log)
+            if existing_munge_key:
+                self.configurations[0].setdefault("slurmConf", {})["munge_key"] = existing_munge_key
+            else:
+                raise ConfigurationException(
+                    "Unable to read the running cluster's existing munge key from the master. Aborting rather "
+                    "than risk deploying a new, mismatched one to the cluster.")
+
+            self.prepare_configurations()
+            self.create_defaults()
+            # Unlike create(), don't call generate_security_groups() here: the cluster's security group
+            # already exists and that call would (re-)create it, duplicating both the group and its rules.
+            # The group name is deterministic from cluster_id, so it can just be reattached.
+            configuration = self.configurations[0]
+            if not configuration.get("securityGroups"):
+                configuration["securityGroups"] = [self.default_security_group_name]
+            else:
+                configuration["securityGroups"] = [self.default_security_group_name] + configuration["securityGroups"]
+
+            to_create = self.compute_worker_diff(cluster)
+            for worker, index, configuration, provider in to_create:
+                self.start_worker(worker, index, configuration, provider)
+                new_worker_names.append(WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=index))
+
+            self.upload_data(used_private_key, clean_playbook=True)
+            if new_worker_names:
+                message = f"Successfully grew cluster {self.cluster_id}. Added workers: {new_worker_names}"
+            else:
+                message = (f"Cluster {self.cluster_id}'s on-demand worker capacity was updated. No new "
+                          "instances were started; SLURM will boot them on demand as needed.")
+            self.log.log(42, message)
+            write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
+                                 "floating_ip": self.master_ip, "state": "running", "message": message})
+        except exceptions.ConnectionException:
+            self.log.error(traceback.format_exc())
+            self.log.error("Connection couldn't be established. Check Provider connection.")
+        except paramiko.ssh_exception.NoValidConnectionsError:
+            self.log.error(traceback.format_exc())
+            self.log.error("SSH connection couldn't be established. Check keypair.")
+        except KeyError as exc:
+            self.log.error(traceback.format_exc())
+            self.log.error(
+                f"Tried to access dictionary key {str(exc)}, but couldn't. Please check your configurations.")
+        except FileNotFoundError as exc:
+            self.log.error(traceback.format_exc())
+            self.log.error(f"Tried to access resource files but couldn't. No such file or directory: {str(exc)}")
+        except TimeoutError as exc:
+            self.log.error(traceback.format_exc())
+            self.log.error(f"Timeout while connecting to master: {str(exc)}")
+        except ExecutionException as exc:
+            self.log.error(traceback.format_exc())
+            self.log.error(f"Execution of cmd on remote host fails: {str(exc)}")
+        except ConfigurationException as exc:
+            self.log.error(traceback.format_exc())
+            self.log.error(f"Configuration invalid: {str(exc)}")
+        except Exception as exc:  # pylint: disable=broad-except
+            self.log.error(traceback.format_exc())
+            self.log.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
+        else:
+            return 0  # will be called if no exception occurred
+        # unlike create()'s failure path, never terminate the whole (pre-existing) cluster here - only clean
+        # up the workers this grow() run itself started.
+        for name in new_worker_names:
+            server = self.providers[0].get_server(name)
+            if server:
+                terminate_server(self.providers[0], server, self.log)
+        write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
+                             "floating_ip": self.master_ip, "state": "failed",
+                             "message": "Cluster growth failed. Existing infrastructure left untouched."})
         return 1
 
     def log_cluster_start_info(self):

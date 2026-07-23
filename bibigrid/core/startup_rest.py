@@ -64,7 +64,7 @@ def setup(cluster_id, configurations_json=None):
     """
     if cluster_id:
         if cluster_id and (
-                len(cluster_id) != id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
+                len(cluster_id) > id_generation.MAX_ID_LENGTH or not set(cluster_id).issubset(
             id_generation.CLUSTER_UUID_ALPHABET)):
             LOG.warning(f"Cluster id doesn't fit length ({id_generation.MAX_ID_LENGTH}) or defined alphabet "
                         f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
@@ -159,9 +159,10 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
 
     try:
         providers = provider_handler.get_providers(configurations, log)
-        if not id_generation.is_unique_cluster_id(cluster_id=cluster_id, providers=providers):
-            return JSONResponse(content={"message": f"Cluster with cluster id {cluster_id} is already running."},
-                                status_code=400)
+        # Note: an existing, already-running cluster_id is intentionally allowed through here (not an
+        # error) - Create.create() will grow that cluster instead of recreating it (see Create.grow()),
+        # which also validates that the new configuration is a safe, tail-only append before touching
+        # anything.
         creator = create.Create(providers=providers, configurations=configurations, log=log,
                                 config_path=None, cluster_id=cluster_id)
         cluster_id = creator.cluster_id
