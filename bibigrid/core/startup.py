@@ -58,12 +58,10 @@ def set_logger_verbosity(verbosity):
     LOG.debug(f"Logging verbosity set to {capped_verbosity}")
 
 
-def check_cid(cluster_id, configurations):
-    providers = provider_handler.get_providers(configurations, LOG)
-    if not id_generation.is_unique_cluster_id(cluster_id, providers):
-        msg = f"Cluster id ({cluster_id}) already exists"
-        LOG.error(msg)
-        raise RuntimeError(msg)
+def check_cid(cluster_id):
+    # Note: an existing cluster_id is intentionally allowed through here (not an error) - `create` will
+    # grow that cluster instead of recreating it (see Create.grow()), which also validates that the new
+    # configuration is a safe, tail-only append before touching anything.
     if "-" in cluster_id:
         new_cid = cluster_id.split("-")[-1]
         LOG.info("-cid %s is not a cid, but probably the entire master name. Using '%s' as "
@@ -186,7 +184,7 @@ def main(verbose, debug, config_input, default_config_input, enforced_config_inp
         sys.exit(1)
 
     if cluster_id:
-        cluster_id = check_cid(cluster_id, configurations)
+        cluster_id = check_cid(cluster_id)
 
     configurations = configuration_handler.merge_configurations(
         user_config=configurations,
