@@ -663,6 +663,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.configurations[0]["volumes"] = server["volumes"]
             self.prepare_configurations()
             self.create_defaults()
+            # Unlike create(), don't call generate_security_groups() here: the cluster's security group
+            # already exists and that call would (re-)create it, duplicating both the group and its rules.
+            # The group name is deterministic from cluster_id, so it can just be reattached.
+            configuration = self.configurations[0]
+            if not configuration.get("securityGroups"):
+                configuration["securityGroups"] = [self.default_security_group_name]
+            else:
+                configuration["securityGroups"] = [self.default_security_group_name] + configuration["securityGroups"]
 
             to_create = self.compute_worker_diff(cluster)
             for worker, index, configuration, provider in to_create:
