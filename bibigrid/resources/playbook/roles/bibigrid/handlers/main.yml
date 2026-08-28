@@ -11,38 +11,41 @@
     - docker.socket
     - docker
 
-
-- name: Munge
+- name: Restart munge
   systemd:
     name: munge
     state: restarted
 
-- name: Slurmdbd
+- name: Restart slurmdbd
   systemd:
     name: slurmdbd
     state: restarted
 
-- name: Slurmrestd
-  systemd:
-    name: slurmrestd
-    state: restarted
-    daemon_reload: true
-
-- name: Slurmctld
+- name: Restart slurmctld
   systemd:
     name: slurmctld
     state: restarted
   when: "'master' in group_names"
 
+- name: Restart slurmrestd
+  systemd:
+    name: slurmrestd
+    state: restarted
+    daemon_reload: true
+
+- name: Reconfigure slurmctld
+  command: scontrol reconfigure
+  when: "'master' in group_names"
+
 - name: Enable Slurmd
   systemd:
-    name: "slurmd"
+    name: slurmd
     enabled: true
     masked: false
     state: started
     daemon_reload: true
 
-- name: Slurmd
+- name: Restart Slurmd
   systemd:
     name: slurmd
     state: restarted

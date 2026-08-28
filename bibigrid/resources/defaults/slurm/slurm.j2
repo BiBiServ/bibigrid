@@ -43,6 +43,7 @@ StateSaveLocation=/var/lib/slurm/state_checkpoint
 # TIMERS
 InactiveLimit=0
 KillWait=30
+UnkillableStepTimeout=420 # read/write is not interrupted. NFS can cause long termination times
 MinJobAge=300
 SlurmctldTimeout=120
 SlurmdTimeout=300
@@ -78,9 +79,7 @@ DebugFlags=Gres
 {% set _ = exclude_groups.append(node.name) %}
 {% endif %}
 {% set _ = node_groups.append(node.name) %}
-{# MiB to MB #}
-{% set mem = (node.flavor.ram * 0.98 - 150) | int %}
-NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ mem }} MemSpecLimit={{ [mem//4 + 1000, 4000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) + " " if node.features is defined}}{% if node.flavor.gres is defined and node.flavor.gres %}Gres={% for g in node.flavor.gres %}{{ g.name }}{% if g.type is defined and g.type %}:{{ g.type }}{% endif %}:{{ g.count }}{% if not loop.last %},{% endif %}{% endfor %} {% endif %}# {{ node.cloud_identifier }}# {{ node.cloud_identifier }}
+NodeName={{ node.name }} SocketsPerBoard={{ node.flavor.vcpus }} CoresPerSocket=1 RealMemory={{ node.flavor.ram }} MemSpecLimit={{ [node.flavor.ram//4 + 1000, 4000] | min }} State={{node.state }} {{"Features=" + (node.features | join(",")) + " " if node.features is defined}}{% if node.flavor.gres is defined and node.flavor.gres %}Gres={% for g in node.flavor.gres %}{{ g.name }}{% if g.type is defined and g.type %}:{{ g.type }}{% endif %}:{{ g.count }}{% if not loop.last %},{% endif %}{% endfor %} {% endif %}# {{ node.cloud_identifier }}# {{ node.cloud_identifier }}
 {% for partition in node.partitions %}
 {% if partition not in partitions %}
 {% set _ = partitions.update({partition: []}) %}
@@ -116,7 +115,7 @@ TreeWidth= {{ slurm_conf.elastic_scheduling.TreeWidth }}
 # Do not cache dns names
 # CommunicationParameters=NoAddrCache # REMOVED for 23.11.0
 # Mark node status idle on suspend so DOWN is removed
-SlurmctldParameters=idle_on_node_suspend
+SlurmctldParameters=idle_on_node_suspend,node_reg_mem_percent=90,enable_configless
 # Show slurm nodes all the time
 PrivateData=cloud
 # return node to idle when startup fails

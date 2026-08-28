@@ -1,3 +1,5 @@
+# Slurm tasks for both master and worker
+
 - name: Create Slurm group
   group:
     name: slurm
@@ -35,84 +37,54 @@
     name:
       - munge
 
-- name: Create new secret (Munge)
-  copy:
-    content: '{{ slurm_conf.munge_key }}'
-    dest: /etc/munge/munge.key
-    owner: munge
-    group: munge
-    mode: "0o600"
-  notify:
-    - Munge
+- name: Configure MUNGE
+  block:
+    - name: Install MUNGE key
+      copy:
+        src: munge/munge.key
+        dest: /etc/munge/munge.key
+        owner: munge
+        group: munge
+        mode: "0600"
+      register: munge_key
 
-- name: Ensures slurm directories exists
+    - name: Restart MUNGE after configuration
+      systemd:
+        name: munge
+        state: restarted
+      when: munge_key.changed
+
+
+- name: Ensure Slurm directories exist
   file:
     path: "{{ item }}"
     state: directory
-    mode: "0o775"
+    mode: "0775"
     owner: root
     group: slurm
-  with_items:
+  loop:
     - /etc/slurm
     - /var/lib/slurm
+    - /var/lib/slurm/slurmd
     - /var/log/slurm
 
-- name: Create system overrides directories (slurmd)
+- name: Create system overrides directory (slurmd)
   file:
-    path: "/etc/systemd/system/slurmd.service.d"
+    path: /etc/systemd/system/slurmd.service.d
     group: root
     owner: root
-    mode: "0o755"
+    mode: "0755"
     state: directory
 
-- name: Copy system overrides (slurmd)
-  copy:
-    src: "slurm/systemd/slurmd.override"
-    dest: "/etc/systemd/system/slurmd.service.d/override.conf"
-    mode: "0o644"
+- name: Configure slurmd for configless mode
+  template:
+    src: slurm/systemd/slurmd.override.j2
+    dest: /etc/systemd/system/slurmd.service.d/override.conf
+    mode: "0644"
     owner: root
     group: root
+  notify:
+    - Restart slurmd
 
-- name: Create Slurm configuration
-  template:
-    src: slurm/slurm.j2
-    dest: /etc/slurm/slurm.conf
-    owner: slurm
-    group: root
-    mode: "0o444"
-    force: true
-
-- name: Create Job Container configuration
-  template:
-    src: slurm/job_container.j2
-    dest: /etc/slurm/job_container.conf
-    owner: slurm
-    group: root
-    mode: "0o444"
-    force: true
-
-- name: Slurm cgroup configuration
-  copy:
-    src: slurm/cgroup.conf
-    dest: /etc/slurm/cgroup.conf
-    owner: slurm
-    group: root
-    mode: "0o444"
-
-- name: Slurm cgroup configuration
-  copy:
-    src: slurm/cgroup.conf
-    dest: /etc/slurm/cgroup.conf
-    owner: slurm
-    group: root
-    mode: "0o444"
-
-- name: Create Slurm gres configuration
-  template:
-    src: slurm/gres.j2
-    dest: /etc/slurm/gres.conf
-    owner: slurm
-    group: root
-    mode: "0o444"
-    force: true
-  notify: Enable Slurmd
+# The controller owns the Slurm configuration in configless mode which means that copying slurm config files is omitted
+# Slurmd is started after the master setup

@@ -143,6 +143,14 @@
       when: "'vpngtw' not in group_names"
     - import_tasks: 042-slurm-server.yaml
       when: "'master' in group_names"
+    - name: Enable and start slurmd
+      systemd:
+        name: slurmd
+        enabled: true
+        masked: false
+        state: started
+        daemon_reload: true
+      when: "'vpngtw' not in group_names"
 
 - name: Setup Theia
   when:
