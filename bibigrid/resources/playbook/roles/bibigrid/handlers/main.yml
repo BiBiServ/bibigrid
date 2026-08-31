@@ -1,7 +1,9 @@
 - name: Nfs-server
-  systemd:
-    name: nfs-kernel-server
-    state: restarted
+  command:
+    cmd: exportfs -ra
+#  systemd:
+#    name: nfs-kernel-server
+#    state: restarted
 
 - name: Docker
   systemd:
@@ -37,7 +39,7 @@
   command: scontrol reconfigure
   when: "'master' in group_names"
 
-- name: Enable Slurmd
+- name: Enable slurmd
   systemd:
     name: slurmd
     enabled: true
@@ -45,7 +47,7 @@
     state: started
     daemon_reload: true
 
-- name: Restart Slurmd
+- name: Restart slurmd
   systemd:
     name: slurmd
     state: restarted

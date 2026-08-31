@@ -36,24 +36,19 @@
   apt:
     name:
       - munge
-
 - name: Configure MUNGE
   block:
-    - name: Install MUNGE key
+    - name: Deploy BiBiGrid Created Munge Key
       copy:
-        src: munge/munge.key
+        content: '{{ slurm_conf.munge_key }}'
         dest: /etc/munge/munge.key
         owner: munge
         group: munge
-        mode: "0600"
-      register: munge_key
-
-    - name: Restart MUNGE after configuration
+        mode: "0o600"
+    - name: Restart munge
       systemd:
         name: munge
         state: restarted
-      when: munge_key.changed
-
 
 - name: Ensure Slurm directories exist
   file:
