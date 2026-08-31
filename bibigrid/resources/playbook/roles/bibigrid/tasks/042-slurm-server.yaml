@@ -10,6 +10,8 @@
     groups:
       - ansible # ensure that slurm user on master can use ansible playbook for on demand scheduling
     append: true
+    home: /opt/slurm
+    shell: /bin/false
 
 - name: Create system overrides directory (slurmctld)
   file:
