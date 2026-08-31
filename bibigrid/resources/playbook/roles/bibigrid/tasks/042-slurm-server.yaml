@@ -2,6 +2,15 @@
 # The master is also a Slurm worker, so the common 042-slurm.yaml
 # has already configured slurmd on this machine.
 
+- name: Create Slurm user
+  user:
+    name: slurm
+    uid: 64030
+    group: slurm
+    groups:
+      - ansible # ensure that slurm user on master can use ansible playbook for on demand scheduling
+    append: true
+
 - name: Create system overrides directory (slurmctld)
   file:
     path: "/etc/systemd/system/slurmctld.service.d"
