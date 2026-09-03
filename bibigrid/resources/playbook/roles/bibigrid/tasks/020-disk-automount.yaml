@@ -34,3 +34,11 @@
         src: "{{ item.device }}"
         state: mounted
         fstype: "{{ bibigrid_filesystem_type.stdout }}"
+
+    - name: Set permissions on mounted disks
+      file:
+        path: "{{ item.mountPoint }}"
+        state: directory
+        owner: ubuntu
+        group: "{{ ansible_distribution | lower }}"
+        mode: "0755"
