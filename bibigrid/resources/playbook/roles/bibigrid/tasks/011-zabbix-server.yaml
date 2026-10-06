@@ -90,6 +90,8 @@
 
 - name: Zabbix Web Frontend related packages for Debian based OS
   when: "ansible_distribution_file_variety == 'Debian'"
+  tags:
+    - "image"
   block:
     - name: Install apache web server and php
       apt:
@@ -104,11 +106,11 @@
           - zabbix-frontend-php
           - zabbix-apache-conf
         state: present
-  tags:
-    - "image"
 
 - name: Zabbix Web Frontend related packages for REHL based OS
   when: "ansible_distribution_file_variety == 'RedHat'"
+  tags:
+    - "image"
   block:
     - name: Install apache web server
       dnf:
@@ -121,8 +123,6 @@
           - zabbix-frontend-php
           - zabbix-apache-conf
         state: present
-  tags:
-    - "image"
 
 - name: Create Zabbix web dir (if not exists)
   file:
