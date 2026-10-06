@@ -131,16 +131,16 @@
 
 - name: Copy create program script (power)
   copy:
-    src: slurm/create.sh
-    dest: /opt/slurm/create.sh
+    src: slurm/resume.sh
+    dest: /opt/slurm/resume.sh
     owner: slurm
     group: ansible
     mode: "0o550"
 
 - name: Copy terminate program script (power)
   copy:
-    src: slurm/terminate.sh
-    dest: /opt/slurm/terminate.sh
+    src: slurm/suspend.sh
+    dest: /opt/slurm/suspend.sh
     owner: slurm
     group: ansible
     mode: "0o550"

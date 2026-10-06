@@ -5,7 +5,7 @@
 - name: Unarchive ZIP file from GitHub repository
   unarchive:
     src: "https://github.com/deNBI/bibigrid_clum/raw/main/resources/Resistance_Nextflow.tar.xz"
-    dest: "/vol/spool/"
+    dest: "/vol/test/"
     remote_src: yes
 
 - name: Install Java JRE on Debian/Ubuntu
@@ -17,11 +17,11 @@
 - name: Get Nextflow
   shell: wget -qO- https://get.nextflow.io | bash
   args:
-    chdir: /vol/spool/
+    chdir: /vol/test/
 
 - name: Change file ownership, group and permissions
   file:
-    path: /vol/spool/nextflow
+    path: /vol/test/nextflow
     owner: ubuntu
     group: ubuntu
     mode: '0775'
