@@ -173,7 +173,7 @@ If `False`, master will no longer help workers to process jobs. Default is `True
 
 If `False`, master will not be created with an attached floating ip. Default is `True`.
 
-#### gateway (optional: None)
+#### gateway (optional)
 In order to save valuable floating ips, BiBiGrid can also make use of a gateway to create the cluster.
 For more information on how to set up a gateway, how gateways work and why they save floating ips please continue reading [here](https://cloud.denbi.de/wiki/Tutorials/SaveFloatingIPs/).
 
@@ -201,7 +201,7 @@ This also allows for external node schedulers by using the Slurm REST API to dec
 
 ### Local
 
-#### waitForServices (optional: None):
+#### waitForServices (optional):
 
 Expects a list of services to wait for.
 This is required if your provider has any post-launch services interfering with the package manager. If not set,
@@ -238,7 +238,7 @@ workerInstance:
     volumes: # optional
       - name: volumeName
         snapshot: snapshotName # optional; to create volume from
-        # one or none of these three
+        # one or none of these
         # permanent: False
         # semiPermanent: False
         # exists: False
@@ -253,7 +253,6 @@ workerInstance:
       size: 50
     securityGroups: # optional
       - list of existing security groups
-    serverGroup: myServerGroup # optional
     meta: # optional (no key or value longer than 256)
       meta_key: meta_value
 ```
@@ -269,8 +268,7 @@ workerInstance:
   - `terminate` (optional:True) if True, the boot volume will be terminated when the server is terminated.
   - `size` (optional:50) if a boot volume is created, this sets its size.
 - `volumes`
-- `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances.
-- `serverGroup` (optional:None) an existing OpenStack [server group](https://docs.openstack.org/nova/latest/user/server-groups.html).
+- `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances
 - `meta` a dict of meta key value pairs (no key or value longer than 256) overwrites global meta key value pairs where conflicts arise.
 ##### volumes (optional)
 
@@ -345,7 +343,6 @@ You can apply most keys [in the same way](#features-optional) as for the workers
   - `size` (optional:50) if a boot volume is created, this sets its size.
 - `volumes`
 - `securityGroups` (optional:[]) a list of existing securityGroups that will be added to the instances
-- `serverGroup` (optional:None) an existing OpenStack [server group](https://docs.openstack.org/nova/latest/user/server-groups.html).
 - `meta` a dict of meta key value pairs (no key or value longer than 256) overwrites global meta key value pairs where conflicts arise
 
 ##### vpnInstance:
@@ -357,14 +354,6 @@ Exactly one in every configuration but the first:
     type: de.NBI tiny
     image: Ubuntu 22.04 LTS (2022-10-14) # regex allowed
 ```
-
-### floatingIpId (optional:None)
-
-At most one floatingIpId in each configuration. When set, an existing floating ip is used. 
-The floating ip is not released upon termination. 
-If unset, a new floating ip is created which is released upon termination.
-
-To list existing floating ip ids use `openstack floating ip list`.
 
 ### fallbackOnOtherImage (optional:False)
 If set to `True` and an image is not among the active images, 
@@ -424,14 +413,6 @@ Instead of setting the `securityGroups` for every instance you can also set them
 securityGroups:
   - securityGroup1
   - securityGroup2 
-```
-
-#### serverGroup (optional)
-
-Instead of setting the `serverGroup` for every instance you can also set them cloud wide:
-
-```yaml
-serverGroup: myServerGroup
 ```
 
 #### meta (optional)

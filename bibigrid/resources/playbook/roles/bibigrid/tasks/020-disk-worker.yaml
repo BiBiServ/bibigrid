@@ -1,23 +1,14 @@
-- when: flavor.ephemeral | int > 0
+- when: flavor.ephemeral > 0
   block:
-    - name: Ensure /vol/scratch exists
-      file:
-        path: /vol/scratch
-        state: directory
-        mode: "0777"
-
-    - name: Mount ephemeral to /mnt cleanly
-      mount:
-        path: /mnt
-        src: LABEL=ephemeral0
-        fstype: ext4
-        opts: defaults,nofail,_netdev
-        state: mounted
-
-    - name: Bind /vol/scratch to /mnt
+    - name: Mount ephemeral
       mount:
         path: /vol/scratch
         src: /mnt
         fstype: none
-        opts: bind,nosuid,nodev,_netdev
+        opts: bind,auto
         state: mounted
+    - name: Set 0777 rights for ephemeral mount
+      file:
+        path: /vol/scratch
+        state: directory
+        mode: "0o777"

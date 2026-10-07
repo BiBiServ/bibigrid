@@ -1,3 +1,0 @@
-[Service]
-ExecStart=
-ExecStart=/usr/sbin/slurmd --systemd --conf-server={{ hostvars[groups.master.0].name | lower }}:6817

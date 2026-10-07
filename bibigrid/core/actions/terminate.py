@@ -29,8 +29,7 @@ def write_cluster_state(state):
         yaml.safe_dump(data=state, stream=cluster_info_file)
 
 
-# pylint: disable=too-many-locals
-def terminate(*, cluster_id, providers, floating_ip_ids, log, debug=False, assume_yes=False):
+def terminate(cluster_id, providers, log, debug=False, assume_yes=False):
     """
     Goes through all providers and gets info of all servers which name contains cluster ID.
     It then checks if any resources are reserved, but not used and frees them that were hold by the cluster.
@@ -59,9 +58,9 @@ def terminate(*, cluster_id, providers, floating_ip_ids, log, debug=False, assum
             f"This might not be your cluster. Are you sure you want to terminate it?\n"
             f"Any non-empty input to shutdown cluster {cluster_id}. "
             f"Empty input to exit with cluster still alive:"):
-        for provider, floating_ip_id in zip(providers, floating_ip_ids):
+        for provider in providers:
             log.info("Terminating cluster %s on cloud %s", cluster_id, provider.cloud_specification['identifier'])
-            cluster_server_state += terminate_servers(cluster_id, provider, floating_ip_id, log)
+            cluster_server_state += terminate_servers(cluster_id, provider, log)
             cluster_keypair_state.append(delete_keypairs(provider, tmp_keyname, log))
             cluster_security_group_state.append(delete_security_groups(provider, cluster_id, security_groups, log))
             cluster_volume_state.append(delete_non_permanent_volumes(provider, cluster_id, log))
@@ -73,12 +72,11 @@ def terminate(*, cluster_id, providers, floating_ip_ids, log, debug=False, assum
     return 0
 
 
-def terminate_servers(cluster_id, provider, floating_ip_id, log):
+def terminate_servers(cluster_id, provider, log):
     """
     Terminates all servers that match the bibigrid regex.
     @param cluster_id: id of cluster to terminate
     @param provider: provider that holds all servers in server_list
-    @param floating_ip_id: floating ip id of master/vpn
     @param log:
     @return: a list of the servers' (that were to be terminated) termination states
     """
@@ -91,20 +89,19 @@ def terminate_servers(cluster_id, provider, floating_ip_id, log):
         if server_regex.match(server["name"]):
             log.info("Trying to terminate Server %s on cloud %s.", server['name'],
                      provider.cloud_specification['identifier'])
-            cluster_server_state.append(terminate_server(provider, server, not bool(floating_ip_id), log))
+            cluster_server_state.append(terminate_server(provider, server, log))
     return cluster_server_state
 
 
-def terminate_server(provider, server, delete_ips, log):
+def terminate_server(provider, server, log):
     """
     Terminates a single server and stores the termination state
     @param provider: the provider that holds the server.
     @param server: the server that is to be terminated
-    @param delete_ips: if true all floating ips of the server are released
     @param log:
     @return: true if the server has been terminated, false else
     """
-    terminated = provider.delete_server(server["id"], delete_ips=delete_ips)
+    terminated = provider.delete_server(server["id"])
     if not terminated:
         log.warning("Unable to terminate server %s on provider %s.", server['name'],
                     provider.cloud_specification['identifier'])
@@ -171,9 +168,8 @@ def delete_security_groups(provider, cluster_id, security_groups, log, timeout=5
         while not tmp_success:
             try:
                 tmp_success = provider.delete_security_group(security_group_name)
-            except ConflictException as exc:
-                log.info(f"ConflictException on deletion attempt on {provider.cloud_specification['identifier']}: "
-                         f"{exc}")
+            except ConflictException:
+                log.info(f"ConflictException on deletion attempt on {provider.cloud_specification['identifier']}.")
                 tmp_success = False
             if tmp_success:
                 break
@@ -226,7 +222,7 @@ def delete_non_permanent_volumes(provider, cluster_id, log):
         if volume_regex.match(volume["name"]):
             log.info("Trying to delete volume %s on cloud %s.", volume['name'], provider.cloud_specification[
                 'identifier'])
-            cluster_volume_state.append(provider.delete_volume(volume["id"]))
+            cluster_volume_state.append(provider.delete_volume(volume))
     return cluster_volume_state
 
 

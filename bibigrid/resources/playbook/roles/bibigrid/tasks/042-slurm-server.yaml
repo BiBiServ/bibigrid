@@ -1,96 +1,18 @@
-# Slurm tasks only executed on the on the master.
-# The master is also a Slurm worker, so the common 042-slurm.yaml
-# has already configured slurmd on this machine.
-
-- name: Create Slurm user
-  user:
-    name: slurm
-    uid: 64030
-    group: slurm
-    groups:
-      - ansible # ensure that slurm user on master can use ansible playbook for on demand scheduling
-    append: true
-    home: /opt/slurm
-    shell: /bin/false
-
-- name: Create system overrides directory (slurmctld)
+- name: Create system overrides directories (slurmctld)
   file:
     path: "/etc/systemd/system/slurmctld.service.d"
     group: root
     owner: root
-    mode: "0755"
+    mode: "0o755"
     state: directory
 
-- name: Copy system override (slurmctld)
+- name: Copy system overrides (slurmctld)
   copy:
     src: "slurm/systemd/slurmctld.override"
     dest: "/etc/systemd/system/slurmctld.service.d/override.conf"
-    mode: "0644"
+    mode: "0o644"
     owner: root
     group: root
-  notify:
-    - Restart slurmctld
-
-# ---------------------------------------------------------------------------
-# SLURM CONFIGURATION
-# ---------------------------------------------------------------------------
-#
-# In configless mode these files are authoritative on the controller.
-# slurmd obtains the configuration from slurmctld.
-
-- name: Create Slurm configuration
-  template:
-    src: slurm/slurm.j2
-    dest: /etc/slurm/slurm.conf
-    owner: slurm
-    group: root
-    mode: "0444"
-    force: true
-  notify:
-    - Reconfigure slurmctld
-  tags:
-    - slurm-reconfigure
-
-- name: Create Job Container configuration
-  template:
-    src: slurm/job_container.j2
-    dest: /etc/slurm/job_container.conf
-    owner: slurm
-    group: root
-    mode: "0444"
-    force: true
-  notify:
-    - Restart slurmd
-
-- name: Slurm cgroup configuration
-  copy:
-    src: slurm/cgroup.conf
-    dest: /etc/slurm/cgroup.conf
-    owner: slurm
-    group: root
-    mode: "0444"
-  notify:
-    - Reconfigure slurmctld
-  tags:
-    - slurm-reconfigure
-
-- name: Create Slurm GRES configuration
-  template:
-    src: slurm/gres.j2
-    dest: /etc/slurm/gres.conf
-    owner: slurm
-    group: root
-    mode: "0444"
-    force: true
-  notify:
-    - Reconfigure slurmctld
-  tags:
-    - slurm-reconfigure
-
-# ---------------------------------------------------------------------------
-# OPENSTACK CREDENTIALS
-# Slurm needs access to the credentials in order to schedule nodes on demand
-# ---------------------------------------------------------------------------
 
 - name: Change group ownership of OpenStack credentials file to slurm if it exists
   block:
@@ -103,12 +25,8 @@
       file:
         path: /etc/openstack/clouds.yaml
         group: slurm
-        mode: "0640"
+        mode: "0o640"  # (owner can read/write, group can read, others have no access)
       when: bibigrid_file_stat.stat.exists
-
-# ---------------------------------------------------------------------------
-# SLURM DATABASE
-# ---------------------------------------------------------------------------
 
 - name: Create slurm db
   mysql_db:
@@ -130,29 +48,19 @@
     dest: /etc/slurm/slurmdbd.conf
     owner: slurm
     group: root
-    mode: "0600"
-  notify:
-    - Restart slurmdbd
-
-# ---------------------------------------------------------------------------
-# JWT
-# ---------------------------------------------------------------------------
+    mode: "0o600"
 
 - name: Generate random JWT Secret
   command:
     cmd: "dd if=/dev/random of=/etc/slurm/jwt-secret.key bs=32 count=1"
-    creates: "/etc/slurm/jwt-secret.key"
+    creates: "/etc/slurm/jwt-secret.key" # only run the command when file is not present
 
-- name: Change file properties of JWT Secret file
+- name: Change file Properties of JWT Secret file
   file:
     path: /etc/slurm/jwt-secret.key
     owner: slurm
     group: slurm
-    mode: "0600"
-
-# ---------------------------------------------------------------------------
-# SLURM REST API
-# ---------------------------------------------------------------------------
+    mode: "0o600"
 
 - name: Copy env file for configuration of slurmrestd
   copy:
@@ -160,41 +68,32 @@
     dest: /etc/default/slurmrestd
     owner: root
     group: root
-    mode: "0644"
-  notify:
-    - Restart slurmrestd
+    mode: "0o644"
 
-- name: Create system overrides directories (slurmdbd/slurmrestd)
+- name: Create system overrides directories (slurmdbdm slurmrestd)
   file:
     path: "/etc/systemd/system/{{ item }}.service.d"
     group: root
     owner: root
-    mode: "0755"
+    mode: "0o755"
     state: directory
-  loop:
+  with_items:
     - slurmdbd
     - slurmrestd
 
-- name: Copy system overrides (slurmdbd/slurmrestd)
+- name: Copy system overrides (slurmdbdm slurmrestd)
   copy:
     src: "slurm/systemd/{{ item }}.override"
     dest: "/etc/systemd/system/{{ item }}.service.d/override.conf"
-    mode: "0644"
+    mode: "0o644"
     owner: root
     group: root
-  loop:
+  with_items:
     - slurmdbd
     - slurmrestd
-  notify:
-    - Restart slurmdbd
-    - Restart slurmrestd
-
-# ---------------------------------------------------------------------------
-# SLURM USER / OPT SLURM
-# ---------------------------------------------------------------------------
 
 - name: Register Slurm users home dir
-  shell: "set -o pipefail && grep slurm /etc/passwd | cut -d ':' -f 6"
+  shell: "set -o pipefail &&  grep slurm /etc/passwd | cut -d ':' -f 6"
   register: bibigrid_slurm_home
   changed_when: false
   args:
@@ -206,21 +105,21 @@
     group: ansible
     path: /opt/slurm/
     state: directory
-    mode: "0770"
+    mode: "0o770"
 
-- name: Ensure /etc/slurm dir exists
+- name: Ensures /etc/slurm dir exists
   file:
     path: /etc/slurm/
     state: directory
-    mode: "0755"
+    mode: "0o755"
 
-- name: Ensure /opt/slurm/.ssh/ dir exists
+- name: Ensures /opt/slurm/.ssh/ dir exists
   file:
     path: /opt/slurm/.ssh/
     group: slurm
     owner: slurm
     state: directory
-    mode: "0700"
+    mode: "0o700"
 
 - name: Copy private key (openstack keypair)
   copy:
@@ -228,27 +127,23 @@
     dest: /opt/slurm/.ssh/id_ecdsa
     owner: slurm
     group: slurm
-    mode: "0600"
-
-# ---------------------------------------------------------------------------
-# ELASTIC / POWER MANAGEMENT
-# ---------------------------------------------------------------------------
+    mode: "0o600"
 
 - name: Copy create program script (power)
   copy:
-    src: slurm/resume.sh
-    dest: /opt/slurm/resume.sh
+    src: slurm/create.sh
+    dest: /opt/slurm/create.sh
     owner: slurm
     group: ansible
-    mode: "0550"
+    mode: "0o550"
 
 - name: Copy terminate program script (power)
   copy:
-    src: slurm/suspend.sh
-    dest: /opt/slurm/suspend.sh
+    src: slurm/terminate.sh
+    dest: /opt/slurm/terminate.sh
     owner: slurm
     group: ansible
-    mode: "0550"
+    mode: "0o550"
 
 - name: Copy fail program script (power)
   copy:
@@ -256,11 +151,7 @@
     dest: /opt/slurm/fail.sh
     owner: slurm
     group: ansible
-    mode: "0550"
-
-# ---------------------------------------------------------------------------
-## OPENSTACK SERVER MANAGEMENT
-# ---------------------------------------------------------------------------
+    mode: "0o550"
 
 - name: Copy "create_server.py" script
   copy:
@@ -268,7 +159,7 @@
     dest: /usr/local/bin/create_server.py
     owner: slurm
     group: ansible
-    mode: "0750"
+    mode: "0o750"
 
 - name: Copy "delete_server.py" script
   copy:
@@ -276,10 +167,10 @@
     dest: /usr/local/bin/delete_server.py
     owner: slurm
     group: ansible
-    mode: "0750"
+    mode: "0o750"
 
 - name: Install python dependencies
-  pip:
+  ansible.builtin.pip:
     name:
       - python-openstackclient==6.0.0
       - openstacksdk==0.62.0
@@ -290,16 +181,12 @@
       - pyzabbix
     virtualenv: /opt/bibigrid-venv
 
-- name: Add default user to ansible group
+- name: 'Add default user to ansible group'
   user:
-    name: "{{ ssh_user }}"
+    name: '{{ ssh_user }}'
     append: true
     groups:
       - ansible
-
-# ---------------------------------------------------------------------------
-# WORKER USERDATA
-# ---------------------------------------------------------------------------
 
 - name: Generate location specific worker userdata
   template:
@@ -307,37 +194,65 @@
     dest: "/opt/slurm/userdata_{{ hostvars[item].cloud_identifier }}.txt"
     owner: slurm
     group: ansible
-    mode: "0640"
+    mode: "0o640"
   with_items: "{{ groups.vpngtw + groups.master }}"
 
-# ---------------------------------------------------------------------------
-# SERVICE STARTUP
-# ---------------------------------------------------------------------------
-#
-#   1. slurmdbd
-#   2. slurmctld
-#   3. slurmrestd
-
-- name: Enable and start slurmdbd
+- name: Enable slurmdbd and slurmrestd services
   systemd:
-    name: slurmdbd
+    name: "{{ item }}"
+    enabled: true
+    masked: false
+    state: started
+    daemon_reload: true
+  with_items:
+    - slurmdbd
+    - slurmrestd
+
+- name: Enable slurmctld service
+  systemd:
+    name: "slurmctld"
     enabled: true
     masked: false
     state: started
     daemon_reload: true
 
-- name: Enable and start slurmctld
-  systemd:
-    name: slurmctld
-    enabled: true
-    masked: false
-    state: started
-    daemon_reload: true
 
-- name: Enable and start slurmrestd
+- when: bibigrid_slurm_home.stdout != '/opt/slurm'
+  block:
+    - name: Stop Slurm Services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      with_items:
+        - slurmctld
+        - slurmd
+        - slurmdbd
+        - slurmrestd
+    - name: Add slurm user to ansible and give slurm user a home
+      user:
+        name: slurm
+        append: true
+        create_home: true
+        groups:
+          - ansible
+        home: /opt/slurm
+        shell: /bin/false
+    - name: Start Slurm Services
+      systemd:
+        name: "{{ item }}"
+        state: started
+      with_items:
+        - slurmctld
+        - slurmd
+        - slurmdbd
+        - slurmrestd
+
+- name: Restart Slurm services
   systemd:
-    name: slurmrestd
-    enabled: true
-    masked: false
-    state: started
-    daemon_reload: true
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - slurmdbd
+    - slurmrestd
+    - slurmctld
+    - slurmd
