@@ -9,11 +9,8 @@ import os
 import subprocess
 import sys
 import threading
-from typing import Union
 
 import uvicorn
-from uvicorn.config import LOGGING_CONFIG
-
 import yaml
 from fastapi import FastAPI, status, Request
 from fastapi.exceptions import RequestValidationError
@@ -25,9 +22,9 @@ from bibigrid.core.utility import validate_configuration, id_generation
 from bibigrid.core.utility.handler import provider_handler, configuration_handler
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, CLOUD_NODE_REQUIREMENTS_PATH, \
     ENFORCED_CONFIG_PATH, DEFAULT_CONFIG_PATH
-from bibigrid.models.configuration import ConfigurationsModel, MinimalConfigurationsModel
-from bibigrid.models.rest.response import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
-    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, RequirementsModel
+from bibigrid.models.rest import ValidationResponseModel, CreateResponseModel, TerminateResponseModel, \
+    InfoResponseModel, LogResponseModel, ClusterStateResponseModel, ConfigurationsModel, MinimalConfigurationsModel, \
+    RequirementsModel
 
 VERSION = "0.0.1"
 DESCRIPTION = """
@@ -51,10 +48,6 @@ file_handler.setFormatter(LOG_FORMATTER)
 LOG.addHandler(file_handler)
 logging.addLevelName(42, "PRINT")
 LOG.setLevel(logging.DEBUG)
-
-#Uvicorn Logging
-LOGGING_CONFIG["formatters"]["default"]["fmt"] = LOG_FORMAT
-LOGGING_CONFIG["formatters"]["access"]["fmt"] = LOG_FORMAT
 
 
 def tail(file_path, lines):
@@ -93,7 +86,7 @@ def setup(cluster_id, configurations_json=None):
                            f"({id_generation.CLUSTER_UUID_ALPHABET}). Aborting.")
 
     if configurations_json:
-        configurations = configurations_json.model_custom_dump(exclude_none=True)
+        configurations = configurations_json.model_dump(exclude_none=True)["configurations"]
         configurations = configuration_handler.merge_configurations(user_config=configurations,
                                                                     default_config_path=DEFAULT_CONFIG_PATH,
                                                                     enforced_config_path=ENFORCED_CONFIG_PATH,
@@ -181,8 +174,7 @@ async def create_cluster(configurations_json: ConfigurationsModel, cluster_id: s
 
 
 @app.post("/bibigrid/terminate/{cluster_id}", response_model=TerminateResponseModel)
-async def terminate_cluster(cluster_id: str,
-                            configurations_json: Union[ConfigurationsModel, MinimalConfigurationsModel]):
+async def terminate_cluster(cluster_id: str, configurations_json: MinimalConfigurationsModel):
     """
     Initiates the termination of a cluster based on the provided configuration JSON.
 
@@ -199,9 +191,7 @@ async def terminate_cluster(cluster_id: str,
 
     try:
         providers = provider_handler.get_providers(configurations, log)
-        thread = threading.Thread(target=terminate.terminate,
-                                  args=(cluster_id, providers, configuration_handler.get_list_by_key(
-                                      configurations=configurations, key="floatingIpId"), log))
+        thread = threading.Thread(target=terminate.terminate, args=(cluster_id, providers, log))
         thread.start()
         return JSONResponse(content={"message": "Termination successfully requested."}, status_code=202)
     except Exception as exc:  # pylint: disable=broad-except
@@ -210,7 +200,7 @@ async def terminate_cluster(cluster_id: str,
 
 
 @app.post("/bibigrid/info/{cluster_id}", response_model=InfoResponseModel)
-async def info(cluster_id: str, configurations_json: Union[ConfigurationsModel, MinimalConfigurationsModel]):
+async def info(cluster_id: str, configurations_json: MinimalConfigurationsModel):
     """
     Retrieves detailed information about the specified cluster.
 

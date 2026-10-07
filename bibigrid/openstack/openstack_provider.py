@@ -13,8 +13,8 @@ from keystoneauth1.exceptions.http import NotFound
 from keystoneauth1.identity import v3
 
 from bibigrid.core import provider
-from bibigrid.core.actions import version
 from bibigrid.core.utility.statics.create_statics import PREFIX_WITH_SEP
+from bibigrid.core.actions import version
 from bibigrid.models.exceptions import ExecutionException, ConflictException, ImageDeactivatedException
 
 LOG = logging.getLogger("bibigrid")
@@ -117,14 +117,12 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                       security_groups=None,
                       # pylint: disable=too-many-locals
                       boot_volume=None, boot_from_volume=False, terminate_boot_volume=False, volume_size=50,
-                      description="", group=None, meta=None):
+                      description="", meta=None):
         try:
             server = self.conn.create_server(name=name, flavor=flavor, image=image, network=network, key_name=key_name,
                                              volumes=volumes, security_groups=security_groups, boot_volume=boot_volume,
                                              boot_from_volume=boot_from_volume,
-                                             terminate_volume=terminate_boot_volume, volume_size=volume_size,
-                                             group=group,
-                                             meta=meta)
+                                             terminate_volume=terminate_boot_volume, volume_size=volume_size, meta=meta)
         except openstack.exceptions.BadRequestException as exc:
             if "is not active" in str(exc):
                 raise ImageDeactivatedException("Image not active") from exc
@@ -194,57 +192,6 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
             free_resources[key] = volume_limits["max_total_" + key] - volume_limits["total_" + key + "_used"]
         return free_resources
 
-    def get_free_resources_new(self):  # pylint: disable=all
-        """
-        Returns remaining (free) quota resources for the currently
-        authenticated project (from clouds.yaml).
-
-        Unlimited quotas are returned as 0.
-        """
-        project_id = self.conn.current_project_id
-
-        # Compute Quotas
-        compute_quotas = self.conn.compute.get_quota_set(project_id)
-        # Compute Usage: list servers and sum resources
-        servers = list(self.conn.compute.servers())
-        instances_used = len(servers)
-        vcpus_used = sum(getattr(s, 'flavor', {}).get('vcpus', 0) for s in servers)
-        ram_used = sum(getattr(s, 'flavor', {}).get('ram', 0) for s in servers)  # in MB
-
-        # Volume Quotas
-        volume_quotas = self.conn.volume.get_quota_set(project_id)
-        # Volume Usage: list volumes and sum sizes
-        volumes = list(self.conn.volume.volumes())
-        volumes_used = len(volumes)
-        volume_storage_used = sum(v.size for v in volumes)  # in GB
-
-        # Network Quotas
-        network_quotas = self.conn.network.get_quota(project_id)
-        # Network Usage: count resources
-        floating_ips = len(list(self.conn.network.ips(floating_ip=True)))
-        security_groups = len(list(self.conn.network.security_groups()))
-        security_group_rules = sum(len(sg.security_group_rules) for sg in self.conn.network.security_groups())
-        networks = len(list(self.conn.network.networks()))
-        ports = len(list(self.conn.network.ports()))
-        routers = len(list(self.conn.network.routers()))
-
-        # Format output
-        output = [
-            f"Compute Instances Used {instances_used} of {compute_quotas.instances}",
-            f"VCPUs Used {vcpus_used} of {compute_quotas.cores}",
-            f"RAM Used {ram_used / 1024:.1f}GB of {compute_quotas.ram / 1024:.1f}GB",
-            f"Volume Volumes Used {volumes_used} of {volume_quotas.volumes}",
-            f"Volume Storage Used {volume_storage_used:.1f}GB of {volume_quotas.gigabytes:.1f}GB",
-            f"Network Floating IPs Allocated {floating_ips} of {network_quotas.floating_ips}",
-            f"Security Groups Used {security_groups} of {network_quotas.security_groups}",
-            f"Security Group Rules Used {security_group_rules} of {network_quotas.security_group_rules}",
-            f"Networks Used {networks} of {network_quotas.networks}",
-            f"Ports Used {ports} of {network_quotas.ports}",
-            f"Routers Used {routers} of {network_quotas.routers}",
-        ]
-        print("\n".join(output))
-        exit(0)  # Remove or comment out in production code
-
     def get_volume_by_id_or_name(self, name_or_id):
         return self.conn.get_volume(name_or_id)
 
@@ -288,45 +235,17 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
                     return router.external_gateway_info["network_id"]
         return None
 
-    def get_floating_ip(self, floating_ip_id, filters=None):
+    def attach_available_floating_ip(self, network=None, server=None):
         """
-        Get a floating IP by id.
-        @param floating_ip_id:
-        @param filters:
-        @return:
-        """
-        return self.conn.get_floating_ip(floating_ip_id, filters)
-
-    def add_ip_list(self, *, server, ips, wait=False, timeout=60, fixed_address=None, nat_destination=None):
-        """
-        Add ip list to server.
-        :param server:
-        :param ips:
-        :param wait:
-        :param timeout:
-        :param fixed_address:
-        :param nat_destination:
-        :return:
-        """
-        return self.conn.add_ip_list(server, ips, wait=wait, timeout=timeout, fixed_address=fixed_address,
-                                     nat_destination=nat_destination)
-
-    def create_floating_ip(self, *, network=None, server=None, fixed_address=None, nat_destination=None, port=None,
-                           wait=True, timeout=60):
-        """
-
+        Get a floating IP from a network or a pool and attach it to the server
         @param network:
         @param server:
-        @param fixed_address:
-        @param nat_destination:
-        @param port:
-        @param wait:
-        @param timeout:
         @return:
         """
-        return self.conn.create_floating_ip(network=network, server=server, fixed_address=fixed_address,
-                                            nat_destination=nat_destination,
-                                            port=port, wait=wait, timeout=timeout)
+        floating_ip = self.conn.available_floating_ip(network=network)
+        if server:
+            self.conn.compute.add_floating_ip_to_server(server, floating_ip["floating_ip_address"])
+        return floating_ip
 
     def get_images(self):
         """
@@ -424,7 +343,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param name_or_id:
         @return:
         """
-        return self.conn.get_server(name_or_id).to_dict()
+        return self.conn.get_server(name_or_id)
 
     def create_volume(self, *, name, size, wait=True, volume_type=None, description=None):
         """
@@ -445,7 +364,7 @@ class OpenstackProvider(provider.Provider):  # pylint: disable=too-many-public-m
         @param name_or_id:
         @return: True if deletion was successful, else False
         """
-        return self.conn.delete_volume(name_or_id=name_or_id, wait=True)
+        return self.conn.delete_volume(name_or_id=name_or_id)
 
     def list_volumes(self):
         """

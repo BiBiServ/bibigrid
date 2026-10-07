@@ -112,6 +112,16 @@
   import_tasks: 020-disk.yaml
   tags:
     - "disk"
+- name: Generate server directory structure available on all hosts
+  import_tasks: 020-disk-server.yaml
+  when: "'master' in group_names"
+  tags:
+    - "disk"
+- name: Generate worker directory structure available on all hosts
+  import_tasks: 020-disk-worker.yaml
+  when: "'master' not in group_names"
+  tags:
+    - "disk"
 
 - name: Setup NFS
   when:
@@ -143,14 +153,6 @@
       when: "'vpngtw' not in group_names"
     - import_tasks: 042-slurm-server.yaml
       when: "'master' in group_names"
-    - name: Enable and start slurmd
-      systemd:
-        name: slurmd
-        enabled: true
-        masked: false
-        state: started
-        daemon_reload: true
-      when: "'vpngtw' not in group_names"
 
 - name: Setup Theia
   when:

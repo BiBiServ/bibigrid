@@ -21,19 +21,19 @@ process_string() {
 }
 
 mkdir -p worker_logs
-mkdir -p worker_logs/resume
-mkdir -p worker_logs/resume/out
-mkdir -p worker_logs/resume/err
+mkdir -p worker_logs/create
+mkdir -p worker_logs/create/out
+mkdir -p worker_logs/create/err
 
 # redirect stderr and stdout
-exec >> "/var/log/slurm/worker_logs/resume/out/$(process_string "$1")_$(date '+%Y-%m-%d_%H:%M:%S').log"
-exec 2>> "/var/log/slurm/worker_logs/resume/err/$(process_string "$1")_$(date '+%Y-%m-%d_%H:%M:%S').log"
+exec >> "/var/log/slurm/worker_logs/create/out/$(process_string "$1")_$(date '+%Y-%m-%d_%H:%M:%S').log"
+exec 2>> "/var/log/slurm/worker_logs/create/err/$(process_string "$1")_$(date '+%Y-%m-%d_%H:%M:%S').log"
 
 function log {
    echo "$(date) $*"
 }
 
-log "Resume-Script started"
+log "Create-Script started"
 
 hosts=$(scontrol show hostnames "$1")
 
@@ -42,7 +42,4 @@ source /opt/bibigrid-venv/bin/activate
 
 # create and configure requested instances
 python3 /usr/local/bin/create_server.py "${hosts}"
-
-exit_code=$?
-log "create_server.py exited with code $exit_code"
 exit $?

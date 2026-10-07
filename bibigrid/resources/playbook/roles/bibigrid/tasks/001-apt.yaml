@@ -47,7 +47,6 @@
     state: "present"
 
 - name: Add zabbix repositories # noqa: line-length
-  when: enable_zabbix|default(false)|bool
   apt:
     # yamllint disable-line
     deb: "https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+{{ ansible_distribution | lower }}{{ ansible_distribution_version }}_all.deb"
@@ -66,42 +65,6 @@
   apt_repository:
     repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
   notify: Apt update
-
-- name: Install Nvidia Drivers
-  when: flavor.gres is defined
-  block:
-    - name: Install ubuntu-drivers-common
-      apt:
-        name: ubuntu-drivers-common
-        state: present
-        update_cache: true
-
-    - name: Install recommended NVIDIA driver
-      command: ubuntu-drivers install
-      args:
-        creates: /usr/bin/nvidia-smi
-      notify: Nvidia drivers installed
-    - name: Install cuda toolkit
-      apt:
-        name: nvidia-cuda-toolkit
-        state: present
-        update_cache: true
-    # Container Toolkit
-    - name: Add GPG Key For nvidia-container-runtime
-      apt_key:
-        url: https://nvidia.github.io/libnvidia-container/gpgkey
-        keyring: /etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg
-        state: "present"
-    - name: Add nvidia-container-runtime Repository to Apt
-      apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /"
-        state: present
-        filename: nvidia-container-toolkit
-        update_cache: true
-    - name: Install nvidia-contaier-toolkit
-      apt:
-        name: nvidia-container-toolkit
-        state: present
 
 - name: Flush handlers
   meta: flush_handlers
