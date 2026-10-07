@@ -94,3 +94,44 @@ class TestStartup(TestCase):
         self.assertTrue(startup.run_action(action="ide", configurations=configurations, config_input="", cluster_id=21,
                                            debug=True) == 42)
         mock_ide.assert_called_with(21, provider_mock, {"test_key": "test_value"}, startup.LOG)
+
+    @patch('bibigrid.core.utility.id_generation.is_unique_cluster_id')
+    @patch('bibigrid.core.utility.handler.provider_handler.get_providers')
+    def test_check_cid_create_unique_passes_through(self, get_providers, mock_is_unique):
+        provider_mock = Mock()
+        provider_mock.close = Mock()
+        get_providers.return_value = [provider_mock]
+        mock_is_unique.return_value = True
+        self.assertEqual("abc123", startup.check_cid("abc123", configurations={}, action="create"))
+        provider_mock.close.assert_called_once()
+
+    @patch('bibigrid.core.utility.id_generation.is_unique_cluster_id')
+    @patch('bibigrid.core.utility.handler.provider_handler.get_providers')
+    def test_check_cid_create_duplicate_raises_and_still_closes_providers(self, get_providers, mock_is_unique):
+        provider_mock = Mock()
+        provider_mock.close = Mock()
+        get_providers.return_value = [provider_mock]
+        mock_is_unique.return_value = False
+        with self.assertRaises(RuntimeError):
+            startup.check_cid("abc123", configurations={}, action="create")
+        provider_mock.close.assert_called_once()
+
+    @patch('bibigrid.core.utility.id_generation.is_unique_cluster_id')
+    @patch('bibigrid.core.utility.handler.provider_handler.get_providers')
+    def test_check_cid_update_skips_uniqueness_check(self, get_providers, mock_is_unique):
+        self.assertEqual("abc123", startup.check_cid("abc123", configurations={}, action="update"))
+        get_providers.assert_not_called()
+        mock_is_unique.assert_not_called()
+
+    @patch('bibigrid.core.utility.id_generation.is_unique_cluster_id')
+    @patch('bibigrid.core.utility.handler.provider_handler.get_providers')
+    def test_check_cid_create_checks_uniqueness_of_normalized_cid(self, get_providers, mock_is_unique):
+        # regression: the master-name -> cid normalization must happen before the uniqueness check runs,
+        # otherwise "create -cid bibigrid-master-abc123" would check the wrong (unnormalized) value
+        provider_mock = Mock()
+        provider_mock.close = Mock()
+        get_providers.return_value = [provider_mock]
+        mock_is_unique.return_value = True
+        result = startup.check_cid("bibigrid-master-abc123", configurations={}, action="create")
+        self.assertEqual("abc123", result)
+        mock_is_unique.assert_called_once_with("abc123", [provider_mock])

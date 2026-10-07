@@ -9,10 +9,11 @@ bibigrid.core.startup [OPTIONS] {create|terminate|list|check|ide|update}
 
 ## Action Argument
 - `check` Validates cluster configuration.
-- `create` Creates cluster.
+- `create` Creates cluster. Fails if the given cluster-id already belongs to a running cluster - use `update` instead.
 - `terminate` Terminates cluster. Needs option cluster-id
 - `list` Lists all running clusters. If option cluster-id is set, will list this cluster in detail only.
-- `update` Updates master's playbook. Needs option cluster-id, no job running and no workers powered up.
+- `update` Updates a running cluster's playbook/configuration and starts any newly configured static
+  (`onDemand: False`) workers. Needs option cluster-id.
 - `ide` Establishes a secured connection to Theia ide.
 
 ## Options

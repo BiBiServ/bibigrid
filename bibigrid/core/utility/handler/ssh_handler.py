@@ -154,6 +154,33 @@ def is_active(client, paramiko_key, ssh_data, log):
                 raise ConnectionException(exc) from exc
 
 
+def read_remote_file(ssh_data, remote_path, log):
+    """
+    Reads a file on the remote as root (via sudo cat) and returns its content.
+    Used to read back already-deployed secrets (e.g. the munge key) instead of regenerating them.
+    @param ssh_data: dict containing floating_ip, private_key, username, gateway, timeout, sock5_proxy
+    @param remote_path: absolute path of the file on remote
+    @param log:
+    @return: file content (str) or None if the file couldn't be read
+    """
+    log.debug("Running read_remote_file")
+    paramiko_key = paramiko.ECDSAKey.from_private_key_file(ssh_data["private_key"])
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            is_active(client=client, paramiko_key=paramiko_key, ssh_data=ssh_data, log=log)
+        except ConnectionException as exc:
+            log.error(f"Couldn't connect to ip {ssh_data['gateway'] or ssh_data['floating_ip']} using private key "
+                      f"{ssh_data['private_key']}.")
+            raise exc
+        _, ssh_stdout, ssh_stderr = client.exec_command(f"sudo cat {remote_path}")
+        exit_status = ssh_stdout.channel.recv_exit_status()
+        if exit_status:
+            log.debug(f"Unable to read remote file {remote_path}: {ssh_stderr.read().decode().strip()}")
+            return None
+        return ssh_stdout.read().decode().strip()
+
+
 def line_buffered(f):
     """
     https://stackoverflow.com/questions/25260088/paramiko-with-continuous-stdout
