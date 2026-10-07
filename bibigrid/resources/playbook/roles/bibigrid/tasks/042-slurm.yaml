@@ -21,10 +21,12 @@
 #     mode: "0o311"
 
 - name: Install slurm-bibigrid package
+  when: not slurm_conf.package.use_experimental|default(false)|bool
+  tags:
+    - "image"
   apt:
     name: "{{ slurm_conf.package.version }}"
     state: present
-  when: not slurm_conf.package.use_experimental|default(false)|bool
 
 - name: Download and install experimental slurm-bibigrid package
   apt:
@@ -36,6 +38,9 @@
   apt:
     name:
       - munge
+  tags:
+    - "image"
+
 - name: Configure MUNGE
   block:
     - name: Deploy BiBiGrid Created Munge Key

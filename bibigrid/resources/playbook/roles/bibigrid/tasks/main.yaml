@@ -33,6 +33,7 @@
   when: "ansible_distribution_file_variety == 'Debian'"
   tags:
     - "pkg"
+    - "image"
   block:
     - name: Running 001-apt.yaml
       debug:

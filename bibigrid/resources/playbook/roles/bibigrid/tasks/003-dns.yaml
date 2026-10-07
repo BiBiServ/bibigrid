@@ -2,6 +2,8 @@
   apt:
     name: dnsmasq
     state: present
+  tags:
+    - "image"
 
 - name: Disable and Stop systemd-resolve
   systemd:
