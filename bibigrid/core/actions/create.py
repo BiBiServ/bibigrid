@@ -17,12 +17,12 @@ from bibigrid.core.actions.terminate import delete_keypairs, delete_local_keypai
 from bibigrid.core.utility import ansible_configurator
 from bibigrid.core.utility import id_generation
 from bibigrid.core.utility import image_selection
-from bibigrid.core.utility.handler import ssh_handler
+from bibigrid.core.utility.handler import ssh_handler, configuration_handler
 from bibigrid.core.utility.paths import ansible_resources_path as a_rp
 from bibigrid.core.utility.paths.basic_path import CLUSTER_INFO_FOLDER, KEY_FOLDER
 from bibigrid.core.utility.statics.create_statics import AC_NAME, KEY_NAME, DEFAULT_SECURITY_GROUP_NAME, \
-    WIREGUARD_SECURITY_GROUP_NAME, MASTER_IDENTIFIER, WORKER_IDENTIFIER, \
-    VPNGTW_IDENTIFIER, UPLOAD_FILEPATHS
+    WIREGUARD_SECURITY_GROUP_NAME, master_identifier, worker_identifier, \
+    vpngtw_identifier, UPLOAD_FILEPATHS
 from bibigrid.models import exceptions
 from bibigrid.models import return_threading
 from bibigrid.models.exceptions import ExecutionException, ConfigurationException
@@ -178,7 +178,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         identifier, instance = self.prepare_vpn_or_master_args(configuration)
         external_network = provider.get_external_network(configuration["network"])
-        if identifier == MASTER_IDENTIFIER:  # pylint: disable=comparison-with-callable
+        if identifier == master_identifier:  # pylint: disable=comparison-with-callable
             name = identifier(cluster_id=self.cluster_id)
         else:
             name = identifier(cluster_id=self.cluster_id,  # pylint: disable=redundant-keyword-arg
@@ -204,6 +204,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         boot_volume=bool(boot_volume),
                                         terminate_boot_volume=boot_volume.get("terminate", True),
                                         volume_size=boot_volume.get("size", 50),
+                                        group=instance.get("serverGroup", configuration.get("serverGroup")),
                                         meta=meta)
         # description=instance.get("description", configuration.get("description")))
         self.add_volume_device_info_to_instance(provider, server, instance)
@@ -221,17 +222,29 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             raise ConfigurationException(f"MAC address for ip {configuration['private_v4']} not found.")
 
         # pylint: disable=comparison-with-callable
-        if identifier == VPNGTW_IDENTIFIER or (identifier == MASTER_IDENTIFIER and self.use_master_with_public_ip):
-            configuration["floating_ip"] = \
-                provider.attach_available_floating_ip(network=external_network, server=server)["floating_ip_address"]
-            if identifier == MASTER_IDENTIFIER:
+        if identifier == vpngtw_identifier or (identifier == master_identifier and self.use_master_with_public_ip):
+            if not configuration.get("floatingIpId"):
+                configuration["floating_ip"] = provider.create_floating_ip(network=external_network, server=server)[
+                    "floating_ip_address"]
+            else:
+                floating_ip = provider.get_floating_ip(configuration["floatingIpId"])
+                if not floating_ip:
+                    raise ValueError(
+                        f"Floating ip {configuration['floatingIpId']} does not exist on "
+                        f"{provider.cloud_specification['identifier']}!")
+                configuration["floating_ip"] = floating_ip["floating_ip_address"]
+                _ = provider.add_ip_list(server=server, floating_ip=[configuration["floating_ip"]])
+            self.log.info(
+                f"Server {name} uses floating ip {configuration['floating_ip']} ({'pre-existing'
+                if configuration.get('floatingIpId') else 'created'})")
+            if identifier == master_identifier:
                 write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
                                      "floating_ip": configuration["floating_ip"],
                                      "state": "starting",
                                      "message": "Create process has been started. Master has been created."
                                      })
             self.log.debug(f"Added floating ip {configuration['floating_ip']} to {name}.")
-        elif identifier == MASTER_IDENTIFIER:
+        elif identifier == master_identifier:
             configuration["floating_ip"] = server["private_v4"]  # pylint: enable=comparison-with-callable
 
     def start_worker(self, worker, worker_count, configuration, provider):  # pylint: disable=too-many-locals
@@ -244,7 +257,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         @param provider:
         @return:
         """
-        name = WORKER_IDENTIFIER(cluster_id=self.cluster_id, additional=worker_count)
+        name = worker_identifier(cluster_id=self.cluster_id, additional=worker_count)
         self.log.info(f"Starting server {name} on {provider.cloud_specification['identifier']}.")
         flavor = worker["type"]
         network = configuration["network"]
@@ -263,6 +276,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                         terminate_boot_volume=boot_volume.get("terminateBoot", True),
                                         volume_size=boot_volume.get("size", 50),
                                         description=worker.get("description", configuration.get("description")),
+                                        group=worker.get("serverGroup", configuration.get("serverGroup")),
                                         meta=meta)
 
         self.add_volume_device_info_to_instance(provider, server, worker)
@@ -336,13 +350,14 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                                       server_volume["id"] == volume["id"]), None)
                 if not server_volume:
                     raise RuntimeError(
-                        f"Created server {server['name']} doesn't have attached volume {volume['name']}.")
+                        f"Created server {server['name']} doesn't have attached volume {volume.get('name')} "
+                        f"(volume_id:{volume.get('id')}).")
                 device = server_volume.get("device")
                 final_volumes.append({**volume, "device": device})
 
                 self.log.debug(f"Added Configuration: Instance {server['name']} has volume {volume['name']} "
-                               f"as device {device} that is going to be mounted to "
-                               f"{volume.get('mountPoint')}")
+                               f"(volume_id:{volume.get('id')}) "
+                               f"as device {device} (Mount Point {volume.get('mountPoint', 'Will Not Be Mounted')})")
 
             self.write_remote.append(
                 ({"volumes": final_volumes}, os.path.join(a_rp.HOST_VARS_FOLDER_REMOTE, f"{server['name']}.yaml"),
@@ -356,10 +371,10 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
         """
         if configuration.get("masterInstance"):
             instance_type = configuration["masterInstance"]
-            identifier = MASTER_IDENTIFIER
+            identifier = master_identifier
         elif configuration.get("vpnInstance"):
             instance_type = configuration["vpnInstance"]
-            identifier = VPNGTW_IDENTIFIER
+            identifier = vpngtw_identifier
         else:
             self.log.warning(
                 f"Configuration {configuration['cloud_identifier']} "
@@ -527,6 +542,7 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                     self.log.info("%s not found. Creating folder.", folder)
                     os.mkdir(folder)
             self.generate_keypair()
+            self.log.debug("Keypair generated")
             self.delete_old_vars()
             self.prepare_configurations()
             self.create_defaults()
@@ -542,8 +558,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
                 delete_local_keypairs(tmp_keyname=self.key_name, log=self.log)
             if self.debug:
                 self.log.info("DEBUG MODE: Entering termination...")
-                terminate(cluster_id=self.cluster_id, providers=self.providers, debug=self.debug,
-                          log=self.log)
+                terminate(cluster_id=self.cluster_id, providers=self.providers,
+                          floating_ip_ids=configuration_handler.get_list_by_key(self.configurations, "floatingIpId"),
+                          log=self.log, debug=self.debug)
         except exceptions.ConnectionException:
             self.log.error(traceback.format_exc())
             self.log.error("Connection couldn't be established. Check Provider connection.")
@@ -573,7 +590,9 @@ class Create:  # pylint: disable=too-many-instance-attributes,too-many-arguments
             self.log.error(f"Unexpected error: '{str(exc)}' ({type(exc)}) Contact a developer!)")
         else:
             return 0  # will be called if no exception occurred
-        terminate(cluster_id=self.cluster_id, providers=self.providers, log=self.log, debug=self.debug)
+        terminate(cluster_id=self.cluster_id, providers=self.providers,
+                  floating_ip_ids=configuration_handler.get_list_by_key(self.configurations, "floatingIpId"),
+                  log=self.log, debug=self.debug)
         write_cluster_state({"cluster_id": self.cluster_id, "ssh_user": self.ssh_user,
                              "floating_ip": self.configurations[0].get("floating_ip"),
                              "state": "failed",

@@ -1,6 +1,6 @@
 # Check
 
-Besides the in depth check which is explained below there is a schema check in [validate_schema.py](../../../bibigrid/core/utility/validate_schema.py).
+Besides the in depth check which is explained below there is a pydantic check on startup which controls the general yaml structure.
 
 ## Exactly one master or vpn instance per configuration
 

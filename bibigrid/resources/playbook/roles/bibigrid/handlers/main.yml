@@ -1,7 +1,9 @@
 - name: Nfs-server
-  systemd:
-    name: nfs-kernel-server
-    state: restarted
+  command:
+    cmd: exportfs -ra
+#  systemd:
+#    name: nfs-kernel-server
+#    state: restarted
 
 - name: Docker
   systemd:
@@ -11,30 +13,41 @@
     - docker.socket
     - docker
 
-
-- name: Munge
+- name: Restart munge
   systemd:
     name: munge
     state: restarted
 
-- name: Slurmdbd
+- name: Restart slurmdbd
   systemd:
     name: slurmdbd
     state: restarted
 
-- name: Slurmrestd
-  systemd:
-    name: slurmrestd
-    state: restarted
-    daemon_reload: true
-
-- name: Slurmctld
+- name: Restart slurmctld
   systemd:
     name: slurmctld
     state: restarted
   when: "'master' in group_names"
 
-- name: Slurmd
+- name: Restart slurmrestd
+  systemd:
+    name: slurmrestd
+    state: restarted
+    daemon_reload: true
+
+- name: Reconfigure slurmctld
+  command: scontrol reconfigure
+  when: "'master' in group_names"
+
+- name: Enable slurmd
+  systemd:
+    name: slurmd
+    enabled: true
+    masked: false
+    state: started
+    daemon_reload: true
+
+- name: Restart slurmd
   systemd:
     name: slurmd
     state: restarted
@@ -78,3 +91,10 @@
 - name: Apt update
   apt:
     update_cache: "yes"
+
+- name: Nvidia drivers installed
+  reboot:
+    reboot_timeout: 900
+    pre_reboot_delay: 5
+    post_reboot_delay: 20
+    test_command: nvidia-smi

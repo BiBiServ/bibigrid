@@ -34,6 +34,18 @@
     dest: '/home/{{ ansible_distribution | lower }}/vol'
     state: link
 
+- name: Handle Ephemeral For Server
+  include_tasks: 020-disk-server.yaml
+  when: "'master' in group_names"
+  tags:
+    - "disk"
+
+- name: Handle Ephemeral For Worker
+  include_tasks: 020-disk-worker.yaml
+  when: "'master' not in group_names"
+  tags:
+    - "disk"
+
 - name: Automount
   when: volumes is defined
   include_tasks: 020-disk-automount.yaml

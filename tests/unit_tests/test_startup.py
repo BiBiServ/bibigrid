@@ -81,7 +81,8 @@ class TestStartup(TestCase):
             self.assertTrue(
                 startup.run_action(action="terminate", configurations=configurations, config_input="", cluster_id=21,
                                    debug=True) == 42)
-            mock_tc.assert_called_with(cluster_id=21, providers=[provider_mock], log=startup.LOG, debug=True)
+            mock_tc.assert_called_with(cluster_id=21, providers=[provider_mock], floating_ip_ids=[], log=startup.LOG,
+                                       debug=True)
 
     @patch('bibigrid.core.utility.handler.provider_handler.get_providers')
     @patch("bibigrid.core.actions.ide.ide")

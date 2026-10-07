@@ -25,7 +25,7 @@
         path: "{{ item.mountPoint }}"
         state: directory
         mode: "0o755"
-        owner: root
+        owner: ubuntu
         group: '{{ ansible_distribution | lower }}'
 
     - name: Mount disks
