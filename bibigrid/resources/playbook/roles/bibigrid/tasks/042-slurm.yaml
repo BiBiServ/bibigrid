@@ -40,7 +40,7 @@
       - munge
   tags:
     - "image"
-    
+
 - name: Configure MUNGE
   block:
     - name: Deploy BiBiGrid Created Munge Key
