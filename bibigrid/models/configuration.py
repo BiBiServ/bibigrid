@@ -2,7 +2,7 @@
 This module contains models regarding the configuration yaml
 """
 
-from typing import Dict, List, Optional, Literal, Annotated
+from typing import Dict, List, Optional, Literal, Annotated, Any
 
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
@@ -38,6 +38,7 @@ class UserRole(StrictModel):
     hosts: List[str]
     roles: List[Role]
     varsFiles: Optional[List[str]] = Field(default_factory=list)
+    vars: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
 class CloudScheduling(StrictModel):
