@@ -38,12 +38,16 @@
   apt:
     name: zabbix-agent2
     state: present
+  tags:
+    - "image"
   when: "ansible_distribution_file_variety == 'Debian'"
 
 - name: Install zabbix agent
   dnf:
     name: zabbix-agent
     state: present
+  tags:
+    - "image"
   when: "ansible_distribution_file_variety == 'RedHat'"
 
 - name: Start and Enable zabbix-agent2

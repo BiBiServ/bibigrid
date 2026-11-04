@@ -15,6 +15,8 @@
       - python3-pymysql
     state: present
     update_cache: true
+  tags:
+    - "image"
   when: "ansible_distribution_file_variety == 'Debian' or ansible_distribution == 'Ubuntu'"
 
 - name: REHL based OS (Install database & Zabbix server)
@@ -25,6 +27,8 @@
       - zabbix-sql-scripts
       - python3-pymysql
     state: present
+  tags:
+    - "image"
   when: "ansible_distribution_file_variety == 'RedHat' "
 
 - name: Create zabbix database
@@ -86,6 +90,8 @@
 
 - name: Zabbix Web Frontend related packages for Debian based OS
   when: "ansible_distribution_file_variety == 'Debian'"
+  tags:
+    - "image"
   block:
     - name: Install apache web server and php
       apt:
@@ -103,6 +109,8 @@
 
 - name: Zabbix Web Frontend related packages for REHL based OS
   when: "ansible_distribution_file_variety == 'RedHat'"
+  tags:
+    - "image"
   block:
     - name: Install apache web server
       dnf:

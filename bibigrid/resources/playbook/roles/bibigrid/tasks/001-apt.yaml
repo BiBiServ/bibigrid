@@ -57,15 +57,15 @@
     - skip_ansible_lint
   notify: Apt update
 
-- name: Add apt.bi.denbi.de repository key
-  apt_key:
-    url: 'https://apt.bi.denbi.de/repo_key.key'
-    state: present
-
-- name: Add apt.bi.denbi.de repository
-  apt_repository:
-    repo: 'deb https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
-  notify: Apt update
+- name: Add apt.bi.denbi.de using key from URL
+  ansible.builtin.deb822_repository:
+    name: bidenbide
+    types: deb
+    uris: https://apt.bi.denbi.de/repos/apt/{{ ansible_distribution_release | lower }}
+    suites: '{{ ansible_distribution_release }}'
+    components: main
+    architectures: amd64
+    signed_by: https://apt.bi.denbi.de/repo_key.key
 
 - name: Install Nvidia Drivers
   when: flavor.gres is defined

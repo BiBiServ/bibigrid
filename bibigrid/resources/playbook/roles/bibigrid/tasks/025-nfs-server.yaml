@@ -2,6 +2,8 @@
   apt:
     name: "nfs-kernel-server"
     state: present
+  tags:
+    - "image"
 
 - name: Create shared directories
   file:

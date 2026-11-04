@@ -2,6 +2,8 @@
   apt:
     name: dnsmasq
     state: present
+  tags:
+    - "image"
 
 - name: Disable and Stop systemd-resolve
   systemd:
@@ -23,7 +25,7 @@
 
 - name: Read upstream DNS IPs from systemd-resolved
   ansible.builtin.shell: "awk '/^nameserver/ {print $2}' /run/systemd/resolve/resolv.conf || true"
-  register: systemd_resolv_lines
+  register: bibigrid_systemd_resolv_lines
   changed_when: false
 
 - name: Adjust dnsmasq.resolv.conf

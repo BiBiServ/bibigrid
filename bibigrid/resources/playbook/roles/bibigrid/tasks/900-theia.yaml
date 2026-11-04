@@ -2,6 +2,8 @@
   apt:
     name: ["python3", "make", "g++", "curl", "git", "pkg-config", "libsecret-1-dev"]
   when: ansible_distribution_file_variety == 'Debian'
+  tags:
+    - "image"
 
 - name: Install packages
   yum:

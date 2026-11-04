@@ -5,6 +5,8 @@
     path: "/etc/apt/keyrings"
     state: "directory"
     mode: "755"
+  tags:
+    - "image"
 
 - name: Add Docker's Official GPG Key
   get_url:
@@ -13,6 +15,8 @@
     owner: root
     dest: /etc/apt/keyrings/docker.asc
     mode: "644"
+  tags:
+    - "image"
 
 - name: Add Docker repository
   apt_repository:
@@ -26,6 +30,8 @@
   vars:
     arch_mapping:
       x86_64: amd64
+  tags:
+    - "image"
 
 - name: Install Docker
   apt:
@@ -34,6 +40,9 @@
       - docker-ce-cli
       - containerd.io
       - docker-buildx-plugin
+  tags:
+    - "image"
+    - "docker-install"
 
 
 - name: Configure Docker

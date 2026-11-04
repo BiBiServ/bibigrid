@@ -2,7 +2,7 @@
 {% for node_name in groups.master + groups.workers %}
 {% set node = hostvars[node_name] %}
 {% set ns = namespace(device_index=0) %}
-{% if node.flavor.gres is defined %}
+{% if node.flavor.gres is defined and node.flavor.gres %}
 {% for gres in node.flavor.gres %}
 {% for i in range(gres.count | int) %}
 NodeName={{ node.name }} Name={{ gres.name }} Type={{ gres.type }} File=/dev/nvidia{{ ns.device_index }}
