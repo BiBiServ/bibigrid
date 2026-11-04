@@ -93,7 +93,7 @@ NFS (Network File System) is a stable and well-functioning network protocol for 
 
 #### userRoles (optional)
 
-`userRoles` takes a list of elements containing the keys `hosts`, `roles` and  
+`userRoles` takes a list of elements containing the keys `hosts`, `roles`, `vars` and `varsFiles`.
 
 ```yaml
 userRoles: # see ansible_hosts for all options
@@ -103,8 +103,10 @@ userRoles: # see ansible_hosts for all options
         - name: "resistance_nextflow"
           tags:
             - resistance_nextflow
-      # varsFiles: # (optional)
-      #  - file1
+      vars: # (optional) key/value pairs
+        custom_var: "value"
+      varsFiles: # (optional) paths relative to resources/playbook/
+        - vars/file1.yaml
 ```
 
 #### Usually Ignored Keys

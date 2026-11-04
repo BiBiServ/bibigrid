@@ -45,15 +45,16 @@ def generate_site_file_yaml(user_roles):
     @param user_roles: userRoles given by the config
     @return: site_yaml (dict)
     """
-    site_yaml = [{'hosts': 'master', "become": "yes", "vars_files": VARS_FILES, "roles": MASTER_ROLES},
-                 {'hosts': 'vpngtw', "become": "yes", "vars_files": VARS_FILES, "roles": VPNGTW_ROLES},
-                 {"hosts": "workers", "become": "yes", "vars_files": VARS_FILES, "roles": WORKER_ROLES}]
+    site_yaml = [{'hosts': 'master', "become": "yes", "vars": {}, "vars_files": VARS_FILES, "roles": MASTER_ROLES},
+                 {'hosts': 'vpngtw', "become": "yes", "vars": {}, "vars_files": VARS_FILES, "roles": VPNGTW_ROLES},
+                 {"hosts": "workers", "become": "yes", "vars": {}, "vars_files": VARS_FILES, "roles": WORKER_ROLES}]
     for user_role in user_roles:
         for host_dict in site_yaml:
             if host_dict["hosts"] in user_role["hosts"]:
                 host_dict["vars_files"] = host_dict["vars_files"] + user_role.get("varsFiles", [])
                 host_dict["roles"] = host_dict["roles"] + [{"role": role["name"], "tags": role.get("tags", [])} for role
                                                            in user_role["roles"]]
+                host_dict["vars"].update(user_role.get("vars", {}))
 
     return site_yaml
 
